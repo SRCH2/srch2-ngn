@@ -1,0 +1,33 @@
+span.exact {
+    color: #000080;
+    font-weight: bold;
+}
+span.fuzzy {
+    color: #ff00ff;
+    font-weight: bold;
+}
+a.fuzzyLink {
+    color:blue;
+    font-size:0.9em;
+}
+a.typeLink {
+    color:blue;
+    font-size:0.9em;
+}
+span.text {
+    color:#505050;
+    font-size:0.9em;
+}
+span.error {
+    color:#FF0000;
+    font-size:0.9em;
+}
+input.inputTextfield {
+	height: 40px;
+	width: 800px;
+	font-size: 25px;
+}
+input.optTextfield {
+	width: 50px;
+	height: 10px;
+}
