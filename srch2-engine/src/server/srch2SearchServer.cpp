@@ -21,10 +21,9 @@
 #include <string>
 #include <sstream>
 
-#include "src/Srch2KafkaConsumer.h"
-#include "src/HTTPResponse.h"
-#include "src/Srch2Server.h"
-#include "svnversion.h"
+#include "Srch2KafkaConsumer.h"
+#include "HTTPResponse.h"
+#include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
 
 #include <event2/http.h>
@@ -156,7 +155,7 @@ void getVersionInfo(std::string &versioninfo)
 {
     stringstream version_info;
     version_info
-        << "{" << "\"version\":" << SVNVERSION
+        << "{" << "\"version\":" <<  3.0  //TODO: SVNVERSION
         << "}";
 
     versioninfo = version_info.str();
@@ -312,7 +311,7 @@ void cb_busy_indexing(evhttp_request *req, void *arg)
 
 void printVersion()
 {
-	std::cout << "srch2-search-server-version:" << SVNVERSION << std::endl;
+	std::cout << "srch2-search-server-version:" << "3.0" << std::endl;
 }
 
 int bindSocket(const char * hostname , int port) {
