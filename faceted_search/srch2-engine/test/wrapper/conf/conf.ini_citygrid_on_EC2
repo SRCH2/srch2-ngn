@@ -1,0 +1,151 @@
+#-------------------------------------------
+# Data Source and index schema definitions  
+#-------------------------------------------
+
+# 0 - Text Index.
+# 1 - Spatial+Text Index
+index-type=1
+
+# 0 - Load from index-dir directly, skip creating an index initially.
+# 1 - Create the index-dir from scratch
+index-load-or-create=0
+
+index-dir-path=/media/eb1/citygrid_project/index/
+
+# 0 - Import data from MySQL using the "MySQL-options" set below.
+# 1 - Import data from csv file at file path "file-path"
+# 2 - Import data from json file at file path "file-path"
+data-source-type=0
+
+#file-path
+file-path=/media/eb1/citygrid_project/index/
+
+# MySQL options
+sql-host=localhost
+#change Soum: Add your mysql username and password
+sql-user=dummyusername
+sql-pass=dummypassword
+sql-db=citygrid_us
+sql-table-name=citygrid_without_keyphrase
+#sql-table-name=citygrid_us_small
+
+primary-key=citygridid
+
+# 0 if the primary key is NOT searchable, 1 else
+is-primary-key-searchable=0	
+
+# The attributes you want to search on other than the primary key
+#TODO: use two attributes by default
+attributes-search=locName,locPhoneNumber,locAddress,locCityName,locStateName,locZip,locTagline,locTags
+
+# Attributes that can be used to sort the results
+attributes-sort=IGNORE
+
+# The types of attributes that can be used to sort the result, 0 if unsigned, 1 if float
+attributes-sort-type=IGNORE
+
+attributes-sort-default-value=IGNORE
+
+attribute-record-boost=recordBoost
+
+attribute-latitude=latitude
+attribute-longitude=longitude
+
+# The result formatting of json search response. 
+# 0 for lucene like record scoring. 
+# 1 for scoring based on just record-boost and fuzzy match.
+record-score-type=0
+
+# The result formatting of json search response. 
+# 0 for rid,edit_dist,matching_prefix. 
+# 1 for rid,edit_dist,matching_prefix,mysql_record.
+# 2 for rid,edit_dist,matching_prefix,in_memory_record.
+search-response-format=1
+
+# Search time - Attributes to retrieve for search hits
+mysql-retrieve-attributes=citygridid,locName,latitude,longitude,locPhoneNumber,locAddress,locCityName,locStateName,locZip,locTagline,locTags
+
+# Specify a boost value for each attribute you want to search on other than the primary key
+# Don't need to specify for primary key if it is set to be searchable. The default boost for primary key is the maximum boost
+attribute-boosts=100,10,10,10,10,10,50,3
+
+# MySQL query to get all records at index time, generated internally.
+# select $(primary-key),$(attributes),$(article_cite_count) from test;
+
+# MySQL query to get search hit records at search time, generated internally.
+# select $(mysql-retrieve-attributes) from test;
+
+#-----------------
+# Searcher daemon options
+#-----------------
+
+# JSON=0 or JSONP=1. For JSONP, the api call must have callback=functionname variable 
+search-response-JSON-format=1
+
+# Query Tokenizer character used to get terms from querystring
+query-tokenizer-character=+
+
+# Record Tokenizer characters to get terms from recordstring
+allowed-record-special-characters=&
+
+#0 if topk, 1 if advanced
+default-searcher-type=0
+
+#0 if exact term, 1 if fuzzy term
+default-fuzzy-query-term-type=1
+
+#0 if complete term, 1 if prefix term
+default-query-term-type=1
+
+#Default query term boost
+default-query-term-boost=1
+
+#Default query term similarity boost
+default-query-term-similarity-boost=0.9
+
+#Default query term similarity boost
+default-query-term-length-boost=0.5
+
+#Default attribute to filter query term
+default-attribute-to-filter-query-term=-1
+
+# Number of results to retrieve
+default-results-to-retrieve=10
+
+# Id of attribute used to sort
+default-attribute-to-sort=0
+
+# Sort order, 0 is Ascending, 1 is Descending
+default-order=1
+
+# Default bounding square side length
+default-spatial-query-bounding-square-side-length=0.2
+
+#--------------------
+# HTTP server options
+#--------------------
+ 
+# Document-root. Make sure the server has read privileges are set on this folder
+#change Soum: Add this as the path to the html directory in srch2search folder
+document-root=/media/eb1/citygrid_project/M1/
+
+# License Key file. Make sure to set the path to the srch2 license key file provided with the package
+#change Soum: Change this as the path to the srch2_license_key.txt file in the srch2search folder
+license-file=/media/eb1/citygrid_project/conf/srch2_license_key.txt
+
+# ports to listen. Make sure these are open. To access over internet, these ports must be open for outside traffic.
+listening-port=80
+
+# number of searcher threads to be run by the server. Recommended, set it to at most the number of processor cores.
+number-of-threads=5
+
+# Path to access log file
+access-log-file=/media/eb1/citygrid_project/log/srch2-access.log
+
+# Path to error log file
+error-log-file=/media/eb1/citygrid_project/log/srch2-error.log
+
+# Cache size in bytes, must be 53,687,000 < x < 4,294,967,295
+# Cache size can be set from a minimum of 50MB to a maximum of 4.2 GB.
+cache-size=1073741824
+
