@@ -69,7 +69,7 @@ public:
     void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters) { this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;    }
     const std::string& getRecordAllowedSpecialCharacters()  const { return this->recordAllowedSpecialCharacters; }
 
-    const StemmerNormalizerFlagType & getStemmerNormalizerType() const
+    const StemmerNormalizerFlagType & getStemmerNormalizerFlagType() const
     {
         return this->stemmerFlag;
     };
@@ -137,7 +137,7 @@ public:
 
 private:
     std::string recordAllowedSpecialCharacters;
-    const StemmerNormalizerFlagType stemmerFlag
+    StemmerNormalizerFlagType stemmerFlag;
     Stemmer *stemmer;
     Normalizer *normalizer;
     AnalyzerInternal *analyzers;
@@ -152,7 +152,7 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        ar & &stemmerFlag;
+        ar & stemmerFlag;
         ar & recordAllowedSpecialCharacters;
         ar & stemmer;
         ar & normalizer;

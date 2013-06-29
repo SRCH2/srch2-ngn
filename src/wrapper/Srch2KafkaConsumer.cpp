@@ -53,7 +53,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 			}
 
 			// Create an analyzer
-			srch2is::Analyzer *analyzer = bmis::Analyzer::create(stemmerFlag,
+			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemmerFlag,
 					indexDataContainerConf->getRecordAllowedSpecialCharacters());
 
 

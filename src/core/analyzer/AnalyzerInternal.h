@@ -136,8 +136,10 @@ public:
 								 const std::map<std::string, unsigned> &searchableAttributesNameToId, vector<unsigned> &filter) const;
 
 
+
 protected:
 	boost::shared_ptr<SharedToken > sharedToken;
+
 	TokenOperator* tokenOperator;
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;

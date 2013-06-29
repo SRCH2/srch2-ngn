@@ -58,7 +58,7 @@ AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerFlagType &stemme
 {
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     this->prepareRegexExpression();
-    this->stemmerFlag= stemmerFlag;
+    this->stemmerFlag = stemmerFlag;
     this->stemmer = NULL;
     this->normalizer = NULL;
     this->analyzers = new StandardAnalyzer();
@@ -69,8 +69,8 @@ AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerFlagType &stemme
 AnalyzerInternalold::AnalyzerInternalold(const AnalyzerInternalold &analyzerInternal, const std::string &indexDirectory)
 {
     this->stemmerFlag = analyzerInternal.stemmerFlag;
-    this->stemmer = new Stemmer(this->getStemmerNormalizerType(), indexDirectory);
-    this->normalizer = new Normalizer(this->getStemmerNormalizerType(), indexDirectory);
+    this->stemmer = new Stemmer(this->getStemmerNormalizerFlagType(), indexDirectory);
+    this->normalizer = new Normalizer(this->getStemmerNormalizerFlagType(), indexDirectory);
     this->analyzers = new StandardAnalyzer();
     this->tokenOperator = analyzers->createOperatorFlow();
     this->recordAllowedSpecialCharacters = analyzerInternal.getRecordAllowedSpecialCharacters();
