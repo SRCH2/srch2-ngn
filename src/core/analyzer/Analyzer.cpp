@@ -26,14 +26,14 @@ namespace srch2
 namespace instantsearch
 {
 // TODO: remove create. The constructor is called directly
-Analyzer *Analyzer::create(const StemmerNormalizerType &stemType, const std::string &delimiters, const AnalyzerType &analyzerType) {
+Analyzer *Analyzer::create(const StemmerNormalizerFlagType &stemmerFlag, const std::string &delimiters, const AnalyzerType &analyzerType) {
 
 	switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-			return new SimpleAnalyzer(stemType, delimiters);
+			return new SimpleAnalyzer(stemmerFlag, delimiters);
 		default:
-			return new StandardAnalyzer(stemType, delimiters);
+			return new StandardAnalyzer(stemmerFlag, delimiters);
 	}
 }
 

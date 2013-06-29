@@ -57,7 +57,7 @@ IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
         const string &trieBootstrapFileNameWithPath,
-        const StemmerNormalizerType &stemType)
+        const StemmerNormalizerFlagType &stemmerFlag)
 {
 
     this->directoryName = directoryName;

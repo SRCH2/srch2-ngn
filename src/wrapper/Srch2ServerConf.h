@@ -92,7 +92,9 @@ private:
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
 	bool supportAttributeBasedSearch;
-
+	bool stemmerFlag;
+	std::string synonymFilterFilePath;
+	std::string stopFilterFilePath;
 	DataSourceType dataSourceType;
 	IndexCreateOrLoad indexCreateOrLoad;
 	WriteApiType writeApiType;
@@ -142,6 +144,9 @@ public:
 	int getIsPrimSearchable() const;
 	bool getIsFuzzyTermsQuery() const;
 	bool getQueryTermType() const;
+	bool getStemmerFlag() const;
+	string getSynonymFilePath() const;
+	string getStopFilePath() const;
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;

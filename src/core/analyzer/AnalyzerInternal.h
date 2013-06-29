@@ -48,7 +48,7 @@ struct TokenAttributeHits {
 
 class AnalyzerInternal: public Analyzer{
 public:
-	AnalyzerInternal(const StemmerNormalizerType &stemNormType, const std::string &recordAllowedSpecialCharacters);
+	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters);
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
 	// assign the shared ptr to given string, clean currentToken and reset offset
 	void loadData(const std::string &s) const;
@@ -141,6 +141,7 @@ protected:
 	TokenOperator* tokenOperator;
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
+	StemmerNormalizerFlagType stemmerType; // know if we are stemming or not
 
     boost::regex disallowedCharactersRegex;
     boost::regex multipleSpaceRegex;

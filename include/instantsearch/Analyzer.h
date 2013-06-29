@@ -31,12 +31,29 @@ namespace srch2
 namespace instantsearch
 {
 
+
 typedef enum
 {
-    STEMMER_NORMALIZER = 0,    // Not supported , For stemmer to work, positionIndex must be enabled.
-    ONLY_NORMALIZER = 1,       // Not supported
-    NO_STEMMER_NORMALIZER = 2  // Currently we support only NO_STEMMER_NORMALIZER
-} StemmerNormalizerType ;
+    DISABLE_STEMMER_NORMALIZER = 0,   // Disables stemming
+    ENABLE_STEMMER_NORMALIZER  = 1,   // Enables stemming
+    ONLY_NORMALIZER = 2
+} StemmerNormalizerFlagType ;
+
+
+typedef enum
+{
+    DICTIONARY_PORTER_STEMMER = 1
+    // We can add other kinds of stemmer here, like MIRROR_STEMMER
+
+} Stemmer_Type; // TODO: I should remove the '_' from the name, (it is temporary)
+
+//
+//typedef enum
+//{
+//    STEMMER_NORMALIZER = 0,    // Not supported , For stemmer to work, positionIndex must be enabled.
+//    ONLY_NORMALIZER = 1,       // Not supported
+//    NO_STEMMER_NORMALIZER = 2  // Currently we support only NO_STEMMER_NORMALIZER
+//} StemmerNormalizerType ;
 
 typedef enum
 {

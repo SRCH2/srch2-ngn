@@ -7,6 +7,7 @@
 #include "SimpleAnalyzer.h"
 #include "WhiteSpaceTokenizer.h"
 #include "LowerCaseFilter.h"
+#include "StemmerFilter.h"
 
 namespace srch2
 {
@@ -18,6 +19,9 @@ TokenOperator * SimpleAnalyzer::createOperatorFlow()
 {
 	TokenOperator *tokenOperator = new WhiteSpaceTokenizer();
 	tokenOperator = new LowerCaseFilter(tokenOperator);
+    if (this->stemmerType ==  ENABLE_STEMMER_NORMALIZER){
+        tokenOperator = new StemmerFilter (tokenOperator);
+    }
 	this->sharedToken = tokenOperator->sharedToken;
 	return tokenOperator;
 }

@@ -1,0 +1,105 @@
+/*
+ * SynonymFilter.h
+ *
+ *  Created on: Jun 21, 2013
+ *      Author: iman
+ */
+
+#ifndef SYNONYMFILTER_H_ANALYZER
+#define SYNONYMFILTER_H_ANALYZER
+
+
+#include <string>
+#include <vector>
+#include <map>
+
+#include "TokenOperator.h"
+#include "TokenFilter.h"
+
+using namespace std;
+
+namespace srch2 {
+namespace instantsearch {
+
+class SynonymFilter: public TokenFilter {
+public:
+	/*
+	 * Constructor of synonym filter.
+	 * Sets sharedToken.
+	 */
+	SynonymFilter(TokenOperator *tokenOperator);
+
+	/*
+	 * IncrementToken() is a virtual function of class TokenOperator.
+	 * Here we have to implement it. It goes on all tokens.
+	 * */
+	bool incrementToken();
+
+	virtual ~SynonymFilter();
+
+private:
+
+	/*
+	 * synonymMap is the map of synonyms
+	 * If we have following rules:
+	 * A => B
+	 * C D => E
+	 * F, G => H
+	 * synonymMap will contains following records:
+	 * A => B
+	 * C D => E
+	 * F => H
+	 * G => H
+	 */
+	map<std::string, std::string> synonymMap;
+
+	/*
+	 * It is a buffer for tokens to check if we have multi-word synonyms
+	 */
+	std::vector<std::string> tokenBuffer;
+
+	/*
+	 *  creates the map of stop words.
+	 */
+	void createSynonymMap(const std::string &synonymFilePath);
+
+	/*
+	 *  Checks the synonym map and returns true if the input string exists in the map keys
+	 */
+	bool containsWord(const std::string &word);
+
+	/*
+	 *  Checks the synonym map and returns true if the input string is a part of any key
+	 */
+	bool isSubStringOfKey(const std::string &);
+
+	/*
+	 *  Checks the synonym map and returns the number of keys which have the word as their substring happening at the begining
+	 */
+	int countSubStringOfKey(const std::string &);
+
+
+	vector<std::string> getSynonymOfBuffered();
+
+	/*
+	 * returns the value of the string as the substring of a key
+	 * returns NULL if there is no such a key
+	 */
+	std::string getValueOf(const std::string &);
+
+	/*
+	 * returns the key of the string as the substring of a key
+	 * returns NULL if there is no such a key
+	 */
+	std::string getKeyOf(const std::string &);
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & synonymMap;
+	}
+};
+
+}
+}
+#endif /* SYNONYMFILTER_H_ANALYZER */

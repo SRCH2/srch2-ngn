@@ -38,8 +38,28 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 	{
 		case srch2http::INDEXCREATE:
 		{
+
+
+			// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
+			StemmerNormalizerFlagType stemmerFlag;
+			// gets the stem flag and set the stemType
+			switch (indexDataContainerConf->getStemmerFlag()) {
+			case true:
+				stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
+				break;
+			case false:
+				stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
+				break;
+			}
+
 			// Create an analyzer
-			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, indexDataContainerConf->getRecordAllowedSpecialCharacters());
+			srch2is::Analyzer *analyzer = bmis::Analyzer::create(stemmerFlag,
+					indexDataContainerConf->getRecordAllowedSpecialCharacters());
+
+
+
+			// Create an analyzer
+//			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, indexDataContainerConf->getRecordAllowedSpecialCharacters());
 
 			// Create a schema to the data source definition in the Srch2ServerConf
 			srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataContainerConf);
