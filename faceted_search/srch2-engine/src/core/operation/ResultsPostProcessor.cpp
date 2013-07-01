@@ -55,7 +55,7 @@ ResultsPostProcessorPlan * ResultsPostProcessor::createPlan(const Query * query)
 	if(query->getPostProcessingFilter() == RANGE_CHECK){ // TODO : we must create enums
 		result = new ResultsPostProcessorPlan();
 		result->addFilterToPlan(new RangeQueryFilter());
-	}else{
+	}else if(query->getPostProcessingFilter() == NO_FILTER){
 		// TODO : must create plan based on query
 		result = new ResultsPostProcessorPlan();
 	}

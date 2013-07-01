@@ -52,7 +52,8 @@ typedef enum
 
 typedef enum
 {
-	RANGE_CHECK = 0
+	NO_FILTER = 0,
+	RANGE_CHECK = 1
 } POST_PROCESSING_FILTER;
 
 typedef enum
