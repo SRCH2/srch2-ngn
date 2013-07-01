@@ -1,4 +1,4 @@
-//$Id: HTTPResponse.cpp 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: HTTPResponse.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
@@ -11,6 +11,8 @@
 
 #include "HTTPResponse.h"
 #include "IndexWriteUtil.h"
+#include "instantsearch/Score.h"
+
 
 #include <event2/http.h>
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
@@ -121,7 +123,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		for(unsigned i = start; i < end; ++i)
 		{
 			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = (0-queryResults->getResultScore(i));//the actual distance between the point of record and the center point of the range
+			root["results"][counter]["score"] = (0-queryResults->getResultScore(i).getFloatScore());//the actual distance between the point of record and the center point of the range
 			if (indexDataContainerConf->getSearchResponseFormat() == 0
 					|| indexDataContainerConf->getSearchResponseFormat() == 2)
 			{
@@ -147,7 +149,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		{
 
 			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = queryResults->getResultScore(i);
+			root["results"][counter]["score"] = queryResults->getResultScore(i).getFloatScore();
 
 			// print edit distance vector
 			vector<unsigned> editDistances;
@@ -616,6 +618,11 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
                     }
                     delete fuzzyQueryResults;
                 }
+
+
+
+
+
 
                 // compute elapsed time in ms
                 struct timespec tend;

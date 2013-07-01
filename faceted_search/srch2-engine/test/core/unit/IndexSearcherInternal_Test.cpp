@@ -1,5 +1,5 @@
 
-//$Id: IndexSearcherInternal_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
@@ -216,7 +216,7 @@ bool checkResults(QueryResults *queryResults, set<unsigned> *resultSet)
 
 
         LOG_REGION(0,
-                cout<<"\nResult-("<<resultCounter<<") RecordId:"<<queryResults->getRecordId(resultCounter)<<"\tScore:"<<queryResults->getResultScore(resultCounter);
+                cout<<"\nResult-("<<resultCounter<<") RecordId:"<<queryResults->getRecordId(resultCounter)<<"\tScore:"<<queryResults->getResultScoreString(resultCounter);
         );
         LOG_REGION(0,
                 cout<<"\nMatching Keywords:"<<endl;

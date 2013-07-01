@@ -147,6 +147,9 @@ SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION
  
 ADD_TEST(GeoCompleteTermSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/integration/GeoCompleteTermSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}geo-complete/")
+
+
+
  
 # CHENLI
 # ADD_TEST(StemmerIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/StemmerIntegration_Test "--verbose")
@@ -161,7 +164,15 @@ SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE
 	  
 ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/GeoIndexUpdate_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/unit/test_data")
-	  
+	
+ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/VariableLengthAttributeContainer_Test "--verbose")  
+
+
+ADD_TEST(NonSearchableAttribute_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/NonSearchableAttribute_Test "--verbose")  
+
+
+
+
 #ADD_TEST(MarioIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/MarioIntegration_Test "--verbose")
 #SET_TESTS_PROPERTIES(MarioIntegration_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/;small_index_dir=${INTEGRATION_TEST_INDEX_DIR}/small-test-data/")
     

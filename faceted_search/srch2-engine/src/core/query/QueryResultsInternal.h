@@ -1,5 +1,5 @@
 
-// $Id: QueryResultsInternal.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: QueryResultsInternal.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,11 +25,15 @@
 //#include "operation/TermVirtualList.h"
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
+#include <instantsearch/Score.h>
 #include "index/ForwardIndex.h"
+#include "util/Assert.h"
+
 #include <vector>
 #include <queue>
 #include <string>
 #include <set>
+
 
 namespace srch2
 {
@@ -42,7 +46,8 @@ class TermVirtualList;
 struct QueryResult {
     string externalRecordId;
     unsigned internalRecordId;
-    float score;
+    Score _score;
+
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
@@ -50,16 +55,40 @@ struct QueryResult {
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     
+
+
+    QueryResult(const QueryResult& copy_from_me){
+//    	ASSERT(copy_from_me._score != NULL);
+    	externalRecordId = copy_from_me.externalRecordId;
+    	internalRecordId = copy_from_me.internalRecordId;
+    	_score = copy_from_me._score;
+
+    	matchingKeywords = copy_from_me.matchingKeywords;
+    	attributeBitmaps = copy_from_me.attributeBitmaps;
+    	editDistances = copy_from_me.editDistances;
+
+    }
+    QueryResult(){
+    };
+
+
+
+    Score getResultScore() const
+    {
+    	return _score;
+    }
     // this operator should be consistent with two others in TermVirtualList.h and InvertedIndex.h
     bool operator<(const QueryResult& queryResult) const
     {
         float leftRecordScore, rightRecordScore;
         unsigned leftRecordId  = internalRecordId;
         unsigned rightRecordId = queryResult.internalRecordId;
-		leftRecordScore = score;
-		rightRecordScore = queryResult.score;
-        return DefaultTopKRanker::compareRecordsGreaterThan(leftRecordScore,  leftRecordId,
-                                    rightRecordScore, rightRecordId);
+		Score _leftRecordScore = this->_score;
+		Score _rightRecordScore = queryResult._score;
+		return DefaultTopKRanker::compareRecordsGreaterThan(_leftRecordScore,  leftRecordId,
+		                                    _rightRecordScore, rightRecordId);//TODO: this one should be returned.
+
+
     }
     
 };
@@ -78,7 +107,8 @@ public:
     unsigned getInternalRecordId(unsigned position) const;
     std::string getInMemoryRecordString(unsigned position) const;
     
-    float getResultScore(unsigned position) const;
+    string getResultScoreString(unsigned position) const;
+    Score getResultScore(unsigned position) const;
     
     void getMatchingKeywords(const unsigned position, vector<string> &matchingKeywords) const;
     void getEditDistances(const unsigned position, vector<unsigned> &editDistances) const;
@@ -119,7 +149,7 @@ public:
  private:
     Query* query;
     unsigned nextK;
-    
+
     const IndexSearcherInternal *indexSearcherInternal;
 
     // OPT use QueryResults Pointers.

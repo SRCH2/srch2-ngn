@@ -1,4 +1,4 @@
-//$Id: Query.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Query.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -23,6 +23,7 @@
 #include <instantsearch/platform.h>
 #include <instantsearch/Term.h>
 #include <vector>
+#include <string>
 
 namespace srch2
 {
@@ -37,6 +38,22 @@ typedef enum
     GetAllResultsQuery = 1,
     MapQuery = 2
 } QueryType;
+
+typedef enum
+{
+	LESS_THAN =0,
+	EQUALS=1,
+	GREATER_THAN=2,
+	LESS_THAN_EQUALS=3,
+	GREATER_THAN_EQUALS=4,
+	NOT_EQUALS=5
+
+} ATTRIBUTE_CRITERION_OPERATION;
+
+typedef enum
+{
+	RANGE_CHECK = 0
+} POST_PROCESSING_FILTER;
 
 typedef enum
 {
@@ -144,6 +161,22 @@ public:
      */
     void setSortableAttribute(unsigned filterAttributeId, srch2::instantsearch::SortOrder order);
     unsigned getSortableAttributeId() const;
+
+
+
+    // TODO temperory functions, to test range search filter
+    void setNonSearchableAttributeName(std::string name);
+    std::string getNonSearchableAttributeName() const;
+
+    void setNonSearchableAttributeValue(std::string value);
+    std::string getNonSearchableAttributeValue() const;
+
+
+    void setPostProcessingFilter(POST_PROCESSING_FILTER code);
+    POST_PROCESSING_FILTER getPostProcessingFilter() const;
+
+    void setPostProcessingFilterOperation(ATTRIBUTE_CRITERION_OPERATION code);
+    ATTRIBUTE_CRITERION_OPERATION getPostProcessingFilterOperation() const;
 
     /*
      * TODO Should change this function's name to

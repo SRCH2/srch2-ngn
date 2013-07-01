@@ -1,4 +1,4 @@
-//$Id: LocationRecordUtil.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: LocationRecordUtil.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -22,7 +22,7 @@
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-#include <math.h>
+#include <cmath>
 #include <vector>
 
 namespace srch2

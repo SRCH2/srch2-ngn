@@ -1,4 +1,4 @@
-//$Id: SearchGeoIndex.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: SearchGeoIndex.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -58,7 +58,8 @@ void QuadTree::rangeQueryWithoutKeywordInformation(QueryResultsInternal *queryRe
 			QueryResult queryResult;
 			queryResult.internalRecordId = this->geoElementIndex[offset]->forwardListID;
 			//take the distance to the center point of shape as the floatScore ,get the negative value of distance for sorting
-			queryResult.score = (0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y));
+			queryResult._score.setScore(
+					(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y)));//TODO
 			queryResultsInternal->insertResult(queryResult);
 			}
 		}
@@ -265,7 +266,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                     QueryResult queryResult;
                     queryResult.internalRecordId = this->geoElementIndex[offset]->forwardListID;
-                    queryResult.score = combinedScore;
+                    queryResult._score.setScore(combinedScore);//TODO
                     //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                     // set up the matching keywords and editDistances for queryResults
@@ -338,7 +339,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                             QueryResult queryResult;
                             queryResult.internalRecordId = geoElement->forwardListID;
-                            queryResult.score = combinedScore;
+                            queryResult._score.setScore(combinedScore);//TODO
                             //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                             // set up the matching keyword and editDistance of the picked term for queryResults

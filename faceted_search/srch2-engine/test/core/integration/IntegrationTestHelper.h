@@ -1,4 +1,4 @@
-//$Id: IntegrationTestHelper.h 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: IntegrationTestHelper.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -398,7 +398,7 @@ void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
         // Output the result information
         cout << "\nResult-(" << resultIter << ") RecordId:"
              << queryResults->getRecordId(resultIter)
-             << "\tScore:" << queryResults->getResultScore(resultIter);
+             << "\tScore:" << queryResults->getResultScoreString(resultIter);
 
         cout << "\nMatching Keywords:" << endl;
         unsigned editDistancesIter = 0;
@@ -430,7 +430,7 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
         // Output the result information
         cout << "\nResult-(" << resultIter << ") RecordId:"
              << queryResults->getRecordId(resultIter)
-             << "\tScore:" << queryResults->getResultScore(resultIter);
+             << "\tScore:" << queryResults->getResultScoreString(resultIter);
 
         cout << "\nMatching Keywords:" << endl;
         unsigned editDistancesIter = 0;
@@ -765,7 +765,7 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
             }
             else
             {
-                cout << "[" << resultCounter << "]" << queryResults->getRecordId(resultCounter) << "[" << queryResults->getResultScore(resultCounter) << "]" << endl;
+                cout << "[" << resultCounter << "]" << queryResults->getRecordId(resultCounter) << "[" << queryResults->getResultScoreString(resultCounter) << "]" << endl;
                 if ( (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()) == recordIDs[resultCounter])
                 //if (queryResults->getRecordId(resultCounter) == recordIDs[resultCounter])
                 {
@@ -1026,7 +1026,7 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resVal = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
     return resVal;

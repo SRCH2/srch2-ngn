@@ -1,5 +1,5 @@
 
-// $Id: QueryResultsInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: QueryResultsInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -38,7 +38,6 @@ QueryResultsInternal::QueryResultsInternal(IndexSearcherInternal *indexSearcherI
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList* >;
     this->indexSearcherInternal = indexSearcherInternal;
-    
     this->stat = new Stat();
 }
     
@@ -86,7 +85,7 @@ QueryResultsInternal::~QueryResultsInternal()
     while (!nextKResultsHeap.empty()) {
         nextKResultsHeap.pop();
     }
-    
+
     delete this->stat;
 }
 
@@ -113,10 +112,16 @@ std::string QueryResultsInternal::getInMemoryRecordString(unsigned position) con
     return this->indexSearcherInternal->getInMemoryData(internalRecordId);
 }
 
-float QueryResultsInternal::getResultScore(unsigned position) const
+string QueryResultsInternal::getResultScoreString(unsigned position) const
 {
     ASSERT (position < this->getNumberOfResults());
-    return this->sortedFinalResults.at(position).score;
+    return this->sortedFinalResults.at(position)._score.toString();
+}
+
+Score QueryResultsInternal::getResultScore(unsigned position) const
+{
+    ASSERT (position < this->getNumberOfResults());
+    return this->sortedFinalResults.at(position)._score;
 }
 
 double QueryResultsInternal::getPhysicalDistance(const unsigned position) const
@@ -181,7 +186,8 @@ void QueryResultsInternal::insertResult(QueryResult &queryResult)
             this->nextKResultsHeap.push(queryResult);
         }
         else {
-            if (this->nextKResultsHeap.top().score < queryResult.score) {
+        	//TODO
+            if (this->nextKResultsHeap.top()._score < queryResult._score) {
                 this->nextKResultsHeap.pop();
                 this->nextKResultsHeap.push(queryResult);
             }
@@ -195,8 +201,15 @@ void QueryResultsInternal::insertResult(QueryResult &queryResult)
 // if the queue has k results and the min score in the queue >= maxScore, return true
 bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords)
 {
-    if ((this->nextKResultsHeap.size() == this->nextK)
-    && (this->nextKResultsHeap.top().score >= maxScoreForUnvisitedRecords))
+	float temp1,temp2;
+	if(this->nextKResultsHeap.size() == 0){
+		return false;
+	}
+	Score tempScore = this->nextKResultsHeap.top().getResultScore();
+	ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
+	temp1 = tempScore.getFloatScore();
+	temp2 = maxScoreForUnvisitedRecords;
+    if ((this->nextKResultsHeap.size() == this->nextK) && ( temp1 >= temp2 ))
         return true;
 
   return false;
@@ -230,7 +243,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
             QueryResult qs;
             qs.externalRecordId = externalRecordId;
             qs.internalRecordId = this->nextKResultsHeap.top().internalRecordId;
-            qs.score = this->nextKResultsHeap.top().score;
+            qs._score.setScore(this->nextKResultsHeap.top()._score);//TODO
             qs.matchingKeywords.assign(this->nextKResultsHeap.top().matchingKeywords.begin(),
                            this->nextKResultsHeap.top().matchingKeywords.end());
             qs.attributeBitmaps.assign(this->nextKResultsHeap.top().attributeBitmaps.begin(),

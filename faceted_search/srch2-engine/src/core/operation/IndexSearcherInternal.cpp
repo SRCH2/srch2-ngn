@@ -1,5 +1,5 @@
 
-// $Id: IndexSearcherInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexSearcherInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,6 +20,7 @@
 
 #include <instantsearch/Query.h>
 #include <instantsearch/Ranker.h>
+#include <instantsearch/Score.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
 
@@ -28,6 +29,8 @@
 #include "operation/ActiveNode.h"
 #include "operation/TermVirtualList.h"
 #include "query/QueryResultsInternal.h"
+#include "operation/ResultsPostProcessor.h"
+
 #include "index/Trie.h"
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
@@ -171,11 +174,9 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                 // add this record to topK results if its score is good enough
                 QueryResult queryResult;
                 queryResult.internalRecordId = internalRecordId;
-                float recordScore = 
-                    fl->getForwardListSortableAttributeScore(this->indexData->forwardIndex->getSchema(), query->getSortableAttributeId());
                 //unsigned sumOfEditDistances = std::accumulate(queryResultEditDistances.begin(), 
                 //                          queryResultEditDistances.end(), 0);
-                queryResult.score = recordScore;
+                queryResult._score.setScore(fl->getForwardListNonSearchableAttributeScore(this->indexData->forwardIndex->getSchema(), query->getSortableAttributeId()));
                 //    query->getRanker()->computeResultScoreUsingAttributeScore(query, recordScore, 
                 //                                  sumOfEditDistances, 
                 //                                  queryTermsLength);
@@ -359,7 +360,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             bool forwardListValid = false;
             this->indexData->forwardIndex->getForwardList(internalRecordId, forwardListValid);
             if (forwardListValid) {
-                queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
+                queryResult._score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
                 queryResult.matchingKeywords = queryResultMatchingKeywords;
                 queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                 queryResult.editDistances = queryResultEditDistances;
@@ -433,7 +434,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         QueryResult queryResult;
                         queryResult.internalRecordId = internalRecordId;
                 
-                        queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
+                        queryResult._score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
                         queryResult.matchingKeywords = queryResultMatchingKeywords;
                         queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult.editDistances = queryResultEditDistances;
@@ -569,8 +570,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         // add this record to topK results if its score is good enough
                         QueryResult queryResult;
                         queryResult.internalRecordId = internalRecordId;
-                        queryResult.score = query->getRanker()->computeOverallRecordScore(query,
-                                                         queryResultTermScores);
+                        queryResult._score.setScore(query->getRanker()->computeOverallRecordScore(query,queryResultTermScores));//TODO
                         queryResult.matchingKeywords = queryResultMatchingKeywords;
                         queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult.editDistances = queryResultEditDistances;
@@ -636,21 +636,45 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
 {
     int returnValue = -1;
+    QueryResultsInternal *resultsBeforePostProcessing = dynamic_cast<QueryResultsInternal *>(QueryResults::create(this, const_cast<Query *>(query)));
 
     if (this->indexData->isCommited() == false)
         return returnValue;
     
     if (query->getQueryType() == srch2::instantsearch::TopKQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
-        returnValue = this->searchTopKQuery(query, offset, nextK, queryResults);
+        returnValue = this->searchTopKQuery(query, offset, nextK, resultsBeforePostProcessing);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
     else if(query->getQueryType() == srch2::instantsearch::GetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
-        returnValue = this->searchGetAllResultsQuery(query, queryResults);
+        returnValue = this->searchGetAllResultsQuery(query, resultsBeforePostProcessing);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
     //queryResults->printResult();
+
+
+    // now do post processing TODO should it be here ?
+
+
+    ResultsPostProcessorOperand finalResultsBefore;
+    finalResultsBefore.importResults(resultsBeforePostProcessing);
+
+    ResultsPostProcessor postProcessor(this->getSchema(), this->getForwardIndex());
+
+
+    ResultsPostProcessorOperand finalResultsAfter;
+    postProcessor.doProcess(query , &finalResultsBefore , finalResultsAfter);
+
+    QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
+
+
+
+    finalResultsAfter.exportResults(queryResultsInternal);
+
+
+
+
     return returnValue;
 }
 
