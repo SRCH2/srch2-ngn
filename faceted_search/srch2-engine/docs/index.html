@@ -1,0 +1,34 @@
+<!--CTYPE HTML PUBLIC "-//W3C//DTD HTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html><head>
+<title>SRCH2</title>
+<link rel="shortcut icon" href="documentation/tab_icon.png" >
+<script type="text/javascript" src="index.js"></script>
+<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+</head>
+<body onload="document.getElementById('input').focus();">
+<center><div><h1>SRCH2 Engine</h1></div>
+<div><table>
+        <tr >
+                <td colspan=3>
+                        <input type='text' style="height:40px; width:800px; font-size:25px;" class='inputTextfield' autocomplete='off' id='input' onkeyup='check(this.value)'>
+                </td>
+        </tr>
+</table></div>
+</center><div id='results'></div><hr>
+<center>Powered by SRCH2</center>
+</body>
+<style type="text/css">
+span.fuzzy {
+        color: #ff00ff;
+        font-weight: bold;
+}
+span.exact {
+        color: red;
+        font-weight: bold;
+}
+
+</style>
+
+
+</html>
+
