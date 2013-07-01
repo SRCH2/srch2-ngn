@@ -1,4 +1,0 @@
-book-store bookstore
-star-bucks starbucks
-wal-mart walmart
-cheese-steak cheesesteak
