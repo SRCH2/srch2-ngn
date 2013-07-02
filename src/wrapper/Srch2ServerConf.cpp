@@ -92,8 +92,8 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess, std
 				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
 				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
 				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
-				("stop-filter-file-path", po::value<int>(), "Stop Filter file path or IGNORE")
-				("synonym-filter-file-path", po::value<int>(), "Synonym Filter file path or IGNORE")
+				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
+				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
 				;
 
 	po::variables_map vm_command_line_args;
@@ -503,8 +503,6 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 
 	if (vm.count("default-stemmer-flag")) {
 		stemmerFlag = (bool) vm["default-stemmer-flag"].as<int>();
-	} else {
-		stemmerFlag = false;
 	}
 
 	if (vm.count("stop-filter-file-path") && (vm["stop-filter-file-path"].as<string>().compare(ignoreOption) != 0)) {

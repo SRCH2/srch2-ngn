@@ -3,10 +3,10 @@
 #include <iostream>
 
 #include <instantsearch/Indexer.h>
-#include "../src/JSONRecordParser.h"
-#include "../src/Srch2KafkaConsumer.h"
-#include "../../src/operation/IndexSearcherInternal.h"
-#include "../../src/operation/IndexerInternal.h"
+#include "wrapper/JSONRecordParser.h"
+#include "wrapper/Srch2KafkaConsumer.h"
+#include "operation/IndexSearcherInternal.h"
+#include "operation/IndexerInternal.h"
 
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -160,7 +160,7 @@ bool test(int argc, char** argv)
 	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, serverConf->getRecordAllowedSpecialCharacters());
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,"","", serverConf->getRecordAllowedSpecialCharacters());
 
 	// Create a schema to the data source definition in the Srch2ServerConf
 	srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(serverConf);
@@ -187,4 +187,3 @@ int main(int argc, char** argv)
 	test(argc, argv);
 	return 0;
 }
-

@@ -190,11 +190,11 @@ memory-limit=100000
 
 # The file path for file import. File must be line json file.
 # REQUIRED, if data-source-type is set to 0.
-data-file-path=${CMAKE_SOURCE_DIR}/wrapper/test/data/sample-data.json
+data-file-path=${CMAKE_SOURCE_DIR}/test/wrapper/data/sample-data.json
  
 # Deprecated. Changed to /home/findr/custmrID/index/ for standardizing 
 # bookkeeping
-index-dir-path=${CMAKE_SOURCE_DIR}/wrapper/test/
+index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
 
 # Path to access log file
 # Deprecated. Changed to /home/findr/custmrID/log/srch2-access.log for standardizing 
