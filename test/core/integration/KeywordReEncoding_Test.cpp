@@ -71,7 +71,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "");
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;

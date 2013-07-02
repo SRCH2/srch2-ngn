@@ -27,7 +27,7 @@ public:
 	 * Constructor of synonym filter.
 	 * Sets sharedToken.
 	 */
-	SynonymFilter(TokenOperator *tokenOperator);
+	SynonymFilter(TokenOperator *tokenOperator, std::string synonymFilterFilePath);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
@@ -52,6 +52,13 @@ private:
 	 * G => H
 	 */
 	map<std::string, std::string> synonymMap;
+
+	/*
+	 * this a temporary buffer to keep the words that are waiting to get emit.
+	 */
+	vector<string> temporaryBuffer;
+
+
 
 	/*
 	 * It is a buffer for tokens to check if we have multi-word synonyms
@@ -92,6 +99,12 @@ private:
 	 * returns NULL if there is no such a key
 	 */
 	std::string getKeyOf(const std::string &);
+
+	/*
+	 * Separates the input string based on " " delimiter
+	 * adds the tokens to the temporaryBuffer (one by one)
+	 */
+	void addToTemporaryBuffer(std::string &);
 
 	friend class boost::serialization::access;
 	template<class Archive>

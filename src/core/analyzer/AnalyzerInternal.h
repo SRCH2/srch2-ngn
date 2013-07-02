@@ -144,6 +144,9 @@ protected:
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // know if we are stemming or not
+	std::string stopWordFilePath;
+	std::string synonymFilePath;
+
 
     boost::regex disallowedCharactersRegex;
     boost::regex multipleSpaceRegex;
@@ -156,6 +159,8 @@ protected:
 	{
 		ar & recordAllowedSpecialCharacters;
 		ar & analyzerType;
+		ar & stopWordFilePath;
+		ar & synonymFilePath;
 	}
 
 };

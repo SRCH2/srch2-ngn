@@ -74,7 +74,12 @@ public:
      */
     /*static Analyzer *create();// Default is NO_STEMMER_NORMALIZER
     static Analyzer *create( StemmerNormalizerType stemNormType);*/
-    static Analyzer *create(const StemmerNormalizerType &stemNormType, const std::string &delimiters, const AnalyzerType &analyzerType = STANDARD_ANALYZER);
+    static Analyzer *create(const StemmerNormalizerFlagType &stemNormType,
+    		const std::string &stopWordFilePath,
+    		const std::string &synonymFilePath,
+
+    		const std::string &delimiters,
+    		const AnalyzerType &analyzerType = STANDARD_ANALYZER);
 
     virtual void setRecordAllowedSpecialCharacters(const std::string &delimiters) = 0;
     virtual const std::string& getRecordAllowedSpecialCharacters() const = 0;

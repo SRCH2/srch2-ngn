@@ -43,11 +43,10 @@ namespace instantsearch
 {
 
 
-StopFilter::StopFilter(TokenOperator *tokenOperator):TokenFilter(tokenOperator)
+StopFilter::StopFilter(TokenOperator *tokenOperator, std::string &stopFilterFilePath):TokenFilter(tokenOperator)
 {
-	const std::string stopWordsFilePath = "/home/iman/srch2/bimaple-root/codebase/mario/branches/stemmer/src/analyzer/data/stopWordsFile.txt";
 	this->sharedToken = tokenOperator->sharedToken;// copies the shared_ptr: sharedToken
-    this->createStopWordList(stopWordsFilePath);// construct the stopWordDictionary
+    this->createStopWordList(stopFilterFilePath);// construct the stopWordDictionary
 }
 
  /*

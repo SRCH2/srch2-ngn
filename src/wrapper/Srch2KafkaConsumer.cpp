@@ -52,8 +52,15 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 				break;
 			}
 
+			// gets the path of stopFilter
+			std::string stopFilterFilePath = indexDataContainerConf->getStopFilePath();
+			// gets the path of stopFilter
+			std::string  synonymFilterFilePath = indexDataContainerConf->getSynonymFilePath();
+
 			// Create an analyzer
 			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemmerFlag,
+					stopFilterFilePath,
+					synonymFilterFilePath,
 					indexDataContainerConf->getRecordAllowedSpecialCharacters());
 
 
