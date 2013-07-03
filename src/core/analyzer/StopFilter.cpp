@@ -24,7 +24,6 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-
 #include "StopFilter.h"
 
 
@@ -33,83 +32,61 @@
 #include <stdio.h>
 #include <fstream>
 
-
-
 using namespace std;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
-
-StopFilter::StopFilter(TokenOperator *tokenOperator, std::string &stopFilterFilePath):TokenFilter(tokenOperator)
-{
-	this->sharedToken = tokenOperator->sharedToken;// copies the shared_ptr: sharedToken
-    this->createStopWordList(stopFilterFilePath);// construct the stopWordDictionary
+StopFilter::StopFilter(TokenOperator *tokenOperator,
+		std::string &stopFilterFilePath) : TokenFilter(tokenOperator) {
+	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
+	this->createStopWordList(stopFilterFilePath); // construct the stopWordDictionary
 }
 
  /*
   * Checks if the input token is in the stop words list or not
-  * */
- bool StopFilter::isStopWord(const std::string &token) const
- {
-	 // returns true if the given token is a stop word, else it reaturns false
-	 return (std::find(this->stopWordsVector.begin(), this->stopWordsVector.end(), token) != this->stopWordsVector.end());
- }
+ * */
+bool StopFilter::isStopWord(const std::string &token) const {
+	// returns true if the given token is a stop word, else it reaturns false
+	return (std::find(this->stopWordsVector.begin(),
+			this->stopWordsVector.end(), token) != this->stopWordsVector.end());
+}
 
- bool StopFilter::incrementToken()
- {
-	 while (true){
-		 if (!this->tokenOperator->incrementToken()){
-			 return false;
-		 }
-		 std::string currentToken = "";
-		 // converts the charType to string
-		 charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
-		 if(!this->isStopWord(currentToken)){
-			 return true;
-		 }
-	 }
-//	 return true;
+bool StopFilter::incrementToken() {
+	while (true) {
+		if (!this->tokenOperator->incrementToken()) {
+			return false;
+		}
+		std::string currentToken = "";
+		// converts the charType to string
+		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
+		// returns true if the currentToken is one of the stop words.
+		if (!this->isStopWord(currentToken)) {
+			return true;
+		}
+	}
+	return false; // The function will never reach this point. This return is for avoiding the warning.
+}
 
-//	if(this->tokenOperator->incrementToken())
-//	{
-//		// TODO: remove "charTypeVectorToUtf8String()"
-//		std::string currentToken = "";
-//		// converts the charType to string
-//		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
-//		// calls the stemToken to stem
-//		if (this->isStopWord(currentToken))		{
-//			utf8StringToCharTypeVector("", sharedToken->currentToken);
-//		}
-//		return true;
-//	}else{
-//		 return false;
-//	}
- }
-
- StopFilter::~StopFilter()
- {
- }
+StopFilter::~StopFilter() {
+}
 
 
- void StopFilter::createStopWordList(const std::string &stopWordsFilePath)
- {
-	 std::string str;
-	 //  using file path to create an ifstream object
-	 std::ifstream input(stopWordsFilePath.c_str());
-	 //  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	 if(input.fail()){
-		 cerr << "\nThe stop words list file could not be opened.\n";
-		 cerr << "The path is: " << stopWordsFilePath << endl;
-		 return;
-	 }
-	 //	Reads the stop word files line by line and fills the vector
-	 while (getline(input,str)){
-		 this->stopWordsVector.push_back(str);
-	 }
- }
+ void StopFilter::createStopWordList(const std::string &stopWordsFilePath) {
+	std::string str;
+	//  using file path to create an ifstream object
+	std::ifstream input(stopWordsFilePath.c_str());
+	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
+	if (input.fail()) {
+		cerr << "\nThe stop words list file could not be opened.\n";
+		cerr << "The path is: " << stopWordsFilePath << endl;
+		return;
+	}
+	//	Reads the stop word files line by line and fills the vector
+	while (getline(input, str)) {
+		this->stopWordsVector.push_back(str);
+	}
+}
 
 
 

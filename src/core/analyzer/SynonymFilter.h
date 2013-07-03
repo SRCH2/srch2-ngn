@@ -1,3 +1,5 @@
+// $Id: StopFilter.cpp 3074 2013-21-06 22:26:36Z iman $
+
 /*
  * SynonymFilter.h
  *
@@ -7,7 +9,6 @@
 
 #ifndef SYNONYMFILTER_H_ANALYZER
 #define SYNONYMFILTER_H_ANALYZER
-
 
 #include <string>
 #include <vector>
@@ -27,7 +28,7 @@ public:
 	 * Constructor of synonym filter.
 	 * Sets sharedToken.
 	 */
-	SynonymFilter(TokenOperator *tokenOperator, std::string synonymFilterFilePath);
+	SynonymFilter(TokenOperator *tokenOperator,	std::string synonymFilterFilePath);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
@@ -58,8 +59,6 @@ private:
 	 */
 	vector<string> temporaryBuffer;
 
-
-
 	/*
 	 * It is a buffer for tokens to check if we have multi-word synonyms
 	 */
@@ -85,7 +84,9 @@ private:
 	 */
 	int countSubStringOfKey(const std::string &);
 
-
+	/*
+	 * Gets the synonym of buffer if tokens.
+	 */
 	vector<std::string> getSynonymOfBuffered();
 
 	/*
@@ -110,9 +111,10 @@ private:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & synonymMap;
+		ar & temporaryBuffer;
+		ar & tokenBuffer;
 	}
 };
 
-}
-}
+}}
 #endif /* SYNONYMFILTER_H_ANALYZER */

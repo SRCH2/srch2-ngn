@@ -37,11 +37,10 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-SynonymFilter::SynonymFilter(TokenOperator * tokenOperator, std::string synonymFilterFilePath) :
+SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
+		std::string synonymFilterFilePath) :
 		TokenFilter(tokenOperator) {
 	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
-//	const std::string synonymFilePath =
-//			"/home/iman/srch2/bimaple-root/codebase/mario/branches/stemmer/src/analyzer/data/synonymFile.txt";
 	this->createSynonymMap(synonymFilterFilePath); // construct the synoymMap
 }
 
@@ -105,23 +104,24 @@ int SynonymFilter::countSubStringOfKey(const std::string &word) {
 }
 
 string SynonymFilter::getValueOf(const std::string &subWord) {
-	std::map<string, string>::const_iterator pos = this->synonymMap.find(
-			subWord);
+	// finds the subWord in the map
+	std::map<string, string>::const_iterator pos = this->synonymMap.find(subWord);
 	if (pos != this->synonymMap.end()) {
 		return pos->second;
 	}
 	return NULL;
 }
 
-string SynonymFilter::getKeyOf(const std::string &subWord) {
+string SynonymFilter::getKeyOf(const std::string &value) {
+	// this iterator is to iterate all keys and find the key which has this value
 	std::map<std::string, std::string>::iterator iter;
 	for (iter = this->synonymMap.begin(); iter != this->synonymMap.end();
 			iter++) {
-		if (iter->first.find(subWord) == 0) {
+		if (iter->first.find(value) == 0) {
 			return iter->first;
 		}
 	}
-	return NULL;
+	return NULL; // returns NULL if there the key is not there.
 }
 
 vector<std::string> SynonymFilter::getSynonymOfBuffered() {
@@ -156,23 +156,29 @@ vector<std::string> SynonymFilter::getSynonymOfBuffered() {
 	}
 }
 
-
-void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens){
+void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens) {
+	// the string of tokens are separated with " "
 	std::string delimiter = " ";
-	while (stringOfTokens.find(delimiter) != string::npos){
+	// it will go on all tokens and will add them to the temporaryBuffer.
+	while (stringOfTokens.find(delimiter) != string::npos) {
 		size_t pos = stringOfTokens.find(delimiter);
 		string token = stringOfTokens.substr(0, pos);
 		this->temporaryBuffer.push_back(token);
-		stringOfTokens = stringOfTokens.substr(pos+1);
+		stringOfTokens = stringOfTokens.substr(pos + 1);
 	}
 	this->temporaryBuffer.push_back(stringOfTokens);
 }
 
-
 bool SynonymFilter::incrementToken() {
 	while (true) {
+		// if increment returns false
 		if (!this->tokenOperator->incrementToken()) {
-			if (this->tokenBuffer.empty() && this->temporaryBuffer.empty()){
+			/*
+			* all the new incomming tokens come to the tokenBuffer.
+			* all the tokens that have to wait to get emit, are in the temporaryBuffer
+			* So, if the increment is false, and there is noting to emit, and the tokenBuffer is empty, this function should return false.
+			*/
+			if (this->tokenBuffer.empty() && this->temporaryBuffer.empty()) {
 				return false;
 			} else {
 				vector<string> tempResult = getSynonymOfBuffered();
@@ -180,17 +186,22 @@ bool SynonymFilter::incrementToken() {
 					this->temporaryBuffer.push_back(tempResult[ii]);
 				}
 				this->tokenBuffer.clear();
-				utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
-				this->temporaryBuffer.erase(this->temporaryBuffer.begin()+0);
-				return true;// TODO: false?
+				utf8StringToCharTypeVector(this->temporaryBuffer[0],
+						sharedToken->currentToken);
+				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+				return true; // TODO: false?
 			}
-		}
+		} // end of increment=false
+		// if increment returns treu
 		if (this->tokenBuffer.empty()) {
 			std::string currentToken = "";
 			// converts the charType to string
 			charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
 //			cout << "current token:  " << currentToken << endl;
 			if (this->countSubStringOfKey(currentToken) == 0) {
+				this->temporaryBuffer.push_back(currentToken);
+				utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
+				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
 				return true;
 			} else if (this->countSubStringOfKey(currentToken) == 1) {
 
@@ -200,8 +211,10 @@ bool SynonymFilter::incrementToken() {
 					std::string value = this->getValueOf(currentToken);
 					std::vector<CharType> tempToken;
 					this->temporaryBuffer.push_back(value);
-					utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
-					this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+					utf8StringToCharTypeVector(this->temporaryBuffer[0],
+							sharedToken->currentToken);
+					this->temporaryBuffer.erase(
+							this->temporaryBuffer.begin() + 0);
 					return true;
 				} else {
 					this->tokenBuffer.push_back(currentToken);
@@ -231,18 +244,20 @@ bool SynonymFilter::incrementToken() {
 					previousTokens += currentToken;
 				} else if (this->countSubStringOfKey(currentToken) == 1) {
 //					previousTokens += getValueOf(currentToken);
-					this->sharedToken->offset = this->sharedToken->offset - currentToken.length() -1;
-					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
+					this->sharedToken->offset = this->sharedToken->offset
+							- currentToken.length() - 1;
+					previousTokens = previousTokens.substr(0,
+							previousTokens.length() - 1);
 				} else {
 					previousTokens = previousTokens.substr(0,
 							previousTokens.length() - 1);
 					this->tokenBuffer.push_back(currentToken);
 				}
-//				utf8StringToCharTypeVector(previousTokens,	sharedToken->currentToken);
 
 				this->addToTemporaryBuffer(previousTokens);
-				utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
-				this->temporaryBuffer.erase(this->temporaryBuffer.begin()+0);
+				utf8StringToCharTypeVector(this->temporaryBuffer[0],
+						sharedToken->currentToken);
+				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
 				return true;
 
 			} else if (this->countSubStringOfKey(previousTokens + currentToken)
@@ -252,8 +267,10 @@ bool SynonymFilter::incrementToken() {
 					std::string value = this->getValueOf(key);
 					this->temporaryBuffer.push_back(value);
 
-					utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
-					this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+					utf8StringToCharTypeVector(this->temporaryBuffer[0],
+							sharedToken->currentToken);
+					this->temporaryBuffer.erase(
+							this->temporaryBuffer.begin() + 0);
 					this->tokenBuffer.clear();
 
 					return true;
@@ -266,6 +283,7 @@ bool SynonymFilter::incrementToken() {
 		}
 
 	}
+	return false; // The function will not reach here and this return is for avoiding the warnings.
 }
 
 SynonymFilter::~SynonymFilter() {

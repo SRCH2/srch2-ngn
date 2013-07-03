@@ -26,7 +26,7 @@ public:
 	 * Constructor of stop words.
 	 * Set sharedToken and create the dictionary list
 	 */
-	StopFilter(TokenOperator *tokenOperator,  std::string &stopFilterFilePath);
+	StopFilter(TokenOperator *tokenOperator, std::string &stopFilterFilePath);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.

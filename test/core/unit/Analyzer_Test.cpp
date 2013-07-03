@@ -137,7 +137,7 @@ void testStemmerFilter() {
 	originalWords.push_back("instructions");
 	originalWords.push_back("package");
 	originalWords.push_back("shoWs");
-//	originalWords.push_back("the"); // because of stop words
+	originalWords.push_back("the"); // because of stop words
 	originalWords.push_back("results");
 
 	vectorString.clear();
@@ -145,7 +145,7 @@ void testStemmerFilter() {
 	vectorString.push_back("instruct");
 	vectorString.push_back("package");
 	vectorString.push_back("show");
-	//	originalWords.push_back("the"); // because of stop words
+	vectorString.push_back("the");
 	vectorString.push_back("result");
 
 	i = 0;
@@ -431,6 +431,32 @@ void testSynonymFilter() {
 		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
+		}
+		i++;
+	}
+
+	// TEST 6
+	// input string
+	simpleAnlyzer = new SimpleAnalyzer(
+				ENABLE_STEMMER_NORMALIZER,
+				"",
+				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	src = "bill";
+	simpleAnlyzer->loadData(src);
+	// to print out the results
+
+	vectorString.clear();
+	vectorString.push_back("william");
+
+	i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+//		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << "------- SynonymFilter:  " <<  src << endl;
 		}
 		i++;
 	}
