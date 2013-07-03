@@ -1,0 +1,491 @@
+nk rel="stylesheet" href="highlight/styles/default.css">
+<script src="highlight/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<link rel="shortcut icon" href="tab_icon.png" >
+
+
+<table><tr>
+	
+<td style="width:14%"> 
+<div id="content">
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Documentation</a></h3></div>
+
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#intro">Introduction</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig"/>Configure and<br>&nbsp;&nbsp;&nbsp;Run the Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#wsgi">Install Apache<br>&nbsp;&nbsp;&nbsp;and mod_wsgi</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#UI">Design a Simple<br>&nbsp;&nbsp;&nbsp;User Interface</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search </a></br><br>
+
+</td></tr></tbody></table>
+
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="./logo.png" /></a></span></br></br>
+</div>
+
+
+
+</td>
+<td style="width:86%">
+
+
+
+
+#SRCH2 Engine Documentation#{id="doc" style="color:#880000" }
+
+
+## Introduction ##{id="intro"}
+>   This project illustrates how to set up a simple SRCH2 implementation. We’ll take you through all the basic steps required to download SRCH2, index your database in standard JSON format, configure search features, and run your search server. SRCH2 runs on a Linux Ubuntu server. Please keep in mind that SRCH2 is designed to be highly configurable, so while this will get you started, we hope you tune it to your specific needs and use cases. An online demo based on these instructions is available at [http://example.srch2.com](http://example.srch2.com){target="_blank" style="text-decoration:none;"}. Enjoy!
+</br>
+##Configure and Run the Search Server##{id="serverConfig"}
+
+>   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Download the SRCH2 Engine from [here](http://www.srch2.com/files/srch2-engine-v3.0.tgz){ style="text-decoration:none"}. Then extract it and put all of the files where you want to have the engine. There are four files there as below:
+
+>   *   *srch2-engine* (Binary file of the engine)
+>   *   *conf.ini* (The configuration file)
+>   *   *readme.txt* 
+>   *   *sample-data.json* (It is a sample data having [JSON](http://www.json.org/){target="_blank"  style="text-decoration:none"} format to test the engine with)
+
+
+>   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing _contact (at) srch2 (dot) com_. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally, such as _“srch2_license_key.txt”_.
+
+
+>   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;Open the _conf.ini_ file that you downloaded  and set the _“license-file”_ option to the path of the key, such as
+
+```python
+license-file=/path/to/the/srch2_license_key.txt
+```
+
+
+>   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Open the _conf.ini_ file and set the _“data-file-path”_ option to the path of the data. For this example it is already set, you can find it like
+
+```python
+data-file-path=sample-data.json
+```
+
+
+>   **Step 5:**&nbsp;&nbsp;&nbsp;&nbsp;(Optional) The engine can be optionally configured to supprot geo index. So you have two options:
+
+>   *   Keyword Search (option 1)
+
+>   *   Keyword + Geo OR Geo only (option 2)
+
+>   _Trade-offs:_ Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. It is very fast. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example). To get more information about Geo search, go to the end of this documentation. 
+
+
+>   **Step 6:**&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded
+
+```python
+> cd path/to/the/engine/directory
+```
+
+>  Run the engine now.
+
+```python
+> ./srch2-engine --config-file=conf.ini
+```
+
+>  _conf.ini_ is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. 
+
+
+>   You should see 
+<center>
+>   ![Enine is running](./engine_running.png)
+</center>
+
+
+>   **Step 7:**&nbsp;&nbsp;&nbsp;&nbsp;(Optional) If you don't have _curl_ installed on your machine, you need to install it to test the engine through terminal
+
+```python
+> sudo apt-get install curl
+```
+
+
+>   **Step 8:**&nbsp;&nbsp;&nbsp;&nbsp;To test the engine, open a new terminal use the following command. For example you want to search for the keyword _“properties”_ you should write
+
+```python
+> curl -i  http://localhost:8081/search?q=properties
+```
+
+>   This query is doing a search for a "keyword search" index. Now you should see the results as following
+
+<center>
+>   ![Enine is running](./results.png)
+</center>
+</br>
+
+##Install Apache and mod_wsgi##{id="wsgi"}
+>   This section shows how to install apache and the mod_wsgi on Ubuntu and CentOs. If you have already installed the Apache and mod_wsgi on your machine, you can skip this part. 
+
+
+
+
+>   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Install Apache2
+
+```python
+> sudo apt-get install apache2
+```
+
+
+>   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;Install the mod_wsgi
+
+```python
+> sudo aptitude install libapache2-mod-wsgi
+```
+
+>   WSGI is a Web Server Gateway Interface and is for communications between web servers and web applications for Python programming language.
+
+>   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;_mod_wsgi_ needs to have python installed on your machine. If you don't have python, install it using the following command, else skip this step.
+
+```python
+> sudo apt-get install python
+```
+
+
+>   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Install simplejson python package, which is an extensible JSON encoder and decoder
+
+```python
+> sudo apt-get install python-setuptools
+```
+
+```python
+> sudo easy_install simplejson
+```
+
+
+>   **Step 5:**&nbsp;&nbsp;&nbsp;&nbsp;So far you have installed Apache, mod_wsgi and python. A WSGI script will forward the request from Apache to the SRCH2 engine, which is running on the same machine, and will get the search results and sends them back. For more information about wsgi, read the appendix 1 at the end of this page. A simple WSGI script is as following
+
+
+
+```
+import cgi
+import simplejson
+import urllib2
+
+def application(environ, start_response):
+
+        #Parse the request
+        d = cgi.parse_qs(environ['QUERY_STRING'])
+        query = d.get('q', [''])[0]
+        callback = d.get('callback', [''])[0]
+        query = "+".join(query.split(" "))
+
+        #Forward the request to the engine and get the results
+        query_url = "http://127.0.0.1:8081/search?q=" + query + "&fuzzy=1"
+        request = urllib2.Request(query_url)
+        resp = urllib2.urlopen(request).read()
+
+        #Configure response content and wrap the output into the "callback"
+        status = '200 OK'
+
+        output = callback+'('+resp+');'
+        response_headers = [('Content-type', 'text/plain'),
+                        ('Content-Length', str(len(output)))]
+        start_response(status, response_headers)
+        return [output]
+```
+
+>   This script makes the query and sends it to the engine. You can see the query in "query_url" variable. If you want to do a fuzzy search, you should keep "&fuzzy=1" and if you don't want to do it, you should remove the part "+ &fuzzy=1" from the end of query_url
+
+
+
+
+##Design a Simple User Interface##{id="UI"}
+>   This part will show how to design a simple user interface and connect it to the engine. The overall process is first, you need to have a html page that has an input box for the search keywords. Then you have to send the query to the search engine using Ajax. Then you have to get the respond and show the results. 
+
+>   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Design a html page for searching and then connect it to your engine. The simpleset way is to have a _input box_ to write the keywords in it. Here is a simple html page. To dwonload this file, right click on [index.html](./download/index.html){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+
+
+```
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html><head>
+<title>SRCH2</title>
+<script type="text/javascript" src="index.js"></script>
+<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+</head>
+<body onload="document.getElementById('input').focus();">
+<center><div><h1>SRCH2 Engine</h1></div>
+<div><table>
+		<tr >
+				<td colspan=3>
+						<input type='text' style="height:40px; width:800px; font-size:25px;" class='inputTextfield' autocomplete='off' id='input' onkeyup='check(this.value)'>
+				</td>
+		</tr>
+</table></div>
+</center><div id='results'></div><hr>
+<center>Powered by SRCH2</center>
+<style type="text/css">
+span.fuzzy {
+        color: #ff00ff;
+        font-weight: bold;
+}
+span.exact {
+        color: red;
+        font-weight: bold;
+}</style></body></html>
+```
+
+
+>   Notes:
+>>  1.  When someone types in the input box, it calls a JavaScript function called `check()`, which gets the search keywords and calls other functions to do the Ajax and show the results. To check it look at "onkeyup='check(this.value)'" inside the code. 'this.value' is the search keyword that are typed so far.
+
+
+
+>   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;“index.js” has a function named `check()` which will be called whenever you type a character to search. Then it calls another function named `query()` to construct the query and uses Ajax to send it to the server. Then it shows the results by calling a function named `display()`. There are some other functions that are used by the mentioned functions and For more details about this functions, read the comments provided in the code. To dwonload this file, right click on [index.js](./download/index.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+
+```
+var pending = false;
+var old_q = "";
+var old_page = 0;
+var busy=false;
+
+function check(value) {
+        var regex=/\+|\s/gi;
+        if (value.length==0)
+        {
+                busy = false;
+                document.getElementById('results').innerHTML="";
+        }
+        else if(value.replace(regex,"").length >= 3){
+                if(busy)pending = true;
+                else query(value);
+        }
+}
+
+function query(value) {
+        var regex=/\+/gi;
+        value = value.replace(regex,"");
+        value = value.replace(/ +(?= )/g,'');
+        var valuestmp = value.split(' ');
+        var values = valuestmp;
+        for (var i = 0; i < valuestmp.length; i++ )
+        {
+                if (valuestmp[i]=="")
+                values.splice(i,i+1);
+        }
+        var url = "http://localhost/apptest?q=";
+        var first = 1;
+        var q = "";
+        for(var i = 0; i < values.length; i++) {
+                if(values[i]!=''){
+                if(!first)q += "+";
+                q += values[i].toLowerCase();
+                        first = 0;
+                }
+        }
+        url += q;
+        // if any option's value changes
+        if( q != old_q  ){
+                url += "&fuzzy=1";
+                busy = true;
+                self.scrollTo(0, 0);
+                url += "&callback=?";
+                $.getJSON(url,
+                  function (data) {
+                    display(data);
+                  });
+                old_q = q;
+        }
+
+}
+
+function display(response) {
+		busy = false;
+		var time = response.searcher_time;
+		var data = response.results;
+		html = "Searcher Time: "+time+" ms<br>";
+		html += "<hr>";
+		for(var i = 0; i < data.length; i++) {
+				var regex = prepareRegex(data[i].matching_prefix, data[i].edit_dist);
+				if(data[i].record){
+						html += highlight("\""+data[i].record.name+"\"", regex, "exact", "fuzzy")+"<br>";
+						html += highlight(JSON.stringify(data[i].record), regex, "exact", "fuzzy");
+						html += "<br>";
+						html += "<i>Overall Score:"+data[i].score+"</i><hr>";
+				}
+				else{
+						html += "Record Id: "
+						html += highlight(data[i].record_id.toString(), regex, "exact", "fuzzy")+"<br>";
+						html += "Score: "
+						html += highlight(data[i].score.toString(), regex, "exact", "fuzzy")+"<br>";
+						html += "Edit Distances: "
+						html += highlight(data[i].edit_dist.toString(), regex, "exact", "fuzzy")+"<br>";
+						html += "Matching Prefixes: "
+						html += highlight(data[i].matching_prefix.toString(), regex, "exact", "fuzzy")+"<br>";
+				}
+				html += "<br>";
+		}
+
+		document.getElementById('results').innerHTML=html;
+		if(pending) {
+				pending = false;
+				query(document.getElementById('input').value);
+		}
+
+}
+
+function prepareRegex(keys, ed) {
+		var regex1 = "([^A-Za-z0-9_&])(";
+		var regex2 = "([^A-Za-z0-9_&])(";
+		var j1 = 0;
+		var j2 = 0;
+		for(var k = 0; k < keys.length; k++)
+		if(keys[k].length)
+				if(ed[k] == 0) {
+				if(j1)regex1 += "|";
+				regex1 += keys[k].replace(/\W/g, 
+					function(sub){return "\\" + sub;});
+				j1++;
+				}
+				else {
+				if(j2)regex2 += "|";
+				regex2 += keys[k].replace(/\W/g, 
+					function(sub){return "\\" + sub;});
+				j2++;
+				}
+		regex1 += ")";
+		regex2 += ")";
+		return [ (j1)?new RegExp(regex1, "gi"):null, (j2)?new RegExp(regex2, "gi"):null ];
+}
+
+function highlight(string, regexp, stylec1, stylec2) {
+		var str = " " + string.replace(/</g, "&lt;");
+		if(regexp == null)
+				return str;
+		if(regexp[0] != null)
+				str = str.replace(regexp[0], function(sub, m1, m2) {
+						return m1 + "<span class='" + stylec1 + "'>" + m2 + "</span>";
+					});
+		if(regexp[1] != null)
+			str = str.replace(regexp[1], function(sub, m1, m2) {
+			return m1 + "<span class='" + stylec2 + "'>" + m2 + "</span>";
+		});
+		return str.replace(/^\s+/, '');;
+}
+
+
+```
+
+
+
+>   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;You need to keep the “jquery-1.7.1.min.js” along with other files that are mentioned in previous steps. Jquery is a cross-browser JavaScript library designed to simplify the client-side scripting of HTML. To download the file, right click on [jquery-1.7.1.min.js](./download/jquery-1.7.1.min.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+
+
+>   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Move index.html, index.js, jquery-1.7.1.min.js and apptest.wsgi into the Apache root directory such as “/var/www/test/”.
+
+
+
+
+
+>   **Step 5:**&nbsp;&nbsp;&nbsp;&nbsp;Add the following lines to /etc/apache2/apache2.conf 
+
+```
+# load the mod_wsgi modue. If you don't have it, you can put it the modules directory and load it
+LoadModule wsgi_module /usr/lib/apache2/modules/mod_wsgi.so
+
+#forward the request sent to doman.com/apptest the corresponding WSGI script
+#WSGIScriptAlias /apptest /path/to/the/apptest.wsgi, For example:
+WSGIScriptAlias /apptest /var/www/test/apptest.wsgi
+```
+
+>   **Step 6:**&nbsp;&nbsp;&nbsp;&nbsp;Restart the Apache
+
+```python
+> sudo /etc/init.d/apache2 restart
+```
+
+>   **Step 7:**&nbsp;&nbsp;&nbsp;&nbsp;Open your browser and put "http://localhost/test" to do the search and see the results. You should be abale to see [this](http://example.srch2.com){target="_blank"  style="text-decoration:none"} on your machine.
+
+</br>
+</br>
+
+
+##Geo Search##{id="geo"}
+
+>   The engine can be optionally configured to supprot geo index. So you have two options:
+
+>   *   Keyword Search (option 1)
+
+>   *   Keyword + Geo OR Geo only (option 2)
+
+>   _Trade-offs:_ Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. It is very fast. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example). To get more information about Geo search, go to the end of this documentation. 
+
+>   If it is a geo index, the query should use one of the two ways below to define a geo region to search on:
+
+>>  1-  Specify a bounding box:
+
+>>> *   "lb_lat": the latitude of the left bottom point of the bounding box;
+
+>>> *   "lb_lng": the longitude of the left bottom point of the bounding box;
+
+>>> *   "rt_lat": the latitude of the top right point of the bounding box;
+
+>>> *   "rt_lng": the longitude of the top right point of the bounding box.
+    
+>>  2-  Specify a center point and a radius:
+
+>>> *   "ct_lat": the latitude of the center point;
+
+>>> *   "ct_lng": the longitude of the center point;
+
+>>> *   "radius": the radius of the search range in degree.
+
+>   **[important]** To do a Geo Search, for each of the objects you should have latitude/longitude attribute to let the engine do the Geo search. In conf.ini file of the SRCH2 engine, to do a Geo search, you need to set the following attributes:
+>>  *   attribute-latitude=lat
+>>  *   attribute-longitude=lng
+
+>   **[important]** If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.   
+>>  *   for example:
+>>> *   {"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}
+
+>   Example for a "Keyword+Geo or Geo only" (Option 2) index:
+```
+$ curl -i "http://localhost:8081/search?q=hosptal+sevices&start=0&limit=20&fuzzy=1&lb_lat=61.20&lb_lng=-149.90&rt_lat=61.22&rt_lng=-149.70"
+```
+
+
+</td></tr></table>
+
+<style type="text/css">
+pre{
+	margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+#content{
+    position:fixed;
+	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+html{
+	min-width:1100px;
+}
+</style>

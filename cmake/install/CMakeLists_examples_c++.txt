@@ -1,0 +1,51 @@
+
+ADD_EXECUTABLE(bimaple-buildindex-example ${CMAKE_SOURCE_DIR}/examples/c++/BuildIndex.cpp)
+TARGET_LINK_LIBRARIES(bimaple-buildindex-example ${BimapleInstantSearch_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} )
+
+ADD_EXECUTABLE(bimaple-searchindex-example ${CMAKE_SOURCE_DIR}/examples/c++/SearchIndex.cpp)
+TARGET_LINK_LIBRARIES(bimaple-searchindex-example ${BimapleInstantSearch_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES})
+
+IF (BUILD_MORE_EXAMPLES)
+
+    MESSAGE(STATUS "Building Code Examples...\n Requires: libmysql-dev, libxml2, libfcgi-dev")
+    
+    #Add subdirectories to look for other CMakeList.txt
+    FIND_PACKAGE( MySQL )
+    MESSAGE(STATUS "MYSQL FOUND:" ${MYSQL_FOUND})
+        
+    FIND_PACKAGE( LibXml2 )
+    MESSAGE(STATUS "LIBXML2 FOUND:" ${LIBXML2_FOUND})
+        
+    FIND_PACKAGE( Fcgi )
+    MESSAGE(STATUS "Fcgi FOUND:" ${FCGI_FOUND})
+
+    INCLUDE_DIRECTORIES(
+        ${CMAKE_SOURCE_DIR}/include/bimaple/instantsearch/include
+        ${MYSQL_INCLUDE_DIR}
+        ${LIBXML2_INCLUDE_DIR}
+        ${Boost_INCLUDE_DIRS}
+    )
+
+    ADD_EXECUTABLE(bimaplesearch ${CMAKE_SOURCE_DIR}/examples/c++/SearchFcgi.cpp)
+    TARGET_LINK_LIBRARIES(bimaplesearch ${BimapleInstantSearch_LIBRARIES} ${MYSQL_LIBRARIES} ${LIBXML2_LIBRARIES} ${FCGI_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} )
+
+    ADD_EXECUTABLE(bimaple-builddbindex-example ${CMAKE_SOURCE_DIR}/examples/c++/BuildDBIndex.cpp)
+    TARGET_LINK_LIBRARIES(bimaple-builddbindex-example ${BimapleInstantSearch_LIBRARIES} ${MYSQL_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} )
+       
+ENDIF()
+
+   ADD_CUSTOM_TARGET(examples_c++ ALL
+    DEPENDS "${CMAKE_BINARY_DIR}/examples/c++/testIndexDirectory" "${CMAKE_BINARY_DIR}/testIndexDirectory")
+
+   ADD_CUSTOM_COMMAND(
+   OUTPUT "${CMAKE_BINARY_DIR}/examples/c++/testIndexDirectory"
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/testIndexDirectory" "${CMAKE_BINARY_DIR}/examples/c++/testIndexDirectory"
+   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/testIndexDirectory"
+   )
+    
+   ADD_CUSTOM_COMMAND(
+   OUTPUT "${CMAKE_BINARY_DIR}/testIndexDirectory"
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/testIndexDirectory" "${CMAKE_BINARY_DIR}/testIndexDirectory"
+   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/testIndexDirectory"
+   )
+   

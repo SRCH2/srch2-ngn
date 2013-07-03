@@ -1,0 +1,118 @@
+# CMake Build Environment
+# Bimaple Version 1.0 distribution provides an example cmake script to build using Bimaple library and API. The cmake script file "CMakeLists.txt" is in the 
+# directory, ${BIMAPLE_HOME}. 
+# 
+# USAGE:
+# 1) Create a new directory called "build" inside ${BIMAPLE_HOME} directory.
+# 2) Inside this directory, use the following command:
+#       cmake -D[${option}={value}] -D[..] ${BIMAPLE_HOME}
+# 3) By default, the build mode is "release".
+# 4) If the shipped bimaple library is shared (.so file extension), then set this option to ON, else set it to OFF
+#    SET(SHARED_LIB ON)
+#
+# OPTIONS USED:
+#    1) BUILD_MORE_EXAMPLES: When set to ON, tries to find "fastcgi" and "mysqlclient" development libraries and builds "BuildDBIndex.cpp" and
+#        "searchFCGI.cpp" examples.
+#
+#    2) BUILD_PYTHON_API: When set to ON, tries to find "python-dev" files and builds the bimaple_instantsearch_python.so
+#       module. This module links to bimaple_instantsearch library and provides an python API to this library.
+#
+#    3) LICENSE_DIR: Sets up the path to the directory with the license key file. If this option is not used,
+#       Defaults to "{bimaple_untar_dir}/license".
+#
+# EXAMPLE:
+# 1)   terminal> cmake ..
+#
+# It is executed by "cmake .." command from the "build" directory (here ".." is to indicate that "CMakeLists.txt" is in parent directory of present directory).
+# This helps in performing compilation and build, "outside of source" in the "build" directory. The contents of "build" directory can be always deleted and 
+# rebuild using "cmake ..". 
+#
+# 2)   terminal> cmake -DBUILD_MORE_EXAMPLES=ON ..
+# Find "fastcgi" and "mysqlclient" development libraries and builds "BuildDBIndex.cpp" and searchFCGI.cpp" examples.
+#
+# 3)   terminal> cmake -DBUILD_MORE_EXAMPLES=ON -DBUILD_PYTHON_API=ON ..
+#
+# 4)   terminal> cmake -DLICENSE_DIR="/home/license/bimaple" ..
+#    Sets up the path to the directory with the license key file.
+#    
+########################################################################################################
+
+PROJECT(Bimaple-InstantSearch-Library-Version1.0)
+
+# States that CMake required version must be >= 2.4
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+MESSAGE(STATUS "CMake version: " ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+
+##SET this option to "on", if you want detailed makefile execution
+SET(CMAKE_VERBOSE_MAKEFILE off)
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
+
+# Platform SpecIFic Compiler Flags
+IF (CMAKE_COMPILER_IS_GNUCC)
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -g -lrt")
+    SET (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lrt" )
+    
+ENDIF (CMAKE_COMPILER_IS_GNUCC)
+ 
+MESSAGE(STATUS "BUILD_TYPE is RELEASE")
+SET(CMAKE_BUILD_TYPE Release)
+
+SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+
+#SET(Boost_DEBUG 1)
+FIND_PACKAGE( Boost 1.40.0 COMPONENTS serialization REQUIRED )
+
+INCLUDE (FindOpenSSL)
+
+MESSAGE(STATUS "Boost_VERSION=" ${Boost_VERSION})
+MESSAGE(STATUS "Boost_LIBRARIES=" ${Boost_LIBRARIES})
+MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
+
+SET (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
+
+INCLUDE_DIRECTORIES(
+    ${CMAKE_SOURCE_DIR}/include/bimaple/instantsearch/include
+    ${Boost_INCLUDE_DIRS}
+)
+
+#If the shipped bimaple library is shared (.so file extension), then set this option to ON, else if the library is static (.a file extension) set it to OFF.
+IF (STATIC_LIB)
+    SET(BimapleInstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libbimaple_instantsearch.a)
+ELSE()
+    SET(BimapleInstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libbimaple_instantsearch.so)
+ENDIF() 
+   
+MESSAGE(STATUS "Bimaple-InstantSearch Library at: " ${BimapleInstantSearch_LIBRARIES})
+
+
+ADD_SUBDIRECTORY(examples/c++)
+IF (BUILD_PYTHON_API)
+    ADD_SUBDIRECTORY(examples/python)
+ENDIF()
+
+
+################CTEST
+
+INCLUDE (CTest)
+
+###Set the directory that has the license key file - "bimaple_license_key.txt" 
+#IF (NOT ${LICENSE_DIR})
+    SET(LICENSE_DIR "${CMAKE_SOURCE_DIR}/license")
+#ENDIF()
+MESSAGE(STATUS "License directory set to - ${LICENSE_DIR}")
+
+ENABLE_TESTING()
+ADD_TEST(BuildIndex_Test ${CMAKE_BINARY_DIR}/examples/c++/bimaple-buildindex-example "--verbose")
+###Set the enviroment variable "bimaple_license_dir" for the executing the binary "BuildIndex_test", build from BuildIndex.cpp 
+SET_TESTS_PROPERTIES(BuildIndex_Test PROPERTIES ENVIRONMENT "bimaple_license_dir=${LICENSE_DIR}")
+
+ADD_TEST(SearchIndex_Test  ${CMAKE_BINARY_DIR}/examples/c++/bimaple-searchindex-example "--verbose")
+###Set the enviroment variable "bimaple_license_dir" for the executing the binary "SearchIndex_test", build from SearchIndex.cpp
+SET_TESTS_PROPERTIES(SearchIndex_Test PROPERTIES ENVIRONMENT "bimaple_license_dir=${LICENSE_DIR}")
+
+#SET_TESTS_PROPERTIES(SearchIndex_Test PROPERTIES ENVIRONMENT "index_dir=${CMAKE_BINARY_DIR}/examples/c++/testIndexDirectory")
+
+
+
+
