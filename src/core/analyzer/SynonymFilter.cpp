@@ -88,7 +88,7 @@ bool SynonymFilter::isSubStringOfKey(const std::string &word) {
 	return false;
 }
 
-int SynonymFilter::countSubStringOfKey(const std::string &word) {
+int SynonymFilter::numberOfKeysHavingTokenAsPrefix(const std::string &prefixToken) {
 
 	// it is an iterator on all keys of the synonym map
 	int count = 0;
@@ -96,7 +96,7 @@ int SynonymFilter::countSubStringOfKey(const std::string &word) {
 			iter != this->synonymMap.end(); ++iter) {
 		string key = iter->first;
 		// if the word happens at the beginning of the a key, return true
-		if (key.find(word) == 0) {
+		if (key.find(prefixToken) == 0) {
 			count++;
 		}
 	}
@@ -169,6 +169,13 @@ void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens) {
 	this->temporaryBuffer.push_back(stringOfTokens);
 }
 
+void SynonymFilter::emitCurrentToken() {
+	// setting the currentToken to the first element of the vector
+	utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
+	// removing the first element
+	this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+}
+
 bool SynonymFilter::incrementToken() {
 	while (true) {
 		// if increment returns false
@@ -186,9 +193,7 @@ bool SynonymFilter::incrementToken() {
 					this->temporaryBuffer.push_back(tempResult[ii]);
 				}
 				this->tokenBuffer.clear();
-				utf8StringToCharTypeVector(this->temporaryBuffer[0],
-						sharedToken->currentToken);
-				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+				this->emitCurrentToken();
 				return true; // TODO: false?
 			}
 		} // end of increment=false
@@ -197,31 +202,31 @@ bool SynonymFilter::incrementToken() {
 			std::string currentToken = "";
 			// converts the charType to string
 			charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
-//			cout << "current token:  " << currentToken << endl;
-			if (this->countSubStringOfKey(currentToken) == 0) {
+			// if the currentToken is not prefix of any of the keys in the map
+			// if it is zero we have to emit this token (because there is not any synonym match for it)
+			if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 0) {
 				this->temporaryBuffer.push_back(currentToken);
-				utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
-				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+				this->emitCurrentToken();
 				return true;
-			} else if (this->countSubStringOfKey(currentToken) == 1) {
-
+			// if there is one synonym match for the new token
+			} else if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 1) {
+				// gets the value of that key
 				std::string key = this->getKeyOf(currentToken);
 				// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
 				if (key.compare(currentToken) == 0) {
 					std::string value = this->getValueOf(currentToken);
 					std::vector<CharType> tempToken;
 					this->temporaryBuffer.push_back(value);
-					utf8StringToCharTypeVector(this->temporaryBuffer[0],
-							sharedToken->currentToken);
-					this->temporaryBuffer.erase(
-							this->temporaryBuffer.begin() + 0);
+					this->emitCurrentToken();
 					return true;
 				} else {
 					this->tokenBuffer.push_back(currentToken);
 				}
+			// if there is more than one, push it to the buffer.
 			} else {
 				this->tokenBuffer.push_back(currentToken);
 			}
+		// if the buffer is not empty
 		} else {
 			std::string currentToken = "";
 			// converts the charType to string
@@ -231,19 +236,17 @@ bool SynonymFilter::incrementToken() {
 			for (int i = 0; i < this->tokenBuffer.size(); i++) {
 				previousTokens = previousTokens + this->tokenBuffer[i] + " ";
 			}
-
-			if (this->countSubStringOfKey(previousTokens + currentToken) == 0) {
-				// TODO: one by one, it is wrong now
+			// if there is NOT any match for the elements in the buffer that followed by current token
+			if (this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken) == 0) {
 				vector<string> tempResult = getSynonymOfBuffered();
 				previousTokens = "";
 				for (int ii = 0; ii < tempResult.size(); ii++) {
 					previousTokens += tempResult[ii] + " ";
 				}
 				this->tokenBuffer.clear();
-				if (this->countSubStringOfKey(currentToken) == 0) {
+				if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 0) {
 					previousTokens += currentToken;
-				} else if (this->countSubStringOfKey(currentToken) == 1) {
-//					previousTokens += getValueOf(currentToken);
+				} else if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 1) {
 					this->sharedToken->offset = this->sharedToken->offset
 							- currentToken.length() - 1;
 					previousTokens = previousTokens.substr(0,
@@ -255,22 +258,21 @@ bool SynonymFilter::incrementToken() {
 				}
 
 				this->addToTemporaryBuffer(previousTokens);
-				utf8StringToCharTypeVector(this->temporaryBuffer[0],
-						sharedToken->currentToken);
-				this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+				this->emitCurrentToken();
 				return true;
-
-			} else if (this->countSubStringOfKey(previousTokens + currentToken)
-					== 1) {
+				// if there is ONE match for the elements in the buffer that followed by current token
+			} else if (this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken)	== 1) {
+				/*
+				* Now we should check if they have a complete match OR
+				* again this combination of buffer and current token is a prefix of a key in the synonym or not
+				* if it is complete we should just replace them with the synonym
+				* if it is still not complete, we have to push the current token into the buffer and move on.
+				*/
 				std::string key = this->getKeyOf(previousTokens);
 				if (key.compare(previousTokens + currentToken) == 0) {
 					std::string value = this->getValueOf(key);
 					this->temporaryBuffer.push_back(value);
-
-					utf8StringToCharTypeVector(this->temporaryBuffer[0],
-							sharedToken->currentToken);
-					this->temporaryBuffer.erase(
-							this->temporaryBuffer.begin() + 0);
+					this->emitCurrentToken();
 					this->tokenBuffer.clear();
 
 					return true;

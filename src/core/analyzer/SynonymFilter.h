@@ -82,7 +82,7 @@ private:
 	/*
 	 *  Checks the synonym map and returns the number of keys which have the word as their substring happening at the begining
 	 */
-	int countSubStringOfKey(const std::string &);
+	int numberOfKeysHavingTokenAsPrefix(const std::string &);
 
 	/*
 	 * Gets the synonym of buffer if tokens.
@@ -106,6 +106,16 @@ private:
 	 * adds the tokens to the temporaryBuffer (one by one)
 	 */
 	void addToTemporaryBuffer(std::string &);
+
+	/*
+	 * it emits the first member of the temporaryToken vedctor.
+	 * sets the currentToken to the first member of this vector
+	 * and removes the first member of the vefctor.
+	 * calling this function should be followed by "return" in increment function.
+	 *
+	 */
+	void emitCurrentToken();
+
 
 	friend class boost::serialization::access;
 	template<class Archive>
