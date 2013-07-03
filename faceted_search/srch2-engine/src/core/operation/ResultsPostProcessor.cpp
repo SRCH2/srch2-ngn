@@ -47,6 +47,7 @@ void ResultsPostProcessor::doProcess(const Query * query,  ResultsPostProcessorO
 
 // based on the information in Query object, this function creates the plan (which is a list of filters
 // to be applied on result list one by one)
+// TODO : chane the name of "result"
 ResultsPostProcessorPlan * ResultsPostProcessor::createPlan(const Query * query){
 // create a plan based on query
 

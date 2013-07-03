@@ -35,6 +35,7 @@ typedef enum
     LocationIndex = 1
 } IndexType;
 
+// change the names, they are too general
 typedef enum
 {
     UNSIGNED = 0,

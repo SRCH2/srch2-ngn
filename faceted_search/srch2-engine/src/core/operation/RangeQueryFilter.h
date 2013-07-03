@@ -84,10 +84,10 @@ public:
 					attributeData.setScore(nonSearchableAttributes->getTimeAttribute(attributeId,schema));
 					break;
 			}
-			//    delete queryResults2;
 
 			// check the data and query value with the condition // TODO this must change to a good implementation of expression and criteria
 
+			// <, >, <=, >=, ==, ... are overloaded for class Score
 			bool pass = false;
 			switch (query->getPostProcessingFilterOperation()) {
 				case LESS_THAN:
@@ -109,6 +109,7 @@ public:
 					pass = (attributeData != attributeValue) ;
 					break;
 			}
+			// if the result passes the filter criteria it's copied into the output.
 			if(pass){
 				output.results.push_back(result);
 			}

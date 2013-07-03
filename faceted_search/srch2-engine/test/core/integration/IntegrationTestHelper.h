@@ -1183,6 +1183,32 @@ unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     return returnvalue;
 }
 
+bool pingExactCompleteWithFilter(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString,
+		unsigned numberofHits , POST_PROCESSING_FILTER filter , ATTRIBUTE_CRITERION_OPERATION operation , string attributeName, string attributeValue , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+{
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(filter);
+    query->setPostProcessingFilterOperation(operation);
+    query->setNonSearchableAttributeName(attributeName);
+    query->setNonSearchableAttributeValue(attributeValue);
+
+    parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+    indexSearcher->search(query, queryResults, resultCount);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
 void csvline_populate(vector<string> &record, const string& line, char delimiter)
 {
     int linepos=0;
