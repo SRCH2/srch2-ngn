@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	record->setRecordBoost(20);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 	map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
 	///Tokenize the Record. TokenAttributeHitsMap

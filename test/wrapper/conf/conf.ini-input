@@ -204,4 +204,8 @@ index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
 # Path to error log file
 # Deprecated. Changed to /home/findr/custmrID/log/srch2-error.log for standardizing 
 # bookkeeping
+
 #error-log-file=/path/to/log/
+
+
+

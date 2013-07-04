@@ -48,9 +48,7 @@ struct TokenAttributeHits {
 
 class AnalyzerInternal: public Analyzer{
 public:
-	AnalyzerInternal(const StemmerNormalizerType &stemNormType, const std::string &recordAllowedSpecialCharacters);
-	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
-	// assign the shared ptr to given string, clean currentToken and reset offset
+	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters);
 	void loadData(const std::string &s) const;
 
 	virtual TokenOperator * createOperatorFlow() = 0;
@@ -136,11 +134,17 @@ public:
 								 const std::map<std::string, unsigned> &searchableAttributesNameToId, vector<unsigned> &filter) const;
 
 
+
 protected:
 	boost::shared_ptr<SharedToken > sharedToken;
+
 	TokenOperator* tokenOperator;
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
+	StemmerNormalizerFlagType stemmerType; // know if we are stemming or not
+	std::string stopWordFilePath;
+	std::string synonymFilePath;
+
 
     boost::regex disallowedCharactersRegex;
     boost::regex multipleSpaceRegex;
@@ -153,6 +157,8 @@ protected:
 	{
 		ar & recordAllowedSpecialCharacters;
 		ar & analyzerType;
+		ar & stopWordFilePath;
+		ar & synonymFilePath;
 	}
 
 };

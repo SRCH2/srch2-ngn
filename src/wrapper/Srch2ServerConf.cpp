@@ -91,6 +91,9 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess, std
 				("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
 				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
 				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
+				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
+				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
+				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
 				;
 
 	po::variables_map vm_command_line_args;
@@ -498,6 +501,22 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		//parseError << "default-fuzzy-query-term-type is not set.\n";
 	}
 
+	if (vm.count("default-stemmer-flag")) {
+		stemmerFlag = (bool) vm["default-stemmer-flag"].as<int>();
+	}
+
+	if (vm.count("stop-filter-file-path") && (vm["stop-filter-file-path"].as<string>().compare(ignoreOption) != 0)) {
+		stopFilterFilePath =  vm["stop-filter-file-path"].as<string>();
+	} else {
+		stopFilterFilePath = "";
+	}
+
+	if (vm.count("synonym-filter-file-path") && (vm["synonym-filter-file-path"].as<string>().compare(ignoreOption) != 0)) {
+		synonymFilterFilePath = vm["synonym-filter-file-path"].as<string>();
+	} else {
+		synonymFilterFilePath = "";
+	}
+
 	if (vm.count("default-query-term-type")) {
 		queryTermType = (bool)vm["default-query-term-type"].as<int>();
 	}else {
@@ -733,6 +752,23 @@ const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() cons
 {
 	return &attributesBoosts;
 }*/
+
+bool Srch2ServerConf::getStemmerFlag() const
+{
+    return stemmerFlag;
+}
+
+string Srch2ServerConf::getSynonymFilePath() const
+{
+    return synonymFilterFilePath;
+}
+
+string Srch2ServerConf::getStopFilePath() const
+{
+    return stopFilterFilePath;
+}
+
+
 
 const string& Srch2ServerConf::getAttributeRecordBoostName() const
 {

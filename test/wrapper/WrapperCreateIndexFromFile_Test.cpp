@@ -160,7 +160,7 @@ bool test(int argc, char** argv)
 	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, serverConf->getRecordAllowedSpecialCharacters());
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,"","", serverConf->getRecordAllowedSpecialCharacters());
 
 	// Create a schema to the data source definition in the Srch2ServerConf
 	srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(serverConf);
@@ -187,4 +187,3 @@ int main(int argc, char** argv)
 	test(argc, argv);
 	return 0;
 }
-

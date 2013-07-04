@@ -58,7 +58,7 @@ public:
     AnalyzerInternalold();
 
     //AnalyzerInternalold(StemmerNormalizerType stemNormType = srch2::instantsearch::NO_STEMMER_NORMALIZER, std::string delimiters = " \r\n\t!%&*^@#,._+-=|/\\{}[]()?~`,<>;:\'\"");// Used by Analyzer.h
-    AnalyzerInternalold(const StemmerNormalizerType &stemNormType, const std::string &recordAllowedSpecialCharacters);// Used by Analyzer.h
+    AnalyzerInternalold(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters);// Used by Analyzer.h
     AnalyzerInternalold(const AnalyzerInternalold& analyzerInternal, const std::string &indexDirectory); //Used by IndexInternal.cpp constructor
 
     virtual ~AnalyzerInternalold();//{ };
@@ -69,9 +69,9 @@ public:
     void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters) { this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;    }
     const std::string& getRecordAllowedSpecialCharacters()  const { return this->recordAllowedSpecialCharacters; }
 
-    const StemmerNormalizerType& getStemmerNormalizerType() const
+    const StemmerNormalizerFlagType & getStemmerNormalizerFlagType() const
     {
-        return this->stemNormType;
+        return this->stemmerFlag;
     };
 
 
@@ -137,7 +137,7 @@ public:
 
 private:
     std::string recordAllowedSpecialCharacters;
-    StemmerNormalizerType stemNormType;
+    StemmerNormalizerFlagType stemmerFlag;
     Stemmer *stemmer;
     Normalizer *normalizer;
     AnalyzerInternal *analyzers;
@@ -152,7 +152,7 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        ar & stemNormType;
+        ar & stemmerFlag;
         ar & recordAllowedSpecialCharacters;
         ar & stemmer;
         ar & normalizer;

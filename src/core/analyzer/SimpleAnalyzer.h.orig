@@ -1,0 +1,68 @@
+/*
+ * SimpleAnalyzer.h
+ *
+ *  Created on: 2013-5-18
+ */
+//This class will token the words according to whitespace character .
+<<<<<<< HEAD
+
+=======
+>>>>>>> iman
+#ifndef __SIMPLEANALYZER_H__
+#define __SIMPLEANALYZER_H__
+
+#include "AnalyzerInternal.h"
+#include "TokenOperator.h"
+
+<<<<<<< HEAD
+namespace srch2
+{
+namespace instantsearch
+{
+=======
+namespace srch2 {
+namespace instantsearch {
+>>>>>>> iman
+
+/*
+ *  SimpleAnalyzer use DELIMITER_TYPE to separate the string and use LowerCaseFilter to filter the token
+ *  For example: "We went to 学校" will be tokenized as "we" "went" "to" and "学校"
+ */
+class SimpleAnalyzer: public AnalyzerInternal {
+public:
+<<<<<<< HEAD
+	SimpleAnalyzer(const StemmerNormalizerType &stemNormType = NO_STEMMER_NORMALIZER, const std::string &recordAllowedSpecialCharacters = ""):AnalyzerInternal(stemNormType, recordAllowedSpecialCharacters)
+	{
+		this->analyzerType = SIMPLE_ANALYZER;
+		this->tokenOperator = createOperatorFlow();
+	}
+	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer):AnalyzerInternal(simpleAnalyzer)
+	{
+=======
+	SimpleAnalyzer(const StemmerNormalizerFlagType &stemmerFlag = DISABLE_STEMMER_NORMALIZER,
+			const std::string &stopWordFilePath = "",
+			const std::string &synonymFilePath = "",
+			const std::string &recordAllowedSpecialCharacters = "") :
+			AnalyzerInternal(stemmerFlag, recordAllowedSpecialCharacters) {
+		this->analyzerType = SIMPLE_ANALYZER;
+		this->stemmerType = stemmerFlag;
+		this->stopWordFilePath = stopWordFilePath;
+		this->synonymFilePath= synonymFilePath;
+		this->tokenOperator = createOperatorFlow();
+	}
+	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
+			AnalyzerInternal(simpleAnalyzer) {
+>>>>>>> iman
+		this->analyzerType = SIMPLE_ANALYZER;
+		this->tokenOperator = createOperatorFlow();
+	}
+	TokenOperator *createOperatorFlow();
+	virtual ~SimpleAnalyzer();
+};
+<<<<<<< HEAD
+}}
+=======
+}
+}
+>>>>>>> iman
+#endif /* __SIMPLEANALYZER_H__ */

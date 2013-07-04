@@ -65,7 +65,7 @@ void addRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";

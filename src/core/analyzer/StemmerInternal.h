@@ -165,7 +165,8 @@ public:
 
     Stemmer() {}; // Default constructor for boost serialization
 
-    Stemmer(StemmerNormalizerType stemNormType, const std::string &indexDirectory);
+    Stemmer(StemmerNormalizerFlagType stemmerFlag, const std::string &indexDirectory);
+>>>>>>> iman
 
     /* searchHeadWords() search if the given string is present in the HeadWordsDictionary */
     int searchHeadWords(const std::string &search) const;
