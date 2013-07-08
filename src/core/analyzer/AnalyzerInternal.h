@@ -49,6 +49,7 @@ struct TokenAttributeHits {
 class AnalyzerInternal: public Analyzer{
 public:
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters);
+	AnalyzerInternal(const srch2::instantsearch::AnalyzerInternal&);
 	void loadData(const std::string &s) const;
 
 	virtual TokenOperator * createOperatorFlow() = 0;

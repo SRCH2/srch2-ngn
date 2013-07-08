@@ -46,5 +46,4 @@ public:
 
 }
 }
->>>>>>> iman
 #endif /* __STANDARDANALYZER_H__*/
