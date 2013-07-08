@@ -225,7 +225,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 		// Output the result information
 		cout << "\nResult-(" << resultIter << ") RecordId:"
 				<< queryResults->getRecordId(resultIter)
-				<< "\tScore:" << queryResults->getResultScore(resultIter)
+				<< "\tScore:" << queryResults->getResultScoreString(resultIter)
 				<< "\nDistance:" << queryResults->getPhysicalDistance(resultIter);
 
 		cout << "\nMatching Keywords:" << endl;
@@ -269,7 +269,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     indexSearcher->search(query, queryResults);
     //printGeoResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resVal = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
     return resVal;

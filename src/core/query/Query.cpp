@@ -1,5 +1,5 @@
 
-// $Id: Query.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Query.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,6 +24,7 @@
 #include <instantsearch/Ranker.h>
 #include "util/Log.h"
 #include "record/LocationRecordUtil.h"
+#include <string>
 
 #include <iostream>
 
@@ -44,6 +45,12 @@ struct Query::Impl
     srch2::instantsearch::SortOrder order;
     Shape *range;
     Ranker *ranker;
+
+    std::string nonSearchableAttributeName ;
+    std::string nonSearchableAttributeValue ;
+
+    POST_PROCESSING_FILTER postProcessingFilterCode;
+    ATTRIBUTE_CRITERION_OPERATION postProcessingFilterOperationCode;
 
     Impl()
     {
@@ -205,6 +212,35 @@ void Query::setSortableAttribute(unsigned sortableAttributeId, srch2::instantsea
 unsigned Query::getSortableAttributeId() const
 {
     return this->impl->sortableAttributeId;
+}
+
+// TODO temperory functions, to test range search filter
+void Query::setNonSearchableAttributeName(std::string name){
+	this->impl->nonSearchableAttributeName = name;
+}
+std::string Query::getNonSearchableAttributeName() const{
+	return this->impl->nonSearchableAttributeName;
+}
+
+void Query::setNonSearchableAttributeValue(std::string value){
+	this->impl->nonSearchableAttributeValue = value;
+}
+std::string Query::getNonSearchableAttributeValue() const{
+	return this->impl->nonSearchableAttributeValue;
+}
+
+
+void Query::setPostProcessingFilter(POST_PROCESSING_FILTER code){
+	this->impl->postProcessingFilterCode = code;
+}
+POST_PROCESSING_FILTER Query::getPostProcessingFilter() const{
+	return this->impl->postProcessingFilterCode;
+}
+void Query::setPostProcessingFilterOperation(ATTRIBUTE_CRITERION_OPERATION code){
+	this->impl->postProcessingFilterOperationCode = code;
+}
+ATTRIBUTE_CRITERION_OPERATION Query::getPostProcessingFilterOperation() const{
+	return this->impl->postProcessingFilterOperationCode;
 }
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const

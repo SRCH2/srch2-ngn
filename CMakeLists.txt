@@ -164,7 +164,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	
 	IF (BUILD_TEST)
 		INCLUDE (CTest)
-		ADD_SUBDIRECTORY(test)
+		ADD_SUBDIRECTORY(test/core)
 		ADD_DEPENDENCIES(build_integration_test srch2_core)
 		ADD_DEPENDENCIES(build_unit_test srch2_core) 
 	ENDIF()

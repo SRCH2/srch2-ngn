@@ -1,4 +1,4 @@
-//$Id: AttributedBasedSearch_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: AttributedBasedSearch_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 #include <analyzer/AnalyzerInternal.h>
 #include <instantsearch/Indexer.h>
@@ -98,6 +98,7 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
 {
     
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     QueryResults *queryResults = QueryResults::create(indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)

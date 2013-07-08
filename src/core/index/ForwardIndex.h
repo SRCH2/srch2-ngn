@@ -1,5 +1,5 @@
 
-// $Id: ForwardIndex.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: ForwardIndex.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -37,6 +37,8 @@
 #include "util/Log.h"
 #include "util/encoding.h"
 #include "util/half.h"
+#include "util/VariableLengthAttributeContainer.h"
+#include "instantsearch/Score.h"
 
 using std::vector;
 using std::fstream;
@@ -83,36 +85,16 @@ class ForwardList
 public:
 
 	//getter and setter
-	// keep numberOfKeywords and numberOfSortableAttributes in an unsigned
-	// |numberOfKeywords : numberOfSortableAttributes |
-	// | 24 : 8 |
 	unsigned getNumberOfKeywords() const
 	{
-		return (numberOfKeywordsAndNumberOfSortableAttributes & 0xFFFFFF00) >> 8;
+		return numberOfKeywords;
 	}
 
 	void setNumberOfKeywords(unsigned numberOfKeywords)
 	{
-		// we consider at most KEYWORD_THRESHOLD keywords
-		if(numberOfKeywords <= KEYWORD_THRESHOLD)
-			this->numberOfKeywordsAndNumberOfSortableAttributes |= (numberOfKeywords << 8);
-		else
-			this->numberOfKeywordsAndNumberOfSortableAttributes |= (KEYWORD_THRESHOLD << 8);
+		this->numberOfKeywords = numberOfKeywords;
 	}
 
-	unsigned getNumberOfSortableAttributes() const
-	{
-		return numberOfKeywordsAndNumberOfSortableAttributes & 0xFF;
-	}
-
-	void setNumberOfSortableAttributes(unsigned numberOfSortableAttributes)
-	{
-		// we consider at most SORTABLE_ATTRIBUTES_THRESHOLD sortableAttributes
-		if(numberOfSortableAttributes <= SORTABLE_ATTRIBUTES_THRESHOLD)
-			this->numberOfKeywordsAndNumberOfSortableAttributes |= numberOfSortableAttributes;
-		else
-			this->numberOfKeywordsAndNumberOfSortableAttributes |= SORTABLE_ATTRIBUTES_THRESHOLD;
-	}
 
 	float getRecordBoost() const
 	{
@@ -144,15 +126,22 @@ public:
 		this->inMemoryData = inMemoryData;
 	}
 
-	const float getSortableAttribute(unsigned iter) const
-	{
-		return sortableAttributeScores[iter];
+
+
+
+	const std::string getNonSearchableAttributeValue(unsigned iter , const Schema * schema) const{
+		return nonSearchableAttributeValues.getAttribute(iter, schema);
 	}
 
-	void setSortableAttribute(unsigned iter, float sortableAttributeScore)
+	const VariableLengthAttributeContainer * getNonSearchableAttributeContainer() const{
+		return &nonSearchableAttributeValues;
+	}
+
+
+	void setNonSearchableAttributeValue(unsigned iter, const Schema * schema, std::string value)
 	{
-		if(iter <= SORTABLE_ATTRIBUTES_THRESHOLD)
-			this->sortableAttributeScores[iter] = sortableAttributeScore;
+		// TODO : what is sortable attribute threshold ?
+		this->nonSearchableAttributeValues.setAttribute(iter, schema, value);
 	}
 
 	const unsigned* getKeywordIds() const
@@ -204,21 +193,17 @@ public:
 	}
 
 	//set the size of keywordIds and keywordRecordStaticScores to keywordListCapacity
-    ForwardList(int sortableAttributeListCapacity=0, int keywordListCapacity=0)
+    ForwardList(int keywordListCapacity=0)
     {
-    	// we consider at most SORTABLE_ATTRIBUTES_THRESHOLD sortableAttributes
-    	if(sortableAttributeListCapacity > SORTABLE_ATTRIBUTES_THRESHOLD)
-    		sortableAttributeListCapacity = SORTABLE_ATTRIBUTES_THRESHOLD;
+
     	// we consider at most KEYWORD_THRESHOLD keywords
     	if(keywordListCapacity > KEYWORD_THRESHOLD)
     		keywordListCapacity = KEYWORD_THRESHOLD;
-    	numberOfKeywordsAndNumberOfSortableAttributes = 0;
-    	numberOfKeywordsAndNumberOfSortableAttributes |= sortableAttributeListCapacity;
+    	numberOfKeywords = 0;
         recordBoost = 0.5;
         inMemoryData = "";
         keywordIds = new unsigned[keywordListCapacity];
         keywordRecordStaticScores = new half[keywordListCapacity];
-        sortableAttributeScores = new float[sortableAttributeListCapacity];
         keywordAttributeBitmaps = NULL;
     }
 
@@ -228,8 +213,6 @@ public:
     		delete keywordIds;
     	if(keywordRecordStaticScores != NULL)
     		delete keywordRecordStaticScores;
-        if (sortableAttributeScores != NULL)
-            delete sortableAttributeScores;
         if (keywordAttributeBitmaps != NULL)
             delete keywordAttributeBitmaps;
     }
@@ -238,7 +221,8 @@ public:
     float computeFieldBoostSummation(const Schema *schema, const TokenAttributeHits &hits) const;
 
     //unsigned getForwardListElement(unsigned cursor) const;
-    float getForwardListSortableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaSortableAttributeId) const;
+
+    Score getForwardListNonSearchableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaNonSearchableAttributeId) const;
 
     bool haveWordInRangeWithStemmer(const SchemaInternal* schema, const unsigned minId, 
                     const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId,
@@ -289,12 +273,12 @@ private:
     void serialize(Archive & ar, const unsigned int version)
     {
     	typename Archive::is_loading load;
-        ar & this->numberOfKeywordsAndNumberOfSortableAttributes;
+        ar & this->numberOfKeywords;
         ar & this->recordBoost;
         // In loading process, we need to allocate space for the members first.
         if(load)
         {
-        	this->sortableAttributeScores = new float[this->getNumberOfSortableAttributes()];
+//        	this->sortableAttributeScores = new float[this->getNumberOfSortableAttributes()];
         	this->keywordIds = new unsigned[this->getNumberOfKeywords()];
         	this->keywordRecordStaticScores = new half[this->getNumberOfKeywords()];
         	// check if it's an attribute based search
@@ -303,7 +287,7 @@ private:
         		this->keywordAttributeBitmaps = new unsigned[this->getNumberOfKeywords()];
         	}
         }
-        ar & boost::serialization::make_array(this->sortableAttributeScores, this->getNumberOfSortableAttributes());
+//        ar & boost::serialization::make_array(this->sortableAttributeScores, this->getNumberOfSortableAttributes());
         ar & boost::serialization::make_array(this->keywordIds, this->getNumberOfKeywords());
         ar & boost::serialization::make_array(this->keywordRecordStaticScores, this->getNumberOfKeywords());
         // check if it's an attribute based search
@@ -313,17 +297,19 @@ private:
         }
         ar & this->externalRecordId;
         ar & this->inMemoryData;
+        ar & this->nonSearchableAttributeValues;
     }
 
     // members
-	unsigned numberOfKeywordsAndNumberOfSortableAttributes;
+	unsigned numberOfKeywords;
 	half recordBoost;
 	std::string externalRecordId;
 	std::string inMemoryData;
 	unsigned* keywordIds;
 	half* keywordRecordStaticScores;
 
-	float* sortableAttributeScores;
+	VariableLengthAttributeContainer nonSearchableAttributeValues;
+
 	unsigned* keywordAttributeBitmaps;
 
 };
@@ -368,7 +354,6 @@ private:
     }
 
     //helper functions
-    float _getSortableAttributeValue( unsigned sortableAttributeIndex, const string* sortableAttributeValueString) const;
     void _getPositionListFromTokenAttributesMap(KeywordIdKeywordStringInvertedListIdTriple &keywordIdList, map<string, TokenAttributeHits > &tokenAttributeHitsMap, vector<unsigned>& positionList);
 
 public:

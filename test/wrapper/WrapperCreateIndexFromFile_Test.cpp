@@ -3,10 +3,10 @@
 #include <iostream>
 
 #include <instantsearch/Indexer.h>
-#include "wrapper/JSONRecordParser.h"
-#include "wrapper/Srch2KafkaConsumer.h"
-#include "operation/IndexSearcherInternal.h"
-#include "operation/IndexerInternal.h"
+#include "../src/JSONRecordParser.h"
+#include "../src/Srch2KafkaConsumer.h"
+#include "../../src/operation/IndexSearcherInternal.h"
+#include "../../src/operation/IndexerInternal.h"
 
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;

@@ -1,4 +1,4 @@
-//$Id: QueryResults.h 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: QueryResults.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -32,6 +32,7 @@ namespace instantsearch
 
 class Query;
 class IndexSearcher;
+class Score;
 
 /**
  * This class defines QueryResults that acts as a container to hold
@@ -87,7 +88,8 @@ public:
     /**
      * Gets the score of the 'position'-th item in the QueryResults object.
      */
-    virtual float getResultScore(unsigned position) const = 0;
+    virtual std::string getResultScoreString(unsigned position) const = 0;
+    virtual Score getResultScore(unsigned position) const = 0;
 
     /**
      *

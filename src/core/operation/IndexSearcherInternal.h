@@ -1,4 +1,4 @@
-// $Id: IndexSearcherInternal.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexSearcherInternal.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -89,6 +89,14 @@ public:
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex(){
         return this->indexData->invertedIndex;
+    }
+
+    ForwardIndex * getForwardIndex(){
+    	return this->indexData->forwardIndex;
+    }
+
+    Schema * getSchema(){
+    	return this->indexData->schemaInternal;
     }
 
     void cacheClear();

@@ -24,12 +24,12 @@ ENDIF()
 # DLL's and set that variable.
 #
 
-SET(SRCH2_LICENSE_DIR ${CMAKE_SOURCE_DIR}/test/Developer_License)
+SET(SRCH2_LICENSE_DIR ${CMAKE_SOURCE_DIR}/test/core/Developer_License)
 ############UNIT TESTS#################
 
 MESSAGE(STATUS  "BUILDING TEST: ${CMAKE_CURRENT_BINARY_DIR}")
 
-SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/unit/test_data/)
+SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/unit/test_data/)
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/Trie_Test "--verbose")
 
@@ -70,7 +70,7 @@ SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")
 ############INTEGRATION TESTS#################
     
-SET(INTEGRATION_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/integration/test_data/)
+SET(INTEGRATION_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/integration/test_data/)
     
 ### BuildIndexesForIntegration_Test build the necessary indexes for Integration Tests ###
 ADD_TEST(BuildIndexesForIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/BuildIndexesForIntegrationTest "--verbose")
@@ -113,7 +113,7 @@ ADD_TEST(ThreadSafety_QueryStress_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/
 #			PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}factual/;query_file=${INTEGRATION_TEST_INDEX_DIR}stress-test-queries/factual-queries/categories.txt")
 SET_TESTS_PROPERTIES(ThreadSafety_QueryStress_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}/stress-test-queries/factual-queries/categories.txt")
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test)
 ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/../search-server/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test")
 		
 ADD_TEST(ThreadSafetyReadWrite_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/ThreadSafetyReadWrite_Test "--verbose")
@@ -147,6 +147,9 @@ SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION
  
 ADD_TEST(GeoCompleteTermSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/integration/GeoCompleteTermSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}geo-complete/")
+
+
+
  
 # CHENLI
 # ADD_TEST(StemmerIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/StemmerIntegration_Test "--verbose")
@@ -161,7 +164,15 @@ SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE
 	  
 ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/GeoIndexUpdate_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/unit/test_data")
-	  
+	
+ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/VariableLengthAttributeContainer_Test "--verbose")  
+
+
+ADD_TEST(NonSearchableAttribute_Test ${CMAKE_CURRENT_BINARY_DIR}/unit/NonSearchableAttribute_Test "--verbose")  
+
+
+
+
 #ADD_TEST(MarioIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/integration/MarioIntegration_Test "--verbose")
 #SET_TESTS_PROPERTIES(MarioIntegration_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/;small_index_dir=${INTEGRATION_TEST_INDEX_DIR}/small-test-data/")
     

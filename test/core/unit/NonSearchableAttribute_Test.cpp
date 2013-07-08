@@ -36,66 +36,7 @@ bool checkContainment(vector<string> &prefixVector, const string &prefix)
     return false;
 }
 
-// TODO Needs change in   indexSearcherInternal->computeActiveNodeSet(term) to run.
-void ActiveNodeSet_test()
-{
- /*   // construct a trie for the searcher
-    Trie *trie = new Trie();
 
-    unsigned invertedIndexOffset;
-    trie->addKeyword("cancer", invertedIndexOffset);
-    trie->addKeyword("canada", invertedIndexOffset);
-    trie->addKeyword("canteen", invertedIndexOffset);
-    trie->addKeyword("can", invertedIndexOffset);
-    trie->addKeyword("cat", invertedIndexOffset);
-    trie->addKeyword("dog", invertedIndexOffset);
-    trie->commit();
-*/
-
-	///Create Schema
-	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
-	schema->setPrimaryKey("article_id"); // integer, not searchable
-	schema->setSearchableAttribute("article_title", 7); // searchable text
-
-	Record *record = new Record(schema);
-	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
-
-	unsigned mergeEveryNSeconds = 3;
-	unsigned mergeEveryMWrites = 5;
-	srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(new Cache(134217728,20000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-	srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData, analyzer, schema);
-
-	record->setPrimaryKey(1001);
-	record->setSearchableAttributeValue("article_title", "cancer canada canteen can cat dog");
-	record->setInMemoryData("test string");
-	indexer->addRecord(record, 0);
-	indexer->commit();
-
-    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
-
-    unsigned threshold = 2;
-    Term *term = FuzzyTerm::create("nce", PREFIX, 1, 1, threshold);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet(term);
-    vector<string> similarPrefixes;
-    prefixActiveNodeSet->getComputedSimilarPrefixes( indexSearcherInternal->getTrie(), similarPrefixes);
-
-    unsigned sim_size = similarPrefixes.size();
-
-    (void)sim_size;
-
-    ASSERT(similarPrefixes.size() == 2);
-    ASSERT(checkContainment(similarPrefixes, "c"));
-    //ASSERT(checkContainment(similarPrefixes, "ca"));
-    ASSERT(checkContainment(similarPrefixes, "cance"));
-    similarPrefixes.clear();
-
-    delete term;
-    delete indexMetaData;
-    delete indexer;
-    // We don't need to delete prefixActiveNodeSet since it's cached and will be
-    // deleted in the destructor of indexSearchInternal
-    delete indexSearcherInternal;
-}
 
 /**
  * Keyword: Record
@@ -116,7 +57,10 @@ void addRecords()
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
-    
+    schema->setNonSearchableAttribute("citation", UNSIGNED, "0" , true);
+    schema->setNonSearchableAttribute("price" , FLOAT, "1.25", true);
+    schema->setNonSearchableAttribute("class" , TEXT, "Z" , false);
+
     Record *record = new Record(schema);
     Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
 
@@ -128,6 +72,9 @@ void addRecords()
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
+    record->setNonSearchableAttributeValue("citation", "1");
+    record->setNonSearchableAttributeValue("price" , "10.34");
+    record->setNonSearchableAttributeValue("class" , "A");
     record->setRecordBoost(10);
     record->setInMemoryData("test string");
     index->addRecord(record, 0);
@@ -136,55 +83,76 @@ void addRecords()
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(0, "George Harris");
     record->setSearchableAttributeValue(1, "Here comes the sun");
+    record->setNonSearchableAttributeValue("citation", "2");
+    record->setNonSearchableAttributeValue("price" , "9.34");
+    record->setNonSearchableAttributeValue("class" , "A");
     record->setRecordBoost(20);
     record->setInMemoryData("test string");
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(0, "Pink Floyd");
     record->setSearchableAttributeValue(1, "Shine on you crazy diamond");
+    record->setNonSearchableAttributeValue("citation", "3");
+    record->setNonSearchableAttributeValue("price" , "8.34");
+    record->setNonSearchableAttributeValue("class" , "B");
     record->setRecordBoost(30);
     record->setInMemoryData("test string");
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1004);
     record->setSearchableAttributeValue(0, "Uriah Hepp");
     record->setSearchableAttributeValue(1, "Come Shine away Melinda ");
+    record->setNonSearchableAttributeValue("citation", "4");
+    record->setNonSearchableAttributeValue("price" , "7.34");
+    record->setNonSearchableAttributeValue("class" , "B");
     record->setRecordBoost(40);
     record->setInMemoryData("test string");
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1005);
     record->setSearchableAttributeValue(0, "Pinksyponzi Floydsyponzi");
     record->setSearchableAttributeValue(1, "Shinesyponzi on Wish you were here");
+    record->setNonSearchableAttributeValue("citation", "5");
+    record->setNonSearchableAttributeValue("price" , "6.34");
+    record->setNonSearchableAttributeValue("class" , "C");
     record->setRecordBoost(50);
     record->setInMemoryData("test string");
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1006);
     record->setSearchableAttributeValue(0, "U2 2345 Pink");
     record->setSearchableAttributeValue(1, "with or without you");
+    record->setNonSearchableAttributeValue("citation", "6");
+    record->setNonSearchableAttributeValue("price" , "5.34");
+    record->setNonSearchableAttributeValue("class" , "C");
     record->setRecordBoost(60);
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1007);
     record->setSearchableAttributeValue(0, "Led Zepplelin");
     record->setSearchableAttributeValue(1, "Stairway to Heaven pink floyd");
+    record->setNonSearchableAttributeValue("citation", "7");
+    record->setNonSearchableAttributeValue("price" , "4.34");
+    record->setNonSearchableAttributeValue("class" , "D");
     record->setRecordBoost(80);
     index->addRecord(record, 0);
-    
+
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
+    record->setNonSearchableAttributeValue("citation", "8");
+    record->setNonSearchableAttributeValue("price" , "3.34");
+    record->setNonSearchableAttributeValue("class" , "E");
     record->setRecordBoost(90);
     index->addRecord(record, 0);
-    
+
     ///TODO: Assert that This record must not be added
     /// 1) Repeat of primary key
     /// 2) Check when adding junk data liek &*^#^%%
@@ -205,6 +173,8 @@ void addRecords()
 
 bool checkResults(QueryResults *queryResults, set<unsigned> *resultSet)
 {
+
+	if(queryResults->getNumberOfResults() != resultSet->size()) return false;
     for (unsigned resultCounter = 0;
             resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
     {
@@ -270,7 +240,6 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = { "pink", "floyd", "shine"};
 
     cout<<"\n***COMPLETE EXACT***\nQuery:";
@@ -326,7 +295,6 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pin","floy","shi"
     };
@@ -378,7 +346,6 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
@@ -433,7 +400,6 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pionn","fllio","shiii"
     };
@@ -469,6 +435,117 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete queryResults2;
 
 }
+
+void Test_Range_Query(IndexSearcherInternal *indexSearcherInternal){
+
+    set<unsigned> resultSet0 , resultSet01, resultSet02, resultSet03,  resultSet1, resultSet2;
+
+    // query = "pionn", citation < 6
+    resultSet0.insert(1003);
+    resultSet0.insert(1005);
+
+    // query = "pionn", citation < 7
+    resultSet01.insert(1003);
+    resultSet01.insert(1005);
+    resultSet01.insert(1006);
+
+    // query = "pionn", price < 6
+    resultSet02.insert(1006);
+    resultSet02.insert(1007);
+
+
+    // query = "pionn", price != 8.34
+    resultSet03.insert(1006);
+    resultSet03.insert(1005);
+    resultSet03.insert(1007);
+
+
+    // query = "pionn fllio", class < D
+    resultSet1.insert(1003);
+    resultSet1.insert(1005);
+
+    // query = "pionn fllio shiii", price < 8.35
+    resultSet2.insert(1003);
+    resultSet2.insert(1005);
+
+    int resultCount = 10;
+    // create a query
+    Query *query = new Query(srch2is::TopKQuery);
+    query->setPostProcessingFilter(RANGE_CHECK); // range query
+    string keywords[3] = {
+            "pionn","fllio","shiii"
+    };
+
+
+    query->setPostProcessingFilterOperation(LESS_THAN);
+    cout<<"\n***PREFIX FUZZY***\nQuery:";
+    TermType type = PREFIX;
+    cout<<keywords[0]<< "\n";
+
+    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
+    query->add(term0);
+    query->setNonSearchableAttributeName("citation");
+    query->setNonSearchableAttributeValue("6");
+
+    QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults, resultCount);
+    checkResults(queryResults, &resultSet0);
+
+    cout<<"\nChanging criterion to : citation < 7";
+    query->setNonSearchableAttributeName("citation");
+    query->setNonSearchableAttributeValue("7");
+    QueryResults *queryResults01 = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults01, resultCount);
+    ASSERT(checkResults(queryResults01, &resultSet01));
+
+
+    cout<<"\nChanging criterion to : price < 6";
+    query->setNonSearchableAttributeName("price");
+    query->setNonSearchableAttributeValue("6");
+    QueryResults *queryResults02 = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults02, resultCount);
+    ASSERT(checkResults(queryResults02, &resultSet02));
+
+    cout<<"\nChanging criterion to : price != 8.34";
+    query->setNonSearchableAttributeName("price");
+    query->setNonSearchableAttributeValue("8.34");
+    query->setPostProcessingFilterOperation(NOT_EQUALS);
+    QueryResults *queryResults03 = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults03, resultCount);
+    ASSERT(checkResults(queryResults03, &resultSet03));
+
+    query->setPostProcessingFilterOperation(LESS_THAN);
+
+    cout<<"\nAdding Term:";
+    cout<<keywords[1]<< "\n";
+    Term *term1 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
+    query->add(term1);
+    query->setNonSearchableAttributeName("class");
+    query->setNonSearchableAttributeValue("D");
+    QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults1, resultCount);
+    ASSERT(checkResults(queryResults1, &resultSet1));
+
+    cout<<"\nAdding Term:";
+    cout<<keywords[2]<< "\n";
+    Term *term2 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
+    query->add(term2);
+    query->setNonSearchableAttributeName("price");
+    query->setNonSearchableAttributeValue("8.35");
+    QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
+    indexSearcherInternal->search(query, queryResults2, resultCount);
+    ASSERT(checkResults(queryResults2, &resultSet2));
+
+
+
+
+    delete query;
+    delete queryResults;
+//    delete queryResults1;
+//    delete queryResults2;
+
+}
+
 void Searcher_Tests()
 {
     addRecords();
@@ -476,22 +553,25 @@ void Searcher_Tests()
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-    
+
     Indexer* indexer = Indexer::load(indexMetaData);
 
 	IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
 
-    Test_Complete_Exact(indexSearcherInternal);
-	std::cout << "test1" << std::endl;
-    
-    Test_Prefix_Exact(indexSearcherInternal);
-	std::cout << "test2" << std::endl;
-    
-    Test_Complete_Fuzzy(indexSearcherInternal);
-	std::cout << "test3" << std::endl;
+//    Test_Complete_Exact(indexSearcherInternal);
+//	std::cout << "test1" << std::endl;
+//
+//    Test_Prefix_Exact(indexSearcherInternal);
+//	std::cout << "test2" << std::endl;
+//
+//    Test_Complete_Fuzzy(indexSearcherInternal);
+//	std::cout << "test3" << std::endl;
+//
+//	Test_Prefix_Fuzzy(indexSearcherInternal);
+//	std::cout << "test4" << std::endl;
 
-    Test_Prefix_Fuzzy(indexSearcherInternal);
-	std::cout << "test4" << std::endl;
+	Test_Range_Query(indexSearcherInternal);
+	std::cout << "test5" << std::endl;
 
     delete indexer;
     delete indexSearcherInternal;
@@ -504,7 +584,6 @@ int main(int argc, char *argv[])
         verbose = true;
     }
 
-    ActiveNodeSet_test();
 
     Searcher_Tests();
 
@@ -512,3 +591,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
