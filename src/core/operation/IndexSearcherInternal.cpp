@@ -29,7 +29,7 @@
 #include "operation/ActiveNode.h"
 #include "operation/TermVirtualList.h"
 #include "query/QueryResultsInternal.h"
-#include "operation/ResultsPostProcessor.h"
+#include "postprocessing/ResultsPostProcessor.h"
 
 #include "index/Trie.h"
 #include "util/Assert.h"
