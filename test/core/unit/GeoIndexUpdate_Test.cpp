@@ -575,7 +575,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "", "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -631,7 +631,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "", "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;

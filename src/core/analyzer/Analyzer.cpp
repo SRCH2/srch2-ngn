@@ -1,4 +1,4 @@
-// $Id: Analyzer.cpp 3219 2013-03-25 23:36:34Z sbisht $
+// $Id: Analyzer.cpp 3219 2013-03-25 23:36:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -21,35 +21,30 @@
 #include "StandardAnalyzer.h"
 #include "SimpleAnalyzer.h"
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 // TODO: remove create. The constructor is called directly
-Analyzer *Analyzer::create(const StemmerNormalizerFlagType &stemmerFlag,
-		const std::string &stopWordFilePath,
-		const std::string &synonymFilePath,
-		const std::string &delimiters,
-		const AnalyzerType &analyzerType) {
+Analyzer *Analyzer::create( const StemmerNormalizerFlagType &stemmerFlag,
+							const std::string &stemmerFilePath,
+							const std::string &stopWordFilePath,
+							const std::string &synonymFilePath, const std::string &delimiters,
+							const AnalyzerType &analyzerType) {
 
-	switch(analyzerType)
-	{
-		case SIMPLE_ANALYZER:
-			return new SimpleAnalyzer(stemmerFlag, stopWordFilePath, synonymFilePath, delimiters);
-		default:
-			return new StandardAnalyzer(stemmerFlag, stopWordFilePath, synonymFilePath, delimiters);
+	switch (analyzerType) {
+	case SIMPLE_ANALYZER:
+		return new SimpleAnalyzer(stemmerFlag,
+								  stemmerFilePath,
+							   	  stopWordFilePath,
+								  synonymFilePath,
+								  delimiters);
+	default:
+		return new StandardAnalyzer(stemmerFlag,
+									stemmerFilePath,
+									stopWordFilePath,
+									synonymFilePath,
+									delimiters);
 	}
 }
 
-/*TODO
-Analyzer *Analyzer::create(const string& stopWordFile, const string& delimiters)
-{
-    return new AnalyzerInternal(stopWordFile, delimiters);
 }
-
-Analyzer *Analyzer::create(const vector<string> &stopWords, const string& delimiters)
-{
-    return new AnalyzerInternal(stopWords, delimiters);
 }
-*/
-}}

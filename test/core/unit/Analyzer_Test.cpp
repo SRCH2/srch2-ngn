@@ -20,7 +20,18 @@
 
 //
 // This test is to verify the correctness of Analyzer to token a string.
-//
+
+#include <stdio.h>  /* defines FILENAME_MAX */
+#ifdef WINDOWS
+    #include <direct.h>
+    #define GetCurrentDir _getcwd
+#else
+    #include <unistd.h>
+    #define GetCurrentDir getcwd
+ #endif
+
+
+
 #include <vector>
 #include <string>
 #include "util/Assert.h"
@@ -29,6 +40,18 @@
 
 using namespace std;
 using namespace srch2::instantsearch;
+
+string getCurrentWorkDirectory(){
+	char cCurrentPath[FILENAME_MAX];
+
+	 if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
+	 {
+	     return "";
+	 }
+
+	cCurrentPath[sizeof(cCurrentPath) - 1] = '\0'; /* not really required */
+	return cCurrentPath;
+}
 
 //SimpleAnalyzer organizes a tokenizer using " " as the delimiter and a "ToLowerCase" filter
 void testSimpleAnalyzer()
@@ -81,11 +104,14 @@ void testStandardAnalyzer()
 }
 
 void testStemmerFilter() {
+
+
 	// if it is true, it prints the results of the test, else id doesn't
 	bool printFlag = true;
 
+	// when you are running ctest you should be in the build directory
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
-			ENABLE_STEMMER_NORMALIZER, "", "");
+			ENABLE_STEMMER_NORMALIZER, getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt", "", "");
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
 	if (printFlag) {
@@ -212,7 +238,7 @@ void testStopFilter() {
 	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
-			ENABLE_STEMMER_NORMALIZER,
+			ENABLE_STEMMER_NORMALIZER,getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 			"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/stopWordsFile.txt", "", "");
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
@@ -269,6 +295,7 @@ void testSynonymFilter() {
 
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
 			ENABLE_STEMMER_NORMALIZER,
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 			"",
 			"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -280,9 +307,12 @@ void testSynonymFilter() {
 	// to print out the results
 
 	vector<string> vectorString;
+	vectorString.push_back("bill");
 	vectorString.push_back("william"); // bill
 	vectorString.push_back("is");
 	vectorString.push_back("in");
+	vectorString.push_back("new");
+	vectorString.push_back("york");
 	vectorString.push_back("ny"); // new york
 
 	int i = 0;
@@ -301,6 +331,7 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
 				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -312,9 +343,16 @@ void testSynonymFilter() {
 	vectorString.push_back("new");
 	vectorString.push_back("wal");
 	vectorString.push_back("new");
+	vectorString.push_back("wal");
+	vectorString.push_back("mart");
 	vectorString.push_back("walmart"); // wal mart
+	vectorString.push_back("new");
+	vectorString.push_back("york");
 	vectorString.push_back("ny"); // new york
 	vectorString.push_back("new");
+	vectorString.push_back("new"); // new york city
+	vectorString.push_back("york"); // new york city
+	vectorString.push_back("city"); // new york city
 	vectorString.push_back("nyc"); // new york city
 
 	i = 0;
@@ -333,6 +371,7 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
 				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -342,12 +381,21 @@ void testSynonymFilter() {
 
 	vectorString.clear();
 	vectorString.push_back("new");
+	vectorString.push_back("bill");
 	vectorString.push_back("william");
 	vectorString.push_back("bring");
 	vectorString.push_back("your");
 	vectorString.push_back("own");
-	vectorString.push_back("william"); // wal mart
-	vectorString.push_back("byob"); // new york
+	vectorString.push_back("bill");
+	vectorString.push_back("william");
+	vectorString.push_back("bring");
+	vectorString.push_back("your");
+	vectorString.push_back("own");
+	vectorString.push_back("beverage");
+	vectorString.push_back("byob");
+	vectorString.push_back("your");
+	vectorString.push_back("own");
+	vectorString.push_back("beverage");
 	vectorString.push_back("yob");
 	vectorString.push_back("bring");
 
@@ -368,6 +416,7 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
 				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -376,11 +425,30 @@ void testSynonymFilter() {
 	// to print out the results
 
 	vectorString.clear();
+	vectorString.push_back("a");
+	vectorString.push_back("b");
+	vectorString.push_back("c");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
+	vectorString.push_back("g");
 	vectorString.push_back("x");
+	vectorString.push_back("a");
+	vectorString.push_back("b");
+	vectorString.push_back("c");
 	vectorString.push_back("y");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
 	vectorString.push_back("z");
 	vectorString.push_back("t");
+	vectorString.push_back("a");
+	vectorString.push_back("b");
+	vectorString.push_back("c");
 	vectorString.push_back("y");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
 	vectorString.push_back("z");
 
 	i = 0;
@@ -399,6 +467,7 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
 				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -409,18 +478,42 @@ void testSynonymFilter() {
 	vectorString.clear();
 	vectorString.push_back("a");
 	vectorString.push_back("b");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
 	vectorString.push_back("z");
+	vectorString.push_back("new");
+	vectorString.push_back("york");
 	vectorString.push_back("ny");
 	vectorString.push_back("g");
+	vectorString.push_back("a");
+	vectorString.push_back("b");
+	vectorString.push_back("c");
 	vectorString.push_back("y");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
 	vectorString.push_back("z");
 	vectorString.push_back("t");
+	vectorString.push_back("a");
+	vectorString.push_back("b");
+	vectorString.push_back("c");
 	vectorString.push_back("y");
+	vectorString.push_back("d");
+	vectorString.push_back("e");
+	vectorString.push_back("f");
 	vectorString.push_back("z");
+	vectorString.push_back("wal");
+	vectorString.push_back("mart");
 	vectorString.push_back("walmart");
+	vectorString.push_back("آسان");
 	vectorString.push_back("راحت");
+	vectorString.push_back("bill");
 	vectorString.push_back("william");
+	vectorString.push_back("美");
 	vectorString.push_back("丽");
+	vectorString.push_back("ایمان");
+	vectorString.push_back("برجسته");
 	vectorString.push_back("مشتی");
 
 	i = 0;
@@ -439,6 +532,7 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
 				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -447,6 +541,7 @@ void testSynonymFilter() {
 	// to print out the results
 
 	vectorString.clear();
+	vectorString.push_back("bill");
 	vectorString.push_back("william");
 
 	i = 0;
@@ -481,6 +576,6 @@ int main() {
 	cout << "StopFilter test passed" << endl;
 
 	testSynonymFilter();
-	cout << "StopFilter test passed" << endl;
+	cout << "SynonymFilter test passed" << endl;
 	return 0;
 }

@@ -142,3 +142,4 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test)
 ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test")
 
+

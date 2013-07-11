@@ -3,9 +3,9 @@
  *
  *  Created on: 2013-5-18
  */
-//This class will token the words according to whitespace character .
-#ifndef __SIMPLEANALYZER_H__
-#define __SIMPLEANALYZER_H__
+//This class will tokenize the words according to whitespace character .
+#ifndef __CORE_ANALYZER__SIMPLEANALYZER_H__
+#define __CORE_ANALYZER__SIMPLEANALYZER_H__
 
 #include "AnalyzerInternal.h"
 #include "TokenOperator.h"
@@ -20,12 +20,14 @@ namespace instantsearch {
 class SimpleAnalyzer: public AnalyzerInternal {
 public:
 	SimpleAnalyzer(const StemmerNormalizerFlagType &stemmerFlag = DISABLE_STEMMER_NORMALIZER,
+			const std::string &stemmerFilePath = "",
 			const std::string &stopWordFilePath = "",
 			const std::string &synonymFilePath = "",
 			const std::string &recordAllowedSpecialCharacters = "") :
 			AnalyzerInternal(stemmerFlag, recordAllowedSpecialCharacters) {
 		this->analyzerType = SIMPLE_ANALYZER;
 		this->stemmerType = stemmerFlag;
+		this->stemmerFilePath = stemmerFilePath;
 		this->stopWordFilePath = stopWordFilePath;
 		this->synonymFilePath= synonymFilePath;
 		this->tokenOperator = createOperatorFlow();
@@ -40,4 +42,4 @@ public:
 };
 }
 }
-#endif /* __SIMPLEANALYZER_H__ */
+#endif /* __CORE_ANALYZER__SIMPLEANALYZER_H__ */

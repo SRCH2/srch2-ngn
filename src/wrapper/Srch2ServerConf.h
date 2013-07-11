@@ -1,7 +1,7 @@
 //$Id: Srch2ServerConf.h 3456 2013-06-14 02:11:13Z jiaying $
 
-#ifndef __SRCH2SERVERCONG_H__
-#define __SRCH2SERVERCONG_H__
+#ifndef __WRAPPER__SRCH2SERVERCONG_H__
+#define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
 #include <string>
@@ -15,31 +15,22 @@
 using namespace std;
 namespace po = boost::program_options;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
-typedef enum
-{
-	KAFKAWRITEAPI = 0,
-	HTTPWRITEAPI = 1
+typedef enum {
+	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
 } WriteApiType;
 
-typedef enum
-{
-	INDEXCREATE = 0,
-	INDEXLOAD = 1
+typedef enum {
+	INDEXCREATE = 0, INDEXLOAD = 1
 } IndexCreateOrLoad;
 
-typedef enum
-{
-	FILEBOOTSTRAP_FALSE = 0,
-	FILEBOOTSTRAP_TRUE = 1
-}DataSourceType;
+typedef enum {
+	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
+} DataSourceType;
 
-class Srch2ServerConf
-{
+class Srch2ServerConf {
 private:
 
 	// Argument file options
@@ -66,13 +57,13 @@ private:
 
 	string primaryKey;
 	int searchResponseFormat;
-    vector<string> attributesToReturn;
+	vector<string> attributesToReturn;
 	int numberOfThreads;
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
-    // < keyword, < offset, boost > >
-    map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
+	// < keyword, < offset, boost > >
+	map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
 	vector<string> sortableAttributes;
 	string attributeRecordBoost;
 
@@ -81,6 +72,9 @@ private:
 	vector<string> sortableAttributesDefaultValue;
 
 	//vector<unsigned> attributesBoosts;
+
+	// This is the directory that will be set during installation.
+	std::string installDir;
 
 	std::string allowedRecordTokenizerCharacters;
 	int searchType;
@@ -93,11 +87,13 @@ private:
 	float prefixMatchPenalty;
 	bool supportAttributeBasedSearch;
 	bool stemmerFlag;
+	std::string stemmerFile;
 	std::string synonymFilterFilePath;
 	std::string stopFilterFilePath;
 	DataSourceType dataSourceType;
 	IndexCreateOrLoad indexCreateOrLoad;
 	WriteApiType writeApiType;
+
 
 	int resultsToRetrieve;
 	int attributeToSort;
@@ -112,12 +108,16 @@ private:
 	//string httpServerDocumentRoot;
 
 public:
-	Srch2ServerConf(int argc, char** argv, bool &configSuccess, std::stringstream &parseError);
+	Srch2ServerConf(int argc, char** argv, bool &configSuccess,
+			std::stringstream &parseError);
 	virtual ~Srch2ServerConf();
 
-	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
-	void _setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector);
-	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
+	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,
+			std::stringstream &parseError);
+	void _setDefaultSearchableAttributeBoosts(
+			const vector<string> &searchableAttributesVector);
+	void parse(const boost::program_options::variables_map &vm,
+			bool &configSuccess, std::stringstream &parseError);
 
 	const std::string& getCustomerName() const;
 	uint32_t getDocumentLimit() const;
@@ -128,7 +128,7 @@ public:
 	const std::string& getPrimaryKey() const;
 
 	const map<string, pair<unsigned, unsigned> > * getSearchableAttributes() const;
-    const vector<string> * getAttributesToReturnName() const;
+	const vector<string> * getAttributesToReturnName() const;
 
 	const vector<string> * getSortableAttributesName() const;
 	const vector<srch2::instantsearch::FilterType> * getSortableAttributesType() const;
@@ -147,6 +147,8 @@ public:
 	bool getStemmerFlag() const;
 	string getSynonymFilePath() const;
 	string getStopFilePath() const;
+	string getStemmerFile() const;// stemmer file
+	string getInstallDir() const;// install Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;
@@ -197,6 +199,4 @@ public:
 }
 }
 
-
-
-#endif /* __SRCH2SERVERCONG_H__ */
+#endif /* __WRAPPER__SRCH2SERVERCONG_H__ */

@@ -38,35 +38,29 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 // TODO: width limit 80 chars
-StemmerFilter::StemmerFilter(
-		TokenOperator* tokenOperator/*, StemmerNormalizerFlagType stemmerFlag*/) :
+StemmerFilter::StemmerFilter(TokenOperator* tokenOperator, const string &stemmerFilePath) :
 		TokenFilter(tokenOperator) {
 	// Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
-	// TODO: path issue
-	// INDEX_DIR is the directory of the dictionary file.
-	const std::string INDEX_DIR =
-			"/home/iman/srch2/bimaple-root/codebase/mario/branches/stemmer/src/analyzer/data/";
+	const std::string stemmerFiltePath = stemmerFilePath;
 
 	// copies the shared_ptr: sharedToken
 	this->sharedToken = tokenOperator->sharedToken;
 	// construct the dictionary
-	this->createWordMap(INDEX_DIR);
+	this->createWordMap(stemmerFiltePath);
 }
 
 // Creates the map of English words based on the dictionary file.
 
-int StemmerFilter::createWordMap(const std::string &indexDirectory) {
-	//	contains the full path of the dictionary file
-	string filePath = indexDirectory + "StemmerHeadwords.txt";
-	std::string str;
+int StemmerFilter::createWordMap(const std::string &stemmerFilePath) {
 	//  using file path to create an ifstream object
-	std::ifstream input(filePath.c_str());
+	std::ifstream input(stemmerFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
 		cerr << "\nThe file could not be opened.";
 		return -1;
 	}
 	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
+	std::string str;
 	while (getline(input, str)) {
 		this->dictionaryWords.insert(make_pair(str, 1));
 	}
@@ -101,17 +95,8 @@ std::string StemmerFilter::stemToken(const std::string &token) const {
 		return token;
 	}
 
-	//	creating an instance of the TokenDetailsStruct and  allocating the struct size
-	struct TokenDetails * tokenDetail = new TokenDetails;
-
 	// Calling the stem function to apply the porter rules
-	int result = StemmerFilterInternal::stem(tokenDetail, token,
-			token.length() - 1);
-	// stemmedToken is the result of the stemmer.
-	std::string stemmedToken = token.substr(0, result + 1);
-	// deleting the space
-	delete tokenDetail;
-	return stemmedToken;
+	return StemmerFilterInternal::stemUsingPorterRules(token);
 }
 
 // incrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
@@ -663,15 +648,19 @@ void StemmerFilterInternal::stepFive(struct TokenDetails * tokenDetailStruct) {
 }
 
 // Does the stemming here and calls the functions related to step1 to t
-int StemmerFilterInternal::stem(struct TokenDetails * tokenDetailStruct,
-		std::string token, int endStringOffset) {
+std::string StemmerFilterInternal::stemUsingPorterRules(std::string token) {
+
+	//	creating an instance of the TokenDetailsStruct and  allocating the struct size
+	struct TokenDetails * tokenDetailStruct = new TokenDetails;
+	int endStringOffset = token.length() - 1;
 
 	char *buff = new char[token.size() + 1];
 	buff[token.size()] = 0;
 	memcpy(buff, token.c_str(), token.size());
 
-	if (endStringOffset <= 1)
-		return endStringOffset;
+	if (endStringOffset <= 1) {
+		return token;
+	}
 
 	tokenDetailStruct->stemmedWordBuffer = buff;
 	tokenDetailStruct->endStringOffset = endStringOffset; /* copy the parameters into z */
@@ -686,7 +675,10 @@ int StemmerFilterInternal::stem(struct TokenDetails * tokenDetailStruct,
 	stepThree(tokenDetailStruct);
 	stepFour(tokenDetailStruct);
 	stepFive(tokenDetailStruct);
-	return tokenDetailStruct->endStringOffset;
+
+	std::string stemmedToken = token.substr(0, tokenDetailStruct->endStringOffset + 1);
+	delete tokenDetailStruct;
+	return stemmedToken;
 }
 
 }

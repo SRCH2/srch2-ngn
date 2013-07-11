@@ -43,7 +43,7 @@ public:
 	 * Constructor of the Stemmer Filter.
 	 * It is the second constructor of the StemmerFilter. This calls a function (creatHeadWordsMap()) to construct the dictionary.
 	 * */
-	StemmerFilter(TokenOperator* tokenOperator); //TokenOperator* tokenOperator);
+	StemmerFilter(TokenOperator* tokenOperator, const string &stemmerFilePath);
 
 	/*
 	 * searchHeadWords() search if the given string is present in the HeadWordsDictionary \
@@ -82,8 +82,7 @@ public:
 	/*
 	 * This function stems and calls the functions related to step1 to t
 	 */
-	static int stem(struct TokenDetails * tokenDetail, std::string token,
-			int k);
+	static std::string stemUsingPorterRules(std::string token);
 
 private:
 	/*

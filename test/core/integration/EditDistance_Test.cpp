@@ -54,7 +54,7 @@ void buildLocalIndex(string INDEX_DIR)
     //schema->setAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "", "");
 
     // create a record of 3 attributes
     Record *record = new Record(schema);

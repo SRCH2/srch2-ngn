@@ -28,7 +28,7 @@ public:
 	 * Constructor of synonym filter.
 	 * Sets sharedToken.
 	 */
-	SynonymFilter(TokenOperator *tokenOperator,	std::string synonymFilterFilePath);
+	SynonymFilter(TokenOperator *tokenOperator,	const std::string &synonymFilterFilePath);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
@@ -39,6 +39,8 @@ public:
 	virtual ~SynonymFilter();
 
 private:
+
+	const std::string synonymDelimiter = "=>";
 
 	/*
 	 * synonymMap is the map of synonyms
@@ -57,7 +59,7 @@ private:
 	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
 	 */
-	vector<string> temporaryBuffer;
+	vector<string> emitBuffer;
 
 	/*
 	 * It is a buffer for tokens to check if we have multi-word synonyms
@@ -87,13 +89,13 @@ private:
 	/*
 	 * Gets the synonym of buffer if tokens.
 	 */
-	vector<std::string> getSynonymOfBuffered();
+	vector<std::string> getSynonymOfTokensInTokenBuffer();
 
 	/*
 	 * returns the value of the string as the substring of a key
 	 * returns NULL if there is no such a key
 	 */
-	std::string getValueOf(const std::string &);
+	const std::string getValueOf(const std::string &);
 
 	/*
 	 * returns the key of the string as the substring of a key
@@ -121,7 +123,7 @@ private:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & synonymMap;
-		ar & temporaryBuffer;
+		ar & emitBuffer;
 		ar & tokenBuffer;
 	}
 };

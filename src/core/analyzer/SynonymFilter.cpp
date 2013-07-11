@@ -38,7 +38,7 @@ namespace srch2 {
 namespace instantsearch {
 
 SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
-		std::string synonymFilterFilePath) :
+		const std::string &synonymFilterFilePath) :
 		TokenFilter(tokenOperator) {
 	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
 	this->createSynonymMap(synonymFilterFilePath); // construct the synoymMap
@@ -61,7 +61,12 @@ void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
 		 * "A" is leftHandSide
 		 * "B" is rightHandSide
 		 */
-		std::size_t index = line.find("=>");
+		std::size_t index = line.find(this->synonymDelimiter);
+		// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
+		// TODO: we can write a message in the logger
+		if (index <= 0) {
+			continue;
+		}
 		string leftHandSide = line.substr(0, index);
 		string rightHandSide = line.substr(index + 2);
 		// insert the "A" and "B" into the map
@@ -103,13 +108,13 @@ int SynonymFilter::numberOfKeysHavingTokenAsPrefix(const std::string &prefixToke
 	return count;
 }
 
-string SynonymFilter::getValueOf(const std::string &subWord) {
+const string SynonymFilter::getValueOf(const std::string &word) {
 	// finds the subWord in the map
-	std::map<string, string>::const_iterator pos = this->synonymMap.find(subWord);
+	std::map<string, string>::const_iterator pos = this->synonymMap.find(word);
 	if (pos != this->synonymMap.end()) {
 		return pos->second;
 	}
-	return NULL;
+	return "";
 }
 
 string SynonymFilter::getKeyOf(const std::string &value) {
@@ -124,7 +129,7 @@ string SynonymFilter::getKeyOf(const std::string &value) {
 	return NULL; // returns NULL if there the key is not there.
 }
 
-vector<std::string> SynonymFilter::getSynonymOfBuffered() {
+vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 	std::vector<std::string> result;
 	bool flag;
 	while (true) {
@@ -138,10 +143,12 @@ vector<std::string> SynonymFilter::getSynonymOfBuffered() {
 				tempToken += this->tokenBuffer[j] + " ";
 			}
 			tempToken = tempToken.substr(0, tempToken.length() - 1);
-			std::map<string, string>::const_iterator pos =
-					this->synonymMap.find(tempToken);
+			std::map<string, string>::const_iterator pos = this->synonymMap.find(tempToken);
 			if (pos != this->synonymMap.end()) {
-				result.push_back(this->getValueOf(tempToken));
+				for (int k = 0; k <=i; k++) {
+					result.push_back(this->tokenBuffer[k]);
+				}
+				result.push_back(this->getValueOf(tempToken));/////@@@@@@@@@@@@ DONE
 				for (int k = i; k >= 0; k--) {
 					this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
 					flag = true;
@@ -163,17 +170,17 @@ void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens) {
 	while (stringOfTokens.find(delimiter) != string::npos) {
 		size_t pos = stringOfTokens.find(delimiter);
 		string token = stringOfTokens.substr(0, pos);
-		this->temporaryBuffer.push_back(token);
+		this->emitBuffer.push_back(token);
 		stringOfTokens = stringOfTokens.substr(pos + 1);
 	}
-	this->temporaryBuffer.push_back(stringOfTokens);
+	this->emitBuffer.push_back(stringOfTokens);
 }
 
 void SynonymFilter::emitCurrentToken() {
 	// setting the currentToken to the first element of the vector
-	utf8StringToCharTypeVector(this->temporaryBuffer[0], sharedToken->currentToken);
+	utf8StringToCharTypeVector(this->emitBuffer[0], sharedToken->currentToken);
 	// removing the first element
-	this->temporaryBuffer.erase(this->temporaryBuffer.begin() + 0);
+	this->emitBuffer.erase(this->emitBuffer.begin() + 0);
 }
 
 bool SynonymFilter::incrementToken() {
@@ -185,38 +192,39 @@ bool SynonymFilter::incrementToken() {
 			* all the tokens that have to wait to get emit, are in the temporaryBuffer
 			* So, if the increment is false, and there is noting to emit, and the tokenBuffer is empty, this function should return false.
 			*/
-			if (this->tokenBuffer.empty() && this->temporaryBuffer.empty()) {
+			if (this->tokenBuffer.empty() && this->emitBuffer.empty()) {
 				return false;
 			} else {
-				vector<string> tempResult = getSynonymOfBuffered();
+				vector<string> tempResult = getSynonymOfTokensInTokenBuffer();
 				for (int ii = 0; ii < tempResult.size(); ii++) {
-					this->temporaryBuffer.push_back(tempResult[ii]);
+					this->emitBuffer.push_back(tempResult[ii]);
 				}
 				this->tokenBuffer.clear();
 				this->emitCurrentToken();
 				return true; // TODO: false?
 			}
 		} // end of increment=false
-		// if increment returns treu
+		std::string currentToken = "";
+		// converts the charType to string
+		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
+		// gives the number of prefixes found in the key set the map for the current token
+		int numberOfKeysHavingCurrentTokenAsTheirPrefix = this->numberOfKeysHavingTokenAsPrefix(currentToken);
+		// if increment returns true
 		if (this->tokenBuffer.empty()) {
-			std::string currentToken = "";
-			// converts the charType to string
-			charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
 			// if the currentToken is not prefix of any of the keys in the map
 			// if it is zero we have to emit this token (because there is not any synonym match for it)
-			if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 0) {
-				this->temporaryBuffer.push_back(currentToken);
+			if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 0) {
+				this->emitBuffer.push_back(currentToken);
 				this->emitCurrentToken();
 				return true;
 			// if there is one synonym match for the new token
-			} else if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 1) {
+			} else if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 1) {
 				// gets the value of that key
 				std::string key = this->getKeyOf(currentToken);
 				// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
 				if (key.compare(currentToken) == 0) {
-					std::string value = this->getValueOf(currentToken);
-					std::vector<CharType> tempToken;
-					this->temporaryBuffer.push_back(value);
+					this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
+					this->emitBuffer.push_back(this->getValueOf(currentToken));/////@@@@@@@@@@@@ DONE
 					this->emitCurrentToken();
 					return true;
 				} else {
@@ -228,32 +236,46 @@ bool SynonymFilter::incrementToken() {
 			}
 		// if the buffer is not empty
 		} else {
-			std::string currentToken = "";
-			// converts the charType to string
-			charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
 			// this will append all previous tokens in the tokenBuffer
 			string previousTokens = "";
 			for (int i = 0; i < this->tokenBuffer.size(); i++) {
 				previousTokens = previousTokens + this->tokenBuffer[i] + " ";
 			}
+
+			int numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix = this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken);
 			// if there is NOT any match for the elements in the buffer that followed by current token
-			if (this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken) == 0) {
-				vector<string> tempResult = getSynonymOfBuffered();
+			if ( numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix == 0) {
+				vector<string> tempResult = getSynonymOfTokensInTokenBuffer();
 				previousTokens = "";
 				for (int ii = 0; ii < tempResult.size(); ii++) {
 					previousTokens += tempResult[ii] + " ";
 				}
 				this->tokenBuffer.clear();
-				if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 0) {
+
+				if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 0) {
 					previousTokens += currentToken;
-				} else if (this->numberOfKeysHavingTokenAsPrefix(currentToken) == 1) {
-					this->sharedToken->offset = this->sharedToken->offset
-							- currentToken.length() - 1;
-					previousTokens = previousTokens.substr(0,
-							previousTokens.length() - 1);
+				} else if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 1) {
+
+
+					///##################################
+					///################################## gotta test
+					///##################################
+
+					// gets the value of that key
+					std::string key = this->getKeyOf(currentToken);
+					// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
+					if (key.compare(currentToken) == 0) {
+						previousTokens += currentToken + " "; // this is for adding the original tokens.
+						previousTokens += this->getValueOf(currentToken);/////@@@@@@@@@@@@ DONE
+					} else {
+						this->tokenBuffer.push_back(currentToken);
+						previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
+					}
+
+//					this->sharedToken->offset = this->sharedToken->offset - currentToken.length() - 1;
+//					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 				} else {
-					previousTokens = previousTokens.substr(0,
-							previousTokens.length() - 1);
+					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 					this->tokenBuffer.push_back(currentToken);
 				}
 
@@ -261,7 +283,7 @@ bool SynonymFilter::incrementToken() {
 				this->emitCurrentToken();
 				return true;
 				// if there is ONE match for the elements in the buffer that followed by current token
-			} else if (this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken)	== 1) {
+			} else if (numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix == 1) {
 				/*
 				* Now we should check if they have a complete match OR
 				* again this combination of buffer and current token is a prefix of a key in the synonym or not
@@ -270,11 +292,13 @@ bool SynonymFilter::incrementToken() {
 				*/
 				std::string key = this->getKeyOf(previousTokens);
 				if (key.compare(previousTokens + currentToken) == 0) {
-					std::string value = this->getValueOf(key);
-					this->temporaryBuffer.push_back(value);
+					for (int i =0; i < tokenBuffer.size(); i++) {
+						this->emitBuffer.push_back(tokenBuffer[i]);
+					}
+					this->emitBuffer.push_back(currentToken);
+					this->emitBuffer.push_back(this->getValueOf(key));/////@@@@@@@@@@@@ DONE
 					this->emitCurrentToken();
 					this->tokenBuffer.clear();
-
 					return true;
 				} else {
 					this->tokenBuffer.push_back(currentToken);
