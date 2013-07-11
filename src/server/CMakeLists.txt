@@ -15,9 +15,9 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
-ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(${SRCH2_SERVER_NAME} bimapleSearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
-                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${BimapleInstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
                         ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}
                 )

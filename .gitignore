@@ -1,0 +1,57 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# mac os files
+## generic files to ignore
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
+
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+# build folder
+build/**
+*.idx
+*.*~
+thirdparty/event/bin/
+thirdparty/event/include/
+thirdparty/event/lib/
+thirdparty/event/libevent-2.0.18-stable/
+thirdparty/json/jsoncpp-src-0.5.0/

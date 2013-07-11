@@ -21,10 +21,10 @@
 #include <string>
 #include <sstream>
 
-#include "src/BimapleKafkaConsumer.h"
-#include "src/HTTPResponse.h"
-#include "src/BimapleServer.h"
-#include "svnversion.h"
+#include "src/wrapper/BimapleKafkaConsumer.h"
+#include "src/wrapper/HTTPResponse.h"
+#include "src/wrapper/BimapleServer.h"
+//#include "svnversion.h"
 
 #include <event2/http.h>
 
@@ -151,7 +151,7 @@ void getMemoryInfo(std::string &meminfo)
 	meminfo = mem_info.str();
 }*/
 
-void getVersionInfo(std::string &versioninfo)
+/*void getVersionInfo(std::string &versioninfo)
 {
     stringstream version_info;
     version_info
@@ -159,7 +159,7 @@ void getVersionInfo(std::string &versioninfo)
         << "}";
 
     versioninfo = version_info.str();
-}
+}*/
 
 /*
 // A handler for the ajax get message endpoint.
@@ -224,7 +224,7 @@ void cb_bminfo(evhttp_request *req, void *arg) {
     getMemoryInfo(meminfo);*/
 
     string versioninfo;
-    getVersionInfo(versioninfo);
+    //getVersionInfo(versioninfo);
 
 	HTTPResponse::infoCommand(req, server, versioninfo);
 }
@@ -311,7 +311,7 @@ void cb_busy_indexing(evhttp_request *req, void *arg)
 
 void printVersion()
 {
-	std::cout << "bimaple-search-server-version:" << SVNVERSION << std::endl;
+	std::cout << "bimaple-search-server-version:"; //<< SVNVERSION << std::endl;
 }
 
 int bindSocket(const char * hostname , int port) {
