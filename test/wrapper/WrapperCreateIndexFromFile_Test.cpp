@@ -3,10 +3,10 @@
 #include <iostream>
 
 #include <instantsearch/Indexer.h>
-#include "../src/JSONRecordParser.h"
-#include "../src/BimapleKafkaConsumer.h"
-#include "../../src/operation/IndexSearcherInternal.h"
-#include "../../src/operation/IndexerInternal.h"
+#include "wrapper/JSONRecordParser.h"
+#include "wrapper/BimapleKafkaConsumer.h"
+#include "operation/IndexSearcherInternal.h"
+#include "operation/IndexerInternal.h"
 
 namespace bmis = bimaple::instantsearch;
 namespace bmhttp = bimaple::httpwrapper;

@@ -24,7 +24,7 @@
 ########################################################################################################
 
 # Project name is not mandatory, but you should use it
-PROJECT(Srch2-Instant-Search)
+PROJECT(Bimaple-Instant-Search)
 
 # States that CMake required version must be >= 2.6
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
@@ -37,13 +37,13 @@ ENDIF(COMMAND cmake_policy)
 ##SET this option to "on", if you want detailed makefile execution
 SET(VERBOSE ON CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
-SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
+SET(BUILD_STATIC ON CACHE BOOL "Build Bimaple static library and binary. Default ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
-#SET(CMAKE_CXX_FLAGS_RELEASE "") 
+
 IF (BUILD_STATIC)
-   SET(CMAKE_EXE_LINKER_FLAGS -static)
-   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  # is this appliable for MAC too ?
+   SET(CMAKE_EXE_LINKER_FLAGS)
+   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 ENDIF (BUILD_STATIC) 
 
 #BUILD TYPE
@@ -72,18 +72,18 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 # Platform SpecIFic Compiler Flags
 #IF (CMAKE_COMPILER_IS_GNUCXX)
-    EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
-                  ARGS  -dumpversion
-                  OUTPUT_VARIABLE gcc_compiler_version)
-    MESSAGE(STATUS "C++ compiler version: ${gcc_compiler_version}") 
-    string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
     
-    if (_compiler_version_lt_4.6)
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
-    else()
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
-    endif()
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-implicit -Wno-sign-compare")
     SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+
+	#IF (DO_PROFILE)
+    #    MESSAGE(STATUS "PROFILE tags Turned ON")
+        #SET(GPROF_FLAGS "-lprofiler")
+        #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GPROF_FLAGS}" )
+        #SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GPROF_FLAGS}" )
+    #ELSE()
+    #    MESSAGE(STATUS "PROFILE tags Turned OFF")        
+    #ENDIF()
     
 	IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
@@ -108,6 +108,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     ## CHENLI
     IF (BUILD_STATIC)
       SET(Boost_USE_STATIC_LIBS ON)
+      SET(CMAKE_REQUIRED_LIBRARIES "/usr/lib/libdl.dylib" ${CMAKE_REQUIRED_LIBRARIES})
     ENDIF ()
 	
 	IF (BUILD_RELEASE)
@@ -127,13 +128,13 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 	
 	# Finally the rt, dl and z library
-	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
-	FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
-	FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+	#FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+	#FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
+	#FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
 	
-	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
-	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
-	MESSAGE(STATUS "libz = ${z_LIBRARY}")	
+	#MESSAGE(STATUS "librt = ${rt_LIBRARY}")
+	#MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
+	#MESSAGE(STATUS "libz = ${z_LIBRARY}")	
 
 	IF (BUILD64BIT)
 		MESSAGE(STATUS "Buildling for 64 bit platform")
@@ -145,7 +146,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		LINK_DIRECTORIES("/usr/lib/")
 	ENDIF ()
 
-	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES}) #${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
 
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
@@ -154,9 +155,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	# Building the wrapper layer in static build mode.
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
-		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
+		SET(BimapleInstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libbimaple_instantsearch.a)
 	ELSE (BUILD_STATIC)
-		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+		SET(BimapleInstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libbimaple_instantsearch.so)
 	ENDIF()
 
 	ADD_SUBDIRECTORY(src/wrapper)
@@ -165,16 +166,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	IF (BUILD_TEST)
 		INCLUDE (CTest)
 		ADD_SUBDIRECTORY(test)
-		ADD_DEPENDENCIES(build_integration_test srch2_core)
-		ADD_DEPENDENCIES(build_unit_test srch2_core) 
+		ADD_DEPENDENCIES(build_integration_test bimaple_lib)
+		ADD_DEPENDENCIES(build_unit_test bimaple_lib) 
 	ENDIF()
 		
 	#ADD_SUBDIRECTORY(examples)
-	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
-	#ADD_DEPENDENCIES(examples_python srch2_lib)
+	#ADD_DEPENDENCIES(examples_c++ bimaple_lib)
+	#ADD_DEPENDENCIES(examples_python bimaple_lib)
 	#ADD_SUBDIRECTORY(docs)
 	#ADD_SUBDIRECTORY(swig)
-	#ADD_DEPENDENCIES(build_swig srch2_lib)
+	#ADD_DEPENDENCIES(build_swig bimaple_lib)
 	
 #ENDIF()
 
@@ -199,22 +200,22 @@ INSTALL(FILES ${CMAKE_INSTALL_examples_c++_FILE} DESTINATION "examples/c++" RENA
 FILE(GLOB README_FILE "cmake/install/README.txt" )
 INSTALL(FILES ${README_FILE} DESTINATION .)
 
-FILE(GLOB license_key_FILE "cmake/install/srch2_license_key.txt")
+FILE(GLOB license_key_FILE "cmake/install/bimaple_license_key.txt")
 INSTALL(FILES ${license_key_FILE} DESTINATION "license")
 
 FILE(GLOB license_docs_FILE "cmake/install/license_docs/*[^_p].htm" )
 INSTALL(FILES ${license_docs_FILE} DESTINATION "license" )
-INSTALL(FILES ${license_docs_FILE} DESTINATION "docs/Srch2-API" )
+INSTALL(FILES ${license_docs_FILE} DESTINATION "docs/Bimaple-API" )
 
 # INSTALL examples
-FILE(GLOB SRCH2_c++_EXAMPLE_FILES "examples/c++/[^_]*.cpp")
-INSTALL(FILES ${SRCH2_c++_EXAMPLE_FILES} DESTINATION "examples/c++")
+FILE(GLOB BIMAPLE_c++_EXAMPLE_FILES "examples/c++/[^_]*.cpp")
+INSTALL(FILES ${BIMAPLE_c++_EXAMPLE_FILES} DESTINATION "examples/c++")
 
 FILE( GLOB FRONTEND_FILES "${CMAKE_SOURCE_DIR}/examples/c++/SearchFCGI-frontend/index.*")
 INSTALL(FILES ${FRONTEND_FILES} DESTINATION "examples/c++/SearchFCGI-frontend/" )
 
-FILE(GLOB SRCH2_python_EXAMPLE_FILES "examples/python/[^_]*.py" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_swigPYTHON_wrap.cxx" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_python.py")
-INSTALL(FILES ${SRCH2_python_EXAMPLE_FILES} DESTINATION "examples/python")
+FILE(GLOB BIMAPLE_python_EXAMPLE_FILES "examples/python/[^_]*.py" "${CMAKE_BINARY_DIR}/swig/bimaple_instantsearch_swigPYTHON_wrap.cxx" "${CMAKE_BINARY_DIR}/swig/bimaple_instantsearch_python.py")
+INSTALL(FILES ${BIMAPLE_python_EXAMPLE_FILES} DESTINATION "examples/python")
 
 FILE(GLOB EMPTY_TEST_FOLDER "examples/c++/testIndexDirectory/test.txt")
 INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/c++/testIndexDirectory")
@@ -227,16 +228,16 @@ SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$
 SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_IGNORE_FILES})
 SET(CPACK_SOURCE_GENERATOR TGZ ZIP)
 SET(CPACK_SOURCE_TOPLEVEL_TAG "")
-SET(CPACK_PACKAGE_NAME "srch2-instantsearch")
+SET(CPACK_PACKAGE_NAME "bimaple-instantsearch")
 SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant search library")
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.srch2.com")
-SET(CPACK_PACKAGE_CONTACT "contact@srch2.com ")
-SET(CPACK_PACKAGE_VENDOR "Srch2 Technology Inc")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.bimaple.com")
+SET(CPACK_PACKAGE_CONTACT "contact@bimaple.com ")
+SET(CPACK_PACKAGE_VENDOR "Bimaple Technology Inc")
 SET(CPACK_PACKAGE_VERSION_MAJOR "1")
 SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 SET(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Srch2")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Bimaple")
 
 INCLUDE (InstallRequiredSystemLibraries)
 #SET (CPACK_RESOURCE_FILE_LICENSE  "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
@@ -248,4 +249,4 @@ INCLUDE(CPack)
 
 # enable dashboard scripting
 include(Dart)
-SET (CTEST_PROJECT_NAME "Srch2 - Testing Framework")
+SET (CTEST_PROJECT_NAME "Bimaple - Testing Framework")

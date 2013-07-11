@@ -14,7 +14,7 @@
 #include <instantsearch/IndexSearcher.h>
 #include <instantsearch/GlobalCache.h>
 
-#include "../test/integration/MapSearchTestHelper.h"
+#include "../integration/MapSearchTestHelper.h"
 #include "operation/TermVirtualList.h"
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
