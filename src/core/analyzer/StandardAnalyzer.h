@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __STANDARDANALYZER_H__
-#define __STANDARDANALYZER_H__
+#ifndef __CORE_ANALYZER__STANDARDANALYZER_H__
+#define __CORE_ANALYZER__STANDARDANALYZER_H__
 
 #include <vector>
 #include <instantsearch/Analyzer.h>
@@ -48,4 +48,4 @@ public:
 
 }
 }
-#endif /* __STANDARDANALYZER_H__*/
+#endif /* __CORE_ANALYZER__STANDARDANALYZER_H__*/

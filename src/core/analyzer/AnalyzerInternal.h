@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CORE_ANALYZER__ANALYZER_INTERNAL_H__
-#define CORE_ANALYZER__ANALYZER_INTERNAL_H__
+#ifndef __CORE_ANALYZER__ANALYZER_INTERNAL_H__
+#define __CORE_ANALYZER__ANALYZER_INTERNAL_H__
 
 #include <vector>
 #include <map>
@@ -174,4 +174,4 @@ protected:
 
 }
 }
-#endif /* CORE_ANALYZER__ANALYZER_INTERNAL_H__ */
+#endif /* __CORE_ANALYZER__ANALYZER_INTERNAL_H__ */

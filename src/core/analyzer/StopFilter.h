@@ -5,8 +5,8 @@
  *      Author: iman
  */
 
-#ifndef STOPFILTER_H_
-#define STOPFILTER_H_
+#ifndef __CORE_ANALYZER__STOPFILTER_H__
+#define __CORE_ANALYZER__STOPFILTER_H__
 
 #include <iostream>
 #include <string>
@@ -63,4 +63,4 @@ private:
 }
 }
 
-#endif /* STOPFILTER_H_ */
+#endif /* __CORE_ANALYZER__STOPFILTER_H__ */

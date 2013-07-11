@@ -7,8 +7,8 @@
  *      Author: iman
  */
 
-#ifndef SYNONYMFILTER_H_ANALYZER
-#define SYNONYMFILTER_H_ANALYZER
+#ifndef __CORE_ANALYZER__SYNONYMFILTER_H_ANALYZER__
+#define __CORE_ANALYZER__SYNONYMFILTER_H_ANALYZER__
 
 #include <string>
 #include <vector>
@@ -129,4 +129,4 @@ private:
 };
 
 }}
-#endif /* SYNONYMFILTER_H_ANALYZER */
+#endif /* __CORE_ANALYZER__SYNONYMFILTER_H_ANALYZER__ */

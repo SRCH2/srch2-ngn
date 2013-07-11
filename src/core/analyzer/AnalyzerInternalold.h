@@ -17,8 +17,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef __ANALYZERINTERNAL_H__
-#define __ANALYZERINTERNAL_H__
+#ifndef __CORE_ANALYZER__ANALYZERINTERNAL_H__
+#define __CORE_ANALYZER__ANALYZERINTERNAL_H__
 
 #include <instantsearch/Analyzer.h>
 #include "analyzer/Normalizer.h"
@@ -163,4 +163,4 @@ private:
 
 }}
 
-#endif /* __ANALYZERINTERNAL_H__ */
+#endif /* __CORE_ANALYZER__ANALYZERINTERNAL_H__ */
