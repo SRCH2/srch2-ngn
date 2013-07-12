@@ -27,7 +27,9 @@ namespace instantsearch {
 Analyzer *Analyzer::create( const StemmerNormalizerFlagType &stemmerFlag,
 							const std::string &stemmerFilePath,
 							const std::string &stopWordFilePath,
-							const std::string &synonymFilePath, const std::string &delimiters,
+							const std::string &synonymFilePath,
+							const SynonymKeepOriginFlag &synonymKeepOriginFlag,
+							const std::string &delimiters,
 							const AnalyzerType &analyzerType) {
 
 	switch (analyzerType) {
@@ -36,12 +38,14 @@ Analyzer *Analyzer::create( const StemmerNormalizerFlagType &stemmerFlag,
 								  stemmerFilePath,
 							   	  stopWordFilePath,
 								  synonymFilePath,
+								  synonymKeepOriginFlag,
 								  delimiters);
 	default:
 		return new StandardAnalyzer(stemmerFlag,
 									stemmerFilePath,
 									stopWordFilePath,
 									synonymFilePath,
+									synonymKeepOriginFlag,
 									delimiters);
 	}
 }

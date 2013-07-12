@@ -96,6 +96,7 @@ Srch2ServerConf::Srch2ServerConf(int argc,
 				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
 				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
 				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
+				("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
 				("stemmer-file", po::value<string>(), "Stemmer File")
 				("install-directory", po::value<string>(), "Install Directory")
 				;
@@ -509,18 +510,19 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 	}
 
 	if (vm.count("default-stemmer-flag")) {
-		string temp = vm["default-stemmer-flag"].as<string>();
-		if (temp.compare("1") == 0){
+		int temp = vm["default-stemmer-flag"].as<int>();
+		if (temp == 1){
 			stemmerFlag = true;
-		} else {
+		} else if (temp == 0){
 			stemmerFlag = false;
-			if (temp.compare("0") != 0){ // if the is not '0', it writes an error.
-				cerr << "default-stemmer-flag only gets '0' or '1'"
+		} else {
+				cerr << "default-stemmer-flag only accepts '0' or '1'"
 						<< endl
 						<< "   '0' for disabling the stemmer" << endl
 						<< "   '1' for enabling the stemmer" << endl;
-			}
 		}
+	} else {
+		stemmerFlag = false;
 	}
 
 	if (vm.count("stemmer-file")) {
@@ -545,6 +547,22 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		synonymFilterFilePath = vm["synonym-filter-file-path"].as<string>();
 	} else {
 		synonymFilterFilePath = "";
+	}
+
+	if (vm.count("default-synonym-keep-origin-flag")) {
+		int temp = vm["default-synonym-keep-origin-flag"].as<int>();
+		if (temp == 1){
+			synonymKeepOrigFlag = true;
+		} else if (temp == 0){
+			synonymKeepOrigFlag = false;
+		} else {
+				cerr << "default-synonym-keep-origin-flag only accepts '0' or '1'"
+						<< endl
+						<< "   '0' for not keeping the original word" << endl
+						<< "   '1' for keeping the original word too" << endl;
+		}
+	} else {
+		synonymKeepOrigFlag = true;
 	}
 
 	if (vm.count("default-query-term-type")) {
@@ -775,6 +793,10 @@ string Srch2ServerConf::getStemmerFile() const {
 
 string Srch2ServerConf::getSynonymFilePath() const {
 	return synonymFilterFilePath;
+}
+
+bool Srch2ServerConf::getSynonymKeepOrigFlag() const {
+	return synonymKeepOrigFlag;
 }
 
 string Srch2ServerConf::getStopFilePath() const {

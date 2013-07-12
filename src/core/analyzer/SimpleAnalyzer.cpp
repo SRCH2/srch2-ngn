@@ -42,7 +42,7 @@ TokenOperator * SimpleAnalyzer::createOperatorFlow() {
 	if (this->synonymFilePath.compare("") != 0) {
 		struct stat stResult;
 		if(stat(this->synonymFilePath.c_str(), &stResult) == 0) {
-			tokenOperator = new SynonymFilter(tokenOperator, this->synonymFilePath);
+			tokenOperator = new SynonymFilter(tokenOperator, this->synonymFilePath, this->synonymKeepOriginFlag);
 		} else {
 			cerr << "The synonym file (path) that is provided is not valid. Please provide a valid file path." << endl;
 		}

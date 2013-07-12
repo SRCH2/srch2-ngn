@@ -38,10 +38,12 @@ namespace srch2 {
 namespace instantsearch {
 
 SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
-		const std::string &synonymFilterFilePath) :
+		const std::string &synonymFilterFilePath,
+		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
 		TokenFilter(tokenOperator) {
 	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
 	this->createSynonymMap(synonymFilterFilePath); // construct the synoymMap
+	this->keepOriginFlag = synonymKeepOriginFlag;
 }
 
 void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
@@ -145,10 +147,12 @@ vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 			tempToken = tempToken.substr(0, tempToken.length() - 1);
 			std::map<string, string>::const_iterator pos = this->synonymMap.find(tempToken);
 			if (pos != this->synonymMap.end()) {
-				for (int k = 0; k <=i; k++) {
-					result.push_back(this->tokenBuffer[k]);
+				if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
+					for (int k = 0; k <=i; k++) {
+						result.push_back(this->tokenBuffer[k]);
+					}
 				}
-				result.push_back(this->getValueOf(tempToken));/////@@@@@@@@@@@@ DONE
+				result.push_back(this->getValueOf(tempToken));
 				for (int k = i; k >= 0; k--) {
 					this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
 					flag = true;
@@ -223,8 +227,10 @@ bool SynonymFilter::incrementToken() {
 				std::string key = this->getKeyOf(currentToken);
 				// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
 				if (key.compare(currentToken) == 0) {
-					this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
-					this->emitBuffer.push_back(this->getValueOf(currentToken));/////@@@@@@@@@@@@ DONE
+					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
+						this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
+					}
+					this->emitBuffer.push_back(this->getValueOf(currentToken));
 					this->emitCurrentToken();
 					return true;
 				} else {
@@ -255,25 +261,18 @@ bool SynonymFilter::incrementToken() {
 				if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 0) {
 					previousTokens += currentToken;
 				} else if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 1) {
-
-
-					///##################################
-					///################################## gotta test
-					///##################################
-
 					// gets the value of that key
 					std::string key = this->getKeyOf(currentToken);
 					// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
 					if (key.compare(currentToken) == 0) {
-						previousTokens += currentToken + " "; // this is for adding the original tokens.
-						previousTokens += this->getValueOf(currentToken);/////@@@@@@@@@@@@ DONE
+						if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
+							previousTokens += currentToken + " "; // this is for adding the original tokens.
+						}
+						previousTokens += this->getValueOf(currentToken);
 					} else {
 						this->tokenBuffer.push_back(currentToken);
 						previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 					}
-
-//					this->sharedToken->offset = this->sharedToken->offset - currentToken.length() - 1;
-//					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 				} else {
 					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 					this->tokenBuffer.push_back(currentToken);
@@ -292,11 +291,13 @@ bool SynonymFilter::incrementToken() {
 				*/
 				std::string key = this->getKeyOf(previousTokens);
 				if (key.compare(previousTokens + currentToken) == 0) {
-					for (int i =0; i < tokenBuffer.size(); i++) {
-						this->emitBuffer.push_back(tokenBuffer[i]);
+					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
+						for (int i =0; i < tokenBuffer.size(); i++) {
+							this->emitBuffer.push_back(tokenBuffer[i]);
+						}
+						this->emitBuffer.push_back(currentToken);
 					}
-					this->emitBuffer.push_back(currentToken);
-					this->emitBuffer.push_back(this->getValueOf(key));/////@@@@@@@@@@@@ DONE
+					this->emitBuffer.push_back(this->getValueOf(key));
 					this->emitCurrentToken();
 					this->tokenBuffer.clear();
 					return true;

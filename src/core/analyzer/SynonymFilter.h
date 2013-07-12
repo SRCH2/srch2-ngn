@@ -16,6 +16,9 @@
 
 #include "TokenOperator.h"
 #include "TokenFilter.h"
+#include "instantsearch/Analyzer.h"
+
+
 
 using namespace std;
 
@@ -28,7 +31,9 @@ public:
 	 * Constructor of synonym filter.
 	 * Sets sharedToken.
 	 */
-	SynonymFilter(TokenOperator *tokenOperator,	const std::string &synonymFilterFilePath);
+	SynonymFilter(TokenOperator *tokenOperator,
+			const std::string &synonymFilterFilePath,
+			const SynonymKeepOriginFlag &synonymKeepOriginFlag);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
@@ -39,6 +44,11 @@ public:
 	virtual ~SynonymFilter();
 
 private:
+
+	/*
+	 * It is about keeping the original keyword or not
+	 */
+	srch2::instantsearch::SynonymKeepOriginFlag keepOriginFlag;
 
 	const std::string synonymDelimiter = "=>";
 
@@ -125,6 +135,7 @@ private:
 		ar & synonymMap;
 		ar & emitBuffer;
 		ar & tokenBuffer;
+		ar & keepOriginFlag;
 	}
 };
 

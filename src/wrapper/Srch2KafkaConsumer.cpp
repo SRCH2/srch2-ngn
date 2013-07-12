@@ -7,10 +7,8 @@
 using namespace srch2::instantsearch;
 namespace srch2is = srch2::instantsearch;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
 namespace srch2http = srch2::httpwrapper;
 
@@ -48,6 +46,14 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 			} else {
 				stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
 			}
+			// This flag shows if we need to keep the origin word or not.
+			SynonymKeepOriginFlag synonymKeepOriginFlag;
+			// gets the stem flag and set the stemType
+			if (indexDataContainerConf->getSynonymKeepOrigFlag()) {
+				synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+			} else {
+				synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+			}
 
 			// append the stemmer file to the install direcrtory
 			std::string stemmerFilterFilePath = indexDataContainerConf->getInstallDir() + indexDataContainerConf->getStemmerFile();
@@ -61,6 +67,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 					stemmerFilterFilePath,
 					stopFilterFilePath,
 					synonymFilterFilePath,
+					synonymKeepOriginFlag,
 					indexDataContainerConf->getRecordAllowedSpecialCharacters());
 
 			// Create a schema to the data source definition in the Srch2ServerConf

@@ -31,8 +31,8 @@ namespace instantsearch {
 
 typedef enum {
 	// there is no numbering for this enum. By default the numbers start from 0
-	DISABLE_STEMMER_NORMALIZER,   // Disables stemming
-	ENABLE_STEMMER_NORMALIZER,   // Enables stemming
+	DISABLE_STEMMER_NORMALIZER, // Disables stemming
+	ENABLE_STEMMER_NORMALIZER, // Enables stemming
 	ONLY_NORMALIZER
 } StemmerNormalizerFlagType;
 
@@ -40,7 +40,13 @@ typedef enum {
 	DICTIONARY_PORTER_STEMMER
 // We can add other kinds of stemmer here, like MIRROR_STEMMER
 
-} Stemmer_Type; // TODO: I should remove the '_' from the name, (it is temporary)
+} StemmerType; // TODO: I should remove the '_' from the name, (it is temporary)
+
+typedef enum {
+	SYNONYM_KEEP_ORIGIN, // Disables stemming
+	SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
+} SynonymKeepOriginFlag;
+
 
 typedef enum {
 	STANDARD_ANALYZER,    // StandardAnalyzer
@@ -63,6 +69,7 @@ public:
 			const std::string &stemmerFilePath,
 			const std::string &stopWordFilePath,
 			const std::string &synonymFilePath,
+			const SynonymKeepOriginFlag &synonymKeepOriginFlag,
 			const std::string &delimiters,
 			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
 

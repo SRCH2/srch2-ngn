@@ -208,4 +208,34 @@ index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
 #error-log-file=/path/to/log/
 
 
+# install directory
+# this address is auto-generated
+install-directory=.
+
+# Enable/Disabling the stemmer
+# The vali values are:
+# 0: To disable the stemmer
+# 1: To enable the stemmer
+default-stemmer-flag=0
+
+# stemmer dictionary file
+stemmer-file=StemmerHeadwords.txt
+
+# Enable/Disabling the StopWord Filter
+# The vali values are:
+# IGNORE: To disable the StopWord Filter
+# path-to-the-stop-words-file: To enable the StopWord Filter
+stop-filter-file-path=IGNORE
+
+# Enable/Disabling the Synonym Filter
+# The vali values are:
+# IGNORE: To disable the Synonym Filter
+# path-to-the-synonym-file: To enable the Synonym Filter
+synonym-filter-file-path=IGNORE
+
+# Replace the synonym with original words or keep the orginal words too
+# The vali values are:
+# 0: Do not keep the original words
+# 1: Keep the original words
+default-synonym-keep-origin-flag=1
 

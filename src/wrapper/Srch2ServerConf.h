@@ -89,6 +89,7 @@ private:
 	bool stemmerFlag;
 	std::string stemmerFile;
 	std::string synonymFilterFilePath;
+	bool synonymKeepOrigFlag;
 	std::string stopFilterFilePath;
 	DataSourceType dataSourceType;
 	IndexCreateOrLoad indexCreateOrLoad;
@@ -146,9 +147,10 @@ public:
 	bool getQueryTermType() const;
 	bool getStemmerFlag() const;
 	string getSynonymFilePath() const;
-	string getStopFilePath() const;
-	string getStemmerFile() const;// stemmer file
-	string getInstallDir() const;// install Directory
+	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
+	string getStopFilePath() const; // StopFilter File Path
+	string getStemmerFile() const; // stemmer file
+	string getInstallDir() const; // install Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;

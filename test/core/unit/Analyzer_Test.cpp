@@ -103,15 +103,76 @@ void testStandardAnalyzer()
 	delete standardAnalyzer;
 }
 
+void testLowerCase() {
+	bool printFlag = true;
+
+	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
+			DISABLE_STEMMER_NORMALIZER,
+			"",
+			"",
+			"",
+			SYNONYM_DONOT_KEEP_ORIGIN);
+	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+
+	string src = "Here IS A Set OF some inStructIOns fOR WHo has the bOOks";
+	simpleAnlyzer->loadData(src);
+	// to print out the results
+	vector<string> originalWords;
+	originalWords.push_back("Here");
+	originalWords.push_back("IS");
+	originalWords.push_back("A");
+	originalWords.push_back("Set");
+	originalWords.push_back("OF");
+	originalWords.push_back("some");
+	originalWords.push_back("inStructIOns");
+	originalWords.push_back("fOR");
+	originalWords.push_back("WHo");
+	originalWords.push_back("has");
+	originalWords.push_back("the");
+	originalWords.push_back("bOOks");
+
+	vector<string> vectorString;
+	vectorString.push_back("here");
+	vectorString.push_back("is");
+	vectorString.push_back("a");
+	vectorString.push_back("set");
+	vectorString.push_back("of");
+	vectorString.push_back("some");
+	vectorString.push_back("instructions");
+	vectorString.push_back("for");
+	vectorString.push_back("who");
+	vectorString.push_back("has");
+	vectorString.push_back("the");
+	vectorString.push_back("books");
+
+	int i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
+					<< endl;
+		}
+		i++;
+	}
+
+	// deleting the objects
+	delete tokenOperator;
+	delete simpleAnlyzer;
+}
+
+
 void testStemmerFilter() {
-
-
 	// if it is true, it prints the results of the test, else id doesn't
 	bool printFlag = true;
 
 	// when you are running ctest you should be in the build directory
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
-			ENABLE_STEMMER_NORMALIZER, getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt", "", "");
+			ENABLE_STEMMER_NORMALIZER,
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+			"", "", SYNONYM_DONOT_KEEP_ORIGIN );
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
 	if (printFlag) {
@@ -191,7 +252,7 @@ void testStemmerFilter() {
 		cout << endl << endl << "TEST 3: Stem English & Non-English Words"
 				<< endl;
 	}
-	// TEST 2 (stem English words)
+	// TEST 3 (stem non-English words)
 	src = "meanings meanings2 of Befall and pencils丽 سلام following";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -238,12 +299,13 @@ void testStopFilter() {
 	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
-			ENABLE_STEMMER_NORMALIZER,getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-			"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/stopWordsFile.txt", "", "");
+			ENABLE_STEMMER_NORMALIZER,
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+			"",
+			SYNONYM_DONOT_KEEP_ORIGIN);
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
-	// TEST 1 (no stemming)
-	// input string
 	string src = "Here IS A Set OF some instructions for who has the books";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -296,16 +358,21 @@ void testSynonymFilter() {
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
 			ENABLE_STEMMER_NORMALIZER,
 			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-			"",
-			"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+			SYNONYM_KEEP_ORIGIN);
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
 	// TEST 1
 	// input string
+
 	string src = "bill is in new york";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
 
+	if (printFlag) {
+		cout << "## Test 1:  " << src << endl;
+	}
 	vector<string> vectorString;
 	vectorString.push_back("bill");
 	vectorString.push_back("william"); // bill
@@ -332,13 +399,16 @@ void testSynonymFilter() {
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
 				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				"",
-				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new wal new wal mart new york new new york city";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-
+	if (printFlag) {
+		cout << "## Test 2:  " << src << endl;
+	}
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("wal");
@@ -372,13 +442,16 @@ void testSynonymFilter() {
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
 				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				"",
-				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new bill bring your own bill bring your own beverage your own beverage bring";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-
+	if (printFlag) {
+		cout << "## Test 3:  " << src << endl;
+	}
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("bill");
@@ -418,12 +491,15 @@ void testSynonymFilter() {
 				ENABLE_STEMMER_NORMALIZER,
 				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
-				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "a b c d e f g a b c d e f t a b c d e f";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-
+	if (printFlag) {
+		cout << "## Test 4:  " << src << endl;
+	}
 	vectorString.clear();
 	vectorString.push_back("a");
 	vectorString.push_back("b");
@@ -469,11 +545,16 @@ void testSynonymFilter() {
 				ENABLE_STEMMER_NORMALIZER,
 				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
 				"",
-				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
+
+	if (printFlag) {
+		cout << "## Test 5:  " << src << endl;
+	}
 
 	vectorString.clear();
 	vectorString.push_back("a");
@@ -533,12 +614,17 @@ void testSynonymFilter() {
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
 				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				"",
-				"/home/iman/srch2/bimaple-root/codebase/contra/branches/iman/test/core/unit/test_data/analyzer/synonymFile.txt");
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "bill";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
+
+	if (printFlag) {
+		cout << "## Test 6:  " << src << endl;
+	}
 
 	vectorString.clear();
 	vectorString.push_back("bill");
@@ -556,6 +642,154 @@ void testSynonymFilter() {
 		i++;
 	}
 
+	simpleAnlyzer = new SimpleAnalyzer(
+				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_DONOT_KEEP_ORIGIN);
+	tokenOperator = simpleAnlyzer->createOperatorFlow();
+
+	// TEST 7
+	// input string
+	src = "bill is in new york";
+	simpleAnlyzer->loadData(src);
+	// to print out the results
+	if (printFlag) {
+		cout << "## Test 7:  " << src << endl;
+	}
+
+
+	vectorString.clear();
+	vectorString.push_back("william"); // bill
+	vectorString.push_back("is");
+	vectorString.push_back("in");
+	vectorString.push_back("ny"); // new york
+
+	i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << "+++++++ SynonymFilter:  " << src  << endl;
+		}
+		i++;
+	}
+
+	// TEST 8
+	// input string
+	simpleAnlyzer = new SimpleAnalyzer(
+				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_DONOT_KEEP_ORIGIN);
+	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	src = "new wal new wal mart new york new new york city";
+	simpleAnlyzer->loadData(src);
+	// to print out the results
+	if (printFlag) {
+		cout << "## Test 8:  " << src << endl;
+	}
+
+	vectorString.clear();
+	vectorString.push_back("new");
+	vectorString.push_back("wal");
+	vectorString.push_back("new");
+	vectorString.push_back("walmart"); // wal mart
+	vectorString.push_back("ny"); // new york
+	vectorString.push_back("new");
+	vectorString.push_back("nyc"); // new york city
+
+	i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << "------- SynonymFilter:  " << src  << endl;
+		}
+		i++;
+	}
+
+	// TEST 9
+	simpleAnlyzer = new SimpleAnalyzer(
+				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_DONOT_KEEP_ORIGIN);
+	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	src = "new bill bring your own bill bring your own beverage your own beverage bring";
+	simpleAnlyzer->loadData(src);
+	// to print out the results
+	if (printFlag) {
+		cout << "## Test 9:  " << src << endl;
+	}
+
+	vectorString.clear();
+	vectorString.push_back("new");
+	vectorString.push_back("william");
+	vectorString.push_back("bring");
+	vectorString.push_back("your");
+	vectorString.push_back("own");
+	vectorString.push_back("william");
+	vectorString.push_back("byob");
+	vectorString.push_back("yob");
+	vectorString.push_back("bring");
+
+	i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << "+++++++ SynonymFilter:  " << src  << endl;
+		}
+		i++;
+	}
+
+
+	// TEST 10
+	simpleAnlyzer = new SimpleAnalyzer(
+				ENABLE_STEMMER_NORMALIZER,
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				"",
+				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				SYNONYM_DONOT_KEEP_ORIGIN);
+	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	src = "a b c d e f g a b c d e f t a b c d e f";
+	simpleAnlyzer->loadData(src);
+	if (printFlag) {
+		cout << "## Test 10:  " << src << endl;
+	}
+
+	vectorString.clear();
+	vectorString.push_back("x");
+	vectorString.push_back("y");
+	vectorString.push_back("z");
+	vectorString.push_back("t");
+	vectorString.push_back("y");
+	vectorString.push_back("z");
+
+	i = 0;
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		charTypeVectorToUtf8String(charVector, src);
+		ASSERT(vectorString[i] == src);
+		if (printFlag) {
+			cout << "------- SynonymFilter:  " << src  << endl;
+		}
+		i++;
+	}
+
+
+
 	// deleting the objects
 	delete tokenOperator;
 	delete simpleAnlyzer;
@@ -568,6 +802,9 @@ int main() {
 
 	testStandardAnalyzer();
 	cout << "StandardAnalyzer test passed" << endl;
+
+	testStemmerFilter();
+	cout << "LowerCase test passed" << endl;
 
 	testStemmerFilter();
 	cout << "StemmerFilter test passed" << endl;

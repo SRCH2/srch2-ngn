@@ -154,6 +154,7 @@ protected:
 	std::string stopWordFilePath;
 	std::string synonymFilePath;
 	std::string stemmerFilePath;
+	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
 	boost::regex disallowedCharactersRegex;
 	boost::regex multipleSpaceRegex;
@@ -167,6 +168,7 @@ protected:
 		ar & analyzerType;
 		ar & stopWordFilePath;
 		ar & synonymFilePath;
+		ar & synonymKeepOriginFlag;
 		ar & stemmerFilePath;
 	}
 
