@@ -22,6 +22,10 @@ using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
+int giveMe1024(){
+	return 1024;
+}
+
 // Read data from file, build the index, and save the index to disk
 void buildIndex(string data_file, string index_dir)
 {

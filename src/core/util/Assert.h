@@ -20,7 +20,7 @@
 #ifndef ASSERT_H_
 #define ASSERT_H_
 
-#include <execinfo.h>
+//#include <execinfo.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -32,20 +32,20 @@ namespace instantsearch
 
 inline void print_trace (void)
 {
-    void *array[10];
-    size_t size;
-    char **strings;
-    size_t i;
-
-    size = backtrace (array, 10);
-    strings = backtrace_symbols (array, size);
-
-    printf ("Obtained %d stack frames.\n", (int) size);
-
-    for (i = 0; i < size; i++)
-        printf ("%s\n", strings[i]);
-
-    free (strings);
+//    void *array[10];
+//    size_t size;
+//    char **strings;
+//    size_t i;
+//
+//    size = backtrace (array, 10);
+//    strings = backtrace_symbols (array, size);
+//
+//    printf ("Obtained %d stack frames.\n", (int) size);
+//
+//    for (i = 0; i < size; i++)
+//        printf ("%s\n", strings[i]);
+//
+//    free (strings);
 }
 
 #ifndef ASSERT_LEVEL

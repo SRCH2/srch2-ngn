@@ -40,7 +40,7 @@ char* Logger::formatLogString(char* buffer, const char* prefix) {
 
 void Logger::writeToFile(FILE* out, const char* str) {
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_DEBUG, prefix, str);
+	__android_log_print(ANDROID_LOG_DEBUG,"", str);
 #else
 	fprintf(out, "%s\n", str);
 #endif

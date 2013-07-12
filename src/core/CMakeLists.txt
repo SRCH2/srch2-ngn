@@ -6,9 +6,10 @@ FILE(GLOB SRCH2_LIB_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "index/*.cp
  
 # additional includes
 INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES( /usr/lib/
-				  /usr/lib/x86_64-linux-gnu/
-				  /usr/lib64/)
+LINK_DIRECTORIES( /home/jianfeng/software/android-toolchain/user/lib
+    /usr/lib/
+	/usr/lib/x86_64-linux-gnu/
+	/usr/lib64/)
 
 #CHENLI: generating a shared library if needed.
 IF (BUILD_STATIC)
@@ -18,7 +19,7 @@ ELSE (BUILD_STATIC)
 ENDIF()
 
 SET_TARGET_PROPERTIES(srch2_core PROPERTIES COMPILE_FLAGS -fPIC)
-TARGET_LINK_LIBRARIES(srch2_core ${CMAKE_REQUIRED_LIBRARIES})				
+TARGET_LINK_LIBRARIES(srch2_core ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES})				
 
 # install
 #INSTALL(TARGETS srch2_core DESTINATION lib)

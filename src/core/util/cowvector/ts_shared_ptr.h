@@ -33,7 +33,7 @@ namespace instantsearch
 template <class T>
 class ts_shared_ptr {
 private:
-    mutable pthread_spinlock_t m_spinlock;
+    mutable pthread_mutex_t m_spinlock;
     boost::shared_ptr<T> m_ptr;
 
     friend class boost::serialization::access;
@@ -46,26 +46,26 @@ private:
 public:
     ts_shared_ptr()
     {
-        pthread_spin_init(&m_spinlock, 0);
+    	pthread_mutex_init(&m_spinlock, 0);
     }
 
     ~ts_shared_ptr()
     {
-        pthread_spin_destroy(&m_spinlock);
+    	pthread_mutex_destroy(&m_spinlock);
     }
 
     void reset(T *optr)
     {
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         m_ptr.reset(optr);
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
     }
 
     ts_shared_ptr<T>& operator =(const boost::shared_ptr<T>& optr)
     {
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         m_ptr = optr;
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
         return *this;
     }
 
@@ -73,43 +73,43 @@ public:
     {
         boost::shared_ptr<T> p;
         optr.get(p);
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         m_ptr = p;
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
         return *this;
     }
 
     void get(boost::shared_ptr<T>& optr) const
     {
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         optr = m_ptr;
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
     }
 
     T *get() const
     {
         T* tmp;
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         tmp = m_ptr.get();
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
         return tmp;
     }
 
     T* operator *() const
     {
         T* tmp;
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         tmp =  m_ptr.get();
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
         return tmp;
     }
 
     T *operator ->() const
     {
         T* tmp;
-        pthread_spin_lock(&m_spinlock);
+        pthread_mutex_lock(&m_spinlock);
         tmp = m_ptr.get();
-        pthread_spin_unlock(&m_spinlock);
+        pthread_mutex_unlock(&m_spinlock);
         return tmp;
     }
 };

@@ -125,20 +125,20 @@ class ReadCounter
     public:
         ReadCounter(uint64_t counter = 0)
         {
-            pthread_spin_init(&m_spinlock, 0);
+            pthread_mutex_init(&m_spinlock, 0);
             this->counter = counter;
         }
         
         ~ReadCounter()
         {
-            pthread_spin_destroy(&m_spinlock);
+            pthread_mutex_destroy(&m_spinlock);
         }
                 
         void increment()
         {
-            pthread_spin_lock(&m_spinlock);
+            pthread_mutex_lock(&m_spinlock);
             ++this->counter;
-            pthread_spin_unlock(&m_spinlock);    
+            pthread_mutex_unlock(&m_spinlock);
         }
     
         uint64_t getCount() const
@@ -148,7 +148,7 @@ class ReadCounter
             
     private:
         volatile uint64_t counter;
-        mutable pthread_spinlock_t m_spinlock;
+        mutable pthread_mutex_t m_spinlock;
 };
 
 // Assumes the calls to increment are write safe. The caller hold a write lock.

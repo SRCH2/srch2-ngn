@@ -81,9 +81,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     if (_compiler_version_lt_4.6)
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
     else()
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast -fno-strict-aliasing")
     endif()
-    SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     
 	IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
@@ -114,7 +114,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		SET(Boost_DEBUG OFF)
 	ENDIF ()
 	
-	SET(sys_LIBRARY_DIRS	"/usr/lib64/" 
+	SET(sys_LIBRARY_DIRS "/home/jianfeng/software/android-toolchain/user/lib"
+                    "/usr/lib64/" 
 					"/lib/"
 					"/lib64/"	
 					)
@@ -127,9 +128,14 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 	
 	# Finally the rt, dl and z library
-	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+    IF (ANDROID)
+	    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
+    ELSE( )
+        FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+    ENDIF ()
 	FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
 	FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+    
 	
 	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
 	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
@@ -145,7 +151,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		LINK_DIRECTORIES("/usr/lib/")
 	ENDIF ()
 
-	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+    IF (ANDROID)
+    	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+    ELSE ()
+	    SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
+    ENDIF ()
 
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
@@ -157,18 +167,26 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
 	ELSE (BUILD_STATIC)
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+        IF (ANDROID)
+            SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/libs/armeabi-v7a/libsrch2_core.so)
+        ENDIF()
 	ENDIF()
 
-	ADD_SUBDIRECTORY(src/wrapper)
-	ADD_SUBDIRECTORY(src/server)
+    IF (ANDROID)
+        ADD_SUBDIRECTORY(test/core/lib4Android)
+    ELSE ()
+        ADD_SUBDIRECTORY(src/wrapper)
+        ADD_SUBDIRECTORY(src/server)
+    	IF (BUILD_TEST)
+            INCLUDE (CTest)
+            ADD_SUBDIRECTORY(test)
+            ADD_DEPENDENCIES(build_integration_test srch2_core)
+            ADD_DEPENDENCIES(build_unit_test srch2_core) 
+        ENDIF()
 	
-	IF (BUILD_TEST)
-		INCLUDE (CTest)
-		ADD_SUBDIRECTORY(test)
-		ADD_DEPENDENCIES(build_integration_test srch2_core)
-		ADD_DEPENDENCIES(build_unit_test srch2_core) 
-	ENDIF()
-		
+    ENDIF()
+	
+	
 	#ADD_SUBDIRECTORY(examples)
 	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
 	#ADD_DEPENDENCIES(examples_python srch2_lib)
