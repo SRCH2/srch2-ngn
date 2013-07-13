@@ -37,7 +37,7 @@ void buildSimpleIndex(string INDEX_DIR)
 
 	// Create stemmer type
 	//srch2is::StemmerType stemType = NORMALIZER;
-	srch2is::StemmerNormalizerType stemType = srch2is::STEMMER_NORMALIZER;
+	srch2is::StemmerNormalizerFlagType stemType = srch2is::ENABLE_STEMMER_NORMALIZER;
 
 	// Create an analyzer
 	Analyzer *analyzer = Analyzer::create(stemType, "");

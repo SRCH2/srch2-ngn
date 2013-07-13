@@ -35,7 +35,7 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create stemmer type
-	srch2is::StemmerNormalizerType stemType = srch2is::STEMMER_NORMALIZER;
+	srch2is::StemmerNormalizerFlagType stemType = srch2is::ENABLE_STEMMER_NORMALIZER;
 
 	// Create an analyzer
 	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemType, " ");

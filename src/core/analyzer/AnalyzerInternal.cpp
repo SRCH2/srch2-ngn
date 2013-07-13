@@ -62,7 +62,7 @@ bool isEmpty(const string &inString)
     return inString.compare("") == 0;
 }
 
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerType &stemNormType, const std::string &recordAllowedSpecialCharacters) {
+AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters) {
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
 	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	prepareRegexExpression();
