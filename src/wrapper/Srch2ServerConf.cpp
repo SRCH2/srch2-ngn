@@ -513,13 +513,14 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		int temp = vm["default-stemmer-flag"].as<int>();
 		if (temp == 1){
 			stemmerFlag = true;
-		} else if (temp == 0){
-			stemmerFlag = false;
 		} else {
-				cerr << "default-stemmer-flag only accepts '0' or '1'"
-						<< endl
-						<< "   '0' for disabling the stemmer" << endl
-						<< "   '1' for enabling the stemmer" << endl;
+			stemmerFlag = false;
+			if (temp != 0) {
+				cerr << "default-stemmer-flag only accepts '0' or '1'" << endl
+					 << "   '0' for disabling the stemmer" << endl
+					 << "   '1' for enabling the stemmer" << endl
+					 << "   Now it is disabled by default" << endl;
+			}
 		}
 	} else {
 		stemmerFlag = false;
@@ -551,15 +552,16 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 
 	if (vm.count("default-synonym-keep-origin-flag")) {
 		int temp = vm["default-synonym-keep-origin-flag"].as<int>();
-		if (temp == 1){
-			synonymKeepOrigFlag = true;
-		} else if (temp == 0){
+		if (temp == 0){
 			synonymKeepOrigFlag = false;
 		} else {
-				cerr << "default-synonym-keep-origin-flag only accepts '0' or '1'"
-						<< endl
-						<< "   '0' for not keeping the original word" << endl
-						<< "   '1' for keeping the original word too" << endl;
+			synonymKeepOrigFlag = true;
+			if (temp != 1) {
+				cerr << "default-synonym-keep-origin-flag only accepts '0' or '1'" << endl
+					 << "   '0' for not keeping the original word" << endl
+					 << "   '1' for keeping the original word too" << endl
+					 << "   Now the original words will be kept by default" << endl;
+			}
 		}
 	} else {
 		synonymKeepOrigFlag = true;

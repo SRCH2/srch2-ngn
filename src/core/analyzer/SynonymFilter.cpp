@@ -110,7 +110,7 @@ int SynonymFilter::numberOfKeysHavingTokenAsPrefix(const std::string &prefixToke
 	return count;
 }
 
-const string SynonymFilter::getValueOf(const std::string &word) {
+const string SynonymFilter::getSynonymOf(const std::string &word) {
 	// finds the subWord in the map
 	std::map<string, string>::const_iterator pos = this->synonymMap.find(word);
 	if (pos != this->synonymMap.end()) {
@@ -152,7 +152,7 @@ vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 						result.push_back(this->tokenBuffer[k]);
 					}
 				}
-				result.push_back(this->getValueOf(tempToken));
+				result.push_back(this->getSynonymOf(tempToken));
 				for (int k = i; k >= 0; k--) {
 					this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
 					flag = true;
@@ -230,7 +230,7 @@ bool SynonymFilter::incrementToken() {
 					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
 						this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
 					}
-					this->emitBuffer.push_back(this->getValueOf(currentToken));
+					this->emitBuffer.push_back(this->getSynonymOf(currentToken));
 					this->emitCurrentToken();
 					return true;
 				} else {
@@ -268,7 +268,7 @@ bool SynonymFilter::incrementToken() {
 						if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
 							previousTokens += currentToken + " "; // this is for adding the original tokens.
 						}
-						previousTokens += this->getValueOf(currentToken);
+						previousTokens += this->getSynonymOf(currentToken);
 					} else {
 						this->tokenBuffer.push_back(currentToken);
 						previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
@@ -297,7 +297,7 @@ bool SynonymFilter::incrementToken() {
 						}
 						this->emitBuffer.push_back(currentToken);
 					}
-					this->emitBuffer.push_back(this->getValueOf(key));
+					this->emitBuffer.push_back(this->getSynonymOf(key));
 					this->emitCurrentToken();
 					this->tokenBuffer.clear();
 					return true;

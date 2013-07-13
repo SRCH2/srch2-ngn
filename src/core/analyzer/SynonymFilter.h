@@ -105,7 +105,7 @@ private:
 	 * returns the value of the string as the substring of a key
 	 * returns NULL if there is no such a key
 	 */
-	const std::string getValueOf(const std::string &);
+	const std::string getSynonymOf(const std::string &);
 
 	/*
 	 * returns the key of the string as the substring of a key
