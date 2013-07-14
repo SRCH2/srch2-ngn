@@ -5,8 +5,8 @@
  */
 //This class is used to transform the English letters to lower case
 
-#ifndef __LOWERCASEFILTER_H__
-#define __LOWERCASEFILTER_H__
+#ifndef __CORE_ANALYZER__LOWERCASEFILTER_H__
+#define __CORE_ANALYZER__LOWERCASEFILTER_H__
 
 #include "TokenOperator.h"
 #include "TokenFilter.h"
@@ -29,4 +29,4 @@ private:
 	void transformToLowerCase(std::vector<CharType> &token);
 };
 }}
-#endif /* __LOWERCASEFILTER_H__ */
+#endif /* __CORE_ANALYZER__LOWERCASEFILTER_H__ */

@@ -30,6 +30,9 @@ tmp/**/*
 *.bak
 *.swp
 *~.nib
+*.idx
+*.orig
+build/
 local.properties
 .classpath
 .settings/
@@ -46,3 +49,8 @@ local.properties
 
 # PDT-specific
 .buildpath
+thirdparty/event/bin/
+thirdparty/event/include/
+thirdparty/event/lib/
+thirdparty/event/libevent-2.0.18-stable/
+thirdparty/json/jsoncpp-src-0.5.0/

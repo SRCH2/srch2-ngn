@@ -17,8 +17,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef STEMMER_H_
-#define STEMMER_H_
+#ifndef __CORE_ANALYZER__STEMMER_H__
+#define __CORE_ANALYZER__STEMMER_H__
 
 #define TRUE 1
 #define FALSE 0
@@ -165,7 +165,7 @@ public:
 
     Stemmer() {}; // Default constructor for boost serialization
 
-    Stemmer(StemmerNormalizerType stemNormType, const std::string &indexDirectory);
+    Stemmer(StemmerNormalizerFlagType stemmerFlag, const std::string &indexDirectory);
 
     /* searchHeadWords() search if the given string is present in the HeadWordsDictionary */
     int searchHeadWords(const std::string &search) const;
@@ -195,4 +195,4 @@ private:
 }}
 
 
-#endif /* STEMMER_H_ */
+#endif /* __CORE_ANALYZER__STEMMER_H__ */
