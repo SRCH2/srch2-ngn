@@ -40,7 +40,7 @@ namespace instantsearch {
 SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
 		const std::string &synonymFilterFilePath,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-		TokenFilter(tokenOperator) {
+		TokenFilter(tokenOperator), synonymDelimiter("=>") {
 	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
 	this->createSynonymMap(synonymFilterFilePath); // construct the synoymMap
 	this->keepOriginFlag = synonymKeepOriginFlag;
@@ -165,6 +165,7 @@ vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 			this->tokenBuffer.erase(this->tokenBuffer.begin());
 		}
 	}
+	return result;
 }
 
 void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens) {

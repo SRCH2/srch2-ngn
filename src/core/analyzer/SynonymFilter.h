@@ -50,7 +50,7 @@ private:
 	 */
 	srch2::instantsearch::SynonymKeepOriginFlag keepOriginFlag;
 
-	const std::string synonymDelimiter = "=>";
+	const std::string synonymDelimiter;
 
 	/*
 	 * synonymMap is the map of synonyms
