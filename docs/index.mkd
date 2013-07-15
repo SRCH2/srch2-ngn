@@ -1,7 +1,7 @@
 nk rel="stylesheet" href="highlight/styles/default.css">
 <script src="highlight/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
-<link rel="shortcut icon" href="tab_icon.png" >
+<link rel="shortcut icon" href="images/tab_icon.png" >
 
 
 <table><tr>
@@ -19,7 +19,7 @@ nk rel="stylesheet" href="highlight/styles/default.css">
 
 </td></tr></tbody></table>
 
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="./logo.png" /></a></span></br></br>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="./images/logo.png" /></a></span></br></br>
 </div>
 
 
@@ -89,7 +89,7 @@ data-file-path=sample-data.json
 
 >   You should see 
 <center>
->   ![Enine is running](./engine_running.png)
+>   ![Enine is running](./images/engine_running.png)
 </center>
 
 
@@ -109,7 +109,7 @@ data-file-path=sample-data.json
 >   This query is doing a search for a "keyword search" index. Now you should see the results as following
 
 <center>
->   ![Enine is running](./results.png)
+>   ![Enine is running](./images/results.png)
 </center>
 </br>
 
@@ -192,7 +192,7 @@ def application(environ, start_response):
 ##Design a Simple User Interface##{id="UI"}
 >   This part will show how to design a simple user interface and connect it to the engine. The overall process is first, you need to have a html page that has an input box for the search keywords. Then you have to send the query to the search engine using Ajax. Then you have to get the respond and show the results. 
 
->   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Design a html page for searching and then connect it to your engine. The simpleset way is to have a _input box_ to write the keywords in it. Here is a simple html page. To dwonload this file, right click on [index.html](./download/index.html){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+>   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Design a html page for searching and then connect it to your engine. The simpleset way is to have a _input box_ to write the keywords in it. Here is a simple html page. To dwonload this file, right click on [index.html](./example-demo/index.html){target="_blank" style="text-decoration:none"} and click on "Save Link as".
 
 
 ```
@@ -230,7 +230,7 @@ span.exact {
 
 
 
->   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;“index.js” has a function named `check()` which will be called whenever you type a character to search. Then it calls another function named `query()` to construct the query and uses Ajax to send it to the server. Then it shows the results by calling a function named `display()`. There are some other functions that are used by the mentioned functions and For more details about this functions, read the comments provided in the code. To dwonload this file, right click on [index.js](./download/index.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+>   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;“index.js” has a function named `check()` which will be called whenever you type a character to search. Then it calls another function named `query()` to construct the query and uses Ajax to send it to the server. Then it shows the results by calling a function named `display()`. There are some other functions that are used by the mentioned functions and For more details about this functions, read the comments provided in the code. To dwonload this file, right click on [index.js](./example-demo/index.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
 
 ```
 var pending = false;
@@ -367,7 +367,7 @@ function highlight(string, regexp, stylec1, stylec2) {
 
 
 
->   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;You need to keep the “jquery-1.7.1.min.js” along with other files that are mentioned in previous steps. Jquery is a cross-browser JavaScript library designed to simplify the client-side scripting of HTML. To download the file, right click on [jquery-1.7.1.min.js](./download/jquery-1.7.1.min.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
+>   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;You need to keep the “jquery-1.7.1.min.js” along with other files that are mentioned in previous steps. Jquery is a cross-browser JavaScript library designed to simplify the client-side scripting of HTML. To download the file, right click on [jquery-1.7.1.min.js](./example-demo/jquery-1.7.1.min.js){target="_blank" style="text-decoration:none"} and click on "Save Link as".
 
 
 >   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Move index.html, index.js, jquery-1.7.1.min.js and apptest.wsgi into the Apache root directory such as “/var/www/test/”.
