@@ -111,20 +111,19 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 		}
 
 		indexer->addRecord(record, 0);
-
 		docsCounter++;
-
 		record->clear();
 	}
 
-	Logger::console("#Docs Read: %d, time spend: %.5f seconds", docsCounter,
-			getTimeSpan(timebegin));
 	indexer->commit();
+	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
+			docsCounter, getTimeSpan(timebegin));
+	clock_t savingbegin = clock();
 	indexer->save();
-
-	Logger::console("Index saved. total time spend: %.5f seconds",
-			getTimeSpan(timebegin));
+	Logger::console("Index Saving time: %.5f seconds, total time: %.5f seconds",
+			getTimeSpan(savingbegin), getTimeSpan(timebegin));
 	Logger::console("Index mem usage %d kb. ", getRAMUsageValue());
+
 	data.close();
 
 	delete indexer;
@@ -160,11 +159,11 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 	/// the file should have two fields, seperated by '^'
 	/// the first field is the primary key, the second field is a searchable attribute
 	clock_t timebegin = clock();
-    int cline = 0;
+	int cline = 0;
 	while (getline(data, line)) {
-        if (++cline > lineLimit){
-            break;
-        }
+		if (++cline > lineLimit) {
+			break;
+		}
 		unsigned cellCounter = 0;
 		stringstream lineStream(line);
 		string cell;
@@ -185,22 +184,18 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 		}
 
 		record->setLocationAttributeValue(lat, lng);
-
 		indexer->addRecord(record, 0);
-
 		docsCounter++;
-
 		record->clear();
 	}
 
-	Logger::console("#Docs Read: %d, time spend: %.5f seconds", docsCounter,
-			getTimeSpan(timebegin));
 	indexer->commit();
+	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
+			docsCounter, getTimeSpan(timebegin));
+	clock_t savingbegin = clock();
 	indexer->save();
-
-	Logger::console("Index saved. total time spend: %.5f seconds",
-			getTimeSpan(timebegin));
-
+	Logger::console("Index Saving time: %.5f seconds, total time: %.5f seconds",
+			getTimeSpan(savingbegin), getTimeSpan(timebegin));
 	Logger::console("Index mem usage %d kb. ", getRAMUsageValue());
 
 	data.close();
@@ -404,14 +399,6 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTestBuildConf
 	FILE* fpLog = fopen(nativeStringLogFile, "a");
 	Logger::setOutputFile(fpLog);
 
-//	char cachedStrIndexPath[1024];
-//	char cachedStrDataFile[1024];
-//	strcpy(cachedStrIndexPath, nativeStringIndexPath);
-//	strcpy(cachedStrDataFile, nativeStringDataFile);
-//
-//	string strIndexPath(cachedStrIndexPath);
-//	string strTestFile(cachedStrDataFile);
-
 	string strIndexPath(nativeStringIndexPath);
 	string strTestFile(nativeStringDataFile);
 
@@ -432,6 +419,26 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTestBuildConf
 
 		buildGeoIndex(geo_data_file, strIndexPath, lineLimit);
 	}
+
+	clock_t begin = clock();
+	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
+			mergeEveryNSeconds, mergeEveryMWrites, strIndexPath, "");
+	Indexer *index = Indexer::load(indexMetaData);
+	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+
+	Logger::console("Index loaded. time spend : %.5f seconds",
+			getTimeSpan(begin));
+
+	env->ReleaseStringUTFChars(testFileDir, nativeStringDataFile);
+	env->ReleaseStringUTFChars(indexDir, nativeStringIndexPath);
+
+	delete indexSearcher;
+	delete index;
+	delete indexMetaData;
+	Logger::console("End of Test");
+	if (fpLog) {
+		fclose(fpLog);
+	}
 }
 #ifdef __cplusplus
 }
@@ -451,13 +458,8 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 	FILE* fpLog = fopen(nativeStringLogFile, "a");
 	Logger::setOutputFile(fpLog);
 
-	char cachedStrIndexPath[1024];
-	char cachedStrDataFile[1024];
-	strcpy(cachedStrIndexPath, nativeStringIndexPath);
-	strcpy(cachedStrDataFile, nativeStringDataFile);
-
-	string strIndexPath(cachedStrIndexPath);
-	string strTestFile(cachedStrDataFile);
+	string strIndexPath(nativeStringIndexPath);
+	string strTestFile(nativeStringDataFile);
 
 	srch2::instantsearch::TermType termType = PREFIX;
 
@@ -552,10 +554,10 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 	delete indexSearcher;
 	delete index;
 	delete indexMetaData;
+	Logger::console("End of Test");
 	if (fpLog) {
 		fclose(fpLog);
 	}
-	Logger::console("End");
 }
 #ifdef __cplusplus
 }
