@@ -31,4 +31,4 @@ FILE(GLOB SRCH2_API_FILES "${CMAKE_BINARY_DIR}/include/instantsearch/*.h")
 #    set_source_files_properties(${SRCH2_LIB_SRC})
 #endif ()
 
-INSTALL(FILES ${SRCH2_API_FILES} DESTINATION include/srch2/instantsearch/include/instantsearch)
+#INSTALL(FILES ${SRCH2_API_FILES} DESTINATION include/srch2/instantsearch/include/instantsearch)
