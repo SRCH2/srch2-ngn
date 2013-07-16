@@ -17,7 +17,7 @@ using std::string;
 using std::vector;
 using std::ostream;
 
-typedef unsigned short CharType;
+typedef unsigned CharType;
 
 //This is the upper bound of the characters, on which we do fuzzy search
 const unsigned int CHARTYPE_FUZZY_UPPERBOUND = 128;
