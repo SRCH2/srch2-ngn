@@ -25,6 +25,7 @@
 #include "HTTPResponse.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
+#include "util/Logger.h"
 
 #include <event2/http.h>
 
@@ -40,7 +41,7 @@ namespace srch2http = srch2::httpwrapper;
 using srch2http::Srch2Server;
 using srch2http::HTTPResponse;
 using srch2http::Srch2ServerConf;
-using srch2http::Srch2ServerLogger;
+using namespace srch2::util;
 
 using std::string;
 
@@ -374,7 +375,14 @@ int main(int argc, char** argv)
 	Srch2ServerConf *serverConf = new Srch2ServerConf(argc, argv, parseSuccess, parseError);
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
-    Srch2ServerLogger *serverLogger = new Srch2ServerLogger(serverConf->getHTTPServerAccessLogFile());
+    FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
+    if(logFile == NULL)
+    {
+    	logFile = stdout;
+    	cout << "Open Log file " << serverConf->getHTTPServerAccessLogFile().c_str() << " failed." << endl;
+    }
+    Logger::setOutputFile(logFile);
+    Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
 	if (not parseSuccess)
 	{
@@ -383,7 +391,7 @@ int main(int argc, char** argv)
 	}
 
 	//load the index from the data source
-	server.init(serverConf, serverLogger);
+	server.init(serverConf);
 	//cout << "srch2 server started." << endl;
 
 	//sleep(200);
@@ -462,8 +470,7 @@ int main(int argc, char** argv)
 	
     int MAX_THREADS = serverConf->getNumberOfThreads();
     
-    std::cout << "Starting Srch2 server with " << MAX_THREADS << " serving threads at " << http_addr << ":" << http_port << std::endl;	
-    serverLogger->BMLog(1, "Starting Srch2 server with %d serving threads at %s:%d", MAX_THREADS, http_addr, http_port);
+     Logger::console("Starting Srch2 server with %d serving threads at %s:%d", MAX_THREADS, http_addr, http_port);
 	
     //string meminfo;
     //getMemoryInfo(meminfo);	
@@ -533,6 +540,7 @@ int main(int argc, char** argv)
     }
 
     delete[] threads;
+    fclose(logFile);
 
 	return EXIT_SUCCESS;
 }

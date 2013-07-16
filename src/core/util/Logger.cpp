@@ -43,6 +43,7 @@ void Logger::writeToFile(FILE* out, const char* str) {
 	__android_log_print(ANDROID_LOG_DEBUG, prefix, str);
 #else
 	fprintf(out, "%s\n", str);
+	fflush(out);
 #endif
 }
 

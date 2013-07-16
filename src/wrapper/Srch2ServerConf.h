@@ -11,8 +11,10 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+#include "util/Logger.h"
 
 using namespace std;
+using namespace srch2::util;
 namespace po = boost::program_options;
 
 namespace srch2 {
@@ -105,6 +107,7 @@ private:
 	string indexPath;
 	string filePath;
 	string httpServerAccessLogFile;
+	Logger::LogLevel loglevel;
 	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
 
@@ -178,6 +181,7 @@ public:
 	const std::string& getTrieBootstrapDictFileName() const;
 
 	const std::string& getHTTPServerAccessLogFile() const;
+	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerErrorLogFile() const;
 	const std::string& getHTTPServerDocumentRoot() const;
 	const std::string& getHTTPServerListeningHostname() const;

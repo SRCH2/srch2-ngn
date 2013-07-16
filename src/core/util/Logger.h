@@ -59,8 +59,8 @@ public:
 	static void warn(const char *format, ...);
 	static void info(const char *format, ...);
 	static void debug(const char *format, ...);
-}
-;
+};
+
 }
 }
 
