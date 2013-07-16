@@ -17,8 +17,8 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
-#include "IntegrationTestHelper.h"
-#include "MapSearchTestHelper.h"
+#include "../integration/IntegrationTestHelper.h"
+#include "../integration/MapSearchTestHelper.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "util/Logger.h"
 
@@ -73,7 +73,7 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 
 	/// Create an Analyzer
 	AnalyzerInternal *analyzer = new StandardAnalyzer(
-			srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
@@ -141,7 +141,7 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 
 	/// Create an Analyzer
 	AnalyzerInternal *analyzer = new StandardAnalyzer(
-			srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),

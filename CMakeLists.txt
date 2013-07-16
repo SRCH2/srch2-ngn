@@ -79,11 +79,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
     
     if (_compiler_version_lt_4.6)
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
+       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
     else()
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast -fno-strict-aliasing")
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast -fno-strict-aliasing")
     endif()
-    SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     
 	IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
@@ -114,7 +114,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		SET(Boost_DEBUG OFF)
 	ENDIF ()
 	
-	SET(sys_LIBRARY_DIRS	"/usr/lib64/" 
+	SET(sys_LIBRARY_DIRS "/home/jianfeng/software/android-toolchain/user/lib"
+                    "/usr/lib64/" 
 					"/lib/"
 					"/lib64/"	
 					)
@@ -127,9 +128,14 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 	
 	# Finally the rt, dl and z library
-	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+    IF (ANDROID)
+	    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
+    ELSE( )
+        FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+    ENDIF ()
 	FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
 	FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+    
 	
 	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
 	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
@@ -145,7 +151,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		LINK_DIRECTORIES("/usr/lib/")
 	ENDIF ()
 
-	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+    IF (ANDROID)
+    	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+    ELSE ()
+	    SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
+    ENDIF ()
 
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
@@ -157,18 +167,26 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
 	ELSE (BUILD_STATIC)
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+        IF (ANDROID)
+            SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/libs/armeabi-v7a/libsrch2_core.so)
+        ENDIF()
 	ENDIF()
 
-	ADD_SUBDIRECTORY(src/wrapper)
-	ADD_SUBDIRECTORY(src/server)
+    IF (ANDROID)
+        ADD_SUBDIRECTORY(test/core/lib4Android)
+    ELSE ()
+        ADD_SUBDIRECTORY(src/wrapper)
+        ADD_SUBDIRECTORY(src/server)
+    	IF (BUILD_TEST)
+            INCLUDE (CTest)
+            ADD_SUBDIRECTORY(test)
+            ADD_DEPENDENCIES(build_integration_test srch2_core)
+            ADD_DEPENDENCIES(build_unit_test srch2_core) 
+        ENDIF()
 	
-	IF (BUILD_TEST)
-		INCLUDE (CTest)
-		ADD_SUBDIRECTORY(test)
-		ADD_DEPENDENCIES(build_integration_test srch2_core)
-		ADD_DEPENDENCIES(build_unit_test srch2_core) 
-	ENDIF()
-		
+    ENDIF()
+	
+	
 	#ADD_SUBDIRECTORY(examples)
 	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
 	#ADD_DEPENDENCIES(examples_python srch2_lib)
@@ -183,16 +201,42 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 ####################################################################################################
 #CPack tarballing code!
 
-#INSTALL  
-SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Files. e.g., the config file")
-SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
-INSTALL(DIRECTORY docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
+#INSTALL "ALICE" CMake files
+FILE(GLOB CMAKE_INSTALL_FILES "cmake/*[^_p].cmake" ) 
+INSTALL(FILES ${CMAKE_INSTALL_FILES} DESTINATION "cmake/modules" )
 
-INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
+FILE(GLOB CMAKE_INSTALL_MAIN_FILE "cmake/install/CMakeLists_main.txt" )
+INSTALL(FILES ${CMAKE_INSTALL_MAIN_FILE} DESTINATION . RENAME CMakeLists.txt)
 
-INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.ini DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
+FILE(GLOB CMAKE_INSTALL_examples_python_FILE "cmake/install/CMakeLists_examples_python.txt" )
+INSTALL(FILES ${CMAKE_INSTALL_examples_python_FILE} DESTINATION "examples/python" RENAME CMakeLists.txt)
 
-INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
+FILE(GLOB CMAKE_INSTALL_examples_c++_FILE "cmake/install/CMakeLists_examples_c++.txt" )
+INSTALL(FILES ${CMAKE_INSTALL_examples_c++_FILE} DESTINATION "examples/c++" RENAME CMakeLists.txt)
+
+FILE(GLOB README_FILE "cmake/install/README.txt" )
+INSTALL(FILES ${README_FILE} DESTINATION .)
+
+FILE(GLOB license_key_FILE "cmake/install/srch2_license_key.txt")
+INSTALL(FILES ${license_key_FILE} DESTINATION "license")
+
+FILE(GLOB license_docs_FILE "cmake/install/license_docs/*[^_p].htm" )
+INSTALL(FILES ${license_docs_FILE} DESTINATION "license" )
+INSTALL(FILES ${license_docs_FILE} DESTINATION "docs/Srch2-API" )
+
+# INSTALL examples
+FILE(GLOB SRCH2_c++_EXAMPLE_FILES "examples/c++/[^_]*.cpp")
+INSTALL(FILES ${SRCH2_c++_EXAMPLE_FILES} DESTINATION "examples/c++")
+
+FILE( GLOB FRONTEND_FILES "${CMAKE_SOURCE_DIR}/examples/c++/SearchFCGI-frontend/index.*")
+INSTALL(FILES ${FRONTEND_FILES} DESTINATION "examples/c++/SearchFCGI-frontend/" )
+
+FILE(GLOB SRCH2_python_EXAMPLE_FILES "examples/python/[^_]*.py" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_swigPYTHON_wrap.cxx" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_python.py")
+INSTALL(FILES ${SRCH2_python_EXAMPLE_FILES} DESTINATION "examples/python")
+
+FILE(GLOB EMPTY_TEST_FOLDER "examples/c++/testIndexDirectory/test.txt")
+INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/c++/testIndexDirectory")
+INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/python/testIndexDirectory")
 
 #Packaging
 SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$;\\\\.cmake$;\\\\.tar.gz$;\\\\.so[.0-9]*$;/build/;/_CPack_Packages/;/CMakeFiles/;/CVS/;/\\\\.svn/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
@@ -201,18 +245,23 @@ SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$
 SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_IGNORE_FILES})
 SET(CPACK_SOURCE_GENERATOR TGZ ZIP)
 SET(CPACK_SOURCE_TOPLEVEL_TAG "")
-SET(CPACK_PACKAGE_NAME "srch2-engine")
-SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant Search Engine")
+SET(CPACK_PACKAGE_NAME "srch2-instantsearch")
+SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant search library")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.srch2.com")
-SET(CPACK_PACKAGE_CONTACT "contact@srch2.com")
-SET(CPACK_PACKAGE_VENDOR "Srch2 Software Inc.")
+SET(CPACK_PACKAGE_CONTACT "contact@srch2.com ")
+SET(CPACK_PACKAGE_VENDOR "Srch2 Technology Inc")
+SET(CPACK_PACKAGE_VERSION_MAJOR "1")
+SET(CPACK_PACKAGE_VERSION_MINOR "0")
+SET(CPACK_PACKAGE_VERSION_PATCH "0")
+SET(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Srch2")
 
-# Note: Version should be passed as input to cmake file. e.g -DVERSION:STRING="3.1.0" 
-SET(VERSION "" CACHE STRING "Version Number") 
-
+INCLUDE (InstallRequiredSystemLibraries)
+#SET (CPACK_RESOURCE_FILE_LICENSE  "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+SET(CPACK_CMAKE_GENERATOR "Unix Makefiles")
+#SET(CPACK_GENERATOR "DEB;TGZ;")
 SET(CPACK_GENERATOR "TGZ;")
-
-SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
+SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}-${CMAKE_SYSTEM_PROCESSOR}")
 INCLUDE(CPack)
 
 # enable dashboard scripting
