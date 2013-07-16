@@ -15,7 +15,7 @@ namespace util {
 #ifdef SRCH2_SHIPPING
 Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_SILENT;
 #else
-Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_INFO;
+Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_DEBUG;
 #endif
 
 FILE* Logger::_out_file = stdout;
@@ -30,7 +30,7 @@ char* Logger::formatCurrentTime(char* buffer, unsigned size) {
 
 char* Logger::formatLogString(char* buffer, const char* prefix) {
 	char timebuffer[32];
-	sprintf(buffer, "%s ", formatCurrentTime(timebuffer, 32));
+	sprintf(buffer, "%s SRCH2 ", formatCurrentTime(timebuffer, 32));
 	if (prefix != NULL) {
 		sprintf(buffer + strlen(buffer), "%s\t", prefix);
 	}
@@ -40,10 +40,14 @@ char* Logger::formatLogString(char* buffer, const char* prefix) {
 
 void Logger::writeToFile(FILE* out, const char* str) {
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_DEBUG,"", str);
-#else
-	fprintf(out, "%s\n", str);
+	if (out == stderr || out == stdout) {
+		__android_log_print(ANDROID_LOG_DEBUG, "SRCH2", str);
+		return;
+	}
 #endif
+	fprintf(out, "%s\n", str);
+	fflush(out);
+
 }
 
 void Logger::console(const char *format, ...) {
