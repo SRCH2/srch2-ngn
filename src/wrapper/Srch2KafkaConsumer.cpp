@@ -7,10 +7,8 @@
 using namespace srch2::instantsearch;
 namespace srch2is = srch2::instantsearch;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
 namespace srch2http = srch2::httpwrapper;
 
@@ -38,8 +36,39 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 	{
 		case srch2http::INDEXCREATE:
 		{
+
+
+			// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
+			StemmerNormalizerFlagType stemmerFlag;
+			// gets the stem flag and set the stemType
+			if (indexDataContainerConf->getStemmerFlag()) {
+				stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
+			} else {
+				stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
+			}
+			// This flag shows if we need to keep the origin word or not.
+			SynonymKeepOriginFlag synonymKeepOriginFlag;
+			// gets the stem flag and set the stemType
+			if (indexDataContainerConf->getSynonymKeepOrigFlag()) {
+				synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+			} else {
+				synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+			}
+
+			// append the stemmer file to the install direcrtory
+			std::string stemmerFilterFilePath = indexDataContainerConf->getInstallDir() + indexDataContainerConf->getStemmerFile();
+			// gets the path of stopFilter
+			std::string stopFilterFilePath = indexDataContainerConf->getStopFilePath();
+			// gets the path of stopFilter
+			std::string  synonymFilterFilePath = indexDataContainerConf->getSynonymFilePath();
+
 			// Create an analyzer
-			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, indexDataContainerConf->getRecordAllowedSpecialCharacters());
+			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemmerFlag,
+					stemmerFilterFilePath,
+					stopFilterFilePath,
+					synonymFilterFilePath,
+					synonymKeepOriginFlag,
+					indexDataContainerConf->getRecordAllowedSpecialCharacters());
 
 			// Create a schema to the data source definition in the Srch2ServerConf
 			srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataContainerConf);
@@ -80,10 +109,8 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 	}
 }
 
-void Srch2KafkaConsumer::_init_consumer()
-{
-	if ( this->srch2Consumer != NULL)
-	{
+void Srch2KafkaConsumer::_init_consumer() {
+	if (this->srch2Consumer != NULL) {
 		delete this->srch2Consumer;
 	}
 
@@ -96,10 +123,8 @@ void Srch2KafkaConsumer::_init_consumer()
 	}*/
 }
 
-void Srch2KafkaConsumer::_init_producer()
-{
-	if ( this->srch2Producer != NULL)
-	{
+void Srch2KafkaConsumer::_init_producer() {
+	if (this->srch2Producer != NULL) {
 		delete this->srch2Producer;
 	}
 
@@ -113,48 +138,42 @@ void Srch2KafkaConsumer::_init_producer()
 }
 
 
-bool Srch2KafkaConsumer::produceHealthMessage()
-{
-	if (this->srch2Producer->is_connected())
-	{
+bool Srch2KafkaConsumer::produceHealthMessage() {
+	if (this->srch2Producer->is_connected()) {
 		std::vector<std::string> messages;
 		messages.push_back(this->indexer->getIndexHealth());
-		return this->srch2Producer->send(messages, kafkaConsumerTopicName+"_health", kafkaConsumerPartitionId);
-	}
-	else
-	{
+		return this->srch2Producer->send(messages, kafkaConsumerTopicName + "_health", kafkaConsumerPartitionId);
+	} else {
 		this->_init_producer();
 		return false;
-	}	
+	}
 }
 
 //TODO add logging to kafka
-bool Srch2KafkaConsumer::consumeMessages()
-{
+bool Srch2KafkaConsumer::consumeMessages() {
 	bool continueIteration = true;
-	do
-	{
-		if (this->srch2Consumer->is_connected())
-		{
+	do {
+		if (this->srch2Consumer->is_connected()) {
 			std::vector<std::string> messages;
 			uint64_t newOffset = this->offset;
 
-			continueIteration =
-					this->srch2Consumer->consume(messages,
-										kafkaConsumerTopicName,	kafkaConsumerPartitionId, kafkaConsumerReadBufferInBytes,
-										this->offset, newOffset);
+			continueIteration = this->srch2Consumer->consume(messages,
+					kafkaConsumerTopicName, kafkaConsumerPartitionId,
+					kafkaConsumerReadBufferInBytes, this->offset, newOffset);
 
-			std::cout << kafkaConsumerTopicName << ":" << kafkaConsumerPartitionId  << ":" << kafkaConsumerReadBufferInBytes 
-					<< "|num.messages:[" << messages.size() << "]oldoffset:[" << this->offset << "]newoffset[" << newOffset << "]" << std::endl;
+			std::cout << kafkaConsumerTopicName << ":"
+					<< kafkaConsumerPartitionId << ":"
+					<< kafkaConsumerReadBufferInBytes
+					<< "|num.messages:["
+					<< messages.size() << "]oldoffset:[" << this->offset
+					<< "]newoffset[" << newOffset << "]" << std::endl;
 
 			this->offset = newOffset;
 			this->_executeMessagesOnIndex(messages, this->offset);
-		}
-		else
-		{
+		} else {
 			this->_init_consumer();
 		}
-	} while(continueIteration);
+	} while (continueIteration);
 
 	return true;
 }

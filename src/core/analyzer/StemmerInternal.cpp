@@ -31,9 +31,9 @@ namespace srch2
 namespace instantsearch
 {
 
-Stemmer::Stemmer(StemmerNormalizerType stemNormType, const std::string &indexDirectory)
+Stemmer::Stemmer(StemmerNormalizerFlagType stemmerFlag, const std::string &indexDirectory)
 {
-    if ( stemNormType == srch2::instantsearch::STEMMER_NORMALIZER)
+    if ( stemmerFlag == srch2::instantsearch::ENABLE_STEMMER_NORMALIZER)
         this->createHeadWordsMap(indexDirectory);
 }
 

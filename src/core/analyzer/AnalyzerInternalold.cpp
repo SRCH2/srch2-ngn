@@ -54,11 +54,11 @@ AnalyzerInternalold::AnalyzerInternalold()
     this->tokenOperator = analyzers->createOperatorFlow();
 }
 
-AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerType &stemNormType,const std::string &recordAllowedSpecialCharacters)
+AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerFlagType &stemmerFlag,const std::string &recordAllowedSpecialCharacters)
 {
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     this->prepareRegexExpression();
-    this->stemNormType = stemNormType;
+    this->stemmerFlag = stemmerFlag;
     this->stemmer = NULL;
     this->normalizer = NULL;
     this->analyzers = new StandardAnalyzer();
@@ -68,9 +68,9 @@ AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerType &stemNormTy
 //Copy Constructor
 AnalyzerInternalold::AnalyzerInternalold(const AnalyzerInternalold &analyzerInternal, const std::string &indexDirectory)
 {
-    this->stemNormType = analyzerInternal.stemNormType;
-    this->stemmer = new Stemmer(this->getStemmerNormalizerType(), indexDirectory);
-    this->normalizer = new Normalizer(this->getStemmerNormalizerType(), indexDirectory);
+    this->stemmerFlag = analyzerInternal.stemmerFlag;
+    this->stemmer = new Stemmer(this->getStemmerNormalizerFlagType(), indexDirectory);
+    this->normalizer = new Normalizer(this->getStemmerNormalizerFlagType(), indexDirectory);
     this->analyzers = new StandardAnalyzer();
     this->tokenOperator = analyzers->createOperatorFlow();
     this->recordAllowedSpecialCharacters = analyzerInternal.getRecordAllowedSpecialCharacters();
