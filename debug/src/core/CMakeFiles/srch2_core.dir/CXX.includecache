@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/jianfeng/software/android-toolchain/sysroot/usr/include/android/log.h
+stdarg.h
+-
+
+/home/jianfeng/workspace/srch2-ngn-jianfeng/src/core/util/Logger.cpp
+Logger.h
+/home/jianfeng/workspace/srch2-ngn-jianfeng/src/core/util/Logger.h
+cstdarg
+-
+cstring
+-
+ctime
+-
+android/log.h
+-
+
+/home/jianfeng/workspace/srch2-ngn-jianfeng/src/core/util/Logger.h
+cstdio
+-
+
