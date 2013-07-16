@@ -171,6 +171,13 @@ void addSimpleChineseRecords() {
 	record->setRecordBoost(90);
 	index->addRecord(record, 0);
 
+	record->clear();
+	record->setPrimaryKey(1204);
+	record->setSearchableAttributeValue(1, "");
+	record->setSearchableAttributeValue(2, "𡑞 will fail for utf16, but work for utf32");
+	record->setRecordBoost(90);
+	index->addRecord(record, 0);
+
 	index->commit();
 	index->save();
 
