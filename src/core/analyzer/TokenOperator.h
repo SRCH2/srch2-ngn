@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __TOKEN_OPERATOR_H__
-#define __TOKEN_OPERATOR_H__
+#ifndef __CORE_ANALYZER__TOKEN_OPERATOR_H__
+#define __CORE_ANALYZER__TOKEN_OPERATOR_H__
 
 #include <boost/shared_ptr.hpp>
 #include "SharedToken.h"
@@ -31,4 +31,4 @@ public:
 
 };
 }}
-#endif /* __TOKEN_OPERATOR_H__ */
+#endif /* __CORE_ANALYZER__TOKEN_OPERATOR_H__ */

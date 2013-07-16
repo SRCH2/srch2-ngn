@@ -21,8 +21,10 @@ namespace httpwrapper
 
 const char * ignoreOption = "IGNORE";
 
-Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess, std::stringstream &parseError)
-{
+Srch2ServerConf::Srch2ServerConf(int argc,
+								char** argv,
+								bool &configSuccess,
+								std::stringstream &parseError) {
 	// Declare the supported options.
 	po::options_description config("Configuration");
 
@@ -91,34 +93,39 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess, std
 				("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
 				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
 				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
+				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
+				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
+				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
+				("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
+				("stemmer-file", po::value<string>(), "Stemmer File")
+				("install-directory", po::value<string>(), "Install Directory")
 				;
 
 	po::variables_map vm_command_line_args;
 	po::store(po::parse_command_line(argc, argv, config), vm_command_line_args);
 	po::notify(vm_command_line_args);
 
-	if (vm_command_line_args.count("help"))
-	{
+	if (vm_command_line_args.count("help")) {
 		parseError << config;
-	    configSuccess = false;
-	    return;
-	}
-	else
-	{
-		if (vm_command_line_args.count("config-file") && (vm_command_line_args["config-file"].as<string>().compare(ignoreOption) != 0))
-		{
-		  std::cout << "Reading config file: " << vm_command_line_args["config-file"].as<string>() << std::endl;
+		configSuccess = false;
+		return;
+	} else {
+		if (vm_command_line_args.count("config-file")
+				&& (vm_command_line_args["config-file"].as<string>().compare(
+						ignoreOption) != 0)) {
+			std::cout << "Reading config file: "
+					<< vm_command_line_args["config-file"].as<string>()
+					<< std::endl;
 
-			string configFile = vm_command_line_args["config-file"].as<string>();
+			string configFile =
+					vm_command_line_args["config-file"].as<string>();
 
 			fstream fs(configFile.c_str(), fstream::in);
 			po::variables_map vm_config_file;
 			po::store(po::parse_config_file(fs, config), vm_config_file);
 			po::notify(vm_config_file);
 			this->parse(vm_config_file, configSuccess, parseError);
-		}
-		else
-		{
+		} else {
 			this->parse(vm_command_line_args, configSuccess, parseError);
 		}
 	}
@@ -126,7 +133,9 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess, std
 
 void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
-	if (vm.count("kafka-consumer-topicname") && (vm["kafka-consumer-topicname"].as<string>().compare(ignoreOption) != 0)) {
+	if (vm.count("kafka-consumer-topicname")
+			&& (vm["kafka-consumer-topicname"].as<string>().compare(
+					ignoreOption) != 0)) {
 		kafkaConsumerTopicName = vm["kafka-consumer-topicname"].as<string>();
 	} else {
 		configSuccess = false;
@@ -135,31 +144,34 @@ void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &confi
 
 	if (vm.count("kafka-broker-hostname")) {
 		kafkaBrokerHostName = vm["kafka-broker-hostname"].as<string>();
-	}else {
+	} else {
 		parseError << "kafka-broker-hostname is not set.\n";
 	}
 
 	if (vm.count("kafka-broker-port")) {
 		kafkaBrokerPort = vm["kafka-broker-port"].as<uint16_t>();
-	}else {
+	} else {
 		parseError << "kafka-broker-port is not set.\n";
 	}
 
 	if (vm.count("kafka-consumer-partitionid")) {
-		kafkaConsumerPartitionId = vm["kafka-consumer-partitionid"].as<uint32_t>();
-	}else {
+		kafkaConsumerPartitionId =
+				vm["kafka-consumer-partitionid"].as<uint32_t>();
+	} else {
 		parseError << "kafka-consumer-partitionid is not set.\n";
 	}
 
 	if (vm.count("kafka-consumer-read-buffer")) {
-		writeReadBufferInBytes = vm["kafka-consumer-read-buffer"].as<uint32_t>();
-	}else {
+		writeReadBufferInBytes =
+				vm["kafka-consumer-read-buffer"].as<uint32_t>();
+	} else {
 		parseError << "kafka-consumer-read-buffer is not set.\n";
 	}
 
 	if (vm.count("kafka-ping-broker-every-n-seconds")) {
-		pingKafkaBrokerEveryNSeconds = vm["kafka-ping-broker-every-n-seconds"].as<uint32_t>();
-	}else {
+		pingKafkaBrokerEveryNSeconds =
+				vm["kafka-ping-broker-every-n-seconds"].as<uint32_t>();
+	} else {
 		parseError << "kafka-ping-broker-every-n-seconds is not set.\n";
 	}
 }
@@ -357,7 +369,7 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 				    sortableAttributes.push_back(attributeNames[iter]);
 				    sortableAttributesType.push_back(attributeTypes[iter]);
 				    sortableAttributesDefaultValue.push_back(attributeDefaultValues[iter]);
-			    }   
+			    }
 		    }
             else
             {
@@ -395,507 +407,534 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 
 	if (vm.count("search-response-format")) {
 		searchResponseFormat = vm["search-response-format"].as<int>();
-	}else {
+	} else {
 		searchResponseFormat = 0; //in-memory
 	}
 
-    if (searchResponseFormat == 2
-            && vm.count("attributes-to-return") && (vm["attributes-to-return"].as<string>().compare(ignoreOption) != 0)) 
-    {
-        boost::split(attributesToReturn, vm["attributes-to-return"].as<string>(), boost::is_any_of(","));
-    }
+	if (searchResponseFormat == 2 && vm.count("attributes-to-return")
+			&& (vm["attributes-to-return"].as<string>().compare(ignoreOption)
+					!= 0)) {
+		boost::split(attributesToReturn,
+				vm["attributes-to-return"].as<string>(), boost::is_any_of(","));
+	}
 
-	if (vm.count("data-source-type"))
-	{
-		dataSourceType = vm["data-source-type"].as<bool>() == 1 ? FILEBOOTSTRAP_TRUE : FILEBOOTSTRAP_FALSE;
-		if (dataSourceType == FILEBOOTSTRAP_TRUE)
-		{
-			if (vm.count("data-file-path"))
-			{
+	if (vm.count("data-source-type")) {
+		dataSourceType =
+				vm["data-source-type"].as<bool>() == 1 ?
+						FILEBOOTSTRAP_TRUE : FILEBOOTSTRAP_FALSE;
+		if (dataSourceType == FILEBOOTSTRAP_TRUE) {
+			if (vm.count("data-file-path")) {
 				filePath = vm["data-file-path"].as<string>();
-			}
-			else
-			{
+			} else {
 				parseError << "Path of index file is not set.\n";
 				dataSourceType = FILEBOOTSTRAP_FALSE;
 			}
 		}
-	}
-	else
-	{
+	} else {
 		dataSourceType = FILEBOOTSTRAP_FALSE;
 	}
 
-	if (vm.count("write-api-type"))
-	{
-		writeApiType = vm["write-api-type"].as<bool>() == 0 ? HTTPWRITEAPI : KAFKAWRITEAPI;
-		switch (writeApiType)
-		{
-			case KAFKAWRITEAPI:
-				this->kafkaOptionsParse(vm, configSuccess, parseError);
-				break;
-			case HTTPWRITEAPI:
-				break;
+	if (vm.count("write-api-type")) {
+		writeApiType =
+				vm["write-api-type"].as<bool>() == 0 ?
+						HTTPWRITEAPI : KAFKAWRITEAPI;
+		switch (writeApiType) {
+		case KAFKAWRITEAPI:
+			this->kafkaOptionsParse(vm, configSuccess, parseError);
+			break;
+		case HTTPWRITEAPI:
+			break;
 		}
-	}
-	else
-	{
+	} else {
 		parseError << "WriteAPI type Set. Default to HTTPWRITEAPI.\n";
 		writeApiType = HTTPWRITEAPI;
 	}
 
 	if (vm.count("index-load-or-create")) {
-		indexCreateOrLoad = vm["index-load-or-create"].as<bool>() == 0 ? INDEXCREATE : INDEXLOAD;
-	}else {
+		indexCreateOrLoad =
+				vm["index-load-or-create"].as<bool>() == 0 ?
+						INDEXCREATE : INDEXLOAD;
+	} else {
 		indexCreateOrLoad = INDEXCREATE;
 		//parseError << "index-load-or-create is not set.\n";
 	}
 
 	if (vm.count("trie-bootstrap-dict-file")) {
 		trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
-	}else {
+	} else {
 		trieBootstrapDictFile = std::string("");
 	}
 
 	if (vm.count("index-dir-path")) {
 		indexPath = vm["index-dir-path"].as<string>();
-	}else {
+	} else {
 		parseError << "Path of index files is not set.\n";
 	}
 
 	if (vm.count("access-log-file")) {
 		httpServerAccessLogFile = vm["access-log-file"].as<string>();
-	}else {
+	} else {
 		parseError << "httpServerAccessLogFile is not set.\n";
 	}
 
 	if (vm.count("error-log-file")) {
 		httpServerErrorLogFile = vm["error-log-file"].as<string>();
-	}else {
+	} else {
 		parseError << "httpServerErrorLogFile is not set.\n";
 	}
-	
+
 	if (vm.count("allowed-record-special-characters")) {
-		allowedRecordTokenizerCharacters = vm["allowed-record-special-characters"].as<string>();
-		if(allowedRecordTokenizerCharacters.empty())
-			std::cerr<<"[Warning] There are no characters in the value allowedRecordTokenizerCharacters. To set it properly, those characters should be included in double quotes such as \"@'\""<<std::endl;
-	}else {
+		allowedRecordTokenizerCharacters =
+				vm["allowed-record-special-characters"].as<string>();
+		if (allowedRecordTokenizerCharacters.empty())
+			std::cerr
+					<< "[Warning] There are no characters in the value allowedRecordTokenizerCharacters. To set it properly, those characters should be included in double quotes such as \"@'\""
+					<< std::endl;
+	} else {
 		allowedRecordTokenizerCharacters = string("");
 		//parseError << "allowed-record-special-characters is not set.\n";
 	}
 
 	if (vm.count("is-primary-key-searchable")) {
 		isPrimSearchable = vm["is-primary-key-searchable"].as<int>();
-	}else {
+	} else {
 		isPrimSearchable = 0;
 		//parseError << "IfPrimSearchable is not set.\n";
 	}
 
 	if (vm.count("default-query-term-match-type")) {
-		exactFuzzy = (bool)vm["default-query-term-match-type"].as<int>();
-	}else {
+		exactFuzzy = (bool) vm["default-query-term-match-type"].as<int>();
+	} else {
 		exactFuzzy = 0;
 		//parseError << "default-fuzzy-query-term-type is not set.\n";
 	}
 
+	if (vm.count("default-stemmer-flag")) {
+		int temp = vm["default-stemmer-flag"].as<int>();
+		if (temp == 1){
+			stemmerFlag = true;
+		} else {
+			stemmerFlag = false;
+			if (temp != 0) {
+				cerr << "default-stemmer-flag only accepts '0' or '1'" << endl
+					 << "   '0' for disabling the stemmer" << endl
+					 << "   '1' for enabling the stemmer" << endl
+					 << "   Now it is disabled by default" << endl;
+			}
+		}
+	} else {
+		stemmerFlag = false;
+	}
+
+	if (vm.count("stemmer-file")) {
+		stemmerFile = vm["stemmer-file"].as<string>();
+	}
+
+	if (vm.count("install-directory")) {
+		installDir = vm["install-directory"].as<string>();
+	}
+
+	if (vm.count("stop-filter-file-path")
+			&& (vm["stop-filter-file-path"].as<string>().compare(ignoreOption)
+					!= 0)) {
+		stopFilterFilePath = vm["stop-filter-file-path"].as<string>();
+	} else {
+		stopFilterFilePath = "";
+	}
+
+	if (vm.count("synonym-filter-file-path")
+			&& (vm["synonym-filter-file-path"].as<string>().compare(
+					ignoreOption) != 0)) {
+		synonymFilterFilePath = vm["synonym-filter-file-path"].as<string>();
+	} else {
+		synonymFilterFilePath = "";
+	}
+
+	if (vm.count("default-synonym-keep-origin-flag")) {
+		int temp = vm["default-synonym-keep-origin-flag"].as<int>();
+		if (temp == 0){
+			synonymKeepOrigFlag = false;
+		} else {
+			synonymKeepOrigFlag = true;
+			if (temp != 1) {
+				cerr << "default-synonym-keep-origin-flag only accepts '0' or '1'" << endl
+					 << "   '0' for not keeping the original word" << endl
+					 << "   '1' for keeping the original word too" << endl
+					 << "   Now the original words will be kept by default" << endl;
+			}
+		}
+	} else {
+		synonymKeepOrigFlag = true;
+	}
+
 	if (vm.count("default-query-term-type")) {
-		queryTermType = (bool)vm["default-query-term-type"].as<int>();
-	}else {
+		queryTermType = (bool) vm["default-query-term-type"].as<int>();
+	} else {
 		queryTermType = 0;
 		//parseError << "default-query-term-type is not set.\n";
 	}
 
 	if (vm.count("default-query-term-boost")) {
 		queryTermBoost = vm["default-query-term-boost"].as<int>();
-	}else {
+	} else {
 		queryTermBoost = 1;
 		//parseError << "Default query term boost.\n";
 	}
 
 	if (vm.count("default-query-term-similarity-boost")) {
-		queryTermSimilarityBoost = vm["default-query-term-similarity-boost"].as<float>();
-	}else {
+		queryTermSimilarityBoost = vm["default-query-term-similarity-boost"].as<
+				float>();
+	} else {
 		queryTermSimilarityBoost = 0.5;
 		//parseError << "Default query term similarity boost.\n";
 	}
 
 	if (vm.count("default-query-term-length-boost")) {
-		queryTermLengthBoost = vm["default-query-term-length-boost"].as<float>();
-		if (!(queryTermLengthBoost > 0.0 && queryTermLengthBoost < 1.0))
-		{
+		queryTermLengthBoost =
+				vm["default-query-term-length-boost"].as<float>();
+		if (!(queryTermLengthBoost > 0.0 && queryTermLengthBoost < 1.0)) {
 			queryTermLengthBoost = 0.5;
 		}
-	}else {
+	} else {
 		queryTermLengthBoost = 0.5;
 		//parseError << "Default query term length boost of 0.5 set.\n";
 	}
 
 	if (vm.count("prefix-match-penalty")) {
-	    prefixMatchPenalty = vm["prefix-match-penalty"].as<float>();
-	    if (!(prefixMatchPenalty > 0.0 && prefixMatchPenalty < 1.0)) {
-		prefixMatchPenalty = 0.95;
-	    }
+		prefixMatchPenalty = vm["prefix-match-penalty"].as<float>();
+		if (!(prefixMatchPenalty > 0.0 && prefixMatchPenalty < 1.0)) {
+			prefixMatchPenalty = 0.95;
+		}
 	} else {
-	    prefixMatchPenalty = 0.95;
+		prefixMatchPenalty = 0.95;
 	}
 
-
 	if (vm.count("support-attribute-based-search")) {
-		supportAttributeBasedSearch = (bool)vm["support-attribute-based-search"].as<int>();
-	}else {
+		supportAttributeBasedSearch =
+				(bool) vm["support-attribute-based-search"].as<int>();
+	} else {
 		supportAttributeBasedSearch = false;
 		//parseError << "\n";
 	}
 
-    if (supportAttributeBasedSearch && searchableAttributesTriple.size()>31)
-    {
-        parseError << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-        configSuccess = false;
-        return;
-    }
+	if (supportAttributeBasedSearch && searchableAttributesTriple.size() > 31) {
+		parseError
+				<< "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
+		configSuccess = false;
+		return;
+	}
 
 	if (vm.count("default-results-to-retrieve")) {
 		resultsToRetrieve = vm["default-results-to-retrieve"].as<int>();
-	}else {
+	} else {
 		resultsToRetrieve = 10;
 		//parseError << "resultsToRetrieve is not set.\n";
 	}
 
 	if (vm.count("default-attribute-to-sort")) {
 		attributeToSort = vm["default-attribute-to-sort"].as<int>();
-	}else {
+	} else {
 		attributeToSort = 0;
 		//parseError << "attributeToSort is not set.\n";
 	}
 
 	if (vm.count("default-order")) {
 		ordering = vm["default-order"].as<int>();
-	}else {
+	} else {
 		ordering = 0;
 		//parseError << "ordering is not set.\n";
 	}
 
 	if (vm.count("merge-every-n-seconds")) {
 		mergeEveryNSeconds = vm["merge-every-n-seconds"].as<unsigned>();
-		if(mergeEveryNSeconds < 10)
+		if (mergeEveryNSeconds < 10)
 			mergeEveryNSeconds = 10;
-		std::cout << "Merge every " << mergeEveryNSeconds << " second(s)" << std::endl;
+		std::cout << "Merge every " << mergeEveryNSeconds << " second(s)"
+				<< std::endl;
 
-	}else {
+	} else {
 		parseError << "merge-every-n-seconds is not set.\n";
 	}
 
 	if (vm.count("merge-every-m-writes")) {
 		mergeEveryMWrites = vm["merge-every-m-writes"].as<unsigned>();
-		if(mergeEveryMWrites < 10)
+		if (mergeEveryMWrites < 10)
 			mergeEveryMWrites = 10;
-	}else {
+	} else {
 		parseError << "merge-every-m-writes is not set.\n";
 	}
 
 	if (vm.count("number-of-threads")) {
 		numberOfThreads = vm["number-of-threads"].as<int>();
-	}else {
+	} else {
 		numberOfThreads = 1;
 		parseError << "number-of-threads is not specified.\n";
 	}
-	
+
 	unsigned minCacheSize = 50 * 1048576;     // 50MB
 	unsigned maxCacheSize = 500 * 1048576;    // 500MB
 	unsigned defaultCacheSize = 50 * 1048576; // 50MB
 	if (vm.count("cache-size")) {
 		cacheSizeInBytes = vm["cache-size"].as<unsigned>();
-		if (cacheSizeInBytes < minCacheSize ||
-		    cacheSizeInBytes > maxCacheSize)
+		if (cacheSizeInBytes < minCacheSize || cacheSizeInBytes > maxCacheSize)
 			cacheSizeInBytes = defaultCacheSize;
 	} else {
-		cacheSizeInBytes = defaultCacheSize; 
+		cacheSizeInBytes = defaultCacheSize;
 	}
 
-	if (not ( this->writeReadBufferInBytes > 4194304 && this->writeReadBufferInBytes < 65536000))
-	{
+	if (not (this->writeReadBufferInBytes > 4194304
+			&& this->writeReadBufferInBytes < 65536000)) {
 		this->writeReadBufferInBytes = 4194304;
 	}
 }
 
-Srch2ServerConf::~Srch2ServerConf()
-{
+Srch2ServerConf::~Srch2ServerConf() {
 
 }
 
-const std::string& Srch2ServerConf::getCustomerName() const
-{
+const std::string& Srch2ServerConf::getCustomerName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getDocumentLimit() const
-{
+uint32_t Srch2ServerConf::getDocumentLimit() const {
 	return documentLimit;
 }
 
-uint64_t Srch2ServerConf::getMemoryLimit() const
-{
+uint64_t Srch2ServerConf::getMemoryLimit() const {
 	return memoryLimit;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryNSeconds() const
-{
+uint32_t Srch2ServerConf::getMergeEveryNSeconds() const {
 	return mergeEveryNSeconds;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryMWrites() const
-{
+uint32_t Srch2ServerConf::getMergeEveryMWrites() const {
 	return mergeEveryMWrites;
 }
 
-int Srch2ServerConf::getIndexType() const
-{
+int Srch2ServerConf::getIndexType() const {
 	return indexType;
 }
 
-const string& Srch2ServerConf::getAttributeLatitude() const
-{
+const string& Srch2ServerConf::getAttributeLatitude() const {
 	return attributeLatitude;
 }
 
-const string& Srch2ServerConf::getAttributeLongitude() const
-{
+const string& Srch2ServerConf::getAttributeLongitude() const {
 	return attributeLongitude;
 }
 
-float Srch2ServerConf::getDefaultSpatialQueryBoundingBox() const
-{
+float Srch2ServerConf::getDefaultSpatialQueryBoundingBox() const {
 	return defaultSpatialQueryBoundingBox;
 }
 
-int Srch2ServerConf::getNumberOfThreads() const
-{
+int Srch2ServerConf::getNumberOfThreads() const {
 	return numberOfThreads;
 }
 
-DataSourceType Srch2ServerConf::getDataSourceType() const
-{
+DataSourceType Srch2ServerConf::getDataSourceType() const {
 	return dataSourceType;
 }
 
-IndexCreateOrLoad Srch2ServerConf::getIndexCreateOrLoad() const
-{
+IndexCreateOrLoad Srch2ServerConf::getIndexCreateOrLoad() const {
 	return indexCreateOrLoad;
 }
 
-WriteApiType Srch2ServerConf::getWriteApiType() const
-{
+WriteApiType Srch2ServerConf::getWriteApiType() const {
 	return writeApiType;
 }
 
-const string& Srch2ServerConf::getIndexPath() const
-{
+const string& Srch2ServerConf::getIndexPath() const {
 	return indexPath;
 }
 
-const string& Srch2ServerConf::getFilePath() const
-{
+const string& Srch2ServerConf::getFilePath() const {
 	return this->filePath;
 }
 
-const string& Srch2ServerConf::getPrimaryKey() const
-{
+const string& Srch2ServerConf::getPrimaryKey() const {
 	return primaryKey;
 }
 
-const map<string, pair<unsigned, unsigned> > * Srch2ServerConf::getSearchableAttributes() const
-{
+const map<string, pair<unsigned, unsigned> > * Srch2ServerConf::getSearchableAttributes() const {
 	return &searchableAttributesTriple;
 }
 
-const vector<string> * Srch2ServerConf::getAttributesToReturnName() const
-{
+const vector<string> * Srch2ServerConf::getAttributesToReturnName() const {
 	return &attributesToReturn;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesName() const
-{
+const vector<string> * Srch2ServerConf::getSortableAttributesName() const {
 	return &sortableAttributes;
 }
 
-const vector<srch2::instantsearch::FilterType>  * Srch2ServerConf::getSortableAttributesType() const
-{
+const vector<srch2::instantsearch::FilterType> * Srch2ServerConf::getSortableAttributesType() const {
 	return &sortableAttributesType;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() const
-{
+const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() const {
 	return &sortableAttributesDefaultValue;
 }
 
-
 /*const vector<unsigned> * Srch2ServerConf::getAttributesBoosts() const
-{
-	return &attributesBoosts;
-}*/
+ {
+ return &attributesBoosts;
+ }*/
 
-const string& Srch2ServerConf::getAttributeRecordBoostName() const
-{
+string Srch2ServerConf::getInstallDir() const {
+	return installDir;
+}
+
+bool Srch2ServerConf::getStemmerFlag() const {
+	return stemmerFlag;
+}
+
+string Srch2ServerConf::getStemmerFile() const {
+	return stemmerFile;
+}
+
+string Srch2ServerConf::getSynonymFilePath() const {
+	return synonymFilterFilePath;
+}
+
+bool Srch2ServerConf::getSynonymKeepOrigFlag() const {
+	return synonymKeepOrigFlag;
+}
+
+string Srch2ServerConf::getStopFilePath() const {
+	return stopFilterFilePath;
+}
+
+const string& Srch2ServerConf::getAttributeRecordBoostName() const {
 	return attributeRecordBoost;
 }
 
 /*string getDefaultAttributeRecordBoost() const
-{
-	return defaultAttributeRecordBoost;
-}*/
+ {
+ return defaultAttributeRecordBoost;
+ }*/
 
-const std::string& Srch2ServerConf::getScoringExpressionString() const
-{
+const std::string& Srch2ServerConf::getScoringExpressionString() const {
 	return scoringExpressionString;
 }
 
-int Srch2ServerConf::getSearchResponseJSONFormat() const
-{
+int Srch2ServerConf::getSearchResponseJSONFormat() const {
 	return searchResponseJsonFormat;
 }
 
-const string& Srch2ServerConf::getRecordAllowedSpecialCharacters() const
-{
+const string& Srch2ServerConf::getRecordAllowedSpecialCharacters() const {
 	return allowedRecordTokenizerCharacters;
 }
 
-int Srch2ServerConf::getSearchType() const
-{
+int Srch2ServerConf::getSearchType() const {
 	return searchType;
 }
 
-int Srch2ServerConf::getIsPrimSearchable() const
-{
+int Srch2ServerConf::getIsPrimSearchable() const {
 	return isPrimSearchable;
 }
 
-bool Srch2ServerConf::getIsFuzzyTermsQuery() const
-{
+bool Srch2ServerConf::getIsFuzzyTermsQuery() const {
 	return exactFuzzy;
 }
 
-bool Srch2ServerConf::getQueryTermType() const
-{
+bool Srch2ServerConf::getQueryTermType() const {
 	return queryTermType;
 }
 
-unsigned Srch2ServerConf::getQueryTermBoost() const
-{
+unsigned Srch2ServerConf::getQueryTermBoost() const {
 	return queryTermBoost;
 }
 
-float Srch2ServerConf::getQueryTermSimilarityBoost() const
-{
+float Srch2ServerConf::getQueryTermSimilarityBoost() const {
 	return queryTermSimilarityBoost;
 }
 
-float Srch2ServerConf::getQueryTermLengthBoost() const
-{
+float Srch2ServerConf::getQueryTermLengthBoost() const {
 	return queryTermLengthBoost;
 }
 
-float Srch2ServerConf::getPrefixMatchPenalty() const
-{
-    return prefixMatchPenalty;
+float Srch2ServerConf::getPrefixMatchPenalty() const {
+	return prefixMatchPenalty;
 }
 
-bool Srch2ServerConf::getSupportAttributeBasedSearch() const
-{
+bool Srch2ServerConf::getSupportAttributeBasedSearch() const {
 	return supportAttributeBasedSearch;
 }
 
-int Srch2ServerConf::getSearchResponseFormat() const
-{
+int Srch2ServerConf::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
 
-const string& Srch2ServerConf::getAttributeStringForMySQLQuery() const
-{
+const string& Srch2ServerConf::getAttributeStringForMySQLQuery() const {
 	return attributeStringForMySQLQuery;
 }
 
-const string& Srch2ServerConf::getLicenseKeyFileName() const
-{
+const string& Srch2ServerConf::getLicenseKeyFileName() const {
 	return licenseKeyFile;
 }
 
-const std::string& Srch2ServerConf::getTrieBootstrapDictFileName() const
-{
+const std::string& Srch2ServerConf::getTrieBootstrapDictFileName() const {
 	return this->trieBootstrapDictFile;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningHostname() const
-{
+const string& Srch2ServerConf::getHTTPServerListeningHostname() const {
 	return httpServerListeningHostname;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningPort() const
-{
+const string& Srch2ServerConf::getHTTPServerListeningPort() const {
 	return httpServerListeningPort;
 }
 
-const string& Srch2ServerConf::getKafkaBrokerHostName() const
-{
+const string& Srch2ServerConf::getKafkaBrokerHostName() const {
 	return kafkaBrokerHostName;
 }
 
-uint16_t Srch2ServerConf::getKafkaBrokerPort() const
-{
+uint16_t Srch2ServerConf::getKafkaBrokerPort() const {
 	return kafkaBrokerPort;
 }
 
-const string& Srch2ServerConf::getKafkaConsumerTopicName() const
-{
+const string& Srch2ServerConf::getKafkaConsumerTopicName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getKafkaConsumerPartitionId() const
-{
+uint32_t Srch2ServerConf::getKafkaConsumerPartitionId() const {
 	return kafkaConsumerPartitionId;
 }
 
-uint32_t Srch2ServerConf::getWriteReadBufferInBytes() const
-{
+uint32_t Srch2ServerConf::getWriteReadBufferInBytes() const {
 	return writeReadBufferInBytes;
 }
 
-uint32_t Srch2ServerConf::getPingKafkaBrokerEveryNSeconds() const
-{
+uint32_t Srch2ServerConf::getPingKafkaBrokerEveryNSeconds() const {
 	return pingKafkaBrokerEveryNSeconds;
 }
 
-int Srch2ServerConf::getDefaultResultsToRetrieve() const
-{
+int Srch2ServerConf::getDefaultResultsToRetrieve() const {
 	return resultsToRetrieve;
 }
 
-int Srch2ServerConf::getAttributeToSort() const
-{
+int Srch2ServerConf::getAttributeToSort() const {
 	return attributeToSort;
 }
 
-int Srch2ServerConf::getOrdering() const
-{
+int Srch2ServerConf::getOrdering() const {
 	return ordering;
 }
 
-bool Srch2ServerConf::isRecordBoostAttributeSet() const
-{
+bool Srch2ServerConf::isRecordBoostAttributeSet() const {
 	return recordBoostAttributeSet;
 }
 
-const string& Srch2ServerConf::getHTTPServerAccessLogFile() const
-{
+const string& Srch2ServerConf::getHTTPServerAccessLogFile() const {
 	return httpServerAccessLogFile;
 }
 
-const string& Srch2ServerConf::getHTTPServerErrorLogFile() const
-{
+const string& Srch2ServerConf::getHTTPServerErrorLogFile() const {
 	return httpServerErrorLogFile;
 }
 
-unsigned Srch2ServerConf::getCacheSizeInBytes() const
-{
+unsigned Srch2ServerConf::getCacheSizeInBytes() const {
 	return cacheSizeInBytes;
 }
 

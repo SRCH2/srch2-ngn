@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	record->setRecordBoost(20);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new AnalyzerInternal(srch2::instantsearch::NO_STEMMER_NORMALIZER, " ");
+	AnalyzerInternal *analyzer = new AnalyzerInternal(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, " ");
 	RankerExpression *rankerExpression = new RankerExpression("doc_length");
 	map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
