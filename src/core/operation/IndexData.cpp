@@ -27,6 +27,7 @@
 #include "index/ForwardIndex.h"
 #include "util/ReadWriteMutex.h"  // for locking
 #include "util/Assert.h"
+#include "util/Logger.h"
 #include "geo/QuadTree.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
@@ -47,6 +48,7 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
+using srch2::util::Logger;
 //using std::unordered_set;
 using namespace srch2::util;
 
@@ -593,9 +595,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
 
 INDEXWRITE_RETVAL IndexData::_merge()
 {
-    LOG_REGION(-1,
-        cout << "Merge begins ---------------------------------------------------------------------------------------------------------" << endl;
-    );
+    Logger::debug("Merge begins--------------------------------"); 
 
     if (!this->mergeRequired)
         return OP_FAIL;
@@ -641,9 +641,7 @@ INDEXWRITE_RETVAL IndexData::_merge()
 
     this->mergeRequired = false;
 
-    LOG_REGION(-1,
-        cout << "Merge ends ---------------------------------------------------------------------------------------------------------" << endl;
-    );
+    Logger::debug("Merge ends--------------------------------"); 
 
     return OP_SUCCESS;
 }
@@ -665,11 +663,6 @@ void IndexData::reassignKeywordIds()
     {
         TrieNode *node = iter->first;
         unsigned newKeywordId = iter->second;
-
-        //unsigned oldKeywordId = node->getId();
-        //LOG_REGION(this->quadTree->log_level,
-        //    std::cout << "ForwardIndex:reassign, " << oldKeywordId << " -> " << newKeywordId << std::endl;
-        //);
 
         keywordIdMapper[node->getId()] = newKeywordId;
 
@@ -772,15 +765,12 @@ void IndexData::_save(const string &directoryName) const
 
 void IndexData::printNumberOfBytes() const
 {
-    LOG_REGION(0,
-            std::cout<<"Number Of Bytes:\n";
-            std::cout<<"Trie:\t\t"<<this->trie->getNumberOfBytes()<<" bytes\t == "<<(float)this->trie->getNumberOfBytes()/1048576<<" MB\n";
-            std::cout<<"ForwardIndex:\t"<<this->forwardIndex->getNumberOfBytes()<<" bytes\t == "<<(float)this->forwardIndex->getNumberOfBytes()/1048576<<" MB\n\n";
-            if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-            {
-                std::cout<<"InvertedIndex:\t"<<this->invertedIndex->getNumberOfBytes()<<" bytes\t == "<<(float)this->invertedIndex->getNumberOfBytes()/1048576<<" MB\n\n";
-            }
-    );
+    Logger::debug("Number Of Bytes:");
+    Logger::debug("Trie:\t\t %d bytes\t %.5f MB", this->trie->getNumberOfBytes(), (float)this->trie->getNumberOfBytes()/1048576);
+    Logger::debug("ForwardIndex:\t %d bytes\t %.5f MB", this->forwardIndex->getNumberOfBytes(), (float)this->forwardIndex->getNumberOfBytes()/1048576);
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+        Logger::debug("InvertedIndex:\t %d bytes\t %.5f MB", this->invertedIndex->getNumberOfBytes(), (float)this->invertedIndex->getNumberOfBytes()/1048576);
+    }
 }
 
 const Analyzer* IndexData::getAnalyzer() const

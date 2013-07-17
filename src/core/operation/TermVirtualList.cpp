@@ -21,9 +21,11 @@
 #include <instantsearch/Ranker.h>
 #include "TermVirtualList.h"
 #include "util/Assert.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
+
+using srch2::util::Logger;
 namespace srch2
 {
 namespace instantsearch
@@ -341,17 +343,10 @@ void TermVirtualList::getCursors(std::vector<unsigned>* &invertedListCursors)
 
 void TermVirtualList::print_test() const
 {
-    LOG_REGION(0,
-            std::cout<<"\n\nItemsHeap--- Size"<<this->itemsHeap.size();
-    );
-    std::cout<<"\n\nItemsHeap--- Size"<<this->itemsHeap.size();
+    Logger::debug("ItemsHeap Size %d", this->itemsHeap.size());
     for (vector<HeapItem* >::const_iterator heapIterator = this->itemsHeap.begin();
             heapIterator != this->itemsHeap.end(); heapIterator++) {
-        /*LOG_REGION(0,
-          std::cout<<"\nInvListPosition:"<<"\tRecord:"<<(*heapIterator)->recordId<<"\tscore:"<<(*heapIterator)->score;
-          );*/
-        std::cout << "\nInvListPosition:"<<"\tRecord:"<<(*heapIterator)->recordId
-              << "\tscore:"<<(*heapIterator)->termRecordRuntimeScore;
+        Logger::debug("InvListPosition:\tRecord: %d\t Score:%.5f", (*heapIterator)->recordId, (*heapIterator)->termRecordRuntimeScore);
     }
     std::cout << std::endl;
 }

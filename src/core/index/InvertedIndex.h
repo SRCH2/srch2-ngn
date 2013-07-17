@@ -27,7 +27,7 @@
 //#include <instantsearch/Schema.h>
 #include <instantsearch/Ranker.h>
 #include "util/Assert.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "util/RankerExpression.h"
 #include "index/InvertedListElement.h"
 #include "util/cowvector/compression/cowvector_S16.h"
@@ -46,6 +46,7 @@ using std::vector;
 using std::string;
 using std::ifstream;
 using std::ofstream;
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -239,7 +240,7 @@ public:
 
         unsigned readViewListSize = readView->getElement(invertedListId)->getReadViewSize();
 
-        std::cerr << "Print invListid:" << invertedListId << "|size:" << readViewListSize << std::endl;
+        Logger::error("Print invListid: %d size %d" , invertedListId, readViewListSize);
         InvertedListElement invertedListElement;
         for (unsigned i = 0; i < readViewListSize; i++)
         {
@@ -248,8 +249,9 @@ public:
             unsigned positionIndexOffset = invertedListElement.positionIndexOffset;
             float score;
             unsigned termAttributeBitmap;
-            if (isValidTermPositionHit(recordId, positionIndexOffset, -1, termAttributeBitmap, score) )
-                std::cerr << recordId  << "|" << positionIndexOffset << "|" << score <<  std::endl;
+            if (isValidTermPositionHit(recordId, positionIndexOffset, -1, termAttributeBitmap, score) ){
+                Logger::debug("%d | %d | %.5f", recordId, positionIndexOffset, score);
+            }
         }
     };
     cowvector<unsigned> *getKeywordIds()

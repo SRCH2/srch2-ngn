@@ -39,7 +39,7 @@
 
 #include <fstream>
 
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "util/encoding.h"
 
 using std::map;

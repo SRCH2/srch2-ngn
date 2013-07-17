@@ -48,7 +48,7 @@
 
 #include "util/cowvector/ts_shared_ptr.h"
 #include "util/Assert.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "util/encoding.h"
 
 using std::cout;
