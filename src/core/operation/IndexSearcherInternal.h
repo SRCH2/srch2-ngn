@@ -25,6 +25,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
+#include <query/QueryResultsInternal.h>
 
 //#include "operation/Cache.h"
 //#include "IndexerInternal.h"
@@ -84,7 +85,7 @@ public:
     }
 
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
-    void computeTermVirtualList(QueryResultsInternal *queryResults) const;
+    void computeTermVirtualList(QueryResults *queryResults) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex(){
@@ -117,6 +118,7 @@ private:
     IndexReaderWriter *indexer;
 
     Cache *cacheManager;
+
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
 

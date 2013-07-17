@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "instantsearch/Schema.h"
+#include "instantsearch/Score.h"
 
 
 namespace srch2
@@ -57,6 +58,13 @@ public:
 	// getting string representation of the attribute value
 	std::string getAttribute(unsigned iter, const Schema * schema ) const;
 
+	// gets the attribute value wrapped in a Score object
+	void getAttribute(unsigned iter, const Schema * schema , Score * score) const;
+
+	// gets values of attributes in iters in Score objects. iters must be ascending.
+	void getBatchOfAttributes(std::vector<unsigned> iters , const Schema * schema , std::vector<Score> * scores) const;
+
+
 
 	unsigned getUnsignedAttribute(unsigned iter , const Schema * schema) const;
 	float getFloatAttribute(unsigned iter , const Schema * schema) const;
@@ -79,13 +87,18 @@ public:
 	void setAttribute(unsigned iter, const Schema * schema, std::vector<unsigned char> attributeValue);
 
 
-	// read the value of an attribute and copies it in char vector
+	// reads the value of an attribute and copies it in char vector
 	void getAttribute(unsigned iter, const Schema * schema, std::vector<unsigned char>& attributeValue) const;
+
+	// reads the values of a set of attributes and copies them in corresponding char vectors
+	void getBatchOfAttributes(std::vector<unsigned> iters,
+			const Schema * schema, std::vector<std::vector<unsigned char> >& attributeValues) const;
 
 	// if updateFlag is on, reads and appends the newAttributeVlue to the newData vector
 	// else reads the attribute value from the currentData and appends it to newData.
 	// In both cases based on the type this attribute moves the startIndex to the beginning point of
 	// the next attribute and returns this value through newStartIndex.
+	// NOTE: if the attribute is of type TEXT, the output contains the length in 4 bytes in the beginning
 	void processNextAttribute(FilterType attributeType, const unsigned char * currentData, unsigned startIndex, bool updateFlag,
 			std::vector<unsigned char> newAttributeValue, std::vector<unsigned char>& newData , unsigned& newStartIndex ) const;
 
@@ -111,6 +124,8 @@ public:
 
 	// Based on type, converts char vector to the string representation of the value, can also be used to convert charvector to string
 	std::string convertCharVectorToString(FilterType type, std::vector<unsigned char> value) const;
+
+	void convertCharVectorToScore(FilterType type, std::vector<unsigned char> value , Score * result) const;
 
     friend class boost::serialization::access;
 

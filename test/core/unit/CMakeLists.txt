@@ -96,11 +96,9 @@ TARGET_LINK_LIBRARIES(VariableLengthAttributeContainer_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS VariableLengthAttributeContainer_Test)
 
 
-ADD_EXECUTABLE(NonSearchableAttribute_Test NonSearchableAttribute_Test.cpp)
-TARGET_LINK_LIBRARIES(NonSearchableAttribute_Test ${UNIT_TEST_LIBS})	
-LIST(APPEND UNIT_TESTS NonSearchableAttribute_Test)
-
-
+ADD_EXECUTABLE(PostProcessingFilter_Test PostProcessingFilters_Test.cpp)
+TARGET_LINK_LIBRARIES(PostProcessingFilter_Test ${UNIT_TEST_LIBS})	
+LIST(APPEND UNIT_TESTS PostProcessingFilter_Test)
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 			 << ranges[vectIter].min.y << " "
 			 << ranges[vectIter].max.y << " " << endl;
 */
-		QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+		QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 		indexSearcher->search(query, queryResults);
 		//cout << queryResults->getNumberOfResults() << endl;

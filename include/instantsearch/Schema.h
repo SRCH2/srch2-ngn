@@ -125,7 +125,7 @@ public:
 
 
     virtual int setNonSearchableAttribute(const std::string &attributeName,
-            FilterType type, const std::string defaultValue, bool isSortable) = 0;
+            FilterType type, const std::string & defaultValue, bool isSortable) = 0;
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -171,7 +171,7 @@ public:
 
     // non Searchable attributes
     virtual const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
-    virtual srch2::instantsearch::FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
     virtual bool isNonSearchableAttributeSortable(const unsigned searchableAttributeNameId) const = 0;
     virtual int getNonSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
     virtual unsigned getNumberOfNonSearchableAttributes() const = 0;

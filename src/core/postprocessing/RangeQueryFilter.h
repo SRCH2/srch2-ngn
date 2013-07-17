@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __RANGEQUERYFILTER_H_OPERATION_SRC
-#define __RANGEQUERYFILTER_H_OPERATION_SRC
+#ifndef _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
+#define _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
 
 
 #include <vector>
@@ -46,7 +46,7 @@ class RangeQueryFilter : public ResultsPostProcessorFilter
 
 public:
 	void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
-			ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output){
+			QueryResults * input, QueryResults * output){
 
 		std::string attributeName = query->getNonSearchableAttributeName();
 		// TODO : operation also needs to come from query, for now we assume it's always " attribute < value "
@@ -61,11 +61,11 @@ public:
 		attributeValue.setScore(attributeType , query->getNonSearchableAttributeValue());
 
 		// iterating on results and checking the criteria on each of them
-		for(vector<QueryResult>::iterator resultIter = input->results.begin(); resultIter != input->results.end() ; ++resultIter){
-			QueryResult &result = *resultIter;
+		for(vector<QueryResult *>::iterator resultIter = input->impl->sortedFinalResults.begin(); resultIter != input->impl->sortedFinalResults.end() ; ++resultIter){
+			QueryResult * result = *resultIter;
 
 			bool isValid = false;
-			const ForwardList * list = forwardIndex->getForwardList(result.internalRecordId , isValid);
+			const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
 			ASSERT(isValid);
 			const VariableLengthAttributeContainer * nonSearchableAttributes = list->getNonSearchableAttributeContainer();
 			Score attributeData;
@@ -111,7 +111,7 @@ public:
 			}
 			// if the result passes the filter criteria it's copied into the output.
 			if(pass){
-				output.results.push_back(result);
+				output->impl->sortedFinalResults.push_back(result);
 			}
 
 
@@ -126,5 +126,5 @@ public:
 
 }
 }
-#endif // __RANGEQUERYFILTER_H_OPERATION_SRC
+#endif // _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
 

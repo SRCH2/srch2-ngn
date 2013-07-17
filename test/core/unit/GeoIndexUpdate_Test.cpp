@@ -190,7 +190,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
                              recordsToSearch[i].second.second.x + 0.05,
                              recordsToSearch[i].second.second.y + 0.05 );
 
-            QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
             unsigned expectedRecordId = atoi(recordsToSearch[i].second.first.c_str());
             indexSearcher->search(query, queryResults);

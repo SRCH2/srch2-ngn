@@ -55,10 +55,10 @@ void QuadTree::rangeQueryWithoutKeywordInformation(QueryResultsInternal *queryRe
 			intptr_t offset = (intptr_t)node->entries[i]; //  get the offset of the element on the global element index
 			if(shape.contains(this->geoElementIndex[offset]->point)) //check whether the location of the geoElement is in the shape
 			{
-			QueryResult queryResult;
-			queryResult.internalRecordId = this->geoElementIndex[offset]->forwardListID;
+			QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
+			queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
 			//take the distance to the center point of shape as the floatScore ,get the negative value of distance for sorting
-			queryResult._score.setScore(
+			queryResult->_score.setScore(
 					(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y)));//TODO
 			queryResultsInternal->insertResult(queryResult);
 			}
@@ -264,9 +264,9 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
                     float distanceScore = this->getDistanceScore(ranker, shape, this->geoElementIndex[offset]->point.x, this->geoElementIndex[offset]->point.y);
                     float combinedScore = ranker->combineKeywordScoreWithDistanceScore(keywordScore, distanceScore);
 
-                    QueryResult queryResult;
-                    queryResult.internalRecordId = this->geoElementIndex[offset]->forwardListID;
-                    queryResult._score.setScore(combinedScore);//TODO
+                    QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
+                    queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
+                    queryResult->_score.setScore(combinedScore);//TODO
                     //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                     // set up the matching keywords and editDistances for queryResults
@@ -278,8 +278,8 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
                         // Don't need thread safe for now, since we acquire a lock outside
                         this->trie->getPrefixString_NotThreadSafe(expan.expansionNodePtr, temp);
                         charTypeVectorToUtf8String(temp, str);
-                        queryResult.matchingKeywords.push_back(str);
-                        queryResult.editDistances.push_back((unsigned)expan.editDistance);
+                        queryResult->matchingKeywords.push_back(str);
+                        queryResult->editDistances.push_back((unsigned)expan.editDistance);
                     }
 
                     queryResultsInternal->insertResult(queryResult);
@@ -337,9 +337,9 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
                             float distanceScore = this->getDistanceScore(ranker, shape, geoElement->point.x, geoElement->point.y);
                             float combinedScore = ranker->combineKeywordScoreWithDistanceScore(keywordScore, distanceScore);
 
-                            QueryResult queryResult;
-                            queryResult.internalRecordId = geoElement->forwardListID;
-                            queryResult._score.setScore(combinedScore);//TODO
+                            QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
+                            queryResult->internalRecordId = geoElement->forwardListID;
+                            queryResult->_score.setScore(combinedScore);//TODO
                             //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                             // set up the matching keyword and editDistance of the picked term for queryResults
@@ -348,8 +348,8 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
                             this->trie->getPrefixString_NotThreadSafe(expansionIterator->expansionNodePtr, temp);
                             string str;
                             charTypeVectorToUtf8String(temp, str);
-                            queryResult.matchingKeywords.push_back(str);
-                            queryResult.editDistances.push_back((unsigned)expansionIterator->editDistance);
+                            queryResult->matchingKeywords.push_back(str);
+                            queryResult->editDistances.push_back((unsigned)expansionIterator->editDistance);
 
                             // set up the matching keywords and editDistances of other terms for queryResults
                             unsigned selectedExpansionsCounter = 0;
@@ -361,8 +361,8 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
                                 // Don't need thread safe for now, since we acquire a lock outside
                                 this->trie->getPrefixString_NotThreadSafe(expan.expansionNodePtr, temp);
                                 charTypeVectorToUtf8String(temp, str);
-                                queryResult.matchingKeywords.push_back(str);
-                                queryResult.editDistances.push_back((unsigned)expan.editDistance);
+                                queryResult->matchingKeywords.push_back(str);
+                                queryResult->editDistances.push_back((unsigned)expan.editDistance);
                                 selectedExpansionsCounter++;
                             }
 

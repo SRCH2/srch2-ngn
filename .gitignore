@@ -46,3 +46,6 @@ local.properties
 
 # PDT-specific
 .buildpath
+
+# my files
+runme-to-init-env.sh

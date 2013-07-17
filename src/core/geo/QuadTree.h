@@ -42,7 +42,7 @@
 
 #include "index/Trie.h"
 #include "record/LocationRecordUtil.h"
-//#include "query/QueryResultsInternal.h"
+#include "query/QueryResultsInternal.h"
 
 #include "geo/FilterIndex.h"
 #include "geo/QuadNodeInternalStructures.h"
@@ -314,6 +314,8 @@ private:
     vector<InfoToFixBroadenPrefixesOnFilters> infoToFixBroadenPrefixesOnFilters;
 
     unsigned totalNumOfInternalQuadNodes;
+
+
 
     friend class boost::serialization::access;
     friend class QuadNode;

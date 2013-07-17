@@ -60,8 +60,8 @@ namespace srch2
         // compare two records based on their scores and record ids
         // used in InvertedList and QueryResultsInternal as a ">" operator to rank the elements
         // on a list in a descending order
-        static bool compareRecordsGreaterThan(Score  leftRecordScore,  unsigned leftRecordId,
-                          Score rightRecordScore, unsigned rightRecordId);//TODO
+        static bool compareRecordsGreaterThan(const Score &  leftRecordScore,  unsigned leftRecordId,
+                          const Score & rightRecordScore, unsigned rightRecordId);//TODO
 
         // Used by GetAllResultsRanker. Default implementation returns 0.
         virtual float computeResultScoreUsingAttributeScore(const Query *query, 

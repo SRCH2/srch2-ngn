@@ -1,6 +1,22 @@
+/*
+ * The Software is made available solely for use according to the License Agreement. Any reproduction
+ * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
+ * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
+ * maximum extent possible.
+ *
+ * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
+ * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
+ * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
+ * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
+ * Copyright © 2013 SRCH2 Inc. All rights reserved
+ */
 
 #include "util/VariableLengthAttributeContainer.h"
+#include "instantsearch/Score.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -66,11 +82,6 @@ void test_1(){
 		ASSERT(value == vlac.convertCharVectorToString(TEXT, charVector));
 	}
 
-
-
-//	std::cout << "Test 1 passed." << std::endl;
-
-
 }
 
 // test getter and setters
@@ -80,11 +91,6 @@ void test_2(){
 
     ///Create Schema
     Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
-//    schema->setPrimaryKey("article_id"); // integer, not searchable
-//    schema->setSearchableAttribute("article_id"); // convert id to searchable text
-//    schema->setSearchableAttribute("article_authors", 2); // searchable text
-//    schema->setSearchableAttribute("article_title", 7); // searchable text
-
 
     schema->setNonSearchableAttribute("text1" , srch2::instantsearch::TEXT, "text1", true);
     schema->setNonSearchableAttribute("int1", srch2::instantsearch::UNSIGNED, "1" , true);
@@ -171,7 +177,31 @@ void test_2(){
 	ASSERT(vlac.getTextAttribute(3,schema) == "Professor");
 	ASSERT(vlac.getTimeAttribute(2,schema) == 22220344567);
 
-//	std::cout << "Test 2 passed." << std::endl;
+	////////////////////////////////////////////
+
+	std::string record6[10] =
+	{"" , "0" , "22220344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
+
+	for(int i=0;i<10;i++){
+		vlac.setAttribute(i,schema,record6[i]);
+	}
+
+	std::vector<Score> results;
+	std::vector<unsigned> attributes;
+	attributes.push_back(2);
+	attributes.push_back(3);
+	attributes.push_back(5);
+	attributes.push_back(7);
+	attributes.push_back(8);
+
+	vlac.getBatchOfAttributes(attributes , schema, &results);
+
+	ASSERT(results.at(0).getTimeScore() == 22220344567);
+	ASSERT(results.at(1).getTextScore().compare("Professor") == 0);
+	ASSERT(results.at(2).getIntScore() == 12000);
+	ASSERT(results.at(3).getTextScore().compare("Smith Patterson") == 0);
+	ASSERT(results.at(4).getIntScore() == 9835);
+
 
 
 
@@ -183,7 +213,7 @@ int main(int argc, char *argv[]){
 	test_1();
 	test_2();
 
-    cout << "Variable Length Attribute Container unit tests: Passed" << endl;
+    cout << "Variable Length Attribute Container unit tests : Passed" << endl;
 
 	return 0;
 }

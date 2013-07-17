@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __RESULTSPOSTPROCESSOR_H_OPERATION_SRC
-#define __RESULTSPOSTPROCESSOR_H_OPERATION_SRC
+#ifndef _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_
+#define _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_
 #include <vector>
 #include <map>
 #include <iostream>
@@ -36,44 +36,12 @@ namespace instantsearch
 
 
 
-class ResultsPostProcessorOperand
-{
-public:
-	vector<QueryResult> results;
-
-	ResultsPostProcessorOperand(){
-;
-	}
-
-	ResultsPostProcessorOperand(const ResultsPostProcessorOperand & copy){
-		results = copy.results;
-	}
-	void importResults(QueryResultsInternal * input){
-//		std::cout << std::endl << "Results imported:" ;
-//
-//		for(vector<QueryResult>::iterator iter = input->sortedFinalResults.begin(); iter != input->sortedFinalResults.end(); ++iter){
-//			std::cout << " "<< iter->externalRecordId ;
-//		}
-//		std::cout << std::endl;
-
-		results.insert(results.end(), input->sortedFinalResults.begin(), input->sortedFinalResults.end());
-	}
-	void exportResults(QueryResultsInternal * output){ // TODO this class might need some more information so this function may need to change ....
-//		std::cout << std::endl << "Results exported:" ;
-//
-//		for(vector<QueryResult>::iterator iter = results.begin(); iter != results.end(); ++iter){
-//			std::cout << " " << iter->externalRecordId ;
-//		}
-//		std::cout << std::endl;
-		output->sortedFinalResults.insert(output->sortedFinalResults.end(), results.begin(), results.end());
-	}
-};
 
 class ResultsPostProcessorFilter
 {
 public:
 	virtual void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
-			ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output) = 0;
+			 QueryResults * input , QueryResults * output) = 0;
 
 	virtual ~ResultsPostProcessorFilter() {};
 
@@ -118,9 +86,9 @@ private:
 class ResultsPostProcessor
 {
 public:
-	ResultsPostProcessor( Schema * schema, ForwardIndex * forwardIndex);
+	ResultsPostProcessor( IndexSearcher *indexSearcher);
 // TODO interface should changed to accept/return QueryResults and also it must accept ForwardIndex pointer to access
-	void doProcess(const Query * query, ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output);
+	void runPlan(Query * query, QueryResults * input, QueryResults * output);
 	~ResultsPostProcessor();
 
 private:
@@ -130,11 +98,6 @@ private:
 
 	// TODO: we need some structure to store information about filter compatibility
 
-	ResultsPostProcessorPlan * createPlan(const Query * query);
-	void runPlan(ResultsPostProcessorPlan * plan, const Query * query, ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output);
-
-
-
 };
 
 
@@ -142,4 +105,4 @@ private:
 }
 
 
-#endif // __RESULTSPOSTPROCESSOR_H_OPERATION_SRC
+#endif // _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_

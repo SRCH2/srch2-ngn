@@ -21,68 +21,53 @@
 #include "ResultsPostProcessor.h"
 #include "RangeQueryFilter.h"
 
+#include "instantsearch/IndexSearcher.h"
+#include "operation/IndexSearcherInternal.h"
 namespace srch2
 {
 namespace instantsearch
 {
 
-ResultsPostProcessor::ResultsPostProcessor( Schema * schema, ForwardIndex * forwardIndex){
+ResultsPostProcessor::ResultsPostProcessor(IndexSearcher *indexSearcher){
 
-	this->forwardIndex = forwardIndex;
-	this->schema = schema;
+
+	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal * >(indexSearcher);
+	this->forwardIndex = indexSearcherInternal->getForwardIndex();
+	this->schema = indexSearcherInternal->getSchema();
 }
 
 ResultsPostProcessor::~ResultsPostProcessor(){
 	// de-allocate plans
 }
-void ResultsPostProcessor::doProcess(const Query * query,  ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output){
-	// choose a plan based on the information in query
-	ResultsPostProcessorPlan * plan = createPlan(query);
-	// run the plan on results
-	runPlan(plan, query, input, output);
-
-	// delete the plan
-	delete plan;
-}
-
-// based on the information in Query object, this function creates the plan (which is a list of filters
-// to be applied on result list one by one)
-// TODO : chane the name of "result"
-ResultsPostProcessorPlan * ResultsPostProcessor::createPlan(const Query * query){
-// create a plan based on query
 
 
-	ResultsPostProcessorPlan * result = NULL;
-	if(query->getPostProcessingFilter() == RANGE_CHECK){ // TODO : we must create enums
-		result = new ResultsPostProcessorPlan();
-		result->addFilterToPlan(new RangeQueryFilter());
-	}else if(query->getPostProcessingFilter() == NO_FILTER){
-		// TODO : must create plan based on query
-		result = new ResultsPostProcessorPlan();
-	}
-
-	return result;
-
-}
-void ResultsPostProcessor::runPlan(ResultsPostProcessorPlan * plan,  const Query * query, ResultsPostProcessorOperand * input, ResultsPostProcessorOperand & output){
+void ResultsPostProcessor::runPlan(Query * query, QueryResults * input, QueryResults *  output){
 // run a plan by iterating on filters and running TODO
 
 	// short circuit in case the plan doesn't have any filters in it.
-	output = *input;
+	ResultsPostProcessorPlan * plan = query->getPostProcessingPlan();
 
+
+
+
+	// if no plan is set in Query, there is no post processing, just mirror the results
+	if(plan == NULL){
+		input->impl->copyForPostProcessing(output->impl);
+		return;
+	}
 
 	// iterating on filters and applying them on list of results
-	ResultsPostProcessorOperand * inputOperand = input;
+	QueryResults * inputOperand = input;
 	plan->beginIteration();
 	while(plan->hasMoreFilters()){
 		ResultsPostProcessorFilter * filter = plan->nextFilter();
 
-		ResultsPostProcessorOperand outputOperand;
-		filter->doFilter(this->schema, this->forwardIndex, query, inputOperand, outputOperand);
+		QueryResults outputOperand(input->impl->resultsFactory,input->impl->indexSearcherInternal,input->impl->query);
+		filter->doFilter(this->schema, this->forwardIndex, query, inputOperand, &outputOperand);
 
-		if(!plan->hasMoreFilters()){
+		if(!plan->hasMoreFilters()){ // TODO : after adding pointer logic reimplement this logic
 			// copy new results to the output
-			output = outputOperand;
+			outputOperand.impl->copyForPostProcessing(output->impl);
 		}else{
 			// pass the input to the next filter
 			inputOperand = &outputOperand;

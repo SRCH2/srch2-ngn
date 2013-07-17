@@ -21,8 +21,8 @@
 
 
 
-#ifndef __SCORE_H__
-#define __SCORE_H__
+#ifndef _INSTANTSEARCH_SCORE_H__
+#define _INSTANTSEARCH_SCORE_H__
 
 #include <cstring>
 #include <ctime>

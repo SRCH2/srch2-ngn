@@ -6778,46 +6778,6 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	delete index;
 }
 
-// test farsi non searchable attributes
-void testFarsiInNonSearchableAttributes(){
-	addFarsiRecordsWithNonSearchableAttribute();
-	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
-	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-
-	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
-	const Analyzer *analyzer = index->getAnalyzer();
-	{
-		string query = "چین ";
-		vector<unsigned> recordIds;
-		recordIds.push_back(1103);
-
-		ASSERT(
-				pingExactCompleteWithFilter(analyzer, indexSearcher, query , 1,RANGE_CHECK , NOT_EQUALS , "class" , "ج" ,
-						recordIds) == true);
-
-	}
-	//Test a record that includes both French and English
-
-	{
-		string query = "اظهار";
-		vector<unsigned> recordIds;
-
-		recordIds.push_back(1101);
-
-		ASSERT(
-				pingExactCompleteWithFilter(analyzer, indexSearcher, query, 1, RANGE_CHECK , GREATER_THAN_EQUALS , "class" , "الف" ,
-						recordIds) == true);
-
-	}
-
-	(void) analyzer;
-	delete indexSearcher;
-	delete index;
-}
 
 int main(int argc, char **argv) {
 
@@ -6958,9 +6918,6 @@ int main(int argc, char **argv) {
 	testSpanishLatin();
 	cout << "test Spanish-Latin passed" << endl;
 
-	// test Multi-language with non searchable attributes
-	testFarsiInNonSearchableAttributes();
-	cout << "test Farsi in non searchable attributes passed" << endl ;
 
 	return 0;
 }

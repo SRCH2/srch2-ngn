@@ -49,8 +49,10 @@ struct Query::Impl
     std::string nonSearchableAttributeName ;
     std::string nonSearchableAttributeValue ;
 
-    POST_PROCESSING_FILTER postProcessingFilterCode;
-    ATTRIBUTE_CRITERION_OPERATION postProcessingFilterOperationCode;
+    PostProcessingFilterFlag postProcessingFilterCode;
+    AttributeCriterionOperation postProcessingFilterOperationCode;
+
+    ResultsPostProcessorPlan *  plan;
 
     Impl()
     {
@@ -60,6 +62,8 @@ struct Query::Impl
         prefixMatchPenalty = 0.90;
 
         range = NULL;
+
+        plan = NULL;
     }
 
     virtual ~Impl()
@@ -230,18 +234,27 @@ std::string Query::getNonSearchableAttributeValue() const{
 }
 
 
-void Query::setPostProcessingFilter(POST_PROCESSING_FILTER code){
+void Query::setPostProcessingFilter(PostProcessingFilterFlag code){
 	this->impl->postProcessingFilterCode = code;
 }
-POST_PROCESSING_FILTER Query::getPostProcessingFilter() const{
+PostProcessingFilterFlag Query::getPostProcessingFilter() const{
 	return this->impl->postProcessingFilterCode;
 }
-void Query::setPostProcessingFilterOperation(ATTRIBUTE_CRITERION_OPERATION code){
+void Query::setPostProcessingFilterOperation(AttributeCriterionOperation code){
 	this->impl->postProcessingFilterOperationCode = code;
 }
-ATTRIBUTE_CRITERION_OPERATION Query::getPostProcessingFilterOperation() const{
+AttributeCriterionOperation Query::getPostProcessingFilterOperation() const{
 	return this->impl->postProcessingFilterOperationCode;
 }
+
+
+void Query::setPostProcessingPlan(ResultsPostProcessorPlan * plan){
+	this->impl->plan = plan;
+}
+ResultsPostProcessorPlan * Query::getPostProcessingPlan(){
+	return this->impl->plan;
+}
+
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
 {

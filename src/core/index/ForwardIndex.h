@@ -278,7 +278,6 @@ private:
         // In loading process, we need to allocate space for the members first.
         if(load)
         {
-//        	this->sortableAttributeScores = new float[this->getNumberOfSortableAttributes()];
         	this->keywordIds = new unsigned[this->getNumberOfKeywords()];
         	this->keywordRecordStaticScores = new half[this->getNumberOfKeywords()];
         	// check if it's an attribute based search
@@ -287,7 +286,6 @@ private:
         		this->keywordAttributeBitmaps = new unsigned[this->getNumberOfKeywords()];
         	}
         }
-//        ar & boost::serialization::make_array(this->sortableAttributeScores, this->getNumberOfSortableAttributes());
         ar & boost::serialization::make_array(this->keywordIds, this->getNumberOfKeywords());
         ar & boost::serialization::make_array(this->keywordRecordStaticScores, this->getNumberOfKeywords());
         // check if it's an attribute based search

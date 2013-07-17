@@ -277,7 +277,7 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(const SchemaInterna
 
     ASSERT( schemaNonSearchableAttributeId < schemaInternal->getNumberOfNonSearchableAttributes() );
 
-    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(schemaNonSearchableAttributeId);
+    FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(schemaNonSearchableAttributeId);
 
     Score score;
 

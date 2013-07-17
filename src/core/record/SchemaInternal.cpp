@@ -142,7 +142,7 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
 
 
 
-int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string defaultValue, bool isSortable)
+int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string & defaultValue, bool isSortable)
 {
 	if( this->nonSearchableAttributeNameToId.size() > 255)
 	{
@@ -192,7 +192,7 @@ const std::string SchemaInternal::getScoringExpression() const
 
 
 
-srch2::instantsearch::FilterType SchemaInternal::getTypeOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const{
+FilterType SchemaInternal::getTypeOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const{
 
 	if(nonSearchableAttributeNameId >= this->nonSearchableAttributeTypeVector.size()){
 		return srch2::instantsearch::TEXT; // TODO default is text, is it ok?

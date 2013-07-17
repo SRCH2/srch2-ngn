@@ -139,7 +139,8 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 
 
 ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/VariableLengthAttributeContainer_Test "--verbose")
-ADD_TEST(NonSearchableAttribute_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/NonSearchableAttribute_Test "--verbose")
+
+ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PostProcessingFilter_Test "--verbose")
 
 #wrapper related tests should be added below this line
 

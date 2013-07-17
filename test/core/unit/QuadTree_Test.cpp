@@ -217,7 +217,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -273,7 +273,8 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 
 	query->setRange(x, y, radius);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -329,7 +330,8 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -381,7 +383,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 

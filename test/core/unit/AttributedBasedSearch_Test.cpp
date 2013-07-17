@@ -99,7 +99,7 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
     
     Query *query = new Query(srch2::instantsearch::TopKQuery);
     query->setPostProcessingFilter(NO_FILTER);
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
     {

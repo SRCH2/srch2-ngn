@@ -23,6 +23,7 @@
 #include <instantsearch/Score.h>
 #include <sstream>
 #include <cstdlib>
+#include <util/Assert.h>
 
 
 namespace srch2
@@ -33,6 +34,7 @@ namespace srch2
 
 
 	bool Score::operator==(const Score& score) const{
+		ASSERT(type == score.type);
     	switch (type) {
 			case UNSIGNED:
 				return intScore == score.intScore;
@@ -52,10 +54,12 @@ namespace srch2
     	return false;
 	}
 	bool Score::operator!=(const Score& score) const{
+		ASSERT(type == score.type);
 		return !(*this == score);
 	}
 
 	bool Score::operator<(const Score& score) const{
+		ASSERT(type == score.type);
     	switch (type) {
 			case UNSIGNED:
 				return intScore < score.intScore;
@@ -76,14 +80,17 @@ namespace srch2
 	}
 
 	bool Score::operator<=(const Score& score) const {
+		ASSERT(type == score.type);
 		return (*this < score) || (*this == score);
 	}
 
 	bool Score::operator>(const Score& score) const{
+		ASSERT(type == score.type);
 		return !(*this <= score);
 	}
 
 	bool Score::operator>=(const Score& score) const{
+		ASSERT(type == score.type);
 		return !(*this < score);
 	}
 

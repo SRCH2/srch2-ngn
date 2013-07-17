@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2013 SRCH2 Inc. All rights reserved
  */
 
 
@@ -91,6 +91,34 @@ std::string VariableLengthAttributeContainer::getAttribute(unsigned iter, const 
 	std::vector<unsigned char> charVectorValue;
 	getAttribute(iter, schema, charVectorValue);
 	return convertCharVectorToString(getAttributeType(iter, schema) , charVectorValue);
+}
+
+// gets the attribute value wrapped in a Score object
+void VariableLengthAttributeContainer::getAttribute(unsigned iter, const Schema * schema , Score * score) const{
+	std::vector<unsigned char> charVectorValue;
+	getAttribute(iter, schema, charVectorValue);
+	convertCharVectorToScore(getAttributeType(iter, schema) , charVectorValue , score);
+}
+
+
+// TODO TODO TODO this function is not tested
+// gets values of attributes in iters in Score objects. iters must be ascending.
+void VariableLengthAttributeContainer::getBatchOfAttributes(std::vector<unsigned> iters , const Schema * schema , std::vector<Score> * scores) const{
+
+	std::vector<std::vector<unsigned char> > charVectorValues;
+	getBatchOfAttributes(iters, schema, charVectorValues);
+	int i=0;
+	for(std::vector<std::vector<unsigned char> >::iterator attrIter = charVectorValues.begin();
+			attrIter != charVectorValues.end(); ++attrIter){
+
+		Score score;
+		convertCharVectorToScore(getAttributeType(iters.at(i), schema) , *attrIter , &score);
+
+		scores->push_back(score);
+
+		//
+		++i;
+	}
 }
 
 unsigned VariableLengthAttributeContainer::getUnsignedAttribute(unsigned iter , const Schema * schema) const{
@@ -234,6 +262,49 @@ void VariableLengthAttributeContainer::getAttribute(unsigned iter, const Schema 
 
 }
 
+void VariableLengthAttributeContainer::getBatchOfAttributes(std::vector<unsigned> iters,
+		const Schema * schema, std::vector<std::vector<unsigned char> >& attributeValues) const{
+	ASSERT(data != NULL);
+
+	unsigned attributeItersIndex = 0;
+	if(iters.size() == 0){
+		return; // no attribute to read
+	}
+
+	unsigned startIndex = 0;
+
+	for (unsigned i=0;i<schema->getNumberOfNonSearchableAttributes();++i){ // iterate on attributes from schema
+				// find the type of ith attribute
+				FilterType type = getAttributeType(i,schema);
+
+				if(i == iters.at(attributeItersIndex)){ // get the value of this attribute
+					std::vector<unsigned char> temp;
+					std::vector<unsigned char> attributeValue;
+					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
+					std::vector<unsigned char>::iterator valueIter = temp.begin();
+					if(type == TEXT){
+						for(unsigned c = 0 ; c < sizeof(unsigned) ; c++){
+							valueIter ++;
+						}
+					}
+					attributeValue.insert(attributeValue.end(), valueIter, temp.end());
+					attributeValues.push_back(attributeValue);
+					attributeItersIndex ++ ;
+					if(attributeItersIndex == iters.size()){
+						break;
+					}
+				}else{ // move over this attribute
+					std::vector<unsigned char> temp;
+					std::vector<unsigned char> attributeValue;
+					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
+				}
+	}
+
+}
+
+
+// TODO: OPTIMIZATION : we can add a flag to the header of this function which tells it to just move the cursor and
+// not do the copy.
 void VariableLengthAttributeContainer::processNextAttribute(FilterType attributeType, const unsigned char * currentData, unsigned startIndex, bool updateFlag,
 		std::vector<unsigned char> newAttributeValue, std::vector<unsigned char>& newData , unsigned& newStartIndex ) const{
 
@@ -423,6 +494,40 @@ std::string VariableLengthAttributeContainer::convertCharVectorToString(FilterTy
 	}
 
 	return result;
+}
+
+
+void VariableLengthAttributeContainer::convertCharVectorToScore(FilterType type, std::vector<unsigned char> value , Score * result) const{
+	unsigned intValue = 0;
+	float floatValue = 0;
+	long longValue = 0;
+	std::stringstream ss;
+	switch (type) {
+		case UNSIGNED:
+			intValue = convertCharVectorToUnsigned(value, value.begin(),value.end());
+			result->setScore(intValue);
+			break;
+		case FLOAT:
+			floatValue = convertCharVectorToFloat(value, value.begin(), value.end());
+			result->setScore(floatValue);
+			break;
+		case TEXT:
+			ss << "";
+			for(std::vector<unsigned char>::iterator it = value.begin(); it != value.end(); ++it) {
+			    ss << (char)*it; // TODO: is it safe to cast it to char
+			}
+			result->setScore(ss.str());
+
+			break;
+		case TIME:
+			longValue = convertCharVectorToLong(value, value.begin(), value.end());
+			result->setScore(longValue);
+			break;
+		default:
+			ASSERT(false);
+			break;
+	}
+
 }
 
 }

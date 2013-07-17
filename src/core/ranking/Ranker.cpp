@@ -100,8 +100,8 @@ namespace srch2
     }
 
     //TODO
-    bool DefaultTopKRanker::compareRecordsGreaterThan(Score leftRecordScore,  unsigned leftRecordId,
-    		Score rightRecordScore, unsigned rightRecordId)
+    bool DefaultTopKRanker::compareRecordsGreaterThan(const Score & leftRecordScore,  unsigned leftRecordId,
+    		const Score & rightRecordScore, unsigned rightRecordId)
     {
     	if (leftRecordScore == rightRecordScore)
     		return leftRecordId < rightRecordId;

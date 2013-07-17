@@ -31,37 +31,43 @@ namespace instantsearch
 {
 
 class Ranker;
+class ResultsPostProcessorPlan;
 
 typedef enum
 {
-    TopKQuery = 0,
-    GetAllResultsQuery = 1,
-    MapQuery = 2
+    TopKQuery ,
+    GetAllResultsQuery ,
+    MapQuery
 } QueryType;
 
 typedef enum
 {
-	LESS_THAN =0,
-	EQUALS=1,
-	GREATER_THAN=2,
-	LESS_THAN_EQUALS=3,
-	GREATER_THAN_EQUALS=4,
-	NOT_EQUALS=5
+	LESS_THAN ,
+	EQUALS,
+	GREATER_THAN,
+	LESS_THAN_EQUALS,
+	GREATER_THAN_EQUALS,
+	NOT_EQUALS
 
-} ATTRIBUTE_CRITERION_OPERATION;
-
-typedef enum
-{
-	NO_FILTER = 0,
-	RANGE_CHECK = 1
-} POST_PROCESSING_FILTER;
+} AttributeCriterionOperation;
 
 typedef enum
 {
-    Ascending = 0,
-    Descending = 1
+	NO_FILTER ,
+	RANGE_CHECK
+} PostProcessingFilterFlag;
+
+typedef enum
+{
+    Ascending ,
+    Descending
 } SortOrder;
 
+
+typedef enum
+{
+	Count
+} FacetedSearchAggregationType;
 /**
  * This class defines a query that is passed to the IndexSearcher. A
  * query has a list of Term objects. We can add more terms to a
@@ -173,11 +179,16 @@ public:
     std::string getNonSearchableAttributeValue() const;
 
 
-    void setPostProcessingFilter(POST_PROCESSING_FILTER code);
-    POST_PROCESSING_FILTER getPostProcessingFilter() const;
+    void setPostProcessingFilter(PostProcessingFilterFlag code);
+    PostProcessingFilterFlag getPostProcessingFilter() const;
 
-    void setPostProcessingFilterOperation(ATTRIBUTE_CRITERION_OPERATION code);
-    ATTRIBUTE_CRITERION_OPERATION getPostProcessingFilterOperation() const;
+    void setPostProcessingFilterOperation(AttributeCriterionOperation code);
+    AttributeCriterionOperation getPostProcessingFilterOperation() const;
+
+
+    void setPostProcessingPlan(ResultsPostProcessorPlan * plan);
+    ResultsPostProcessorPlan * getPostProcessingPlan();
+
 
     /*
      * TODO Should change this function's name to

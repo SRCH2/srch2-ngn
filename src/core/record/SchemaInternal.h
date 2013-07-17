@@ -109,7 +109,7 @@ public:
     int setSortableAttribute(const std::string &attributeName, FilterType type, std::string defaultValue);
 
 
-    int setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string defaultValue, bool isSortable);
+    int setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string & defaultValue, bool isSortable);
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -149,7 +149,7 @@ public:
 
 
     const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const;
-    srch2::instantsearch::FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const;
+    FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const;
     bool isNonSearchableAttributeSortable(const unsigned searchableAttributeNameId) const;
     int getNonSearchableAttributeId(const std::string &searchableAttributeName) const;
     unsigned getNumberOfNonSearchableAttributes() const;

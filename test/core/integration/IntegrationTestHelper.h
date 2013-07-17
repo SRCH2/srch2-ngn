@@ -465,7 +465,8 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
     IndexSearcherInternal *searcher1 = dynamic_cast<IndexSearcherInternal *>(indexSearcher1);
     cacheHit_exact = searcher1->cacheHit(exactQuery);
 
-    QueryResults *exactQueryResults = QueryResults::create(indexSearcher1, exactQuery);
+    QueryResults *exactQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher1, exactQuery);
+
     unsigned idsExactFound = indexSearcher1->search(exactQuery, exactQueryResults, 0, offset + resultsToRetrieve);
 
     //fill visitedList
@@ -488,19 +489,19 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
         IndexSearcherInternal *searcher2 = dynamic_cast<IndexSearcherInternal *>(indexSearcher2);
         cacheHit_fuzzy = searcher2->cacheHit(fuzzyQuery);
 
-        QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher2, fuzzyQuery);
+        QueryResults *fuzzyQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher2, fuzzyQuery);
         idsFuzzyFound = indexSearcher2->search(fuzzyQuery, fuzzyQueryResults, 0, offset + resultsToRetrieve);
 
         // create final queryResults to print.
-        QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-        QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+        QueryResultsInternal *exact_qs = exactQueryResults->impl;
+        QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
         unsigned fuzzyQueryResultsIter = 0;
 
         while (exact_qs->sortedFinalResults.size() < offset + resultsToRetrieve
                 && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
         {
-            string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+            string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
             if ( ! exactVisitedList.count(recordId) )// recordid not there
             {
                 exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -534,7 +535,7 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     exactQuery->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, exactQuery, queryString, attributeIdToFilter);
 
-    QueryResults *exactQueryResults = QueryResults::create(indexSearcher, exactQuery);
+    QueryResults *exactQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher, exactQuery);
     unsigned idsExactFound = indexSearcher->search(exactQuery, exactQueryResults, 0, offset + resultsToRetrieve);
 
     //IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
@@ -560,7 +561,7 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
             Query *fuzzyQuery = new Query(srch2::instantsearch::TopKQuery);
             fuzzyQuery->setPostProcessingFilter(NO_FILTER);
             parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, attributeIdToFilter);
-            QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, fuzzyQuery);
+            QueryResults *fuzzyQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher, fuzzyQuery);
 
             idsFuzzyFound = indexSearcher->search(fuzzyQuery, fuzzyQueryResults, 0, offset + resultsToRetrieve);
 
@@ -568,15 +569,15 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
             //cacheHit_fuzzy = searcher->cacheHit(fuzzyQuery);
 
             // create final queryResults to print.
-            QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-            QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+            QueryResultsInternal *exact_qs = exactQueryResults->impl;
+            QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
             unsigned fuzzyQueryResultsIter = 0;
 
             while (exact_qs->sortedFinalResults.size() < offset + resultsToRetrieve
                     && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
             {
-                string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+                string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
                 if ( ! exactVisitedList.count(recordId) )// recordid not there
                 {
                     exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -624,7 +625,7 @@ bool pingNormalQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, 0, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -798,7 +799,7 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -825,7 +826,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *index
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     for (unsigned resultCounter = 0; resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
@@ -847,9 +848,9 @@ bool pingCache1(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults =  new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
-    QueryResultsInternal *q = dynamic_cast<QueryResultsInternal *>(queryResults);
+    QueryResultsInternal *q = queryResults->impl;
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
 
     if( q->checkCacheHit(searcher,query) )
@@ -871,7 +872,7 @@ bool pingCache2(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     bool returnValue = searcher->cacheHit(query);
@@ -892,7 +893,7 @@ bool ping_DUMMY(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     searcher->cacheHit(query);
@@ -925,7 +926,7 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -953,7 +954,7 @@ bool pingExactPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -974,7 +975,7 @@ bool pingFuzzyPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -995,7 +996,7 @@ bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1016,7 +1017,7 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1037,7 +1038,7 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
@@ -1058,7 +1059,7 @@ bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearch
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1081,7 +1082,7 @@ void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1107,8 +1108,8 @@ bool topK1ConsistentWithTopK2(const Analyzer *analyzer, IndexSearcher *indexSear
 
     //cout << "[" << queryString << "]" << endl;
 
-    QueryResults *queryResultsK1 = QueryResults::create(indexSearcher, query);
-    QueryResults *queryResultsK2 = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK1 = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+    QueryResults *queryResultsK2 = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK1, k1);
     indexSearcher->search(query, queryResultsK2, k2);
@@ -1139,7 +1140,7 @@ bool existsInTopK(const Analyzer *analyzer, IndexSearcher *indexSearcher, string
 
     //cout << "[" << queryString << "]" << endl;
 
-    QueryResults *queryResultsK = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK =new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK, k);
 
@@ -1173,7 +1174,7 @@ unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     unsigned returnvalue =  queryResults->getNumberOfResults();
@@ -1183,31 +1184,6 @@ unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     return returnvalue;
 }
 
-bool pingExactCompleteWithFilter(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString,
-		unsigned numberofHits , POST_PROCESSING_FILTER filter , ATTRIBUTE_CRITERION_OPERATION operation , string attributeName, string attributeValue , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
-{
-    Query *query = new Query(srch2::instantsearch::TopKQuery);
-    query->setPostProcessingFilter(filter);
-    query->setPostProcessingFilterOperation(operation);
-    query->setNonSearchableAttributeName(attributeName);
-    query->setNonSearchableAttributeValue(attributeValue);
-
-    parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
-    int resultCount = 10;
-
-    //cout << "[" << queryString << "]" << endl;
-
-    // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
-
-    indexSearcher->search(query, queryResults, resultCount);
-    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
-    //printResults(queryResults);
-    queryResults->printStats();
-    delete queryResults;
-    delete query;
-    return returnvalue;
-}
 
 void csvline_populate(vector<string> &record, const string& line, char delimiter)
 {
