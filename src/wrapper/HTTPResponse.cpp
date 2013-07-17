@@ -8,6 +8,7 @@
 #include <set>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/Logger.h"
 
 #include "HTTPResponse.h"
 #include "IndexWriteUtil.h"
@@ -21,7 +22,6 @@ using srch2is::QueryResultsInternal;
 using srch2is::QueryResults;
 
 using namespace snappy;
-
 
 namespace srch2
 {
@@ -111,6 +111,9 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
     Json::FastWriter writer;
     Json::Value root;
 
+    // For logging
+    string logQueries;
+
     root["searcher_time"] = ts1;
     root["results"].resize(end-start);
 
@@ -189,7 +192,11 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		root["query_keywords"].resize(query->getQueryTerms()->size());
 		for(unsigned i = 0; i < query->getQueryTerms()->size(); i++)
 		{
-			root["query_keywords"][i] = *(query->getQueryTerms()->at(i)->getKeyword());
+			string &term = *(query->getQueryTerms()->at(i)->getKeyword());
+			root["query_keywords"][i] = term;
+			if(i)
+				logQueries += "";
+			logQueries += term;
 		}
 
 		root["fuzzy"] = (int)urlParserHelper.isFuzzy;
@@ -215,6 +222,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         }
     }
 
+    Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
     
 }
@@ -231,7 +239,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, Srch2Server *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->srch2ServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -263,7 +271,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, Srch2Server *server)
                 delete record;
             }
             //std::cout << log_str.str() << std::endl;
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             break;
@@ -277,7 +285,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, Srch2Server *server)
 
             IndexWriteUtil::_deleteCommand_QueryURI(server->indexer, server->indexDataContainerConf, headers, 0, log_str);
 
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
 
             // Free the objects
@@ -286,7 +294,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, Srch2Server *server)
         }
         default:
         {
-            server->srch2ServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            Logger::error("error: The request has an invalid or missing argument. See Srch2 API documentation for details");
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         }
     };
@@ -304,7 +312,7 @@ void HTTPResponse::updateCommand(evhttp_request *req, Srch2Server *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->srch2ServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -339,7 +347,7 @@ void HTTPResponse::updateCommand(evhttp_request *req, Srch2Server *server)
                 evhttp_clear_headers(&headers);
             }
             //std::cout << log_str.str() << std::endl;
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             
@@ -347,7 +355,7 @@ void HTTPResponse::updateCommand(evhttp_request *req, Srch2Server *server)
         }
         default:
         {
-            server->srch2ServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         }
     };
@@ -365,7 +373,7 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, Srch2Server *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->srch2ServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -406,7 +414,7 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, Srch2Server *server)
                 }
             }
             //std::cout << log_str.str() << std::endl;
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             break;
         }
@@ -424,14 +432,14 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, Srch2Server *server)
             // Free the objects
             evhttp_clear_headers(&headers);
 
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             break;
         }
         default:
         {
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-            server->srch2ServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }
@@ -450,13 +458,13 @@ void HTTPResponse::activateCommand(evhttp_request *req, Srch2Server *server)
             IndexWriteUtil::_commitCommand(server->indexer, server->indexDataContainerConf, 0, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The initialization phase has started successfully\", \"log\":["+log_str.str()+"]}\n" );
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             break;
         }
         default:
         {
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-            server->srch2ServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }
@@ -472,13 +480,13 @@ void HTTPResponse::saveCommand(evhttp_request *req, Srch2Server *server)
             IndexWriteUtil::_saveCommand(server->indexer, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The index has been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
-            server->srch2ServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             break;
         }
         default:
         {
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-            server->srch2ServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }

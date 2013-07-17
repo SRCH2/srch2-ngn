@@ -10,7 +10,6 @@
 #include <instantsearch/Indexer.h>
 
 #include "Srch2ServerConf.h"
-#include "Srch2ServerLogger.h"
 
 namespace srch2is = srch2::instantsearch;
 
@@ -37,7 +36,7 @@ class JSONRecordParser
 class DaemonDataSource
 {
 	public:
-		static void createNewIndexFromFile(srch2is::Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const Srch2ServerLogger *srch2ServerLogger);
+		static void createNewIndexFromFile(srch2is::Indexer *indexer, const Srch2ServerConf *indexDataContainerConf);
 };
 
 

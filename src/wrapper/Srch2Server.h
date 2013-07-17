@@ -12,7 +12,6 @@
 #include <instantsearch/QueryResults.h>
 
 #include "Srch2ServerConf.h"
-#include "Srch2ServerLogger.h"
 #include "Srch2KafkaConsumer.h"
 
 #include <pthread.h>
@@ -34,7 +33,6 @@ class Srch2Server
 {
 public:
 	Indexer *indexer;
-    const Srch2ServerLogger *srch2ServerLogger;
 	const Srch2ServerConf *indexDataContainerConf;
 	Srch2KafkaConsumer *kafkaConsumer;
 
@@ -53,16 +51,14 @@ public:
 	Srch2Server()
 	{
 		this->indexer = NULL;
-		this->srch2ServerLogger= NULL;
 		this->indexDataContainerConf = NULL;
 		this->kafkaConsumer = NULL;
 	}
 
-	void init(const Srch2ServerConf *indexDataContainerConf, const Srch2ServerLogger *srch2ServerLogger)
+	void init(const Srch2ServerConf *indexDataContainerConf)
 	{
-        this->srch2ServerLogger = srch2ServerLogger;
 		this->indexDataContainerConf = indexDataContainerConf;
-		this->kafkaConsumer = new Srch2KafkaConsumer(this->indexDataContainerConf, this->srch2ServerLogger);
+		this->kafkaConsumer = new Srch2KafkaConsumer(this->indexDataContainerConf);
 		this->indexer = this->kafkaConsumer->getIndexer();
 	}
 

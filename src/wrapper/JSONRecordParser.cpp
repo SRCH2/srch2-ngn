@@ -15,6 +15,7 @@
 
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/Logger.h"
 
 using namespace snappy;
 
@@ -273,15 +274,13 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const Srch2ServerConf *indexDataContainerConf, const Srch2ServerLogger *srch2ServerLogger)
+void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const Srch2ServerConf *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
-        cout << "DataSource file not found at:" << filePath << endl;
-        //srch2ServerLogger->BMLog(1, "DataSource file not found at: %s", filePath.c_str());
-        srch2ServerLogger->BMLog(1, "%s", filePath.c_str());
+        Logger::error("DataSource file not found at: %s", filePath.c_str());
         return;
     }
 
@@ -307,8 +306,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const S
         {
             //TODO: cout to logger
             error << "at line:" << lineCounter;
-            std::cout << error.str();
-            srch2ServerLogger->BMLog(1, "%s", error.str().c_str());
+            Logger::error("%s", error.str().c_str());
         }
         record->clear();
 
@@ -323,8 +321,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const S
         }
         ++lineCounter;
     }
-    std::cout << std::endl << "Indexed " << lineCounter << " records."<< std::endl;
-    srch2ServerLogger->BMLog(1, "Indexed %d records.", lineCounter);
+    Logger::console("Indexed %d records.", lineCounter);
 
     in.close();
 
@@ -332,11 +329,9 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const S
     // be added
     indexer->commit();
 
-    std::cout << "Saving Index....." << std::endl;
-    srch2ServerLogger->BMLog(1, "Saving Index.....");
+    Logger::console("Saving Index.....");
     indexer->save();
-    std::cout << "Index saved." << std::endl;
-    srch2ServerLogger->BMLog(1, "Index saved.");
+    Logger::console("Index saved.");
 }
 
 // convert other types to string
