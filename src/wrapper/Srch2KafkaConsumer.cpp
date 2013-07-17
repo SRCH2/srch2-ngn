@@ -3,6 +3,7 @@
 #include "Srch2KafkaConsumer.h"
 #include "IndexWriteUtil.h"
 #include "json/json.h"
+#include "util/Logger.h"
 
 using namespace srch2::instantsearch;
 namespace srch2is = srch2::instantsearch;
@@ -27,7 +28,7 @@ IndexMetaData *Srch2KafkaConsumer::createIndexMetaData(const Srch2ServerConf *in
 	return indexMetaData;
 }
 
-void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch2ServerLogger)
+void Srch2KafkaConsumer::createAndBootStrapIndexer()
 {
 	// create IndexMetaData
 	IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataContainerConf);
@@ -79,16 +80,14 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer(const Srch2ServerLogger* srch
 				case srch2http::FILEBOOTSTRAP_TRUE:
 				{
 					// Create from JSON and save to index-dir
-				  cout << "Creating an index from JSON file..." << endl;
-                    srch2ServerLogger->BMLog(1, "%s", "Creating an index from JSON file...");
-					DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf, srch2ServerLogger);
+                    Logger::console("Creating an index from JSON file...");
+					DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
 					this->offset = this->indexer->getKafkaOffsetFromIndexSnapShot();
 					break;
 				}
 				default:
 				{
-					cout << "Creating new empty index" << endl;
-                    srch2ServerLogger->BMLog(1, "%s", "Creating new empty index");
+                    Logger::console("Creating new empty index");
 				}
 			};
 			break;

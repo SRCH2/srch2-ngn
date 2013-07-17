@@ -15,7 +15,7 @@ namespace util {
 #ifdef SRCH2_SHIPPING
 Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_SILENT;
 #else
-Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_DEBUG;
+Logger::LogLevel Logger::_logLevel = Logger::SRCH2_LOG_INFO;
 #endif
 
 FILE* Logger::_out_file = stdout;
