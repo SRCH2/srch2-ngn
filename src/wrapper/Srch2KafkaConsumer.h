@@ -24,7 +24,6 @@
 #include "thirdparty/kafka/producer/producer.hpp"
 //#include "JSONRecordParser.h"
 #include "Srch2ServerConf.h"
-#include "Srch2ServerLogger.h"
 
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -40,14 +39,14 @@ class Srch2KafkaConsumer
 {
 public:
 
-	Srch2KafkaConsumer(const Srch2ServerConf *indexDataContainerConf, const Srch2ServerLogger *srch2ServerLogger)
+	Srch2KafkaConsumer(const Srch2ServerConf *indexDataContainerConf)
 	{
 		this->indexDataContainerConf = indexDataContainerConf;
 
 		//pthread_mutex_init(&mutex_writer, 0);
 		this->offset = 0;
 
-	    this->createAndBootStrapIndexer(srch2ServerLogger);
+	    this->createAndBootStrapIndexer();
 
 	    if ( this->indexDataContainerConf->getWriteApiType() == srch2http::KAFKAWRITEAPI)
 	    {
@@ -159,7 +158,7 @@ private:
    	bool consumeMessages();
    	bool produceHealthMessage();
 
-   	void createAndBootStrapIndexer(const Srch2ServerLogger *srch2ServerLogger);
+   	void createAndBootStrapIndexer();
 
     void consumer_watch_time()
    	{

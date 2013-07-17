@@ -181,7 +181,7 @@ listening-port=8081
 # License Key file. Make sure to set the path to the srch2 license key
 # file provided with the package change
 # REQUIRED
-license-file=${CMAKE_SOURCE_DIR}/test/Developer_License/srch2_license_key.txt
+license-file=${CMAKE_SOURCE_DIR}/test/wrapper/conf/srch2_license_key.txt
 
 trie-bootstrap-dict-file=${CMAKE_SOURCE_DIR}/wrapper/wordlist.txt
 
