@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __SHAREDTOKEN_H__
-#define __SHAREDTOKEN_H__
+#ifndef __CORE_ANALYZER__SHAREDTOKEN_H__
+#define __CORE_ANALYZER__SHAREDTOKEN_H__
 
 #include <vector>
 #include "util/encoding.h"
@@ -29,4 +29,4 @@ public:
 	int offset;									//the offset of current position to process
 };
 }}
-#endif /* __SHAREDTOKEN_H__ */
+#endif /* __CORE_ANALYZER__SHAREDTOKEN_H__ */

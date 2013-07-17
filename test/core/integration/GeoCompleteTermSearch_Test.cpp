@@ -26,7 +26,8 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
     schema->setSearchableAttribute("category", 1);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;

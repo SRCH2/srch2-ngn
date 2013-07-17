@@ -31,6 +31,7 @@
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
 #include <instantsearch/Record.h>
+#include "util/FileOps.h"
 
 #include <stdio.h>  /* defines FILENAME_MAX */
 #include <iostream>
@@ -47,6 +48,7 @@ using std::vector;
 using std::map;
 using std::pair;
 //using std::unordered_set;
+using namespace srch2::util;
 
 namespace srch2
 {
@@ -57,10 +59,16 @@ IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
         const string &trieBootstrapFileNameWithPath,
-        const StemmerNormalizerType &stemType)
+        const StemmerNormalizerFlagType &stemmerFlag)
 {
 
     this->directoryName = directoryName;
+
+    if(!checkDirExistence(directoryName.c_str())){
+		if(createDir(directoryName.c_str()) == -1){
+			exit(1);
+		}
+	}
 
     /* Create a copy of analyzer as the user created analyzer can be dereferenced by the user any time.
      * Shared pointer could be one solution to overcome this.
@@ -102,6 +110,12 @@ IndexData::IndexData(const string &directoryName,
 IndexData::IndexData(const string& directoryName)
 {
     this->directoryName = directoryName;
+
+    if(!checkDirExistence(directoryName.c_str())){
+		if(createDir(directoryName.c_str()) == -1){
+			exit(1);
+		}
+	}
 
     std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
 	boost::archive::binary_iarchive ia(ifs);

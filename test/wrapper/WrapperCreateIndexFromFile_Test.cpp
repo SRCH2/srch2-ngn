@@ -7,6 +7,8 @@
 #include "wrapper/Srch2KafkaConsumer.h"
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
+#include "license/LicenseVerifier.h"
+#include "util/Logger.h"
 
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -148,7 +150,16 @@ bool test(int argc, char** argv)
 	bool parseSuccess = true;
 	std::stringstream parseError;
 	srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(argc, argv, parseSuccess, parseError);
-    srch2http::Srch2ServerLogger *serverLogger = new srch2http::Srch2ServerLogger(serverConf->getHTTPServerAccessLogFile());
+	// check the license file
+	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+	FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
+	if(logFile == NULL){
+		Logger::setOutputFile(stdout);
+		Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
+	}
+	else
+		Logger::setOutputFile(logFile);
+	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
 	if (not parseSuccess)
 	{
@@ -160,7 +171,8 @@ bool test(int argc, char** argv)
 	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, serverConf->getRecordAllowedSpecialCharacters());
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, serverConf->getRecordAllowedSpecialCharacters());
 
 	// Create a schema to the data source definition in the Srch2ServerConf
 	srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(serverConf);
@@ -169,7 +181,7 @@ bool test(int argc, char** argv)
 
 	cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
-	srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf, serverLogger);
+	srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
 
 	srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
 	ii->getTrie()->print_Trie();
@@ -177,6 +189,7 @@ bool test(int argc, char** argv)
 	delete indexMetaData;
 	delete indexer;
 	delete serverConf;
+	fclose(logFile);
 
 	return true;
 }
@@ -187,4 +200,3 @@ int main(int argc, char** argv)
 	test(argc, argv);
 	return 0;
 }
-

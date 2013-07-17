@@ -206,7 +206,7 @@ private:
     IndexData(const string& directoryName, 
             Analyzer *analyzer, Schema *schema,
             const string &trieBootstrapFileNameWithPath,
-            const StemmerNormalizerType &stemType);
+            const StemmerNormalizerFlagType &stemmerFlag);
             
     IndexData(const string& directoryName);
 
@@ -259,9 +259,9 @@ public:
     inline static IndexData* create(const string& directoryName, 
                 Analyzer *analyzer, Schema *schema, 
                 const string &trieBootstrapFileNameWithPath,
-                const StemmerNormalizerType &stemType = srch2::instantsearch::NO_STEMMER_NORMALIZER)
+                const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer, schema, trieBootstrapFileNameWithPath, stemType);
+        return new IndexData(directoryName, analyzer, schema, trieBootstrapFileNameWithPath, stemmerFlag);
     }
     
     inline static IndexData* load(const string& directoryName)

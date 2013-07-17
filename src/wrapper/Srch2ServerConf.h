@@ -1,7 +1,7 @@
 //$Id: Srch2ServerConf.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
-#ifndef __SRCH2SERVERCONG_H__
-#define __SRCH2SERVERCONG_H__
+#ifndef __WRAPPER__SRCH2SERVERCONG_H__
+#define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
 #include <string>
@@ -11,35 +11,28 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+#include "util/Logger.h"
 
 using namespace std;
+using namespace srch2::util;
 namespace po = boost::program_options;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
-typedef enum
-{
-	KAFKAWRITEAPI = 0,
-	HTTPWRITEAPI = 1
+typedef enum {
+	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
 } WriteApiType;
 
-typedef enum
-{
-	INDEXCREATE = 0,
-	INDEXLOAD = 1
+typedef enum {
+	INDEXCREATE = 0, INDEXLOAD = 1
 } IndexCreateOrLoad;
 
-typedef enum
-{
-	FILEBOOTSTRAP_FALSE = 0,
-	FILEBOOTSTRAP_TRUE = 1
-}DataSourceType;
+typedef enum {
+	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
+} DataSourceType;
 
-class Srch2ServerConf
-{
+class Srch2ServerConf {
 private:
 
 	// Argument file options
@@ -66,13 +59,11 @@ private:
 
 	string primaryKey;
 	int searchResponseFormat;
-    vector<string> attributesToReturn;
+	vector<string> attributesToReturn;
 	int numberOfThreads;
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
-    // < keyword, < offset, boost > >
-    map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
 
     // < name, <required, <default, <offset, boost> > > >
     map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
@@ -87,6 +78,9 @@ private:
 
 	//vector<unsigned> attributesBoosts;
 
+	// This is the directory that will be set during installation.
+	std::string installDir;
+
 	std::string allowedRecordTokenizerCharacters;
 	int searchType;
 	int isPrimSearchable;
@@ -97,10 +91,15 @@ private:
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
 	bool supportAttributeBasedSearch;
-
+	bool stemmerFlag;
+	std::string stemmerFile;
+	std::string synonymFilterFilePath;
+	bool synonymKeepOrigFlag;
+	std::string stopFilterFilePath;
 	DataSourceType dataSourceType;
 	IndexCreateOrLoad indexCreateOrLoad;
 	WriteApiType writeApiType;
+
 
 	int resultsToRetrieve;
 	int attributeToSort;
@@ -111,11 +110,13 @@ private:
 	string indexPath;
 	string filePath;
 	string httpServerAccessLogFile;
+	Logger::LogLevel loglevel;
 	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
 
 public:
-	Srch2ServerConf(int argc, char** argv, bool &configSuccess, std::stringstream &parseError);
+	Srch2ServerConf(int argc, char** argv, bool &configSuccess,
+			std::stringstream &parseError);
 	virtual ~Srch2ServerConf();
 
 	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
@@ -147,6 +148,12 @@ public:
 	int getIsPrimSearchable() const;
 	bool getIsFuzzyTermsQuery() const;
 	bool getQueryTermType() const;
+	bool getStemmerFlag() const;
+	string getSynonymFilePath() const;
+	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
+	string getStopFilePath() const; // StopFilter File Path
+	string getStemmerFile() const; // stemmer file
+	string getInstallDir() const; // install Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;
@@ -174,6 +181,7 @@ public:
 	const std::string& getTrieBootstrapDictFileName() const;
 
 	const std::string& getHTTPServerAccessLogFile() const;
+	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerErrorLogFile() const;
 	const std::string& getHTTPServerDocumentRoot() const;
 	const std::string& getHTTPServerListeningHostname() const;
@@ -197,6 +205,4 @@ public:
 }
 }
 
-
-
-#endif /* __SRCH2SERVERCONG_H__ */
+#endif /* __WRAPPER__SRCH2SERVERCONG_H__ */

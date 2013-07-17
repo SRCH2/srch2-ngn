@@ -107,7 +107,7 @@ public:
                                          analyzer,
                                          schema,
                                          indexMetaData->trieBootstrapFileNameWithPath,
-                                         srch2::instantsearch::NO_STEMMER_NORMALIZER
+                                         srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                          );
         this->initIndexReaderWriter(indexMetaData);
         // start merge threads after commit
