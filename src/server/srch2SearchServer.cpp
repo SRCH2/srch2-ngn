@@ -376,12 +376,12 @@ int main(int argc, char** argv)
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
     FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
-    if(logFile == NULL)
-    {
-    	logFile = stdout;
-    	cout << "Open Log file " << serverConf->getHTTPServerAccessLogFile().c_str() << " failed." << endl;
+    if(logFile == NULL){
+    	Logger::setOutputFile(stdout);
+    	Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
     }
-    Logger::setOutputFile(logFile);
+    else
+    	Logger::setOutputFile(logFile);
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
 	if (not parseSuccess)
