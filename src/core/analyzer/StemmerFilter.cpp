@@ -32,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <util/encoding.h>
+#include <util/Logger.h>
 
 using namespace std;
 
@@ -56,7 +57,7 @@ int StemmerFilter::createWordMap(const std::string &stemmerFilePath) {
 	std::ifstream input(stemmerFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-		cerr << "\nThe file could not be opened.";
+        srch2::util::Logger::error("The file %s could not be opened.", stemmerFilePath.c_str());
 		return -1;
 	}
 	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file

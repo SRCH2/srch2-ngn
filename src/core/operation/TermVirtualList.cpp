@@ -348,7 +348,6 @@ void TermVirtualList::print_test() const
             heapIterator != this->itemsHeap.end(); heapIterator++) {
         Logger::debug("InvListPosition:\tRecord: %d\t Score:%.5f", (*heapIterator)->recordId, (*heapIterator)->termRecordRuntimeScore);
     }
-    std::cout << std::endl;
 }
 unsigned TermVirtualList::getVirtualListTotalLength() {
 	unsigned totalLen = 0;

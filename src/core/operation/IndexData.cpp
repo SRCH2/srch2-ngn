@@ -355,7 +355,7 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
     }
     catch (std::exception& e)
     {
-        std::cerr << "trie bootstrap with english dictionary failed. File read error.\n";
+        Logger::error("trie bootstrap with english dictionary failed. File read error");
     }
 }
 

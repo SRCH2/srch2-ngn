@@ -25,6 +25,7 @@
  */
 
 #include "SynonymFilter.h"
+#include "util/Logger.h"
 
 #include <string>
 #include <iostream>
@@ -51,8 +52,7 @@ void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
 	std::ifstream input(synonymFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-		cerr << "\nThe stop words list file could not be opened.\n";
-		cerr << "The path is: " << synonymFilePath << endl;
+        srch2::util::Logger::error("The stop words list file %s could not be opened", synonymFilePath.c_str()); 
 		return;
 	}
 	//	Reads the map file line by line and fills the map

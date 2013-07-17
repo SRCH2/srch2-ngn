@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include "util/Logger.h"
 
 using namespace std;
 
@@ -46,7 +47,7 @@ int Stemmer::createHeadWordsMap(const std::string &indexDirectory)
     std::ifstream input(filePath.c_str());
     if(input.fail())
     {
-        cerr<<"\nThe file could not be opened.";
+        srch2::util::Logger::error("The file %s could not be opened.", filePath.c_str() );
         return -1;
     }
 

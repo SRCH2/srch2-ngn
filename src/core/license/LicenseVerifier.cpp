@@ -14,7 +14,9 @@ using std::exception;
 #include <openssl/pem.h>
 
 #include "license/LicenseVerifier.h"
+#include "util/Logger.h"
 
+using srch2::util::Logger;
 namespace srch2
 {
 namespace instantsearch
@@ -195,7 +197,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		}
 		catch (exception& e)
 		{
-			std::cerr << "Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.\n";
+            Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
 			abort();
 		}
 
@@ -206,7 +208,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		}
 		else
 		{
-			std::cerr << "Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.\n";
+            Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
 			abort();
 		}
 
@@ -214,7 +216,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 
 		if (! test(line))
 		{
-			std::cerr << "License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com\n";
+            Logger::error("License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com");
 			abort();
 		}
 		return true;
@@ -235,7 +237,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	}
 	catch (exception& e)
 	{
-		std::cerr << "Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.\n";
+        Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
 		abort();
 	}
 
@@ -245,7 +247,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	}
 	else
 	{
-		std::cerr << "Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.\n";
+        Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
 		abort();
 	}
 
@@ -253,7 +255,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 
 	if (! test(line))
 	{
-		std::cerr << "License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com\n";
+        Logger::error("License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com");
 		abort();
 	}
 
