@@ -92,6 +92,7 @@ Srch2ServerConf::Srch2ServerConf(int argc,
 				("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
 				("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
 				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
+				("log-level", po::value<int>(), "srch2 log level")
 				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
 				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
 				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
@@ -244,12 +245,14 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 				}
 				else {
 					parseError << "Attribute-latitude is not set.\n";
+					configSuccess = false;
 				}
 
 				if (vm.count("attribute-longitude") && (vm["attribute-longitude"].as<string>().compare(ignoreOption) != 0)) {
 					attributeLongitude =  vm["attribute-longitude"].as<string>();
 				}else {
 					parseError << "Attribute-longitude is not set.\n";
+					configSuccess = false;
 				}
 
 				if (vm.count("default-spatial-query-bounding-square-side-length")) {
@@ -426,7 +429,8 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 			if (vm.count("data-file-path")) {
 				filePath = vm["data-file-path"].as<string>();
 			} else {
-				parseError << "Path of index file is not set.\n";
+				parseError << "Path of data file is not set.\n";
+				configSuccess = false;
 				dataSourceType = FILEBOOTSTRAP_FALSE;
 			}
 		}
@@ -469,12 +473,20 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		indexPath = vm["index-dir-path"].as<string>();
 	} else {
 		parseError << "Path of index files is not set.\n";
+		configSuccess = false;
 	}
 
 	if (vm.count("access-log-file")) {
 		httpServerAccessLogFile = vm["access-log-file"].as<string>();
 	} else {
 		parseError << "httpServerAccessLogFile is not set.\n";
+	}
+
+	if(vm.count("log-level")){
+		loglevel = static_cast<Logger::LogLevel> (vm["log-level"].as<int>());
+	}else{
+		//default name is log.txt
+		httpServerAccessLogFile = "log.txt";
 	}
 
 	if (vm.count("error-log-file")) {
@@ -654,6 +666,7 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 
 	} else {
 		parseError << "merge-every-n-seconds is not set.\n";
+		configSuccess = false;
 	}
 
 	if (vm.count("merge-every-m-writes")) {
@@ -928,6 +941,11 @@ bool Srch2ServerConf::isRecordBoostAttributeSet() const {
 
 const string& Srch2ServerConf::getHTTPServerAccessLogFile() const {
 	return httpServerAccessLogFile;
+}
+
+const Logger::LogLevel& Srch2ServerConf::getHTTPServerLogLevel() const
+{
+	return loglevel;
 }
 
 const string& Srch2ServerConf::getHTTPServerErrorLogFile() const {

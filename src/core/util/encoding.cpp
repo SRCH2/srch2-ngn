@@ -27,12 +27,12 @@ void utf8StringToCharTypeVector(const string &utf8String, vector<CharType> & cha
 		std::cout << "Invalid UTF-8 encoding detected in " << utf8String << "\n";
 	}
 
-	utf8::utf8to16(utf8String.begin(), end_it, back_inserter(charTypeVector));
+	utf8::utf8to32(utf8String.begin(), end_it, back_inserter(charTypeVector));
 }
 void charTypeVectorToUtf8String(const vector<CharType> &charTypeVector, string &utf8String)
 {
 	utf8String.clear();
-	utf8::utf16to8(charTypeVector.begin(), charTypeVector.end(), back_inserter(utf8String));
+	utf8::utf32to8(charTypeVector.begin(), charTypeVector.end(), back_inserter(utf8String));
 }
 
 vector<CharType> getCharTypeVector(const string &utf8String)
