@@ -437,6 +437,8 @@ void testSynonymFilter() {
 		i++;
 	}
 
+
+
 	// TEST 3
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
@@ -802,9 +804,6 @@ int main() {
 
 	testStandardAnalyzer();
 	cout << "StandardAnalyzer test passed" << endl;
-
-	testStemmerFilter();
-	cout << "LowerCase test passed" << endl;
 
 	testStemmerFilter();
 	cout << "StemmerFilter test passed" << endl;

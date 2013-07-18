@@ -48,6 +48,13 @@ class AnalyzerInternal: public Analyzer {
 public:
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 			const std::string &recordAllowedSpecialCharacters);
+	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
+			const std::string &stemmerFilePath,
+			const std::string &stopWordFilePath,
+			const std::string &synonymFilePath,
+			const std::string &recordAllowedSpecialCharacters,
+			const SynonymKeepOriginFlag &synonymKeepOriginFlag =
+					SYNONYM_KEEP_ORIGIN);
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
 	void loadData(const std::string &s) const;
 
@@ -151,9 +158,9 @@ protected:
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.
-	std::string stopWordFilePath;
-	std::string synonymFilePath;
-	std::string stemmerFilePath;
+	string stopWordFilePath;
+	string synonymFilePath;
+	string stemmerFilePath;
 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
 	boost::regex disallowedCharactersRegex;

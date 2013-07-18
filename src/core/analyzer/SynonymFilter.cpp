@@ -42,19 +42,13 @@ SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
 		TokenFilter(tokenOperator), synonymDelimiter("=>") {
 	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
-	this->createSynonymMap(synonymFilterFilePath); // construct the synoymMap
+	this->createMaps(synonymFilterFilePath); // construct the synoymMap
 	this->keepOriginFlag = synonymKeepOriginFlag;
 }
 
-void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
+void SynonymFilter::createMaps(const std::string &synonymFilePath) {
 	//  using file path to create an ifstream object
 	std::ifstream input(synonymFilePath.c_str());
-	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
-		cerr << "\nThe stop words list file could not be opened.\n";
-		cerr << "The path is: " << synonymFilePath << endl;
-		return;
-	}
 	//	Reads the map file line by line and fills the map
 	std::string line;
 	while (getline(input, line)) {
@@ -65,8 +59,7 @@ void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
 		 */
 		std::size_t index = line.find(this->synonymDelimiter);
 		// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
-		// TODO: we can write a message in the logger
-		if (index <= 0) {
+		if (index <= 0) { //TODO: write a message in logger
 			continue;
 		}
 		string leftHandSide = line.substr(0, index);
@@ -74,40 +67,38 @@ void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
 		// insert the "A" and "B" into the map
 		this->synonymMap.insert(
 				std::pair<string, string>(leftHandSide, rightHandSide));
-	}
-}
 
-bool SynonymFilter::containsWord(const std::string &word) {
-	// returns true if word exists, otherwise returns false
-	return this->synonymMap.count(word) > 0;
-}
+		// adding leftHandSide to the prefixMap
+		std::size_t found ;
+		while (true) {
+			std::map<string, bool>::const_iterator pos = this->prefixMap.find(leftHandSide);
+			if (pos != this->prefixMap.end()) {
+				this->prefixMap[leftHandSide] =  waitForNextToken;
+			} else {
+				this->prefixMap.insert(std::pair<string, bool>(leftHandSide, checkExistingTokens));
+			}
 
-bool SynonymFilter::isSubStringOfKey(const std::string &word) {
-	// it is an iterator on all keys of the synonym map
-	for (std::map<string, string>::iterator iter = this->synonymMap.begin();
-			iter != this->synonymMap.end(); ++iter) {
-		string key = iter->first;
-		// if the word happens at the beginning of the a key, return true
-		if (key.find(word) == 0) {
-			return true;
+			found = leftHandSide.rfind(" ");
+			if (found == std::string::npos) {
+				break;
+			}
+			leftHandSide = leftHandSide.substr(0, found);
 		}
+
 	}
-	return false;
 }
+
 
 int SynonymFilter::numberOfKeysHavingTokenAsPrefix(const std::string &prefixToken) {
-
-	// it is an iterator on all keys of the synonym map
-	int count = 0;
-	for (std::map<string, string>::iterator iter = this->synonymMap.begin();
-			iter != this->synonymMap.end(); ++iter) {
-		string key = iter->first;
-		// if the word happens at the beginning of the a key, return true
-		if (key.find(prefixToken) == 0) {
-			count++;
+	std::map<string, bool>::const_iterator pos = this->prefixMap.find(prefixToken);
+	if (pos != this->prefixMap.end()) {
+		if (pos->second == waitForNextToken) {
+			return  2;
 		}
+		return 1 ;
+	} else {
+		return 0;
 	}
-	return count;
 }
 
 const string SynonymFilter::getSynonymOf(const std::string &word) {
@@ -119,24 +110,19 @@ const string SynonymFilter::getSynonymOf(const std::string &word) {
 	return "";
 }
 
-string SynonymFilter::getKeyOf(const std::string &value) {
-	// this iterator is to iterate all keys and find the key which has this value
-	std::map<std::string, std::string>::iterator iter;
-	for (iter = this->synonymMap.begin(); iter != this->synonymMap.end();
-			iter++) {
-		if (iter->first.find(value) == 0) {
-			return iter->first;
-		}
+bool SynonymFilter::isCurrentTokenExistInSynonymMap(const std::string &key) {
+	std::map<string, string>::const_iterator pos = this->synonymMap.find(key);
+	if (pos != this->synonymMap.end()) {
+		return true;
 	}
-	return NULL; // returns NULL if there the key is not there.
+	return false;
 }
 
-vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
-	std::vector<std::string> result;
+void SynonymFilter::pushSynonymsOfExistingTokensInEmitBuffer() {
 	bool flag;
 	while (true) {
 		if (this->tokenBuffer.size() == 0) {
-			return result;
+			return;
 		}
 		flag = false;
 		for (int i = this->tokenBuffer.size() - 1; i >= 0; i--) {
@@ -149,10 +135,10 @@ vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 			if (pos != this->synonymMap.end()) {
 				if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
 					for (int k = 0; k <=i; k++) {
-						result.push_back(this->tokenBuffer[k]);
+						this->emitBuffer.push_back(this->tokenBuffer[k]);
 					}
 				}
-				result.push_back(this->getSynonymOf(tempToken));
+				this->emitBuffer.push_back(this->getSynonymOf(tempToken));
 				for (int k = i; k >= 0; k--) {
 					this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
 					flag = true;
@@ -161,25 +147,13 @@ vector<std::string> SynonymFilter::getSynonymOfTokensInTokenBuffer() {
 			}
 		}
 		if (!flag) {
-			result.push_back(this->tokenBuffer[0]);
+			this->emitBuffer.push_back(this->tokenBuffer[0]);
 			this->tokenBuffer.erase(this->tokenBuffer.begin());
 		}
 	}
-	return result;
+	return;
 }
 
-void SynonymFilter::addToTemporaryBuffer(std::string &stringOfTokens) {
-	// the string of tokens are separated with " "
-	std::string delimiter = " ";
-	// it will go on all tokens and will add them to the temporaryBuffer.
-	while (stringOfTokens.find(delimiter) != string::npos) {
-		size_t pos = stringOfTokens.find(delimiter);
-		string token = stringOfTokens.substr(0, pos);
-		this->emitBuffer.push_back(token);
-		stringOfTokens = stringOfTokens.substr(pos + 1);
-	}
-	this->emitBuffer.push_back(stringOfTokens);
-}
 
 void SynonymFilter::emitCurrentToken() {
 	// setting the currentToken to the first element of the vector
@@ -200,20 +174,18 @@ bool SynonymFilter::incrementToken() {
 			if (this->tokenBuffer.empty() && this->emitBuffer.empty()) {
 				return false;
 			} else {
-				vector<string> tempResult = getSynonymOfTokensInTokenBuffer();
-				for (int ii = 0; ii < tempResult.size(); ii++) {
-					this->emitBuffer.push_back(tempResult[ii]);
-				}
-				this->tokenBuffer.clear();
+				pushSynonymsOfExistingTokensInEmitBuffer();
 				this->emitCurrentToken();
-				return true; // TODO: false?
+				return true;
 			}
 		} // end of increment=false
 		std::string currentToken = "";
 		// converts the charType to string
 		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
 		// gives the number of prefixes found in the key set the map for the current token
-		int numberOfKeysHavingCurrentTokenAsTheirPrefix = this->numberOfKeysHavingTokenAsPrefix(currentToken);
+		int numberOfKeysHavingCurrentTokenAsTheirPrefix =
+				this->numberOfKeysHavingTokenAsPrefix(currentToken);
+
 		// if increment returns true
 		if (this->tokenBuffer.empty()) {
 			// if the currentToken is not prefix of any of the keys in the map
@@ -224,10 +196,7 @@ bool SynonymFilter::incrementToken() {
 				return true;
 			// if there is one synonym match for the new token
 			} else if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 1) {
-				// gets the value of that key
-				std::string key = this->getKeyOf(currentToken);
-				// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
-				if (key.compare(currentToken) == 0) {
+				if (this->isCurrentTokenExistInSynonymMap(currentToken)) {
 					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
 						this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
 					}
@@ -249,37 +218,26 @@ bool SynonymFilter::incrementToken() {
 				previousTokens = previousTokens + this->tokenBuffer[i] + " ";
 			}
 
-			int numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix = this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken);
+			int numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix =
+					this->numberOfKeysHavingTokenAsPrefix(previousTokens + currentToken);
 			// if there is NOT any match for the elements in the buffer that followed by current token
-			if ( numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix == 0) {
-				vector<string> tempResult = getSynonymOfTokensInTokenBuffer();
-				previousTokens = "";
-				for (int ii = 0; ii < tempResult.size(); ii++) {
-					previousTokens += tempResult[ii] + " ";
-				}
-				this->tokenBuffer.clear();
 
+			if ( numberOfKeysHavingPreviousFollowedByCurrentTokenAsTheirPrefix == 0) {
+				pushSynonymsOfExistingTokensInEmitBuffer();
 				if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 0) {
-					previousTokens += currentToken;
+					this->emitBuffer.push_back(currentToken);
 				} else if (numberOfKeysHavingCurrentTokenAsTheirPrefix == 1) {
-					// gets the value of that key
-					std::string key = this->getKeyOf(currentToken);
-					// if two string are the same, it means that we have "A=>B" rule, not "A B=>C"
-					if (key.compare(currentToken) == 0) {
+					if (this->isCurrentTokenExistInSynonymMap(currentToken)) {
 						if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
-							previousTokens += currentToken + " "; // this is for adding the original tokens.
+							this->emitBuffer.push_back(currentToken); // this is for adding the original tokens.
 						}
-						previousTokens += this->getSynonymOf(currentToken);
+						this->emitBuffer.push_back(this->getSynonymOf(currentToken));
 					} else {
 						this->tokenBuffer.push_back(currentToken);
-						previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 					}
 				} else {
-					previousTokens = previousTokens.substr(0, previousTokens.length() - 1);
 					this->tokenBuffer.push_back(currentToken);
 				}
-
-				this->addToTemporaryBuffer(previousTokens);
 				this->emitCurrentToken();
 				return true;
 				// if there is ONE match for the elements in the buffer that followed by current token
@@ -290,15 +248,14 @@ bool SynonymFilter::incrementToken() {
 				* if it is complete we should just replace them with the synonym
 				* if it is still not complete, we have to push the current token into the buffer and move on.
 				*/
-				std::string key = this->getKeyOf(previousTokens);
-				if (key.compare(previousTokens + currentToken) == 0) {
+				if (this->isCurrentTokenExistInSynonymMap(previousTokens + currentToken)) {
 					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
 						for (int i =0; i < tokenBuffer.size(); i++) {
 							this->emitBuffer.push_back(tokenBuffer[i]);
 						}
 						this->emitBuffer.push_back(currentToken);
 					}
-					this->emitBuffer.push_back(this->getSynonymOf(key));
+					this->emitBuffer.push_back(this->getSynonymOf(previousTokens + currentToken));
 					this->emitCurrentToken();
 					this->tokenBuffer.clear();
 					return true;
@@ -309,7 +266,6 @@ bool SynonymFilter::incrementToken() {
 				this->tokenBuffer.push_back(currentToken);
 			}
 		}
-
 	}
 	return false; // The function will not reach here and this return is for avoiding the warnings.
 }

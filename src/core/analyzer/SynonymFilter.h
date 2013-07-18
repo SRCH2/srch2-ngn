@@ -18,6 +18,8 @@
 #include "TokenFilter.h"
 #include "instantsearch/Analyzer.h"
 
+#define waitForNextToken true
+#define checkExistingTokens false
 
 
 using namespace std;
@@ -67,6 +69,24 @@ private:
 	map<std::string, std::string> synonymMap;
 
 	/*
+	 * prefixMap is the map of prefixes to their count
+	 * if their count is 1, their value is false
+	 * if their count is more than 1, their value is true
+	 *
+	 * Example:
+	 *
+	 * if we have this synonym:
+	 *      new york=>ny
+	 *      new york city=>nyc
+	 *
+	 * The prefixMap's elements will be as following:
+	 *      new => true (the count is 2)
+	 *      new york => true (the count is 2)
+	 *      new york city => false (the count is 1)
+	 */
+	map<std::string, bool> prefixMap;
+
+	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
 	 */
 	vector<string> emitBuffer;
@@ -79,17 +99,8 @@ private:
 	/*
 	 *  creates the map of stop words.
 	 */
-	void createSynonymMap(const std::string &synonymFilePath);
+	void createMaps(const std::string &synonymFilePath);
 
-	/*
-	 *  Checks the synonym map and returns true if the input string exists in the map keys
-	 */
-	bool containsWord(const std::string &word);
-
-	/*
-	 *  Checks the synonym map and returns true if the input string is a part of any key
-	 */
-	bool isSubStringOfKey(const std::string &);
 
 	/*
 	 *  Checks the synonym map and returns the number of keys which have the word as their substring happening at the begining
@@ -97,9 +108,9 @@ private:
 	int numberOfKeysHavingTokenAsPrefix(const std::string &);
 
 	/*
-	 * Gets the synonym of buffer if tokens.
+	 * put the synonyms of existing tokens into emit token
 	 */
-	vector<std::string> getSynonymOfTokensInTokenBuffer();
+	void pushSynonymsOfExistingTokensInEmitBuffer();
 
 	/*
 	 * returns the value of the string as the substring of a key
@@ -108,16 +119,10 @@ private:
 	const std::string getSynonymOf(const std::string &);
 
 	/*
-	 * returns the key of the string as the substring of a key
-	 * returns NULL if there is no such a key
+	 * returns true if the key is one of the keys of synonym map
+	 * returns false otherwise
 	 */
-	std::string getKeyOf(const std::string &);
-
-	/*
-	 * Separates the input string based on " " delimiter
-	 * adds the tokens to the temporaryBuffer (one by one)
-	 */
-	void addToTemporaryBuffer(std::string &);
+	bool isCurrentTokenExistInSynonymMap(const std::string &key);
 
 	/*
 	 * it emits the first member of the temporaryToken vedctor.
@@ -128,11 +133,11 @@ private:
 	 */
 	void emitCurrentToken();
 
-
 	friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & synonymMap;
+		ar & prefixMap;
 		ar & emitBuffer;
 		ar & tokenBuffer;
 		ar & keepOriginFlag;
