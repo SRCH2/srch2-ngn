@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CMake Build Environment
 # This is the top-level CMakeLists file. The build is preformed "outside of source" in the build 
 # directory. 
