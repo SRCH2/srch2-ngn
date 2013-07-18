@@ -28,12 +28,11 @@
 
 
 #include <string.h>
-#include <iostream>
-#include <stdio.h>
 #include <fstream>
 #include "util/Logger.h"
 
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
@@ -79,7 +78,7 @@ StopFilter::~StopFilter() {
 	std::ifstream input(stopWordsFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-        srch2::util::Logger::error("The stop words list file %s could not open.", stopWordsFilePath.c_str());
+        Logger::error("The stop words list file %s could not open.", stopWordsFilePath.c_str());
 		return;
 	}
 	//	Reads the stop word files line by line and fills the vector

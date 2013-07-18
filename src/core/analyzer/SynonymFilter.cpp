@@ -28,12 +28,10 @@
 #include "util/Logger.h"
 
 #include <string>
-#include <iostream>
-#include <stdio.h>
 #include <fstream>
-#include <string>
 
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
@@ -52,7 +50,7 @@ void SynonymFilter::createSynonymMap(const std::string &synonymFilePath) {
 	std::ifstream input(synonymFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-        srch2::util::Logger::error("The stop words list file %s could not be opened", synonymFilePath.c_str()); 
+        Logger::error("The stop words list file %s could not be opened", synonymFilePath.c_str()); 
 		return;
 	}
 	//	Reads the map file line by line and fills the map
