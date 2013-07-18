@@ -63,10 +63,10 @@ bool isEmpty(const string &inString)
 }
 
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
+		const std::string &recordAllowedSpecialCharacters,
 		const std::string &stemmerFilePath,
 		const std::string &stopWordFilePath,
 		const std::string &synonymFilePath,
-		const std::string &recordAllowedSpecialCharacters,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
@@ -78,21 +78,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	this->stopWordFilePath = stopWordFilePath;
 	this->synonymFilePath = synonymFilePath;
 	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
-}
-
-
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters) {
-	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
-}
-
-AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal)
-{
-	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
 }
 
 void AnalyzerInternal::loadData(const std::string &s) const
