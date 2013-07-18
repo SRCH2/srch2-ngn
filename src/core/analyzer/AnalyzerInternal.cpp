@@ -61,19 +61,28 @@ bool isEmpty(const string &inString)
 {
     return inString.compare("") == 0;
 }
+/*
+ * Important:
+ *   Since this AnalyzerInternal class can be inherited by other superclasses, it's a common practice to initialize these
+ *   parameters in this superclass, rather than doing the initialization in the subclasses. In fact, if we let the subclasses
+ *   do the initialization, for some reason our engine doesn't work on Android.
+ */
+AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
+		const std::string &recordAllowedSpecialCharacters,
+		const std::string &stemmerFilePath,
+		const std::string &stopWordFilePath,
+		const std::string &synonymFilePath,
+		const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters) {
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
 	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	prepareRegexExpression();
 	sharedToken.reset(new SharedToken);
-}
-
-AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal)
-{
-	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
+	this->stemmerType = stemmerFlag;
+	this->stemmerFilePath = stemmerFilePath;
+	this->stopWordFilePath = stopWordFilePath;
+	this->synonymFilePath = synonymFilePath;
+	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 }
 
 void AnalyzerInternal::loadData(const std::string &s) const
