@@ -43,7 +43,7 @@ SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 IF (BUILD_STATIC)
    SET(CMAKE_EXE_LINKER_FLAGS)
-   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  # is this appliable for MAC too ?
 ENDIF (BUILD_STATIC) 
 
 #BUILD TYPE
@@ -78,7 +78,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     MESSAGE(STATUS "C++ compiler version: ${gcc_compiler_version}") 
     string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
     
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-implicit -Wno-sign-compare")
+    if (_compiler_version_lt_4.6)
+       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
+    else()
+       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
+    endif()
     SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     
 	IF(DO_COVERAGE)
@@ -142,7 +146,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		LINK_DIRECTORIES("/usr/lib/")
 	ENDIF ()
 
-	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES}) #${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} #${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
 
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
@@ -182,8 +186,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 #INSTALL  
 SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Files. e.g., the config file")
-SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
-INSTALL(DIRECTORY docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
+SET(PACKAGE_INSTALL_DIR "" CACHE STRING "Package files directory")
+SET(CMAKE_INSTALL_PREFIX "${PACKAGE_INSTALL_DIR}")
+INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
 
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
 
@@ -212,6 +217,3 @@ SET(CPACK_GENERATOR "TGZ;")
 SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 INCLUDE(CPack)
 
-# enable dashboard scripting
-include(Dart)
-SET (CTEST_PROJECT_NAME "Srch2 - Testing Framework")

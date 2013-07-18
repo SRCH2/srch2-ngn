@@ -23,19 +23,20 @@ namespace instantsearch {
  */
 class StandardAnalyzer: public AnalyzerInternal {
 public:
-	StandardAnalyzer(const StemmerNormalizerFlagType &stemmerFlag =	DISABLE_STEMMER_NORMALIZER,
-			const std::string &stemmerFilePath = "",
+	StandardAnalyzer(const StemmerNormalizerFlagType &stemmerFlag =
+			DISABLE_STEMMER_NORMALIZER, const std::string &stemmerFilePath = "",
 			const std::string &stopWordFilePath = "",
 			const std::string &synonymFilePath = "",
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN,
+			const SynonymKeepOriginFlag &synonymKeepOriginFlag =
+					SYNONYM_KEEP_ORIGIN,
 			const std::string &recordAllowedSpecialCharacters = "") :
-			AnalyzerInternal(stemmerFlag, recordAllowedSpecialCharacters) {
+			AnalyzerInternal(stemmerFlag,
+						recordAllowedSpecialCharacters,
+						stemmerFilePath,
+						stopWordFilePath,
+						synonymFilePath,
+						synonymKeepOriginFlag) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->stemmerType = stemmerFlag;
-		this->stemmerFilePath = stemmerFilePath;
-		this->stopWordFilePath = stopWordFilePath;
-		this->synonymFilePath= synonymFilePath;
-		this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 		this->tokenOperator = createOperatorFlow();
 	}
 
