@@ -359,39 +359,10 @@ void readGeoQueriesAndDoQueries(string path, string type,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jint Java_com_srch2_mobile_ndksearch_Srch2Lib_buildIndex(JNIEnv* env,
-		jobject javaThis, jstring dataFile, jstring indexPath, jboolean isGeo) {
-	const char *nativeStringDataFile = env->GetStringUTFChars(dataFile, NULL);
-	const char *nativeStringIndexPath = env->GetStringUTFChars(indexPath, NULL);
-	//return buildIndex(nativeStringDataFile, nativeStringIndexPath);
-	return 0;
-}
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
-		jobject javaThis, jstring queryFile, jstring indexPath,
-		jboolean isGeo) {
-	int num = 1024;
-	char str[100];
-	sprintf(str, "Hello from query code! = %d", num);
-	return env->NewStringUTF(str);
-}
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTestBuildConfigurableLines(
+JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 		JNIEnv* env, jobject javaThis, jstring testFileDir, jstring indexDir,
 		jstring logfile, jint lineLimit, jboolean isGeo) {
-	Logger::console("Test BuildConfigurableLines begins. lines: %d", lineLimit);
+	Logger::console("Test begins.");
 	const char *nativeStringDataFile = env->GetStringUTFChars(testFileDir,
 			NULL);
 	const char *nativeStringIndexPath = env->GetStringUTFChars(indexDir, NULL);
@@ -418,65 +389,6 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTestBuildConf
 		Logger::console("Save index to %s", strIndexPath.c_str());
 
 		buildGeoIndex(geo_data_file, strIndexPath, lineLimit);
-	}
-
-	clock_t begin = clock();
-	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, strIndexPath, "");
-	Indexer *index = Indexer::load(indexMetaData);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
-
-	Logger::console("Index loaded. time spend : %.5f seconds",
-			getTimeSpan(begin));
-
-	env->ReleaseStringUTFChars(testFileDir, nativeStringDataFile);
-	env->ReleaseStringUTFChars(indexDir, nativeStringIndexPath);
-
-	delete indexSearcher;
-	delete index;
-	delete indexMetaData;
-	Logger::console("End of Test");
-	if (fpLog) {
-		fclose(fpLog);
-	}
-}
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
-		JNIEnv* env, jobject javaThis, jstring testFileDir, jstring indexDir,
-		jstring logfile, jboolean isGeo) {
-	Logger::console("Test begins.");
-	const char *nativeStringDataFile = env->GetStringUTFChars(testFileDir,
-			NULL);
-	const char *nativeStringIndexPath = env->GetStringUTFChars(indexDir, NULL);
-	const char *nativeStringLogFile = env->GetStringUTFChars(logfile, NULL);
-	FILE* fpLog = fopen(nativeStringLogFile, "a");
-	Logger::setOutputFile(fpLog);
-
-	string strIndexPath(nativeStringIndexPath);
-	string strTestFile(nativeStringDataFile);
-
-	srch2::instantsearch::TermType termType = PREFIX;
-
-	if (!isGeo) {
-		string data_file = strTestFile + "/data.txt";
-
-		Logger::console("Read data from %s", data_file.c_str());
-		Logger::console("Save index to %s", strIndexPath.c_str());
-
-		buildIndex(data_file, strIndexPath, 5000000);
-	} else {
-		string geo_data_file = strTestFile + "/geo_data.txt";
-
-		Logger::console("Read data from %s", geo_data_file.c_str());
-		Logger::console("Save index to %s", strIndexPath.c_str());
-
-		buildGeoIndex(geo_data_file, strIndexPath, 5000000);
 	}
 
 	clock_t begin = clock();
