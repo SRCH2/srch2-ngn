@@ -1,5 +1,5 @@
 
-// $Id: InvertedIndex.cpp 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: InvertedIndex.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -32,7 +32,7 @@
 using std::endl;
 using std::vector;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -121,10 +121,10 @@ InvertedIndex::~InvertedIndex()
 }
 
 bool InvertedIndex::isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset,
-                       unsigned searchableAttributeId, float &termRecordStaticScore) const
+                       unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const
 {
     return this->forwardIndex->isValidRecordTermHit(forwardListId, keywordOffset,
-                            searchableAttributeId, termRecordStaticScore);
+                            searchableAttributeId, termAttributeBitmap, termRecordStaticScore);
 }
 
 // given a forworListId and invertedList offset, return the keyword offset
@@ -199,7 +199,7 @@ float InvertedIndex::computeRecordStaticScore(RankerExpression *rankerExpression
                           const float recordLength, const float tf, const float idf, 
                           const float sumOfFieldBoosts) const
 {
-    // recordScoreType == bimaple::instantsearch::LUCENESCORE:
+    // recordScoreType == srch2::instantsearch::LUCENESCORE:
     float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
     return rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
 }

@@ -1,8 +1,8 @@
 
-# Follow these steps to setup the Bimaple development environment
+# Follow these steps to setup the Srch2 development environment
 # Chen Li, July 2012
 
-cd trunk/bimaple-engine
+cd trunk/srch2-engine
 \rm -fr build
 ./runme-to-init-env.sh
 # In the process it will start building the whole package
@@ -22,7 +22,7 @@ Click "Available Software Sites"
 Type in "CDT", and select "CDT http://download.eclipse.org/tools/cdt/releases/galileo".  Click the "Enable" button and "OK".
 Check "CDT Main Features", and check "Eclipse C/C++ Development Tools".  Uncheck "Eclipse C/C++ Development Tools SDK". Click "OK".
 
-# Import Bimaple project in Eclipse
+# Import Srch2 project in Eclipse
 
 File -> Import -> General -> Existing Projects into Workspace -> Next -> Browse -> the "trunk" folder -> OK
 
@@ -32,11 +32,11 @@ cmake -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .
 
 # setup the project environment
 
-Right click the Bimaple project, click "Properties" -> "C/C++ Make Project".  In "Build Director", add "/build" to the default path.
+Right click the Srch2 project, click "Properties" -> "C/C++ Make Project".  In "Build Director", add "/build" to the default path.
 
 Then press "Ctr-B" to build the project
 
-To test the engine, please first set the "license-file" option in "bimaple-engine/wrapper/conf/conf.ini", and then run "ctest" under the "build" folder.
+To test the engine, please first set the "license-file" option in "srch2-engine/wrapper/conf/conf.ini", and then run "ctest" under the "build" folder.
 
 # Possible Compiling Errors
 1. Your compiler may not support "-Wno-implicit". To fix it, you can remove it from "CMakeLists.txt". 

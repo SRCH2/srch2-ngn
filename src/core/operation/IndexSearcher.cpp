@@ -1,5 +1,5 @@
 
-// $Id: IndexSearcher.cpp 3248 2013-04-03 13:16:52Z jiaying $
+// $Id: IndexSearcher.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -22,7 +22,7 @@
 #include "IndexerInternal.h"
 //#include "Cache.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="2.2">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Bimaple Stress Test" enabled="true">
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Srch2 Stress Test" enabled="true">
       <stringProp name="TestPlan.comments"></stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
@@ -82,7 +82,7 @@
         </collectionProp>
         <collectionProp name="UserParameters.thread_values">
           <collectionProp name="1170425071">
-            <stringProp name="857288214">${_StringFromFile(/home/popeye/mario/trunk/bimaple-engine/wrapper/words.csv)}</stringProp>
+            <stringProp name="857288214">${_StringFromFile(/home/popeye/mario/trunk/srch2-engine/wrapper/words.csv)}</stringProp>
           </collectionProp>
         </collectionProp>
         <boolProp name="UserParameters.per_iteration">true</boolProp>

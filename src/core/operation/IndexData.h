@@ -1,5 +1,5 @@
 
-// $Id: IndexData.h 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: IndexData.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -84,7 +84,7 @@
 using std::vector;
 using std::string;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -206,10 +206,9 @@ private:
     IndexData(const string& directoryName, 
             Analyzer *analyzer, Schema *schema,
             const string &trieBootstrapFileNameWithPath,
-            const std::string &licenseFileNameWithPath,
-            const StemmerNormalizerType &stemType);
+            const StemmerNormalizerFlagType &stemmerFlag);
             
-    IndexData(const string& directoryName, const std::string &licenseFileNameWithPath);
+    IndexData(const string& directoryName);
 
     //To save the directory name to save the trieIndex
     string directoryName;
@@ -260,16 +259,14 @@ public:
     inline static IndexData* create(const string& directoryName, 
                 Analyzer *analyzer, Schema *schema, 
                 const string &trieBootstrapFileNameWithPath,
-                const std::string &licenseFileNameWithPath = string(""),
-                const StemmerNormalizerType &stemType = bimaple::instantsearch::NO_STEMMER_NORMALIZER)
+                const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer, schema, trieBootstrapFileNameWithPath, licenseFileNameWithPath, stemType);
+        return new IndexData(directoryName, analyzer, schema, trieBootstrapFileNameWithPath, stemmerFlag);
     }
     
-    inline static IndexData* load(const string& directoryName, 
-                                const std::string &licenseFileNameWithPath = string(""))
+    inline static IndexData* load(const string& directoryName)
     {
-        return new IndexData(directoryName, licenseFileNameWithPath);
+        return new IndexData(directoryName);
     }
 
     Trie_Internal *trie;

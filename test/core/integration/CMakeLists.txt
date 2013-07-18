@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(
 
 SET(IndexIntegration_Source  ${CMAKE_SOURCE_DIR}/test/core/integration/IntegrationTestHelper.h)
 SET(MapSearchTest_Source  ${CMAKE_SOURCE_DIR}/test/core/integration/MapSearchTestHelper.h)
-SET(INTEGRATION_TEST_LIBS ${BimapleInstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES})
+SET(INTEGRATION_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES})
 
 ADD_EXECUTABLE(BuildIndexesForIntegrationTest BuildIndexesForIntegrationTest.cpp ${IndexIntegration_Source} )
 TARGET_LINK_LIBRARIES(BuildIndexesForIntegrationTest ${INTEGRATION_TEST_LIBS})

@@ -7,7 +7,7 @@ Make sure to run the scripts in the following order, since the third and
 fourth steps will change the data in the search engine.
 
 - For each test, you need to start the search engine using a command such as:
-   ./path/to/bimaple-search-server-${VERSION NUMBER} --config-file=/path/to/conf.ini
+   ./path/to/srch2-search-server-${VERSION NUMBER} --config-file=/path/to/conf.ini
   
   Also, please use State Media's testing data
 
@@ -18,7 +18,7 @@ fourth steps will change the data in the search engine.
       How to run all the tests together automatically
 ================================================================================
 
-- Make sure in the build/search-server/ folder, there is a binary bimaple-search-server-{version}
+- Make sure in the build/search-server/ folder, there is a binary srch2-search-server-{version}
 
 - Run the following command:
 
@@ -100,4 +100,4 @@ fourth steps will change the data in the search engine.
   
   We need to install Jmeter in order to run it.
 
-- Step 6, use the front-end in bimaple_ui to try the search experience.
+- Step 6, use the front-end in srch2_ui to try the search experience.

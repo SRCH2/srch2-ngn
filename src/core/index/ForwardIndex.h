@@ -1,5 +1,5 @@
 
-// $Id: ForwardIndex.h 3441 2013-06-11 20:30:12Z sinakeshtkar $
+// $Id: ForwardIndex.h 3480 2013-06-19 08:00:34Z jiaying $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -51,7 +51,7 @@ using half_float::half;
 // The upper bound of the number of sortable attributes in a record is FF
 #define SORTABLE_ATTRIBUTES_THRESHOLD ((1<<8) - 1)
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -242,10 +242,10 @@ public:
     float getForwardListSortableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaSortableAttributeId) const;
 
     bool haveWordInRangeWithStemmer(const SchemaInternal* schema, const unsigned minId, 
-                    const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits, 
-                    unsigned &keywordId, float &termRecordStaticScore, bool &isStemmed) const;
+                    const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId,
+                    unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
     bool haveWordInRange(const SchemaInternal* schema, const unsigned minId, const unsigned maxId, 
-                 const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, 
+                 const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, unsigned &termAttributeBitmap,
                  float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(unsigned keywordId) const;
@@ -273,10 +273,13 @@ public:
      * for key a3, we append [6, 8, 0].
      */
 
-    bool isValidRecordTermHit(const SchemaInternal *schema, unsigned keywordOffset, unsigned searchableAttributeId, float& termRecordStaticScore) const;
-    bool isValidRecordTermHitWithStemmer(const SchemaInternal *schema, unsigned keywordOffset, unsigned searchableAttributeId, float &termRecordStaticScore, bool &isStemmed) const;
+    bool isValidRecordTermHit(const SchemaInternal *schema, unsigned keywordOffset, unsigned searchableAttributeId, unsigned &termAttributeBitVec, float& termRecordStaticScore) const;
+    bool isValidRecordTermHitWithStemmer(const SchemaInternal *schema, unsigned keywordOffset, unsigned searchableAttributeId,  unsigned &matchingKeywordAttributeBitmap, float &termRecordStaticScore, bool &isStemmed) const;
 
     unsigned getNumberOfBytes() const;
+
+    // is attribute based search or not
+    static bool isAttributeBasedSearch;
 
     //void mapOldIdsToNewIds();
 
@@ -295,7 +298,8 @@ private:
         	this->sortableAttributeScores = new float[this->getNumberOfSortableAttributes()];
         	this->keywordIds = new unsigned[this->getNumberOfKeywords()];
         	this->keywordRecordStaticScores = new half[this->getNumberOfKeywords()];
-        	if (this->keywordAttributeBitmaps!=NULL)
+        	// check if it's an attribute based search
+        	if (ForwardList::isAttributeBasedSearch)
         	{
         		this->keywordAttributeBitmaps = new unsigned[this->getNumberOfKeywords()];
         	}
@@ -303,7 +307,8 @@ private:
         ar & boost::serialization::make_array(this->sortableAttributeScores, this->getNumberOfSortableAttributes());
         ar & boost::serialization::make_array(this->keywordIds, this->getNumberOfKeywords());
         ar & boost::serialization::make_array(this->keywordRecordStaticScores, this->getNumberOfKeywords());
-        if (this->keywordAttributeBitmaps!=NULL)
+        // check if it's an attribute based search
+        if (ForwardList::isAttributeBasedSearch)
         {
         	ar & boost::serialization::make_array(this->keywordAttributeBitmaps, this->getNumberOfKeywords());
         }
@@ -407,8 +412,10 @@ public:
 //    bool haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, const int termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, float &score) const;
 
     ///Added for stemmer
-    bool haveWordInRangeWithStemmer(const unsigned recordId, const unsigned minId, const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, float &termRecordStaticScore, bool &isStemmed) const;
-    bool haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, float &termRecordStaticScore) const;
+    bool haveWordInRangeWithStemmer(const unsigned recordId, const unsigned minId, const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits,
+    		unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
+    bool haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, const unsigned termSearchableAttributeIdToFilterTermHits,
+    		unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore) const;
 
     /**
          * Check if the ForwardList of recordId has a keywordId in range [minId, maxId]. Note that this is closed range.
@@ -426,16 +433,16 @@ public:
     static void load(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {
         // read the ForwardIndex from the file
-    	struct timespec tstart;
-		clock_gettime(CLOCK_REALTIME, &tstart);
+    	//struct timespec tstart;
+		//clock_gettime(CLOCK_REALTIME, &tstart);
         std::ifstream ifs(forwardIndexFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_iarchive ia(ifs);
         ia >> forwardIndex;
         ifs.close();
-        struct timespec tend;
-        clock_gettime(CLOCK_REALTIME, &tend);
-        unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-        std::cout << "Forward index create time :" << time << std::endl;
+        //struct timespec tend;
+        //clock_gettime(CLOCK_REALTIME, &tend);
+        //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+        //std::cout << "Forward index create time :" << time << std::endl;
     };
 
     static void save(const ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
@@ -515,8 +522,9 @@ public:
      * for key a2, we append [2, 0].
      * for key a3, we append [6, 8, 0].
      */
-    bool isValidRecordTermHit(unsigned forwardIndexId, unsigned keywordOffset, unsigned searchableAttributeId, float& termRecordStaticScore) const;
-    bool isValidRecordTermHitWithStemmer(unsigned forwardIndexId, unsigned keywordOffset, unsigned searchableAttributeId, float &termRecordStaticScore, bool &isStemmed) const;
+    bool isValidRecordTermHit(unsigned forwardIndexId, unsigned keywordOffset, unsigned searchableAttributeId, unsigned &termAttributeBitmap, float& termRecordStaticScore) const;
+    bool isValidRecordTermHitWithStemmer(unsigned forwardIndexId, unsigned keywordOffset, unsigned searchableAttributeId,
+    		unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
     unsigned getKeywordOffset(unsigned forwardListId, unsigned keywordId) const;
 

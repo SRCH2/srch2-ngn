@@ -1,5 +1,5 @@
 
-// $Id: InvertedIndex.h 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: InvertedIndex.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -47,7 +47,7 @@ using std::string;
 using std::ifstream;
 using std::ofstream;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -166,7 +166,7 @@ public:
     const unsigned getInvertedListElementByDirectory(const unsigned invertedListId, const unsigned cursor) const;
     unsigned getInvertedListSize_ReadView(const unsigned invertedListId) const;
     bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset, 
-                    unsigned searchableAttributeId, float &termRecordStaticScore) const;
+                    unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) const;
 
@@ -247,7 +247,8 @@ public:
             unsigned recordId = invertedListElement.recordId;
             unsigned positionIndexOffset = invertedListElement.positionIndexOffset;
             float score;
-            if (isValidTermPositionHit(recordId, positionIndexOffset, -1, score) )
+            unsigned termAttributeBitmap;
+            if (isValidTermPositionHit(recordId, positionIndexOffset, -1, termAttributeBitmap, score) )
                 std::cerr << recordId  << "|" << positionIndexOffset << "|" << score <<  std::endl;
         }
     };

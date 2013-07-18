@@ -32,7 +32,7 @@
 
 #define SEMAPHORE_NAME_LENGTH 20
 
-namespace bimaple
+namespacesrch2
 {
 namespace instantsearch
 {
@@ -94,35 +94,6 @@ public:
 		//pthread_spin_unlock(&m_spinlock);
 		pthread_mutex_unlock(&mutex);
 	}
-
-	int cond_timedwait(pthread_cond_t *cond, const struct timespec *ts)
-	{
-		int rc;
-
-		pthread_mutex_lock(&mutex);
-
-		rc = pthread_cond_timedwait(cond, &mutex, ts);
-
-		for (int i = 0; i < max_readers; i++)
-		{
-			sem_wait(m_semaphore);
-		}
-
-		return rc;
-	}
-
-	void cond_signal(pthread_cond_t *cond)
-	{
-		pthread_cond_signal(cond);
-	}
-
-	~ReadWriteMutex()
-	{
-		sem_destroy(m_semaphore);
-		//pthread_spin_destroy(&m_spinlock);
-		pthread_mutex_destroy(&mutex);
-	}
-
 private:
     char semaphoreName[SEMAPHORE_NAME_LENGTH];
     int max_readers;

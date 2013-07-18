@@ -1,4 +1,4 @@
-//$Id: IndexReader_Test.cpp 2410 2012-04-20 21:56:56Z bimaple.vijay $
+//$Id: IndexReader_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include "operation/IndexerInternal.h"
 #include "index/Trie.h"
@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 void test1()
 {
@@ -31,7 +31,7 @@ void test1()
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    bmis::IndexMetaData *indexMetaData = new bmis::IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
     IndexerInternal *indexer = new IndexerInternal(indexMetaData, analyzer, schema);
     Record *record = new Record(schema);
     char* authorsCharStar = new char[30];

@@ -1,5 +1,5 @@
 
-//$Id: ForwardIndex_Test.cpp 2525 2012-05-14 06:40:08Z chenli $
+//$Id: ForwardIndex_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include "index/ForwardIndex.h"
 #include "record/SchemaInternal.h"
@@ -18,8 +18,8 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 typedef Trie<char> Trie_Internal;
 
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     const string filename("testForwardIndexSerialize");
 
     ///Create Schema
-	bmis::SchemaInternal *schema = dynamic_cast<bmis::SchemaInternal*>(bmis::Schema::create(bmis::DefaultIndex));
+	srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	//schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	record->setRecordBoost(20);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new AnalyzerInternal(bimaple::instantsearch::NO_STEMMER_NORMALIZER, " ");
+	AnalyzerInternal *analyzer = new AnalyzerInternal(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, " ");
 	map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
 	///Tokenize the Record. TokenAttributeHitsMap
@@ -123,14 +123,14 @@ int main(int argc, char *argv[])
     positionIndexOffsetList.push_back(1);
     positionIndexOffsetList.push_back(1);
 
-    bmis::IndexType type = bmis::DefaultIndex;
+    srch2is::IndexType type = srch2is::DefaultIndex;
 
-    bmis::SchemaInternal *schema = dynamic_cast<bmis::SchemaInternal*>(bmis::Schema::create(type));
+    srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(type));
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
 
     // create a junk record of 3 attributes
-    bmis::Record *record = new bmis::Record(schema);
+    srch2is::Record *record = new srch2is::Record(schema);
     record->setPrimaryKey(1001);
     record->setRecordBoost(20);
 

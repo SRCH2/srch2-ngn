@@ -1,4 +1,4 @@
-// $Id: QuadNode.cpp 3341 2013-05-14 12:56:33Z jiaying $
+// $Id: QuadNode.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -22,7 +22,7 @@
 #include "index/ForwardIndex.h"
 using namespace std;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -890,7 +890,8 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
             int termSearchableAttributeIdToFilterTermHits = -1;
             float score;
             unsigned keywordId;
-            if (fl->haveWordInRange(quadtree->getForwardIndex()->getSchema(), oldKeywordId, oldKeywordId, termSearchableAttributeIdToFilterTermHits, keywordId, score))
+            unsigned attributeBitmap;
+            if (fl->haveWordInRange(quadtree->getForwardIndex()->getSchema(), oldKeywordId, oldKeywordId, termSearchableAttributeIdToFilterTermHits, keywordId, attributeBitmap, score))
             {
                 if (recordIdsToProcess.find (forwardListID) == recordIdsToProcess.end())
                 {

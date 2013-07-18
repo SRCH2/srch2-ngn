@@ -1,4 +1,4 @@
-//$Id: QuadTree_Test.cpp 3181 2013-02-06 02:10:06Z oliverax $
+//$Id: QuadTree_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -21,7 +21,7 @@
 #include "operation/IndexData.h"
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 bool parseDouble(string &line, double &doubleNum)
 {
@@ -676,12 +676,13 @@ void testSingleNodeQuadTree(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -730,12 +731,13 @@ void testCircleRange(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -776,13 +778,14 @@ void testInsertingRecordsWithSameLocation(const string &directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
 
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/sameLocation100");
@@ -816,12 +819,13 @@ void testSpecialQueryRange(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -870,12 +874,13 @@ void testThousandRecordsQuadTree(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -925,12 +930,13 @@ void testPrefixSearch(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1038,12 +1044,13 @@ void autoGeneratedTestCases(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1078,12 +1085,13 @@ void testFuzzySearch(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1111,12 +1119,13 @@ void testSerialization(string directoryName)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1140,11 +1149,12 @@ void testDeserialization(string directoryName)
 	schema->setPrimaryKey("list_id"); // integer, by default not searchable
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 
 	// load the quadtree from disk
     Indexer *indexer1 = Indexer::load(indexMetaData);
@@ -1185,7 +1195,7 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName+"/1M", "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName+"/1M", "");
 
 	if(flag == 1 || flag == 2)
 	{
@@ -1196,7 +1206,8 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
 		schema->setSearchableAttribute("address", 7); // searchable text
 
 		// Create an analyzer
-		analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+		analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+				"", "", "", SYNONYM_DONOT_KEEP_ORIGIN,"");
 
 		indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1299,7 +1310,7 @@ void singleTest(string directoryName, unsigned threshold)
 	schema->setSearchableAttribute("address", 7); // searchable text
 
 	// Create an analyzer
-	analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	index = Index::create(directoryName, analyzer, schema);
 
@@ -1312,7 +1323,7 @@ void singleTest(string directoryName, unsigned threshold)
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 	Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, "/home/xiang/data/factual/Dec082011/5MIndex", "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, "/home/xiang/data/factual/Dec082011/5MIndex", "");
 	Indexer *indexer = Indexer::load(indexMetaData);
 
 	timespec ts1;

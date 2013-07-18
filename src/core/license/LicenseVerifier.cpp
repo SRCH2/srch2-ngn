@@ -15,7 +15,7 @@ using std::exception;
 
 #include "license/LicenseVerifier.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -188,8 +188,8 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 	{
 		try
 		{
-			//license_dir = std::string(getenv("bimaple_license_dir")); /// getenv could return NULL and app will give seg fault if assigned to string
-			//license_file = license_dir + "/bimaple_license_key.txt";
+			//license_dir = std::string(getenv("srch2_license_dir")); /// getenv could return NULL and app will give seg fault if assigned to string
+			//license_file = license_dir + "/srch2_license_key.txt";
 			license_file = filenameWithPath;
 			infile.open (license_file.c_str());
 		}
@@ -229,13 +229,13 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	std::ifstream infile;
 	try
 	{
-		license_dir = std::string(getenv("bimaple_license_dir")); /// getenv could return NULL and app will give seg fault if assigned to string
-		license_file = license_dir + "/bimaple_license_key.txt";
+		license_dir = std::string(getenv("srch2_license_dir")); /// getenv could return NULL and app will give seg fault if assigned to string
+		license_file = license_dir + "/srch2_license_key.txt";
 		infile.open (license_file.c_str());
 	}
 	catch (exception& e)
 	{
-		std::cerr << "Cannot read the license key file. Check the environment variable \"bimaple_license_dir\", which defines the folder that includes the license key file.\n";
+		std::cerr << "Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.\n";
 		abort();
 	}
 
@@ -245,7 +245,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	}
 	else
 	{
-		std::cerr << "Cannot read the license key file. Check the environment variable \"bimaple_license_dir\", which defines the folder that includes the license key file.\n";
+		std::cerr << "Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.\n";
 		abort();
 	}
 

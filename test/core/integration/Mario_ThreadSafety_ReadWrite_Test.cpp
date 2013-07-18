@@ -14,8 +14,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 string INDEX_DIR = getenv("index_dir");
 
@@ -30,7 +30,7 @@ void addSimpleRecords()
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 	// create an indexer
 	unsigned mergeEveryNSeconds = 3;	
 	unsigned mergeEveryMWrites = 5;
@@ -140,7 +140,7 @@ void query(IndexSearcher *indexSearcher, string keyword, unsigned numberofHits ,
 void testRead(IndexerDataContainer *indexerDataContainerLocal)
 {
 	//Indexer *indexer = indexerDataContainerLocal->indexer;
-	//bmis::Cache *cache = new bmis::Cache();
+	//srch2is::Cache *cache = new srch2is::Cache();
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexerDataContainer.indexer);
 
 	//Query: "tom", hits -> 1001, 1003

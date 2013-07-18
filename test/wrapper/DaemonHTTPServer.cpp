@@ -1,4 +1,4 @@
-//$Id: Daemon.cpp 1191 2011-06-01 19:55:07Z bimaple.vijay $
+//$Id: Daemon.cpp 1191 2011-06-01 19:55:07Z srch2.vijay $
 
 #include "ConfReader.h"
 #include "JSON.h"
@@ -29,8 +29,8 @@
 
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 enum CommandType { DAEMON_LOAD, DAEMON_SEARCH, DAEMON_INSERT, DAEMON_DELETE, DAEMON_NONE };
 
@@ -102,7 +102,7 @@ void printResults(FCGX_Request &request, const QueryResults *queryResults, int i
 
 void searchCommand(vector<string> &values, Indexer *indexer, char delimiter, char delimiter2, int searchType, int searchOption1, int searchOption2, int exactFuzzy)
 {
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(indexer);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(indexer);
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
 	vector<string> queryKeywords;
@@ -120,25 +120,25 @@ void searchCommand(vector<string> &values, Indexer *indexer, char delimiter, cha
 	vector<string> AttributeToFilterTermHits;
 	boost::split(AttributeToFilterTermHits, values[4], boost::is_any_of(sep));
 
-	Query *query = new Query((searchType==0) ? bmis::TopKQuery : bmis::AdvancedQuery);
+	Query *query = new Query((searchType==0) ? srch2is::TopKQuery : srch2is::AdvancedQuery);
 
 	//for each keyword, build a term
 	for (unsigned i = 0; i < queryKeywords.size(); ++i)
 	{
-		TermType type = atoi(termTypes[i].c_str())==0 ? bmis::PREFIX : bmis::COMPLETE;;
+		TermType type = atoi(termTypes[i].c_str())==0 ? srch2is::PREFIX : srch2is::COMPLETE;;
 
 		unsigned termBoost = atoi(termBoosts[i].c_str());
 		unsigned similarityBoost = atoi(similarityBoosts[i].c_str());
 		Term *term;
 		if(exactFuzzy == 0)
 		{
-			term = new bmis::ExactTerm(queryKeywords[i],
+			term = new srch2is::ExactTerm(queryKeywords[i],
 									   type,
 									   termBoost,
 									   similarityBoost,
 									   getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywords[i])));
 		}else{
-			term = new bmis::FuzzyTerm(queryKeywords[i],
+			term = new srch2is::FuzzyTerm(queryKeywords[i],
 									   type,
 									   termBoost,
 									   similarityBoost,
@@ -171,7 +171,7 @@ void searchCommand(vector<string> &values, Indexer *indexer, char delimiter, cha
 
 	}else{//Advanced
 		int filterAttribute = searchOption1;
-		bmis::SortOrder order = (searchOption2 == 0) ? bmis::Descending : bmis::Ascending;
+		srch2is::SortOrder order = (searchOption2 == 0) ? srch2is::Descending : srch2is::Ascending;
 		query->setSortableAttribute(filterAttribute, order);
 		idsFound = indexSearcher->search(query, queryResults);
 		printResults(request, queryResults, idsFound, 0);
@@ -184,7 +184,7 @@ void searchCommand(vector<string> &values, Indexer *indexer, char delimiter, cha
 
 void insertCommand(FCGX_Request &request, vector<string> &values, Indexer *indexer, string index_dir, char delimiter, int ifPrimSearchable)
 {
-	bmis::Record *record = new Record(indexer->getSchema());
+	srch2is::Record *record = new Record(indexer->getSchema());
 
 	//read in the primary key of the record we want to insert
 	unsigned primaryKey = (unsigned)atoi(values[0].c_str());

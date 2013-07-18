@@ -4,8 +4,8 @@
  *  Created on: 2013-5-19
  */
 
-#ifndef __CHARSET_H__
-#define __CHARSET_H__
+#ifndef __CORE_ANALYZER__CHARSET_H__
+#define __CORE_ANALYZER__CHARSET_H__
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include "util/encoding.h"
@@ -15,7 +15,7 @@
 #define LATIN_TYPE 2
 #define BOPOMOFO_TYPE 3 // zhuyin is refereed to http://www.ssec.wisc.edu/~tomw/java/unicode.html.
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -33,4 +33,4 @@ private:
 };
 
 }}
-#endif /* __CHARSET_H__*/
+#endif /* __CORE_ANALYZER__CHARSET_H__*/

@@ -1,5 +1,5 @@
 
-// $Id: TermVirtualList.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: TermVirtualList.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,7 +24,7 @@
 #include "util/Log.h"
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -41,9 +41,10 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
+    unsigned termAttributeBitmap = 0;
     while (1) {
         if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-                                                           term->getAttributeToFilterTermHits(), 
+                                                           term->getAttributeToFilterTermHits(), termAttributeBitmap,
                                                            termRecordStaticScore) ) {
             foundValidHit = 1;
             break;
@@ -66,7 +67,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (this->numberOfItemsInPartialHeap == 0)
             this->currentMaxEditDistanceOnHeap = distance;
 
-        if (this->getTermType() == bimaple::instantsearch::PREFIX) { // prefix term
+        if (this->getTermType() == srch2::instantsearch::PREFIX) { // prefix term
             bool isPrefixMatch = (prefixNode != leafNode);
             float termRecordRuntimeScore =
                 DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
@@ -75,7 +76,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                                                                  isPrefixMatch,
                                                                  this->prefixMatchPenalty);
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(), 
-                                                   recordId, termRecordRuntimeScore,
+                                                   recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, prefixNode,
                                                    distance, isPrefixMatch));
         }
@@ -87,7 +88,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                                                                  false,
                                                                  this->prefixMatchPenalty);// prefix match == false
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(), 
-                                                   recordId, termRecordRuntimeScore,
+                                                   recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, leafNode, distance, false));
         }
     
@@ -247,6 +248,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         returnHeapItem->recordId = currentHeapMax->recordId;
         returnHeapItem->termRecordRuntimeScore = currentHeapMax->termRecordRuntimeScore;
         returnHeapItem->trieNode = currentHeapMax->trieNode;
+        returnHeapItem->attributeBitMap = currentHeapMax->attributeBitMap;
         returnHeapItem->ed = currentHeapMax->ed;
         returnHeapItem->positionIndexOffset = currentHeapMax->positionIndexOffset;
         
@@ -265,12 +267,13 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                                            currentHeapMaxCursor);
             // calculate record offset online
             unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+            unsigned termAttributeBitmap = 0;
             currentHeapMaxCursor++;
                 
             // check isValidTermPositionHit
             float termRecordStaticScore = 0;
             if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-                                    term->getAttributeToFilterTermHits(), 
+                                    term->getAttributeToFilterTermHits(), termAttributeBitmap,
                                         termRecordStaticScore)) {
                 foundValidHit = 1;
                 this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
@@ -283,6 +286,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                                              term->getKeyword()->size(),
                                              currentHeapMax->isPrefixMatch,
                                              this->prefixMatchPenalty);
+                currentHeapMax->attributeBitMap = termAttributeBitmap;
                 currentHeapMax->positionIndexOffset = recordOffset;
                 push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap, 
                       TermVirtualList::HeapItemCmp());

@@ -1,5 +1,5 @@
 
-//$Id: ForwardIndex_Performance_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: ForwardIndex_Performance_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /**
   This test case is create for evaluating the performance of the ForwardIndex
@@ -33,8 +33,8 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 typedef Trie Trie_Internal;
 
@@ -182,6 +182,7 @@ void sequentialAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeyword
         for(unsigned j = 0; j < recordWithKeywordInfoVector[i].keywordStringVector.size(); j++)
         {
             unsigned keywordId;
+            unsigned attributeBitmap;
             string keyword = recordWithKeywordInfoVector[i].keywordStringVector[j];
 
             vector< MinMaxPair > minMaxVector;
@@ -191,7 +192,7 @@ void sequentialAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeyword
             {
                 clock_gettime(CLOCK_REALTIME, &t1);
 
-                bool result = forwardIndex->haveWordInRange(i, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, score);
+                bool result = forwardIndex->haveWordInRange(i, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, attributeBitmap, score);
 
                 clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -246,6 +247,7 @@ void randomAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeywordInfo
         unsigned recordId;
         string keyword;
         unsigned keywordId;
+        unsigned attributeBitmap;
         float score = 0;
         
         getNextRandomKeyword(keyword, recordWithKeywordInfoVector);
@@ -259,7 +261,7 @@ void randomAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeywordInfo
                 
             clock_gettime(CLOCK_REALTIME, &t1);
 
-            bool result = forwardIndex->haveWordInRange(recordId, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, score);
+            bool result = forwardIndex->haveWordInRange(recordId, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, attributeBitmap, score);
         
             clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -284,12 +286,12 @@ int main(int argc, char *argv[])
     srand( (unsigned)time(0) );
 
     /// Create a Schema
-	bmis::SchemaInternal *schema = dynamic_cast<bmis::SchemaInternal*>(bmis::Schema::create(bmis::DefaultIndex));
+	srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
 	schema->setPrimaryKey("primaryKey"); // integer, not searchable
 	schema->setSearchableAttribute("description", 2); // searchable text
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	/// Initialise Index Structures
 	Trie_Internal *trie = new Trie_Internal();

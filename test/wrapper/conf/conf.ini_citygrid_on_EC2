@@ -126,12 +126,12 @@ default-spatial-query-bounding-square-side-length=0.2
 #--------------------
  
 # Document-root. Make sure the server has read privileges are set on this folder
-#change Soum: Add this as the path to the html directory in bimaplesearch folder
+#change Soum: Add this as the path to the html directory in srch2search folder
 document-root=/media/eb1/citygrid_project/M1/
 
-# License Key file. Make sure to set the path to the bimaple license key file provided with the package
-#change Soum: Change this as the path to the bimaple_license_key.txt file in the bimaplesearch folder
-license-file=/media/eb1/citygrid_project/conf/bimaple_license_key.txt
+# License Key file. Make sure to set the path to the srch2 license key file provided with the package
+#change Soum: Change this as the path to the srch2_license_key.txt file in the srch2search folder
+license-file=/media/eb1/citygrid_project/conf/srch2_license_key.txt
 
 # ports to listen. Make sure these are open. To access over internet, these ports must be open for outside traffic.
 listening-port=80
@@ -140,10 +140,10 @@ listening-port=80
 number-of-threads=5
 
 # Path to access log file
-access-log-file=/media/eb1/citygrid_project/log/bimaple-access.log
+access-log-file=/media/eb1/citygrid_project/log/srch2-access.log
 
 # Path to error log file
-error-log-file=/media/eb1/citygrid_project/log/bimaple-error.log
+error-log-file=/media/eb1/citygrid_project/log/srch2-error.log
 
 # Cache size in bytes, must be 53,687,000 < x < 4,294,967,295
 # Cache size can be set from a minimum of 50MB to a maximum of 4.2 GB.

@@ -1,4 +1,4 @@
-// $Id: NormalizerIntegration_WithoutSerialization_Test.cpp 3027 2012-12-05 02:22:07Z oliverax $
+// $Id: NormalizerIntegration_WithoutSerialization_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
@@ -20,8 +20,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 
 
@@ -29,18 +29,18 @@ void buildSimpleIndex(string INDEX_DIR)
 {
 
 	// Create a schema
-	bmis::Schema *schema = bmis::Schema::create(bmis::DefaultIndex);
+	srch2is::Schema *schema = srch2is::Schema::create(srch2is::DefaultIndex);
 	schema->setPrimaryKey("record_id"); // integer, by default not searchable
 	//schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create stemmer type
-	bmis::StemmerNormalizerType stemType = bmis::STEMMER_NORMALIZER;
-	//bmis::StemmerType stemType = DEFAULTSTEMMER;
+	srch2is::StemmerNormalizerType stemType = srch2is::STEMMER_NORMALIZER;
+	//srch2is::StemmerType stemType = DEFAULTSTEMMER;
 
 	// Create an analyzer
-	bmis::Analyzer *analyzer = bmis::Analyzer::create(stemType,"");
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemType,"");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -51,7 +51,7 @@ void buildSimpleIndex(string INDEX_DIR)
 
 	// Step 2: Create records and add to the index
 	// Create a record of 3 attributes
-	bmis::Record *record = new bmis::Record(schema);
+	srch2is::Record *record = new srch2is::Record(schema);
 	record->setPrimaryKey(100);
 	record->setSearchableAttributeValue(0, "Wal-mart");
 	record->setSearchableAttributeValue(1, "Wal mart is the biggest convenient store in United states");
@@ -73,9 +73,9 @@ void buildSimpleIndex(string INDEX_DIR)
 
 	index->commit(); // after commit(), no more records can be added
 
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(index);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);
 		// STEP 2: Create a Query object and a QueryResults object
-		bmis::Query *query = new bmis::Query(bmis::TopKQuery);
+		srch2is::Query *query = new srch2is::Query(srch2is::TopKQuery);
 		string keywords [] = {
 				"starbucks","coffee" //"starbucks"//,"prediction","weak" //,"walmart"   //,"organization"
 		};
@@ -84,11 +84,11 @@ void buildSimpleIndex(string INDEX_DIR)
 		// For each keyword above, add a corresponding fuzzy term to the query
 		for (unsigned i = 0; i < 2; ++i)
 		{
-			bmis::TermType type = bmis::PREFIX; // prefix matching
-			//bmis::TermType type = bmis::COMPLETE; // use it for complete matching
+			srch2is::TermType type = srch2is::PREFIX; // prefix matching
+			//srch2is::TermType type = srch2is::COMPLETE; // use it for complete matching
 			unsigned termBoost = 1;
 			unsigned similarityBoost = 100;
-			bmis::Term *term = bmis::ExactTerm::create(keywords[i],
+			srch2is::Term *term = srch2is::ExactTerm::create(keywords[i],
 					type,
 					termBoost,
 					similarityBoost);
@@ -96,7 +96,7 @@ void buildSimpleIndex(string INDEX_DIR)
 			query->add(term);
 		}
 
-		bmis::QueryResults *queryResults = bmis::QueryResults::create(indexSearcher, query);
+		srch2is::QueryResults *queryResults = srch2is::QueryResults::create(indexSearcher, query);
 
 		// Step 3: Search the index and display results
 
@@ -129,7 +129,7 @@ void buildSimpleIndex(string INDEX_DIR)
 	delete index;
 
 }
-bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, bmis::TermType type = bmis::PREFIX)
+bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, srch2is::TermType type = srch2is::PREFIX)
 {
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -138,10 +138,10 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 	Indexer *indexer = Indexer::load(indexMetaData1);
 	
 	// Create an index searcher
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(indexer);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(indexer);
 
 	// STEP 2: Create a Query object and a QueryResults object
-	bmis::Query *query = new bmis::Query(bmis::TopKQuery);
+	srch2is::Query *query = new srch2is::Query(srch2is::TopKQuery);
 	string keywords [] = {
 			"starbucks","coffee" //"starbucks"//,"prediction","weak" //,"walmart"   //,"organization"
 	};
@@ -150,11 +150,11 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 	// For each keyword above, add a corresponding fuzzy term to the query
 	for (unsigned i = 0; i < 2; ++i)
 	{
-		//bmis::TermType type = bmis::PREFIX; // prefix matching
-		//bmis::TermType type = bmis::COMPLETE; // use it for complete matching
+		//srch2is::TermType type = srch2is::PREFIX; // prefix matching
+		//srch2is::TermType type = srch2is::COMPLETE; // use it for complete matching
 		unsigned termBoost = 1;
 		unsigned similarityBoost = 100;
-		bmis::Term *term = bmis::ExactTerm::create(keywords[i],
+		srch2is::Term *term = srch2is::ExactTerm::create(keywords[i],
 				type,
 				termBoost,
 				similarityBoost);
@@ -162,7 +162,7 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 		query->add(term);
 	}
 
-	bmis::QueryResults *queryResults = bmis::QueryResults::create(indexSearcher, query);
+	srch2is::QueryResults *queryResults = srch2is::QueryResults::create(indexSearcher, query);
 
 	// Step 3: Search the index and display results
 

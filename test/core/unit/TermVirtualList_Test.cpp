@@ -1,5 +1,5 @@
 
-// $Id: TermVirtualList_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+// $Id: TermVirtualList_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -39,7 +39,7 @@
 #include <string>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 typedef Trie Trie_Internal;
 typedef IndexReaderWriter IndexerInternal;
@@ -57,7 +57,7 @@ typedef IndexReaderWriter IndexerInternal;
 void addRecords()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -65,11 +65,12 @@ void addRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -480,7 +481,7 @@ void TermVirtualList_Tests()
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
        Indexer *indexer = Indexer::load(indexMetaData);
     
     IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));

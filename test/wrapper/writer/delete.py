@@ -9,7 +9,7 @@ delete_payload = "{\"_id\":\"" + primary_key + "\"}"
 print "delete", delete_payload
 
 
-conn.request("POST", "/bimaple/index/delete", delete_payload)
+conn.request("POST", "/srch2/index/delete", delete_payload)
 response = conn.getresponse()
 print response.read()
 

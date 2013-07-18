@@ -1,5 +1,5 @@
 
-//$Id: IndexSearcherInternal_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: IndexSearcherInternal_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
@@ -18,8 +18,8 @@
 #include <string>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 typedef Trie Trie_Internal;
 
@@ -53,17 +53,18 @@ void ActiveNodeSet_test()
 */
 
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	Record *record = new Record(schema);
-	Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
-	bmis::IndexMetaData *indexMetaData = new bmis::IndexMetaData(new Cache(134217728,20000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
-	bmis::Indexer *indexer = bmis::Indexer::create(indexMetaData, analyzer, schema);
+	srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(new Cache(134217728,20000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+	srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData, analyzer, schema);
 
 	record->setPrimaryKey(1001);
 	record->setSearchableAttributeValue("article_title", "cancer canada canteen can cat dog");
@@ -111,19 +112,20 @@ void ActiveNodeSet_test()
 void addRecords()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
     
     Record *record = new Record(schema);
-    Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    bmis::IndexMetaData *indexMetaData = new bmis::IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
-    bmis::Indexer *index = bmis::Indexer::create(indexMetaData, analyzer, schema);
+    srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer, schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -269,7 +271,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     int resultCount = 10;
     // create a query
-    Query *query = new Query(bmis::TopKQuery);
+    Query *query = new Query(srch2is::TopKQuery);
     string keywords[3] = { "pink", "floyd", "shine"};
 
     cout<<"\n***COMPLETE EXACT***\nQuery:";
@@ -324,7 +326,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     int resultCount = 10;
     // create a query
-    Query *query = new Query(bmis::TopKQuery);
+    Query *query = new Query(srch2is::TopKQuery);
     string keywords[3] = {
             "pin","floy","shi"
     };
@@ -375,7 +377,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     int resultCount = 10;
     // create a query
-    Query *query = new Query(bmis::TopKQuery);
+    Query *query = new Query(srch2is::TopKQuery);
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
@@ -429,7 +431,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     int resultCount = 10;
     // create a query
-    Query *query = new Query(bmis::TopKQuery);
+    Query *query = new Query(srch2is::TopKQuery);
     string keywords[3] = {
             "pionn","fllio","shiii"
     };
@@ -471,7 +473,7 @@ void Searcher_Tests()
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    bmis::IndexMetaData *indexMetaData = new bmis::IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     
     Indexer* indexer = Indexer::load(indexMetaData);
 

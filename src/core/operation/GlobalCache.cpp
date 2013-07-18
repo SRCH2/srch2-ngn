@@ -1,4 +1,4 @@
-// $Id: GlobalCache.cpp 3054 2012-12-05 23:09:41Z oliverax $
+// $Id: GlobalCache.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -19,7 +19,7 @@
 
 #include "Cache.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

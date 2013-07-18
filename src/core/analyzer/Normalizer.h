@@ -34,7 +34,7 @@
 
 #include "util/encoding.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -47,7 +47,7 @@ class Normalizer
 public:
 
     Normalizer() {};  // Default constructor for boost serialization
-    Normalizer(StemmerNormalizerType stemNormType, const std::string &indexDirectory);
+    Normalizer(StemmerNormalizerFlagType stemmerFlag, const std::string &indexDirectory);
     ~Normalizer();
 
     /*

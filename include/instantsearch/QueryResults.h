@@ -1,4 +1,4 @@
-//$Id: QueryResults.h 3219 2013-03-25 23:36:34Z sbisht $
+//$Id: QueryResults.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,7 +25,7 @@
 
 #include <instantsearch/platform.h>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -123,14 +123,22 @@ public:
      * keyword "compilor".
      */
     virtual void getEditDistances(const unsigned position, std::vector<unsigned> &editDistances) const = 0;
+
+    // The following two functions only work for attribute based search
+    virtual void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const = 0;
+
+    virtual void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const = 0;
     /*
      *   In Geo search return distance between location of the result and center of the query rank.
      *   TODO: Change the name to getGeoDistance()
      */
     virtual double getPhysicalDistance(const unsigned position) const = 0;
 
-    //TODO: These two functions for internal debugging. remove from the header
+    //TODO: These three functions for internal debugging. remove from the header
     virtual void printStats() const = 0;
+
+    virtual void printResult() const = 0;
+
     virtual void addMessage(const char* msg) = 0;
 
     /**

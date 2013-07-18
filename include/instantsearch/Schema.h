@@ -1,4 +1,4 @@
-//$Id: Schema.h 3410 2013-06-05 12:58:08Z jiaying $
+//$Id: Schema.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,7 +24,7 @@
 #include <string>
 #include <map>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -98,12 +98,12 @@ public:
     /**
      * Creates a Schema object
      */
-    static Schema *create(bimaple::instantsearch::IndexType indexType, bimaple::instantsearch::PositionIndexType positionIndexType = bimaple::instantsearch::NOPOSITIONINDEX);
-    //    static Schema *create(bimaple::instantsearch::IndexType indexType, bimaple::instantsearch::PositionIndexType positionIndexType = bimaple::instantsearch::FULLPOSITIONINDEX);
+    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::NOPOSITIONINDEX);
+    //    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::FULLPOSITIONINDEX);
 
-    virtual bimaple::instantsearch::IndexType getIndexType() const = 0;
+    virtual srch2::instantsearch::IndexType getIndexType() const = 0;
 
-    virtual bimaple::instantsearch::PositionIndexType getPositionIndexType() const = 0;
+    virtual srch2::instantsearch::PositionIndexType getPositionIndexType() const = 0;
 
     /**
      *  Sets the name of the primary key to primaryKey.
@@ -148,7 +148,7 @@ public:
     virtual unsigned getBoostSumOfSearchableAttributes() const = 0;
 
     virtual const std::string* getDefaultValueOfSortableAttribute(const unsigned searchableAttributeNameId) const = 0;
-    virtual bimaple::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual srch2::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned searchableAttributeNameId) const = 0;
 
     // get searchable attribute
     virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;

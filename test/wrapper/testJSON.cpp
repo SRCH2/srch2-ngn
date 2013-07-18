@@ -8,12 +8,12 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	kafkaconnect::consumer *bimapleConsumer;
+	kafkaconnect::consumer *srch2Consumer;
 	boost::asio::io_service io_service;
     std::auto_ptr<boost::asio::io_service::work> work_consumer;
         
 	work_consumer.reset(new boost::asio::io_service::work(io_service));
-	bimapleConsumer = new kafkaconnect::consumer(io_service, "127.0.0.1", 9092);
+	srch2Consumer = new kafkaconnect::consumer(io_service, "127.0.0.1", 9092);
 	boost::thread bt(boost::bind(&boost::asio::io_service::run, &io_service));
     
     uint64_t offset = 0;
@@ -21,13 +21,13 @@ int main(int argc, char** argv)
     do
 	{
 		sleep(1);
-		if (bimapleConsumer->is_connected())
+		if (srch2Consumer->is_connected())
 		{
 			std::vector<std::string> messages;
 			uint64_t newOffset = offset;		
 
 			continueIteration =
-					bimapleConsumer->consume(messages,
+					srch2Consumer->consume(messages,
 										"pinkf",	0, 50000000,
 										offset, newOffset);
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 		}
 	} while(continueIteration);
 	
-	delete bimapleConsumer;
+	delete srch2Consumer;
 	
 	return 0;	
 }

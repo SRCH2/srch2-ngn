@@ -45,7 +45,7 @@ function query(value) {
 		values.splice(i,i+1);
 	}
 	
-	var url = "/bimaple/search?q=";
+	var url = "/srch2/search?q=";
 	var first = 1;
 	var q = "";
 	for(var i = 0; i < values.length; i++) {

@@ -1,5 +1,5 @@
-Bimaple Version 1.0 Distribution. 
+Srch2 Version 1.0 Distribution. 
 
-Please open "docs/Bimaple-API/index.html" for more documentation.
+Please open "docs/Srch2-API/index.html" for more documentation.
 
-For support, email us at contact@bimaple.com
+For support, email us at contact@srch2.com

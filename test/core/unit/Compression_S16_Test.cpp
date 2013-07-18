@@ -1,4 +1,4 @@
-// $Id: Compression_S16_Test.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: Compression_S16_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -17,7 +17,7 @@
  */
 
 #include "util/cowvector/compression/cowvector_S16.h"
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 /*
  * In this test, we verify the correctness and compression ratio of S16 compression methods.

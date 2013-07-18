@@ -1,4 +1,4 @@
-//$Id: FilterIndex.h 3016 2012-12-05 00:12:16Z oliverax $
+//$Id: FilterIndex.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -28,10 +28,10 @@
 
 using std::map;
 using std::vector;
-using bimaple::instantsearch::OFilterMapPtr;
-using bimaple::instantsearch::CFilterMapPtr;
+using srch2::instantsearch::OFilterMapPtr;
+using srch2::instantsearch::CFilterMapPtr;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

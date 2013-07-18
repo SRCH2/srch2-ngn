@@ -1,7 +1,7 @@
 #include <iostream>
 #include "license/LicenseVerifier.h"
 #include <util/Assert.h>
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 int main(int argc, char **argv)
 {
@@ -19,12 +19,12 @@ int main(int argc, char **argv)
     std::cerr << "License test: " << resultFail2 << std::endl;
 
     //Correct Signature and ExpiryDate changed
-    bool resultFail3 = LicenseVerifier::test("Signature=Nqh+DH22KBxY9t1unwmbWxI1DdZTYvJyqF4YPoT4f9a218BcMJRcNgBeU1ZizZG0Jl+qyTfeBtoR+onnZmYq4ZoksMQe5EuP7OVNK4IEsg9wpBxW48i1oFRnTH16LhsBbPtEJ1I6GWHgUw6lHInPXJBHadYFOK2xzuzccldTcxY=,name=bimaple_license,Expiry-Date=2020-08-02");
+    bool resultFail3 = LicenseVerifier::test("Signature=eTwLb3n1cYBYsR6reo/uSlFLwu80cxqjO+t3LrtcqqvgpkCyIEryd2ajMqCneqHN8vBpfI4jcoKSXtQLJGIvCurZxkuHdBwT7eCOCuauoXCOK+0MKeLI4PNggEQAQSxDXZci9QEN2d7NSeEKG+VUl3MZQTUz5CP45H3htzRlozU=,name=srch2_license,Expiry-Date=2020-08-02");
     ASSERT(resultFail3 == 0);
     std::cerr << "License test: " << resultFail3 << std::endl;
 
     //CorrectKey and ExpiryDate valid
-    bool resultPass = LicenseVerifier::test("Signature=Nqh+DH22KBxY9t1unwmbWxI1DdZTYvJyqF4YPoT4f9a218BcMJRcNgBeU1ZizZG0Jl+qyTfeBtoR+onnZmYq4ZoksMQe5EuP7OVNK4IEsg9wpBxW48i1oFRnTH16LhsBbPtEJ1I6GWHgUw6lHInPXJBHadYFOK2xzuzccldTcxY=,name=bimaple_license,Expiry-Date=2020-08-01");
+    bool resultPass = LicenseVerifier::test("Signature=eTwLb3n1cYBYsR6reo/uSlFLwu80cxqjO+t3LrtcqqvgpkCyIEryd2ajMqCneqHN8vBpfI4jcoKSXtQLJGIvCurZxkuHdBwT7eCOCuauoXCOK+0MKeLI4PNggEQAQSxDXZci9QEN2d7NSeEKG+VUl3MZQTUz5CP45H3htzRlozU=,name=srch2_license,Expiry-Date=2020-08-01");
     ASSERT(resultPass == 1);
     std::cerr << "License test: " << resultPass << std::endl;
 

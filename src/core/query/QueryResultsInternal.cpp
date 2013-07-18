@@ -1,5 +1,5 @@
 
-// $Id: QueryResultsInternal.cpp 3341 2013-05-14 12:56:33Z jiaying $
+// $Id: QueryResultsInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -28,7 +28,7 @@
 
 using std::vector;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -125,23 +125,47 @@ double QueryResultsInternal::getPhysicalDistance(const unsigned position) const
     return this->sortedFinalResults.at(position).physicalDistance;
 }
 
-// TODO: Optimize Vector copy
 void QueryResultsInternal::getMatchingKeywords(const unsigned position, vector<string> &matchingKeywords) const
 {
-    ///TODO OPT
-    for (vector<string>::const_iterator iter = this->sortedFinalResults[position].matchingKeywords.begin();
-     iter!=this->sortedFinalResults[position].matchingKeywords.end(); iter++) {
-        matchingKeywords.push_back(*iter);
-    }
+    matchingKeywords.assign(this->sortedFinalResults[position].matchingKeywords.begin(),
+    		this->sortedFinalResults[position].matchingKeywords.end());
 }
     
 void QueryResultsInternal::getEditDistances(const unsigned position, vector<unsigned> &editDistances) const
 {
-    // TODO OPT
-    for (vector<unsigned>::const_iterator iter = this->sortedFinalResults[position].editDistances.begin(); 
-     iter!=this->sortedFinalResults[position].editDistances.end(); iter++) {
-        editDistances.push_back(*iter);
-    }
+    editDistances.assign(this->sortedFinalResults[position].editDistances.begin(),
+    		this->sortedFinalResults[position].editDistances.end());
+}
+
+void QueryResultsInternal::getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const
+{
+	matchedAttributeBitmaps.assign(this->sortedFinalResults[position].attributeBitmaps.begin(),
+			this->sortedFinalResults[position].attributeBitmaps.end());
+}
+
+
+// return the matchedAttributes indexed from 0
+void QueryResultsInternal::getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const
+{
+	//TODO opt
+	const vector<unsigned> &matchedAttributeBitmaps = this->sortedFinalResults[position].attributeBitmaps;
+	matchedAttributes.resize(matchedAttributeBitmaps.size());
+
+	for(int i = 0; i < matchedAttributeBitmaps.size(); i++)
+	{
+		unsigned idx = 0;
+		unsigned matchedAttributeBitmap = matchedAttributeBitmaps[i];
+		matchedAttributes[i].clear();
+		while(matchedAttributeBitmap)
+		{
+			if(matchedAttributeBitmap & 0x1)
+			{
+				matchedAttributes[i].push_back(idx);
+			}
+			matchedAttributeBitmap >>= 1;
+			++idx;
+		}
+	}
 }
 
 void QueryResultsInternal::setNextK(const unsigned k)
@@ -151,7 +175,7 @@ void QueryResultsInternal::setNextK(const unsigned k)
 
 void QueryResultsInternal::insertResult(QueryResult &queryResult)
 {
-    if (this->query->getQueryType() == bimaple::instantsearch::TopKQuery) {
+    if (this->query->getQueryType() == srch2::instantsearch::TopKQuery) {
         ASSERT(this->nextKResultsHeap.size() <= this->nextK);
         if (this->nextKResultsHeap.size() < this->nextK) {
             this->nextKResultsHeap.push(queryResult);
@@ -190,7 +214,7 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList)
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
 {
-    bool descending = (this->query->getSortableAttributeIdSortOrder() == bimaple::instantsearch::Descending);
+    bool descending = (this->query->getSortableAttributeIdSortOrder() == srch2::instantsearch::Descending);
 
     int numberOfSortedResults = this->getNumberOfResults();
 
@@ -209,6 +233,8 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
             qs.score = this->nextKResultsHeap.top().score;
             qs.matchingKeywords.assign(this->nextKResultsHeap.top().matchingKeywords.begin(),
                            this->nextKResultsHeap.top().matchingKeywords.end());
+            qs.attributeBitmaps.assign(this->nextKResultsHeap.top().attributeBitmaps.begin(),
+            				this->nextKResultsHeap.top().attributeBitmaps.end());
             qs.editDistances.assign(this->nextKResultsHeap.top().editDistances.begin(),
                            this->nextKResultsHeap.top().editDistances.end());
             if (descending)
@@ -236,6 +262,32 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
 void QueryResultsInternal::printStats() const
 {
     this->stat->print();
+}
+
+void QueryResultsInternal::printResult() const
+{
+	// show attributeBitmaps
+	vector<unsigned> attributeBitmaps;
+	vector<vector<unsigned> > attributes;
+	vector<string> matchedKeywords;
+	cout << "Result count" <<": " << this->getNumberOfResults() << endl;;
+	for(int i = 0; i < this->getNumberOfResults(); i++)
+	{
+		cout << "Result #" << i << ":" <<endl;
+		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
+		this->getMatchingKeywords(i, matchedKeywords);
+		this->getMatchedAttributes(i, attributes);
+		for(int j = 0; j < attributeBitmaps.size(); j++)
+		{
+			cout << matchedKeywords[j] << " " << attributeBitmaps[j] << "{";
+			for(int k = 0; k < attributes[j].size(); k++)
+				cout << attributes[j][k] << " ";
+			cout << "} | ";
+		}
+
+		cout << endl;
+	}
+
 }
 
 

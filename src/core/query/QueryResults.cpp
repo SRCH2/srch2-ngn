@@ -1,5 +1,5 @@
 
-// $Id: QueryResults.cpp 3047 2012-12-05 22:24:32Z oliverax $
+// $Id: QueryResults.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -21,7 +21,7 @@
 #include "QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

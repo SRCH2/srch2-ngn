@@ -20,7 +20,7 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

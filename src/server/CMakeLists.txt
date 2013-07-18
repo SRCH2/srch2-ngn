@@ -15,13 +15,13 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
-ADD_EXECUTABLE(${SRCH2_SERVER_NAME} bimapleSearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
-                        ${BimapleInstantSearch_LIBRARIES} 
+                        ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
                         ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}
                 )
 
 ADD_DEPENDENCIES(${SRCH2_SERVER_NAME} srch2_core)
-
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${SRCH2_SERVER_NAME} DESTINATION bin RENAME "srch2-engine"  PERMISSIONS OWNER_READ OWNER_EXECUTE)
 #SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/../search-server)

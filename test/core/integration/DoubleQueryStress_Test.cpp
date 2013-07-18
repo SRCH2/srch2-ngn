@@ -1,5 +1,5 @@
 
-// $Id: DoubleQueryStress_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+// $Id: DoubleQueryStress_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -32,8 +32,8 @@
 #include <cstdlib>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 // variables to measure the elapsed time
 struct timespec tstart;
@@ -67,7 +67,6 @@ bool parseLine(string &line, string &query, bool &returnValue1, bool &returnValu
 int main(int argc, char **argv)
 {
     std::string index_dir = getenv("index_dir");
-    std::string bimaple_license_file = getenv("bimaple_license_dir");
 
     // user defined query variables
     std::vector<std::string> file;
@@ -95,7 +94,7 @@ int main(int argc, char **argv)
         Cache *cache = new Cache();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
-        IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+        IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
         const Analyzer *analyzer = indexer->getAnalyzer();
@@ -130,7 +129,7 @@ int main(int argc, char **argv)
         Cache *cache = new Cache();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
-        IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+        IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
         const Analyzer *analyzer = indexer->getAnalyzer();

@@ -1,12 +1,12 @@
-//$Id: HTTPResponse.h 3149 2013-01-29 00:28:02Z oliverax $
+//$Id: HTTPResponse.h 3456 2013-06-14 02:11:13Z jiaying $
 
 #ifndef _HTTPRESPONSE_H_
 #define _HTTPRESPONSE_H_
 
-#include "BimapleServerConf.h"
+#include "Srch2ServerConf.h"
 #include "URLParser.h"
 #include "json/json.h"
-#include "BimapleServer.h"
+#include "Srch2Server.h"
 
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
@@ -21,7 +21,7 @@
 #include <event.h>
 #include <evhttp.h>
 
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
@@ -29,22 +29,22 @@ namespace httpwrapper
 class HTTPResponse
 {
 	public:
-		static void searchCommand(evhttp_request *req, BimapleServer *server);
-		static void infoCommand(evhttp_request *req, BimapleServer *server, const string &versioninfo);
-		static void writeCommand_v0(evhttp_request *req, BimapleServer *server);
-		static void updateCommand(evhttp_request *req, BimapleServer *server);
-		static void saveCommand(evhttp_request *req, BimapleServer *server);
-        static void lookupCommand(evhttp_request *req, BimapleServer *server);
-		static void writeCommand_v1(evhttp_request *req, BimapleServer *server);
-		static void activateCommand(evhttp_request *req, BimapleServer *server);
+		static void searchCommand(evhttp_request *req, Srch2Server *server);
+		static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
+		static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
+		static void updateCommand(evhttp_request *req, Srch2Server *server);
+		static void saveCommand(evhttp_request *req, Srch2Server *server);
+        static void lookupCommand(evhttp_request *req, Srch2Server *server);
+		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
+		static void activateCommand(evhttp_request *req, Srch2Server *server);
 		
 	private:
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const URLParserHelper &urlParserHelper,
-				const BimapleServerConf *indexDataContainerConf,
+				const Srch2ServerConf *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const Query *query,
-				const bmis::Indexer *indexer,
+				const srch2is::Indexer *indexer,
 				const unsigned offset,
 				const unsigned nextK,
 				const unsigned retrievedResults,

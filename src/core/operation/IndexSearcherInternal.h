@@ -1,4 +1,4 @@
-// $Id: IndexSearcherInternal.h 3335 2013-05-11 03:41:56Z huaijie $
+// $Id: IndexSearcherInternal.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -39,7 +39,7 @@
 #include "operation/IndexData.h"
 #include <vector>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -120,7 +120,7 @@ private:
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 
     bool randomAccess(std::vector<TermVirtualList* > *virtualListVector,std::vector<float> &queryResultTermScores,
-            std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
+            std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
 };
 
 }}

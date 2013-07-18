@@ -1,5 +1,5 @@
 
-// $Id: QuadTree.h 3335 2013-05-11 03:41:56Z huaijie $
+// $Id: QuadTree.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -52,7 +52,7 @@ using std::bitset;
 using std::string;
 using std::set;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

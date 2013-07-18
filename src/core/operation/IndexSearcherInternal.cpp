@@ -1,5 +1,5 @@
 
-// $Id: IndexSearcherInternal.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: IndexSearcherInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -40,7 +40,7 @@
 
 using namespace std;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -81,6 +81,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 
     std::vector<float> queryResultTermScores;
     std::vector<std::string> queryResultMatchingKeywords;
+    std::vector<unsigned> queryResultBitmaps;
     std::vector<unsigned> queryResultEditDistances;
     HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
 
@@ -115,11 +116,12 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         // assign the vectors with default values to clear them
         queryResultTermScores.assign(queryTerms->size(), 0);
         queryResultMatchingKeywords.assign(queryTerms->size(), "");
+        queryResultBitmaps.assign(queryTerms->size(), 0);
         queryResultEditDistances.assign(queryTerms->size(), 0);
 
         /*//Check if the hit is from a stemmed keyword.
         if(this->indexData->analyzerInternal->getStemmerNormalizerType() 
-           != bimaple::instantsearch::NO_STEMMER_NORMALIZER)
+           != srch2::instantsearch::NO_STEMMER_NORMALIZER)
         {
             unsigned heapItemKeywordId;//Unused
             float heapItemScore;//Unused
@@ -156,10 +158,11 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
             charTypeVectorToUtf8String(temp, str);
             queryResultMatchingKeywords.at(smallestVirtualListVectorId) = str;
         //}
+        queryResultBitmaps.at(smallestVirtualListVectorId) = heapItem->attributeBitMap;
         queryResultEditDistances.at(smallestVirtualListVectorId) = heapItem->ed;
         
         // Do random access on the other TermVirtualLists
-        if (randomAccess(virtualListVector, queryResultTermScores, queryResultMatchingKeywords, 
+        if (randomAccess(virtualListVector, queryResultTermScores, queryResultMatchingKeywords, queryResultBitmaps,
                  queryResultEditDistances, query, internalRecordId, smallestVirtualListVectorId, 0)) {
             bool  validForwardList = false;
             const ForwardList *fl = this->indexData->forwardIndex->getForwardList(internalRecordId, 
@@ -177,6 +180,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                 //                                  sumOfEditDistances, 
                 //                                  queryTermsLength);
                 queryResult.matchingKeywords = queryResultMatchingKeywords;
+                queryResult.attributeBitmaps = queryResultBitmaps;
                 queryResult.editDistances = queryResultEditDistances;
                 queryResultsInternal->insertResult(queryResult);
             }
@@ -237,7 +241,7 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
         }
         else
         { 
-            // see ticket https://trac.assembla.com/bimaple-root/ticket/142
+            // see ticket https://trac.assembla.com/srch2-root/ticket/142
             // prefixActiveNodeSet->busyBit->setFree();
             delete prefixActiveNodeSet;
         }
@@ -339,8 +343,10 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             queryResultTermScores.resize(query->getQueryTerms()->size(), 0);
 
             std::vector<std::string> queryResultMatchingKeywords(conjunctionCacheResultsEntry->candidateList->at(i).matchingKeywords);
-
             queryResultMatchingKeywords.resize(query->getQueryTerms()->size(), "");
+
+            std::vector<unsigned> queryResultAttributeBitmaps(conjunctionCacheResultsEntry->candidateList->at(i).attributeBitmaps);
+            queryResultAttributeBitmaps.resize(query->getQueryTerms()->size(), 0);
 
             std::vector<unsigned> queryResultEditDistances(conjunctionCacheResultsEntry->candidateList->at(i).editDistances);
             queryResultEditDistances.resize(query->getQueryTerms()->size(), 0);
@@ -355,6 +361,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             if (forwardListValid) {
                 queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
                 queryResult.matchingKeywords = queryResultMatchingKeywords;
+                queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                 queryResult.editDistances = queryResultEditDistances;
                 queryResultsInternal->insertResult(queryResult);
             }
@@ -407,13 +414,14 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 queryResultTermScores.resize(query->getQueryTerms()->size(), 0);
                     
                 std::vector<std::string> queryResultMatchingKeywords(conjunctionCacheResultsEntry->candidateList->at(i).matchingKeywords);
+                std::vector<unsigned> queryResultAttributeBitmaps(conjunctionCacheResultsEntry->candidateList->at(i).attributeBitmaps);
                 queryResultMatchingKeywords.resize(query->getQueryTerms()->size(), "");
 
                 std::vector<unsigned> queryResultEditDistances(conjunctionCacheResultsEntry->candidateList->at(i).editDistances);
                 queryResultEditDistances.resize(query->getQueryTerms()->size(), 0);
             
                 if (randomAccess(virtualListVector, queryResultTermScores, 
-                        queryResultMatchingKeywords, queryResultEditDistances, 
+                        queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
                         query, internalRecordId, 
                         conjunctionCacheResultsEntry->queryTerms->size()-1, 
                         conjunctionCacheResultsEntry->queryTerms->size())) {
@@ -427,6 +435,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 
                         queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
                         queryResult.matchingKeywords = queryResultMatchingKeywords;
+                        queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult.editDistances = queryResultEditDistances;
                         queryResultsInternal->insertResult(queryResult);
                 
@@ -435,6 +444,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         candidate.internalRecordId = internalRecordId;
                         candidate.termScores = queryResultTermScores;
                         candidate.matchingKeywords = queryResultMatchingKeywords;
+                        candidate.attributeBitmaps = queryResultAttributeBitmaps;
                         candidate.editDistances = queryResultEditDistances;
                         candidateList->push_back(candidate);
                     }
@@ -451,6 +461,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         bool stop = false;
         std::vector<float> queryResultTermScores;
         std::vector<std::string> queryResultMatchingKeywords;
+        std::vector<unsigned> queryResultAttributeBitmaps;
         std::vector<unsigned> queryResultEditDistances;
         HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
         queryResults->addMessage("Fagin's Loop Start");
@@ -501,11 +512,12 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 // assign the vectors with default values to clear them
                 queryResultTermScores.assign(query->getQueryTerms()->size(), 0);
                 queryResultMatchingKeywords.assign(query->getQueryTerms()->size(), "");
+                queryResultAttributeBitmaps.assign(query->getQueryTerms()->size(), 0);
                 queryResultEditDistances.assign(query->getQueryTerms()->size(), 0);
-            
+
                 /*// Check if the hit is from a stemmed keyword.
                 if (this->indexData->analyzerInternal->getStemmerNormalizerType() 
-                        != bimaple::instantsearch::NO_STEMMER_NORMALIZER) {
+                        != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
                     unsigned heapItemKeywordId;//Unused
                     float heapItemScore;//Unused
                     bool heapItemIsStemmed;
@@ -544,11 +556,12 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             
                 queryResultEditDistances.at(i) = heapItem->ed;
                 queryResultTermScores.at(i) = heapItem->termRecordRuntimeScore;
+                queryResultAttributeBitmaps.at(i) = heapItem->attributeBitMap;
                 
                 // Step 3
                 // Do random access on the other TermVirtualLists
                 if(randomAccess(virtualListVector, queryResultTermScores, 
-                        queryResultMatchingKeywords, queryResultEditDistances, 
+                        queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
                         query, internalRecordId, i, 0))    {
                     bool validForwardList;
                     this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
@@ -559,6 +572,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         queryResult.score = query->getRanker()->computeOverallRecordScore(query,
                                                          queryResultTermScores);
                         queryResult.matchingKeywords = queryResultMatchingKeywords;
+                        queryResult.attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult.editDistances = queryResultEditDistances;
                         queryResultsInternal->insertResult(queryResult);
                     
@@ -567,6 +581,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         candidate.internalRecordId = internalRecordId;
                         candidate.termScores = queryResultTermScores;
                         candidate.matchingKeywords = queryResultMatchingKeywords;
+                        candidate.attributeBitmaps = queryResultAttributeBitmaps;
                         candidate.editDistances = queryResultEditDistances;
                         candidateList->push_back(candidate);
                     }
@@ -625,17 +640,17 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
     if (this->indexData->isCommited() == false)
         return returnValue;
     
-    if (query->getQueryType() == bimaple::instantsearch::TopKQuery) {
+    if (query->getQueryType() == srch2::instantsearch::TopKQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchTopKQuery(query, offset, nextK, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
-    else if(query->getQueryType() == bimaple::instantsearch::GetAllResultsQuery) {
+    else if(query->getQueryType() == srch2::instantsearch::GetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchGetAllResultsQuery(query, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
-
+    //queryResults->printResult();
     return returnValue;
 }
 
@@ -783,7 +798,8 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
 bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtualListVector,
                      std::vector<float> &queryResultTermScores, 
                      std::vector<std::string> &queryResultMatchingKeywords,
-                     std::vector<unsigned> &queryResultEditDistances, 
+                     std::vector<unsigned> &queryResultBitmaps,
+                     std::vector<unsigned> &queryResultEditDistances,
                      const Query *query, unsigned recordId, 
                      unsigned skip, unsigned start)
 {
@@ -809,7 +825,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
         
             unsigned minId = trieNode->getMinId();
             unsigned maxId = trieNode->getMaxId();
-            if (virtualListVector->at(j)->getTermType() == bimaple::instantsearch::COMPLETE) {
+            if (virtualListVector->at(j)->getTermType() == srch2::instantsearch::COMPLETE) {
                 if (trieNode->isTerminalNode())
                     maxId = minId;
                 else
@@ -818,11 +834,12 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
         
             unsigned matchingKeywordId;
             float termRecordStaticScore;
+            unsigned termAttributeBitmap;
            /* bool isStemmed;
             // the similarity between a record and a prefix is the largest
             // similarity between this prefix and keywords in the record
             if (this->indexData->analyzerInternal->getStemmerNormalizerType() 
-                    != bimaple::instantsearch::NO_STEMMER_NORMALIZER) {
+                    != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
                 if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(recordId, minId, maxId, 
                                           termSearchableAttributeIdToFilterTermHits, 
                                           matchingKeywordId, termRecordStaticScore, isStemmed)) {
@@ -855,13 +872,14 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
             else {*/
                 if (this->indexData->forwardIndex->haveWordInRange(recordId, minId, maxId, 
                                                                termSearchableAttributeIdToFilterTermHits, 
-                                                               matchingKeywordId, termRecordStaticScore)) {
+                                                               matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
                     std::vector<CharType> temp;
                     this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, 
                                                        trieNode, temp);
                     string str;
                     charTypeVectorToUtf8String(temp, str);
                     queryResultMatchingKeywords.at(j) = str;
+                    queryResultBitmaps.at(j) = termAttributeBitmap;
                     queryResultEditDistances.at(j) = distance;
 
                     bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );

@@ -26,8 +26,8 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 
 /**
@@ -209,7 +209,7 @@ void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
 
 }
 
-void printGeoResults(bmis::QueryResults *queryResults, unsigned offset = 0)
+void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 {
 	cout << "Number of hits:" << queryResults->getNumberOfResults() << endl;
 	for (unsigned resultIter = offset;
@@ -243,7 +243,7 @@ void printGeoResults(bmis::QueryResults *queryResults, unsigned offset = 0)
 
 float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(bimaple::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::MapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -275,9 +275,9 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     return resVal;
 }
 
-bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed, bimaple::instantsearch::TermType termType)
+bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed, srch2::instantsearch::TermType termType)
 {
-    Query *query = new Query(bimaple::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::MapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -315,7 +315,7 @@ bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearc
 
 unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(bimaple::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::MapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);

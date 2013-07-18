@@ -1,5 +1,5 @@
 
-// $Id: IndexData.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,13 +25,13 @@
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
-#include "license/LicenseVerifier.h"
 #include "util/ReadWriteMutex.h"  // for locking
 #include "util/Assert.h"
 #include "geo/QuadTree.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
 #include <instantsearch/Record.h>
+#include "util/FileOps.h"
 
 #include <stdio.h>  /* defines FILENAME_MAX */
 #include <iostream>
@@ -48,8 +48,9 @@ using std::vector;
 using std::map;
 using std::pair;
 //using std::unordered_set;
+using namespace srch2::util;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -58,13 +59,16 @@ IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
         const string &trieBootstrapFileNameWithPath,
-        const string &licenseFileNameWithPath,
-        const StemmerNormalizerType &stemType)
+        const StemmerNormalizerFlagType &stemmerFlag)
 {
-    this->licenseFileNameWithPath = licenseFileNameWithPath;
-    LicenseVerifier::testFile(licenseFileNameWithPath);
 
     this->directoryName = directoryName;
+
+    if(!checkDirExistence(directoryName.c_str())){
+		if(createDir(directoryName.c_str()) == -1){
+			exit(1);
+		}
+	}
 
     /* Create a copy of analyzer as the user created analyzer can be dereferenced by the user any time.
      * Shared pointer could be one solution to overcome this.
@@ -87,7 +91,7 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex =new  InvertedIndex(this->forwardIndex);
     else
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
@@ -103,12 +107,15 @@ IndexData::IndexData(const string &directoryName,
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
 
-IndexData::IndexData(const string& directoryName, const string &licenseFileNameWithPath)
+IndexData::IndexData(const string& directoryName)
 {
-    this->licenseFileNameWithPath = licenseFileNameWithPath;
-    LicenseVerifier::testFile(licenseFileNameWithPath);
-
     this->directoryName = directoryName;
+
+    if(!checkDirExistence(directoryName.c_str())){
+		if(createDir(directoryName.c_str()) == -1){
+			exit(1);
+		}
+	}
 
     std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
 	boost::archive::binary_iarchive ia(ifs);
@@ -136,14 +143,18 @@ IndexData::IndexData(const string& directoryName, const string &licenseFileNameW
     this->trie = new Trie_Internal();
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
     Trie_Internal::load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+
+    // set if it's a attributeBasedSearch
+    if(this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
+    	ForwardList::isAttributeBasedSearch = true;
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     this->forwardIndex->setSchema(this->schemaInternal);
     this->forwardIndex->merge();// to force create a separate view for writes.
 
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
     {
         InvertedIndex::load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
         this->invertedIndex->setForwardIndex(this->forwardIndex);
@@ -189,7 +200,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
 
         // only used for committed geo index
         vector<unsigned> *keywordIdVector = NULL;
-        if(this->schemaInternal->getIndexType() == bimaple::instantsearch::LocationIndex
+        if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
                 && this->commited == true)
         {
             keywordIdVector = new vector<unsigned> ();
@@ -220,7 +231,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
                 keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
             else
             {
-                if (this->schemaInternal->getIndexType() == bimaple::instantsearch::LocationIndex)
+                if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
                 {
                     oldParentOrSelfAndAncs = new vector<Prefix> ();  // CHEN: store the ancestors (possibly itself) whose interval will change after this insertion
                     breakLeftOrRight = this->trie->ifBreakOldParentPrefix(getCharTypeVector(mapIterator->first), oldParentOrSelfAndAncs, hadExactlyOneChild);
@@ -234,7 +245,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
             // should also be valid.
             keywordIdList.push_back( make_pair(keywordId, make_pair(mapIterator->first, invertedIndexOffset) ) );
 
-            if ( this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex ) // A1
+            if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex ) // A1
             {
                 this->invertedIndex->incrementHitCount(invertedIndexOffset);
             }
@@ -262,7 +273,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
         this->forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(), internalRecordId);
         this->forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
-        if ( this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex )
+        if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex )
         {
             if ( this->commited == true )
             {
@@ -272,7 +283,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
                         internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
             }
         }
-        else if (this->schemaInternal->getIndexType() == bimaple::instantsearch::LocationIndex ) // geo index
+        else if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex ) // geo index
         {
             // for geo index, we don't have inverted index, so we compute TermRecordStaticScores here
             ForwardList *fl = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
@@ -408,7 +419,7 @@ INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId)
 INDEXWRITE_RETVAL IndexData::_commit()
 {
     bool isLocational = false;
-    if(this->schemaInternal->getIndexType() == bimaple::instantsearch::LocationIndex)
+    if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         isLocational = true;
 
     if (this->commited == false)
@@ -601,7 +612,7 @@ INDEXWRITE_RETVAL IndexData::_merge()
     
     this->forwardIndex->merge();
 
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
     
     // check if we need to reassign some keyword ids
@@ -625,7 +636,7 @@ INDEXWRITE_RETVAL IndexData::_merge()
         // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
     }
     
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::LocationIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         this->quadTree->merge();
 
     this->mergeRequired = false;
@@ -669,7 +680,7 @@ void IndexData::reassignKeywordIds()
     //std::unordered_set<unsigned> processedRecordIds; // keep track of records that have been converted
     map<unsigned, unsigned> processedRecordIds; // keep track of records that have been converted
 
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex) // if it's A1 index
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) // if it's A1 index
     {
         // Now we have the ID mapper.  We want to go through the trie nodes one by one.
         // For each of them, access its inverted list.  For each record,
@@ -747,7 +758,7 @@ void IndexData::_save(const string &directoryName) const
     //this->invertedIndex->print_test();
     ForwardIndex::save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
     SchemaInternal::save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         InvertedIndex::save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
     else
         QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
@@ -765,7 +776,7 @@ void IndexData::printNumberOfBytes() const
             std::cout<<"Number Of Bytes:\n";
             std::cout<<"Trie:\t\t"<<this->trie->getNumberOfBytes()<<" bytes\t == "<<(float)this->trie->getNumberOfBytes()/1048576<<" MB\n";
             std::cout<<"ForwardIndex:\t"<<this->forwardIndex->getNumberOfBytes()<<" bytes\t == "<<(float)this->forwardIndex->getNumberOfBytes()/1048576<<" MB\n\n";
-            if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+            if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
             {
                 std::cout<<"InvertedIndex:\t"<<this->invertedIndex->getNumberOfBytes()<<" bytes\t == "<<(float)this->invertedIndex->getNumberOfBytes()/1048576<<" MB\n\n";
             }
@@ -788,7 +799,7 @@ IndexData::~IndexData()
     delete this->trie;
     delete this->forwardIndex;
 
-    if (this->schemaInternal->getIndexType() == bimaple::instantsearch::DefaultIndex)
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
     {
         delete this->invertedIndex;
     }

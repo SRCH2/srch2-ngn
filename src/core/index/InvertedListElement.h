@@ -1,5 +1,5 @@
 
-// $Id: InvertedListElement.h 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: InvertedListElement.h 3456 2013-06-14 02:11:13Z jiaying $
 
 #ifndef __INVERTED_LIST_ELEMENT_H__
 #define __INVERTED_LIST_ELEMENT_H__
@@ -13,7 +13,7 @@
 #include <boost/archive/binary_iarchive.hpp>
 
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

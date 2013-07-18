@@ -1,5 +1,5 @@
 
-// $Id: Term.cpp 3294 2013-05-01 03:45:51Z jiaying $
+// $Id: Term.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -28,7 +28,7 @@
 
 using std::string;
 using std::vector;
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

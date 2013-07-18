@@ -1,4 +1,4 @@
-//$Id: IntegrationTestHelper.h 3433 2013-06-11 03:13:10Z jiaying $
+//$Id: IntegrationTestHelper.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -43,8 +43,8 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 
 /**
@@ -87,7 +87,7 @@ void buildIndex(string index_dir)
 
     /// create a schema
     /// id typeid   last_name   first_name  type    title   department  description email   location    work_phone  url
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 
     schema->setPrimaryKey(fields[0]); // integer, not searchable
 
@@ -98,12 +98,13 @@ void buildIndex(string index_dir)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, " ");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -172,7 +173,7 @@ void buildFactualIndex(string index_dir, unsigned docsToIndex)
 
     /// create a schema
     /// id typeid   last_name   first_name  type    title   department  description email   location    work_phone  url
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
 
     schema->setPrimaryKey(fields[0]); // integer, not searchable
 
@@ -183,12 +184,13 @@ void buildFactualIndex(string index_dir, unsigned docsToIndex)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, " ");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -354,7 +356,7 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     queryKeywords.clear();
 }
 
-void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed, bimaple::instantsearch::TermType termType)
+void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed, srch2::instantsearch::TermType termType)
 {
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -382,7 +384,7 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
     queryKeywords.clear();
 }
 
-void printResults(bmis::QueryResults *queryResults, unsigned offset = 0)
+void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 {
     cout << "Number of hits:" << queryResults->getNumberOfResults() << endl;
     for (unsigned resultIter = offset;
@@ -414,7 +416,7 @@ void printResults(bmis::QueryResults *queryResults, unsigned offset = 0)
 }
 
 /// Added for stemmer
-void printResults(bmis::QueryResults *queryResults, bool &isStemmed, unsigned offset = 0)
+void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned offset = 0)
 {
     cout << "Number of hits:" << queryResults->getNumberOfResults() << endl;
     for (unsigned resultIter = offset;
@@ -458,7 +460,7 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
     unsigned offset = 0;
     unsigned resultsToRetrieve = 10;
 
-    Query *exactQuery = new Query(bimaple::instantsearch::TopKQuery);
+    Query *exactQuery = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, exactQuery, queryString, -1);
 
     IndexSearcherInternal *searcher1 = dynamic_cast<IndexSearcherInternal *>(indexSearcher1);
@@ -480,7 +482,7 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
     if ( isFuzzy && idsExactFound < (resultsToRetrieve+offset))
     {
         fuzzy_reached = true;
-        Query *fuzzyQuery = new Query(bimaple::instantsearch::TopKQuery);
+        Query *fuzzyQuery = new Query(srch2::instantsearch::TopKQuery);
         parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, -1);
 
         IndexSearcherInternal *searcher2 = dynamic_cast<IndexSearcherInternal *>(indexSearcher2);
@@ -528,7 +530,7 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     unsigned offset = 0;
     unsigned resultsToRetrieve = numberofHits;
 
-    Query *exactQuery = new Query(bimaple::instantsearch::TopKQuery);
+    Query *exactQuery = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, exactQuery, queryString, attributeIdToFilter);
 
     QueryResults *exactQueryResults = QueryResults::create(indexSearcher, exactQuery);
@@ -554,7 +556,7 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
         if ( isFuzzy && idsExactFound < (resultsToRetrieve+offset))
         {
             //fuzzy_reached = 1;
-            Query *fuzzyQuery = new Query(bimaple::instantsearch::TopKQuery);
+            Query *fuzzyQuery = new Query(srch2::instantsearch::TopKQuery);
             parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, attributeIdToFilter);
             QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, fuzzyQuery);
 
@@ -612,7 +614,7 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
 //Stress Test
 bool pingNormalQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = numberofHits;
 
@@ -783,9 +785,9 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
 
 bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter, int attributeIdToSort = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::GetAllResultsQuery);
+    Query *query = new Query(srch2::instantsearch::GetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
-    query->setSortableAttribute(attributeIdToSort,bmis::Descending);
+    query->setSortableAttribute(attributeIdToSort,srch2is::Descending);
 
     int resultCount = 10;
 
@@ -805,13 +807,13 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
 
 void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, bool descending, vector<string> &recordIds, int attributeIdToFilter, int attributeIdToSort = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::GetAllResultsQuery);
+    Query *query = new Query(srch2::instantsearch::GetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     
     if (descending)
-        query->setSortableAttribute(attributeIdToSort, bmis::Descending);
+        query->setSortableAttribute(attributeIdToSort, srch2is::Descending);
     else
-        query->setSortableAttribute(attributeIdToSort, bmis::Ascending);
+        query->setSortableAttribute(attributeIdToSort, srch2is::Ascending);
 
     int resultCount = 10;
 
@@ -835,7 +837,7 @@ bool pingCache1(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 {
     bool returnValue = false;
 
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
 
     // for each keyword in the user input, add a term to the query
@@ -857,7 +859,7 @@ bool pingCache1(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 //Test the ConjunctiveResults cache
 bool pingCache2(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
     int resultCount = 10;
 
@@ -877,7 +879,7 @@ bool pingCache2(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 
 bool ping_DUMMY(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -907,7 +909,7 @@ bool ping_DUMMY(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 
 bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -934,7 +936,7 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
 
 bool pingExactPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -954,7 +956,7 @@ bool pingExactPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
 
 bool pingFuzzyPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -974,7 +976,7 @@ bool pingFuzzyPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
 
 bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -994,7 +996,7 @@ bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 
 bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
@@ -1015,7 +1017,7 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 // fuzzy query by default
 float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
@@ -1032,9 +1034,9 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     return resVal;
 }
 
-bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed, bimaple::instantsearch::TermType termType)
+bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed, srch2::instantsearch::TermType termType)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
     int resultCount = 10;
 
@@ -1055,7 +1057,7 @@ bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearch
 
 void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits = 10)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     int resultCount = 10;
@@ -1083,7 +1085,7 @@ bool topK1ConsistentWithTopK2(const Analyzer *analyzer, IndexSearcher *indexSear
         return false;
     }
 
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
@@ -1114,7 +1116,7 @@ bool topK1ConsistentWithTopK2(const Analyzer *analyzer, IndexSearcher *indexSear
 bool existsInTopK(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, const unsigned k)
 {
 
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
@@ -1145,7 +1147,7 @@ bool existsInTopK(const Analyzer *analyzer, IndexSearcher *indexSearcher, string
 
 unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
     int resultCount = 10;
 

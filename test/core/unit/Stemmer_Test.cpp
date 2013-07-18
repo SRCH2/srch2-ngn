@@ -9,7 +9,7 @@
 
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 
 /*

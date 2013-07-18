@@ -1,5 +1,5 @@
 
-// $Id: JSONRecordParser.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: JSONRecordParser.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include <iostream>
 #include <sstream>
@@ -15,13 +15,14 @@
 
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/Logger.h"
 
 using namespace snappy;
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
+namespace srch2is = srch2::instantsearch;
 
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
@@ -41,9 +42,9 @@ std::string WStringToString(const std::wstring& s)
     return temp;
 }
 
-bool JSONRecordParser::_JSONValueObjectToRecord(bmis::Record *record, const std::string &inputLine, 
+bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
-                        const BimapleServerConf *indexDataContainerConf, 
+                        const Srch2ServerConf *indexDataContainerConf,
                         std::stringstream &error)
 {
     if (not (root.type() == Json::objectValue))
@@ -185,7 +186,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(bmis::Record *record, const std:
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const BimapleServerConf *indexDataContainerConf, bmis::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Srch2ServerConf *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -213,30 +214,30 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Bi
     return true;
 }
 
-bmis::Schema* JSONRecordParser::createAndPopulateSchema( const BimapleServerConf *indexDataContainerConf)
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerConf *indexDataContainerConf)
 {
-    bimaple::instantsearch::IndexType indexType;
-    bimaple::instantsearch::PositionIndexType positionIndexType;
+    srch2::instantsearch::IndexType indexType;
+    srch2::instantsearch::PositionIndexType positionIndexType;
 
     if (indexDataContainerConf->getIndexType() == 0)
     {
-        indexType = bmis::DefaultIndex;
+        indexType = srch2is::DefaultIndex;
     }
     else
     {
-        indexType = bmis::LocationIndex;
+        indexType = srch2is::LocationIndex;
     }
 
     if (indexDataContainerConf->getSupportAttributeBasedSearch())
     {
-        positionIndexType = bimaple::instantsearch::FIELDBITINDEX;
+        positionIndexType = srch2::instantsearch::FIELDBITINDEX;
     }
     else
     {
-        positionIndexType = bimaple::instantsearch::NOPOSITIONINDEX;
+        positionIndexType = srch2::instantsearch::NOPOSITIONINDEX;
     }
 
-    bmis::Schema* schema = bmis::Schema::create(indexType, positionIndexType);
+    srch2is::Schema* schema = srch2is::Schema::create(indexType, positionIndexType);
 
     // Set PrimaryKey
     string primaryKey = indexDataContainerConf->getPrimaryKey();
@@ -258,12 +259,12 @@ bmis::Schema* JSONRecordParser::createAndPopulateSchema( const BimapleServerConf
 
     // Set SortableAttributes
     vector<string>::const_iterator sortableAttributeNameIter = indexDataContainerConf->getSortableAttributesName()->begin();
-    vector<bimaple::instantsearch::FilterType>::const_iterator sortableAttributeTypeIter = indexDataContainerConf->getSortableAttributesType()->begin();
+    vector<srch2::instantsearch::FilterType>::const_iterator sortableAttributeTypeIter = indexDataContainerConf->getSortableAttributesType()->begin();
     vector<string>::const_iterator sortableAttributeDefaultValueIter = indexDataContainerConf->getSortableAttributesDefaultValue()->begin();
     for ( ; sortableAttributeNameIter != indexDataContainerConf->getSortableAttributesName()->end();
             ++sortableAttributeNameIter, ++sortableAttributeTypeIter, ++sortableAttributeDefaultValueIter)
     {
-        //schema->setSortableAttribute("score",bimaple::instantsearch::FLOAT, "1");
+        //schema->setSortableAttribute("score",srch2::instantsearch::FLOAT, "1");
         schema->setSortableAttribute(*sortableAttributeNameIter,*sortableAttributeTypeIter,*sortableAttributeDefaultValueIter); // sortable attribute
     }
 
@@ -273,20 +274,18 @@ bmis::Schema* JSONRecordParser::createAndPopulateSchema( const BimapleServerConf
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(bmis::Indexer* indexer, const BimapleServerConf *indexDataContainerConf, const BimapleServerLogger *bimapleServerLogger)
+void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const Srch2ServerConf *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
-        cout << "DataSource file not found at:" << filePath << endl;
-        //bimapleServerLogger->BMLog(1, "DataSource file not found at: %s", filePath.c_str());
-        bimapleServerLogger->BMLog(1, "%s", filePath.c_str());
+        Logger::error("DataSource file not found at: %s", filePath.c_str());
         return;
     }
 
     string line;
-    bmis::Record *record = new bmis::Record(indexer->getSchema());
+    srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
 
@@ -307,8 +306,7 @@ void DaemonDataSource::createNewIndexFromFile(bmis::Indexer* indexer, const Bima
         {
             //TODO: cout to logger
             error << "at line:" << lineCounter;
-            std::cout << error.str();
-            bimapleServerLogger->BMLog(1, "%s", error.str().c_str());
+            Logger::error("%s", error.str().c_str());
         }
         record->clear();
 
@@ -323,8 +321,7 @@ void DaemonDataSource::createNewIndexFromFile(bmis::Indexer* indexer, const Bima
         }
         ++lineCounter;
     }
-    std::cout << std::endl << "Indexed " << lineCounter << " records."<< std::endl;
-    bimapleServerLogger->BMLog(1, "Indexed %d records.", lineCounter);
+    Logger::console("Indexed %d records.", lineCounter);
 
     in.close();
 
@@ -332,11 +329,9 @@ void DaemonDataSource::createNewIndexFromFile(bmis::Indexer* indexer, const Bima
     // be added
     indexer->commit();
 
-    std::cout << "Saving Index....." << std::endl;
-    bimapleServerLogger->BMLog(1, "Saving Index.....");
+    Logger::console("Saving Index.....");
     indexer->save();
-    std::cout << "Index saved." << std::endl;
-    bimapleServerLogger->BMLog(1, "Index saved.");
+    Logger::console("Index saved.");
 }
 
 // convert other types to string
@@ -381,7 +376,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	  if(!jsonValue.isMember(key))
 		{
 		  stringValue = "";
-		  cout << "[Warning] Wrong set for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		  cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
 			return;
 		}
     Json::Value value = jsonValue.get(key, "NULL");
@@ -400,7 +395,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	if(!jsonValue.isMember(key))
 	{
 		doubleValue = 0;
-		cout << "[Warning] Wrong set for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		cout << "[Warning] value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
 		return;
 	}
     Json::Value value = jsonValue.get(key, "NULL");

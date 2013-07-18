@@ -22,14 +22,14 @@
 
 using std::string;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
 
-Normalizer::Normalizer(StemmerNormalizerType stemNormType, const std::string &indexDirectory)
+Normalizer::Normalizer(StemmerNormalizerFlagType stemmerFlag, const std::string &indexDirectory)
 {
-    if (stemNormType != bimaple::instantsearch::NO_STEMMER_NORMALIZER)
+    if (stemmerFlag != srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     {
         FILE *f;
         string filePath = indexDirectory + "NormalizerRules.txt";

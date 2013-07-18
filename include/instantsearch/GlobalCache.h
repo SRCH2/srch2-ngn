@@ -1,4 +1,4 @@
-//$Id: GlobalCache.h 3219 2013-03-25 23:36:34Z sbisht $
+//$Id: GlobalCache.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,7 +20,7 @@
 #ifndef __GLOBALCACHE_H__
 #define __GLOBALCACHE_H__
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

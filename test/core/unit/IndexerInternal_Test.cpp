@@ -1,4 +1,4 @@
-//$Id: IndexerInternal_Test.cpp 3294 2013-05-01 03:45:51Z jiaying $
+//$Id: IndexerInternal_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -34,19 +34,20 @@
 #include <stdio.h>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 void testIndexData()
 {
     /// Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     /// Create Analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create IndexData
     string INDEX_DIR = ".";
@@ -54,8 +55,7 @@ void testIndexData()
                                             analyzer,
                                             schema,
                                             "",
-                                            "",
-                                            bimaple::instantsearch::NO_STEMMER_NORMALIZER);
+                                            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER);
 
     Record *record = new Record(schema);
 
@@ -126,14 +126,18 @@ void testIndexData()
 
     float score = 0;
     unsigned keywordId = 1;
+    // define the attributeBitmap only in debug mode
+#if ASSERT_LEVEL > 0
+    unsigned attributeBitmap = 0;
+#endif
     ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
-                                             trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, score) == true );
+                                             trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
     ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
-                                             trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, score) == false );
+                                             trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
     ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
-                                             trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, score) == true );
+                                             trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
     ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
-                                             trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, score) == false );
+                                             trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex
     InvertedIndex *invertedIndex = indexData->invertedIndex;
@@ -165,7 +169,7 @@ void testIndexData()
 
 void test1()
 {
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 
     schema->setPrimaryKey("article_id"); // integer, not searchable
 
@@ -174,12 +178,13 @@ void test1()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = "test";
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", ".");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     Record *record = new Record(schema);
@@ -224,19 +229,20 @@ void test1()
 void addRecords()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
     
     Record *record = new Record(schema);
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -284,7 +290,7 @@ void test3()
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     
     Indexer *indexer = Indexer::load(indexMetaData);
 

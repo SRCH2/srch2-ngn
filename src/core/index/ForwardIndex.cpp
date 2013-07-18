@@ -1,5 +1,5 @@
 
-// $Id: ForwardIndex.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: ForwardIndex.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -35,10 +35,13 @@ using std::string;
 using std::pair;
 using std::make_pair;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
+
+
+bool ForwardList::isAttributeBasedSearch = false;
 
 float ForwardIndex::_getSortableAttributeValue(unsigned sortableAttributeIndex,
                                 const string* sortableAttributeValueString) const
@@ -47,14 +50,14 @@ float ForwardIndex::_getSortableAttributeValue(unsigned sortableAttributeIndex,
         sortableAttributeValueString = this->schemaInternal->getDefaultValueOfSortableAttribute(sortableAttributeIndex);
     }
 
-    bimaple::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(sortableAttributeIndex);
+    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(sortableAttributeIndex);
 
-    if (filterType == bimaple::instantsearch::UNSIGNED) {
+    if (filterType == srch2::instantsearch::UNSIGNED) {
         unsigned value = (unsigned)( atoi(sortableAttributeValueString->c_str()) ) ;
         return  value;
     }
 
-    // filterType == bimaple::instantsearch::FLOAT
+    // filterType == srch2::instantsearch::FLOAT
 
     float value = (float)( atof(sortableAttributeValueString->c_str()) );
 
@@ -211,8 +214,8 @@ void printVector(const vector<unsigned> *fl)
 
 // do binary search to probe in forward list
 bool ForwardIndex::haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, 
-                   const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId, 
-                   float &termRecordStaticScore) const
+                   const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId,
+                   unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore) const
 {
     ASSERT(minId <= maxId);
     ASSERT (recordId < this->getTotalNumberOfForwardLists_ReadView());
@@ -224,13 +227,13 @@ bool ForwardIndex::haveWordInRange(const unsigned recordId, const unsigned minId
     if (valid == false)
         return false;
     
-    return fl->haveWordInRange(this->schemaInternal, minId, maxId, 
-                   termSearchableAttributeIdToFilterTermHits, matchingKeywordId, termRecordStaticScore);
+    return fl->haveWordInRange(this->schemaInternal, minId, maxId, termSearchableAttributeIdToFilterTermHits,
+    		matchingKeywordId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
 }
 
 bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const unsigned minId, const unsigned maxId, 
                           const unsigned termSearchableAttributeIdToFilterTermHits, 
-                          unsigned &matchingKeywordId, float &termRecordStaticScore, 
+                          unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
                           bool &isStemmed) const
 {
     assert(minId <= maxId);
@@ -244,8 +247,8 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const uns
         return false;
 
     return fl->haveWordInRangeWithStemmer(this->schemaInternal, minId, maxId, 
-                      termSearchableAttributeIdToFilterTermHits, matchingKeywordId, 
-                      termRecordStaticScore, isStemmed);
+                      termSearchableAttributeIdToFilterTermHits, matchingKeywordId, matchingKeywordAttributeBitmap,
+                      matchingKeywordRecordStaticScore, isStemmed);
 }
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
@@ -287,14 +290,14 @@ float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* sc
 {
     ASSERT( schemaSortableAttributeId < schemaInternal->getNumberOfSortableAttributes() );
 
-    bimaple::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(schemaSortableAttributeId);
+    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(schemaSortableAttributeId);
 
     float scoreItem = 0.0;
 
-    if (filterType == bimaple::instantsearch::UNSIGNED) {
+    if (filterType == srch2::instantsearch::UNSIGNED) {
         scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
     }
-    else if (filterType == bimaple::instantsearch::FLOAT) {
+    else if (filterType == srch2::instantsearch::FLOAT) {
         scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
     }
     else
@@ -371,8 +374,9 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
     }
     
     // support attribute-based search
-    if( this->schemaInternal->getPositionIndexType() == bimaple::instantsearch::FIELDBITINDEX)
+    if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
     {
+    	ForwardList::isAttributeBasedSearch = true;
         forwardList->setKeywordAttributeBitmaps(new unsigned[keywordListCapacity]);
         
         for (unsigned iter=0; iter < keywordIdList.size(); ++iter)
@@ -478,7 +482,7 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList, const map<unsign
         keywordRichInformationList[keywordOffset].keywordScore = forwardList->getKeywordRecordStaticScore(keywordOffset);
 
         // support attribute-based search
-        if( this->schemaInternal->getPositionIndexType() == bimaple::instantsearch::FIELDBITINDEX)
+        if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
             keywordRichInformationList[keywordOffset].keywordAttribute = forwardList->getKeywordAttributeBitmap(keywordOffset);
     }
     
@@ -500,7 +504,7 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList, const map<unsign
       
         //copy attribute
         // support attribute-based search
-        if( this->schemaInternal->getPositionIndexType() == bimaple::instantsearch::FIELDBITINDEX)
+        if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
         {
             forwardList->setKeywordAttributeBitmap(keywordOffset, iter->keywordAttribute);
         }
@@ -595,10 +599,11 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema, const unsigned m
     
     bool returnValue = false;
 
-    float termRecordStaticScore = 0.0;
+    float matchingKeywordRecordStaticScore = 0.0;
+    unsigned matchingKeywordRecordAttributeBitmap = 0;
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId))    {
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-                       termSearchableAttributeIdToFilterTermHits,termRecordStaticScore)) {
+                       termSearchableAttributeIdToFilterTermHits, matchingKeywordRecordAttributeBitmap,matchingKeywordRecordStaticScore)) {
             returnValue = true;
             keywordIdsVector.push_back(*vectorIterator); // found a keyword id in the [minId, maxId] range
         }
@@ -611,8 +616,8 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema, const unsigned m
 
 // Do binary search to probe in the forward list
 bool ForwardList::haveWordInRange(const SchemaInternal* schema, const unsigned minId, const unsigned maxId, 
-                  const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId, 
-                  float &termRecordStaticScore) const
+                  const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+                  float &matchingKeywordRecordStaticScore) const
 {
     const unsigned* vectorBegin = this->getKeywordIds();
     const unsigned* vectorEnd = this->getKeywordIds()+ this->getNumberOfKeywords();
@@ -620,15 +625,17 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema, const unsigned m
     ASSERT(vectorEnd-vectorBegin == this->getNumberOfKeywords());
 
     bool returnValue = false;
-    termRecordStaticScore = 0;
+    matchingKeywordRecordStaticScore = 0;
+    unsigned tempAttributeBitmap = 0;
 
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId))
     {
     	float tempScore = 0;
 		if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-						   termSearchableAttributeIdToFilterTermHits,tempScore)) {
-			if(tempScore > termRecordStaticScore){
-				termRecordStaticScore = tempScore;
+						   termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,tempScore)) {
+			if(tempScore > matchingKeywordRecordStaticScore){
+				matchingKeywordRecordStaticScore = tempScore;
+				matchingKeywordAttributeBitmap = tempAttributeBitmap;
 				returnValue = true;
 				matchingKeywordId = *vectorIterator; // found a keyword id in the [minId, maxId] range
 			}
@@ -652,8 +659,8 @@ unsigned ForwardList::getKeywordOffset(unsigned keywordId) const
 /// Added for stemmer
 bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema, const unsigned minId, const unsigned maxId, 
                          const unsigned termSearchableAttributeIdToFilterTermHits, 
-                         unsigned &matchingKeywordId, 
-                         float &termRecordStaticScore, bool& isStemmed) const
+                         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
+                         bool& isStemmed) const
 {
 
     
@@ -666,7 +673,7 @@ bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema, const
 
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId) ) {
         if (this->isValidRecordTermHitWithStemmer(schema, (vectorIterator - vectorBegin), 
-                          termSearchableAttributeIdToFilterTermHits,termRecordStaticScore, 
+                          termSearchableAttributeIdToFilterTermHits, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore,
                           isStemmed)) {
             returnValue = true;
             matchingKeywordId = *vectorIterator;
@@ -720,25 +727,25 @@ bool ForwardIndex::getExternalRecordId_ReadView(const unsigned internalRecordId,
 }
 
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema, unsigned keywordOffset, 
-                       unsigned searchableAttributeId, float& termRecordStaticScore) const
+                       unsigned searchableAttributeId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore) const
 {
-    termRecordStaticScore =  this->getKeywordRecordStaticScore(keywordOffset);
+	matchingKeywordRecordStaticScore =  this->getKeywordRecordStaticScore(keywordOffset);
     // support attribute-based search
-    if (searchableAttributeId == 0 || (schema->getPositionIndexType() != bimaple::instantsearch::FIELDBITINDEX)) {
+    if (searchableAttributeId == 0 || (schema->getPositionIndexType() != srch2::instantsearch::FIELDBITINDEX)) {
         return true;
     }
     else {
         ASSERT(this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
         bool AND = searchableAttributeId & 0x80000000; // test the highest bit
-        unsigned keywordAttributeBiVec = getKeywordAttributeBitmap(keywordOffset);
+        matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(keywordOffset);
         if (AND)
         {
             searchableAttributeId &= 0x7fffffff; // turn off the highest bit
-            return (keywordAttributeBiVec & searchableAttributeId) == searchableAttributeId;
+            return (matchingKeywordAttributeBitmap & searchableAttributeId) == searchableAttributeId;
         }
         else
         {
-            return (keywordAttributeBiVec & searchableAttributeId) != 0;
+            return (matchingKeywordAttributeBitmap & searchableAttributeId) != 0;
         }
     }
 }
@@ -769,7 +776,7 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema, unsigned ke
  *      isStemmed = yes
  */
 bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema, unsigned keywordOffset, 
-                          unsigned searchableAttributeId, float &termRecordStaticScore, 
+                          unsigned searchableAttributeId,  unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
                           bool &isStemmed) const
 {
     ASSERT(0);
@@ -847,26 +854,26 @@ float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId, unsigned k
 }
 
 bool ForwardIndex::isValidRecordTermHit(unsigned forwardIndexId, unsigned keywordOffset, 
-                    unsigned searchableAttributeId, float& termRecordStaticScore) const
+                    unsigned searchableAttributeId, unsigned &matchingKeywordAttributeBitmap, float& matchingKeywordRecordStaticScore) const
 {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardIndexId, valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHit(this->schemaInternal, keywordOffset, 
-                         searchableAttributeId, termRecordStaticScore);
+                         searchableAttributeId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
     else
         return false;
 }
 
 bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId, unsigned keywordOffset, 
-                           unsigned searchableAttributeId, float &termRecordStaticScore, 
+                           unsigned searchableAttributeId,  unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
                            bool &isStemmed) const
 {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardIndexId, valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHitWithStemmer(this->schemaInternal, keywordOffset, 
-                                    searchableAttributeId, termRecordStaticScore, isStemmed);
+                                    searchableAttributeId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore, isStemmed);
     else
         return false;
 }

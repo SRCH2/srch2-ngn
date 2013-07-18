@@ -1,5 +1,5 @@
 
-// $Id: IndexUtil.h 3248 2013-04-03 13:16:52Z jiaying $
+// $Id: IndexUtil.h 3456 2013-06-14 02:11:13Z jiaying $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -21,7 +21,7 @@
 #ifndef __INDEX_H__
 #define __INDEX_H__
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

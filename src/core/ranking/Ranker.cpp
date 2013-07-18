@@ -1,5 +1,5 @@
 
-// $Id: Ranker.cpp 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: Ranker.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,7 +25,7 @@
 
 using std::vector;
 
-namespace bimaple
+namespace srch2
 {
     namespace instantsearch
     {

@@ -1,5 +1,5 @@
 
-// $Id: cowvector_S16.h 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: cowvector_S16.h 3456 2013-06-14 02:11:13Z jiaying $
 #ifndef __COWVECTOR_S16__
 #define __COWVECTOR_S16__
 
@@ -10,7 +10,7 @@
 
 using namespace std;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

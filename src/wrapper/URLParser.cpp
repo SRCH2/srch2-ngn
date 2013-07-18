@@ -1,11 +1,11 @@
-//$Id: URLParser.cpp 3429 2013-06-10 09:13:54Z jiaying $
+//$Id: URLParser.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 #include "URLParser.h"
 
-using bimaple::instantsearch::Query;
+using srch2::instantsearch::Query;
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
@@ -40,7 +40,7 @@ const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
-URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyzer *analyzer, const BimapleServerConf *indexDataContainerConf, const bmis::Schema *schema, URLParserHelper &urlParserHelper)
+URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper)
 {
     this->exactQuery = NULL;
     this->fuzzyQuery = NULL;
@@ -88,7 +88,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
 				}
 				//use the exactQuery to construct the query for the range query without keywords
 				//for this query, only need to set the range of query
-				this->exactQuery = new Query(bmis::MapQuery);
+				this->exactQuery = new Query(srch2is::MapQuery);
 				//set the rectangle range
 				const char *paramIter_latLB = evhttp_find_header(&headers, URLParser::leftBottomLatitudeParamName);
 				const char *paramIter_lngLB = evhttp_find_header(&headers, URLParser::leftBottomLongitudeParamName);
@@ -190,6 +190,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
             const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
             if (keywordsParamName)
             {
+            	//cout << string(keywordsParamName)<<endl;
                 size_t sz;
                 char *keywordsParamName_cstar = evhttp_uridecode(keywordsParamName, 0, &sz);
 
@@ -367,7 +368,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
         urlParserHelper.offset = 0; //default
         urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve(); //atoi(values[5].c_str());
         int sortAttribute = indexDataContainerConf->getAttributeToSort(); //atoi(values[6].c_str());
-        bmis::SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? bmis::Ascending : bmis::Descending; //(atoi(values[7].c_str()) == 0) ? bmis::Ascending : bmis::Descending;
+        srch2is::SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? srch2is::Ascending : srch2is::Descending; //(atoi(values[7].c_str()) == 0) ? srch2is::Ascending : srch2is::Descending;
 
         {
             const char *searchTypeParamName = evhttp_find_header(&headers, URLParser::searchTypeParamName);
@@ -438,8 +439,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
         switch (urlParserHelper.searchType)
         {
             case 0:
-                this->exactQuery = new Query(bmis::TopKQuery);
-                this->fuzzyQuery = new Query(bmis::TopKQuery);
+                this->exactQuery = new Query(srch2is::TopKQuery);
+                this->fuzzyQuery = new Query(srch2is::TopKQuery);
                 break;
 
             case 1:
@@ -468,20 +469,20 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
                     {
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? bmis::Ascending : bmis::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
                         delete orderParamName_cstar;
                     }
                     else
                     {
-                        order = (indexDataContainerConf->getOrdering() == 0) ? bmis::Ascending : bmis::Descending;
+                        order = (indexDataContainerConf->getOrdering() == 0) ? srch2is::Ascending : srch2is::Descending;
                     }
                 }
 
                 urlParserHelper.sortby = sortAttribute;
                 urlParserHelper.order = order;
 
-                this->exactQuery = new Query(bmis::GetAllResultsQuery);
-                this->fuzzyQuery = new Query(bmis::GetAllResultsQuery);
+                this->exactQuery = new Query(srch2is::GetAllResultsQuery);
+                this->fuzzyQuery = new Query(srch2is::GetAllResultsQuery);
 
                 this->exactQuery->setSortableAttribute(sortAttribute, order);
                 this->fuzzyQuery->setSortableAttribute(sortAttribute, order);
@@ -489,8 +490,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
                 break;
 
             case 2:
-                this->exactQuery = new Query(bmis::MapQuery);
-                this->fuzzyQuery = new Query(bmis::MapQuery);
+                this->exactQuery = new Query(srch2is::MapQuery);
+                this->fuzzyQuery = new Query(srch2is::MapQuery);
 
                 {
                     const char *orderParamName = evhttp_find_header(&headers, URLParser::orderParamName);
@@ -498,7 +499,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
                     {
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? bmis::Ascending : bmis::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
                         delete orderParamName_cstar;
                     }
 
@@ -588,14 +589,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
         //for each keyword, build the exact terms
         for (unsigned i = 0; i < numberOfKeywords; ++i)
         {
-            bmis::TermType type;
+            srch2is::TermType type;
             if (indexDataContainerConf->getQueryTermType())
             {
-            	type = bmis::COMPLETE;
+            	type = srch2is::COMPLETE;
             }
             else
             {
-            	type = atoi(termTypesVector[i].c_str()) == 0 ? bmis::PREFIX : bmis::COMPLETE;
+            	type = atoi(termTypesVector[i].c_str()) == 0 ? srch2is::PREFIX : srch2is::COMPLETE;
             }
             unsigned termBoost;
             if (termBoostsVectorValid){
@@ -623,21 +624,21 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
                 similarityBoost = indexDataContainerConf->getQueryTermSimilarityBoost();
             }
 
-            bmis::Term *exactTerm;
-            bmis::Term *fuzzyTerm;
+            srch2is::Term *exactTerm;
+            srch2is::Term *fuzzyTerm;
             if(urlParserHelper.isFuzzy)
             {
-                exactTerm = new bmis::Term(queryKeywordsVector[i],
+                exactTerm = new srch2is::Term(queryKeywordsVector[i],
                         type,
                         termBoost,
                         similarityBoost,
                         0);
 
-                fuzzyTerm = new bmis::Term(queryKeywordsVector[i],
+                fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
                         type,
                         termBoost,
                         similarityBoost,
-                        bmis::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
+                        srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -646,7 +647,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyze
                 this->fuzzyQuery->add(fuzzyTerm);
 
             }else{
-                exactTerm = new bmis::Term(queryKeywordsVector[i],
+                exactTerm = new srch2is::Term(queryKeywordsVector[i],
                         type,
                         termBoost,
                         similarityBoost,

@@ -25,7 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

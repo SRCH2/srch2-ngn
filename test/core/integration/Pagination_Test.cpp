@@ -22,25 +22,25 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 // Read data from file, build the index, and save the index to disk
 void buildIndex(string data_file, string index_dir)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("primaryKey");
     schema->setSearchableAttribute("description", 2);
     schema->setScoringExpression("idf_score*doc_boost");
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -104,7 +104,7 @@ void buildIndex(string data_file, string index_dir)
 void updateIndex(string data_file, Indexer *index)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("primaryKey");
     schema->setSearchableAttribute("description", 2);
     schema->setScoringExpression("idf_score*doc_boost");
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
     unsigned mergeEveryNSeconds = 10;
     unsigned mergeEveryMWrites = 5;
 
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
 
     cout << "Index loaded." << endl;

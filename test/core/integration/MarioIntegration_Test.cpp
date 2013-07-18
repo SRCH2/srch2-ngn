@@ -1,4 +1,4 @@
-// $Id: MarioIntegration_Test.cpp 2541 2012-05-18 16:25:03Z chenli $
+// $Id: MarioIntegration_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
@@ -19,7 +19,7 @@
 #include <cstdlib>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 void smallTest(string INDEX_DIR)
 {
@@ -31,7 +31,7 @@ void smallTest(string INDEX_DIR)
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -144,7 +144,7 @@ void bigTest(string INDEX_DIR)
 	schema->setSearchableAttribute("phone"); // searchable text
 
 	// create an analyzer
-	Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
 
 	// create an index writer
 	unsigned mergeEveryNSeconds = 3;	

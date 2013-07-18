@@ -1,4 +1,4 @@
-//$Id: Assert.h 3038 2012-12-05 20:14:26Z oliverax $
+//$Id: Assert.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,7 +25,7 @@
 #include <cstdlib>
 #include <cassert>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

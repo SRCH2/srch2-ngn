@@ -1,5 +1,5 @@
 
-// $Id: QueryStress_Test.cpp 2541 2012-05-18 16:25:03Z chenli $
+// $Id: QueryStress_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 
 #include <instantsearch/Analyzer.h>
@@ -16,8 +16,8 @@
 #include <cstdlib>
 
 using std::string;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 // variables to measure the elapsed time
 struct timespec tstart;
@@ -52,10 +52,10 @@ int main(int argc, char **argv)
   // Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, "", index_dir, "");
+	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, "", index_dir);
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(index);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);
 	const Analyzer *analyzer = index->getAnalyzer();
 
 	std::vector<std::string> file;

@@ -1,5 +1,5 @@
 
-// $Id: TermVirtualList.h 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: TermVirtualList.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -38,16 +38,19 @@ using std::pair;
 using std::set;
 using std::string;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
 class InvertedIndex;
 typedef const TrieNode* TrieNodePointer;
+
+//TODO check the difference with HeapItem
 struct HeapItemForIndexSearcher
 {
     unsigned recordId;
     float termRecordRuntimeScore;
+    unsigned attributeBitMap;
     TrieNodePointer trieNode;
     unsigned ed;
     unsigned positionIndexOffset;
@@ -57,6 +60,7 @@ struct HeapItem
 {
     //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
     unsigned invertedListId;
+    unsigned attributeBitMap;			//only used for attribute based query
     unsigned cursorVectorPosition;
     unsigned recordId; //invertedListTop
     float termRecordRuntimeScore;
@@ -70,6 +74,7 @@ struct HeapItem
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
         this->recordId = 0;
+        this->attributeBitMap = 0;
         this->termRecordRuntimeScore = 0;
         this->positionIndexOffset = 0;
         this->trieNode = NULL;
@@ -79,6 +84,7 @@ struct HeapItem
     HeapItem(unsigned invertedListId,
             unsigned cursorVectorPosition,
             unsigned recordId,
+            unsigned attributeBitMap,
             float termRecordRuntimeScore,
             unsigned positionIndexOffset,
             TrieNodePointer trieNode,
@@ -88,6 +94,7 @@ struct HeapItem
         this->invertedListId = invertedListId;
         this->cursorVectorPosition = cursorVectorPosition;
         this->recordId = recordId;
+        this->attributeBitMap = attributeBitMap;
         this->termRecordRuntimeScore = termRecordRuntimeScore;
         this->positionIndexOffset = positionIndexOffset;
         this->trieNode = trieNode;
@@ -135,7 +142,7 @@ public:
     void getCursors(vector<unsigned>* &invertedListCursors);
     virtual ~TermVirtualList();
 
-    inline bimaple::instantsearch::TermType getTermType() const
+    inline srch2::instantsearch::TermType getTermType() const
     {
         return term->getTermType();
     }

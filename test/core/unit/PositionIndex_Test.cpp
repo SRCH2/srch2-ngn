@@ -1,4 +1,4 @@
-//$Id: PositionIndex_Test.cpp 1639 2011-09-27 22:13:26Z bimaple.vijay $
+//$Id: PositionIndex_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include "util/Assert.h"
 #include <iostream>
@@ -9,7 +9,7 @@
 #include <assert.h>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 int main(int argc, char *argv[])
 {

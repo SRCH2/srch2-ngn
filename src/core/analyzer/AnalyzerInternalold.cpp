@@ -39,7 +39,7 @@
 
 using namespace std;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -54,11 +54,11 @@ AnalyzerInternalold::AnalyzerInternalold()
     this->tokenOperator = analyzers->createOperatorFlow();
 }
 
-AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerType &stemNormType,const std::string &recordAllowedSpecialCharacters)
+AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerFlagType &stemmerFlag,const std::string &recordAllowedSpecialCharacters)
 {
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     this->prepareRegexExpression();
-    this->stemNormType = stemNormType;
+    this->stemmerFlag = stemmerFlag;
     this->stemmer = NULL;
     this->normalizer = NULL;
     this->analyzers = new StandardAnalyzer();
@@ -68,9 +68,9 @@ AnalyzerInternalold::AnalyzerInternalold(const StemmerNormalizerType &stemNormTy
 //Copy Constructor
 AnalyzerInternalold::AnalyzerInternalold(const AnalyzerInternalold &analyzerInternal, const std::string &indexDirectory)
 {
-    this->stemNormType = analyzerInternal.stemNormType;
-    this->stemmer = new Stemmer(this->getStemmerNormalizerType(), indexDirectory);
-    this->normalizer = new Normalizer(this->getStemmerNormalizerType(), indexDirectory);
+    this->stemmerFlag = analyzerInternal.stemmerFlag;
+    this->stemmer = new Stemmer(this->getStemmerNormalizerFlagType(), indexDirectory);
+    this->normalizer = new Normalizer(this->getStemmerNormalizerFlagType(), indexDirectory);
     this->analyzers = new StandardAnalyzer();
     this->tokenOperator = analyzers->createOperatorFlow();
     this->recordAllowedSpecialCharacters = analyzerInternal.getRecordAllowedSpecialCharacters();
@@ -218,7 +218,7 @@ void AnalyzerInternalold::tokenizeRecord(const Record *record, map<string, Token
              */
 
             //ONLY NORMALIZER
-           /* if(this->stemNormType == bimaple::instantsearch::ONLY_NORMALIZER)
+           /* if(this->stemNormType == srch2::instantsearch::ONLY_NORMALIZER)
             {
                 for(tokenIterator = tokens.begin();tokenIterator!=tokens.begin() + size;++tokenIterator)
                 {
@@ -253,7 +253,7 @@ void AnalyzerInternalold::tokenizeRecord(const Record *record, map<string, Token
             }
 
             //COMPLETE STEMMER (PORTER STEMMER + NORMALIZER)
-            else if(this->stemNormType == bimaple::instantsearch::STEMMER_NORMALIZER)
+            else if(this->stemNormType == srch2::instantsearch::STEMMER_NORMALIZER)
             {
                 for(tokenIterator = tokens.begin();tokenIterator!=tokens.begin() + size;++tokenIterator)
                 {

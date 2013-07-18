@@ -25,7 +25,7 @@
 
 #include "index/Trie.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

@@ -1,5 +1,5 @@
 
-//$Id: IndexIntegration_Test.cpp 2541 2012-05-18 16:25:03Z chenli $
+//$Id: IndexIntegration_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include "record/AnalyzerInternal.h"
 #include "record/SchemaInternal.h"
@@ -17,8 +17,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 typedef Trie<char> Trie_Internal;
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	///Create Schema
-	bmis::SchemaInternal *schema = dynamic_cast<bmis::SchemaInternal*>(bmis::Schema::create(bmis::DefaultIndex));
+	srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	record->setRecordBoost(20);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new AnalyzerInternal(bimaple::instantsearch::NO_STEMMER_NORMALIZER, " ");
+	AnalyzerInternal *analyzer = new AnalyzerInternal(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, " ");
 	RankerExpression *rankerExpression = new RankerExpression("doc_length");
 	map<string, TokenAttributeHits > tokenAttributeHitsMap;
 

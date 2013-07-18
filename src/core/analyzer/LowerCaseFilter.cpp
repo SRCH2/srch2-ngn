@@ -9,7 +9,7 @@
 
 using namespace std;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

@@ -31,7 +31,7 @@
 #include "AnalyzerInternal.h"
 using std::pair;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -62,7 +62,7 @@ bool isEmpty(const string &inString)
     return inString.compare("") == 0;
 }
 
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerType &stemNormType, const std::string &recordAllowedSpecialCharacters) {
+AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag, const std::string &recordAllowedSpecialCharacters) {
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
 	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	prepareRegexExpression();
@@ -162,6 +162,11 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString, vector<string> &
 			queryKeywords.clear();
 }
 
+bool queryIsEmpty(string str)
+{
+	return str.empty();
+}
+
 void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString, vector<string> &queryKeywords, const char &delimiterCharacter,
 								 const char &filterDelimiterCharacter, const char &fieldsAndCharacter, const char &fieldsOrCharacter,
 								 const std::map<std::string, unsigned> &searchableAttributesNameToId, vector<unsigned> &filters) const
@@ -189,6 +194,10 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString, vector
 	replace_if(query.begin(), query.end(), boost::is_any_of(delimiter), DEFAULT_DELIMITER);
 
 	boost::split(parts, query, boost::is_any_of(" "));
+	std::vector<string>::iterator iter =  std::remove_if(parts.begin(), parts.end(), queryIsEmpty);
+	parts.erase(iter, parts.end());
+	// print the queries
+	//std::cout<<"parts number:" << parts.size()<<std::endl;
 
 	bool malformed = false;
 	for (unsigned i=0; i<parts.size(); i++)

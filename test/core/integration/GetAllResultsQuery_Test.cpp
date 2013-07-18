@@ -19,28 +19,29 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 Indexer *buildIndex(string data_file, string index_dir, string expression, map<string, int> &sort1Map, map<string, float> &sort2Map)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
-    schema->setSortableAttribute("id_for_sort", bimaple::instantsearch::UNSIGNED, "0");
-    schema->setSortableAttribute("latitude", bimaple::instantsearch::FLOAT, "1");
+    schema->setSortableAttribute("id_for_sort", srch2::instantsearch::UNSIGNED, "0");
+    schema->setSortableAttribute("latitude", srch2::instantsearch::FLOAT, "1");
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);

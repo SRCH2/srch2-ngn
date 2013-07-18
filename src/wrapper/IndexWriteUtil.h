@@ -1,22 +1,22 @@
-//$Id: IndexWriteUtil.h 3083 2012-12-11 19:57:06Z oliverax $
+//$Id: IndexWriteUtil.h 3456 2013-06-14 02:11:13Z jiaying $
 
 #ifndef _INDEXWRITEUTIL_H_
 #define _INDEXWRITEUTIL_H_
 
 #include "json/json.h"
 #include "JSONRecordParser.h"
-#include "BimapleServerConf.h"
+#include "Srch2ServerConf.h"
 
 #include "evhttp.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const BimapleServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _insertCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
     	JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
@@ -24,21 +24,21 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		bimaple::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
 
     		switch( ret )
 			{
-				case bimaple::instantsearch::OP_SUCCESS:
+				case srch2::instantsearch::OP_SUCCESS:
 				{
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
 					break;
 				}
-				case bimaple::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
+				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
 				{
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The keywordid space problem.\"}";
 					break;
 				}
-				case bimaple::instantsearch::OP_FAIL:
+				case srch2::instantsearch::OP_FAIL:
 				{
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
 					break;
@@ -47,14 +47,14 @@ struct IndexWriteUtil
     	}
     	else
     	{
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@bimaple.com for account upgrade.\"}";
+    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
     	}
 
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    //TODO: NO way to tell if delete failed on bimaple index
-    static void _deleteCommand(Indexer *indexer, const BimapleServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, std::stringstream &log_str)
+    //TODO: NO way to tell if delete failed on srch2 index
+    static void _deleteCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -87,7 +87,7 @@ struct IndexWriteUtil
     	//std::cout << "DELETE request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const BimapleServerConf *indexDataContainerConf, const evkeyvalq &headers, const uint64_t offset, std::stringstream &log_str)
+    static void _deleteCommand_QueryURI(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const evkeyvalq &headers, const uint64_t offset, std::stringstream &log_str)
 	{
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -125,7 +125,7 @@ struct IndexWriteUtil
 		}
 	}
 
-    static void _updateCommand(Indexer *indexer, const BimapleServerConf *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _updateCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
     {
         /// step 1, delete old record
 
@@ -183,21 +183,21 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		bimaple::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
 
     		switch( ret )
 			{
-				case bimaple::instantsearch::OP_SUCCESS:
+				case srch2::instantsearch::OP_SUCCESS:
 				{
 					log_str << "success\"}";
 					return;
 				}
-				case bimaple::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
+				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
 				{
 					log_str << "failed\",\"reason\":\"insert: The keywordid space problem.\",";
 					break;
 				}
-				case bimaple::instantsearch::OP_FAIL:
+				case srch2::instantsearch::OP_FAIL:
 				{
 					log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
 					break;
@@ -206,12 +206,12 @@ struct IndexWriteUtil
     	}
     	else
     	{
-    		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@bimaple.com for account upgrade.\",";
+    		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
     	}
 
         /// reaching here means the insert failed, need to resume the deleted old record
         
-        bimaple::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, offset, deletedInternalRecordId);
+        srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, offset, deletedInternalRecordId);
 
         switch ( ret )
         {
@@ -233,7 +233,7 @@ struct IndexWriteUtil
 	    log_str << "{\"save\":\"success\"}";
     }
 
-    static void _commitCommand(Indexer *indexer, const BimapleServerConf *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
+    static void _commitCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
     	if ( indexer->commit() == OP_SUCCESS)

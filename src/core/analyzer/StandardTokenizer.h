@@ -5,8 +5,8 @@
  */
 //This class will token the words according to whitespace character and character which is >=256 .
 
-#ifndef __STANDARDTOKENIZER_H__
-#define __STANDARDTOKENIZER_H__
+#ifndef __CORE_ANALYZER__STANDARDTOKENIZER_H__
+#define __CORE_ANALYZER__STANDARDTOKENIZER_H__
 
 #include <vector>
 #include <iostream>
@@ -14,7 +14,7 @@
 
 using std::vector;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -30,4 +30,4 @@ public:
 	virtual ~StandardTokenizer();
 };
 }}
-#endif /* __STANDARDTOKENIZER_H__ */
+#endif /* __CORE_ANALYZER__STANDARDTOKENIZER_H__ */

@@ -1,4 +1,4 @@
-//$Id: ReadWriteMutexCondWait_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+//$Id: ReadWriteMutexCondWait_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -26,7 +26,7 @@
 #include <pthread.h>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 /* For safe condition variable usage, must use a boolean predicate and  */
 /* a mutex with the condition.                                          */

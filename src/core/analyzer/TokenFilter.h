@@ -4,11 +4,11 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __TOKENFILTER_H__
-#define __TOKENFILTER_H__
+#ifndef __CORE_ANALYZER__TOKENFILTER_H__
+#define __CORE_ANALYZER__TOKENFILTER_H__
 
 #include "TokenOperator.h"
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -30,4 +30,4 @@ protected:
 	TokenOperator* tokenOperator;
 };
 }}
-#endif /* __TOKENFILTER_H__ */
+#endif /* __CORE_ANALYZER__TOKENFILTER_H__ */

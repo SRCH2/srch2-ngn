@@ -1,4 +1,4 @@
-import bimaple_mapsearch_python as instant
+import srch2_mapsearch_python as instant
 
 analyzer = instant.Analyzer_create()
 stringVector = instant.StringVector()

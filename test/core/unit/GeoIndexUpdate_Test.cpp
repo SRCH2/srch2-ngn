@@ -1,4 +1,4 @@
-//$Id: GeoIndexUpdate_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: GeoIndexUpdate_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 #include <sstream>
 #include <iostream> 
 #include <time.h>
@@ -14,7 +14,7 @@
 #include <instantsearch/GlobalCache.h>
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 const unsigned mergeEveryNSeconds = 10;
 const unsigned mergeEveryMWrites = 5;
@@ -566,7 +566,7 @@ void testDeletion(vector< pair<string, pair<string, Point> > > &recordsToSearch,
 void testSmallInitLargeInsertion(const string directoryName)
 {
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -575,7 +575,8 @@ void testSmallInitLargeInsertion(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -622,7 +623,7 @@ void testSmallInitLargeInsertion(const string directoryName)
 void testIncrementalUpdateGeoIndex(const string directoryName)
 {
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -631,7 +632,8 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -690,8 +692,8 @@ int main(int argc, char *argv[])
     }
 
     // Environment variables
-    // directoryName = $SRCH2ROOT/mario/trunk/bimaple-engine/test/unit/test_data/geo_update
-    // bimaple_license_dir = $SRCH2ROOT/mario/trunk/bimaple-engine/test/Developer_License
+    // directoryName = $SRCH2ROOT/mario/trunk/srch2-engine/test/unit/test_data/geo_update
+    // srch2_license_dir = $SRCH2ROOT/mario/trunk/srch2-engine/test/Developer_License
     const string directoryName = getenv("directoryName");
 
     // Read 900 geo records from a file. For each record, form a query using the first keyword of its "first" attribute and the

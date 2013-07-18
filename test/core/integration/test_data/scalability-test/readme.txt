@@ -8,4 +8,4 @@
     > python genPrefixQueries.py words.txt
 
 4. Run the test
-    > bimaple_license_dir=../../../../wrapper/conf index_dir=. ../../../../build/test/integration/Scalability_Test
+    > srch2_license_dir=../../../../wrapper/conf index_dir=. ../../../../build/test/integration/Scalability_Test

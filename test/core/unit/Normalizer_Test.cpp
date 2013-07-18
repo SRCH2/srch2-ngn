@@ -6,13 +6,13 @@
 #include "util/Assert.h"
 
 using namespace std;
-using namespace bimaple::instantsearch;
+using namespace srch2::instantsearch;
 
 void testNormalizer()
 
 {
 	string FILE_DIR = getenv("file_dir");
-	Normalizer *normalizer_handler = new Normalizer(bimaple::instantsearch::ONLY_NORMALIZER, FILE_DIR);
+	Normalizer *normalizer_handler = new Normalizer(srch2::instantsearch::ONLY_NORMALIZER, FILE_DIR);
 	vector<string> tokens;
 	string token = "wal";
 	tokens.push_back(token);

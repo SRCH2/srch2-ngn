@@ -1,4 +1,4 @@
-//$Id: HTTPResponse.cpp 3410 2013-06-05 12:58:08Z jiaying $
+//$Id: HTTPResponse.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
@@ -8,6 +8,7 @@
 #include <set>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/Logger.h"
 
 #include "HTTPResponse.h"
 #include "IndexWriteUtil.h"
@@ -15,15 +16,14 @@
 #include <event2/http.h>
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
-namespace bmis = bimaple::instantsearch;
-using bmis::Analyzer;
-using bmis::QueryResultsInternal;
-using bmis::QueryResults;
+namespace srch2is = srch2::instantsearch;
+using srch2is::Analyzer;
+using srch2is::QueryResultsInternal;
+using srch2is::QueryResults;
 
 using namespace snappy;
 
-
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
@@ -98,7 +98,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  */
 void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         const URLParserHelper &urlParserHelper,
-        const BimapleServerConf *indexDataContainerConf,
+        const Srch2ServerConf *indexDataContainerConf,
         const QueryResults *queryResults,
         const Query *query,
         const Indexer *indexer,
@@ -110,6 +110,9 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 {
     Json::FastWriter writer;
     Json::Value root;
+
+    // For logging
+    string logQueries;
 
     root["searcher_time"] = ts1;
     root["results"].resize(end-start);
@@ -189,7 +192,11 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		root["query_keywords"].resize(query->getQueryTerms()->size());
 		for(unsigned i = 0; i < query->getQueryTerms()->size(); i++)
 		{
-			root["query_keywords"][i] = *(query->getQueryTerms()->at(i)->getKeyword());
+			string &term = *(query->getQueryTerms()->at(i)->getKeyword());
+			root["query_keywords"][i] = term;
+			if(i)
+				logQueries += "";
+			logQueries += term;
 		}
 
 		root["fuzzy"] = (int)urlParserHelper.isFuzzy;
@@ -215,11 +222,12 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         }
     }
 
+    Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
     
 }
 
-void HTTPResponse::writeCommand_v0(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::writeCommand_v0(evhttp_request *req, Srch2Server *server)
 {
     /* Yes, we are expecting a post request */
     switch (req->type)
@@ -231,7 +239,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, BimapleServer *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->bimapleServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -263,7 +271,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, BimapleServer *server)
                 delete record;
             }
             //std::cout << log_str.str() << std::endl;
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             break;
@@ -277,7 +285,7 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, BimapleServer *server)
 
             IndexWriteUtil::_deleteCommand_QueryURI(server->indexer, server->indexDataContainerConf, headers, 0, log_str);
 
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
 
             // Free the objects
@@ -286,13 +294,13 @@ void HTTPResponse::writeCommand_v0(evhttp_request *req, BimapleServer *server)
         }
         default:
         {
-            server->bimapleServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Bimaple API documentation for details");
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Bimaple API documentation for details.\"}");
+            Logger::error("error: The request has an invalid or missing argument. See Srch2 API documentation for details");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         }
     };
 }
 
-void HTTPResponse::updateCommand(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::updateCommand(evhttp_request *req, Srch2Server *server)
 {
     /* Yes, we are expecting a post request */
     switch (req->type)
@@ -304,7 +312,7 @@ void HTTPResponse::updateCommand(evhttp_request *req, BimapleServer *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->bimapleServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -339,7 +347,7 @@ void HTTPResponse::updateCommand(evhttp_request *req, BimapleServer *server)
                 evhttp_clear_headers(&headers);
             }
             //std::cout << log_str.str() << std::endl;
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             
@@ -347,13 +355,13 @@ void HTTPResponse::updateCommand(evhttp_request *req, BimapleServer *server)
         }
         default:
         {
-            server->bimapleServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Bimaple API documentation for details");
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Bimaple API documentation for details.\"}");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         }
     };
 }
 
-void HTTPResponse::writeCommand_v1(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::writeCommand_v1(evhttp_request *req, Srch2Server *server)
 {
     /* Yes, we are expecting a post request */
     switch (req->type)
@@ -365,7 +373,7 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, BimapleServer *server)
             if (length == 0)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",  "{\"message\":\"http body is empty\"}" );
-                server->bimapleServerLogger->BMLog(1, "http body is empty");
+                Logger::warn("http body is empty");
                 break;
             }
 
@@ -406,7 +414,7 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, BimapleServer *server)
                 }
             }
             //std::cout << log_str.str() << std::endl;
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The batch was processed successfully\",\"log\":["+log_str.str()+"]}\n" );
             break;
         }
@@ -424,19 +432,19 @@ void HTTPResponse::writeCommand_v1(evhttp_request *req, BimapleServer *server)
             // Free the objects
             evhttp_clear_headers(&headers);
 
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
 
             break;
         }
         default:
         {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Bimaple API documentation for details.\"}");
-            server->bimapleServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Bimaple API documentation for details");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }
 
-void HTTPResponse::activateCommand(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::activateCommand(evhttp_request *req, Srch2Server *server)
 {
     /* Yes, we are expecting a post request */
     switch (req->type)
@@ -450,18 +458,18 @@ void HTTPResponse::activateCommand(evhttp_request *req, BimapleServer *server)
             IndexWriteUtil::_commitCommand(server->indexer, server->indexDataContainerConf, 0, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The initialization phase has started successfully\", \"log\":["+log_str.str()+"]}\n" );
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             break;
         }
         default:
         {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Bimaple API documentation for details.\"}");
-            server->bimapleServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Bimaple API documentation for details");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }
 
-void HTTPResponse::saveCommand(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::saveCommand(evhttp_request *req, Srch2Server *server)
 {
     /* Yes, we are expecting a post request */
     switch (req->type)
@@ -472,18 +480,18 @@ void HTTPResponse::saveCommand(evhttp_request *req, BimapleServer *server)
             IndexWriteUtil::_saveCommand(server->indexer, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The index has been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
-            server->bimapleServerLogger->BMLog(1, "%s", log_str.str().c_str());
+            Logger::info("%s", log_str.str().c_str());
             break;
         }
         default:
         {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Bimaple API documentation for details.\"}");
-            server->bimapleServerLogger->BMLog(1, "error: The request has an invalid or missing argument. See Bimaple API documentation for details");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+            Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
         }
     };
 }
 
-void HTTPResponse::infoCommand(evhttp_request *req, BimapleServer *server, const string &versioninfo)
+void HTTPResponse::infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo)
 {
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
@@ -494,12 +502,12 @@ void HTTPResponse::infoCommand(evhttp_request *req, BimapleServer *server, const
     evhttp_clear_headers(&headers);
 }
 
-void HTTPResponse::lookupCommand(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::lookupCommand(evhttp_request *req, Srch2Server *server)
 {
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const BimapleServerConf *indexDataContainerConf = server->indexDataContainerConf;
+    const Srch2ServerConf *indexDataContainerConf = server->indexDataContainerConf;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 
@@ -543,12 +551,12 @@ void HTTPResponse::lookupCommand(evhttp_request *req, BimapleServer *server)
     evhttp_clear_headers(&headers);
 }
 
-void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
+void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 {
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const BimapleServerConf *indexDataContainerConf = server->indexDataContainerConf;
+    const Srch2ServerConf *indexDataContainerConf = server->indexDataContainerConf;
     const Analyzer *analyzer = server->indexer->getAnalyzer();
 
     URLParserHelper urlParserHelper;
@@ -567,7 +575,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
     if (urlParserHelper.parserSuccess)
     {
         int idsExactFound = 0;
-        bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(server->indexer);
+        srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(server->indexer);
 
         //do the search
         switch(urlParserHelper.searchType)
@@ -581,7 +589,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
             else
             {
 
-              bmis::QueryResults *exactQueryResults = bmis::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+              srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
               idsExactFound = indexSearcher->search(urlToDoubleQuery->exactQuery, exactQueryResults, 0, urlParserHelper.offset + urlParserHelper.resultsToRetrieve);
 
                 //fill visitedList
@@ -650,12 +658,12 @@ void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
             else
             {
 
-              bmis::QueryResults *queryResults = NULL;
+              srch2is::QueryResults *queryResults = NULL;
               unsigned idsFound = 0;
               
               if ( !urlParserHelper.isFuzzy )
               {
-                queryResults = bmis::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+                queryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
                 idsFound = indexSearcher->search(urlToDoubleQuery->exactQuery, queryResults, 0);
               }
               else
@@ -703,7 +711,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
             else
             {
             	// for the range query without keywords.
-				bmis::QueryResults *exactQueryResults = bmis::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+				srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
 				if(urlToDoubleQuery->exactQuery->getQueryTerms()->empty())//check if query type is a range query without keywords
 				{
 					vector<double> values;
@@ -733,7 +741,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, BimapleServer *server)
             	else// keywords and geo search
             	{
 					//cout << "reached map query" << endl;
-					//bmis::QueryResults *exactQueryResults = bmis::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+					//srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
 					indexSearcher->search(urlToDoubleQuery->exactQuery, exactQueryResults);
 					idsExactFound = exactQueryResults->getNumberOfResults();
 

@@ -1,4 +1,4 @@
-//$Id: Indexer.h 3076 2012-12-07 22:47:36Z oliverax $
+//$Id: Indexer.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -29,7 +29,7 @@
 #include <string>
 #include <stdint.h>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -46,8 +46,7 @@ public:
                    unsigned _mergeEveryNSeconds,
                    unsigned _mergeEveryMWrites,
                    const std::string &_directoryName,
-                   const std::string &_trieBootstrapFileNameWithPath,
-                   const std::string &_licenseFileNameWithPath)
+                   const std::string &_trieBootstrapFileNameWithPath)
     {
         cache = _cache;
 
@@ -64,7 +63,6 @@ public:
         mergeEveryMWrites = _mergeEveryMWrites;
 
         directoryName = _directoryName;
-        licenseFileNameWithPath = _licenseFileNameWithPath;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
     }
     
@@ -74,7 +72,6 @@ public:
     }
 
     std::string directoryName;
-    std::string licenseFileNameWithPath;
     std::string trieBootstrapFileNameWithPath;
     GlobalCache *cache;
     unsigned mergeEveryNSeconds;
@@ -138,9 +135,9 @@ public:
      * Using the same analyzer, we can do the same preprocessing
      * operations on a query.
      */
-    virtual const bimaple::instantsearch::Analyzer *getAnalyzer() const = 0;
+    virtual const srch2::instantsearch::Analyzer *getAnalyzer() const = 0;
 
-    virtual const bimaple::instantsearch::Schema *getSchema() const = 0;
+    virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;
 

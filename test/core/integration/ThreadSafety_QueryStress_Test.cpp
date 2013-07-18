@@ -1,4 +1,4 @@
-//$Id: ThreadSafety_QueryStress_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+//$Id: ThreadSafety_QueryStress_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -45,8 +45,8 @@ using std::cout;
 using std::endl;
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 #define MAX_THREAD 1000
 
@@ -78,7 +78,7 @@ void queryStressTest(double &time)
     struct timespec tend;
 
     // create an index searcher
-    //bmis::Cache *cache = new bmis::Cache();
+    //srch2is::Cache *cache = new srch2is::Cache();
     IndexSearcher *indexSearcher = IndexSearcher::create(indexerDataContainer.indexer);
 
     clock_gettime(CLOCK_REALTIME, &tstart);
@@ -182,8 +182,8 @@ int main(int argc, char *argv[])
     // create an indexer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    indexerDataContainer.cache = new bmis::Cache(134217728,20000); // 134217728 bytes = 1GB
-    IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    indexerDataContainer.cache = new srch2is::Cache(134217728,20000); // 134217728 bytes = 1GB
+    IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     indexerDataContainer.indexer = Indexer::load(indexMetaData1);
     indexerDataContainer.analyzer = indexerDataContainer.indexer->getAnalyzer();
 

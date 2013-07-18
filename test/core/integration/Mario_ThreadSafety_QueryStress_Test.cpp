@@ -14,8 +14,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 #define MAX_THREAD 1000
 
@@ -47,7 +47,7 @@ void queryStressTest(double &time)
 	struct timespec tend;
 
 	// create an index searcher
-	//bmis::Cache *cache = new bmis::Cache();
+	//srch2is::Cache *cache = new srch2is::Cache();
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexerDataContainer.indexer);
 

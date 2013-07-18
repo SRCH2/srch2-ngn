@@ -4,12 +4,14 @@
 
 #include <instantsearch/Indexer.h>
 #include "wrapper/JSONRecordParser.h"
-#include "wrapper/BimapleKafkaConsumer.h"
+#include "wrapper/Srch2KafkaConsumer.h"
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
+#include "license/LicenseVerifier.h"
+#include "util/Logger.h"
 
-namespace bmis = bimaple::instantsearch;
-namespace bmhttp = bimaple::httpwrapper;
+namespace srch2is = srch2::instantsearch;
+namespace srch2http = srch2::httpwrapper;
 
 using namespace std;
 
@@ -125,7 +127,7 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
 
 bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
-	Query *query = new Query(bimaple::instantsearch::TopKQuery);
+	Query *query = new Query(srch2::instantsearch::TopKQuery);
 	parseQuery(analyzer, query, queryString, attributeIdToFilter);
 	int resultCount = 10;
 
@@ -147,8 +149,17 @@ bool test(int argc, char** argv)
 	//read configuration file
 	bool parseSuccess = true;
 	std::stringstream parseError;
-	bmhttp::BimapleServerConf *serverConf = new bmhttp::BimapleServerConf(argc, argv, parseSuccess, parseError);
-    bmhttp::BimapleServerLogger *serverLogger = new bmhttp::BimapleServerLogger(serverConf->getHTTPServerAccessLogFile());
+	srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(argc, argv, parseSuccess, parseError);
+	// check the license file
+	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+	FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
+	if(logFile == NULL){
+		Logger::setOutputFile(stdout);
+		Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
+	}
+	else
+		Logger::setOutputFile(logFile);
+	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
 	if (not parseSuccess)
 	{
@@ -157,26 +168,28 @@ bool test(int argc, char** argv)
 	}
 
 	// create IndexMetaData
-	bmis::IndexMetaData *indexMetaData = bmhttp::BimapleKafkaConsumer::createIndexMetaData(serverConf);
+	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
 
 	// Create an analyzer
-	bmis::Analyzer *analyzer = bmis::Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, serverConf->getRecordAllowedSpecialCharacters());
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, serverConf->getRecordAllowedSpecialCharacters());
 
-	// Create a schema to the data source definition in the BimapleServerConf
-	bmis::Schema *schema = bmhttp::JSONRecordParser::createAndPopulateSchema(serverConf);
+	// Create a schema to the data source definition in the Srch2ServerConf
+	srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(serverConf);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
-	bmhttp::DaemonDataSource::createNewIndexFromFile(indexer, serverConf, serverLogger);
+	srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
 
-	bmis::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<bmis::IndexReaderWriter*>(indexer));
+	srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
 	ii->getTrie()->print_Trie();
 
 	delete indexMetaData;
 	delete indexer;
 	delete serverConf;
+	fclose(logFile);
 
 	return true;
 }
@@ -187,4 +200,3 @@ int main(int argc, char** argv)
 	test(argc, argv);
 	return 0;
 }
-

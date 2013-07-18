@@ -1,5 +1,5 @@
 
-// $Id: SchemaInternal.cpp 3441 2013-06-11 20:30:12Z sinakeshtkar $
+// $Id: SchemaInternal.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -30,12 +30,12 @@ using std::string;
 using std::map;
 using std::pair;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
 
-SchemaInternal::SchemaInternal(bimaple::instantsearch::IndexType indexType, bimaple::instantsearch::PositionIndexType positionIndexType)
+SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType)
 {
     this->indexType = indexType;
     this->positionIndexType = positionIndexType;
@@ -56,12 +56,12 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal)
     this->commited = schemaInternal.commited;
 }
 
-bimaple::instantsearch::IndexType SchemaInternal::getIndexType() const
+srch2::instantsearch::IndexType SchemaInternal::getIndexType() const
 {
     return this->indexType;
 }
 
-bimaple::instantsearch::PositionIndexType SchemaInternal::getPositionIndexType() const
+srch2::instantsearch::PositionIndexType SchemaInternal::getPositionIndexType() const
 {
     return this->positionIndexType;
 }
@@ -183,7 +183,7 @@ const std::string SchemaInternal::getScoringExpression() const
 /**
  * Does not do the bound checking. Caller must make sure filterAttributeNameId is within bounds.
  */
-bimaple::instantsearch::FilterType SchemaInternal::getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const
+srch2::instantsearch::FilterType SchemaInternal::getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const
 {
     //if ( filterAttributeNameId < this->filterAttributeTypeVector.size())
     return this->sortableAttributeTypeVector[sortableAttributeNameId];

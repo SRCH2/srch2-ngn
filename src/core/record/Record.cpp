@@ -1,5 +1,5 @@
 
-// $Id: Record.cpp 3074 2012-12-06 22:26:36Z oliverax $
+// $Id: Record.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -33,7 +33,7 @@
 using std::vector;
 using std::string;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

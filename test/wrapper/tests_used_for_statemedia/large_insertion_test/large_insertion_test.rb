@@ -3,7 +3,7 @@ require 'httparty'
 require 'pp'
 require 'json'
 
-class BimapleClient
+class Srch2Client
   include HTTParty
   base_uri "http://localhost:8082"
 
@@ -27,8 +27,8 @@ responses = {}
 
 =begin
 limit_arr.each { |lim|
-	pp 'Querying bimaple with ' + lim.to_s
-	resp = BimapleClient.query( 'apple', lim )
+	pp 'Querying srch2 with ' + lim.to_s
+	resp = Srch2Client.query( 'apple', lim )
 	responses[lim] = [] 
 	resp['results'].each { |r| responses[lim] << r['record']['attr'] }
 }
@@ -43,7 +43,7 @@ File.foreach('data/update.json') { |data|
   
   data_h = JSON.parse(data)
 #  puts data_h.inspect
-  BimapleClient.insert(data)
+  Srch2Client.insert(data)
 #puts 'inserted ' + data_h['title']
   query_arr << data_h['attr']
   #sleep(1)
@@ -62,7 +62,7 @@ puts 'Now searching for them'
 search_counter_insert = 0
 query_arr.each do |qr|
 #puts '----------------------------------- Searching for: ' + qr
-  resp = BimapleClient.query(qr)
+  resp = Srch2Client.query(qr)
   if resp['results'] != nil then
     if resp['results'].length == 0 then
       search_counter_insert = search_counter_insert + 1
@@ -81,7 +81,7 @@ File.foreach('data/update.json') { |data|
 
   data_h = JSON.parse(data)
 #puts 'Removing ' + data_h['index']
-  BimapleClient.remove({'index' => data_h['index']})
+  Srch2Client.remove({'index' => data_h['index']})
 }
 
 sleep(10)
@@ -90,7 +90,7 @@ puts 'Now searching for them again'
 search_counter_delete = 0
 query_arr.each do |qr|
 #  puts '----------------------------------- Searching for: ' + qr
-  resp = BimapleClient.query(qr)
+  resp = Srch2Client.query(qr)
   if resp['results'] != nil then
     if resp['results'].length != 0 then
       search_counter_delete = search_counter_delete + 1

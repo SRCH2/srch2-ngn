@@ -1,4 +1,4 @@
-//$Id: Query.h 3219 2013-03-25 23:36:34Z sbisht $
+//$Id: Query.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,7 +24,7 @@
 #include <instantsearch/Term.h>
 #include <vector>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -93,7 +93,7 @@ public:
      * call add(term) with the term of "book" will
      * rewrite the query as "ullman compilor book".
      */
-    void add(bimaple::instantsearch::Term *term);
+    void add(srch2::instantsearch::Term *term);
 
     /*
      * Sets a rectangle range for geo search
@@ -126,14 +126,14 @@ public:
     void setPrefixMatchPenalty(float prefixMatchPenalty);
     float getPrefixMatchPenalty() const;
 
-    const bimaple::instantsearch::Ranker *getRanker() const;
+    const srch2::instantsearch::Ranker *getRanker() const;
 
     /**
      * \returns a const pointer to the vector of Term pointers.
      */
-    const std::vector<bimaple::instantsearch::Term* > *getQueryTerms() const;
+    const std::vector<srch2::instantsearch::Term* > *getQueryTerms() const;
 
-    bimaple::instantsearch::QueryType getQueryType() const;
+    srch2::instantsearch::QueryType getQueryType() const;
 
     /*
      * TODO Should change this function's name to
@@ -142,14 +142,14 @@ public:
      * TODO split the setter function into two functions and make
      * it consistent with getters.
      */
-    void setSortableAttribute(unsigned filterAttributeId, bimaple::instantsearch::SortOrder order);
+    void setSortableAttribute(unsigned filterAttributeId, srch2::instantsearch::SortOrder order);
     unsigned getSortableAttributeId() const;
 
     /*
      * TODO Should change this function's name to
      * getSortOrder
      */
-    bimaple::instantsearch::SortOrder getSortableAttributeIdSortOrder() const;
+    srch2::instantsearch::SortOrder getSortableAttributeIdSortOrder() const;
 
 private:
     struct Impl;

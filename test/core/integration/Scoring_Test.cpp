@@ -1,4 +1,4 @@
-//$Id: Scoring_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: Scoring_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
@@ -19,25 +19,25 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 Indexer *buildIndex(string data_file, string index_dir, string expression)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -97,19 +97,19 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
 Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::LocationIndex);
+    Schema *schema = Schema::create(srch2is::LocationIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);

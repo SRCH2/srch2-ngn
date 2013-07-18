@@ -1,24 +1,24 @@
 # CMake Build Environment
-# Bimaple Version 1.0 distribution provides an example cmake script to build using Bimaple library and API. The cmake script file "CMakeLists.txt" is in the 
-# directory, ${BIMAPLE_HOME}. 
+# Srch2 Version 1.0 distribution provides an example cmake script to build using Srch2 library and API. The cmake script file "CMakeLists.txt" is in the 
+# directory, ${SRCH2_HOME}. 
 # 
 # USAGE:
-# 1) Create a new directory called "build" inside ${BIMAPLE_HOME} directory.
+# 1) Create a new directory called "build" inside ${SRCH2_HOME} directory.
 # 2) Inside this directory, use the following command:
-#       cmake -D[${option}={value}] -D[..] ${BIMAPLE_HOME}
+#       cmake -D[${option}={value}] -D[..] ${SRCH2_HOME}
 # 3) By default, the build mode is "release".
-# 4) If the shipped bimaple library is shared (.so file extension), then set this option to ON, else set it to OFF
+# 4) If the shipped srch2 library is shared (.so file extension), then set this option to ON, else set it to OFF
 #    SET(SHARED_LIB ON)
 #
 # OPTIONS USED:
 #    1) BUILD_MORE_EXAMPLES: When set to ON, tries to find "fastcgi" and "mysqlclient" development libraries and builds "BuildDBIndex.cpp" and
 #        "searchFCGI.cpp" examples.
 #
-#    2) BUILD_PYTHON_API: When set to ON, tries to find "python-dev" files and builds the bimaple_instantsearch_python.so
-#       module. This module links to bimaple_instantsearch library and provides an python API to this library.
+#    2) BUILD_PYTHON_API: When set to ON, tries to find "python-dev" files and builds the srch2_instantsearch_python.so
+#       module. This module links to srch2_instantsearch library and provides an python API to this library.
 #
 #    3) LICENSE_DIR: Sets up the path to the directory with the license key file. If this option is not used,
-#       Defaults to "{bimaple_untar_dir}/license".
+#       Defaults to "{srch2_untar_dir}/license".
 #
 # EXAMPLE:
 # 1)   terminal> cmake ..
@@ -32,12 +32,12 @@
 #
 # 3)   terminal> cmake -DBUILD_MORE_EXAMPLES=ON -DBUILD_PYTHON_API=ON ..
 #
-# 4)   terminal> cmake -DLICENSE_DIR="/home/license/bimaple" ..
+# 4)   terminal> cmake -DLICENSE_DIR="/home/license/srch2" ..
 #    Sets up the path to the directory with the license key file.
 #    
 ########################################################################################################
 
-PROJECT(Bimaple-InstantSearch-Library-Version1.0)
+PROJECT(Srch2-InstantSearch-Library-Version1.0)
 
 # States that CMake required version must be >= 2.4
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
@@ -72,18 +72,18 @@ MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 SET (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
 
 INCLUDE_DIRECTORIES(
-    ${CMAKE_SOURCE_DIR}/include/bimaple/instantsearch/include
+    ${CMAKE_SOURCE_DIR}/include/srch2/instantsearch/include
     ${Boost_INCLUDE_DIRS}
 )
 
-#If the shipped bimaple library is shared (.so file extension), then set this option to ON, else if the library is static (.a file extension) set it to OFF.
+#If the shipped srch2 library is shared (.so file extension), then set this option to ON, else if the library is static (.a file extension) set it to OFF.
 IF (STATIC_LIB)
-    SET(BimapleInstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libbimaple_instantsearch.a)
+    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libsrch2_instantsearch.a)
 ELSE()
-    SET(BimapleInstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libbimaple_instantsearch.so)
+    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/lib/libsrch2_instantsearch.so)
 ENDIF() 
    
-MESSAGE(STATUS "Bimaple-InstantSearch Library at: " ${BimapleInstantSearch_LIBRARIES})
+MESSAGE(STATUS "Srch2-InstantSearch Library at: " ${Srch2InstantSearch_LIBRARIES})
 
 
 ADD_SUBDIRECTORY(examples/c++)
@@ -96,20 +96,20 @@ ENDIF()
 
 INCLUDE (CTest)
 
-###Set the directory that has the license key file - "bimaple_license_key.txt" 
+###Set the directory that has the license key file - "srch2_license_key.txt" 
 #IF (NOT ${LICENSE_DIR})
     SET(LICENSE_DIR "${CMAKE_SOURCE_DIR}/license")
 #ENDIF()
 MESSAGE(STATUS "License directory set to - ${LICENSE_DIR}")
 
 ENABLE_TESTING()
-ADD_TEST(BuildIndex_Test ${CMAKE_BINARY_DIR}/examples/c++/bimaple-buildindex-example "--verbose")
-###Set the enviroment variable "bimaple_license_dir" for the executing the binary "BuildIndex_test", build from BuildIndex.cpp 
-SET_TESTS_PROPERTIES(BuildIndex_Test PROPERTIES ENVIRONMENT "bimaple_license_dir=${LICENSE_DIR}")
+ADD_TEST(BuildIndex_Test ${CMAKE_BINARY_DIR}/examples/c++/srch2-buildindex-example "--verbose")
+###Set the enviroment variable "srch2_license_dir" for the executing the binary "BuildIndex_test", build from BuildIndex.cpp 
+SET_TESTS_PROPERTIES(BuildIndex_Test PROPERTIES ENVIRONMENT "srch2_license_dir=${LICENSE_DIR}")
 
-ADD_TEST(SearchIndex_Test  ${CMAKE_BINARY_DIR}/examples/c++/bimaple-searchindex-example "--verbose")
-###Set the enviroment variable "bimaple_license_dir" for the executing the binary "SearchIndex_test", build from SearchIndex.cpp
-SET_TESTS_PROPERTIES(SearchIndex_Test PROPERTIES ENVIRONMENT "bimaple_license_dir=${LICENSE_DIR}")
+ADD_TEST(SearchIndex_Test  ${CMAKE_BINARY_DIR}/examples/c++/srch2-searchindex-example "--verbose")
+###Set the enviroment variable "srch2_license_dir" for the executing the binary "SearchIndex_test", build from SearchIndex.cpp
+SET_TESTS_PROPERTIES(SearchIndex_Test PROPERTIES ENVIRONMENT "srch2_license_dir=${LICENSE_DIR}")
 
 #SET_TESTS_PROPERTIES(SearchIndex_Test PROPERTIES ENVIRONMENT "index_dir=${CMAKE_BINARY_DIR}/examples/c++/testIndexDirectory")
 

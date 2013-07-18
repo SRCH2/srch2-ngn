@@ -1,4 +1,4 @@
-//$Id: Serialization_on_Running_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: Serialization_on_Running_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
@@ -20,8 +20,8 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 unsigned mergeEveryNSeconds = 1;
 unsigned mergeEveryMWrites = 5;
@@ -29,17 +29,17 @@ unsigned mergeEveryMWrites = 5;
 Indexer *buildIndex(string data_file, string index_dir, string expression, vector<pair<string, string> > &records_in_index)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -165,17 +165,17 @@ void updateAndSaveIndex(Indexer *indexer, string data_file, vector<pair<string, 
 Indexer *buildGeoIndex(string data_file, string index_dir, string expression, vector<pair<pair<string, Point>, string> > &records_in_index)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::LocationIndex);
+    Schema *schema = Schema::create(srch2is::LocationIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -377,7 +377,7 @@ void testDefaultIndex(string index_dir)
     // load the index again and validate it
 
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
@@ -419,7 +419,7 @@ void testGeoIndex(string index_dir)
     // load the index again and validate it
 
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);

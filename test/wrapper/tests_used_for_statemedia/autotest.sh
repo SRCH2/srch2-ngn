@@ -7,7 +7,7 @@ fi
 
 VERSION=$1
 PORT=8082
-binary=./../../../../build/search-server/bimaple-search-server-$VERSION
+binary=./../../../../build/search-server/srch2-search-server-$VERSION
 
 pingServer(){
     info=$( curl -s http://localhost:$PORT/search?q=p | grep -o results)

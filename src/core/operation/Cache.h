@@ -1,4 +1,4 @@
-// $Id: Cache.h 3294 2013-05-01 03:45:51Z jiaying $
+// $Id: Cache.h 3480 2013-06-19 08:00:34Z jiaying $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -25,7 +25,7 @@
 #include "util/BusyBit.h"
 #include "operation/ActiveNode.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -65,6 +65,7 @@ struct CandidateResult
     std::vector<float> termScores;
     std::vector<string> matchingKeywords;
     std::vector<unsigned> editDistances;
+    std::vector<unsigned> attributeBitmaps;
 };
 
 class ConjunctionCacheResultsEntry

@@ -21,7 +21,7 @@ TARGET_LINK_LIBRARIES(test-jsoncpp ${jsoncpp_LIBRARY} ${Boost_LIBRARIES}  ${CMAK
 
 ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
-						${BimapleInstantSearch_LIBRARIES} 
+						${Srch2InstantSearch_LIBRARIES} 
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
 						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}
 					)

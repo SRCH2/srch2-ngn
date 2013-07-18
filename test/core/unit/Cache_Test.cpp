@@ -1,4 +1,4 @@
-//$Id: Cache_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+//$Id: Cache_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -33,20 +33,20 @@
 #include <assert.h>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using bmis::Query;
-using bmis::TermType;
-using bmis::Term;
-using bmis::ExactTerm;
-using bmis::FuzzyTerm;
-using bmis::Cache;
-using bmis::ConjunctionCacheResultsEntry;
-using bmis::print_trace;
+namespace srch2is = srch2::instantsearch;
+using srch2is::Query;
+using srch2is::TermType;
+using srch2is::Term;
+using srch2is::ExactTerm;
+using srch2is::FuzzyTerm;
+using srch2is::Cache;
+using srch2is::ConjunctionCacheResultsEntry;
+using srch2is::print_trace;
 
 int main(int argc, char *argv[])
 {
 
-    Query *query1 = new Query(bmis::TopKQuery);
+    Query *query1 = new Query(srch2is::TopKQuery);
     string keywords[2] = {
             "tom","cat"
     };
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     // for each keyword in the user input, add a term to the query
     for (unsigned i = 0; i < 2; ++i)
     {
-        TermType type = bmis::COMPLETE;
+        TermType type = srch2is::COMPLETE;
         Term *term = new Term(keywords[i], type, 1, 1);
         query1->add(term);
     }
@@ -84,12 +84,12 @@ int main(int argc, char *argv[])
 
     delete query1;
     //New Query
-    Query *query2 = new Query(bmis::TopKQuery);
+    Query *query2 = new Query(srch2is::TopKQuery);
 
     // for each keyword in the user input, add a term to the query
     for (unsigned i = 0; i < 1; ++i)
     {
-        TermType type = bmis::COMPLETE;
+        TermType type = srch2is::COMPLETE;
         Term *term = new Term(keywords[i], type, 1, 1);
         query2->add(term);
     }

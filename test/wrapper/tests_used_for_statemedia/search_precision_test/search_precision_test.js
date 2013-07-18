@@ -2,11 +2,11 @@
 //a utility to calculute mean average precision for a freebase search
 
 //change this to the test endpoint
-// var host='http://10.182.2.214:8081/bimaple'//sch-2
-// var host='http://rack-s-sch-1:8081//bimaple'//
-//var host='http://rack-s-sch-2:8081//bimaple'//
-//var host='http://rack-p-sch-1:8081//bimaple'//
-//var host='http://rack-p-sch-2:8081//bimaple'//
+// var host='http://10.182.2.214:8081/srch2'//sch-2
+// var host='http://rack-s-sch-1:8081//srch2'//
+//var host='http://rack-s-sch-2:8081//srch2'//
+//var host='http://rack-p-sch-1:8081//srch2'//
+//var host='http://rack-p-sch-2:8081//srch2'//
 var host="http://localhost:8082"
 
 //to run, type node searchtestfest.js...
@@ -1339,8 +1339,8 @@ for(var i in data){
 }
 
 
-//talk to bimaple's search interface
-function bimaple(query) {
+//talk to srch2's search interface
+function srch2(query) {
   query=query.replace(/^\s+|\s+$/g, '')
   query=query.replace(/  /g, ' ')
   //console.log(query)
@@ -1357,14 +1357,14 @@ function bimaple(query) {
 
 
 function callit(query, callback){
-  var url=bimaple(query);
+  var url=srch2(query);
   request({
     uri:url,
   }, function(error, response, body) {
        try{
          return callback(JSON.parse(body));
        }catch(e){
-         console.log('-----bimaple kickback on '+query+'----'+e);
+         console.log('-----srch2 kickback on '+query+'----'+e);
          return callback({results:[]})
        }
 

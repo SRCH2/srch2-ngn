@@ -1,4 +1,4 @@
-//$Id: SchemaInternal.h 3410 2013-06-05 12:58:08Z jiaying $
+//$Id: SchemaInternal.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -37,7 +37,7 @@
 
 using std::fstream;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -86,12 +86,12 @@ public:
      * Creates a Schema object
      */
     SchemaInternal() { };
-    SchemaInternal(bimaple::instantsearch::IndexType indexType, bimaple::instantsearch::PositionIndexType positionIndexType);
+    SchemaInternal(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType);
     SchemaInternal(const SchemaInternal &schemaInternal);
 
-    bimaple::instantsearch::IndexType getIndexType() const;
+    srch2::instantsearch::IndexType getIndexType() const;
 
-    bimaple::instantsearch::PositionIndexType getPositionIndexType() const;
+    srch2::instantsearch::PositionIndexType getPositionIndexType() const;
 
     /**
      *  Sets the name of the primary key to primaryKey.
@@ -130,7 +130,7 @@ public:
     unsigned getBoostSumOfSearchableAttributes() const;
 
     const std::string* getDefaultValueOfSortableAttribute(const unsigned sortableAttributeNameId) const;
-    bimaple::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const;
+    srch2::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const;
 
     /**
      * Gets the index of an attribute name by doing an internal
@@ -199,8 +199,8 @@ private:
     std::vector<FilterType> sortableAttributeTypeVector;
     std::vector<std::string> sortableAttributeDefaultValueVector;
 
-    bimaple::instantsearch::IndexType indexType;
-    bimaple::instantsearch::PositionIndexType positionIndexType;
+    srch2::instantsearch::IndexType indexType;
+    srch2::instantsearch::PositionIndexType positionIndexType;
 
     std::string scoringExpressionString;
 

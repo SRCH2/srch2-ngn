@@ -1,5 +1,5 @@
 
-// $Id: KeywordReEncoding_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+// $Id: KeywordReEncoding_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -55,15 +55,15 @@ using std::cout;
 using std::endl;
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 string INDEX_DIR = getenv("index_dir");
 
 void addSimpleRecords()
 {
     ///Create Schema
-    bmis::Schema *schema = bmis::Schema::create(bmis::DefaultIndex);
+    srch2is::Schema *schema = srch2is::Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -71,11 +71,12 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
     
@@ -129,7 +130,7 @@ void testRead(Indexer *indexer)
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     indexer = Indexer::load(indexMetaData1);
 
@@ -301,7 +302,7 @@ void test1()
     // create an indexer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     indexer = Indexer::load(indexMetaData1);
 
     //threadNumber = 1000;

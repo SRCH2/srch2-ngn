@@ -258,7 +258,7 @@ function displayFactualData(response, marker)
 			if ( socialLinkImages[response.response.data[iter].namespace].ping == 1 ) {
 				YUI().use("jsonp", "node",function (Y) {						
 						//Send the request. The function sendAjaxRequest() is in acunit.js, will call display() back
-						var url = "http://demo.bimaple.com/"+link_namespace+"_o_one_jsonp?url="+response.response.data[iter].url+"&callback={callback}";
+						var url = "http://demo.srch2.com/"+link_namespace+"_o_one_jsonp?url="+response.response.data[iter].url+"&callback={callback}";
 						//var url     = "http://example.com/service.php?callback={callback}",
 						service = new Y.JSONPRequest(url, {
 						on: {
@@ -358,7 +358,7 @@ function queryFactual(factualId, marker)
 	
 	YUI().use("jsonp", "node",function (Y) {
 		//Send the request. The function sendAjaxRequest() is in acunit.js, will call display() back
-		var url = "http://demo.bimaple.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
+		var url = "http://demo.srch2.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
 
 		service = new Y.JSONPRequest(url, {
 			on: {
@@ -684,7 +684,7 @@ function query() {
 		//YAHOO.util.Event.on('demo-run', 'click', function() {
 		//anim.animate();
 		//});    		
-		var url = "/bimaple/search?fuzzy=1&type=2&start=0"
+		var url = "/srch2/search?fuzzy=1&type=2&start=0"
 						+ "&lb_lng=" + currentLng1
                                                 + "&lb_lat=" + currentLat1
                                                 + "&rt_lng=" + currentLng2
@@ -706,7 +706,7 @@ function query() {
 		
 		YUI().use("jsonp", "node",function (Y) {
 				//Send the request. The function sendAjaxRequest() is in acunit.js, will call display() back
-				//var url = "http://demo.bimaple.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
+				//var url = "http://demo.srch2.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
 				//var url     = "http://example.com/service.php?callback={callback}",
 		    	service = new Y.JSONPRequest(url, {
 		    	on: {
@@ -846,7 +846,7 @@ function loadMoreElements(){
 	}
 	
 	//Prepare the request sent to WSGI
-	var url = "/bimaple/search?fuzzy=1&type=2&start=0"
+	var url = "/srch2/search?fuzzy=1&type=2&start=0"
                                                 + "&lb_lng=" + currentLng1
                                                 + "&lb_lat=" + currentLat1
                                                 + "&rt_lng=" + currentLng2
@@ -869,7 +869,7 @@ function loadMoreElements(){
 //	sendAjaxRequest(displayMore, url, values);
 	YUI().use("jsonp", "node",function (Y) {
 			//Send the request. The function sendAjaxRequest() is in acunit.js, will call display() back
-			//var url = "http://demo.bimaple.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
+			//var url = "http://demo.srch2.com/factual_o_one_jsonp?factual_id="+factualId+"&callback={callback}";
 			//var url     = "http://example.com/service.php?callback={callback}",
     		service = new Y.JSONPRequest(url, {
 	    	on: {

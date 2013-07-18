@@ -1,5 +1,5 @@
 
-// $Id: Query.cpp 3248 2013-04-03 13:16:52Z jiaying $
+// $Id: Query.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -28,7 +28,7 @@
 #include <iostream>
 
 using std::vector;
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -41,14 +41,14 @@ struct Query::Impl
     unsigned sortableAttributeId;
     float lengthBoost;
     float prefixMatchPenalty;
-    bimaple::instantsearch::SortOrder order;
+    srch2::instantsearch::SortOrder order;
     Shape *range;
     Ranker *ranker;
 
     Impl()
     {
         sortableAttributeId = 0;
-        order = bimaple::instantsearch::Descending;
+        order = srch2::instantsearch::Descending;
         lengthBoost = 0.5;
         prefixMatchPenalty = 0.90;
 
@@ -73,7 +73,7 @@ struct Query::Impl
     }
 };
 
-const bimaple::instantsearch::Ranker *Query::getRanker() const
+const srch2::instantsearch::Ranker *Query::getRanker() const
 {
     return this->impl->ranker;
 }
@@ -152,13 +152,13 @@ Query::Query(QueryType type):impl(new Impl)
 
     switch ( impl->type )
     {
-        case bimaple::instantsearch::TopKQuery:
+        case srch2::instantsearch::TopKQuery:
             impl->ranker = new DefaultTopKRanker();
             break;
-        case bimaple::instantsearch::GetAllResultsQuery:
+        case srch2::instantsearch::GetAllResultsQuery:
             impl->ranker = new GetAllResultsRanker();
             break;
-        case bimaple::instantsearch::MapQuery:
+        case srch2::instantsearch::MapQuery:
             impl->ranker = new SpatialRanker();
             break;
         default:
@@ -196,7 +196,7 @@ void Query::getRange(vector<double> &values) const
     impl->range->getValues(values);
 }
 
-void Query::setSortableAttribute(unsigned sortableAttributeId, bimaple::instantsearch::SortOrder order)
+void Query::setSortableAttribute(unsigned sortableAttributeId, srch2::instantsearch::SortOrder order)
 {
     this->impl->sortableAttributeId = sortableAttributeId;
     this->impl->order = order;
@@ -207,7 +207,7 @@ unsigned Query::getSortableAttributeId() const
     return this->impl->sortableAttributeId;
 }
 
-bimaple::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
+srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
 {
     return this->impl->order;
 }

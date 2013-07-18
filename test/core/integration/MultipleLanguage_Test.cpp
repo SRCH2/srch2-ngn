@@ -22,15 +22,15 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 string DBLP_INDEX_DIR = getenv("dblp_index_dir");
 string INDEX_DIR = getenv("small_index_dir");
 
 void addSimpleChineseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -39,12 +39,13 @@ void addSimpleChineseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -170,6 +171,13 @@ void addSimpleChineseRecords() {
 	record->setRecordBoost(90);
 	index->addRecord(record, 0);
 
+	record->clear();
+	record->setPrimaryKey(1204);
+	record->setSearchableAttributeValue(1, "");
+	record->setSearchableAttributeValue(2, "𡑞 will fail for utf16, but work for utf32");
+	record->setRecordBoost(90);
+	index->addRecord(record, 0);
+
 	index->commit();
 	index->save();
 
@@ -186,7 +194,7 @@ void testSimpleChinese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -411,7 +419,7 @@ void testSimpleChinese() {
 
 void addSimpleZhuyinRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -420,12 +428,13 @@ void addSimpleZhuyinRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -576,7 +585,7 @@ void testSimpleZhuyin() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -806,7 +815,7 @@ void testSimpleZhuyin() {
 //from http://novel.tingroom.com/ translated by google
 void addJapaneseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -815,12 +824,13 @@ void addJapaneseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -938,7 +948,7 @@ void testJapanese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1111,7 +1121,7 @@ void testJapanese() {
 //from http://novel.tingroom.com/ translated by google
 void addFrenchRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -1120,12 +1130,13 @@ void addFrenchRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1228,7 +1239,7 @@ void testFrench() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1380,7 +1391,7 @@ void testFrench() {
 //from http://novel.tingroom.com/ translated by google
 void addTranditionalChineseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -1389,12 +1400,13 @@ void addTranditionalChineseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1469,7 +1481,7 @@ void testTranditionalChinese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1526,7 +1538,7 @@ void testTranditionalChinese() {
 //from http://novel.tingroom.com/ translated by google
 void addBulgarianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -1535,12 +1547,13 @@ void addBulgarianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1618,7 +1631,7 @@ void testBulgarian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1658,7 +1671,7 @@ void testBulgarian() {
 //from http://novel.tingroom.com/ translated by google
 void addPinyinChineseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_pinyin", 2); // searchable text
@@ -1667,12 +1680,13 @@ void addPinyinChineseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1749,7 +1763,7 @@ void testPinyinChinese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1821,7 +1835,7 @@ void testPinyinChinese() {
 //from http://novel.tingroom.com/ translated by google
 void addZhuyinChineseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_zhuyin", 2); // searchable text
@@ -1830,12 +1844,13 @@ void addZhuyinChineseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1913,7 +1928,7 @@ void testZhuyinChinese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1991,7 +2006,7 @@ void testZhuyinChinese() {
 //from http://novel.tingroom.com/ translated by google
 void addCroatianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2000,12 +2015,13 @@ void addCroatianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2082,7 +2098,7 @@ void testCroatian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2138,7 +2154,7 @@ void testCroatian() {
 //from http://novel.tingroom.com/ translated by google
 void addCzechRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2147,12 +2163,13 @@ void addCzechRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2231,7 +2248,7 @@ void testCzech() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2287,7 +2304,7 @@ void testCzech() {
 //from http://novel.tingroom.com/ translated by google
 void addDanishRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2296,12 +2313,13 @@ void addDanishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2379,7 +2397,7 @@ void testDanish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2434,7 +2452,7 @@ void testDanish() {
 //from http://novel.tingroom.com/ translated by google
 void addDutchRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2443,12 +2461,13 @@ void addDutchRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2526,7 +2545,7 @@ void testDutch() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2580,7 +2599,7 @@ void testDutch() {
 //from http://novel.tingroom.com/ translated by google
 void addEstonianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2589,12 +2608,13 @@ void addEstonianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2671,7 +2691,7 @@ void testEstonian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2711,7 +2731,7 @@ void testEstonian() {
 //from http://novel.tingroom.com/ translated by google
 void addFinnishRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2720,12 +2740,13 @@ void addFinnishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2802,7 +2823,7 @@ void testFinnish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2858,7 +2879,7 @@ void testFinnish() {
 //from http://novel.tingroom.com/ translated by google
 void addGermanRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -2867,12 +2888,13 @@ void addGermanRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2950,7 +2972,7 @@ void testGerman() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3005,7 +3027,7 @@ void testGerman() {
 //from http://novel.tingroom.com/ translated by google
 void addGreekRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3014,12 +3036,13 @@ void addGreekRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3097,7 +3120,7 @@ void testGreek() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3145,7 +3168,7 @@ void testGreek() {
 //from http://novel.tingroom.com/ translated by google
 void addHungarianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3154,12 +3177,13 @@ void addHungarianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3236,7 +3260,7 @@ void testHungarian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3292,7 +3316,7 @@ void testHungarian() {
 //from http://novel.tingroom.com/ translated by google
 void addIndonesiaRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3301,12 +3325,13 @@ void addIndonesiaRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3382,7 +3407,7 @@ void testIndonesia() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3423,7 +3448,7 @@ void testIndonesia() {
 //from http://novel.tingroom.com/ translated by google
 void addItalianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3432,12 +3457,13 @@ void addItalianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3512,7 +3538,7 @@ void testItalian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3566,7 +3592,7 @@ void testItalian() {
 //from http://novel.tingroom.com/ translated by google
 void addKoreanRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3575,12 +3601,13 @@ void addKoreanRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3655,7 +3682,7 @@ void testKorean() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3707,7 +3734,7 @@ void testKorean() {
 //from http://novel.tingroom.com/ translated by google
 void addLatvianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3716,12 +3743,13 @@ void addLatvianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3797,7 +3825,7 @@ void testLatvian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3835,7 +3863,7 @@ void testLatvian() {
 //from http://novel.tingroom.com/ translated by google
 void addLithuanianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3844,12 +3872,13 @@ void addLithuanianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -3925,7 +3954,7 @@ void testLithuanian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -3964,7 +3993,7 @@ void testLithuanian() {
 //from http://novel.tingroom.com/ translated by google
 void addNorwegianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -3973,12 +4002,13 @@ void addNorwegianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4054,7 +4084,7 @@ void testNorwegian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4092,7 +4122,7 @@ void testNorwegian() {
 //from http://novel.tingroom.com/ translated by google
 void addPolishRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4100,13 +4130,13 @@ void addPolishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4181,7 +4211,7 @@ void testPolish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4218,7 +4248,7 @@ void testPolish() {
 //from http://novel.tingroom.com/ translated by google
 void addPortugueseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4227,12 +4257,13 @@ void addPortugueseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4309,7 +4340,7 @@ void testPortuguese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4363,7 +4394,7 @@ void testPortuguese() {
 //from http://novel.tingroom.com/ translated by google
 void addRomanianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4372,12 +4403,13 @@ void addRomanianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4453,7 +4485,7 @@ void testRomanian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4491,7 +4523,7 @@ void testRomanian() {
 //from http://novel.tingroom.com/ translated by google
 void addRussianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4500,12 +4532,13 @@ void addRussianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4581,7 +4614,7 @@ void testRussian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4621,7 +4654,7 @@ void testRussian() {
 //from http://novel.tingroom.com/ translated by google
 void addSerbianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4630,12 +4663,13 @@ void addSerbianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4709,7 +4743,7 @@ void testSerbian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4747,7 +4781,7 @@ void testSerbian() {
 //from http://novel.tingroom.com/ translated by google
 void addSlovakRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4756,12 +4790,13 @@ void addSlovakRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4837,7 +4872,7 @@ void testSlovak() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -4877,7 +4912,7 @@ void testSlovak() {
 //from http://novel.tingroom.com/ translated by google
 void addSlovenianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -4886,12 +4921,13 @@ void addSlovenianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -4967,7 +5003,7 @@ void testSlovenian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5005,7 +5041,7 @@ void testSlovenian() {
 //from http://novel.tingroom.com/ translated by google
 void addSpanishRecords() {
 	///Create Schema Spanish
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5014,12 +5050,13 @@ void addSpanishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5096,7 +5133,7 @@ void testSpanish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5149,7 +5186,7 @@ void testSpanish() {
 //from http://novel.tingroom.com/ translated by google
 void addSwedishRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5158,12 +5195,13 @@ void addSwedishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5240,7 +5278,7 @@ void testSwedish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5278,7 +5316,7 @@ void testSwedish() {
 //from http://novel.tingroom.com/ translated by google
 void addThaiRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5287,12 +5325,13 @@ void addThaiRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5369,7 +5408,7 @@ void testThai() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5407,7 +5446,7 @@ void testThai() {
 //from http://novel.tingroom.com/ translated by google
 void addTurkishRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5416,12 +5455,13 @@ void addTurkishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5497,7 +5537,7 @@ void testTurkish() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5535,7 +5575,7 @@ void testTurkish() {
 //from http://novel.tingroom.com/ translated by google
 void addUkrainianRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5544,12 +5584,13 @@ void addUkrainianRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5624,7 +5665,7 @@ void testUkrainian() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5662,7 +5703,7 @@ void testUkrainian() {
 //from http://novel.tingroom.com/ translated by google
 void addVietnameseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5671,12 +5712,13 @@ void addVietnameseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5753,7 +5795,7 @@ void testVietnamese() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5791,7 +5833,7 @@ void testVietnamese() {
 //from http://novel.tingroom.com/ translated by google
 void addFarsiRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
@@ -5800,12 +5842,13 @@ void addFarsiRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -5865,7 +5908,7 @@ void testFarsi() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -5903,7 +5946,7 @@ void testFarsi() {
 //from http://novel.tingroom.com/ translated by google
 void addArabicRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_title", 2); // searchable text
@@ -5912,12 +5955,13 @@ void addArabicRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6068,7 +6112,7 @@ void testArabic() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -6169,7 +6213,7 @@ void testArabic() {
 //from http://novel.tingroom.com/ translated by google
 void addHebrewRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
@@ -6178,12 +6222,13 @@ void addHebrewRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6252,7 +6297,7 @@ void testHebrew() {
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -6290,7 +6335,7 @@ void testHebrew() {
 //from http://novel.tingroom.com/ translated by google
 void addKazakhRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
@@ -6299,12 +6344,13 @@ void addKazakhRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6366,7 +6412,7 @@ void testKazakh()
 	// create an index searcher
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -6390,7 +6436,7 @@ void testKazakh()
 // from http://my.wikipedia.org/wiki/Wikipedia:Font
 void addBurmeseRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_sentence", 2); // searchable text
@@ -6399,12 +6445,13 @@ void addBurmeseRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6466,7 +6513,7 @@ void testBurmese()
 	// create an index searcher
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -6489,7 +6536,7 @@ void testBurmese()
 //Portuguese - Brazil The main differece from Portuguese is the voice and some write, the character is same. From http://en.wikipedia.org/wiki/Brazilian_Portuguese
 void addPortugueseBrazilRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_sentence", 2); // searchable text
@@ -6498,12 +6545,13 @@ void addPortugueseBrazilRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6565,7 +6613,7 @@ void testPortugueseBrazil()
 	// create an index searcher
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -6588,7 +6636,7 @@ void testPortugueseBrazil()
 //Spanish - Latin America The main differece from Spanish is the voice and some write, the character is same. From http://novel.tingroom.com/ translated by http://www.spanishdict.com/translate/Latin%20America
 void addSpanishLatinRecords() {
 	///Create Schema
-	Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, not searchable
 	schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_sentence", 2); // searchable text
@@ -6597,12 +6645,13 @@ void addSpanishLatinRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = Analyzer::create(
-			bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -6664,7 +6713,7 @@ void testSpanishLatin()
 	// create an index searcher
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);

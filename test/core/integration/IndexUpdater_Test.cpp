@@ -1,5 +1,5 @@
 
-// $Id: IndexUpdater_Test.cpp 3433 2013-06-11 03:13:10Z jiaying $
+// $Id: IndexUpdater_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -40,15 +40,15 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 string INDEX_DIR = getenv("index_dir");
 
 void addSimpleRecords()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -56,11 +56,12 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -96,21 +97,22 @@ void addSimpleRecords()
 void addAdvancedRecordsWithScoreSortableAttributes()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
-    schema->setSortableAttribute("citationcount", bimaple::instantsearch::UNSIGNED, "0");
-    schema->setSortableAttribute("pagerank", bimaple::instantsearch::FLOAT, "1");
+    schema->setSortableAttribute("citationcount", srch2::instantsearch::UNSIGNED, "0");
+    schema->setSortableAttribute("pagerank", srch2::instantsearch::FLOAT, "1");
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
     record->setPrimaryKey(1001);
@@ -158,7 +160,7 @@ void test1()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -249,7 +251,7 @@ void test2()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -332,7 +334,7 @@ void test3()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -407,7 +409,7 @@ void test4()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -460,7 +462,7 @@ void test5()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -518,7 +520,7 @@ void test6()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -621,7 +623,7 @@ void test8()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -698,7 +700,7 @@ void test9()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -773,7 +775,7 @@ void test10()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -860,17 +862,18 @@ void test10()
 void test11()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex);
+    Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 

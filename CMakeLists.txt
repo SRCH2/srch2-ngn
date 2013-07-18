@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CMake Build Environment
 # This is the top-level CMakeLists file. The build is preformed "outside of source" in the build 
 # directory. 
@@ -24,7 +25,7 @@
 ########################################################################################################
 
 # Project name is not mandatory, but you should use it
-PROJECT(Bimaple-Instant-Search)
+PROJECT(Srch2-Instant-Search)
 
 # States that CMake required version must be >= 2.6
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
@@ -37,10 +38,10 @@ ENDIF(COMMAND cmake_policy)
 ##SET this option to "on", if you want detailed makefile execution
 SET(VERBOSE ON CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
-SET(BUILD_STATIC ON CACHE BOOL "Build Bimaple static library and binary. Default ON")
+SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
-
+#SET(CMAKE_CXX_FLAGS_RELEASE "") 
 IF (BUILD_STATIC)
    SET(CMAKE_EXE_LINKER_FLAGS)
    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
@@ -72,18 +73,14 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 # Platform SpecIFic Compiler Flags
 #IF (CMAKE_COMPILER_IS_GNUCXX)
+    EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
+                  ARGS  -dumpversion
+                  OUTPUT_VARIABLE gcc_compiler_version)
+    MESSAGE(STATUS "C++ compiler version: ${gcc_compiler_version}") 
+    string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
     
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-implicit -Wno-sign-compare")
     SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
-
-	#IF (DO_PROFILE)
-    #    MESSAGE(STATUS "PROFILE tags Turned ON")
-        #SET(GPROF_FLAGS "-lprofiler")
-        #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GPROF_FLAGS}" )
-        #SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GPROF_FLAGS}" )
-    #ELSE()
-    #    MESSAGE(STATUS "PROFILE tags Turned OFF")        
-    #ENDIF()
     
 	IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
@@ -155,9 +152,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	# Building the wrapper layer in static build mode.
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
-		SET(BimapleInstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libbimaple_instantsearch.a)
+		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
 	ELSE (BUILD_STATIC)
-		SET(BimapleInstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libbimaple_instantsearch.so)
+		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
 	ENDIF()
 
 	ADD_SUBDIRECTORY(src/wrapper)
@@ -166,16 +163,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	IF (BUILD_TEST)
 		INCLUDE (CTest)
 		ADD_SUBDIRECTORY(test)
-		ADD_DEPENDENCIES(build_integration_test bimaple_lib)
-		ADD_DEPENDENCIES(build_unit_test bimaple_lib) 
+		ADD_DEPENDENCIES(build_integration_test srch2_core)
+		ADD_DEPENDENCIES(build_unit_test srch2_core) 
 	ENDIF()
 		
 	#ADD_SUBDIRECTORY(examples)
-	#ADD_DEPENDENCIES(examples_c++ bimaple_lib)
-	#ADD_DEPENDENCIES(examples_python bimaple_lib)
+	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
+	#ADD_DEPENDENCIES(examples_python srch2_lib)
 	#ADD_SUBDIRECTORY(docs)
 	#ADD_SUBDIRECTORY(swig)
-	#ADD_DEPENDENCIES(build_swig bimaple_lib)
+	#ADD_DEPENDENCIES(build_swig srch2_lib)
 	
 #ENDIF()
 
@@ -184,42 +181,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 ####################################################################################################
 #CPack tarballing code!
 
-#INSTALL "ALICE" CMake files
-FILE(GLOB CMAKE_INSTALL_FILES "cmake/*[^_p].cmake" ) 
-INSTALL(FILES ${CMAKE_INSTALL_FILES} DESTINATION "cmake/modules" )
+#INSTALL  
+SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Files. e.g., the config file")
+SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
+INSTALL(DIRECTORY docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
 
-FILE(GLOB CMAKE_INSTALL_MAIN_FILE "cmake/install/CMakeLists_main.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_MAIN_FILE} DESTINATION . RENAME CMakeLists.txt)
+INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
 
-FILE(GLOB CMAKE_INSTALL_examples_python_FILE "cmake/install/CMakeLists_examples_python.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_examples_python_FILE} DESTINATION "examples/python" RENAME CMakeLists.txt)
+INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.ini DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 
-FILE(GLOB CMAKE_INSTALL_examples_c++_FILE "cmake/install/CMakeLists_examples_c++.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_examples_c++_FILE} DESTINATION "examples/c++" RENAME CMakeLists.txt)
-
-FILE(GLOB README_FILE "cmake/install/README.txt" )
-INSTALL(FILES ${README_FILE} DESTINATION .)
-
-FILE(GLOB license_key_FILE "cmake/install/bimaple_license_key.txt")
-INSTALL(FILES ${license_key_FILE} DESTINATION "license")
-
-FILE(GLOB license_docs_FILE "cmake/install/license_docs/*[^_p].htm" )
-INSTALL(FILES ${license_docs_FILE} DESTINATION "license" )
-INSTALL(FILES ${license_docs_FILE} DESTINATION "docs/Bimaple-API" )
-
-# INSTALL examples
-FILE(GLOB BIMAPLE_c++_EXAMPLE_FILES "examples/c++/[^_]*.cpp")
-INSTALL(FILES ${BIMAPLE_c++_EXAMPLE_FILES} DESTINATION "examples/c++")
-
-FILE( GLOB FRONTEND_FILES "${CMAKE_SOURCE_DIR}/examples/c++/SearchFCGI-frontend/index.*")
-INSTALL(FILES ${FRONTEND_FILES} DESTINATION "examples/c++/SearchFCGI-frontend/" )
-
-FILE(GLOB BIMAPLE_python_EXAMPLE_FILES "examples/python/[^_]*.py" "${CMAKE_BINARY_DIR}/swig/bimaple_instantsearch_swigPYTHON_wrap.cxx" "${CMAKE_BINARY_DIR}/swig/bimaple_instantsearch_python.py")
-INSTALL(FILES ${BIMAPLE_python_EXAMPLE_FILES} DESTINATION "examples/python")
-
-FILE(GLOB EMPTY_TEST_FOLDER "examples/c++/testIndexDirectory/test.txt")
-INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/c++/testIndexDirectory")
-INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/python/testIndexDirectory")
+INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
 
 #Packaging
 SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$;\\\\.cmake$;\\\\.tar.gz$;\\\\.so[.0-9]*$;/build/;/_CPack_Packages/;/CMakeFiles/;/CVS/;/\\\\.svn/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
@@ -228,25 +199,20 @@ SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$
 SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_IGNORE_FILES})
 SET(CPACK_SOURCE_GENERATOR TGZ ZIP)
 SET(CPACK_SOURCE_TOPLEVEL_TAG "")
-SET(CPACK_PACKAGE_NAME "bimaple-instantsearch")
-SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant search library")
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.bimaple.com")
-SET(CPACK_PACKAGE_CONTACT "contact@bimaple.com ")
-SET(CPACK_PACKAGE_VENDOR "Bimaple Technology Inc")
-SET(CPACK_PACKAGE_VERSION_MAJOR "1")
-SET(CPACK_PACKAGE_VERSION_MINOR "0")
-SET(CPACK_PACKAGE_VERSION_PATCH "0")
-SET(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Bimaple")
+SET(CPACK_PACKAGE_NAME "srch2-engine")
+SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant Search Engine")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.srch2.com")
+SET(CPACK_PACKAGE_CONTACT "contact@srch2.com")
+SET(CPACK_PACKAGE_VENDOR "Srch2 Software Inc.")
 
-INCLUDE (InstallRequiredSystemLibraries)
-#SET (CPACK_RESOURCE_FILE_LICENSE  "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-SET(CPACK_CMAKE_GENERATOR "Unix Makefiles")
-#SET(CPACK_GENERATOR "DEB;TGZ;")
+# Note: Version should be passed as input to cmake file. e.g -DVERSION:STRING="3.1.0" 
+SET(VERSION "" CACHE STRING "Version Number") 
+
 SET(CPACK_GENERATOR "TGZ;")
-SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}-${CMAKE_SYSTEM_PROCESSOR}")
+
+SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 INCLUDE(CPack)
 
 # enable dashboard scripting
 include(Dart)
-SET (CTEST_PROJECT_NAME "Bimaple - Testing Framework")
+SET (CTEST_PROJECT_NAME "Srch2 - Testing Framework")

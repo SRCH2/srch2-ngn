@@ -1,4 +1,4 @@
-//$Id: URLParser.h 3410 2013-06-05 12:58:08Z jiaying $
+//$Id: URLParser.h 3456 2013-06-14 02:11:13Z jiaying $
 
 #ifndef _URLPARSER_H_
 #define _URLPARSER_H_
@@ -23,14 +23,14 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Analyzer.h>
-#include "BimapleServerConf.h"
+#include "Srch2ServerConf.h"
 
 using std::string;
 using std::stringstream;
 
-namespace bmis = bimaple::instantsearch;
+namespace srch2is = srch2::instantsearch;
 
-namespace bimaple
+namespace srch2
 {
 namespace httpwrapper
 {
@@ -48,7 +48,7 @@ struct URLParserHelper
 
     // only applicable for searchType=1: GetAllResultsQuery
     unsigned sortby;
-    bimaple::instantsearch::SortOrder order;
+    srch2::instantsearch::SortOrder order;
 
 	URLParserHelper()
 	{
@@ -110,10 +110,10 @@ private:
 class URLToDoubleQuery
 {
 	public:
-		bmis::Query *exactQuery;
-		bmis::Query *fuzzyQuery;
+		srch2is::Query *exactQuery;
+		srch2is::Query *fuzzyQuery;
 
-		URLToDoubleQuery(const evkeyvalq &headers, const bmis::Analyzer *analyzer, const BimapleServerConf *indexDataContainerConf, const bmis::Schema *schema, URLParserHelper &urlParserHelper);
+		URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper);
 
 		~URLToDoubleQuery();
 	private:

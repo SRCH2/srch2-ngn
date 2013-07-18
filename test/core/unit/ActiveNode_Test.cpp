@@ -1,4 +1,4 @@
-// $Id: ActiveNode_Test.cpp 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: ActiveNode_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -27,14 +27,14 @@
 #include <cstring>
 #include <assert.h>
 
-namespace bmis = bimaple::instantsearch;
+namespace srch2is = srch2::instantsearch;
 using namespace std;
-using bmis::Trie;
-using bmis::TrieNode;
-using bmis::PrefixActiveNodeSet;
-using bmis::print_trace;
-using bmis::ActiveNodeSetIterator;
-using bmis::LeafNodeSetIterator;
+using srch2is::Trie;
+using srch2is::TrieNode;
+using srch2is::PrefixActiveNodeSet;
+using srch2is::print_trace;
+using srch2is::ActiveNodeSetIterator;
+using srch2is::LeafNodeSetIterator;
 
 // a structure to record information of each node
 class LeafIteratorResultItem

@@ -1,5 +1,5 @@
 
-// $Id: StringEncoding_Test.cpp 3433 2013-06-11 03:13:10Z jiaying $
+// $Id: StringEncoding_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
@@ -24,8 +24,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 string DBLP_INDEX_DIR = getenv("dblp_index_dir");
 string INDEX_DIR = getenv("small_index_dir");
@@ -33,7 +33,7 @@ string INDEX_DIR = getenv("small_index_dir");
 void addSimpleRecords()
 {
     ///Create Schema
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
     schema->setPrimaryKey("article_id"); // integer, not searchable
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
@@ -41,7 +41,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

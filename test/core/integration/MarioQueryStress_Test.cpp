@@ -1,5 +1,5 @@
 
-// $Id: MarioQueryStress_Test.cpp 2541 2012-05-18 16:25:03Z chenli $
+// $Id: MarioQueryStress_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 #include "MapSearchTestHelper.h"
 
@@ -9,8 +9,8 @@
 #include <cstdlib>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 // variables to measure the elapsed time
 struct timespec tstart;
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	schema->setSearchableAttribute("category"); // searchable text
 
 	// create an analyzer
-	Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	// create an index writer
 	unsigned mergeEveryNSeconds = 3;	

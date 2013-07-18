@@ -1,4 +1,4 @@
-//$Id: platform.h 3014 2012-12-04 23:34:03Z oliverax $
+//$Id: platform.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -19,8 +19,8 @@
 
 // Contents of platform.h
 
-#ifndef _BimapleLib_DLLDEFINES_H_
-#define _BimapleLib_DLLDEFINES_H_
+#ifndef _SRCH2Lib_DLLDEFINES_H_
+#define _SRCH2Lib_DLLDEFINES_H_
 
 /*
 Buildfiles will define MyLibrary_EXPORTS on Windows where it is
@@ -28,17 +28,17 @@ configured to build a shared library. If you are going to use
 another build system on windows or create the visual studio
 projects by hand you need to define MyLibrary_EXPORTS when
 building a DLL on windows.
-By default, bimaple build infrastructure uses the Visual Studio
+By default, srch2 build infrastructure uses the Visual Studio
 Compiler and builds Shared libraries on Windows platform.
 */
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
 
 
 #if defined (_WIN32)
-  #if defined(bimaple_instantsearch_EXPORTS)
+  #if defined(srch2_instantsearch_EXPORTS)
     #define  MYLIB_EXPORT __declspec(dllexport)
   #else
     #define  MYLIB_EXPORT __declspec(dllimport)
@@ -48,4 +48,4 @@ namespace instantsearch
 #endif
 }}
 
-#endif /* _BimapleLib_DLLDEFINES_H_ */
+#endif /* _SRCH2Lib_DLLDEFINES_H_ */

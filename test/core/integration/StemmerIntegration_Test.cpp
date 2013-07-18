@@ -1,4 +1,4 @@
-// $Id: StemmerIntegration_Test.cpp 3027 2012-12-05 02:22:07Z oliverax $
+// $Id: StemmerIntegration_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/IndexSearcher.h>
@@ -19,8 +19,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 
 
@@ -28,17 +28,17 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 {
 
 	// Create a schema
-	bmis::Schema *schema = bmis::Schema::create(bmis::DefaultIndex);
+	srch2is::Schema *schema = srch2is::Schema::create(srch2is::DefaultIndex);
 	schema->setPrimaryKey("record_id"); // integer, by default not searchable
 	//schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create stemmer type
-	bmis::StemmerNormalizerType stemType = bmis::STEMMER_NORMALIZER;
+	srch2is::StemmerNormalizerFlagType stemType = srch2is::ENABLE_STEMMER_NORMALIZER;
 
 	// Create an analyzer
-	bmis::Analyzer *analyzer = bmis::Analyzer::create(stemType, " ");
+	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemType, " ");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -49,7 +49,7 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 	// Step 2: Create records and add to the index
 
 	// Create a record of 3 attributes
-	bmis::Record *record = new bmis::Record(schema);
+	srch2is::Record *record = new srch2is::Record(schema);
 //	record->setPrimaryKey(100); // give a value for the primary key
 //	record->setSearchableAttributeValue("record_location", "star-bucks");
 //	record->setSearchableAttributeValue("record_description", "Star-bucks is one of the famous coffee stores in United States");
@@ -103,7 +103,7 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 }
 
 
-bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, string keywords[], bool isStemmed,bmis::TermType type = bmis::PREFIX)
+bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, string keywords[], bool isStemmed,srch2is::TermType type = srch2is::PREFIX)
 {
 	// Create an index reader
 	unsigned mergeEveryNSeconds = 3;	
@@ -112,20 +112,20 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 	Indexer *indexer = Indexer::load(indexMetaData1);
 
 	// Create an index searcher
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(indexer);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(indexer);
 
 	// STEP 2: Create a Query object and a QueryResults object
-	bmis::Query *query = new bmis::Query(bmis::TopKQuery);
+	srch2is::Query *query = new srch2is::Query(srch2is::TopKQuery);
 
 	//std::cout << "SearchableAttributeId:" << indexReader->getSchema()->getSearchableAttributeId("article_title") << std::endl;
 	// For each keyword above, add a corresponding fuzzy term to the query
 	for (unsigned i = 0; i < 2; ++i)
 	{
-		//bmis::TermType type = bmis::PREFIX; // prefix matching
-		//bmis::TermType type = bmis::COMPLETE; // use it for complete matching
+		//srch2is::TermType type = srch2is::PREFIX; // prefix matching
+		//srch2is::TermType type = srch2is::COMPLETE; // use it for complete matching
 		unsigned termBoost = 1;
 		unsigned similarityBoost = 100;
-		bmis::Term *term = bmis::ExactTerm::create(keywords[i],
+		srch2is::Term *term = srch2is::ExactTerm::create(keywords[i],
 				type,
 				termBoost,
 				similarityBoost);
@@ -133,7 +133,7 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 		query->add(term);
 	}
 
-	bmis::QueryResults *queryResults = bmis::QueryResults::create(indexSearcher, query);
+	srch2is::QueryResults *queryResults = srch2is::QueryResults::create(indexSearcher, query);
 
 	// Step 3: Search the index and display results
 
@@ -191,13 +191,13 @@ int main(int argc, char **argv)
 	//First 3 ASSERTS test for correct #records and stemmed information
 
 	//correct record info and stem info provided
-	ASSERT(test(INDEX_DIR, recordId, 1, 3, keywords, true,bmis::PREFIX )==true);
+	ASSERT(test(INDEX_DIR, recordId, 1, 3, keywords, true,srch2is::PREFIX )==true);
 
 	//correct record info and wrong stem info provided
-	ASSERT(test(INDEX_DIR, recordId, 1, 3 , keywords,false,bmis::PREFIX)==false);
+	ASSERT(test(INDEX_DIR, recordId, 1, 3 , keywords,false,srch2is::PREFIX)==false);
 
 	//wrong record info and correct stem info provided
-	ASSERT(test(INDEX_DIR, recordId, 1, 0, keywords,true,bmis::PREFIX)==false);
+	ASSERT(test(INDEX_DIR, recordId, 1, 0, keywords,true,srch2is::PREFIX)==false);
 
 
 	//changing the query "starbuck" to "starbucks"
@@ -207,22 +207,22 @@ int main(int argc, char **argv)
 
 
     //correct record info and stem info provided
-   	ASSERT(test(INDEX_DIR, recordId, 1, 3, keywords, true,bmis::PREFIX )==true);
+   	ASSERT(test(INDEX_DIR, recordId, 1, 3, keywords, true,srch2is::PREFIX )==true);
 
    	//correct record info and wrong stem info provided
-    ASSERT(test(INDEX_DIR, recordId, 1, 3 , keywords,false,bmis::PREFIX)==false);
+    ASSERT(test(INDEX_DIR, recordId, 1, 3 , keywords,false,srch2is::PREFIX)==false);
 
    	//wrong record info and correct stem info provided
-    ASSERT(test(INDEX_DIR, recordId, 1, 0, keywords,true,bmis::PREFIX)==false);
+    ASSERT(test(INDEX_DIR, recordId, 1, 0, keywords,true,srch2is::PREFIX)==false);
 
     keywords[0] = "walmart"; // This is a stemmed word in the records
     keywords[1] = "store";
 
     //correct record and stem info
-    ASSERT(test(INDEX_DIR, recordId, 1, 1, keywords, true,bmis::PREFIX )==true);
+    ASSERT(test(INDEX_DIR, recordId, 1, 1, keywords, true,srch2is::PREFIX )==true);
 
     //correct record and wrong stem info
-    ASSERT(test(INDEX_DIR, recordId, 1, 1, keywords, false,bmis::PREFIX )==false);
+    ASSERT(test(INDEX_DIR, recordId, 1, 1, keywords, false,srch2is::PREFIX )==false);
 
     std::cout << "Stemmer API tests passed." << std::endl;
 

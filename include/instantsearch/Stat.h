@@ -1,4 +1,4 @@
-// $Id: Stat.h 3441 2013-06-11 20:30:12Z sinakeshtkar $
+// $Id: Stat.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,7 +24,7 @@
 #include <iostream>
 #include "util/mytime.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

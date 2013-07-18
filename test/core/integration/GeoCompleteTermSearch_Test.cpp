@@ -14,24 +14,25 @@
 #include <cstdlib>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 Indexer *buildGeoIndex(string data_file, string index_dir)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::LocationIndex);
+    Schema *schema = Schema::create(srch2is::LocationIndex);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -106,7 +107,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    Query *query = new Query(bimaple::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::MapQuery);
 
 
     Term *term = NULL;
@@ -141,7 +142,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
 {
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    Query *query = new Query(bimaple::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::MapQuery);
     query->setRange(lb_lat,lb_lng,rt_lat,rt_lng);
     Rectangle *rectangleRange = new Rectangle();
     rectangleRange->min.x = lb_lat;
@@ -166,7 +167,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 {
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-	Query *query = new Query(bimaple::instantsearch::MapQuery);
+	Query *query = new Query(srch2::instantsearch::MapQuery);
 	query->setRange(lb_lat,lb_lng,radius);
 	Point pnt;
 	pnt.x=lb_lat;
@@ -201,7 +202,7 @@ int main(int argc, char **argv)
    unsigned mergeEveryNSeconds = 10;
    unsigned mergeEveryMWrites = 5;
 
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::load(indexMetaData);
 
     // Three records:
@@ -224,26 +225,26 @@ int main(int argc, char **argv)
     expected.clear();
 
     expected.push_back("1");
-    query(indexer, "prefix", -200.0, -200.0, 200.0, 200.0, bmis::COMPLETE, 0, expected);
+    query(indexer, "prefix", -200.0, -200.0, 200.0, 200.0, srch2is::COMPLETE, 0, expected);
     expected.clear();
 
 
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, bmis::COMPLETE, 0, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::COMPLETE, 0, expected);
 
     // TODO revive this test case after the bug in active node is fixed
     /*
     expected.push_back("1");
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, bmis::COMPLETE, 1, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::COMPLETE, 1, expected);
     expected.clear();
     */
 
     expected.push_back("1");
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, bmis::PREFIX, 0, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::PREFIX, 0, expected);
     expected.clear();
 
     expected.push_back("1");
     expected.push_back("2");
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, bmis::PREFIX, 1, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::PREFIX, 1, expected);
     expected.clear();
 
     delete indexer;

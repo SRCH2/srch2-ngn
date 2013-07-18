@@ -4,12 +4,12 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __TOKENIZER_H__
-#define __TOKENIZER_H__
+#ifndef __CORE_ANALYZER__TOKENIZER_H__
+#define __CORE_ANALYZER__TOKENIZER_H__
 
 #include "TokenOperator.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -34,4 +34,4 @@ public:
 	}
 };
 }}
-#endif /* __TOKENIZER_H__*/
+#endif /* __CORE_ANALYZER__TOKENIZER_H__*/

@@ -1,5 +1,5 @@
 
-// $Id: CacheIntegration_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+// $Id: CacheIntegration_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -146,8 +146,8 @@ int main(int argc, char **argv)
         unsigned mergeEveryNSeconds = 3;    
         unsigned mergeEveryMWrites = 5;
         
-        IndexMetaData *indexMetaData1 = new IndexMetaData( cache1, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
-        IndexMetaData *indexMetaData2 = new IndexMetaData( cache2, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+        IndexMetaData *indexMetaData1 = new IndexMetaData( cache1, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+        IndexMetaData *indexMetaData2 = new IndexMetaData( cache2, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
            
            Indexer *indexer1 = Indexer::load(indexMetaData1);
         Indexer *indexer2 = Indexer::load(indexMetaData2);

@@ -1,5 +1,5 @@
 
-// $Id: IndexerInternal.h 3441 2013-06-11 20:30:12Z sinakeshtkar $
+// $Id: IndexerInternal.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -41,7 +41,7 @@
 using std::vector;
 using std::string;
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -110,8 +110,7 @@ public:
                                          analyzer,
                                          schema,
                                          indexMetaData->trieBootstrapFileNameWithPath,
-                                         indexMetaData->licenseFileNameWithPath,
-                                         bimaple::instantsearch::NO_STEMMER_NORMALIZER
+                                         srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                          );
         this->initIndexReaderWriter(indexMetaData);
         // start merge threads after commit
@@ -120,8 +119,7 @@ public:
     IndexReaderWriter(IndexMetaData* indexMetaData)
     {
         // LOAD Index
-        this->index = IndexData::load(indexMetaData->directoryName,
-                      indexMetaData->licenseFileNameWithPath);
+        this->index = IndexData::load(indexMetaData->directoryName);
         this->initIndexReaderWriter(indexMetaData);
         this->startMergerThreads();
     };
@@ -197,12 +195,12 @@ public:
         return this->index;
     }
 
-    const bimaple::instantsearch::Analyzer *getAnalyzer() const
+    const srch2::instantsearch::Analyzer *getAnalyzer() const
     {
         return this->index->getAnalyzer();
     }
 
-    const bimaple::instantsearch::Schema *getSchema() const
+    const srch2::instantsearch::Schema *getSchema() const
     {
         return this->index->getSchema();
     }

@@ -6,7 +6,7 @@
 
 #include "CharSet.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

@@ -1,5 +1,5 @@
 
-// $Id: ActiveNode.h 3429 2013-06-10 09:13:54Z jiaying $
+// $Id: ActiveNode.h 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -31,7 +31,7 @@
 #include <set>
 #include <iostream>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

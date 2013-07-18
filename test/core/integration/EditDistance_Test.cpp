@@ -1,5 +1,5 @@
 
-// $Id: EditDistance_Test.cpp 3097 2012-12-19 00:55:28Z oliverax $
+// $Id: EditDistance_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -38,14 +38,14 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 //TODO To improve
 
 void buildLocalIndex(string INDEX_DIR)
 {
-    Schema *schema = Schema::create(bimaple::instantsearch::DefaultIndex);
+    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 
     schema->setPrimaryKey("article_id"); // integer, not searchable
 
@@ -54,7 +54,8 @@ void buildLocalIndex(string INDEX_DIR)
     //schema->setAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     // create a record of 3 attributes
     Record *record = new Record(schema);
@@ -65,7 +66,7 @@ void buildLocalIndex(string INDEX_DIR)
     Cache *cache = new Cache();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
@@ -108,7 +109,7 @@ void test1()
     Cache *cache = new Cache();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
     const Analyzer *analyzer = indexer->getAnalyzer();

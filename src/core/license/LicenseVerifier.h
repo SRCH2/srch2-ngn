@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

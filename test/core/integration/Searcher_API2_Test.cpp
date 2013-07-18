@@ -1,5 +1,5 @@
 
-// $Id: Searcher_API2_Test.cpp 2541 2012-05-18 16:25:03Z chenli $
+// $Id: Searcher_API2_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 
 #include <instantsearch/Analyzer.h>
@@ -24,8 +24,8 @@
 #include <cstring>
 
 using namespace std;
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 // This Integration test is for API 2 i.e term->addAttributeToFilterTermHits(attributeId);
 
@@ -34,14 +34,14 @@ void buildSimpleIndex(string INDEX_DIR)
 {
 
 	// Create a schema
-	bmis::Schema *schema = bmis::Schema::create(bimaple::instantsearch::DefaultIndex);
+	srch2is::Schema *schema = srch2is::Schema::create(srch2::instantsearch::DefaultIndex);
 	schema->setPrimaryKey("article_id"); // integer, by default not searchable
 	//schema->setSearchableAttribute("article_id"); // convert id to searchable text
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = Analyzer::create(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -52,7 +52,7 @@ void buildSimpleIndex(string INDEX_DIR)
 	// Step 2: Create records and add to the index
 
 	// Create a record of 3 attributes
-	bmis::Record *record = new bmis::Record(schema);
+	srch2is::Record *record = new srch2is::Record(schema);
 	record->setPrimaryKey(100); // give a value for the primary key
 	record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
 	record->setSearchableAttributeValue("article_title", "Yesterday Once More");
@@ -96,7 +96,7 @@ void buildSimpleIndex(string INDEX_DIR)
 	delete index;
 }
 
-bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, bmis::TermType type = bmis::PREFIX)
+bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigned noofhits, srch2is::TermType type = srch2is::PREFIX)
 {
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -105,10 +105,10 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 	Indexer *indexer = Indexer::load(indexMetaData1);
 
 	// Create an index searcher
-	bmis::IndexSearcher *indexSearcher = bmis::IndexSearcher::create(indexer);
+	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(indexer);
 
 	// STEP 2: Create a Query object and a QueryResults object
-	bmis::Query *query = new bmis::Query(bmis::TopKQuery);
+	srch2is::Query *query = new srch2is::Query(srch2is::TopKQuery);
 	string keywords [] = {
 			"another","brick"
 	};
@@ -117,11 +117,11 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 	// For each keyword above, add a corresponding fuzzy term to the query
 	for (unsigned i = 0; i < 2; ++i)
 	{
-		//bmis::TermType type = bmis::PREFIX; // prefix matching
-		//bmis::TermType type = bmis::COMPLETE; // use it for complete matching
+		//srch2is::TermType type = srch2is::PREFIX; // prefix matching
+		//srch2is::TermType type = srch2is::COMPLETE; // use it for complete matching
 		unsigned termBoost = 1;
 		unsigned similarityBoost = 100;
-		bmis::Term *term = bmis::FuzzyTerm::create(keywords[i],
+		srch2is::Term *term = srch2is::FuzzyTerm::create(keywords[i],
 				type,
 				termBoost,
 				similarityBoost,
@@ -130,7 +130,7 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 		query->add(term);
 	}
 
-	bmis::QueryResults *queryResults = bmis::QueryResults::create(indexSearcher, query);
+	srch2is::QueryResults *queryResults = srch2is::QueryResults::create(indexSearcher, query);
 
 	// Step 3: Search the index and display results
 
@@ -171,29 +171,29 @@ int main(int argc, char **argv)
 	vector<unsigned> recordId;
 
 	recordId.push_back(500);
-	ASSERT( test(INDEX_DIR, recordId, 0, 1, bmis::PREFIX) == true);
+	ASSERT( test(INDEX_DIR, recordId, 0, 1, srch2is::PREFIX) == true);
 
 	recordId.clear();
 	recordId.push_back(300);
 	recordId.push_back(400);
-	ASSERT( test(INDEX_DIR, recordId, 1, 2, bmis::PREFIX) == true);
+	ASSERT( test(INDEX_DIR, recordId, 1, 2, srch2is::PREFIX) == true);
 
 	recordId.clear();
 	recordId.push_back(300);
-	ASSERT( test(INDEX_DIR, recordId, 0, 2, bmis::PREFIX) == false);
+	ASSERT( test(INDEX_DIR, recordId, 0, 2, srch2is::PREFIX) == false);
 
 	recordId.clear();
 	recordId.push_back(500);
-	ASSERT( test(INDEX_DIR, recordId, 0, 1, bmis::COMPLETE) == true);
+	ASSERT( test(INDEX_DIR, recordId, 0, 1, srch2is::COMPLETE) == true);
 
 	recordId.clear();
 	recordId.push_back(400);
 	recordId.push_back(300);
-	ASSERT( test(INDEX_DIR, recordId, 1, 2, bmis::COMPLETE) == true);
+	ASSERT( test(INDEX_DIR, recordId, 1, 2, srch2is::COMPLETE) == true);
 
 	recordId.clear();
 	recordId.push_back(300);
-	ASSERT( test(INDEX_DIR, recordId, 0, 2, bmis::COMPLETE) == false);
+	ASSERT( test(INDEX_DIR, recordId, 0, 2, srch2is::COMPLETE) == false);
 
 
 	std::cout << "Searcher API tests passed." << std::endl;

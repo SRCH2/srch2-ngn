@@ -1,4 +1,4 @@
-//$Id: IndexerInternal.cpp 3094 2012-12-17 20:18:20Z oliverax $
+//$Id: IndexerInternal.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,7 +20,7 @@
 
 #include "operation/IndexerInternal.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

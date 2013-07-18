@@ -1,4 +1,4 @@
-//$Id: IndexUtil.cpp 3065 2012-12-06 01:33:50Z oliverax $
+//$Id: IndexUtil.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -19,7 +19,7 @@
 
 #include "IndexUtil.h"
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {

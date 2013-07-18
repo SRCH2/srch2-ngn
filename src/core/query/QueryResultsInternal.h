@@ -1,5 +1,5 @@
 
-// $Id: QueryResultsInternal.h 3410 2013-06-05 12:58:08Z jiaying $
+// $Id: QueryResultsInternal.h 3480 2013-06-19 08:00:34Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -31,7 +31,7 @@
 #include <string>
 #include <set>
 
-namespace bimaple
+namespace srch2
 {
 namespace instantsearch
 {
@@ -44,6 +44,7 @@ struct QueryResult {
     unsigned internalRecordId;
     float score;
     std::vector<std::string> matchingKeywords;
+    std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
     
     // only the results of MapQuery have this
@@ -81,6 +82,8 @@ public:
     
     void getMatchingKeywords(const unsigned position, vector<string> &matchingKeywords) const;
     void getEditDistances(const unsigned position, vector<unsigned> &editDistances) const;
+    void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const;
+    void getMatchedAttributes(const unsigned position, std::vector<vector<unsigned> > &matchedAttributes) const;
     
     // only the results of MapQuery have this
     double getPhysicalDistance(const unsigned position) const; // TODO check if there is a better way to structure the "location result"
@@ -101,6 +104,8 @@ public:
     
     void printStats() const;
     
+    void printResult() const;
+
     void addMessage(const char* msg)
     {
         this->stat->addMessage(msg);

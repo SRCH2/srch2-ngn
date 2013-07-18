@@ -1,4 +1,4 @@
-//$Id: AttributedBasedSearch_Test.cpp 3419 2013-06-06 12:43:09Z jiaying $
+//$Id: AttributedBasedSearch_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
 #include <analyzer/AnalyzerInternal.h>
 #include <instantsearch/Indexer.h>
@@ -18,25 +18,25 @@
 
 using namespace std;
 
-namespace bmis = bimaple::instantsearch;
-using namespace bmis;
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
 
 Indexer *buildIndex(string data_file, string index_dir, string expression)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(bmis::DefaultIndex, bimaple::instantsearch::FIELDBITINDEX);
+    Schema *schema = Schema::create(srch2is::DefaultIndex, srch2::instantsearch::FIELDBITINDEX);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new StandardAnalyzer(bimaple::instantsearch::NO_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "", "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -94,10 +94,10 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
 }
 
 void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const vector<string> &searchKeywords,
-                unsigned numOfResults, const vector<string> &resultIds)
+                unsigned numOfResults, const vector<string> &resultIds, const vector<vector<unsigned> > &resultAttributeBitmap)
 {
     
-    Query *query = new Query(bimaple::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
     QueryResults *queryResults = QueryResults::create(indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
@@ -112,9 +112,14 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
     indexSearcher->search(query, queryResults, k);
 
     ASSERT(queryResults->getNumberOfResults() == numOfResults);
+
+    vector<unsigned> matchedAttributeBitmap;
     for (unsigned i = 0; i< numOfResults; ++i)
     {
         ASSERT(queryResults->getRecordId(i) == resultIds[i]);
+        queryResults->getMatchedAttributeBitmaps(i, matchedAttributeBitmap);
+        for(int j = 0; j< matchedAttributeBitmap.size(); j++)
+        	ASSERT(matchedAttributeBitmap[j] == resultAttributeBitmap[i][j]);
     }
 
     delete queryResults;
@@ -135,6 +140,7 @@ void test(string index_dir, string data_file)
     searchKeywords.push_back("jack");
 
     vector<string> resultIds;
+    vector<vector<unsigned> > resultAttributeBitmap;
     unsigned numOfResults = 0;
 
     // case 1
@@ -144,10 +150,15 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     resultIds.push_back("4");
     numOfResults = 3;
+    resultAttributeBitmap.resize(3);
+    resultAttributeBitmap[0].push_back(2);
+    resultAttributeBitmap[1].push_back(2);
+    resultAttributeBitmap[2].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds);
+    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
+    resultAttributeBitmap.clear();
 
     cout << "case 1 passed." << endl;
 
@@ -157,10 +168,14 @@ void test(string index_dir, string data_file)
     resultIds.push_back("1");
     resultIds.push_back("4");
     numOfResults = 2;
+    resultAttributeBitmap.resize(2);
+    resultAttributeBitmap[0].push_back(1);
+    resultAttributeBitmap[1].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds);
+    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
+    resultAttributeBitmap.clear();
 
     cout << "case 2 passed." << endl;
 
@@ -172,10 +187,16 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     resultIds.push_back("4");
     numOfResults = 4;
+    resultAttributeBitmap.resize(4);
+    resultAttributeBitmap[0].push_back(1);
+    resultAttributeBitmap[1].push_back(2);
+    resultAttributeBitmap[2].push_back(2);
+    resultAttributeBitmap[3].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds);
+    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
+    resultAttributeBitmap.clear();
 
     cout << "case 3 passed." << endl;
 
@@ -185,10 +206,13 @@ void test(string index_dir, string data_file)
 
     resultIds.push_back("4");
     numOfResults = 1;
+    resultAttributeBitmap.resize(1);
+    resultAttributeBitmap[0].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds);
+    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
+    resultAttributeBitmap.clear();
 
     cout << "case 4 passed." << endl;
 
@@ -200,8 +224,13 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     resultIds.push_back("4");
     numOfResults = 4;
+    resultAttributeBitmap.resize(4);
+    resultAttributeBitmap[0].push_back(1);
+    resultAttributeBitmap[1].push_back(2);
+    resultAttributeBitmap[2].push_back(2);
+    resultAttributeBitmap[3].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds);
+    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
 
