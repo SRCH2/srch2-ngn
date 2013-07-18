@@ -183,42 +183,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 ####################################################################################################
 #CPack tarballing code!
 
-#INSTALL "ALICE" CMake files
-FILE(GLOB CMAKE_INSTALL_FILES "cmake/*[^_p].cmake" ) 
-INSTALL(FILES ${CMAKE_INSTALL_FILES} DESTINATION "cmake/modules" )
+#INSTALL  
+SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Files. e.g., the config file")
+SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
+INSTALL(DIRECTORY docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
 
-FILE(GLOB CMAKE_INSTALL_MAIN_FILE "cmake/install/CMakeLists_main.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_MAIN_FILE} DESTINATION . RENAME CMakeLists.txt)
+INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
 
-FILE(GLOB CMAKE_INSTALL_examples_python_FILE "cmake/install/CMakeLists_examples_python.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_examples_python_FILE} DESTINATION "examples/python" RENAME CMakeLists.txt)
+INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.ini DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 
-FILE(GLOB CMAKE_INSTALL_examples_c++_FILE "cmake/install/CMakeLists_examples_c++.txt" )
-INSTALL(FILES ${CMAKE_INSTALL_examples_c++_FILE} DESTINATION "examples/c++" RENAME CMakeLists.txt)
-
-FILE(GLOB README_FILE "cmake/install/README.txt" )
-INSTALL(FILES ${README_FILE} DESTINATION .)
-
-FILE(GLOB license_key_FILE "cmake/install/srch2_license_key.txt")
-INSTALL(FILES ${license_key_FILE} DESTINATION "license")
-
-FILE(GLOB license_docs_FILE "cmake/install/license_docs/*[^_p].htm" )
-INSTALL(FILES ${license_docs_FILE} DESTINATION "license" )
-INSTALL(FILES ${license_docs_FILE} DESTINATION "docs/Srch2-API" )
-
-# INSTALL examples
-FILE(GLOB SRCH2_c++_EXAMPLE_FILES "examples/c++/[^_]*.cpp")
-INSTALL(FILES ${SRCH2_c++_EXAMPLE_FILES} DESTINATION "examples/c++")
-
-FILE( GLOB FRONTEND_FILES "${CMAKE_SOURCE_DIR}/examples/c++/SearchFCGI-frontend/index.*")
-INSTALL(FILES ${FRONTEND_FILES} DESTINATION "examples/c++/SearchFCGI-frontend/" )
-
-FILE(GLOB SRCH2_python_EXAMPLE_FILES "examples/python/[^_]*.py" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_swigPYTHON_wrap.cxx" "${CMAKE_BINARY_DIR}/swig/srch2_instantsearch_python.py")
-INSTALL(FILES ${SRCH2_python_EXAMPLE_FILES} DESTINATION "examples/python")
-
-FILE(GLOB EMPTY_TEST_FOLDER "examples/c++/testIndexDirectory/test.txt")
-INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/c++/testIndexDirectory")
-INSTALL(FILES ${EMPTY_TEST_FOLDER} DESTINATION "examples/python/testIndexDirectory")
+INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
 
 #Packaging
 SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$;\\\\.cmake$;\\\\.tar.gz$;\\\\.so[.0-9]*$;/build/;/_CPack_Packages/;/CMakeFiles/;/CVS/;/\\\\.svn/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
@@ -227,23 +201,18 @@ SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$
 SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_IGNORE_FILES})
 SET(CPACK_SOURCE_GENERATOR TGZ ZIP)
 SET(CPACK_SOURCE_TOPLEVEL_TAG "")
-SET(CPACK_PACKAGE_NAME "srch2-instantsearch")
-SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant search library")
+SET(CPACK_PACKAGE_NAME "srch2-engine")
+SET(CPACK_PACKAGE_DESCRIPTION "The Instant Typo-Tolerant Search Engine")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "www.srch2.com")
-SET(CPACK_PACKAGE_CONTACT "contact@srch2.com ")
-SET(CPACK_PACKAGE_VENDOR "Srch2 Technology Inc")
-SET(CPACK_PACKAGE_VERSION_MAJOR "1")
-SET(CPACK_PACKAGE_VERSION_MINOR "0")
-SET(CPACK_PACKAGE_VERSION_PATCH "0")
-SET(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Srch2")
+SET(CPACK_PACKAGE_CONTACT "contact@srch2.com")
+SET(CPACK_PACKAGE_VENDOR "Srch2 Software Inc.")
 
-INCLUDE (InstallRequiredSystemLibraries)
-#SET (CPACK_RESOURCE_FILE_LICENSE  "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-SET(CPACK_CMAKE_GENERATOR "Unix Makefiles")
-#SET(CPACK_GENERATOR "DEB;TGZ;")
+# Note: Version should be passed as input to cmake file. e.g -DVERSION:STRING="3.1.0" 
+SET(VERSION "" CACHE STRING "Version Number") 
+
 SET(CPACK_GENERATOR "TGZ;")
-SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}-${CMAKE_SYSTEM_PROCESSOR}")
+
+SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 INCLUDE(CPack)
 
 # enable dashboard scripting
