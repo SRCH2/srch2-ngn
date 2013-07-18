@@ -7,7 +7,8 @@ ENABLE_TESTING()
 
 ADD_SUBDIRECTORY(core/unit)
 ADD_SUBDIRECTORY(core/integration)
-ADD_SUBDIRECTORY(wrapper)
+ADD_SUBDIRECTORY(wrapper/unit)
+ADD_SUBDIRECTORY(wrapper/integration)
 
 SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 SET(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes --leak-check=full --show-reachable=yes")
@@ -141,7 +142,7 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 
 #wrapper related tests should be added below this line
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test)
-ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test")
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test)
+ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test")
 
 

@@ -53,15 +53,21 @@ unsigned setAttributePositionBitVector(unsigned attribute, unsigned position) {
 //    return 1 << attribute;
 }
 
-bool isEmpty(const string &inString) {
-	return inString.compare("") == 0;
+bool isEmpty(const string &inString)
+{
+    return inString.compare("") == 0;
 }
-
+/*
+ * Important:
+ *   Since this AnalyzerInternal class can be inherited by other superclasses, it's a common practice to initialize these
+ *   parameters in this superclass, rather than doing the initialization in the subclasses. In fact, if we let the subclasses
+ *   do the initialization, for some reason our engine doesn't work on Android.
+ */
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
+		const std::string &recordAllowedSpecialCharacters,
 		const std::string &stemmerFilePath,
 		const std::string &stopWordFilePath,
 		const std::string &synonymFilePath,
-		const std::string &recordAllowedSpecialCharacters,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
@@ -69,29 +75,10 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	prepareRegexExpression();
 	sharedToken.reset(new SharedToken);
 	this->stemmerType = stemmerFlag;
-	this->stemmerFilePath = stemmerFilePath;
 	this->stopWordFilePath = stopWordFilePath;
 	this->synonymFilePath = synonymFilePath;
 	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
-}
 
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-		const std::string &recordAllowedSpecialCharacters) {
-	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
-	this->stemmerType = stemmerFlag;
-	this->stemmerFilePath = "";
-	this->stopWordFilePath = "";
-	this->synonymFilePath = "";
-}
-
-AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
-	this->recordAllowedSpecialCharacters =
-			analyzerInternal.recordAllowedSpecialCharacters;
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
 }
 
 void AnalyzerInternal::loadData(const std::string &s) const {
