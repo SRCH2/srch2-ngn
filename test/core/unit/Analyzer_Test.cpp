@@ -18,7 +18,6 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-//
 // This test is to verify the correctness of Analyzer to token a string.
 
 #include <stdio.h>  /* defines FILENAME_MAX */
@@ -104,6 +103,12 @@ void testStandardAnalyzer()
 }
 
 void testLowerCase() {
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################";
+	cout << "#########################################################################" << "LowerCase Filter" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
 	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
@@ -150,11 +155,10 @@ void testLowerCase() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
-					<< endl;
+			cout << originalWords[i] << "   =>   " << src << " " << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -165,6 +169,15 @@ void testLowerCase() {
 
 
 void testStemmerFilter() {
+	cout << "\n\n";
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << "Stemmer Filter" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "stemmer File: " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
+
+
 	// if it is true, it prints the results of the test, else id doesn't
 	bool printFlag = true;
 
@@ -204,17 +217,21 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
-					<< endl;
+			cout << originalWords[i] << "   =>   " << src << " " << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
+
+
 
 	if (printFlag) {
 		cout << endl << endl << "TEST 2: Stem English Words" << endl;
 	}
+
+
+
 	// TEST 2 (stem English words)
 	src = "Our instructions package shoWs the results";
 	simpleAnlyzer->loadData(src);
@@ -240,13 +257,15 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
-					<< endl;
+			cout << originalWords[i] << "   =>   " << src << " " << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
+
+
+
 
 	if (printFlag) {
 		cout << endl << endl << "TEST 3: Stem English & Non-English Words"
@@ -281,11 +300,10 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
-					<< endl;
+			cout << originalWords[i] << "   =>   " << src << " " << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -295,6 +313,15 @@ void testStemmerFilter() {
 }
 
 void testStopFilter() {
+	cout << "\n\n";
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << "Stop Filter" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
+	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
+
 	// if it is true, it prints the results of the test, else id doesn't
 	bool printFlag = true;
 
@@ -338,11 +365,10 @@ void testStopFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << vectorString[i] << " "
-					<< endl;
+			cout << originalWords[i] << "   =>   " << src << " " << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -352,6 +378,16 @@ void testStopFilter() {
 }
 
 void testSynonymFilter() {
+	cout << "\n\n";
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << "Stop Filter" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "#########################################################################" << endl;
+	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
+	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n";
+	cout << "stynonym File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt" << "\n\n";
+
 	// if it is true, it prints the results of the test, else id doesn't
 	bool printFlag = true;
 
@@ -387,10 +423,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -430,10 +466,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "------- SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -479,10 +515,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -534,10 +570,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "------- SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -604,10 +640,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -637,10 +673,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-//		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "------- SynonymFilter:  " <<  src << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -673,10 +709,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -710,10 +746,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "------- SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -748,10 +784,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "+++++++ SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
@@ -783,10 +819,10 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		ASSERT(vectorString[i] == src);
 		if (printFlag) {
 			cout << "------- SynonymFilter:  " << src  << endl;
 		}
+		ASSERT(vectorString[i] == src);
 		i++;
 	}
 

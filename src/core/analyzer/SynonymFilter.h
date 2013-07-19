@@ -21,6 +21,13 @@
 #define waitForNextToken true
 #define checkExistingTokens false
 
+typedef enum{
+	SYNONYM_PREFIX_ONLY,
+	SYNONYM_COMPLETE_ONLY,
+	SYNONYM_PREFIX_AND_COMPLETE,
+	SYNONYM_NOT_PREFIX_NOT_COMPLETE
+} SynonymTokenType;
+
 
 using namespace std;
 
@@ -65,26 +72,9 @@ private:
 	 * C D => E
 	 * F => H
 	 * G => H
+	 * TODO: update this comment
 	 */
-	map<std::string, std::string> synonymMap;
-
-	/*
-	 * prefixMap is the map of prefixes to their count
-	 * if their count is 1, their value is false
-	 * if their count is more than 1, their value is true
-	 *
-	 * Example:
-	 *
-	 * if we have this synonym:
-	 *      new york=>ny
-	 *      new york city=>nyc
-	 *
-	 * The prefixMap's elements will be as following:
-	 *      new => true (the count is 2)
-	 *      new york => true (the count is 2)
-	 *      new york city => false (the count is 1)
-	 */
-	map<std::string, bool> prefixMap;
+	map<std::string, pair<SynonymTokenType, std::string> > synonymMap;
 
 	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
@@ -105,7 +95,7 @@ private:
 	/*
 	 *  Checks the synonym map and returns the number of keys which have the word as their substring happening at the begining
 	 */
-	int numberOfKeysHavingTokenAsPrefix(const std::string &);
+	int getTokenTypeOf(const std::string &);
 
 	/*
 	 * put the synonyms of existing tokens into emit token
@@ -117,12 +107,6 @@ private:
 	 * returns NULL if there is no such a key
 	 */
 	const std::string getSynonymOf(const std::string &);
-
-	/*
-	 * returns true if the key is one of the keys of synonym map
-	 * returns false otherwise
-	 */
-	bool isCurrentTokenExistInSynonymMap(const std::string &key);
 
 	/*
 	 * it emits the first member of the temporaryToken vedctor.
@@ -137,7 +121,6 @@ private:
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & synonymMap;
-		ar & prefixMap;
 		ar & emitBuffer;
 		ar & tokenBuffer;
 		ar & keepOriginFlag;

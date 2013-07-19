@@ -75,6 +75,7 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	prepareRegexExpression();
 	sharedToken.reset(new SharedToken);
 	this->stemmerType = stemmerFlag;
+	this->stemmerFilePath = stemmerFilePath;
 	this->stopWordFilePath = stopWordFilePath;
 	this->synonymFilePath = synonymFilePath;
 	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
