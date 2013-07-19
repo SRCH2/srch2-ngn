@@ -34,10 +34,6 @@
 #include <vector>
 #include <memory>
 
-#ifndef __MACH__ // on linux only
-#include <malloc.h>
-#endif
-
 using std::vector;
 using std::string;
 

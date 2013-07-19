@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
-
+#include <cstdlib>
 //fcntl.h and stdio.h are implicitly included in Mac OSX g++ but on Linux it should be added explicitly.
 //It is safe for both platforms to include them both here.
 
