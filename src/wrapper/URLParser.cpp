@@ -179,7 +179,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         string sep;
         sep += URLParser::queryDelimiter;
         vector<string> queryKeywordsVector;
-        vector<string> termTypesVector;
+        vector<string> termTypesStringVector;
+        vector<srch2is::TermType> termTypesVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
         float lengthBoost;
@@ -204,8 +205,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 else
                 {
                     analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordsVector);
-                    //check the last character is whitespace(which is transformed by "+")
-                    //and eg: "q=trus+", take "trus" as complete search
+                    //check whether or not the last character is a whitespace (which is transformed from "+")
+                    //For example, for a query "q=trus+", we will take "trus" as a complete term.
                     string query=string(keywordsParamName_cstar);
 
 	            if(query.substr(query.length()-1, 1) == " ")
@@ -280,12 +281,21 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 delete termTypesParamName_cstar;
 
                 //use delimiter to decode options for every keyword
-                boost::split(termTypesVector, termTypesParamName_str, boost::is_any_of(sep));
-                if(termTypesVector.size() != numberOfKeywords){
+                boost::split(termTypesStringVector, termTypesParamName_str, boost::is_any_of(" "));
+                if(termTypesStringVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of TermTypes doesn't match the number of keywords\"}";
                     return;
                 }
+                for(int idx=0;idx<termTypesStringVector.size();idx++)
+				{
+					if( atoi(termTypesStringVector[idx].c_str()) == 0)
+					{
+						termTypesVector.push_back(srch2is::PREFIX);
+					}
+					else
+						termTypesVector.push_back(srch2is::COMPLETE);
+				}
 
             }
             else
@@ -294,10 +304,15 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 {
                     for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++)
                     {
-                        termTypesVector.push_back("1");
+                        termTypesVector.push_back(srch2is::COMPLETE);
                     }
                     if(queryKeywordsVector[numberOfKeywords - 1] != " ")
-                    	termTypesVector.push_back("0");
+                    {
+                    	if (!indexDataContainerConf->getQueryTermType())
+                    		termTypesVector.push_back(srch2is::PREFIX);
+                    	else
+                    		termTypesVector.push_back(srch2is::COMPLETE);
+                    }
                     else
                     {
                     	queryKeywordsVector.pop_back();
@@ -604,15 +619,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         //for each keyword, build the exact terms
         for (unsigned i = 0; i < numberOfKeywords; ++i)
         {
-            srch2is::TermType type;
-            if (indexDataContainerConf->getQueryTermType())
-            {
-            	type = srch2is::COMPLETE;
-            }
-            else
-            {
-            	type = atoi(termTypesVector[i].c_str()) == 0 ? srch2is::PREFIX : srch2is::COMPLETE;
-            }
+            srch2is::TermType type = termTypesVector[i];
+
             unsigned termBoost;
             if (termBoostsVectorValid){
                 termBoost = atoi(termBoostsVector[i].c_str());
