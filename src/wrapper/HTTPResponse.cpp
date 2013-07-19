@@ -222,7 +222,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         }
     }
 
-    Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
+    Logger::info("searcher_time: %.2f ms, payload_access_time: %.2f ms", logQueries.c_str(), ts1, ts2);
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
     
 }
@@ -562,6 +562,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     URLParserHelper urlParserHelper;
 
     evkeyvalq headers;
+    Logger::info("%s", req->uri+1);
     evhttp_parse_query(req->uri, &headers);
     
     // CHENLI: DEBUG
