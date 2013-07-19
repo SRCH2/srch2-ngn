@@ -39,6 +39,7 @@
 #include "util/half.h"
 #include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/Score.h"
+#include "util/mytime.h"
 
 using std::vector;
 using std::fstream;

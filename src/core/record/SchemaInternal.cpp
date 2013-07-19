@@ -133,7 +133,8 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
     }
     else {
-        this->searchableAttributeNameToId[attributeName] = this->searchableAttributeNameToId.size() - 1;
+    	int searchAttributeMapSize= this->searchableAttributeNameToId.size();
+        this->searchableAttributeNameToId[attributeName] = searchAttributeMapSize;
         this->searchableAttributeBoostVector.push_back(attributeBoost);
     }
     return this->searchableAttributeNameToId.size() - 1;

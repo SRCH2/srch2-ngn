@@ -33,7 +33,6 @@
 #include <sstream>
 #include <vector>
 #include <memory>
-#include <malloc.h>
 
 using std::vector;
 using std::string;

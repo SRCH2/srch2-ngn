@@ -204,6 +204,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 else
                 {
                     analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordsVector);
+                    //check the last character is whitespace(which is transformed by "+")
+                    //and eg: "q=trus+", take "trus" as complete search
+                    string query=string(keywordsParamName_cstar);
+
+	            if(query.substr(query.length()-1, 1) == " ")
+	            {
+	            	queryKeywordsVector.push_back(" ");
+	            }
                     filters.assign(queryKeywordsVector.size(), 1);
                 }
                 delete keywordsParamName_cstar;
@@ -259,7 +267,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
 
 
-        const unsigned numberOfKeywords = queryKeywordsVector.size();
+        unsigned numberOfKeywords = queryKeywordsVector.size();
 
         {
             const char *termTypesParamName = evhttp_find_header(&headers, URLParser::termTypesParamName);
@@ -288,7 +296,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                     {
                         termTypesVector.push_back("1");
                     }
-                    termTypesVector.push_back("0");
+                    if(queryKeywordsVector[numberOfKeywords - 1] != " ")
+                    	termTypesVector.push_back("0");
+                    else
+                    {
+                    	queryKeywordsVector.pop_back();
+                    	numberOfKeywords = numberOfKeywords - 1;
+                    }
+
                 }
             }
         }
