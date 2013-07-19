@@ -1,4 +1,4 @@
-//$Id: ts_shared_ptr.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: ts_shared_ptr.h 3441 2013-06-11 20:30:12Z sinakeshtkar $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,7 +20,7 @@
 #ifndef __TS_SHARED_PTR_H__
 #define __TS_SHARED_PTR_H__
 
-#include <pthread.h>
+#include "../mypthread.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
