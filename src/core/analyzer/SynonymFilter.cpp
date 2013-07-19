@@ -1,103 +1,103 @@
-	// $Id: StopFilter.cpp 3074 2013-21-06 22:26:36Z iman $
+// $Id: StopFilter.cpp 3074 2013-21-06 22:26:36Z iman $
 
-	/*
-	 * SynonymFilter.cpp
-	 *
-	 *  Created on: Jun 21, 2013
-	 *      Author: iman
-	 */
+/*
+ * SynonymFilter.cpp
+ *
+ *  Created on: Jun 21, 2013
+ *      Author: iman
+ */
 
-	/*
-	 * The Software is made available solely for use according to the License Agreement. Any reproduction
-	 * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
-	 * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
-	 * maximum extent possible.
-	 *
-	 * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
-	 * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
-	 * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
-	 * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
-	 * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
-	 * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
-	 * WITH THE USE OR PERFORMANCE OF SOFTWARE.
+/*
+ * The Software is made available solely for use according to the License Agreement. Any reproduction
+ * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
+ * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
+ * maximum extent possible.
+ *
+ * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
+ * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
+ * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
+ * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
-	 * Copyright © 2010 SRCH2 Inc. All rights reserved
-	 */
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
+ */
 
-	#include "SynonymFilter.h"
+#include "SynonymFilter.h"
 
-	#include <string>
-	#include <iostream>
-	#include <stdio.h>
-	#include <fstream>
-	#include <string>
+#include <string>
+#include <iostream>
+#include <stdio.h>
+#include <fstream>
+#include <string>
 
-	using namespace std;
+using namespace std;
 
-	namespace srch2 {
-	namespace instantsearch {
+namespace srch2 {
+namespace instantsearch {
 
-	SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
-			const std::string &synonymFilterFilePath,
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-			TokenFilter(tokenOperator), synonymDelimiter("=>") {
-		this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
-		this->createMaps(synonymFilterFilePath); // construct the synoymMap
-		this->keepOriginFlag = synonymKeepOriginFlag;
-	}
+SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
+		const std::string &synonymFilterFilePath,
+		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
+		TokenFilter(tokenOperator), synonymDelimiter("=>") {
+	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
+	this->createMaps(synonymFilterFilePath); // construct the synoymMap
+	this->keepOriginFlag = synonymKeepOriginFlag;
+}
 
-	void SynonymFilter::createMaps(const std::string &synonymFilePath) {
-		//  using file path to create an ifstream object
-		std::ifstream input(synonymFilePath.c_str());
-		//	Reads the map file line by line and fills the map
-		std::string line;
-		while (getline(input, line)) {
-			/*
-			 * for example we have "A=>B" in the file
-			 * "A" is leftHandSide
-			 * "B" is rightHandSide
-			 */
-			std::size_t index = line.find(this->synonymDelimiter);
-			// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
-			if (index <= 0) { //TODO: write a message in logger
-				continue;
+void SynonymFilter::createMaps(const std::string &synonymFilePath) {
+	//  using file path to create an ifstream object
+	std::ifstream input(synonymFilePath.c_str());
+	//	Reads the map file line by line and fills the map
+	std::string line;
+	while (getline(input, line)) {
+		/*
+		 * for example we have "A=>B" in the file
+		 * "A" is leftHandSide
+		 * "B" is rightHandSide
+		 */
+		std::size_t index = line.find(this->synonymDelimiter);
+		// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
+		if (index <= 0) { //TODO: write a message in logger
+			continue;
+		}
+		string leftHandSide = line.substr(0, index);
+		string rightHandSide = line.substr(index + 2);
+
+
+		std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
+		if (pos != this->synonymMap.end()) {
+			if (this->synonymMap[leftHandSide].first == SYNONYM_PREFIX_ONLY) {
+				this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
+				this->synonymMap[leftHandSide].second =  rightHandSide;
 			}
-			string leftHandSide = line.substr(0, index);
-			string rightHandSide = line.substr(index + 2);
+		} else {
+			this->synonymMap.insert(std::pair<string, pair<SynonymTokenType, std::string> >
+					(leftHandSide, make_pair(SYNONYM_COMPLETE_ONLY, rightHandSide)));
+		}
 
-
+		// adding leftHandSide to the prefixMap
+		std::size_t found ;
+		while (true) {
+			found = leftHandSide.rfind(" ");
+			if (found == std::string::npos) {
+				break;
+			}
+			leftHandSide = leftHandSide.substr(0, found);
 			std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
 			if (pos != this->synonymMap.end()) {
-				if (this->synonymMap[leftHandSide].first == SYNONYM_PREFIX_ONLY) {
+				if (this->synonymMap[leftHandSide].first == SYNONYM_COMPLETE_ONLY) {
 					this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-					this->synonymMap[leftHandSide].second =  rightHandSide;
 				}
 			} else {
 				this->synonymMap.insert(std::pair<string, pair<SynonymTokenType, std::string> >
-						(leftHandSide, make_pair(SYNONYM_COMPLETE_ONLY, rightHandSide)));
+						(leftHandSide, make_pair(SYNONYM_PREFIX_ONLY, "")));
 			}
-
-			// adding leftHandSide to the prefixMap
-			std::size_t found ;
-			while (true) {
-				found = leftHandSide.rfind(" ");
-				if (found == std::string::npos) {
-					break;
-				}
-				leftHandSide = leftHandSide.substr(0, found);
-				std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
-				if (pos != this->synonymMap.end()) {
-					if (this->synonymMap[leftHandSide].first == SYNONYM_COMPLETE_ONLY) {
-						this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-					}
-				} else {
-					this->synonymMap.insert(std::pair<string, pair<SynonymTokenType, std::string> >
-							(leftHandSide, make_pair(SYNONYM_PREFIX_ONLY, "")));
-				}
-			}
-
 		}
+
 	}
+}
 
 
 int SynonymFilter::getTokenTypeOf(const std::string &prefixToken) {
