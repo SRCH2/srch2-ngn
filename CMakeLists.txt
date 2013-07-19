@@ -42,23 +42,21 @@ SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 
-SET(MAC_OS OFF BOOL)
-SET(LINUX_OS OFF BOOL)
+SET(MAC_OS OFF CACHE BOOL "")
+SET(LINUX_OS OFF CACHE BOOL "")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     MESSAGE(STATUS "PLATFORM = LINUX")
-    SET(MAC_OS ON)
+    SET(LINUX_OS ON)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "PLATFORM = MAC OS")
-    SET(LINUX_OS ON)
-ENDIF()
-
-IF(MAC_OS)
-   SET(BUILD_STATIC OFF)  #static linking is "not supported" in macos.
+    SET(MAC_OS ON)
 ENDIF()
 
 IF (BUILD_STATIC)
+   IF(LINUX_OS)
    SET(CMAKE_EXE_LINKER_FLAGS -static)
    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  
+   ENDIF()
 ENDIF (BUILD_STATIC) 
 
 #BUILD TYPE
@@ -156,9 +154,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	MESSAGE(STATUS "Buildling for 32 bit platform")
 	LINK_DIRECTORIES("/usr/lib/")
      ENDIF ()
-
+     IF (LINUX_OS)
 	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
-
+     ELSEIF (MAC_OS)
+        SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
+     ENDIF ()   
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
 	ADD_SUBDIRECTORY(src/core)
@@ -167,8 +167,12 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
-	ELSE (BUILD_STATIC)
-		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+	ELSE ()
+            IF(MAC_OS) 
+      		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
+            ELSE()
+                SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+            ENDIF()
 	ENDIF()
 
 	ADD_SUBDIRECTORY(src/wrapper)
