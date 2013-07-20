@@ -170,7 +170,6 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         string sep;
         sep += URLParser::queryDelimiter;
         vector<string> queryKeywordsVector;
-        vector<string> termTypeStringVector;
         vector<srch2is::TermType> termTypeVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
@@ -259,20 +258,21 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 std::string termTypesParamName_str = string(termTypesParamName_cstar);
                 delete termTypesParamName_cstar;
 
+                for (unsigned idx=0; idx<termTypesParamName_str.size(); idx++){
+					if (termTypesParamName_str[idx] == '0'){
+						termTypeVector.push_back(srch2is::PREFIX);
+					}
+					else if (termTypesParamName_str[idx] == '1')
+						termTypeVector.push_back(srch2is::COMPLETE);
+				}
                 //use delimiter to decode options for every keyword
-                boost::split(termTypeStringVector, termTypesParamName_str, boost::is_any_of(" "));
-                if (termTypeStringVector.size() != numberOfKeywords){
+                //boost::split(termTypeStringVector, termTypesParamName_str, boost::is_any_of(" "));
+                if (termTypeVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of TermTypes doesn't match the number of keywords\"}";
                     return;
                 }
-                for (int idx=0; idx<termTypeStringVector.size(); idx++){
-					if (atoi(termTypeStringVector[idx].c_str()) == 0){
-						termTypeVector.push_back(srch2is::PREFIX);
-					}
-					else
-						termTypeVector.push_back(srch2is::COMPLETE);
-				}
+
 
             }
             else{
