@@ -604,14 +604,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         //for each keyword, build the exact terms
         for (unsigned i = 0; i < numberOfKeywords; ++i)
         {
-            srch2is::TermType type;
+            srch2is::TermType termType;
             if (indexDataContainerConf->getQueryTermType())
             {
-            	type = srch2is::COMPLETE;
+            	termType = srch2is::TERM_TYPE_COMPLETE;
             }
             else
             {
-            	type = atoi(termTypesVector[i].c_str()) == 0 ? srch2is::PREFIX : srch2is::COMPLETE;
+            	termType = atoi(termTypesVector[i].c_str()) == 0 ? srch2is::TERM_TYPE_PREFIX : srch2is::TERM_TYPE_COMPLETE;
             }
             unsigned termBoost;
             if (termBoostsVectorValid){
@@ -644,13 +644,13 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             if(urlParserHelper.isFuzzy)
             {
                 exactTerm = new srch2is::Term(queryKeywordsVector[i],
-                        type,
+                		termType,
                         termBoost,
                         similarityBoost,
                         0);
 
                 fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
-                        type,
+                		termType,
                         termBoost,
                         similarityBoost,
                         srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
@@ -663,7 +663,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
             }else{
                 exactTerm = new srch2is::Term(queryKeywordsVector[i],
-                        type,
+                		termType,
                         termBoost,
                         similarityBoost,
                         0);

@@ -67,7 +67,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (this->numberOfItemsInPartialHeap == 0)
             this->currentMaxEditDistanceOnHeap = distance;
 
-        if (this->getTermType() == srch2::instantsearch::PREFIX) { // prefix term
+        if (this->getTermType() == srch2::instantsearch::TERM_TYPE_PREFIX) { // prefix term
             bool isPrefixMatch = (prefixNode != leafNode);
             float termRecordRuntimeScore =
                 DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
@@ -123,7 +123,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentMaxEditDistanceOnHeap = 0;
 
     // check the TermType
-    if (this->getTermType() == PREFIX) { //case 1: Term is prefix
+    if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         for (LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;

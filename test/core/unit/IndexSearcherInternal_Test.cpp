@@ -75,7 +75,7 @@ void ActiveNodeSet_test()
     IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
 
     unsigned threshold = 2;
-    Term *term = FuzzyTerm::create("nce", PREFIX, 1, 1, threshold);
+    Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet(term);
     vector<string> similarPrefixes;
     prefixActiveNodeSet->getComputedSimilarPrefixes( indexSearcherInternal->getTrie(), similarPrefixes);
@@ -275,9 +275,9 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = { "pink", "floyd", "shine"};
 
     cout<<"\n***COMPLETE EXACT***\nQuery:";
-    TermType type = COMPLETE;
+    TermType termType = TERM_TYPE_COMPLETE;
     cout<<keywords[0]<< "\n";
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
     QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults, resultCount);
@@ -286,7 +286,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     cout<<"\nAdding Term:";
     cout<<keywords[1]<< "\n";
-    Term *term1 = ExactTerm::create(keywords[1], type, 1, 1);
+    Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
     QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
@@ -295,7 +295,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     cout<<"\nAdding Term:";
     cout<<keywords[2]<< "\n";
-    Term *term2 = ExactTerm::create(keywords[2], type, 1, 1);
+    Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
     QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
@@ -332,9 +332,9 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     };
 
     cout<<"\n***PREFIX EXACT***\nQuery:";
-    TermType type = PREFIX;
+    TermType termType = TERM_TYPE_PREFIX;
     cout<<keywords[0]<< "\n";
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
     QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults, resultCount);
@@ -342,7 +342,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     cout<<"\nAdding Term:";
     cout<<keywords[1]<< "\n";
-    Term *term1 = ExactTerm::create(keywords[1], type, 1, 1);
+    Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
     QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
@@ -350,7 +350,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     cout<<"\nAdding Term:";
     cout<<keywords[2]<< "\n";
-    Term *term2 = ExactTerm::create(keywords[2], type, 1, 1);
+    Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
     QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
@@ -383,7 +383,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     };
 
     cout<<"\n***COMPLETE FUZZY***\nQuery:";
-    TermType type = COMPLETE;
+    TermType type = TERM_TYPE_COMPLETE;
     cout<<keywords[0]<< "\n";
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);
@@ -437,7 +437,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     };
 
     cout<<"\n***PREFIX FUZZY***\nQuery:";
-    TermType type = PREFIX;
+    TermType type = TERM_TYPE_PREFIX;
     cout<<keywords[0]<< "\n";
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);

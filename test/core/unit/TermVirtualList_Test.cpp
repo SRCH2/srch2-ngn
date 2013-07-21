@@ -200,11 +200,11 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
             cout<<"\n***COMPLETE EXACT***\nQuery:";
     //);
 
-    TermType type = COMPLETE;
+    TermType termType = TERM_TYPE_COMPLETE;
     //LOG_REGION(0,
             cout<<keywords[0]<< "\n";
    // );
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
 
@@ -223,7 +223,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
    // LOG_REGION(0,
             cout<<keywords[1]<< "\n";
     //);
-    term0 = ExactTerm::create(keywords[1], type, 1, 1);
+    term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -236,7 +236,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[2]<< "\n";
     //);
-    term0 = ExactTerm::create(keywords[2], type, 1, 1);
+    term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -283,11 +283,11 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<"\n***PREFIX EXACT***\nQuery:";
     //);
-    TermType type = PREFIX;
+    TermType termType = TERM_TYPE_PREFIX;
    // LOG_REGION(0,
             cout<<keywords[0]<< "\n";
     //);
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
     prefixActiveNodeSet->busyBit->isFree();
@@ -300,7 +300,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
    // LOG_REGION(0,
             cout<<keywords[1]<< "\n";
     //);
-    term0 = ExactTerm::create(keywords[1], type, 1, 1);
+    term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -314,7 +314,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[2]<< "\n";
     //);
-    term0 = ExactTerm::create(keywords[2], type, 1, 1);
+    term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -360,11 +360,11 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<"\n***COMPLETE FUZZY***\nQuery:";
     //);
-    TermType type = COMPLETE;
+    TermType termType = TERM_TYPE_COMPLETE;
     LOG_REGION(0,
             cout<<keywords[0]<< "\n";
     );
-    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
+    Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -377,7 +377,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[1]<< "\n";
     //);
-    term0 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -390,7 +390,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[2]<< "\n";
     //);
-    term0 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -436,11 +436,11 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<"\n***PREFIX FUZZY***\nQuery:";
     //);
-    TermType type = PREFIX;
+    TermType termType = TERM_TYPE_PREFIX;
     LOG_REGION(0,
             cout<<keywords[0]<< "\n";
     );
-    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
+    Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
@@ -452,7 +452,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[1]<< "\n";
     //);
-    term0 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
@@ -464,7 +464,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     //LOG_REGION(0,
             cout<<keywords[2]<< "\n";
     //);
-    term0 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
 

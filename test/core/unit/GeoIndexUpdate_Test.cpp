@@ -137,7 +137,7 @@ void generateTermAddToQuery(const string &keyword, Query *query, bool isFuzzy)
     {
         string fuzzy_keyword = "a" + keyword;
         Term *term = FuzzyTerm::create(fuzzy_keyword,
-                                       PREFIX,
+        		TERM_TYPE_PREFIX,
                                        1,
                                        100.0,
                                        1);
@@ -147,7 +147,7 @@ void generateTermAddToQuery(const string &keyword, Query *query, bool isFuzzy)
     else
     {
         Term *term = ExactTerm::create(keyword,
-                                       PREFIX,
+        		TERM_TYPE_PREFIX,
                                        1,
                                        100.0);
         query->add(term);
