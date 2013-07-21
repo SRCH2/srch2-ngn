@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <gperftools/profiler.h>
 
 using namespace std;
 
@@ -377,7 +378,9 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::set<unsigned> visitedList;
         queryResultsInternal->fillVisitedList(visitedList);
     
+        ProfilerStart("CPUProfile");
         this->computeTermVirtualList(queryResultsInternal);
+        ProfilerStop();
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
