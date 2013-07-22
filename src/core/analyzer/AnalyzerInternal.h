@@ -47,16 +47,14 @@ struct TokenAttributeHits {
 class AnalyzerInternal: public Analyzer {
 public:
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-			const std::string &recordAllowedSpecialCharacters);
-	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-			const std::string &stemmerFilePath,
-			const std::string &stopWordFilePath,
-			const std::string &synonymFilePath,
 			const std::string &recordAllowedSpecialCharacters,
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag =
-					SYNONYM_KEEP_ORIGIN);
-	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
+			const std::string &stemmerFilePath = "",
+			const std::string &stopWordFilePath = "",
+			const std::string &synonymFilePath = "",
+			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
+
 	void loadData(const std::string &s) const;
+
 
 	virtual TokenOperator * createOperatorFlow() = 0;
 	virtual ~AnalyzerInternal() {

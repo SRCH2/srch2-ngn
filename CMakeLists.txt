@@ -41,9 +41,22 @@ SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default O
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
+
+SET(MAC_OS OFF CACHE BOOL "")
+SET(LINUX_OS OFF CACHE BOOL "")
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    MESSAGE(STATUS "PLATFORM = LINUX")
+    SET(LINUX_OS ON)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    MESSAGE(STATUS "PLATFORM = MAC OS")
+    SET(MAC_OS ON)
+ENDIF()
+
 IF (BUILD_STATIC)
+   IF(LINUX_OS)
    SET(CMAKE_EXE_LINKER_FLAGS -static)
-   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  # is this appliable for MAC too ?
+   SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  
+   ENDIF()
 ENDIF (BUILD_STATIC) 
 
 #BUILD TYPE
@@ -58,7 +71,6 @@ ELSE(BUILD_RELEASE)
     SET (CMAKE_BUILD_TYPE Debug)
     SET (DO_PROFILE OFF)
     SET (DO_COVERAGE OFF)
-	SET (DO_ASSERT ON)
 ENDIF(BUILD_RELEASE)
 
 # http://stackoverflow.com/questions/6578484/telling-gcc-directly-to-link-a-library-statically
@@ -85,7 +97,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     endif()
     SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     
-	IF(DO_COVERAGE)
+    IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
         SET(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}" )
@@ -107,53 +119,55 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
     ## CHENLI
     IF (BUILD_STATIC)
-      SET(Boost_USE_STATIC_LIBS ON)
+        SET(Boost_USE_STATIC_LIBS ON)
     ENDIF ()
 	
-	IF (BUILD_RELEASE)
-		SET(Boost_DEBUG OFF)
-	ENDIF ()
+    IF (BUILD_RELEASE)
+	SET(Boost_DEBUG OFF)
+    ENDIF ()
 	
 	SET(sys_LIBRARY_DIRS "/home/jianfeng/software/android-toolchain/user/lib"
                     "/usr/lib64/" 
 					)
 					
-	SET(Boost_USE_MULTITHREAD ON)
+    SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS serialization program_options regex system thread REQUIRED )
     
-	MESSAGE(STATUS "Boost_VERSION=" ${Boost_VERSION})
-	MESSAGE(STATUS "Boost_LIBRARIES=" ${Boost_LIBRARIES})
-	MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
+    MESSAGE(STATUS "Boost_VERSION=" ${Boost_VERSION})
+    MESSAGE(STATUS "Boost_LIBRARIES=" ${Boost_LIBRARIES})
+    MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 	
-	# Finally the rt, dl and z library
+    # Finally the rt, dl and z library
     IF (ANDROID)
 	    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
-    ELSE( )
-        FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+    ELSEIF (LINUX_OS)
+    	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
     ENDIF ()
-	FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
-	FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
 	
 	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
 	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
 	MESSAGE(STATUS "libz = ${z_LIBRARY}")	
 
-	IF (BUILD64BIT)
-		MESSAGE(STATUS "Buildling for 64 bit platform")
-		LINK_DIRECTORIES( /usr/lib/x86_64-linux-gnu/
-			  /usr/lib64/
-			)
-	ELSE ()
-		MESSAGE(STATUS "Buildling for 32 bit platform")
-		LINK_DIRECTORIES("/usr/lib/")
-	ENDIF ()
-
     IF (ANDROID)
     	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
     ELSE ()
-	    SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
+         IF (BUILD64BIT)
+        MESSAGE(STATUS "Buildling for 64 bit platform")
+        LINK_DIRECTORIES( "/usr/lib/x86_64-linux-gnu/" "/usr/lib64/")
+         ELSE ()
+        MESSAGE(STATUS "Buildling for 32 bit platform")
+        LINK_DIRECTORIES("/usr/lib/")
+         ENDIF ()
+         IF (LINUX_OS)
+        SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+         ELSEIF (MAC_OS)
+            SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
+         ENDIF ()   
     ENDIF ()
-
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
 	ADD_SUBDIRECTORY(src/core)
@@ -162,12 +176,14 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
-	ELSE (BUILD_STATIC)
-		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
-        IF (ANDROID)
-            SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/libs/armeabi-v7a/libsrch2_core.so)
-        ENDIF()
- 
+	ELSE ()
+            IF(ANDROID)
+                SET(Srch2InstantSearch_LIBRARIES ${CMAKE_SOURCE_DIR}/libs/armeabi-v7a/libsrch2_core.so)
+            ELSEIF(MAC_OS) 
+      		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
+            ELSE()
+                SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+            ENDIF()
 	ENDIF()
 
     IF (ANDROID)
@@ -202,8 +218,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 #INSTALL  
 SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Files. e.g., the config file")
-SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
-INSTALL(DIRECTORY docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
+SET(PACKAGE_INSTALL_DIR "" CACHE STRING "Package files directory")
+SET(CMAKE_INSTALL_PREFIX "${PACKAGE_INSTALL_DIR}")
+INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/docs/ DESTINATION docs USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
 
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
 
@@ -232,6 +249,3 @@ SET(CPACK_GENERATOR "TGZ;")
 SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 INCLUDE(CPack)
 
-# enable dashboard scripting
-include(Dart)
-SET (CTEST_PROJECT_NAME "Srch2 - Testing Framework")

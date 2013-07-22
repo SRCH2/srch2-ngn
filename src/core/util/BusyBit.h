@@ -20,7 +20,7 @@
 #ifndef __BUSYBIT_H__
 #define __BUSYBIT_H__
 
-#include <pthread.h>
+#include "mypthread.h"
 
 namespace srch2
 {
