@@ -104,11 +104,7 @@ void testStandardAnalyzer()
 
 void testLowerCase() {
 	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
-	cout << "#########################################################################";
 	cout << "#########################################################################" << "LowerCase Filter" << endl;
-	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
@@ -171,10 +167,7 @@ void testLowerCase() {
 void testStemmerFilter() {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stemmer Filter" << endl;
-	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "stemmer File: " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
 
 
@@ -315,10 +308,7 @@ void testStemmerFilter() {
 void testStopFilter() {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stop Filter" << endl;
-	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
 	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
 
@@ -380,10 +370,7 @@ void testStopFilter() {
 void testSynonymFilter() {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stop Filter" << endl;
-	cout << "#########################################################################" << endl;
-	cout << "#########################################################################" << endl;
 	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
 	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n";
 	cout << "stynonym File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt" << "\n\n";
