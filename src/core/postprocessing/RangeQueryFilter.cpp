@@ -26,6 +26,8 @@
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/RangeQueryFilter.h"
+#include "instantsearch/IndexSearcher.h"
+#include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "util/VariableLengthAttributeContainer.h"
@@ -36,11 +38,18 @@ namespace srch2
 namespace instantsearch
 {
 
+RangeQueryFilter::~RangeQueryFilter(){
+
+}
 
 
-
-void RangeQueryFilter::doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+void RangeQueryFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
 		QueryResults * input, QueryResults * output){
+
+
+	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+	Schema * schema = indexSearcherInternal->getSchema();
+	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
 	std::string attributeName = query->getNonSearchableAttributeName();
 	// TODO : operation also needs to come from query, for now we assume it's always " attribute < value "
@@ -113,9 +122,7 @@ void RangeQueryFilter::doFilter(Schema * schema, ForwardIndex * forwardIndex, co
 
 
 }
-~RangeQueryFilter(){
 
-}
 
 }
 }

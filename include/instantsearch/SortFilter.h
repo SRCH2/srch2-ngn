@@ -44,7 +44,7 @@ class SortFilter : public ResultsPostProcessorFilter
 
 public:
 	// TODO : we don't need query in new design
-	void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+	void doFilter(IndexSearcher * indexSearcher, const Query * query,
 			 QueryResults * input, QueryResults * output);
 	~SortFilter();
 

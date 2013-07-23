@@ -40,22 +40,20 @@
 #include "instantsearch/Schema.h"
 #include "ParsedParameterContainer.h"
 
-
+namespace srch2is = srch2::instantsearch;
+using srch2is::Schema;
+using srch2is::Analyzer;
 
 namespace srch2
 {
-namespace instantsearch
+namespace httpwrapper
 {
 
 class QueryParser
 {
 public:
 
-
-	QueryParser(const Analyzer *analyzer,
-			const srch2::httpwrapper::Srch2ServerConf *indexDataContainerConf,
-			const Schema *schema,
-			const evkeyvalq &headers,
+	QueryParser(const evkeyvalq &headers,
 			ParsedParameterContainer * container);
 
 
@@ -66,10 +64,8 @@ public:
 private:
 
 
-	const Analyzer *analyzer;
-	const srch2::httpwrapper::Srch2ServerConf *indexDataContainerConf;
-	const Schema *schema;
 	ParsedParameterContainer * container;
+	const evkeyvalq & headers;
 
 
 	// TODO: change the prototypes to reflect input/outputs

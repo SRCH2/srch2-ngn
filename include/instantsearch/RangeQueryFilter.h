@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
-#define _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
+#ifndef _RANGEQUERYFILTER_H_
+#define _RANGEQUERYFILTER_H_
 
 
 #include <vector>
@@ -28,9 +28,7 @@
 
 
 #include "ResultsPostProcessor.h"
-#include "instantsearch/Schema.h"
-#include "index/ForwardIndex.h"
-#include "util/VariableLengthAttributeContainer.h"
+#include "instantsearch/IndexSearcher.h"
 #include "instantsearch/Score.h"
 
 namespace srch2
@@ -45,12 +43,12 @@ class RangeQueryFilter : public ResultsPostProcessorFilter
 {
 
 public:
-	void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+	void doFilter(IndexSearcher * indexSearcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~RangeQueryFilter();
 };
 
 }
 }
-#endif // _CORE_POSTPROCESSING_RANGEQUERYFILTER_H_
+#endif // _RANGEQUERYFILTER_H_
 

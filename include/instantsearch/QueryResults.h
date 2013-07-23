@@ -56,6 +56,9 @@ public:
 class MYLIB_EXPORT QueryResults
 {
 public:
+
+
+
     /**
      * TODO: change this to constructor. Also verify how much code changes will be
      * required to this.
@@ -64,6 +67,11 @@ public:
      * @param[in] query the reference to a Query object.
      */
     QueryResults(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+
+
+	QueryResults();
+	void init(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+
 
     /**
      * Checks if the iterator reaches the end. @return false if

@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H_
-#define _CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H_
+#ifndef _FACETEDSEARCHFILTER_H_
+#define _FACETEDSEARCHFILTER_H_
 
 
 #include <vector>
@@ -30,8 +30,8 @@
 
 #include "ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
-#include "index/ForwardIndex.h"
 #include "instantsearch/Score.h"
+#include "instantsearch/IndexSearcher.h"
 #include "util/Assert.h"
 
 namespace srch2
@@ -46,7 +46,7 @@ class FacetedSearchFilter : public ResultsPostProcessorFilter
 
 public:
 	// TODO : we don't need query in new design
-	void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
 
@@ -67,5 +67,5 @@ private:
 
 }
 }
-#endif // _CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H_
+#endif // _FACETEDSEARCHFILTER_H_
 

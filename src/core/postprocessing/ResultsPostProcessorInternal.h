@@ -21,9 +21,20 @@
 #ifndef _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_
 #define _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_
 
-#include "instantsearch/ResultsPostProcessor.h"
-using namespace std;
 #include <vector>
+
+
+
+#include <instantsearch/ResultsPostProcessor.h>
+
+
+using namespace std;
+
+namespace srch2
+{
+namespace instantsearch
+{
+
 
 class ResultsPostProcessorPlanInternal
 {
@@ -39,5 +50,7 @@ public:
 	}
 };
 
+}
+}
 
 #endif // _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_

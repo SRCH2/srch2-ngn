@@ -37,6 +37,14 @@ QueryResultFactory::QueryResultFactory(){
 }
 
 
+QueryResults::QueryResults(){
+	impl = new QueryResultsInternal();
+}
+
+void QueryResults::init(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query){
+	impl->init(resultsFactory,dynamic_cast<const IndexSearcherInternal *>(indexSearcher),query);
+}
+
 /**
  * Creates a QueryResults object.
  * @param[in] indexSearcher the reference to an IndexSearcher object.

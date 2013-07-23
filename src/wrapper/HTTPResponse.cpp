@@ -13,7 +13,7 @@
 #include "HTTPResponse.h"
 #include "IndexWriteUtil.h"
 #include "instantsearch/Score.h"
-#include "postprocessing/ResultsPostProcessor.h"
+#include "instantsearch/ResultsPostProcessor.h"
 
 
 #include <event2/http.h>
@@ -633,11 +633,11 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
 
 
-                ResultsPostProcessor postProcessor(indexSearcher);
+//                ResultsPostProcessor postProcessor(indexSearcher);
 
 
                 QueryResults * finalQueryResults = new QueryResults(resultsFactory,indexSearcher,urlToDoubleQuery->exactQuery);
-                postProcessor.runPlan(urlToDoubleQuery->exactQuery, exactQueryResults , finalQueryResults);
+//                postProcessor.runPlan(urlToDoubleQuery->exactQuery, exactQueryResults , finalQueryResults);
 
 
 
@@ -715,15 +715,15 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
 
 
-            	ResultsPostProcessor postProcessor(indexSearcher);
+//            	ResultsPostProcessor postProcessor(indexSearcher);
 
 
             	QueryResults * finalQueryResults = new QueryResults(resultsFactory,indexSearcher,
     					(urlParserHelper.isFuzzy)?urlToDoubleQuery->fuzzyQuery:urlToDoubleQuery->exactQuery);
 
-            	postProcessor.runPlan(
-            			(urlParserHelper.isFuzzy)?urlToDoubleQuery->fuzzyQuery:urlToDoubleQuery->exactQuery,
-            					queryResults , finalQueryResults);
+//            	postProcessor.runPlan(
+//            			(urlParserHelper.isFuzzy)?urlToDoubleQuery->fuzzyQuery:urlToDoubleQuery->exactQuery,
+//            					queryResults , finalQueryResults);
 
 
 

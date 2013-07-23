@@ -25,6 +25,8 @@
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/SortFilter.h"
+#include "instantsearch/IndexSearcher.h"
+#include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/Score.h"
@@ -85,20 +87,24 @@ public:
 	}
 };
 
+SortFilter::~SortFilter(){
+
+}
 // TODO : we don't need query in new design
-void SortFilter::doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
 		QueryResults * input, QueryResults * output){
+
+	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+	Schema * schema = indexSearcherInternal->getSchema();
+	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
 	// first copy all input results to output
 	input->impl->copyForPostProcessing(output->impl);
 
 	// now sort the results based on the comparator
 	std::sort(output->impl->sortedFinalResults.begin(), output->impl->sortedFinalResults.end() ,
-			SortFilter::ResultNonSearchableAttributeComparator(this,forwardIndex,schema,query));
+			ResultNonSearchableAttributeComparator(this,forwardIndex,schema,query));
 
-
-}
-~SortFilter::SortFilter(){
 
 }
 

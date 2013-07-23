@@ -1,19 +1,29 @@
 
 #include "instantsearch/FacetedSearchFilter.h"
 #include "FacetedSearchFilterInternal.h"
+#include "instantsearch/IndexSearcher.h"
+#include "operation/IndexSearcherInternal.h"
+#include "instantsearch/Schema.h"
+#include "index/ForwardIndex.h"
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-~FacetedSearchFilter::FacetedSearchFilter(){
+FacetedSearchFilter::~FacetedSearchFilter(){
 
 }
 
 
-void FacetedSearchFilter::doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * query,
 		QueryResults * input, QueryResults * output){
+
+	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+	Schema * schema = indexSearcherInternal->getSchema();
+	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+
+
 
 	// these two maps must be parallel
 	ASSERT(lowerBoundsOfCategories.size() == facetedSearchAggregationTypes.size());

@@ -5,26 +5,20 @@
 
 namespace srch2
 {
-namespace instantsearch
+namespace httpwrapper
 {
 
 
-QueryParser::QueryParser(const Analyzer *analyzer,
-		const srch2::httpwrapper::Srch2ServerConf *indexDataContainerConf,
-		const Schema *schema,
-		const evkeyvalq &headers,
+QueryParser::QueryParser(const evkeyvalq &headers,
 		ParsedParameterContainer * container){
-
-	this->analyzer = analyzer;
-	this->indexDataContainerConf = indexDataContainerConf;
-	this->schema = schema;
 	this->container = container;
+	this->headers = headers;
 
 }
 
 
 // parses the URL to a query object
-void parse(){
+void QueryParser::parse(){
 
 
 	/*
@@ -65,10 +59,6 @@ void QueryParser::mainQueryParser(){ // TODO: change the prototype to reflect in
 	 */
 }
 
-
-void QueryParser::debugQueryParser(){
-
-}
 
 
 
@@ -186,6 +176,7 @@ void QueryParser::getAllResultsParser(){
 
 
 void QueryParser::getGeoParser(){
+
 	/*
 	 * this function parsers the parameters related to geo search like latitude and longitude .
 	 * 1. also calls the facet parser. : facetParser();
@@ -193,26 +184,12 @@ void QueryParser::getGeoParser(){
 	 * 3. parses the geo parameters like leftBottomLatitude,leftBottomLongitude,rightTopLatitude,rightTopLongitude
 	 * 		centerLatitude,centerLongitude,radius
 	 * 4. Based on what group of geo parameters are present it sets geoType to CIRCULAR or RECTANGULAR
+	 */
 
 }
 
 // creates a post processing plan based on information from Query
 // TODO : query should be removed from the inputs of this function. This function should only return plan based on header
-ResultsPostProcessorPlan * QueryParser::createPostProcessingPlan(const evkeyvalq &headers,Query * query){
-
-	ResultsPostProcessorPlan * result = NULL;
-	if(query->getPostProcessingFilter() == RANGE_CHECK){
-		result = new ResultsPostProcessorPlan();
-		result->addFilterToPlan(new RangeQueryFilter());
-	}else if(query->getPostProcessingFilter() == NO_FILTER){
-		// TODO : must create plan based on query
-		result = new ResultsPostProcessorPlan();
-	}
-
-	return result;
-
-
-}
 
 
 

@@ -8,7 +8,7 @@ using namespace std;
 
 namespace srch2
 {
-namespace instantsearch
+namespace httpwrapper
 {
 
 

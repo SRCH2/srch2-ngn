@@ -139,6 +139,8 @@ class QueryResultsInternal
 public:
 	friend class QueryResults;
 	friend class ResultsPostProcessor;
+	QueryResultsInternal();
+	void init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
 
     QueryResultsInternal(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
     virtual ~QueryResultsInternal();

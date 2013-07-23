@@ -18,27 +18,28 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_
-#define _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_
+#ifndef _RESULTSPOSTPROCESSOR_H_
+#define _RESULTSPOSTPROCESSOR_H_
+
 #include <vector>
 #include <map>
 #include <iostream>
 
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
+#include "instantsearch/IndexSearcher.h"
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-class ResultsPostProcessorInternal;
 
 
 class ResultsPostProcessorFilter
 {
 public:
-	virtual void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+	virtual void doFilter(IndexSearcher *indexSearcher, const Query * query,
 			 QueryResults * input , QueryResults * output) = 0; // TODO : shouldn't pass forward index here
 
 	virtual ~ResultsPostProcessorFilter() {};
@@ -60,7 +61,7 @@ public:
 	bool hasMoreFilters();
 	void closeIteration();
 private:
-	ResultsPostProcessorInternal * impl;
+	ResultsPostProcessorPlanInternal * impl;
 };
 
 
@@ -69,4 +70,4 @@ private:
 }
 
 
-#endif // _CORE_POSTPROCESSING_RESULTSPOSTPROCESSOR_H_
+#endif // _RESULTSPOSTPROCESSOR_H_

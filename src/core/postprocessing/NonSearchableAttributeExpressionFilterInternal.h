@@ -20,10 +20,21 @@
 
 #ifndef _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H_
 #define _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H_
+
+#include "instantsearch/Schema.h"
+#include "index/ForwardIndex.h"
+#include "instantsearch/Score.h"
+#include "query/QueryResultsInternal.h"
+#include "string"
+using namespace std;
+
+
 namespace srch2
 {
 namespace instantsearch
 {
+
+
 class NonSearchableAttributeExpressionFilterInternal
 {
 
@@ -32,6 +43,9 @@ public:
 	// evaluates expression object coming from query using result data to see
 	// if it passes the query criterion.
 	bool doesPassCriterion(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result){
+		string attributeName = "";
+		Score attributeValue = result->_score;
+
 		// getting attributeID from schema
 		unsigned attributeId = schema->getNonSearchableAttributeId(attributeName);
 

@@ -17,19 +17,28 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef _WRAPPER_QUERYBUILDERHELPER_H_
-#define _WRAPPER_QUERYBUILDERHELPER_H_
+#ifndef _WRAPPER_PARSEDPARAMETERCONTAINER_H_
+#define _WRAPPER_PARSEDPARAMETERCONTAINER_H_
 
 #include <vector>
 #include <string>
+#include <map>
+
+
+namespace srch2
+{
+namespace httpwrapper
+{
+
+
 
 typedef enum{
 
 	RawQueryKeywords,
-	QueryBooleanOperator,
+	QueryBooleanOperatorFlag,
 	KeywordFuzzyLevel,
 	KeywordBoostLevel,
-	QueryPrefixComplete,
+	QueryPrefixCompleteFlag,
 	IsDebugEnabled,
 	ReponseAttributesList,
 	ResultsStartOffset,
@@ -37,7 +46,7 @@ typedef enum{
 	MaxTimeAllowed,
 	IsOmitHeader,
 	ResponseFormat,
-	FilterQueryEvaluator,
+	FilterQueryEvaluatorFlag,
 	TopKSearchType,
 	GetAllResultsSearchType,
 	GeoSearchType,
@@ -49,7 +58,8 @@ typedef enum{
 } ParameterName;
 
 typedef enum{
-	AND
+	AND,
+	OR
 } QueryBooleanOperator;
 
 typedef enum{
@@ -74,6 +84,12 @@ typedef enum{
 	Ascending,
 	Descending
 } SortOrder;
+
+
+typedef enum{
+	Error,
+	Warning
+} MessageType;
 
 class FilterQueryEvaluator
 {
@@ -185,13 +201,33 @@ public:
 	GetAllResultsParameterContainer * getAllResultsParameterContainer;
 	GeoParameterContainer * geoParameterContainer;
 
+
+
+	/// messages for the query processing pipeline
+	std::map<MessageType, std::string> messages;
+
+	std::string getMessageString(){
+		std::string result = "";
+		for(std::map<MessageType, std::string>::iterator m = messages.begin();
+										m != messages.end() ; ++m){
+			switch (m->first) {
+				case Error:
+					result += "ERROR : " + m->second + "\n";
+					break;
+				case Warning:
+					result += "WARNING : " + m->second + "\n";
+					break;
+			}
+		}
+		return result;
+	}
 };
 
 
 
+}
+}
 
 
 
-
-
-#endif // _WRAPPER_QUERYBUILDERHELPER_H_
+#endif // _WRAPPER_PARSEDPARAMETERCONTAINER_H_

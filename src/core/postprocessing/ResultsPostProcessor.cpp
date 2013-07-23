@@ -17,18 +17,53 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-
-#include "instantsearch/ResultsPostProcessor.h"
 #include "ResultsPostProcessorInternal.h"
-#include "RangeQueryFilter.h"
 
 #include "instantsearch/IndexSearcher.h"
 #include "operation/IndexSearcherInternal.h"
+#include <instantsearch/ResultsPostProcessor.h>
+
+using namespace std;
+
+
 namespace srch2
 {
 namespace instantsearch
 {
 
+
+ResultsPostProcessorPlan::ResultsPostProcessorPlan(){
+	impl = new ResultsPostProcessorPlanInternal();
+	impl->iter = impl->plan.end();
+}
+ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
+	delete impl;
+}
+
+void ResultsPostProcessorPlan::addFilterToPlan(ResultsPostProcessorFilter * filter){
+	impl->plan.push_back(filter);
+}
+void ResultsPostProcessorPlan::clearPlan(){
+	impl->plan.clear();
+}
+void ResultsPostProcessorPlan::beginIteration(){
+	impl->iter = impl->plan.begin();
+}
+ResultsPostProcessorFilter * ResultsPostProcessorPlan::nextFilter(){
+	if(impl->iter == impl->plan.end()) return NULL;
+	ResultsPostProcessorFilter * result = *impl->iter;
+	++(impl->iter);
+	return result;
+}
+bool ResultsPostProcessorPlan::hasMoreFilters(){
+	if(impl->iter != impl->plan.end()) return true;
+	else{
+		return false;
+	}
+}
+void ResultsPostProcessorPlan::closeIteration(){
+	impl->iter = impl->plan.end();
+}
 
 //ResultsPostProcessor::ResultsPostProcessor(IndexSearcher *indexSearcher){
 //
@@ -79,38 +114,7 @@ namespace instantsearch
 //}
 
 
-ResultsPostProcessorPlan::ResultsPostProcessorPlan(){
-	impl = new ResultsPostProcessorPlanInternal();
-	impl->iter = impl->plan.end();
-}
-ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
-	delete impl;
-}
 
-void ResultsPostProcessorPlan::addFilterToPlan(ResultsPostProcessorFilter * filter){
-	impl->plan.push_back(filter);
-}
-void ResultsPostProcessorPlan::clearPlan(){
-	impl->plan.clear();
-}
-void ResultsPostProcessorPlan::beginIteration(){
-	impl->iter = plan.begin();
-}
-ResultsPostProcessorFilter * ResultsPostProcessorPlan::nextFilter(){
-	if(impl->iter == impl->plan.end()) return NULL;
-	ResultsPostProcessorFilter * result = *impl->iter;
-	++(impl->iter);
-	return result;
-}
-bool ResultsPostProcessorPlan::hasMoreFilters(){
-	if(impl->iter != impl->plan.end()) return true;
-	else{
-		return false;
-	}
-}
-void ResultsPostProcessorPlan::closeIteration(){
-	impl->iter = impl->plan.end();
-}
 
 }
 }

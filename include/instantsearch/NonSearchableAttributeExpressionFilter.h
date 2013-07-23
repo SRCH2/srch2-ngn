@@ -18,16 +18,12 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
-#define _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
-
-
-#include <vector>
+#ifndef _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
+#define _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
 
 
 #include "instantsearch/ResultsPostProcessor.h"
-#include "instantsearch/Schema.h"
-#include "index/ForwardIndex.h"
+#include "instantsearch/IndexSearcher.h"
 #include "instantsearch/Score.h"
 
 namespace srch2
@@ -42,7 +38,7 @@ class NonSearchableAttributeExpressionFilter : public ResultsPostProcessorFilter
 {
 
 public:
-	void doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+	void doFilter(IndexSearcher * indexSearcher,   const Query * query,
 			QueryResults * input, QueryResults * output);
 	~NonSearchableAttributeExpressionFilter();
 	// temporary variables to test the expression framework, attributename must be less than attribute value
@@ -57,5 +53,5 @@ private:
 
 }
 }
-#endif // _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
+#endif // _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
 

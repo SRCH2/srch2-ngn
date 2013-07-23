@@ -23,17 +23,28 @@
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/NonSearchableAttributeExpressionFilter.h"
+#include "postprocessing/NonSearchableAttributeExpressionFilterInternal.h"
+#include "instantsearch/IndexSearcher.h"
+#include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/Score.h"
+#include "instantsearch/QueryResults.h"
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-void NonSearchableAttributeExpressionFilter::doFilter(Schema * schema, ForwardIndex * forwardIndex, const Query * query,
+NonSearchableAttributeExpressionFilter::~NonSearchableAttributeExpressionFilter(){
+
+}
+void NonSearchableAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
 		QueryResults * input, QueryResults * output){
+
+	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+	Schema * schema = indexSearcherInternal->getSchema();
+	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
 	// iterating on results and checking the criteria on each of them
 	for(vector<QueryResult *>::iterator resultIter = input->impl->sortedFinalResults.begin(); resultIter != input->impl->sortedFinalResults.end() ; ++resultIter){
@@ -49,9 +60,6 @@ void NonSearchableAttributeExpressionFilter::doFilter(Schema * schema, ForwardIn
 
 	}
 
-
-}
-~NonSearchableAttributeExpressionFilter::NonSearchableAttributeExpressionFilter(){
 
 }
 
