@@ -81,6 +81,7 @@ private:
 	static const char* const rowsParamName;
 	static const char* const timeAllowedParamName;
 	static const char* const ommitHeaderParamName;
+	static const char* const responseWriteTypeParamName;
 
 
 	// TODO: change the prototypes to reflect input/outputs

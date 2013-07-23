@@ -17,7 +17,8 @@ const char* const QueryParser::debugParamName = "debug";
 const char* const QueryParser::startParamName = "start";
 const char* const QueryParser::rowsParamName = "rows";
 const char* const QueryParser::timeAllowedParamName = "timeAllowed";
-const char* const QueryParser::ommitHeaderParamName="omitHeader";
+const char* const QueryParser::ommitHeaderParamName = "omitHeader";
+const char* const QueryParser::responseWriteTypeParamName = 'wt';
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -212,10 +213,10 @@ void QueryParser::omitHeaderParameterParser() {
         size_t st;
         string ommitHeader = evhttp_uridecode(ommitHeaderTemp, 0, &st);
         // check if "true"
-        if(boost::iequals("true",ommitHeader)){
-            this->container->isOmitHeader=true;
-        }else{
-            this->container->isOmitHeader=false; // this is default.
+        if (boost::iequals("true", ommitHeader)) {
+            this->container->isOmitHeader = true;
+        } else {
+            this->container->isOmitHeader = false; // this is default.
         }
         // populate the summary
         this->container->summary.push_back(IsOmitHeader); // should we change this ParameterName to OmitHeader?
@@ -227,6 +228,25 @@ void QueryParser::responseWriteTypeParameterParser() {
      * it looks to see if we have a responce type
      * if we have reponce type it fills up the helper accordingly.
      */
+    const char * responseWriteTypeTemp = evhttp_find_header(&headers,
+            QueryParser::responseWriteTypeParamName);
+    if (responseWriteTypeTemp) { // if this parameter exists
+        size_t st;
+        string responseWriteType = evhttp_uridecode(responseWriteTypeTemp, 0,
+                &st);
+        // check if "true"
+        if (boost::iequals("json", responseWriteType)) {
+            this->container->responseResultsFormat = JSON;
+        } else {
+            // create warning, we only support json as of now.
+            this->container->messages.insert(
+                    std::pair<MessageType, string>(Warning,
+                            "Unknown value for parameter wt. using wt=json"));
+            this->container->responseResultsFormat = JSON; // this is default.
+        }
+        // populate the summary
+        this->container->summary.push_back(ResponseFormat); // should we change this ParameterName to OmitHeader?
+    }
 }
 
 void QueryParser::filterQueryParameterParser() {
