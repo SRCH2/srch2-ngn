@@ -18,7 +18,9 @@ const char* const QueryParser::startParamName = "start";
 const char* const QueryParser::rowsParamName = "rows";
 const char* const QueryParser::timeAllowedParamName = "timeAllowed";
 const char* const QueryParser::ommitHeaderParamName = "omitHeader";
-const char* const QueryParser::responseWriteTypeParamName = 'wt';
+const char* const QueryParser::responseWriteTypeParamName = "wt";
+const char* const QueryParser::sortParamName = "sort";
+const char* const QueryParser::sortFiledsDelimiter = ",";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -240,7 +242,7 @@ void QueryParser::responseWriteTypeParameterParser() {
         } else {
             // create warning, we only support json as of now.
             this->container->messages.insert(
-                    std::pair<MessageType, string>(Warning,
+                    make_pair(Warning,
                             "Unknown value for parameter wt. using wt=json"));
             this->container->responseResultsFormat = JSON; // this is default.
         }
@@ -268,6 +270,28 @@ void QueryParser::sortParser() {
     /*
      * looks for the parameter sort which defines the post processing sort job
      */
+    const char * sortTemp = evhttp_find_header(&headers,
+            QueryParser::sortParamName);
+    if (sortTemp) { // if this parameter exists
+        size_t st;
+        string sortString = evhttp_uridecode(sortTemp, 0, &st);
+        // we have sortString, we need to tokenize this string and populate the
+        // parameters in SortQueryEvaluator class object.
+        char * pch = strtok(fl.c_str(), QueryParser::sortFiledsDelimiter);
+        while (pch) {
+            string field = pch;
+            if (field == "*") {
+                this->container->responseAttributesList.clear();
+                this->container->responseAttributesList.push_back("*");
+                return;
+            }
+            this->container->responseAttributesList.push_back(field);
+            //
+            pch = strtok(fl.c_str(), NULL);
+        }
+        // populate the summary
+        this->container->summary.push_back(SortQueryHandler); // should we change this ParameterName to OmitHeader?
+    }
 }
 
 void QueryParser::localParameterParser() {

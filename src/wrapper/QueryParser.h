@@ -82,6 +82,10 @@ private:
 	static const char* const timeAllowedParamName;
 	static const char* const ommitHeaderParamName;
 	static const char* const responseWriteTypeParamName;
+	static const char* const sortParamName;
+	static const char* const sortFiledsDelimiter;
+
+
 
 
 	// TODO: change the prototypes to reflect input/outputs
