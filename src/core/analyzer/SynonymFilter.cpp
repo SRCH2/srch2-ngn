@@ -86,11 +86,10 @@ void SynonymFilter::createMap(const std::string &synonymFilePath) {
 
 		/*
 		 * Here will add the sub sequence of Tokens to the map.
-		 * For example, if the lefthandside is "new york city", the whole string is already inserted intro the map.
+		 * For example, if the lefthandside is "new york city", the whole string is already inserted into the map.
 		 * Now we should take care of "new york" and "new"
 		 * In the while() loop, first "new york" will be added and then "new"
-		 * For each of them, if they are already there and their flag is complete_only, we change them to the prefix_and_complete
-		 * and if they are not there, we add them as prefix_only
+		 * For each of them, if it is already there and its flag is complete_only, we change it to prefix_and_complete and if it is not there, we add it as prefix_only
 		 */
 		std::size_t found ;
 		while (true) {

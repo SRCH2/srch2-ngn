@@ -64,6 +64,7 @@ bool isEmpty(const string &inString)
  *   parameters in this superclass, rather than doing the initialization in the subclasses. In fact, if we let the subclasses
  *   do the initialization, for some reason our engine doesn't work on Android.
  */
+
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 		const string &recordAllowedSpecialCharacters,
 		const string &stemmerFilePath,
