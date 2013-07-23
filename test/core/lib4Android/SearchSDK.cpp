@@ -71,10 +71,10 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_loadIndex(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(
-		jlong ptr) {
+JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(JNIEnv* env,
+		jobject javaThis, jlong ptr) {
 	Logger::console("saveIndex");
-	Indexer* index = (Indexer*)ptr;
+	Indexer* index = (Indexer*) ptr;
 	saveIndex(index);
 	Logger::console("saveIndex done");
 }
@@ -92,3 +92,5 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 #ifdef __cplusplus
 }
 #endif
+
+//TODO: delete the index
