@@ -19,8 +19,8 @@
  */
 
 
-#ifndef _WRAPPER_QUERYPLEANGENERATOR_H_
-#define _WRAPPER_QUERYPLEANGENERATOR_H_
+#ifndef _WRAPPER_QUERYPLEAN_H_
+#define _WRAPPER_QUERYPLEAN_H_
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "ParsedParameterContainer.h"
@@ -38,11 +38,6 @@ class QueryPlan
 public:
 
 
-	QueryPlan(const ParsedParameterContainer & paramsContainer){
-		this->paramsContainer = paramsContainer;
-		exactQuery = NULL;
-		fuzzyQuery = NULL;
-	}
 	~QueryPlan(){
 		if(exactQuery != NULL) delete exactQuery;
 
@@ -51,7 +46,7 @@ public:
 		if(postProcessingPlan != NULL) delete postProcessingPlan;
 
 	}
-	Query* getExactQuery() const {
+	Query* getExactQuery() {
 		return exactQuery;
 	}
 
@@ -60,7 +55,7 @@ public:
 		this->exactQuery = exactQuery;
 	}
 
-	Query* getFuzzyQuery() const {
+	Query* getFuzzyQuery() {
 		return fuzzyQuery;
 	}
 
@@ -71,23 +66,49 @@ public:
 	}
 
 
-	/*
-	 * 1. creates exact and fuzzy queries
-	 * 2. Generates the post processing plan
-	 */
-	void generatePlan(){
+	ResultsPostProcessorPlan* getPostProcessingPlan() const {
+		return postProcessingPlan;
+	}
 
-		// create query objects
-		createExactAndFuzzyQueries();
-		// generate post processing plan
-		createPostProcessingPlan();
+	void setPostProcessingPlan(ResultsPostProcessorPlan* postProcessingPlan) {
+		this->postProcessingPlan = postProcessingPlan;
+	}
+
+	bool isIsFuzzy() const {
+		return isFuzzy;
+	}
+
+	void setIsFuzzy(bool isFuzzy) {
+		this->isFuzzy = isFuzzy;
+	}
+
+	int getOffset() const {
+		return offset;
+	}
+
+	void setOffset(int offset) {
+		this->offset = offset;
+	}
+
+	int getResultsToRetrieve() const {
+		return resultsToRetrieve;
+	}
+
+	void setResultsToRetrieve(int resultsToRetrieve) {
+		this->resultsToRetrieve = resultsToRetrieve;
+	}
+
+	ParameterName getSearchType() const {
+		return searchType;
+	}
+
+	void setSearchType(ParameterName searchType) {
+		this->searchType = searchType;
 	}
 
 
-
-
 private:
-	const ParsedParameterContainer & paramsContainer;
+
 	Query *exactQuery;
 	Query *fuzzyQuery;
 
@@ -96,23 +117,22 @@ private:
 
 	/// Plan related information
 
+	ParameterName searchType;
+	int offset;
+	int resultsToRetrieve;
+	bool isFuzzy;
 
 	///
 
-	// creates a post processing plan based on information from Query
-	void createPostProcessingPlan(){
 
-		// NOTE: FacetedSearchFilter should be always the last filter.
-		// this function goes through the summary and uses the members of parsedInfo to fill out the query objects and
-		// also create and set the plan
-	}
 
-	void createExactAndFuzzyQueries(){
 
-	}
+
+
+
 
 };
 }
 }
 
-#endif // _WRAPPER_QUERYPLEANGENERATOR_H_
+#endif // _WRAPPER_QUERYPLEAN_H_

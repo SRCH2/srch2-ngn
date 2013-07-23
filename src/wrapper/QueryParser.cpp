@@ -33,6 +33,8 @@ void QueryParser::parse(){
 	/*
 	 *  We have all the header information here which is the pairs of query parameters
 	 * 1. call the main query parser : mainQueryParser();
+	 * 1.1. call isFuzzy parser : isFuzzyParser();
+	 * 1.2. call lengthBoost parser : lengthBoostParser();
 	 * 2. call the debug parser: debugQueryParser();
 	 * 3. call the field list parser : fieldListParser();
 	 * 4. call the start parser: startOffsetParameterParser();
@@ -68,6 +70,21 @@ void QueryParser::mainQueryParser(){ // TODO: change the prototype to reflect in
 	 */
 }
 
+
+void QueryParser::isFuzzyParser(){
+	 /*
+	  * checks to see if "fuzzy" exists in parameters.
+	  */
+}
+
+
+void QueryParser::lengthBoostParser(){
+
+}
+
+void QueryParser::prefixMatchPenaltyParser(){
+
+}
 
 
 

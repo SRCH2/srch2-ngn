@@ -34,6 +34,14 @@ namespace instantsearch
 class NonSearchableAttributeExpressionFilterInternal;
 
 
+class NonSearchableAttributeExpressionEvaluator
+{
+public:
+	virtual bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) = 0 ;
+	virtual ~NonSearchableAttributeExpressionEvaluator();
+};
+
+
 class NonSearchableAttributeExpressionFilter : public ResultsPostProcessorFilter
 {
 

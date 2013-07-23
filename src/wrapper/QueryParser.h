@@ -91,6 +91,17 @@ private:
 	void mainQueryParser();
 
 
+	/// is fuzzy parser
+	void isFuzzyParser();
+
+
+	/// length boost parser
+	void lengthBoostParser();
+
+
+	/// prefix match penalty parser
+	void prefixMatchPenaltyParser();
+
 	/*
 	 * this function looks to see if there is a debug key/value pairs in headers
 	 * input:

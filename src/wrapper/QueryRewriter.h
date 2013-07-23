@@ -36,11 +36,13 @@ class QueryRewriter
 {
 public:
 	QueryRewriter(const Analyzer & analyzer ,ParsedParameterContainer * paramContainer){
-
 	}
 
 	void rewrite(){
 		// go through the summary and call the analyzer on the query if needed.
+		// 1. Field filter should be changed from field names to field bit filter
+		// 2. if a field facet type is range, if it does not have all the 3 needed pieces, fill them using configuration file
+		//    if it's not even in configuration file remove that field from facets and save error message.
 	}
 };
 

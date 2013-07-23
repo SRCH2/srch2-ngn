@@ -25,6 +25,8 @@
 #include <map>
 
 
+#include "FilterQueryEvaluator.h"
+
 namespace srch2
 {
 namespace httpwrapper
@@ -35,9 +37,13 @@ namespace httpwrapper
 typedef enum{
 
 	RawQueryKeywords,
+	IsFuzzyFlag,
+	LengthBoostFlag,
+	PrefixMatchPenaltyFlag,
 	QueryBooleanOperatorFlag,
 	KeywordFuzzyLevel,
 	KeywordBoostLevel,
+	FieldFilter,
 	QueryPrefixCompleteFlag,
 	IsDebugEnabled,
 	ReponseAttributesList,
@@ -63,8 +69,8 @@ typedef enum{
 } QueryBooleanOperator;
 
 typedef enum{
-	Prefix,
-	Complete
+	PREFIX,
+	COMPLETE
 } QueryPrefixComplete;
 
 typedef enum{
@@ -85,27 +91,42 @@ typedef enum{
 	Descending
 } SortOrder;
 
+typedef enum{
+	Simple,
+	Range
+} FacetType;
 
 typedef enum{
 	Error,
 	Warning
 } MessageType;
 
-class FilterQueryEvaluator
+class FilterQueryContainer
 {
-
+public:
+	FilterQueryEvaluator * evaluator;
 };
 
 
-class SortQueryEvaluator
+class SortQueryContainer
 {
 
+public:
+	std::vector<std::string> field;
+	std::vector<SortOrder> order;
 };
 
 
-class FacetQueryEvaluator
+class FacetQueryContainer
 {
 
+public:
+	// these vectors must be parallel and same size all the time
+	std::vector<FacetType> types;
+	std::vector<std::string> fields;
+	std::vector<std::string> rangeStarts;
+	std::vector<std::string> rangeEnds;
+	std::vector<std::string> rangeGaps;
 };
 
 class TopKParameterContainer
@@ -127,9 +148,9 @@ public:
 
 
 	// facet parser parameters
-	FacetQueryEvaluator * facetQueryEvaluator;
+	FacetQueryContainer * facetQueryEvaluator;
 	// sort parser parameters
-	SortQueryEvaluator * sortQueryEvaluator;
+	SortQueryContainer * sortQueryEvaluator;
 
 };
 
@@ -142,9 +163,9 @@ public:
 
 
 	// facet parser parameters
-	FacetQueryEvaluator * facetQueryEvaluator;
+	FacetQueryContainer * facetQueryEvaluator;
 	// sort parser parameters
-	SortQueryEvaluator * sortQueryEvaluator;
+	SortQueryContainer * sortQueryEvaluator;
 
 	// geo related parameters
 	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
@@ -164,10 +185,14 @@ public:
 
 	// TODO add members related to local parameters
 	std::vector<std::string> rawQueryKeywords;
+	bool isFuzzy;
+	float lengthBoost;
+	float prefixMatchPenalty;
 	QueryBooleanOperator queryBooleanOperator; // TODO: when we want to all NOT or OR this part should change
 	std::vector<float> keywordFuzzyLevel;
 	std::vector<float> keywordBoostLevel;
 	std::vector<QueryPrefixComplete> keywordPrefixComplete;
+	std::vector<std::string> fieldFilter;
 
 	// debug query parser parameters
 	bool isDebugEnabled;
@@ -193,7 +218,7 @@ public:
 	ResponseResultsFormat responseResultsFormat;
 
 	// filter query parser parameters
-	FilterQueryEvaluator * filterQueryEvaluator;
+	FilterQueryContainer * filterQueryEvaluator;
 
 
 	// different search type specific parameters
