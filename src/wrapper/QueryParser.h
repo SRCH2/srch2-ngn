@@ -80,7 +80,7 @@ private:
 	static const char* const startParamName;
 	static const char* const rowsParamName;
 	static const char* const timeAllowedParamName;
-
+	static const char* const ommitHeaderParamName;
 
 
 	// TODO: change the prototypes to reflect input/outputs

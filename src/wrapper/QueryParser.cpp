@@ -17,7 +17,7 @@ const char* const QueryParser::debugParamName = "debug";
 const char* const QueryParser::startParamName = "start";
 const char* const QueryParser::rowsParamName = "rows";
 const char* const QueryParser::timeAllowedParamName = "timeAllowed";
-
+const char* const QueryParser::ommitHeaderParamName="omitHeader";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -206,6 +206,20 @@ void QueryParser::omitHeaderParameterParser() {
      * it looks to see if we have a omit header
      * if we have omit header it fills up the helper accordingly.
      */
+    const char * ommitHeaderTemp = evhttp_find_header(&headers,
+            QueryParser::ommitHeaderParamName);
+    if (ommitHeaderTemp) { // if this parameter exists
+        size_t st;
+        string ommitHeader = evhttp_uridecode(ommitHeaderTemp, 0, &st);
+        // check if "true"
+        if(boost::iequals("true",ommitHeader)){
+            this->container->isOmitHeader=true;
+        }else{
+            this->container->isOmitHeader=false; // this is default.
+        }
+        // populate the summary
+        this->container->summary.push_back(IsOmitHeader); // should we change this ParameterName to OmitHeader?
+    }
 }
 
 void QueryParser::responseWriteTypeParameterParser() {
