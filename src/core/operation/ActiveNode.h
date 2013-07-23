@@ -309,16 +309,18 @@ public:
         //ASSERT(distance != 0);
     }
 
-    void getItem(const TrieNode *&trieNode) {
+    // Get current active node, if we have finished the iteration, return NULL
+    void getActiveNode(const TrieNode *&trieNode) {
 	   if (isDone()) {
 		   trieNode = NULL;
 	   }
 	   else {
+		   // return current active node, which is the offsetCursor one in editDistanceCursor array
 		   trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
 	   }
 	}
 
-	void restart(){
+	void refresh(){
 		this->editDistanceCursor = 0;
 		this->offsetCursor = 0;
 		while (editDistanceCursor <= edUpperBound &&
@@ -379,6 +381,7 @@ class LeafNodeSetIterator
 {
 private:
     std::vector<LeafNodeSetIteratorItem > resultVector;
+    boost::unordered_map<const TrieNode*, bool> activeNodes;
     unsigned cursor;
 
 public:
@@ -441,39 +444,36 @@ public:
 
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
-    	boost::unordered_map<const TrieNode*, bool> visitedTrieNodes;
+
 		const TrieNode *trieNode;
 		unsigned distance;
 
-        // assume the iterator returns the active nodes in an ascending order of their edit distance
+		// assume the iterator returns the active nodes in an ascending order of their edit distance
 		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
 		for (; !ani.isDone(); ani.next()){
-			ani.getItem(trieNode);
-			visitedTrieNodes[trieNode] = false;
+			ani.getActiveNode(trieNode);
+			activeNodes[trieNode] = false; // initially all active nodes are not visited.
 		}
-		ani.restart();
+		ani.refresh();
 
-        for (; !ani.isDone(); ani.next()) {
-            // get the trie node and its distance
-            const TrieNode *trieNode;
-            unsigned distance;
-            ani.getItem(trieNode, distance);
+		for (; !ani.isDone(); ani.next()) {
+			// get the trie node and its distance
+			ani.getItem(trieNode, distance);
 
-            // append the leaf nodes of this active node to the vector
-            _appendLeafNodes(trieNode, trieNode, distance, visitedTrieNodes);
-        }
+			// append the leaf nodes of this active node to the vector
+			_appendLeafNodes(trieNode, trieNode, distance);
+		}
 
-        // init the cursor
-        cursor = 0;
+		// init the cursor
+		cursor = 0;
     }
 
     // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
     // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, boost::unordered_map<const TrieNode*, bool> &visitedTrieNodes) {
-    	boost::unordered_map<const TrieNode*, bool>::iterator iter = visitedTrieNodes.find(trieNode);
-		if(iter != visitedTrieNodes.end())
-		{
-			if(iter->second)
+    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance) {
+    	boost::unordered_map<const TrieNode*, bool>::iterator iter = activeNodes.find(trieNode);
+		if(iter != activeNodes.end()){ // if this node is one of the active nodes
+			if(iter->second) // if this active node is visited, directly return
 				return;
 			else // mark this active node visited
 				iter->second = true;
@@ -486,7 +486,7 @@ private:
 
         // go through the children
         for (unsigned childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator ++)
-            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance, visitedTrieNodes);
+            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance);
     }
 };
 
