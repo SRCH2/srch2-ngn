@@ -14,6 +14,7 @@ const char* const QueryParser::fieldListDelimiter = ",";
 const char* const QueryParser::fieldListParamName = "fl";
 const char* const QueryParser::debugControlParamName = "debugQuery";
 const char* const QueryParser::debugParamName = "debug";
+const char* const QueryParser::startParamName = "start";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -72,7 +73,7 @@ void QueryParser::fieldListParser() {
     //1. first check to see if fl exists in the headers
     const char * flTemp = evhttp_find_header(&headers,
             QueryParser::fieldListParamName);
-    if (!flTemp) { // if this parameter exists
+    if (flTemp) { // if this parameter exists
         size_t st;
         string fl = evhttp_uridecode(flTemp, 0, &st);
 
@@ -81,7 +82,7 @@ void QueryParser::fieldListParser() {
 
         char * pch = strtok(fl.c_str(), QueryParser::fieldListDelimiter);
 
-        while (!pch) {
+        while (pch) {
 
             string field = pch;
             if (field == "*") {
@@ -108,17 +109,16 @@ void QueryParser::debugQueryParser() {
     //1. first check to see if debugQuery exists in the headers
     const char * debugQueryTemp = evhttp_find_header(&headers,
             QueryParser::debugControlParamName);
-    if (!debugQueryTemp) { // if this parameter exists
+    if (debugQueryTemp) { // if this parameter exists
         size_t st;
         string debugQuery = evhttp_uridecode(debugQueryTemp, 0, &st);
         if (boost::iequals(debugQuery, 'true')) {
             this->container->isDebugEnabled = true;
-            this->container->summary.push_back(
-                    IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName ?
+            this->container->summary.push_back(IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName ?
             // look for debug paramter. it decides the debug level, if it is not set, set the debug level to complete.
             const char * debugTemp = evhttp_find_header(&headers,
                     QueryParser::debugParamName);
-            if (!debugTemp) { // if this parameter exists
+            if (debugTemp) { // if this parameter exists
                 size_t st;
                 string debug = evhttp_uridecode()(debugTemp, 0, &st);
                 //check what is the debug level
@@ -150,6 +150,17 @@ void QueryParser::startOffsetParameterParser() {
      * if there is a start offset
      * fills the helper up
      */
+    // 1. check for start parameter.
+    const char * startTemp = evhttp_find_header(&headers,
+            QueryParser::startParamName);
+    if (startTemp) { // if this parameter exists
+        size_t st;
+        string startStr = evhttp_uridecode(startTemp, 0, &st);
+        // convert the startStr to integer.
+        this->container->resultsStartOffset=atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
+        // populate the summary
+        this->container->summary.push_back(ResultsStartOffset);
+    }
 }
 
 void QueryParser::numberOfResultsParser() {

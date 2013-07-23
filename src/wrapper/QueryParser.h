@@ -77,6 +77,8 @@ private:
 	static const char* const fieldListParamName;
 	static const char* const debugControlParamName;
 	static const char* const debugParamName;
+	static const char* const startParamName;
+
 
 
 
