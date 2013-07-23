@@ -1,68 +1,21 @@
 //$Id: Scalability_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
 
-#include <jni.h>
-
-#include <iostream>
+#include "Srch2Android.h"
 #include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
-#include <android/log.h>
-#include <ctime>
 
-#include <instantsearch/Analyzer.h>
-#include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
-#include <instantsearch/Query.h>
-#include <instantsearch/Term.h>
-#include <instantsearch/QueryResults.h>
-#include "../integration/IntegrationTestHelper.h"
-#include "../integration/MapSearchTestHelper.h"
-#include "analyzer/StandardAnalyzer.h"
 #include "util/Logger.h"
+#include "analyzer/StandardAnalyzer.h"
 
 #define MAX_QUERY_NUMBER 5000
 
-using namespace std;
-
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
+using namespace srch2::sdk;
 using srch2::util::Logger;
-
-const unsigned mergeEveryNSeconds = 3;
-const unsigned mergeEveryMWrites = 5;
-
-float getTimeSpan(clock_t begin) {
-	return (((float) (clock() - begin)) / CLOCKS_PER_SEC);
-}
-
-int parseLine(char* line) {
-	int i = strlen(line);
-	while (*line < '0' || *line > '9')
-		line++;
-	line[i - 3] = '\0';
-	i = atoi(line);
-	return i;
-}
-
-int getRAMUsageValue() { //Note: this value is in KB!
-	FILE* file = fopen("/proc/self/status", "r");
-	int result = -1;
-	if (file == NULL) {
-		Logger::error("File %s open failed", "/proc/self/status");
-		return result;
-	}
-	char line[128];
-	while (fgets(line, 128, file) != NULL) {
-		if (strncmp(line, "VmRSS:", 6) == 0) {
-			result = parseLine(line);
-			break;
-		}
-	}
-	fclose(file);
-	return result;
-}
 
 // Read data from file, build the index, and save the index to disk
 void buildIndex(string data_file, string index_dir, int lineLimit) {
