@@ -114,7 +114,7 @@ void QueryParser::debugQueryParser() {
         if (boost::iequals(debugQuery, 'true')) {
             this->container->isDebugEnabled = true;
             this->container->summary.push_back(
-                    srch2::httpwrapper::IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName.
+                    IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName ?
             // look for debug paramter. it decides the debug level, if it is not set, set the debug level to complete.
             const char * debugTemp = evhttp_find_header(&headers,
                     QueryParser::debugParamName);
