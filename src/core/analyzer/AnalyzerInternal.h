@@ -46,6 +46,9 @@ struct TokenAttributeHits {
 
 class AnalyzerInternal: public Analyzer {
 public:
+
+	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
+
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 			const std::string &recordAllowedSpecialCharacters,
 			const std::string &stemmerFilePath = "",
@@ -156,9 +159,9 @@ protected:
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.
-	std::string stopWordFilePath;
-	std::string synonymFilePath;
-	std::string stemmerFilePath;
+	string stopWordFilePath;
+	string synonymFilePath;
+	string stemmerFilePath;
 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
 	boost::regex disallowedCharactersRegex;
