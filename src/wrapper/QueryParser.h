@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2013 SRCH2 Inc. All rights reserved
+ * Copyright �� 2013 SRCH2 Inc. All rights reserved
  */
 
 
@@ -75,6 +75,11 @@ private:
 	static const char* const fieldListDelimiter;
 
 	static const char* const fieldListParamName;
+	static const char* const debugControlParamName;
+	static const char* const debugParamName;
+
+
+
 
 
 
