@@ -57,6 +57,7 @@ ADD_TEST(IndexSearcherInternal_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Index
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 
 ADD_TEST(Analyzer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Analyzer_Test "--verbose")
+SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer")
     
 ADD_TEST(ReadWriteMutex_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadWriteMutex_Test "--verbose")
 

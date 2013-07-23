@@ -1,5 +1,4 @@
-
-// $Id: Analyzer_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Analyzer_Test.cpp 3456 2013-06-14 02:11:13Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,17 +19,6 @@
 
 // This test is to verify the correctness of Analyzer to token a string.
 
-#include <stdio.h>  /* defines FILENAME_MAX */
-#ifdef WINDOWS
-    #include <direct.h>
-    #define GetCurrentDir _getcwd
-#else
-    #include <unistd.h>
-    #define GetCurrentDir getcwd
- #endif
-
-
-
 #include <vector>
 #include <string>
 #include "util/Assert.h"
@@ -40,17 +28,6 @@
 using namespace std;
 using namespace srch2::instantsearch;
 
-string getCurrentWorkDirectory(){
-	char cCurrentPath[FILENAME_MAX];
-
-	 if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
-	 {
-	     return "";
-	 }
-
-	cCurrentPath[sizeof(cCurrentPath) - 1] = '\0'; /* not really required */
-	return cCurrentPath;
-}
 
 //SimpleAnalyzer organizes a tokenizer using " " as the delimiter and a "ToLowerCase" filter
 void testSimpleAnalyzer()
@@ -105,7 +82,6 @@ void testStandardAnalyzer()
 void testLowerCase() {
 	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "LowerCase Filter" << endl;
-	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
 			DISABLE_STEMMER_NORMALIZER,
@@ -151,9 +127,7 @@ void testLowerCase() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << src << " " << endl;
-		}
+		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -164,26 +138,20 @@ void testLowerCase() {
 }
 
 
-void testStemmerFilter() {
+void testStemmerFilter(string dataDir) {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stemmer Filter" << endl;
-	cout << "stemmer File: " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
-
-
-	// if it is true, it prints the results of the test, else id doesn't
-	bool printFlag = true;
+	cout << "stemmer File: " << dataDir + "/StemmerHeadwords.txt" << "\n\n";
 
 	// when you are running ctest you should be in the build directory
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
 			ENABLE_STEMMER_NORMALIZER,
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+			dataDir + "/StemmerHeadwords.txt",
 			"", "", SYNONYM_DONOT_KEEP_ORIGIN );
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
-	if (printFlag) {
-		cout << "TEST 1: No Stemming" << endl;
-	}
+	cout << "TEST 1: No Stemming" << endl;
 	// TEST 1 (no stemming)
 	// input string
 	string src = "People show that they are good";
@@ -210,21 +178,13 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << src << " " << endl;
-		}
+		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
 
-
-	if (printFlag) {
-		cout << endl << endl << "TEST 2: Stem English Words" << endl;
-	}
-
-
-
+	cout << endl << endl << "TEST 2: Stem English Words" << endl;
 	// TEST 2 (stem English words)
 	src = "Our instructions package shoWs the results";
 	simpleAnlyzer->loadData(src);
@@ -250,20 +210,13 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << src << " " << endl;
-		}
+		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
 
-
-
-	if (printFlag) {
-		cout << endl << endl << "TEST 3: Stem English & Non-English Words"
-				<< endl;
-	}
+	cout << endl << endl << "TEST 3: Stem English & Non-English Words" << endl;
 	// TEST 3 (stem non-English words)
 	src = "meanings meanings2 of Befall and pencils丽 سلام following";
 	simpleAnlyzer->loadData(src);
@@ -293,9 +246,7 @@ void testStemmerFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << src << " " << endl;
-		}
+		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -305,20 +256,19 @@ void testStemmerFilter() {
 	delete simpleAnlyzer;
 }
 
-void testStopFilter() {
+void testStopFilter(string dataDir) {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stop Filter" << endl;
-	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
-	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n\n";
+	cout << "stopWords File:  " << dataDir + "/stopWordsFile.txt" << "\n";
+	cout << "stemmer File:  " << dataDir + "/StemmerHeadwords.txt" << "\n\n";
 
 	// if it is true, it prints the results of the test, else id doesn't
-	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
 			ENABLE_STEMMER_NORMALIZER,
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
+			dataDir + "/StemmerHeadwords.txt",
+			dataDir + "/stopWordsFile.txt",
 			"",
 			SYNONYM_DONOT_KEEP_ORIGIN);
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
@@ -355,9 +305,7 @@ void testStopFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << originalWords[i] << "   =>   " << src << " " << endl;
-		}
+		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -367,22 +315,21 @@ void testStopFilter() {
 	delete simpleAnlyzer;
 }
 
-void testSynonymFilter() {
+void testSynonymFilter(string dataDir) {
 	cout << "\n\n";
 	cout << "#########################################################################" << endl;
 	cout << "#########################################################################" << "Stop Filter" << endl;
-	cout << "stopWords File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt" << "\n";
-	cout << "stemmer File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt" << "\n";
-	cout << "stynonym File:  " << getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt" << "\n\n";
+	cout << "stopWords File:  " << dataDir + "/stopWordsFile.txt" << "\n";
+	cout << "stemmer File:  " << dataDir + "/StemmerHeadwords.txt" << "\n";
+	cout << "stynonym File:  " << dataDir + "/synonymFile.txt" << "\n\n";
 
 	// if it is true, it prints the results of the test, else id doesn't
-	bool printFlag = true;
 
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
 			ENABLE_STEMMER_NORMALIZER,
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-			getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+			dataDir + "/StemmerHeadwords.txt",
+			dataDir + "/stopWordsFile.txt",
+			dataDir + "/synonymFile.txt",
 			SYNONYM_KEEP_ORIGIN);
 	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
 
@@ -393,9 +340,7 @@ void testSynonymFilter() {
 	simpleAnlyzer->loadData(src);
 	// to print out the results
 
-	if (printFlag) {
-		cout << "## Test 1:  " << src << endl;
-	}
+	cout << "## Test 1:  " << src << endl;
 	vector<string> vectorString;
 	vectorString.push_back("bill");
 	vectorString.push_back("william"); // bill
@@ -410,9 +355,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "+++++++ SynonymFilter:  " << src  << endl;
-		}
+		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -421,17 +364,15 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new wal new wal mart new york new new york city";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 2:  " << src << endl;
-	}
+	cout << "## Test 2:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("wal");
@@ -453,9 +394,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "------- SynonymFilter:  " << src  << endl;
-		}
+		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -466,17 +405,15 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new bill bring your own bill bring your own beverage your own beverage bring";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 3:  " << src << endl;
-	}
+	cout << "## Test 3:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("bill");
@@ -502,9 +439,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "+++++++ SynonymFilter:  " << src  << endl;
-		}
+		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -514,17 +449,15 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				dataDir + "/StemmerHeadwords.txt",
 				"",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "a b c d e f g a b c d e f t a b c d e f";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 4:  " << src << endl;
-	}
+	cout << "## Test 4:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("a");
 	vectorString.push_back("b");
@@ -557,9 +490,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "------- SynonymFilter:  " << src  << endl;
-		}
+		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -568,19 +499,16 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				dataDir + "/StemmerHeadwords.txt",
 				"",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
 
-	if (printFlag) {
-		cout << "## Test 5:  " << src << endl;
-	}
-
+	cout << "## Test 5:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("a");
 	vectorString.push_back("b");
@@ -627,9 +555,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "+++++++ SynonymFilter:  " << src  << endl;
-		}
+		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -638,18 +564,16 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "bill";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
 
-	if (printFlag) {
 		cout << "## Test 6:  " << src << endl;
-	}
 
 	vectorString.clear();
 	vectorString.push_back("bill");
@@ -660,18 +584,16 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "------- SynonymFilter:  " <<  src << endl;
-		}
+		cout << "------- SynonymFilter:  " <<  src << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
 
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 
@@ -680,11 +602,7 @@ void testSynonymFilter() {
 	src = "bill is in new york";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 7:  " << src << endl;
-	}
-
-
+	cout << "## Test 7:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("william"); // bill
 	vectorString.push_back("is");
@@ -696,9 +614,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "+++++++ SynonymFilter:  " << src  << endl;
-		}
+		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -707,18 +623,15 @@ void testSynonymFilter() {
 	// input string
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new wal new wal mart new york new new york city";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 8:  " << src << endl;
-	}
-
+	cout << "## Test 8:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("wal");
@@ -733,9 +646,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "------- SynonymFilter:  " << src  << endl;
-		}
+		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -743,18 +654,15 @@ void testSynonymFilter() {
 	// TEST 9
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/stopWordsFile.txt",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/StemmerHeadwords.txt",
+				dataDir + "/stopWordsFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "new bill bring your own bill bring your own beverage your own beverage bring";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
-	if (printFlag) {
-		cout << "## Test 9:  " << src << endl;
-	}
-
+	cout << "## Test 9:  " << src << endl;
 	vectorString.clear();
 	vectorString.push_back("new");
 	vectorString.push_back("william");
@@ -771,9 +679,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "+++++++ SynonymFilter:  " << src  << endl;
-		}
+		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -782,16 +688,14 @@ void testSynonymFilter() {
 	// TEST 10
 	simpleAnlyzer = new SimpleAnalyzer(
 				ENABLE_STEMMER_NORMALIZER,
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/StemmerHeadwords.txt",
+				dataDir + "/StemmerHeadwords.txt",
 				"",
-				getCurrentWorkDirectory() + "/../../test/core/unit/test_data/analyzer/synonymFile.txt",
+				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
 	tokenOperator = simpleAnlyzer->createOperatorFlow();
 	src = "a b c d e f g a b c d e f t a b c d e f";
 	simpleAnlyzer->loadData(src);
-	if (printFlag) {
-		cout << "## Test 10:  " << src << endl;
-	}
+	cout << "## Test 10:  " << src << endl;
 
 	vectorString.clear();
 	vectorString.push_back("x");
@@ -806,9 +710,7 @@ void testSynonymFilter() {
 		vector<CharType> charVector;
 		tokenOperator->getCurrentToken(charVector);
 		charTypeVectorToUtf8String(charVector, src);
-		if (printFlag) {
-			cout << "------- SynonymFilter:  " << src  << endl;
-		}
+		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
@@ -822,19 +724,21 @@ void testSynonymFilter() {
 
 
 int main() {
+	string dataDir = getenv("dataDir");
+
 	testSimpleAnalyzer();
 	cout << "SimpleAnalyzer test passed" << endl;
 
 	testStandardAnalyzer();
 	cout << "StandardAnalyzer test passed" << endl;
 
-	testStemmerFilter();
+	testStemmerFilter(dataDir);
 	cout << "StemmerFilter test passed" << endl;
 
-	testStopFilter();
+	testStopFilter(dataDir);
 	cout << "StopFilter test passed" << endl;
 
-	testSynonymFilter();
+	testSynonymFilter(dataDir);
 	cout << "SynonymFilter test passed" << endl;
 	return 0;
 }
