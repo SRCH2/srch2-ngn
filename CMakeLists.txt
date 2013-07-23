@@ -54,7 +54,7 @@ ENDIF()
 
 IF (BUILD_STATIC)
    IF(LINUX_OS)
-   SET(CMAKE_EXE_LINKER_FLAGS -Wl -Bdynamic -lprofiler)
+   SET(CMAKE_EXE_LINKER_FLAGS -static -Wl -Bdynamic -lprofiler)
    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)  
    ENDIF()
 ENDIF (BUILD_STATIC) 
