@@ -79,11 +79,7 @@ private:
 	static const char* const debugParamName;
 	static const char* const startParamName;
 	static const char* const rowsParamName;
-
-
-
-
-
+	static const char* const timeAllowedParamName;
 
 
 

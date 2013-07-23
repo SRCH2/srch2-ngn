@@ -16,6 +16,8 @@ const char* const QueryParser::debugControlParamName = "debugQuery";
 const char* const QueryParser::debugParamName = "debug";
 const char* const QueryParser::startParamName = "start";
 const char* const QueryParser::rowsParamName = "rows";
+const char* const QueryParser::timeAllowedParamName = "timeAllowed";
+
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -187,6 +189,16 @@ void QueryParser::timeAllowedParameterParser() {
      * it looks to see if we have a time limitation
      * if we have time limitation it fills up the helper accordingly
      */
+    const char * timeAllowedTemp = evhttp_find_header(&headers,
+            QueryParser::timeAllowedParamName);
+    if (timeAllowedTemp) { // if this parameter exists
+        size_t st;
+        string timeAllowedStr = evhttp_uridecode(timeAllowedTemp, 0, &st);
+        // convert the Str to integer.
+        this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
+        // populate the summary
+        this->container->summary.push_back(MaxTimeAllowed);
+    }
 }
 
 void QueryParser::omitHeaderParameterParser() {
