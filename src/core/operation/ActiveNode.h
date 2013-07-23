@@ -30,6 +30,7 @@
 #include <map>
 #include <set>
 #include <iostream>
+#include <boost/unordered_map.hpp>
 
 namespace srch2
 {
@@ -308,6 +309,23 @@ public:
         //ASSERT(distance != 0);
     }
 
+    void getItem(const TrieNode *&trieNode) {
+	   if (isDone()) {
+		   trieNode = NULL;
+	   }
+	   else {
+		   trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
+	   }
+	}
+
+	void restart(){
+		this->editDistanceCursor = 0;
+		this->offsetCursor = 0;
+		while (editDistanceCursor <= edUpperBound &&
+			trieNodeSetVector->at(editDistanceCursor).size() == 0)
+		editDistanceCursor ++;
+	}
+
 private:
     typedef std::vector<const TrieNode* > TrieNodeSet;
 
@@ -423,10 +441,19 @@ public:
 
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
-        std::set<const TrieNode*> visitedTrieNodes;
+    	boost::unordered_map<const TrieNode*, bool> visitedTrieNodes;
+		const TrieNode *trieNode;
+		unsigned distance;
 
         // assume the iterator returns the active nodes in an ascending order of their edit distance
-        for (ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound); !ani.isDone(); ani.next()) {
+		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
+		for (; !ani.isDone(); ani.next()){
+			ani.getItem(trieNode);
+			visitedTrieNodes[trieNode] = false;
+		}
+		ani.restart();
+
+        for (; !ani.isDone(); ani.next()) {
             // get the trie node and its distance
             const TrieNode *trieNode;
             unsigned distance;
@@ -442,13 +469,15 @@ private:
 
     // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
     // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, std::set<const TrieNode*> &visitedTrieNodes) {
-        // do nothing if this node has already been visited
-        if (visitedTrieNodes.find(trieNode) != visitedTrieNodes.end())
-            return;
-
-        // mark this node visited
-        visitedTrieNodes.insert(trieNode);
+    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, boost::unordered_map<const TrieNode*, bool> &visitedTrieNodes) {
+    	boost::unordered_map<const TrieNode*, bool>::iterator iter = visitedTrieNodes.find(trieNode);
+		if(iter != visitedTrieNodes.end())
+		{
+			if(iter->second)
+				return;
+			else // mark this active node visited
+				iter->second = true;
+		}
 
         if (trieNode->isTerminalNode()) {
             // TODO: prefix might not be unique. Should we return the longest matching prefix?
