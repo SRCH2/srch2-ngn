@@ -49,14 +49,17 @@ local.properties
 
 # PDT-specific
 .buildpath
-<<<<<<< HEAD
 
 # my files
 runme-to-init-env.sh
-=======
 thirdparty/event/bin/
 thirdparty/event/include/
 thirdparty/event/lib/
 thirdparty/event/libevent-2.0.18-stable/
 thirdparty/json/jsoncpp-src-0.5.0/
->>>>>>> main_repository/master
+# .cmake related
+*.cmake
+*CMakeFiles
+*Makefile
+CMakeCache.txt
+DartConfiguration.tcl
