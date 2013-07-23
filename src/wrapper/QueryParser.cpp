@@ -15,6 +15,7 @@ const char* const QueryParser::fieldListParamName = "fl";
 const char* const QueryParser::debugControlParamName = "debugQuery";
 const char* const QueryParser::debugParamName = "debug";
 const char* const QueryParser::startParamName = "start";
+const char* const QueryParser::rowsParamName = "rows";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -157,17 +158,28 @@ void QueryParser::startOffsetParameterParser() {
         size_t st;
         string startStr = evhttp_uridecode(startTemp, 0, &st);
         // convert the startStr to integer.
-        this->container->resultsStartOffset=atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
+        this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
         // populate the summary
         this->container->summary.push_back(ResultsStartOffset);
     }
 }
 
 void QueryParser::numberOfResultsParser() {
-    /*
+    /* aka: rows parser
      * if there is a number of results
      * fills the helper up
      */
+    // 1. check for rows parameter.
+    const char * rowsTemp = evhttp_find_header(&headers,
+            QueryParser::rowsParamName);
+    if (rowsTemp) { // if this parameter exists
+        size_t st;
+        string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+        // convert the rowsStr to integer.
+        this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+        // populate the summary
+        this->container->summary.push_back(NumberOfResults);
+    }
 }
 
 void QueryParser::timeAllowedParameterParser() {
