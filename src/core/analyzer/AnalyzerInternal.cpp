@@ -65,6 +65,17 @@ bool isEmpty(const string &inString)
  *   do the initialization, for some reason our engine doesn't work on Android.
  */
 
+AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
+	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
+	prepareRegexExpression();
+	sharedToken.reset(new SharedToken);
+	this->stemmerType = analyzerInternal.stemmerType;
+	this->stemmerFilePath = analyzerInternal.stemmerFilePath;
+	this->stopWordFilePath = analyzerInternal.stopWordFilePath;
+	this->synonymFilePath = analyzerInternal.synonymFilePath;
+	this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
+}
+
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 		const string &recordAllowedSpecialCharacters,
 		const string &stemmerFilePath,
