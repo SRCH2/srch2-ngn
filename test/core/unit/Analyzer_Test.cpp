@@ -23,6 +23,7 @@
 #include <string>
 #include "util/Assert.h"
 #include "analyzer/StandardAnalyzer.h"
+#include <stdlib.h>
 #include "analyzer/SimpleAnalyzer.h"
 
 using namespace std;
@@ -724,7 +725,13 @@ void testSynonymFilter(string dataDir) {
 
 
 int main() {
-	string dataDir = getenv("dataDir");
+	if ((getenv("dataDir") == NULL) ) {
+		cout << "dataDir as an environment variable should be set." << endl;
+		ASSERT (getenv("dataDir") == NULL );
+		return 0;
+	}
+
+	string dataDir(getenv("dataDir"));
 
 	testSimpleAnalyzer();
 	cout << "SimpleAnalyzer test passed" << endl;
