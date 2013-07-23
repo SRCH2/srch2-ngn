@@ -727,7 +727,8 @@ void testSynonymFilter(string dataDir) {
 int main() {
 	if ((getenv("dataDir") == NULL) ) {
 		cout << "dataDir as an environment variable should be set." << endl;
-		ASSERT (getenv("dataDir") == NULL );
+		cout << "dataDir is the path to the analyzer data files such as StemmerHeadwords.txt etc." << endl;
+		ASSERT (getenv("dataDir") != NULL );
 		return 0;
 	}
 
