@@ -18,6 +18,7 @@
  */
 
 #include "Normalizer.h"
+#include <cstdio>
 #include <string>
 
 using std::string;

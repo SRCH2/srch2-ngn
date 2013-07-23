@@ -24,7 +24,7 @@ char* Logger::formatCurrentTime(char* buffer, unsigned size) {
 	time_t now = time(0);
 	struct tm tstruct;
 	tstruct = *localtime(&now);
-	strftime(buffer, size, "%x %X", &tstruct);
+	strftime(buffer, size, "%F %X", &tstruct);
 	return buffer;
 }
 
@@ -40,7 +40,7 @@ char* Logger::formatLogString(char* buffer, const char* prefix) {
 
 void Logger::writeToFile(FILE* out, const char* str) {
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_DEBUG, prefix, str);
+	__android_log_print(ANDROID_LOG_DEBUG, "SRCH2", prefix, str);
 #else
 	fprintf(out, "%s\n", str);
 	fflush(out);
