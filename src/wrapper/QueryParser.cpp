@@ -1,12 +1,21 @@
 
 #include "QueryParser.h"
+#include "ParsedParameterContainer.h"
 #include "ParserUtility.h"
+#include <evhttp.h>
+#include <string>
 
+using namespace std;
 
 namespace srch2
 {
 namespace httpwrapper
 {
+
+const char* const QueryParser::fieldListDelimiter = ",";
+
+
+const char* const QueryParser::fieldListParamName = "fl";
 
 
 QueryParser::QueryParser(const evkeyvalq &headers,
@@ -66,7 +75,38 @@ void QueryParser::fieldListParser(){
 	/*
 	 * if there is a field list query parameter
 	 * then parse it and fill the helper up
+	 *
+	 * Example: fl=field1,field2,field3 or fl=*
 	 */
+
+	//1. first check to see if fl exists in the headers
+	const char * flTemp = evhttp_find_header(&headers, QueryParser::fieldListParamName);
+	if(! flTemp ){ // if this parameter exists
+		size_t st;
+		string fl = evhttp_uridecode(flTemp , 0, &st);
+
+		this->container->summary.push_back(srch2::httpwrapper::ReponseAttributesList);
+
+		char * pch = strtok(fl.c_str() , QueryParser::fieldListDelimiter);
+
+		while(! pch){
+
+			string field = pch;
+			if(field == "*"){
+				this->container->responseAttributesList.clear();
+				this->container->responseAttributesList.push_back("*");
+				return;
+			}
+
+			this->container->responseAttributesList.push_back(field);
+
+			//
+			pch = strtok(fl.c_str() , NULL);
+		}
+
+	}
+
+
 }
 
 void QueryParser::debugQueryParser(){

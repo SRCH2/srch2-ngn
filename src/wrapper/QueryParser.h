@@ -61,11 +61,21 @@ public:
 	void parse();
 
 
+
+
 private:
 
 
 	ParsedParameterContainer * container;
 	const evkeyvalq & headers;
+
+
+
+	// constants used by this class
+	static const char* const fieldListDelimiter;
+
+	static const char* const fieldListParamName;
+
 
 
 	// TODO: change the prototypes to reflect input/outputs
@@ -91,7 +101,7 @@ private:
 	void debugQueryParser();
 
 	/*
-	 * it looks to see if we have a field list (fl=...)
+	 * it looks to see if we have a field list (fl=field1,field2,field3 or fl=*)
 	 * if we have field list it fills up the helper accordingly
 	 */
 	void fieldListParser();
