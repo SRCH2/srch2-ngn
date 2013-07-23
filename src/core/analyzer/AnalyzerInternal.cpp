@@ -1,4 +1,4 @@
-// $Id: AnalyzerInternal.cpp 3375 2013-05-24 06:54:28Z huaijie $
+// $Id: AnalyzerInternal.cpp 3375 2013-05-24 06:54:28Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -29,6 +29,7 @@
 #include <boost/algorithm/string.hpp>
 #include "AnalyzerInternal.h"
 using std::pair;
+using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
@@ -63,11 +64,23 @@ bool isEmpty(const string &inString)
  *   parameters in this superclass, rather than doing the initialization in the subclasses. In fact, if we let the subclasses
  *   do the initialization, for some reason our engine doesn't work on Android.
  */
+
+AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
+	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
+	prepareRegexExpression();
+	sharedToken.reset(new SharedToken);
+	this->stemmerType = analyzerInternal.stemmerType;
+	this->stemmerFilePath = analyzerInternal.stemmerFilePath;
+	this->stopWordFilePath = analyzerInternal.stopWordFilePath;
+	this->synonymFilePath = analyzerInternal.synonymFilePath;
+	this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
+}
+
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-		const std::string &recordAllowedSpecialCharacters,
-		const std::string &stemmerFilePath,
-		const std::string &stopWordFilePath,
-		const std::string &synonymFilePath,
+		const string &recordAllowedSpecialCharacters,
+		const string &stemmerFilePath,
+		const string &stopWordFilePath,
+		const string &synonymFilePath,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
@@ -79,9 +92,10 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	this->stopWordFilePath = stopWordFilePath;
 	this->synonymFilePath = synonymFilePath;
 	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
+
 }
 
-void AnalyzerInternal::loadData(const std::string &s) const {
+void AnalyzerInternal::loadData(const string &s) const {
 	std::vector<CharType> charVector;
 	utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
 	this->sharedToken->currentToken.clear();
@@ -105,8 +119,8 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 	tokenAttributeHitsMap.clear();
 	const Schema *schema = record->getSchema();
 	// token string to vector<CharType>
-	vector < string > tokens;
-	vector<string>::iterator tokenIterator;
+	vector <string> tokens;
+	vector <string>::iterator tokenIterator;
 	unsigned positionIterator;
 	unsigned size;
 	for (unsigned attributeIterator = 0;
@@ -175,7 +189,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
 		vector<string> &queryKeywords, const char &delimiterCharacter,
 		const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
 		const char &fieldsOrCharacter,
-		const std::map<std::string, unsigned> &searchableAttributesNameToId,
+		const std::map<string, unsigned> &searchableAttributesNameToId,
 		vector<unsigned> &filters) const {
 	stringstream charToString;
 	string delimiter;
@@ -196,7 +210,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
 	filters.clear();
 	std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
-	vector < string > parts;
+	vector <string> parts;
 	replace_if(query.begin(), query.end(), boost::is_any_of(delimiter),
 			DEFAULT_DELIMITER);
 
@@ -211,7 +225,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
 	for (unsigned i = 0; i < parts.size(); i++) {
 		replace_if(parts[i].begin(), parts[i].end(),
 				boost::is_any_of(filterDelimiter), DEFAULT_DELIMITER);
-		vector < string > one_pair;
+		vector <string> one_pair;
 		boost::split(one_pair, parts[i], boost::is_any_of(" "));
 
 		if (one_pair.size() > 2 || one_pair.size() == 0) {
@@ -222,13 +236,12 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
 		const string cleanString = this->cleanString(one_pair[0]);
 		queryKeywords.push_back(cleanString);
 
-		if (one_pair.size() == 1) // have no filter information
-				{
+		if (one_pair.size() == 1) {// have no filter information
 			filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
 			continue;
 		}
 
-		vector < string > fields;
+		vector <string> fields;
 
 		bool AND = false;
 		bool OR = false;

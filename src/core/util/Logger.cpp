@@ -24,7 +24,7 @@ char* Logger::formatCurrentTime(char* buffer, unsigned size) {
 	time_t now = time(0);
 	struct tm tstruct;
 	tstruct = *localtime(&now);
-	strftime(buffer, size, "%x %X", &tstruct);
+	strftime(buffer, size, "%F %X", &tstruct);
 	return buffer;
 }
 

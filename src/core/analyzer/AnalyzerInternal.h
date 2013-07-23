@@ -14,11 +14,14 @@
 #include <instantsearch/Analyzer.h>
 #include <boost/regex.hpp>
 #include "TokenOperator.h"
+#include "util/Logger.h"
 
 using std::vector;
 using std::map;
 using std::string;
 using std::stringstream;
+using srch2::util::Logger;
+
 namespace srch2 {
 namespace instantsearch {
 
@@ -46,6 +49,9 @@ struct TokenAttributeHits {
 
 class AnalyzerInternal: public Analyzer {
 public:
+
+	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
+
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 			const std::string &recordAllowedSpecialCharacters,
 			const std::string &stemmerFilePath = "",
@@ -83,9 +89,7 @@ public:
 			disallowedCharactersRegex = boost::regex(regexString);
 		} catch (boost::regex_error& e) {
 
-			std::cerr << regexString
-					<< " is not a valid regular expression. Using default: [^A-Za-z0-9 ]"
-					<< std::endl;
+            Logger::error("%s is not a valid regular expression. Using default: [^A-Za-z0-9 ]", regexString.c_str());
 			disallowedCharactersRegex = boost::regex("[^A-Za-z0-9 ]");
 		}
 
