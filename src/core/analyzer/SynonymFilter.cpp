@@ -25,15 +25,14 @@
  */
 
 #include "SynonymFilter.h"
+#include "util/Logger.h"
 
 #include <string>
-#include <iostream>
-#include <stdio.h>
 #include <fstream>
-#include <string>
 #include "util/Assert.h"
 
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {

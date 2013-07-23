@@ -22,8 +22,6 @@
 #include <instantsearch/platform.h>
 #include <instantsearch/Analyzer.h>
 
-#include <cstdlib>
-#include <cstdio>
 #include <string>
 #include <vector>
 #include <map>

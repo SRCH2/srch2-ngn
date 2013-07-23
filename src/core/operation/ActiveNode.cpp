@@ -1,4 +1,6 @@
 #include "ActiveNode.h"
+#include "util/Logger.h"
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -36,13 +38,12 @@ void PrefixActiveNodeSet::printActiveNodes(const Trie* trie) const// Deprecated 
 {
 	typedef const TrieNode* trieNodeStar;
 	std::map<trieNodeStar,PivotalActiveNode>::const_iterator mapIterater;
-	std::cout << "QueryPrefix:" << this->prefix << "|PANMap:" << std::endl;
 	for ( mapIterater  = this->PANMap.begin(); mapIterater != this->PANMap.end(); mapIterater++ )
 	{
 		trieNodeStar trieNode = mapIterater->first;
 		string prefix;
 		trie->getPrefixString(this->trieRootNodeSharedPtr->root, trieNode, prefix);
-		std::cout << prefix << ":" << mapIterater->second.transformationdistance << std::endl;
+        Logger::debug("%s : %d" , prefix.c_str(),mapIterater->second.transformationdistance );
 	}
 }
 
