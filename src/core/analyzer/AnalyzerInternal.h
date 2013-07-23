@@ -46,6 +46,9 @@ struct TokenAttributeHits {
 
 class AnalyzerInternal: public Analyzer {
 public:
+
+	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
+
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 			const std::string &recordAllowedSpecialCharacters,
 			const std::string &stemmerFilePath = "",
