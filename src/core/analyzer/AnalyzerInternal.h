@@ -156,9 +156,9 @@ protected:
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.
-	std::string stopWordFilePath;
-	std::string synonymFilePath;
-	std::string stemmerFilePath;
+	string stopWordFilePath;
+	string synonymFilePath;
+	string stemmerFilePath;
 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
 	boost::regex disallowedCharactersRegex;
