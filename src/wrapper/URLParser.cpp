@@ -645,9 +645,9 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             {
             	exactTerm = new srch2is::Term(queryKeywordsVector[i],
             			termType,
-                        termBoost,
-                        similarityBoost,
-                        0);
+            			termBoost,
+            			similarityBoost,
+            			0);
 
                 fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
                 		termType,
