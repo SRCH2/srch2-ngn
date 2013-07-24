@@ -39,6 +39,7 @@ class FacetedSearchFilterInternal
 {
 
 public:
+
 	void facetByCountAggregation(const Score & attributeValue ,
 			const std::vector<Score> & lowerBounds ,
 			std::vector<float>  * counts ){
@@ -73,6 +74,13 @@ public:
 		// normally we should never reach to this point because each record should fall in at least one of the categories.
 		ASSERT(false);
 	}
+
+	//
+	std::vector<FacetType> types;
+	std::vector<std::string> fields;
+	std::vector<std::string> rangeStarts;
+	std::vector<std::string> rangeEnds;
+	std::vector<std::string> rangeGaps;
 
 };
 

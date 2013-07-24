@@ -11,6 +11,10 @@ namespace srch2
 namespace instantsearch
 {
 
+FacetedSearchFilter::FacetedSearchFilter(){
+	impl = new FacetedSearchFilterInternal();
+}
+
 FacetedSearchFilter::~FacetedSearchFilter(){
 
 }

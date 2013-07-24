@@ -49,9 +49,10 @@ public:
 	void doFilter(IndexSearcher * indexSearcher,   const Query * query,
 			QueryResults * input, QueryResults * output);
 	~NonSearchableAttributeExpressionFilter();
-	// temporary variables to test the expression framework, attributename must be less than attribute value
-	std::string attributeName;
-	Score attributeValue;
+
+	// this object is allocated and de-allocated ourside this class.
+	NonSearchableAttributeExpressionEvaluator * evaluator;
+
 private:
 
 	NonSearchableAttributeExpressionFilterInternal * impl;

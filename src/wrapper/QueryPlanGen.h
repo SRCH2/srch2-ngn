@@ -25,6 +25,9 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
+#include <instantsearch/FacetedSearchFilter.h>
+#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include <instantsearch/SortFilter.h>
 #include "QueryPlan.h"
 #include <algorithm>
 #include <sstream>
@@ -77,7 +80,9 @@ private:
 		// 2. If there is a filter query, allocate the filter and add it to the plan
 		if ( find(paramsContainer.summary.begin(), paramsContainer.summary.end() , FilterQueryEvaluatorFlag)
 				!= paramsContainer.summary.end()  ){ // there is a filter query
-			// TODO : create filer query and add to the plan->getPostProcessingPlan()->add(...)
+			srch2is::NonSearchableAttributeExpressionFilter * filterQuery = new srch2is::NonSearchableAttributeExpressionFilter();
+			filterQuery->evaluator = paramsContainer.filterQueryContainer->evaluator;
+			plan->getPostProcessingPlan()->addFilterToPlan(filterQuery);
 		}
 
 		// 3. If the search type is GetAllResults or Geo, look for Sort and Facet
@@ -87,7 +92,9 @@ private:
 					paramsContainer.getAllResultsParameterContainer->summary.end()
 					, SortQueryHandler)
 					!= paramsContainer.getAllResultsParameterContainer->summary.end()  ){ // there is a sort filter
-				// TODO: create the sort filter and add it to the plan
+				srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
+				sortFilter->evaluator = paramsContainer.getAllResultsParameterContainer->sortQueryContainer->evaluator;
+				plan->getPostProcessingPlan()->addFilterToPlan(sortFilter);
 			}
 
 			// look for Facet filter
@@ -95,7 +102,15 @@ private:
 					paramsContainer.getAllResultsParameterContainer->summary.end()
 					, FacetQueryHandler)
 					!= paramsContainer.getAllResultsParameterContainer->summary.end()  ){ // there is a sort filter
-				// TODO: create the sort filter and add it to the plan
+				srch2is::FacetedSearchFilter * facetFilter = new FacetedSearchFilter();
+				FacetQueryContainer * container = paramsContainer.getAllResultsParameterContainer->facetQueryContainer;
+				facetFilter->initialize(container->types, // FIXME : this compile error is because of CONSTANT problem
+										container->fields,
+										container->rangeStarts,
+										container->rangeEnds,
+										container->rangeGaps);
+
+				plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
 			}
 		} else if (plan->getSearchType() == GeoSearchType ){
 			// look for SortFiler
@@ -103,7 +118,9 @@ private:
 					paramsContainer.geoParameterContainer->summary.end()
 					, SortQueryHandler)
 					!= paramsContainer.geoParameterContainer->summary.end()  ){ // there is a sort filter
-				// TODO: create the sort filter and add it to the plan
+				srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
+				sortFilter->evaluator = paramsContainer.geoParameterContainer->sortQueryContainer->evaluator;
+				plan->getPostProcessingPlan()->addFilterToPlan(sortFilter);
 			}
 
 			// look for Facet filter
@@ -111,7 +128,15 @@ private:
 					paramsContainer.geoParameterContainer->summary.end()
 					, FacetQueryHandler)
 					!= paramsContainer.geoParameterContainer->summary.end()  ){ // there is a sort filter
-				// TODO: create the sort filter and add it to the plan
+				srch2is::FacetedSearchFilter * facetFilter = new FacetedSearchFilter();
+				FacetQueryContainer * container = paramsContainer.geoParameterContainer->facetQueryContainer;
+				facetFilter->initialize(container->types, // FIXME : this compile error is because of CONSTANT problem
+										container->fields,
+										container->rangeStarts,
+										container->rangeEnds,
+										container->rangeGaps);
+
+				plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
 			}
 		}
 

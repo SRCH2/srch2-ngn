@@ -39,6 +39,11 @@ namespace srch2
 namespace instantsearch
 {
 
+typedef enum{
+	Simple,
+	Range
+} FacetType;
+
 class FacetedSearchFilterInternal;
 
 class FacetedSearchFilter : public ResultsPostProcessorFilter
@@ -50,13 +55,12 @@ public:
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
 
-	// temporary public for test purposes
-	// map of attribute name to : "vector of attribute values for categorization"
-	// map<string, vector<Score>>
-	std::map<std::string , std::vector<Score> > lowerBoundsOfCategories;
-	// map of attribute name to : "type of aggregation for each category"
-	// map<string, FacetedSearchAggregationType>
-	std::map<std::string, srch2::instantsearch::FacetedSearchAggregationType> facetedSearchAggregationTypes;
+
+	void initialize(std::vector<FacetType> types,
+			std::vector<std::string> fields,
+			std::vector<std::string> rangeStarts,
+			std::vector<std::string> rangeEnds,
+			std::vector<std::string> rangeGaps);
 private:
 
 	FacetedSearchFilterInternal * impl;

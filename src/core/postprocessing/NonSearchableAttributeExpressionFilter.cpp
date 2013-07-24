@@ -36,6 +36,9 @@ namespace srch2
 namespace instantsearch
 {
 
+NonSearchableAttributeExpressionFilter::NonSearchableAttributeExpressionFilter(){
+	impl = new NonSearchableAttributeExpressionFilterInternal();
+}
 NonSearchableAttributeExpressionFilter::~NonSearchableAttributeExpressionFilter(){
 
 }

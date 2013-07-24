@@ -26,6 +26,7 @@
 
 
 #include "FilterQueryEvaluator.h"
+#include "SortFilterEvaluator.h"
 
 namespace srch2
 {
@@ -112,8 +113,8 @@ class SortQueryContainer
 {
 
 public:
-	std::vector<std::string> field;
-	std::vector<SortOrder> order;
+
+	SortFilterEvaluator * evaluator;
 };
 
 
@@ -148,9 +149,9 @@ public:
 
 
 	// facet parser parameters
-	FacetQueryContainer * facetQueryEvaluator;
+	FacetQueryContainer * facetQueryContainer;
 	// sort parser parameters
-	SortQueryContainer * sortQueryEvaluator;
+	SortQueryContainer * sortQueryContainer;
 
 };
 
@@ -163,9 +164,9 @@ public:
 
 
 	// facet parser parameters
-	FacetQueryContainer * facetQueryEvaluator;
+	FacetQueryContainer * facetQueryContainer;
 	// sort parser parameters
-	SortQueryContainer * sortQueryEvaluator;
+	SortQueryContainer * sortQueryContainer;
 
 	// geo related parameters
 	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
@@ -218,7 +219,7 @@ public:
 	ResponseResultsFormat responseResultsFormat;
 
 	// filter query parser parameters
-	FilterQueryContainer * filterQueryEvaluator;
+	FilterQueryContainer * filterQueryContainer;
 
 
 	// different search type specific parameters
