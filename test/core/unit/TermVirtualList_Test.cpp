@@ -30,6 +30,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
 #include "util/Assert.h"
+#include "util/Logger.h"
 
 #include <iostream>
 #include <algorithm>
@@ -40,6 +41,7 @@
 
 using namespace std;
 using namespace srch2::instantsearch;
+using srch2::util::Logger;
 
 typedef Trie Trie_Internal;
 typedef IndexReaderWriter IndexerInternal;
@@ -153,13 +155,10 @@ bool checkResults( TermVirtualList *termVirtualList, set<unsigned> *resultSet)
     HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
     while (termVirtualList->getNext(heapItem))
     {
-        cout<<"HeapPop:->RecordId:"<<heapItem->recordId<<"\tScore:"<<heapItem->termRecordRuntimeScore<<endl;
+        Logger::debug("HeapPop:->RecordId: %d\tScore:%.5f", heapItem->recordId, heapItem->termRecordRuntimeScore);
         
         if (resultSet->count(heapItem->recordId) == true)
         {
-            // LOG_REGION(0,
-            //          cout<<"HeapPop:->RecordId:"<<heapItem->recordId<<"\tScore:"<<heapItem->score<<endl;
-            //);
             resultSet->erase(heapItem->recordId);
         }
     }
@@ -196,14 +195,10 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pink","floyd","shine"
     };
-   // LOG_REGION(0,
-            cout<<"\n***COMPLETE EXACT***\nQuery:";
-    //);
+    Logger::debug("***COMPLETE EXACT***");
 
     TermType termType = TERM_TYPE_COMPLETE;
-    //LOG_REGION(0,
-            cout<<keywords[0]<< "\n";
-   // );
+    Logger::debug("Query:%s",(keywords[0]).c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
@@ -219,10 +214,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
     //delete prefixActiveNodeSet;
 
-
-   // LOG_REGION(0,
-            cout<<keywords[1]<< "\n";
-    //);
+    Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -233,9 +225,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[2]<< "\n";
-    //);
+    Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -280,13 +270,10 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pin","floy","shi"
     };
-    //LOG_REGION(0,
-            cout<<"\n***PREFIX EXACT***\nQuery:";
-    //);
+
+    Logger::debug("***PREFIX EXACT***");
     TermType termType = TERM_TYPE_PREFIX;
-   // LOG_REGION(0,
-            cout<<keywords[0]<< "\n";
-    //);
+    Logger::debug("Query: %s", keywords[0].c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
@@ -297,9 +284,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-   // LOG_REGION(0,
-            cout<<keywords[1]<< "\n";
-    //);
+    Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -311,9 +296,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[2]<< "\n";
-    //);
+    Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -357,13 +340,10 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
-    //LOG_REGION(0,
-            cout<<"\n***COMPLETE FUZZY***\nQuery:";
-    //);
+
+    Logger::debug("***COMPLETE FUZZY***");
     TermType termType = TERM_TYPE_COMPLETE;
-    LOG_REGION(0,
-            cout<<keywords[0]<< "\n";
-    );
+    Logger::debug("Query:%s", keywords[0].c_str());
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -374,9 +354,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[1]<< "\n";
-    //);
+    Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -387,9 +365,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[2]<< "\n";
-    //);
+    Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
@@ -433,13 +409,10 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pionn","fllio","shiii"
     };
-    //LOG_REGION(0,
-            cout<<"\n***PREFIX FUZZY***\nQuery:";
-    //);
+
+    Logger::debug("***PREFIX FUZZY***");
+    Logger::debug("Query: %s",keywords[0].c_str());
     TermType termType = TERM_TYPE_PREFIX;
-    LOG_REGION(0,
-            cout<<keywords[0]<< "\n";
-    );
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
@@ -449,9 +422,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[1]<< "\n";
-    //);
+    Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
@@ -461,9 +432,8 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    //LOG_REGION(0,
-            cout<<keywords[2]<< "\n";
-    //);
+
+    Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
@@ -499,7 +469,6 @@ void TermVirtualList_Tests()
 int main(int argc, char *argv[])
 {
     TermVirtualList_Tests();
-
-    cout<<"\n\nTermVirtualList unit tests passed!!";
+    Logger::debug("TermVirtualList unit tests passed!!");
     return 0;
 }

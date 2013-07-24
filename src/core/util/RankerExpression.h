@@ -62,18 +62,8 @@ struct RankerExpression
         this->doc_boost = doc_boost;
         this->idf_score = idf_score;
     
-        /*
-        std::cout << "doc_length:[" << this->doc_length << "] | "
-                  << "doc_boost: [" << this->doc_boost  << "] | "
-                  << "idf_score: [" << this->idf_score  << "] | "
-                  << "expression: [" << this->expr_string  << "] | "
-                  << std::endl;
-        */
-    
         double score = expression.value();
 
-        //std::cout << "score:[" << score << "]" << std::endl;
-    
         return static_cast<float>(score);
     }
 

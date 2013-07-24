@@ -24,8 +24,10 @@
 
 #include "QuadTree.h"
 #include "index/ForwardIndex.h"
+#include "util/Logger.h"
 
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -34,8 +36,6 @@ namespace instantsearch
 
 QuadTree::QuadTree(ForwardIndex *forwardIndex, Trie *trie)
 {
-    this->log_level = -1;
-
     this->cFiltersOfQuadTree = new CFilterIndex();
     this->oFiltersOfQuadTree = new OFilterIndex();
 
@@ -63,7 +63,7 @@ void QuadTree::createFilters()
 {
     if(!forwardIndex->isCommitted())
     {
-        cerr << "Trie and ForwardIndex are not committed yet, cannot create filters" << endl;
+        Logger::error("Trie and ForwardIndex are not committed yet, cannot create filters");
         return;
     }
     if(!root->isLeaf) // if we only have root, then we don't need filters
@@ -171,9 +171,7 @@ void QuadTree::merge()
         //    this->log_level = 0;
         //if (geoElementOffset % 1000 == 0)
         //    cout << geoElementOffset / 1000 << endl;
-        LOG_REGION(this->log_level,
-            cout << "****** " << geoElementOffset << " ******" << endl;
-        );
+        Logger::debug("****** %d ******", geoElementOffset);
         GeoElement* geoElement = this->geoElementIndex[geoElementOffset];
 
         // make an empty vector of skipped prefixes before traversing the quad tree
@@ -191,9 +189,7 @@ void QuadTree::merge()
         for (vector<unsigned>::const_iterator constIterator = this->newGeoRecordsToMerge[i].second->begin();
                         constIterator != this->newGeoRecordsToMerge[i].second->end();
                         ++constIterator) { // for each keyword of the newly inserted geoElement, add them to the geo index
-            LOG_REGION(this->log_level,
-                cout << "== One keyword ==" << endl;
-            );
+            Logger::debug("== One keyword ==");
             vector<OFilterMapPtr> skipList;
             root->addRecordToSubQuadTreeAfterCommit(this, *constIterator, this->newGeoRecordsToMerge[i].first, Prefix(Trie::MAX_KEYWORD_ID, Trie::MAX_KEYWORD_ID), skipList, insertedKeywords);
             insertedKeywords.insert(*constIterator);
@@ -252,9 +248,8 @@ void QuadTree::fixFiltersBroaden()
     for ( vector<InfoToFixBroadenPrefixesOnFilters>::iterator it = this->infoToFixBroadenPrefixesOnFilters.begin();
             it != this->infoToFixBroadenPrefixesOnFilters.end(); it++ )
     {
-        LOG_REGION(this->log_level,
-            cout << "fix " << it->oldParentOrSelfAndAncs->back().minId << " " << it->oldParentOrSelfAndAncs->back().maxId << " because of "<< it->problemKeywordIdPair.first << " " << it->problemKeywordIdPair.second << " " << it->hadExactlyOneChild << endl;
-        );
+        Logger::debug("fix %d %d because of %d %d has exactly one child: %d ", it->oldParentOrSelfAndAncs->back().minId, it->oldParentOrSelfAndAncs->back().maxId, 
+            it->problemKeywordIdPair.first, it->problemKeywordIdPair.second, it->hadExactlyOneChild );
 
         root->fixFiltersBroadenOnOneNode(this, it->oldParentOrSelfAndAncs, it->problemKeywordIdPair, it->hadExactlyOneChild);
 

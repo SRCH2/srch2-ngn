@@ -27,8 +27,6 @@
 #include <instantsearch/platform.h>
 #include <instantsearch/Analyzer.h>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <map>
 
@@ -53,12 +51,12 @@ class StemmerInternal
 public:
     static struct token_details * create_stemmer(void)
     {
-        return (struct token_details *) malloc(sizeof(struct token_details));
+        return (struct token_details *) new struct token_details;
     }
 
     static void free_stemmer(struct token_details * z)
     {
-        free(z);
+        delete z;
     }
 
     static int  stem(struct token_details * z, std::string token, int k);

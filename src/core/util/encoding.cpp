@@ -9,6 +9,8 @@
 //
 
 #include "encoding.h"
+#include "Logger.h"
+using srch2::util::Logger;
 
 
 // Tranform a utf-8 string to a CharType vector.
@@ -24,7 +26,7 @@ void utf8StringToCharTypeVector(const string &utf8String, vector<CharType> & cha
 	// and return it.
 	string::const_iterator end_it = utf8::find_invalid(utf8String.begin(), utf8String.end());
 	if (end_it != utf8String.end()) {
-		std::cout << "Invalid UTF-8 encoding detected in " << utf8String << "\n";
+        Logger::warn("Invalid UTF-8 encoding detected in %s", utf8String.c_str());
 	}
 
 	utf8::utf8to32(utf8String.begin(), end_it, back_inserter(charTypeVector));
@@ -54,7 +56,7 @@ const unsigned getUtf8StringCharacterNumber(const string utf8String)
 {
 	string::const_iterator end_it = utf8::find_invalid(utf8String.begin(), utf8String.end());
 	if (end_it != utf8String.end()) {
-		std::cout << "Invalid UTF-8 encoding detected in " << utf8String << "\n";
+        Logger::warn("Invalid UTF-8 encoding detected in %s", utf8String.c_str());
 	}
 	// Get the utf8 string length in the valid range
 	// For example a_1 a_2...a_i...a_n is a string, in which a_i is not valid, we will only return i-1[a_1 a_2...a_i-1]as the length

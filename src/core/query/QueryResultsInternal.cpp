@@ -22,11 +22,13 @@
 #include "operation/TermVirtualList.h"
 //#include "index/Trie.h"
 #include "operation/IndexSearcherInternal.h"
+#include "util/Logger.h"
 #include <instantsearch/Query.h>
 //#include <instantsearch/Term.h>
 #include <sstream>
 
 using std::vector;
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -270,22 +272,21 @@ void QueryResultsInternal::printResult() const
 	vector<unsigned> attributeBitmaps;
 	vector<vector<unsigned> > attributes;
 	vector<string> matchedKeywords;
-	cout << "Result count" <<": " << this->getNumberOfResults() << endl;;
+    Logger::debug("Result count %d" ,this->getNumberOfResults());
 	for(int i = 0; i < this->getNumberOfResults(); i++)
 	{
-		cout << "Result #" << i << ":" <<endl;
+        Logger::debug("Result #%d" ,i);
 		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
 		this->getMatchingKeywords(i, matchedKeywords);
 		this->getMatchedAttributes(i, attributes);
 		for(int j = 0; j < attributeBitmaps.size(); j++)
 		{
-			cout << matchedKeywords[j] << " " << attributeBitmaps[j] << "{";
+            Logger::debug("%s %d {", matchedKeywords[j].c_str(), attributeBitmaps[j]);
 			for(int k = 0; k < attributes[j].size(); k++)
-				cout << attributes[j][k] << " ";
-			cout << "} | ";
+                Logger::debug("%d", attributes[j][k]);
+            Logger::debug("}");
 		}
 
-		cout << endl;
 	}
 
 }

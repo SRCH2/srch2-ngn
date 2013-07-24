@@ -11,6 +11,8 @@
 #include "StemmerFilter.h"
 #include "StopFilter.h"
 #include "SynonymFilter.h"
+#include "util/Logger.h"
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
@@ -26,7 +28,7 @@ TokenOperator * SimpleAnalyzer::createOperatorFlow() {
 			tokenOperator = new StemmerFilter(tokenOperator, this->stemmerFilePath);
 		} else {
 			this->stemmerType = DISABLE_STEMMER_NORMALIZER;
-			cerr << "The stemmer file (path) that is provided is not valid. Please provide a valid file path." << endl;
+            Logger::error("The stemmer file %s is not valid. Please provide a valid file path." , this->stemmerFilePath.c_str());
 		}
 	}
 
@@ -35,7 +37,7 @@ TokenOperator * SimpleAnalyzer::createOperatorFlow() {
 		if(stat(this->stopWordFilePath.c_str(), &stResult) == 0) {
 			tokenOperator = new StopFilter(tokenOperator, this->stopWordFilePath);
 		} else {
-			cerr << "The stop word file (path) that is provided is not valid. Please provide a valid file path." << endl;
+            Logger::error("The stop word file %s is not valid. Please provide a valid file path.", this->stopWordFilePath.c_str());
 		}
 	}
 
@@ -44,7 +46,7 @@ TokenOperator * SimpleAnalyzer::createOperatorFlow() {
 		if(stat(this->synonymFilePath.c_str(), &stResult) == 0) {
 			tokenOperator = new SynonymFilter(tokenOperator, this->synonymFilePath, this->synonymKeepOriginFlag);
 		} else {
-			cerr << "The synonym file (path) that is provided is not valid. Please provide a valid file path." << endl;
+            Logger::error("The synonym file %s. Please provide a valid file path.", this->synonymFilePath.c_str());
 		}
 	}
 

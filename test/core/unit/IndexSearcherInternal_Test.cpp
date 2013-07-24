@@ -4,6 +4,7 @@
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
 #include "util/Assert.h"
+#include "util/Logger.h"
 #include "analyzer/AnalyzerInternal.h"
 
 #include <instantsearch/Term.h>
@@ -20,6 +21,7 @@
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
+using srch2::util::Logger;
 
 typedef Trie Trie_Internal;
 
@@ -217,19 +219,13 @@ bool checkResults(QueryResults *queryResults, set<unsigned> *resultSet)
         queryResults->getEditDistances(resultCounter, editDistances);
 
 
-        LOG_REGION(0,
-                cout<<"\nResult-("<<resultCounter<<") RecordId:"<<queryResults->getRecordId(resultCounter)<<"\tScore:"<<queryResults->getResultScore(resultCounter);
-        );
-        LOG_REGION(0,
-                cout<<"\nMatching Keywords:"<<endl;
-        );
+        Logger::debug("Result-(%d) RecordId:%s\tScore:%.5f", resultCounter, (queryResults->getRecordId(resultCounter)).c_str(), queryResults->getResultScore(resultCounter));
+        Logger::debug("Matching Keywords:");
 
         unsigned counter = 0;
         for(vector<string>::iterator iter = matchingKeywords.begin(); iter != matchingKeywords.end(); iter++, counter++ )
         {
-            LOG_REGION(0,
-                    cout<<"\t"<<*iter<<" "<<editDistances.at(counter)<<endl;
-            );
+            Logger::debug("\t%s %d", (*iter).c_str(), editDistances.at(counter));
         }
 
         if(resultSet->count(atoi(queryResults->getRecordId(resultCounter).c_str())) == false)

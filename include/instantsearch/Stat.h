@@ -20,9 +20,9 @@
 #ifndef __STAT_H__
 #define __STAT_H__
 
-#include <time.h>
 #include <vector>
 #include <iostream>
+#include "util/mytime.h"
 
 namespace srch2
 {

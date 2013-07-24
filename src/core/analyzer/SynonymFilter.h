@@ -18,6 +18,25 @@
 #include "TokenFilter.h"
 #include "instantsearch/Analyzer.h"
 
+/*
+ * If we have folllwing synonym rules
+ * s1: new york = ny
+ * s2: new york city = nyc
+ * s3: bill = william
+ *
+ * The flags will be set as following:
+ * new: SYNONYM_PREFIX_ONLY, meaning it is a prefix of a left-hand-site (lhs) string (s1 and s2) but not a complete string.
+ * new york: SYNONYM_PREFIX_AND_COMPLETE, meaning it is a prefix of an lhs string (s2) and also a complete lhs string (s1).
+ * new york city: SYNONYM_COMPLETE_ONLY, meaning it is a complete lhs string (s2) but it's not a (proper) prefix of any lhs string.
+ * bill: SYNONYM_COMPLETE_ONLY, meaning it is a complete lhs string (s3) but it's not a (proper) prefix of any lhs string.
+ * orange: SYNONYM_NOT_PREFIX_NOT_COMPLETE, meaning it is not a complete lhs string nor a prefix of any lhs string.
+ */
+typedef enum{
+	SYNONYM_PREFIX_ONLY,
+	SYNONYM_COMPLETE_ONLY,
+	SYNONYM_PREFIX_AND_COMPLETE,
+	SYNONYM_NOT_PREFIX_NOT_COMPLETE
+} SynonymTokenType;
 
 
 using namespace std;
@@ -32,7 +51,7 @@ public:
 	 * Sets sharedToken.
 	 */
 	SynonymFilter(TokenOperator *tokenOperator,
-			const std::string &synonymFilterFilePath,
+			const string &synonymFilterFilePath,
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag);
 
 	/*
@@ -50,21 +69,23 @@ private:
 	 */
 	srch2::instantsearch::SynonymKeepOriginFlag keepOriginFlag;
 
-	const std::string synonymDelimiter;
+	const string synonymDelimiter;
 
 	/*
-	 * synonymMap is the map of synonyms
-	 * If we have following rules:
-	 * A => B
-	 * C D => E
-	 * F, G => H
-	 * synonymMap will contains following records:
-	 * A => B
-	 * C D => E
-	 * F => H
-	 * G => H
+	 * If we have folllwing synonym rules
+	 * s1: new york = ny
+	 * s2: new york city = nyc
+	 * s3: bill = william
+	 *
+	 * The map elements will be as following:
+	 *
+	 * new => <SYNONYM_PREFIX_ONLY, "" >
+	 * new york => <SYNONYM_PREFIX_AND_COMPLETE, 'ny'>
+	 * new york city => <SYNONYM_COMPLETE_ONLY, 'nyc'>
+	 * bill => <SYNONYM_COMPLETE_ONLY, 'william'>
+	 * orange: Nothing will be in the map for it.
 	 */
-	map<std::string, std::string> synonymMap;
+	map<string, pair<SynonymTokenType, string> > synonymMap;
 
 	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
@@ -74,50 +95,24 @@ private:
 	/*
 	 * It is a buffer for tokens to check if we have multi-word synonyms
 	 */
-	std::vector<std::string> tokenBuffer;
+	std::vector<string> tokenBuffer;
 
 	/*
 	 *  creates the map of stop words.
 	 */
-	void createSynonymMap(const std::string &synonymFilePath);
+	void createMap(const string &synonymFilePath);
 
 	/*
-	 *  Checks the synonym map and returns true if the input string exists in the map keys
+	 * put the synonyms of existing tokens into the buffer of to-be-emitted tokens
 	 */
-	bool containsWord(const std::string &word);
+	void pushSynonymsOfExistingTokensInEmitBuffer();
 
 	/*
-	 *  Checks the synonym map and returns true if the input string is a part of any key
-	 */
-	bool isSubStringOfKey(const std::string &);
-
-	/*
-	 *  Checks the synonym map and returns the number of keys which have the word as their substring happening at the begining
-	 */
-	int numberOfKeysHavingTokenAsPrefix(const std::string &);
-
-	/*
-	 * Gets the synonym of buffer if tokens.
-	 */
-	vector<std::string> getSynonymOfTokensInTokenBuffer();
-
-	/*
-	 * returns the value of the string as the substring of a key
+	 * returns the row of the map which has input as its key
 	 * returns NULL if there is no such a key
 	 */
-	const std::string getSynonymOf(const std::string &);
+	pair<SynonymTokenType, std::string> &getValuePairOf(const std::string &key);
 
-	/*
-	 * returns the key of the string as the substring of a key
-	 * returns NULL if there is no such a key
-	 */
-	std::string getKeyOf(const std::string &);
-
-	/*
-	 * Separates the input string based on " " delimiter
-	 * adds the tokens to the temporaryBuffer (one by one)
-	 */
-	void addToTemporaryBuffer(std::string &);
 
 	/*
 	 * it emits the first member of the temporaryToken vedctor.
@@ -127,7 +122,6 @@ private:
 	 *
 	 */
 	void emitCurrentToken();
-
 
 	friend class boost::serialization::access;
 	template<class Archive>

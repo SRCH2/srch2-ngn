@@ -34,9 +34,10 @@
 #include "record/SchemaInternal.h"
 #include "analyzer/AnalyzerInternal.h"
 #include "util/cowvector/cowvector.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "util/encoding.h"
 #include "util/half.h"
+#include "util/mytime.h"
 
 using std::vector;
 using std::fstream;
@@ -441,7 +442,6 @@ public:
         //struct timespec tend;
         //clock_gettime(CLOCK_REALTIME, &tend);
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-        //std::cout << "Forward index create time :" << time << std::endl;
     };
 
     static void save(const ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
