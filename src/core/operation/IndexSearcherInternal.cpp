@@ -37,7 +37,6 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include "util/srch2_profiler.h"
 
 using namespace std;
 
@@ -378,9 +377,8 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::set<unsigned> visitedList;
         queryResultsInternal->fillVisitedList(visitedList);
     
-        sProfilerStart("CPUProfile");
         this->computeTermVirtualList(queryResultsInternal);
-        sProfilerStop();
+
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
