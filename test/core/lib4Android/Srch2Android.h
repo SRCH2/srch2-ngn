@@ -12,7 +12,6 @@
 
 #include <ctime>
 
-
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
@@ -38,6 +37,8 @@ QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 Indexer* loadIndex(const string& strIndexPath);
 
 void saveIndex(Indexer *indexer);
+
+string printQueryResult(QueryResults* queryResults, Indexer* indexer);
 
 }
 }

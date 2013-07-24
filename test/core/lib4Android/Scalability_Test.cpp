@@ -56,6 +56,7 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 		while (getline(lineStream, cell, '^') && cellCounter < 2) {
 			if (cellCounter == 0) {
 				record->setPrimaryKey(cell.c_str());
+				//record->setInMemoryData(cell);
 			} else {
 				record->setSearchableAttributeValue(0, cell);
 			}

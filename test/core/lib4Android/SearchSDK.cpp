@@ -85,9 +85,23 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
-		jobject javaThis, jlong index, jstring queryStr, jboolean isGeo) {
+JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
+		jobject javaThis, jlong indexPtr, jstring queryStr, jboolean isGeo) {
 
+	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
+	string queryString(nativeStringQuery);
+	Logger::console("query:%s", nativeStringQuery);
+	Indexer* indexer = (Indexer*) indexPtr;
+	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+	const Analyzer *analyzer = indexer->getAnalyzer();
+
+	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
+			srch2::instantsearch::PREFIX);
+
+	string result = printQueryResult(queryResults, indexer);
+	jstring jstr = env->NewStringUTF(result.c_str()); //hitting the reboot exactly here!!!!
+	env->ReleaseStringUTFChars(queryStr, nativeStringQuery);
+	return jstr;
 }
 #ifdef __cplusplus
 }
