@@ -643,17 +643,17 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             srch2is::Term *fuzzyTerm;
             if(urlParserHelper.isFuzzy)
             {
-                exactTerm = new srch2is::Term(queryKeywordsVector[i],
-                		termType,
+            	exactTerm = new srch2is::Term(queryKeywordsVector[i],
+            			termType,
                         termBoost,
                         similarityBoost,
                         0);
 
                 fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
                 		termType,
-                        termBoost,
-                        similarityBoost,
-                        srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
+                		termBoost,
+                		similarityBoost,
+                		srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -664,9 +664,9 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             }else{
                 exactTerm = new srch2is::Term(queryKeywordsVector[i],
                 		termType,
-                        termBoost,
-                        similarityBoost,
-                        0);
+                		termBoost,
+                		similarityBoost,
+                		0);
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 this->exactQuery->add(exactTerm);
