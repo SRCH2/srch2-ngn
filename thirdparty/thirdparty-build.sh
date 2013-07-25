@@ -22,3 +22,12 @@ echo "INSTALLING LIBEVENT in $CURRENTDIR/../"
 ./configure --prefix=$CURRENTDIR/../
 make install
 
+cd ../../gperftools
+tar -xvf gperftools-2.0.tar.gz
+cd gperftools-2.0.tar.gz
+
+CURRENTDIR=$(pwd)
+echo "INSTALLING google perftools in $CURRENTDIR/../"
+./configure --perfix=$CURRENTDIR/../
+make && make install
+

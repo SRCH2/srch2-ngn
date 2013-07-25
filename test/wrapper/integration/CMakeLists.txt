@@ -18,7 +18,7 @@ ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.c
 TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
 						${Srch2InstantSearch_LIBRARIES} 
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} -lprofiler -lunwind
+						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a -lunwind
 					)
 
 ADD_DEPENDENCIES(WrapperCreateIndexFromFile_Test srch2_core)
