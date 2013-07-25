@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     // for each keyword in the user input, add a term to the query
     for (unsigned i = 0; i < 2; ++i)
     {
-        TermType type = srch2is::COMPLETE;
-        Term *term = new Term(keywords[i], type, 1, 1);
+        TermType termType = srch2is::TERM_TYPE_COMPLETE;
+        Term *term = new Term(keywords[i], termType, 1, 1);
         query1->add(term);
     }
 
@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
     // for each keyword in the user input, add a term to the query
     for (unsigned i = 0; i < 1; ++i)
     {
-        TermType type = srch2is::COMPLETE;
-        Term *term = new Term(keywords[i], type, 1, 1);
+        TermType termType = srch2is::TERM_TYPE_COMPLETE;
+        Term *term = new Term(keywords[i], termType, 1, 1);
         query2->add(term);
     }
 

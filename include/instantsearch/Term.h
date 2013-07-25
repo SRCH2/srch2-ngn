@@ -32,8 +32,8 @@ namespace instantsearch
 
 typedef enum
 {
-    PREFIX = 0,
-    COMPLETE = 1
+	TERM_TYPE_PREFIX = 0,
+	TERM_TYPE_COMPLETE = 1
 } TermType;
 
 /**
