@@ -58,7 +58,7 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_addRecord(JNIEnv* env,
 
 	string cstrkey(nativeKey);
 	string cstrval(nativeVal);
-    
+
 	addRecord(indexer, cstrkey, cstrval, keepInMemory);
 
 	env->ReleaseStringUTFChars(key, nativeKey);
@@ -171,6 +171,8 @@ JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
 }
 #endif
 
+vector<string> matchedKeywords;
+vector<unsigned> editDistances;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -207,8 +209,6 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	Logger::console("classHit constructor: %d", constructorHit);
 
 	// Foreach queryResult
-	vector < string > matchedKeywords;
-	vector<unsigned> editDistances;
 	for (int i = 0; i < count; i++) {
 		float score = queryResults->getResultScore(i);
 		string record = queryResults->getInMemoryRecordString(i);
@@ -238,19 +238,21 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 		jobject hit = env->NewObject(clsHit, constructorHit, score, jstrRecord,
 				jstrArray, jintArray);
 
-
 		bool isAdded = env->CallBooleanMethod(objArrayList, arrayListAdd, hit);
 		Logger::console("set %d isAdded:%d", i, isAdded);
+		env->DeleteLocalRef(jstrRecord);
+		env->DeleteLocalRef(jstrArray);
+		env->DeleteLocalRef(jintArray);
+		env->DeleteLocalRef(hit);
 	}
-	Logger::console("TO:%s:%d",__FILE__,__LINE__);
 
 	env->DeleteLocalRef(clsArrayList);
-	Logger::console("TO:%s:%d",__FILE__,__LINE__);
 	env->DeleteLocalRef(clsHit);
-	Logger::console("TO:%s:%d",__FILE__,__LINE__);
-	Logger::console("MemUsage:%d",getRAMUsageValue());
+	env->DeleteLocalRef(objArrayList);
+	Logger::console("MemUsage:%d", getRAMUsageValue());
 	delete queryResults;
 	delete indexSearcher;
+	env->ReleaseStringUTFChars(queryStr, nativeStringQuery);
 	return objArrayList;
 }
 #ifdef __cplusplus
