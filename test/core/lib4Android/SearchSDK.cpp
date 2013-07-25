@@ -85,7 +85,7 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
+JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
 		jobject javaThis, jlong indexPtr, jstring queryStr, jboolean isGeo) {
 
 	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
@@ -99,9 +99,84 @@ JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 			srch2::instantsearch::PREFIX);
 
 	string result = printQueryResult(queryResults, indexer);
-	jstring jstr = env->NewStringUTF(result.c_str()); //hitting the reboot exactly here!!!!
+	jstring jstr = env->NewStringUTF(result.c_str());
 	env->ReleaseStringUTFChars(queryStr, nativeStringQuery);
 	return jstr;
+}
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
+		jobject javaThis, jlong indexPtr, jstring queryStr, jboolean isGeo) {
+
+	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
+	string queryString(nativeStringQuery);
+	Logger::console("query:%s", nativeStringQuery);
+	Indexer* indexer = (Indexer*) indexPtr;
+	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+	const Analyzer *analyzer = indexer->getAnalyzer();
+
+	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
+			srch2::instantsearch::PREFIX);
+
+    // Find java ArrayList
+    jclass clsArrayList = env->FindClass("java/util/ArrayList");
+    jmethodID constructor = env->GetMethodID(clsArrayList, "<init>", "(I)V");
+    Logger::console("arrayListConstructor: %d", constructor);
+    jmethodID arrayListAdd = env->GetMethodID(clsArrayList, "add", "(Ljava/lang/Object;)Z");
+    Logger::console("arrayListAdd: %d", arrayListAdd);
+
+	int count = queryResults->getNumberOfResults();
+    jobject objArrayList = env->NewObject(clsArrayList, constructor, count);
+
+    // Find com.srch2.mobile.ndksearch.Hit
+    jclass clsHit = env->FindClass("com/srch2/mobile/ndksearch/Hit");
+    Logger::console("classHit: %d", clsHit);
+    //public Hit(float score, String record, String[] keywords, int[] eds)
+    jmethodID constructorHit = env->GetMethodID(clsHit, "<init>", "(FLjava/lang/String;[Ljava/lang/String;[I)V");
+    Logger::console("classHit constructor: %d", constructorHit);
+
+    // Foreach queryResult
+    vector<string> matchedKeywords;
+    vector<unsigned> editDistances;
+    for(int i = 0; i < count ; i++){
+        float score = queryResults->getResultScore(i);
+		string record = queryResults->getInMemoryRecordString(i);
+		queryResults->getMatchingKeywords(i, matchedKeywords);
+		queryResults->getEditDistances(i, editDistances);
+
+        // create record string
+        jstring jstrRecord = env->NewStringUTF(record.c_str());
+        // create keywords array
+        int size = matchedKeywords.size();
+        jobjectArray jstrArray = (jobjectArray)env->NewObjectArray(size,
+                env->FindClass("java/lang/String"), env->NewStringUTF(""));
+        for(int j = 0; j < size;j++){
+            env->SetObjectArrayElement(jstrArray, j, env->NewStringUTF( matchedKeywords[j].c_str() ) );
+        }
+
+        // create edit distance array
+        jintArray jintArray = env->NewIntArray(size);
+        jint* eds = new jint[size];
+        for(int j = 0; j < size; j++){
+            eds[j] = editDistances[j];
+        }
+        env->SetIntArrayRegion(jintArray, 0, size, eds);
+        delete [] eds;
+
+        jobject hit = env->NewObject(clsHit, constructorHit, score, jstrRecord, jstrArray, jintArray);
+
+        Logger::console("set %d",i);
+        env->CallVoidMethod(objArrayList, arrayListAdd, hit);
+    }
+        
+    env->DeleteLocalRef(clsArrayList);
+    env->DeleteLocalRef(clsHit);
+	return objArrayList;
 }
 #ifdef __cplusplus
 }

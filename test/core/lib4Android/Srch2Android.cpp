@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "analyzer/StandardAnalyzer.h"
-//#include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
 
 #define CHECK_DELETE(ptr)	{if(ptr!=NULL){delete ptr; ptr=NULL;}};
@@ -55,45 +54,22 @@ string printQueryResult(QueryResults* queryResults, Indexer* indexer) {
 	Logger::console("Result count:%d", queryResults->getNumberOfResults());
 
 	stringstream ss;
-	char recordstr[1024] = { 0 };
+	string recordStr;
 	int icount = queryResults->getNumberOfResults();
 	for (int i = 0; i < icount; i++) {
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		queryResults->getMatchedAttributeBitmaps(i, attributeBitmaps);
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		queryResults->getMatchingKeywords(i, matchedKeywords);
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		queryResults->getMatchedAttributes(i, attributes);
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		ss << "{";
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		for (int j = 0; j < attributeBitmaps.size(); j++) {
-			Logger::console("%s:%d", __FILE__, __LINE__);
 			ss << matchedKeywords[j] << ",";
-			Logger::console("%s:%d", __FILE__, __LINE__);
 		}
-		Logger::console("%s:%d", __FILE__, __LINE__);
 		ss << "}";
 
 		unsigned internalRecordId = queryResults->getInternalRecordId(i);
-		Logger::console("record id:%d, record string: %s", internalRecordId,
-				(indexer->getInMemoryData(internalRecordId)).c_str());
-		if (indexer->getInMemoryData(internalRecordId) != "") {
-			Logger::console("%s:%d", __FILE__, __LINE__);
-			strncpy(recordstr,
-					(indexer->getInMemoryData(internalRecordId)).c_str(), 1024);
-		}
-		Logger::console("%s:%d", __FILE__, __LINE__);
-
-//		string uncompressedInMemoryRecordString;
-//		snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-//				compressedInMemoryRecordString.size(),
-//				&uncompressedInMemoryRecordString);
-//		ss << uncompressedInMemoryRecordString << endl;
-//		recordstr.assign( queryResults->getInMemoryRecordString(i));
-		Logger::console("record : %s", recordstr);
-		ss << recordstr << endl;
-		Logger::console("ss: %s", ss.str().c_str());
+		recordStr = indexer->getInMemoryData(internalRecordId);
+		Logger::console("record : %s", recordStr.c_str());
+		ss << recordStr << endl;
 	}
 	Logger::console("%s", ss.str().c_str());
 	return ss.str();
