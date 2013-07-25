@@ -84,8 +84,7 @@ private:
 	static const char* const responseWriteTypeParamName;
 	static const char* const sortParamName;
 	static const char* const sortFiledsDelimiter;
-
-
+	static const char* const keywordQueryParamName;
 
 
 	// TODO: change the prototypes to reflect input/outputs
@@ -184,7 +183,7 @@ private:
 	 * output:
 	 * 		1. it fills up the metadata of the queryHelper object
 	 */
-	void localParameterParser();
+	void localParameterParser(string* input);
 
 
 
@@ -193,7 +192,7 @@ private:
 	 * input: keyword string : keyword1 AND keyword2~2.5
 	 * output: fills up the helper
 	 */
-	void keywordParser();
+	void keywordParser(string* input);
 
 
 
@@ -212,6 +211,8 @@ private:
 	 * this function parsers the parameters related to geo search like latitude and longitude .
 	 */
 	void getGeoParser();
+
+	bool verifyMainQuery(const string &input);
 
 };
 

@@ -3,6 +3,7 @@
 #include "ParserUtility.h"
 #include <evhttp.h>
 #include <string>
+#include "boost/regex.hpp"
 
 using namespace std;
 
@@ -21,12 +22,12 @@ const char* const QueryParser::ommitHeaderParamName = "omitHeader";
 const char* const QueryParser::responseWriteTypeParamName = "wt";
 const char* const QueryParser::sortParamName = "sort";
 const char* const QueryParser::sortFiledsDelimiter = ",";
+const char* const QueryParser::keywordQueryParamName = "q";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
     this->container = container;
     this->headers = headers;
-
 }
 
 // parses the URL to a query object
@@ -66,6 +67,56 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
      * 2. calls localParameterParser()
      * 3. calls the keywordParser();
      */
+    // 1. get the mainQuery string.
+    const char * mainQueryTmp = evhttp_find_header(&headers,
+            QueryParser::keywordQueryParamName);
+    if (mainQueryTmp) { // if this parameter exists
+        size_t st;
+        string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
+        // check if mainQueryStr is valid.
+        boost::algorithm::trim(mainQueryStr);
+        if (this->verifyMainQuery(mainQueryStr)) {
+            // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
+            this->localParameterParser(&mainQueryStr);
+            // 3. call the keywordParser(). this will take care of rest of the keyword string.
+            this->keywordParser(&mainQueryStr);
+        }
+
+    }
+
+}
+
+bool verifyMainQuery(const string &input) {
+    // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
+    const string lpRegexString =
+            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
+    const string fieldRegexString = "\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
+    const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
+    const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
+    const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
+    const string keywordRegexString = "\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}"; // verifies the syntax of keyword
+    const string keywordWithModsRegexString = keywordRegexString
+            + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
+    std::string termModRegex = "(" + keywordWithModsRegexString + "|"
+            + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
+
+    std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
+            + termModRegex + "(\\s+(AND|&&)\\s+" + termModRegex + ")*\\s*"; // verifies the systax of complete query string.
+    // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
+    boost::regex queryRegex(queryRegexString);
+    // the above regex block needs to be compiled once only
+    /*
+     *  explaination of above regex:
+     *  if localparameter is present then, query string should START with localparameter.
+     *  ^(" + lpRegexString + "){0,1}  =>  here {0,1} makes sure localparameter is present at most once.
+     *  query can have a keyword or a field:keyword pair.
+     *  field should not start with a '.' (dot). '.' and '+' have special meaning in the field names.
+     *  field1.field2:keyword would mean that engine will result the record only if  'keyword' is present in both field1 and field2
+     *  field1+field2:keyword would mean that engine will result the record if  'keyword' is present in field1 or field2
+     *  Note: we can have only '+' or '.' not both. e.g. field1.field2+field3:keyword is invalid syntax
+     *  field can have alphnumerical characters
+     */
+    return boost::regex_match(input, queryRegex);
 }
 
 void QueryParser::fieldListParser() {
@@ -277,30 +328,32 @@ void QueryParser::sortParser() {
         string sortString = evhttp_uridecode(sortTemp, 0, &st);
         // we have sortString, we need to tokenize this string and populate the
         // parameters in SortQueryEvaluator class object.
-        char * pch = strtok(fl.c_str(), QueryParser::sortFiledsDelimiter);
-        while (pch) {
-            string field = pch;
-            if (field == "*") {
-                this->container->responseAttributesList.clear();
-                this->container->responseAttributesList.push_back("*");
-                return;
-            }
-            this->container->responseAttributesList.push_back(field);
-            //
-            pch = strtok(fl.c_str(), NULL);
-        }
-        // populate the summary
-        this->container->summary.push_back(SortQueryHandler); // should we change this ParameterName to OmitHeader?
     }
 }
 
-void QueryParser::localParameterParser() {
+void QueryParser::localParameterParser(string *input) {
     /*
-     * based on context it extract the key/value pairs and puts them in the helper.
+     * it checks if localparamertes are present in the input. extracts the key/value pairs and puts them in the helper.
      */
+    // check if input string might have a local parameter info
+    std::string localParametersString; // string to contain the localparameter string only
+    std::string lpRegexString =
+            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*\\}";
+    boost::regex localParameterRegex(lpRegexString);
+    boost::smatch clpMatches;
+    if (boost::regex_search(input, clpMatches, localParameterRegex)) {
+        // remove the localparameter string part form the input.
+        input = boost::regex_replace(input, localParameterRegex, ""); // input is modified. lp info is being removed.
+        localParametersString = clpMatches[0];
+
+        // parse the key value pairs and populate the container
+
+    } else {
+        // does not contain any localParameter info.
+    }
 }
 
-void QueryParser::keywordParser() {
+void QueryParser::keywordParser(string * input) {
     /*
      * parses the keyword string and fills up the helper by term information
      */
