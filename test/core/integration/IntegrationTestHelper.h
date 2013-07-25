@@ -77,9 +77,6 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
 // 3. parse a query to fuzzy and prefix keywords
 void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1);
 
-// 4. parse a query to fuzzy and complete keywords
-void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1);
-
 void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed, srch2::instantsearch::TermType termType);
 
 void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0);

@@ -825,7 +825,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
         
             unsigned minId = trieNode->getMinId();
             unsigned maxId = trieNode->getMaxId();
-            if (virtualListVector->at(j)->getTermType() == srch2::instantsearch::COMPLETE) {
+            if (virtualListVector->at(j)->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
                 if (trieNode->isTerminalNode())
                     maxId = minId;
                 else

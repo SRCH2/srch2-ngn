@@ -197,9 +197,9 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     };
     Logger::debug("***COMPLETE EXACT***");
 
-    TermType type = COMPLETE;
+    TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s",(keywords[0]).c_str());
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
 
@@ -214,9 +214,8 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
     //delete prefixActiveNodeSet;
 
-
     Logger::debug(keywords[1].c_str());
-    term0 = ExactTerm::create(keywords[1], type, 1, 1);
+    term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -226,8 +225,8 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
-    Logger::debug(keywords[2].c_str()); 
-    term0 = ExactTerm::create(keywords[2], type, 1, 1);
+    Logger::debug(keywords[2].c_str());
+    term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -271,10 +270,11 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pin","floy","shi"
     };
+
     Logger::debug("***PREFIX EXACT***");
-    TermType type = PREFIX;
+    TermType termType = TERM_TYPE_PREFIX;
     Logger::debug("Query: %s", keywords[0].c_str());
-    Term *term0 = ExactTerm::create(keywords[0], type, 1, 1);
+    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
     prefixActiveNodeSet->busyBit->isFree();
@@ -285,7 +285,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
 
     Logger::debug(keywords[1].c_str());
-    term0 = ExactTerm::create(keywords[1], type, 1, 1);
+    term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -297,7 +297,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
 
     Logger::debug(keywords[2].c_str());
-    term0 = ExactTerm::create(keywords[2], type, 1, 1);
+    term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -340,10 +340,11 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
+
     Logger::debug("***COMPLETE FUZZY***");
-    TermType type = COMPLETE;
+    TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s", keywords[0].c_str());
-    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
+    Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
@@ -354,7 +355,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
 
     Logger::debug(keywords[1].c_str());
-    term0 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -365,7 +366,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
 
     Logger::debug(keywords[2].c_str());
-    term0 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
@@ -408,10 +409,11 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     string keywords[3] = {
             "pionn","fllio","shiii"
     };
+
     Logger::debug("***PREFIX FUZZY***");
     Logger::debug("Query: %s",keywords[0].c_str());
-    TermType type = PREFIX;
-    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
+    TermType termType = TERM_TYPE_PREFIX;
+    Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
@@ -421,7 +423,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete termVirtualList;
 
     Logger::debug(keywords[1].c_str());
-    term0 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
@@ -430,8 +432,9 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
 
+
     Logger::debug(keywords[2].c_str());
-    term0 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
+    term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
     termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
 

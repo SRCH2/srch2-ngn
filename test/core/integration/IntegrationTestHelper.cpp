@@ -265,7 +265,7 @@ void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = PREFIX;
+        TermType type = TERM_TYPE_PREFIX;
         Term *term = ExactTerm::create(queryKeywords[i], type, 1, 0.5);
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->setPrefixMatchPenalty(0.95);
@@ -285,7 +285,7 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = COMPLETE;
+        TermType type = TERM_TYPE_COMPLETE;
         Term *term = ExactTerm::create(queryKeywords[i], type, 1, 0.5);
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->add(term);
@@ -304,7 +304,7 @@ void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = PREFIX;
+        TermType type = TERM_TYPE_PREFIX;
         Term *term = FuzzyTerm::create(queryKeywords[i], type, 1, 0.5, getNormalizedThreshold(queryKeywords[i].size()));
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->setPrefixMatchPenalty(0.95);
@@ -324,7 +324,7 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = COMPLETE;
+        TermType type = TERM_TYPE_COMPLETE;
         Term *term = FuzzyTerm::create(queryKeywords[i], type, 1, 0.5, getNormalizedThreshold(queryKeywords[i].size()));
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         //query->setPrefixMatchPenalty(0.95);

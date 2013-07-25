@@ -162,19 +162,19 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 
 // Warm up the index, so that the first query in the test won't be slow
 void warmUp(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, PREFIX);
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, PREFIX);
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, PREFIX);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
 }
 
 // Warm up the geo index, so that the first query in the test won't be slow
 void warmUpGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, PREFIX);
+			60.0, -90.0, 1, TERM_TYPE_PREFIX);
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, PREFIX);
+			60.0, -90.0, 1, TERM_TYPE_PREFIX);
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, PREFIX);
+			60.0, -90.0, 1, TERM_TYPE_PREFIX);
 }
 
 // Read queries from file and do the search
@@ -327,7 +327,7 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 	string strIndexPath(nativeStringIndexPath);
 	string strTestFile(nativeStringDataFile);
 
-	srch2::instantsearch::TermType termType = PREFIX;
+	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
 
 	if (!isGeo) {
 		string data_file = strTestFile + "/data.txt";

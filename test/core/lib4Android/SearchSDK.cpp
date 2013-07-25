@@ -28,7 +28,7 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndex(
 
 	string strIndexPath(nativeStringIndexPath);
 
-	srch2::instantsearch::TermType termType = PREFIX;
+	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
 
 	Logger::console("Save index to %s", strIndexPath.c_str());
 
@@ -81,7 +81,7 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndexByFile(
 	string strIndexPath(nativeStringIndexPath);
 	string strTestFile(nativeStringDataFile);
 
-	srch2::instantsearch::TermType termType = PREFIX;
+	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
 
 	Logger::console("Read data from %s", strTestFile.c_str());
 	Logger::console("Save index to %s", strIndexPath.c_str());
@@ -160,7 +160,7 @@ JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
 	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
-			srch2::instantsearch::PREFIX);
+			srch2::instantsearch::TERM_TYPE_PREFIX);
 
 	string result = printQueryResult(queryResults, indexer);
 	jstring jstr = env->NewStringUTF(result.c_str());
@@ -187,7 +187,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
 	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
-			srch2::instantsearch::PREFIX);
+			srch2::instantsearch::TERM_TYPE_PREFIX);
 
 	// Find java ArrayList
 	jclass clsArrayList = env->FindClass("java/util/ArrayList");
@@ -217,13 +217,15 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 
 		// create record string
 		jstring jstrRecord = env->NewStringUTF(record.c_str());
+		jstring jstrEmpty = env->NewStringUTF("");
 		// create keywords array
 		int size = matchedKeywords.size();
 		jobjectArray jstrArray = (jobjectArray) env->NewObjectArray(size,
-				env->FindClass("java/lang/String"), env->NewStringUTF(""));
+				env->FindClass("java/lang/String"), jstrEmpty);
 		for (int j = 0; j < size; j++) {
-			env->SetObjectArrayElement(jstrArray, j,
-					env->NewStringUTF(matchedKeywords[j].c_str()));
+			jstring jstrMatch = env->NewStringUTF(matchedKeywords[j].c_str());
+			env->SetObjectArrayElement(jstrArray, j, jstrMatch);
+			env->DeleteLocalRef(jstrMatch);
 		}
 
 		// create edit distance array
@@ -244,6 +246,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 		env->DeleteLocalRef(jstrArray);
 		env->DeleteLocalRef(jintArray);
 		env->DeleteLocalRef(hit);
+		env->DeleteLocalRef(jstrEmpty);
 	}
 
 	env->DeleteLocalRef(clsArrayList);
