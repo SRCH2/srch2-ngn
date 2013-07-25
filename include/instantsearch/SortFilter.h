@@ -37,7 +37,13 @@ namespace instantsearch
 {
 
 
-
+class SortEvaluator
+{
+public:
+	virtual void evaluate(std::map<std::string, Score> nonSearchableAttributeValues,Score * score) const = 0 ;
+	virtual ~SortEvaluator();
+	SortOrder order;
+};
 
 class SortFilter : public ResultsPostProcessorFilter
 {
@@ -49,9 +55,7 @@ public:
 	~SortFilter();
 
 
-	// TODO : temperorrily we keep two simple variables to be filled up at query builder
-	std::string attributeName;
-	SortOrder order;
+	SortEvaluator * evaluator;
 };
 
 }

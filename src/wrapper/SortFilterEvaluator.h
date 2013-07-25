@@ -1,4 +1,4 @@
-//$Id: RangeQueryFilter.h 3456 2013-06-26 02:11:13Z Jamshid $
+//$Id: ResultsPostProcessor.h 3456 2013-06-26 02:11:13Z Jamshid $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -16,39 +16,48 @@
 
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
-
-
-#ifndef _RANGEQUERYFILTER_H_
-#define _RANGEQUERYFILTER_H_
-
-
-#include <vector>
+#include <instantsearch/SortFilter.h>
+#include <instantsearch/Score.h>
 #include <map>
 #include <string>
 
+using srch2::instantsearch::SortEvaluator;
+using srch2::instantsearch::Score;
 
-#include "ResultsPostProcessor.h"
-#include "instantsearch/IndexSearcher.h"
-#include "instantsearch/Score.h"
+#ifndef _WRAPPER_SORTFILTEREVALUATOR_H_
+
+#define _WRAPPER_SORTFILTEREVALUATOR_H_
+
 
 namespace srch2
 {
-namespace instantsearch
+namespace httpwrapper
 {
 
-
-
-
-class RangeQueryFilter : public ResultsPostProcessorFilter
+class SortFilterEvaluator : public SortEvaluator
 {
-
 public:
-	void doFilter(IndexSearcher * indexSearcher, const Query * query,
-			QueryResults * input, QueryResults * output);
-	~RangeQueryFilter();
+	void evaluate(std::map<std::string, Score> nonSearchableAttributeValues,Score * score) const {
+
+
+	}
+	~SortEvaluator(){
+
+	}
+
+private:
+	std::vector<std::string> field;
+	std::vector<SortOrder> order;
+
+
 };
 
-}
-}
-#endif // _RANGEQUERYFILTER_H_
 
+
+}
+
+}
+
+
+
+#endif // _WRAPPER_SORTFILTEREVALUATOR_H_

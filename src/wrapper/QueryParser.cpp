@@ -119,6 +119,20 @@ bool verifyMainQuery(const string &input) {
     return boost::regex_match(input, queryRegex);
 }
 
+void QueryParser::isFuzzyParser() {
+    /*
+     * checks to see if "fuzzy" exists in parameters.
+     */
+}
+
+void QueryParser::lengthBoostParser() {
+
+}
+
+void QueryParser::prefixMatchPenaltyParser() {
+
+}
+
 void QueryParser::fieldListParser() {
     /*
      * if there is a field list query parameter
@@ -126,7 +140,6 @@ void QueryParser::fieldListParser() {
      *
      * Example: fl=field1,field2,field3 or fl=*
      */
-
     //1. first check to see if fl exists in the headers
     const char * flTemp = evhttp_find_header(&headers,
             QueryParser::fieldListParamName);

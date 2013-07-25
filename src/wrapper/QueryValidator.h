@@ -53,6 +53,12 @@ public:
 		 * 3. is a field searchable or not
 		 * 4. the value of "numberOfResultsLimit"
 		 * 5. is a facet field nonSearchable
+		 * 6. Only one of the search types should exist in summary
+		 * 7. if search type is TopK or GetAllResults query keywords should not be empty
+		 * 8. If search type is Geo, some latitude longitude must be provided.
+		 * 9. If facet is off desabled by configuration facet information should be removed.
+		 * 10. facet field names must be among non-searchable attributes.
+		 * 11. Sort field name must be among non-searchable attributes.
 		 *
 		 */
 	}

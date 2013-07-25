@@ -18,6 +18,7 @@
 #include "QueryParser.h"
 #include "QueryValidator.h"
 #include "QueryRewriter.h"
+#include "QueryPlanGen.h"
 #include "QueryPlan.h"
 
 #include <event2/http.h>
@@ -593,12 +594,12 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     qr.rewrite();
 
     //4. generate the queries and the plans
-    QueryPlan qp(paramContainer);
-    qp.generatePlan();
+    QueryPlanGen qpg(paramContainer,indexDataContainerConf);
+    QueryPlan plan = qpg.generatePlan();
 
     //5. now execute the plan
     srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
-    QueryExecutor qe(qp,resultsFactory);
+    QueryExecutor qe(plan,resultsFactory);
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
@@ -606,6 +607,9 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     // TODO : re-implement a print function which print the results in JSON format.
 
 
+    // 7. delete allocated structures
+    delete finalResults;
+    delete resultsFactory;
 
 
 
