@@ -378,7 +378,6 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         queryResultsInternal->fillVisitedList(visitedList);
     
         this->computeTermVirtualList(queryResultsInternal);
-
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
