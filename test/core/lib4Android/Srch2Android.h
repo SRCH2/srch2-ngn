@@ -27,8 +27,13 @@ int parseLine(char* line);
 
 int getRAMUsageValue();
 
+Indexer* createIndex(string indexDir, bool isGeo);
 Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
 		bool isGeo);
+
+void commitIndex(Indexer* indexer);
+
+void addRecord(Indexer* index, string key, string value, bool keepInMemory);
 
 QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 		const string& queryString, unsigned ed,

@@ -75,8 +75,19 @@ string printQueryResult(QueryResults* queryResults, Indexer* indexer) {
 	return ss.str();
 }
 
+void addRecord(Indexer* index, string key, string value, bool keepInMemory) {
+	Record *record = new Record(index->getSchema());
+	record->setPrimaryKey(key.c_str());
+	record->setSearchableAttributeValue(0, value);
+	if (keepInMemory) {
+		record->setInMemoryData(value);
+	}
+	index->addRecord(record, 0);
+	delete record;
+}
+
 unsigned loadDefaultData(const string &dataFile, int lineLimit,
-		Indexer* indexer, Schema *schema) {
+		Indexer* indexer, const Schema *schema) {
 	Record *record = new Record(schema);
 	string line;
 
@@ -112,7 +123,7 @@ unsigned loadDefaultData(const string &dataFile, int lineLimit,
 }
 
 unsigned loadGeoData(const string &dataFile, int lineLimit, Indexer* indexer,
-		Schema *schema) {
+		const Schema *schema) {
 	Record *record = new Record(schema);
 
 	string line;
@@ -150,13 +161,9 @@ unsigned loadGeoData(const string &dataFile, int lineLimit, Indexer* indexer,
 	delete record;
 	return cline;
 }
-
 // Read data from file, build the index, and save the index to disk
-Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
-		bool isGeo) {
-
+Indexer* createIndex(string indexDir, bool isGeo) {
 	Schema *schema;
-
 	if (isGeo) {
 		schema = Schema::create(srch2is::LocationIndex);
 	} else {
@@ -172,23 +179,35 @@ Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+	return indexer;
+}
+
+// Read data from file, build the index, and save the index to disk
+Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
+		bool isGeo) {
+	Indexer *indexer = createIndex(indexDir, isGeo);
 
 	clock_t timebegin = clock();
 	unsigned docsCounter = 0;
 	if (isGeo) {
-		docsCounter = loadGeoData(dataFile, lineLimit, indexer, schema);
+		docsCounter = loadGeoData(dataFile, lineLimit, indexer,
+				indexer->getSchema());
 	} else {
-		docsCounter = loadDefaultData(dataFile, lineLimit, indexer, schema);
+		docsCounter = loadDefaultData(dataFile, lineLimit, indexer,
+				indexer->getSchema());
 	}
 
 	indexer->commit();
 	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
 			docsCounter, getTimeSpan(timebegin));
 
-	// ? Should I delete those value? or it deleted by indexer ?
-//	delete indexMetaData;
-//	delete analyzer;
 	return indexer;
+}
+
+void commitIndex(Indexer* indexer) {
+	if (not indexer->isCommited()) {
+		indexer->commit();
+	}
 }
 
 void saveIndex(Indexer *indexer) {
