@@ -225,11 +225,11 @@ int main(int argc, char **argv)
     expected.clear();
 
     expected.push_back("1");
-    query(indexer, "prefix", -200.0, -200.0, 200.0, 200.0, srch2is::COMPLETE, 0, expected);
+    query(indexer, "prefix", -200.0, -200.0, 200.0, 200.0, srch2is::TERM_TYPE_COMPLETE, 0, expected);
     expected.clear();
 
 
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::COMPLETE, 0, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::TERM_TYPE_COMPLETE, 0, expected);
 
     // TODO revive this test case after the bug in active node is fixed
     /*
@@ -239,12 +239,12 @@ int main(int argc, char **argv)
     */
 
     expected.push_back("1");
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::PREFIX, 0, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::TERM_TYPE_PREFIX, 0, expected);
     expected.clear();
 
     expected.push_back("1");
     expected.push_back("2");
-    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::PREFIX, 1, expected);
+    query(indexer, "prefi", -200.0, -200.0, 200.0, 200.0, srch2is::TERM_TYPE_PREFIX, 1, expected);
     expected.clear();
 
     delete indexer;

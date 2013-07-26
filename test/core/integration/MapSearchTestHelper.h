@@ -252,8 +252,8 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = PREFIX;
-        Term *term = FuzzyTerm::create(queryKeywords[i], type, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].size()));
+        TermType termType = TERM_TYPE_PREFIX;
+        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].size()));
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -322,8 +322,8 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
-        TermType type = PREFIX;
-        Term *term = ExactTerm::create(queryKeywords[i], type, 1, 0.5);
+        TermType termType = TERM_TYPE_PREFIX;
+        Term *term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);

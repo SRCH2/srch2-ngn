@@ -20,7 +20,9 @@
 #include <iomanip>
 #include "QuadTree.h"
 #include "index/ForwardIndex.h"
+#include "util/Logger.h"
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -170,9 +172,8 @@ unsigned QuadNode::findChildContainingPoint(Point point) const
     unsigned y = (unsigned)(yRatio * CHILD_NUM_SQRT);
 
     if((x + y * CHILD_NUM_SQRT)>=CHILD_NUM){
-        cout << setprecision(10);
-        cout << yRatio << " , " << y << " , " << this->mbr.min.y << " , " << this->mbr.max.y << endl;
-        cout << point.x << " , " << point.y <<endl;
+        Logger::debug("%.10f,%d,%.10f,%.10f", yRatio, y, this->mbr.min.y,  this->mbr.max.y);
+        Logger::debug("%.10f,%.10f", point.x, point.y);
     }
 
     return x + y * CHILD_NUM_SQRT;
@@ -255,10 +256,9 @@ void QuadNode::foundOnOFilter(QuadTree *quadtree, const Trie *trie, OFilterMap *
     // add geoElementOffset to the found prefix in the OFilter
     geoElementList->add(geoElementOffset);
 
-    LOG_REGION(quadtree->log_level,
-        if (geoElementList->geoElementOffsets.size() + geoElementList->freq <= OBJECT_SELECTIVITY_THRESHOLD)
-            cout << "Add to O-Filter without split." << endl;
-    );
+    if (geoElementList->geoElementOffsets.size() + geoElementList->freq <= OBJECT_SELECTIVITY_THRESHOLD){
+        Logger::debug("Add to O-Filter without split.");
+    }
 
     if (geoElementList->geoElementOffsets.size() + geoElementList->freq > OBJECT_SELECTIVITY_THRESHOLD)
     { // if oFilter's frequency exceeds the threshold after we add this geoElementId TODO change freq to the true size
@@ -297,9 +297,7 @@ void QuadNode::ifNeedNewOFilterAndUpdateCFilter(QuadTree *quadtree, const Trie *
     // if we can find it on the c-filter
     if (cMapPtr->cmp->find(prefix) != cMapPtr->cmp->end())
     {
-        LOG_REGION(quadtree->log_level,
-            cout << "    branch 1" << endl;
-        );
+        Logger::debug("\tbranch 1");
         // update c-filter of this prefix and ancsetor prefixes
         for (unsigned i = 0; i < ancestorPrefixes.size(); i++)
             cMapPtr->updateCFilter(ancestorPrefixes[i], child);
@@ -311,9 +309,7 @@ void QuadNode::ifNeedNewOFilterAndUpdateCFilter(QuadTree *quadtree, const Trie *
     {
         // the prefix has never been here 
         // search ancestor prefixes on c-filter (impossible on o-filter, otherwise won't be here)
-        LOG_REGION(quadtree->log_level,
-            cout << "    branch 2" << endl;
-        );
+        Logger::debug("\tbranch 2");
 
         // get the shortest ancester prefix that's NOT on c-filter
         unsigned i = 0;
@@ -324,9 +320,7 @@ void QuadNode::ifNeedNewOFilterAndUpdateCFilter(QuadTree *quadtree, const Trie *
         Prefix newPrefix = (i == ancestorPrefixes.size() ? prefix: ancestorPrefixes[i]);
         ASSERT(oMapPtr->omp->find(newPrefix) == oMapPtr->omp->end());
         oMapPtr->updateOFilter(newPrefix, geoElementOffset, false);
-        LOG_REGION(quadtree->log_level,
-            cout << "    create new o-filter for " << newPrefix.minId << " " << newPrefix.maxId << endl;
-        );
+        Logger::debug("\tcreate new o-filter for %d %d" ,newPrefix.minId ,newPrefix.maxId );
         ASSERT(newPrefix.isAncestor(prefix));
 
         if (i == 0)
@@ -383,12 +377,11 @@ void QuadNode::addRecordToSubQuadTreeAfterCommit(QuadTree *quadtree, unsigned ke
     Prefix matchingPrefixOnOFilter;
     GeoElementList *geoElementList = oMapPtr->searchOFilter(prefix, matchingPrefixOnOFilter);
 
-    LOG_REGION(quadtree->log_level,
-        if (geoElementList != NULL)
-            cout << "search for " << prefix.minId << " " << prefix.maxId << " found " << matchingPrefixOnOFilter.minId << " " << matchingPrefixOnOFilter.maxId << endl;
-        else
-            cout << "search for " << prefix.minId << " " << prefix.maxId << " found nothing" << endl;
-    );
+    if (geoElementList != NULL){
+        Logger::debug("search for %d %d, found %d %d", prefix.minId, prefix.maxId, matchingPrefixOnOFilter.minId, matchingPrefixOnOFilter.maxId);
+    }else{
+        Logger::debug("search for %d %d, found nothing",prefix.minId, prefix.maxId); 
+    }
 
     if (geoElementList != NULL) // find the prefix or its ancestor on the oFilter
     {
@@ -415,9 +408,7 @@ void QuadNode::addRecordToSubQuadTreeAfterCommit(QuadTree *quadtree, unsigned ke
             cMapPtr->updateCFilter(ancestorPrefixes[i], child);
 
 
-        LOG_REGION(quadtree->log_level,
-            cout << "go to child " << child << endl;
-        );
+        Logger::debug("go to child");
 
         if (matchingPrefixOnOFilter.minId != Trie::MAX_KEYWORD_ID || matchingPrefixOnOFilter.maxId != Trie::MAX_KEYWORD_ID)
             ASSERT(prefixToChild.isStrictAncestor(matchingPrefixOnOFilter));
@@ -433,18 +424,14 @@ void QuadNode::addRecordToSubQuadTreeAfterCommit(QuadTree *quadtree, unsigned ke
     if ( (prefixFromParent.minId == Trie::MAX_KEYWORD_ID && prefixFromParent.maxId == Trie::MAX_KEYWORD_ID)
             || prefix.isAncestor(prefixFromParent) )
     {
-        LOG_REGION(quadtree->log_level,
-            cout << "case 1" << endl;
-        );
+        Logger::debug("case 1");
 
         ifNeedNewOFilterAndUpdateCFilter(quadtree, trie, prefix, geoElementOffset, child, oMapPtr, cMapPtr, prefixToChild, canReturn);
     }
     // else if prefix is descendant of prefixFromParent
     else if (prefixFromParent.isStrictAncestor(prefix))
     {
-        LOG_REGION(quadtree->log_level,
-            cout << "case 2" << endl;
-        );
+        Logger::debug("case 2");
 
         ifNeedNewOFilterAndUpdateCFilter(quadtree, trie, prefixFromParent, geoElementOffset, child, oMapPtr, cMapPtr, prefixToChild, canReturn);
     }
@@ -455,9 +442,7 @@ void QuadNode::addRecordToSubQuadTreeAfterCommit(QuadTree *quadtree, unsigned ke
         return;
 
     // recursively add the element to the subtree
-    LOG_REGION(quadtree->log_level,
-        cout << "go to child " << child << endl;
-    );
+    Logger::debug("go to child %d", child);
 
     this->entries[child]->addRecordToSubQuadTreeAfterCommit(quadtree, keywordId, geoElementOffset, prefixToChild, skipList, insertedKeywords);
     return;
@@ -594,9 +579,7 @@ void QuadNode::splitOFilter(QuadTree *quadtree, const Trie *trie, OFilterMapPtr 
             if (deltaOFilterMapIter->first.isAncestor(keywordPrefixFromNewGeoElem))
                 matchingPrefixOnOFilter = deltaOFilterMapIter->first;
 
-            LOG_REGION(quadtree->log_level,
-                cout << "split to current Quad Node with prefix " << deltaOFilterMapIter->first.minId << " " << deltaOFilterMapIter->first.maxId << endl;
-            );
+            Logger::debug("split to current Quad Node with prefix %d %d" , deltaOFilterMapIter->first.minId ,deltaOFilterMapIter->first.maxId );
 
             ASSERT(cMapPtr->cmp->find(deltaOFilterMapIter->first) == cMapPtr->cmp->end());
 
@@ -685,9 +668,7 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
         {
             unsigned child = this->findChildContainingPoint(quadtree->geoElementIndex[geoElementOffset]->point);
             cMapPtr->updateCFilter(prefixToRecover, child);
-            LOG_REGION(quadtree->log_level,
-                cout << "   further recover c-filter for " << prefixToRecover.minId << " " << prefixToRecover.maxId << " at child " << child << " for record "<< geoElementOffset << endl;
-            );
+            Logger::debug("   further recover c-filter for %d %d at child %d for record %d", prefixToRecover.minId, prefixToRecover.maxId, child, geoElementOffset);
         }
     }
     
@@ -695,9 +676,7 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
     {
         unsigned child = this->findChildContainingPoint(quadtree->geoElementIndex[newGeoElementOffset]->point);
         cMapPtr->updateCFilter(prefixToRecover, child);
-        LOG_REGION(quadtree->log_level,
-            cout << "   further recover c-filter for " << prefixToRecover.minId << " " << prefixToRecover.maxId << " at child " << child << " for record "<< newGeoElementOffset << endl;
-        );
+        Logger::debug("   further recover c-filter for %d %d at child %d for record %d", prefixToRecover.minId, prefixToRecover.maxId, child, newGeoElementOffset);
     }
 
 }
@@ -721,9 +700,7 @@ void QuadNode::recoverCFiltersOnThisNodeAndOFiltersOnChildrenNode(QuadTree *quad
     if (tempBitVector->count() <= CHILD_SELECTIVITY_THRESHOLD)
     {
         (*cMapPtr->cmp)[prefixToSplit] = *tempBitVector;
-        LOG_REGION(quadtree->log_level,
-            cout << "recover c-filter for " << prefixToSplit.minId << " " << prefixToSplit.maxId << endl;
-        );
+        Logger::debug("recover c-filter for %d %d", prefixToSplit.minId, prefixToSplit.maxId);
     }
 
     // Then, for each geoElement on the o-filter to be deleted shortly,
@@ -903,9 +880,7 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
         return;
     }
 
-    LOG_REGION(quadtree->log_level,
-        cout << "adjusting filters for " << oldKeywordId << "-" << newKeywordId << " reassignment" << endl;
-    );
+    Logger::debug("adjusting filters for %d-%d reassignment", oldKeywordId, newKeywordId);
 
     // if not leaf we should update filters
     OFilterMapPtr oMapPtr = quadtree->getOFilterMapPtr(this);
@@ -940,9 +915,7 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
             newPrefix.replace(oldKeywordId, newKeywordId);
 
             oMapPtr->changePrefix(matchingPrefixOnOFilter, newPrefix);
-            LOG_REGION(quadtree->log_level,
-                cout << " ---change on o-filter " << matchingPrefixOnOFilter.minId << " " << matchingPrefixOnOFilter.maxId << " to " << newPrefix.minId << " " << newPrefix.maxId << endl;
-            );
+            Logger::debug("---change on o-filter %d %d to %d %d", matchingPrefixOnOFilter.minId, matchingPrefixOnOFilter.maxId, newPrefix.minId, newPrefix.maxId);
         }
     }
 
@@ -972,9 +945,7 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
         childrenBitVector |= cMapPtr->cmp->at(oldAncestorsPrefixes[i]);
 
         cMapPtr->cmp->erase(oldAncestorsPrefixes[i]);
-        LOG_REGION(quadtree->log_level,
-            cout << " ---change on c-filter " << oldAncestorsPrefixes[i].minId << " " << oldAncestorsPrefixes[i].maxId << " to " << newPrefix.minId << " " << newPrefix.maxId << endl;
-        );
+        Logger::debug(" ---change on c-filter %d %d to %d %d", oldAncestorsPrefixes[i].minId, oldAncestorsPrefixes[i].maxId, newPrefix.minId ,newPrefix.maxId );
         
     }
 

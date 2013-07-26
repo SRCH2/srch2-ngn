@@ -8,6 +8,11 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
+set(GPERFTOOL_LIBS "")
+IF(ENABLE_PROFILER)
+    set(GPERFTOOL_LIBS "-lprofiler -lunwind")
+ENDIF()
+
 EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                       ARGS  -dumpversion
                   OUTPUT_VARIABLE gcc_compiler_version)
@@ -18,7 +23,7 @@ ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.c
 TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
 						${Srch2InstantSearch_LIBRARIES} 
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}
+						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
 					)
 
 ADD_DEPENDENCIES(WrapperCreateIndexFromFile_Test srch2_core)
