@@ -7,6 +7,17 @@ using srch2::util::Logger;
 #ifdef __cplusplus
 extern "C" {
 #endif
+JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLogLevel(JNIEnv* env,
+		jobject javaThis, jint logLevel) {
+	Logger::setLogLevel((Logger::LogLevel) logLevel);
+}
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLoggerFile(
 		JNIEnv* env, jobject javaThis, jstring logfile) {
 	const char *nativeStringLogFile = env->GetStringUTFChars(logfile, NULL);
@@ -192,38 +203,40 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	// Find java ArrayList
 	jclass clsArrayList = env->FindClass("java/util/ArrayList");
 	jmethodID constructor = env->GetMethodID(clsArrayList, "<init>", "(I)V");
-	Logger::console("arrayListConstructor: %d", constructor);
+	Logger::debug("arrayListConstructor: %d", constructor);
 	jmethodID arrayListAdd = env->GetMethodID(clsArrayList, "add",
 			"(Ljava/lang/Object;)Z");
-	Logger::console("arrayListAdd: %d", arrayListAdd);
+	Logger::debug("arrayListAdd: %d", arrayListAdd);
 
 	int count = queryResults->getNumberOfResults();
 	jobject objArrayList = env->NewObject(clsArrayList, constructor, count);
 
 	// Find com.srch2.mobile.ndksearch.Hit
 	jclass clsHit = env->FindClass("com/srch2/mobile/ndksearch/Hit");
-	Logger::console("classHit: %d", clsHit);
+	Logger::debug("classHit: %d", clsHit);
 	//public Hit(float score, String record, String[] keywords, int[] eds)
 	jmethodID constructorHit = env->GetMethodID(clsHit, "<init>",
 			"(FLjava/lang/String;[Ljava/lang/String;[I)V");
-	Logger::console("classHit constructor: %d", constructorHit);
+	Logger::debug("classHit constructor: %d", constructorHit);
 
 	// Foreach queryResult
+
 	for (int i = 0; i < count; i++) {
 		float score = queryResults->getResultScore(i);
 		string record = queryResults->getInMemoryRecordString(i);
 		queryResults->getMatchingKeywords(i, matchedKeywords);
-		queryResults->getEditDistances(i, editDistances);
+		queryResults->getEditDistances(i, (editDistances));
 
 		// create record string
 		jstring jstrRecord = env->NewStringUTF(record.c_str());
 		jstring jstrEmpty = env->NewStringUTF("");
 		// create keywords array
-		int size = matchedKeywords.size();
+		int size = (matchedKeywords).size();
 		jobjectArray jstrArray = (jobjectArray) env->NewObjectArray(size,
 				env->FindClass("java/lang/String"), jstrEmpty);
 		for (int j = 0; j < size; j++) {
-			jstring jstrMatch = env->NewStringUTF(matchedKeywords[j].c_str());
+			jstring jstrMatch = env->NewStringUTF(
+					(matchedKeywords)[j].c_str());
 			env->SetObjectArrayElement(jstrArray, j, jstrMatch);
 			env->DeleteLocalRef(jstrMatch);
 		}
@@ -232,7 +245,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 		jintArray jintArray = env->NewIntArray(size);
 		jint* eds = new jint[size];
 		for (int j = 0; j < size; j++) {
-			eds[j] = editDistances[j];
+			eds[j] = (editDistances)[j];
 		}
 		env->SetIntArrayRegion(jintArray, 0, size, eds);
 		delete[] eds;
@@ -241,7 +254,6 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 				jstrArray, jintArray);
 
 		bool isAdded = env->CallBooleanMethod(objArrayList, arrayListAdd, hit);
-		Logger::console("set %d isAdded:%d", i, isAdded);
 		env->DeleteLocalRef(jstrRecord);
 		env->DeleteLocalRef(jstrArray);
 		env->DeleteLocalRef(jintArray);
@@ -251,8 +263,8 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 
 	env->DeleteLocalRef(clsArrayList);
 	env->DeleteLocalRef(clsHit);
-	env->DeleteLocalRef(objArrayList);
-	Logger::console("MemUsage:%d", getRAMUsageValue());
+//	env->DeleteLocalRef(objArrayList);
+	Logger::debug("MemUsage:%d", getRAMUsageValue());
 	delete queryResults;
 	delete indexSearcher;
 	env->ReleaseStringUTFChars(queryStr, nativeStringQuery);

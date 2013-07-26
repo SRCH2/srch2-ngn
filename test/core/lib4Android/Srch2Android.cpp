@@ -232,14 +232,15 @@ QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 		const string& queryString, unsigned ed,
 		srch2::instantsearch::TermType termType) {
 	Logger::console("srch2::sdk::query:%s", queryString.c_str());
+	clock_t begin = clock();
 	Query *query = new Query(srch2::instantsearch::TopKQuery);
 	parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
 	int resultCount = 10;
 
 	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
 	indexSearcher->search(query, queryResults, resultCount);
-	Logger::console("srch2::sdk::queryresults:%d",
-			queryResults->getNumberOfResults());
+	Logger::console("srch2::sdk::queryresults:%d, time spend: %.5f seconds",
+			queryResults->getNumberOfResults(), getTimeSpan(begin));
 	delete query;
 	return queryResults;
 }
