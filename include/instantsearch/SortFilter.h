@@ -40,7 +40,8 @@ namespace instantsearch
 class SortEvaluator
 {
 public:
-	virtual void evaluate(std::map<std::string, Score> nonSearchableAttributeValues,Score * score) const = 0 ;
+	virtual int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const = 0 ;
+	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual ~SortEvaluator();
 	SortOrder order;
 };

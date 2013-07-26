@@ -16,6 +16,7 @@
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include "ParserUtility.h"
 
 using namespace snappy;
 
@@ -132,25 +133,47 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
             attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
             ++attributeIter)
     {
+
         string attributeKeyName = attributeIter->first;
         //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
-        string attributeStringValue;
-        getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
-        if (attributeStringValue=="") // if the attribute is int or float, convert it to string
-        {
-            double attributeDoubleValue;
-            getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
-            stringstream s;
-            s << attributeDoubleValue;
-            attributeStringValue = s.str();
-        }
-        // TODO : how should user enter data/time attributes ? right now it should be a long value as an string.
+        // if type is date/time check the syntax
+        if( attributeIter->second.first == srch2is::TIME){
+        	string attributeStringValue;
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
+        	if(attributeStringValue==""){
+        		// ERROR
+                error << "\nDATE/TIME field has non recognizable format.";
+                return false;// Raise Error
+        	}else{
+                if (attributeStringValue.compare("NULL") != 0)
+                {
+                    record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+                }else{
+                	// set the default value
+                	record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                }
+        	}
+        }else{
 
-        if (attributeStringValue.compare("NULL") != 0)
-        {
-            record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+            string attributeStringValue;
+            getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
+            if (attributeStringValue=="") // if the attribute is int or float, convert it to string
+            {
+                double attributeDoubleValue;
+                getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
+                stringstream s;
+                s << attributeDoubleValue;
+                attributeStringValue = s.str();
+            }
+            // TODO : how should user enter data/time attributes ? right now it should be a long value as an string.
+
+            if (attributeStringValue.compare("NULL") != 0)
+            {
+                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+            }
         }
+
     }
 
     // Add recordBoost, setSortableAttribute and setScoreAttribute
@@ -378,22 +401,61 @@ void convertValueToString(Json::Value value, string &stringValue){
   // get the string from a json value based on a key value.  Check the type first before
   // calling "asString()" to deal with the case where the input data was not formatted
   // properly.
-  // if the type is int or double we convert it to string
-  // Written by CHENLI
-  void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue, 
-                       const std::string &key,
-                       std::string &stringValue,
-                       const string &configName)
-  {
-	  if(!jsonValue.isMember(key))
-		{
-		  stringValue = "";
-		  cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
-			return;
-		}
-    Json::Value value = jsonValue.get(key, "NULL");
-    convertValueToString(value, stringValue);
-  }
+// if the type is int or double we convert it to string
+// Written by CHENLI
+void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
+		const std::string &key,
+		std::string &stringValue,
+		const string &configName)
+{
+	if(!jsonValue.isMember(key))
+	{
+		stringValue = "";
+		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		return;
+	}
+	Json::Value value = jsonValue.get(key, "NULL");
+	convertValueToString(value, stringValue);
+}
+
+
+// get the string from a json value based on a key value.
+// check to see if it is proper date/time format.
+void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
+		const std::string &key,
+		std::string &stringValue,
+		const string &configName){
+	if(!jsonValue.isMember(key))
+	{
+		stringValue = "";
+		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		return;
+	}
+	string temp;
+	Json::Value value = jsonValue.get(key, "NULL");
+	convertValueToString(value, temp);
+
+	// now check to see if it has proper date/time format
+
+    for(size_t i=0; i<formats; ++i)
+    {
+        std::istringstream ss(temp);
+        ss.imbue(inputs[i]);
+        boost::posix_time::ptime this_time;
+        ss >> this_time;
+
+        if(this_time != boost::posix_time::not_a_date_time){
+        	time_t value = ptime_to_time_t(this_time);
+        	long valueLong = value;
+        	stringValue = convertToStr(valueLong);
+        	return;
+        }
+
+    }
+    stringValue = "";
+    return;
+
+}
 
   // get the double from a json value based on a key value.  Check the type first before
   // calling "asDouble()" to deal with the case where the input data was not formatted
@@ -415,6 +477,8 @@ void convertValueToString(Json::Value value, string &stringValue){
     	doubleValue = value.asDouble();
     else if (value.isInt())
     	doubleValue = value.asInt();
+    else if (value.isUInt())
+    	doubleValue = value.asUInt();
     else // if the type is not double not int, set it to 0
     {
     	doubleValue = 0;

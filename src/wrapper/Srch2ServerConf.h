@@ -4,6 +4,7 @@
 #define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
+#include "WrapperConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -20,17 +21,6 @@ namespace po = boost::program_options;
 namespace srch2 {
 namespace httpwrapper {
 
-typedef enum {
-	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
-} WriteApiType;
-
-typedef enum {
-	INDEXCREATE = 0, INDEXLOAD = 1
-} IndexCreateOrLoad;
-
-typedef enum {
-	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
-} DataSourceType;
 
 class Srch2ServerConf {
 private:
@@ -75,6 +65,15 @@ private:
 	// < name, <type, <default, isSortable>>>
 	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
 
+
+
+	// facet
+	bool facetEnabled;
+	vector<int> facetTypes; // 0 : simple , 1 : range
+	vector<string> facetAttributes;
+	vector<string> facetStarts;
+	vector<string> facetEnds;
+	vector<string> facetGaps;
 
 	//vector<unsigned> attributesBoosts;
 
@@ -200,6 +199,25 @@ public:
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
+
+	vector<string> getAttributesToReturn() const {
+		return attributesToReturn;
+	}
+
+	void setAttributesToReturn(vector<string> attributesToReturn) {
+		this->attributesToReturn = attributesToReturn;
+	}
+
+
+	bool isFacetEnabled() const;
+
+	const vector<string> * getFacetAttributes() const ;
+	const vector<int> * getFacetTypes() const;
+	const vector<string> * getFacetStarts() const ;
+	const vector<string> * getFacetEnds() const ;
+
+	const vector<string> * getFacetGaps() const ;
+
 };
 
 }

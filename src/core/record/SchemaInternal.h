@@ -153,7 +153,7 @@ public:
     bool isNonSearchableAttributeSortable(const unsigned searchableAttributeNameId) const;
     int getNonSearchableAttributeId(const std::string &searchableAttributeName) const;
     unsigned getNumberOfNonSearchableAttributes() const;
-
+    const std::map<std::string , unsigned> * getNonSearchableAttributes() const ;
 
 
 

@@ -160,7 +160,7 @@ struct IndexWriteUtil
 			//delete the record from the index
 			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId))
 			{
-				case OP_FAIL:
+				case srch2::instantsearch::OP_FAIL:
 				{
                     // record to update doesn't exit, will insert it
                     break;
@@ -215,7 +215,7 @@ struct IndexWriteUtil
 
         switch ( ret )
         {
-            case OP_FAIL:
+            case srch2::instantsearch::OP_FAIL:
             {
                 log_str << "\"resume\":\"no record with given primary key\"}";
                 break;
@@ -236,7 +236,7 @@ struct IndexWriteUtil
     static void _commitCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
-    	if ( indexer->commit() == OP_SUCCESS)
+    	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     	{
 	  
 	  // CHENLI: do not save indexes to disk since we can always rebuild them from

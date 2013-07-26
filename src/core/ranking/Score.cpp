@@ -24,6 +24,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <util/Assert.h>
+#include <limits.h>
 
 
 namespace srch2
@@ -93,6 +94,30 @@ namespace srch2
 		ASSERT(type == score.type);
 		return !(*this < score);
 	}
+	Score Score::operator+(const Score& a,const Score& b){
+		ASSERT(a.type == b.type);
+    	type = a.type;
+    	Score result;
+
+    	switch (type) {
+			case UNSIGNED:
+				result.setScore(a.getIntScore() + b.getIntScore());
+				break;
+			case FLOAT:
+				result.setScore(a.getFloatScore() + b.getFloatScore());
+				break;
+			case TEXT:
+				result.setScore(a.getTextScore() + b.getTextScore());
+				break;
+			case TIME:
+				result.setScore(a.getTimeScore() + b.getTimeScore());
+				break;
+		}
+
+    	return result;
+	}
+
+
 
 
 	void Score::setScore(unsigned intS){
@@ -170,7 +195,25 @@ namespace srch2
 	long Score::getTimeScore() const{
 		return timeScore;
 	}
+	Score Score::minimumValue(){
+		Score result ;
+		switch (type) {
+				case UNSIGNED:
+					result.setScore((unsigned)std::numeric_limits<unsigned>::min());
+					break;
+				case FLOAT:
+					result.setScore((float)std::numeric_limits<float>::min());
+					break;
+				case TEXT:
+					result.setScore("NO_MINIMUM_FOR_TEXT");
+					break;
+				case TIME:
+					result.setScore((long)std::numeric_limits<long>::min());
+					break;
+			}
 
+		return result;
+	}
 
     Score::Score(const Score& score){
     	setScore(score);

@@ -102,6 +102,22 @@ public:
 		return searchType;
 	}
 
+	unsigned getSearchTypeCode() const {
+		// TODO : there must be some functions in Config file that give us these codes.
+		switch (getSearchType()) {
+			case srch2http::TopKSearchType:
+				return 0;
+				break;
+			case srch2http::GetAllResultsSearchType:
+				return 1;
+				break;
+			case srch2http::GeoSearchType:
+				return 2;
+				break;
+		}
+		return 0;
+	}
+
 	void setSearchType(ParameterName searchType) {
 		this->searchType = searchType;
 	}

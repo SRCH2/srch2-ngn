@@ -46,6 +46,7 @@ namespace srch2
     	bool operator>(const Score& score) const;
     	bool operator<=(const Score& score) const;
     	bool operator>=(const Score& score) const;
+    	Score operator+(const Score& a,const Score& b);
 
     	Score(){
     	};
@@ -66,6 +67,9 @@ namespace srch2
     	double getDoubleScore() const;
     	string getTextScore() const;
     	long getTimeScore() const;
+
+
+    	Score minimumValue();
 
 
 

@@ -70,6 +70,14 @@ Srch2ServerConf::Srch2ServerConf(int argc,
 				("non-searchable-attributes-default", po::value<string>(), "Default values of attributes/fields in data for sorting and range query")
 				("non-searchable-attributes-sort" , po::value<string>() , "Flag to indicate if a non-searchable attribute can be used to sort results.")
 
+				// facet information
+				("facet-enable", po::value<int>(), "Attributes which are used to create facets.")
+				("attribute-facet", po::value<string>(), "Attributes which are used to create facets.")
+				("attribute-facet-type", po::value<int>(), "Type of facet to be created on each attribute.") // 0 : simple, 1 : range
+				("attribute-facet-start", po::value<string>(), "The start value of range attributes.")
+				("attribute-facet-end", po::value<string>(), "The start value of range attributes.")
+				("attribute-facet-gap", po::value<string>(), "The start value of range attributes.")
+
 				("attribute-record-boost", po::value<string>(), "record-boost")
 				("attribute-latitude", po::value<string>(), "record-attribute-latitude")
 				("attribute-longitude", po::value<string>(), "record-attribute-longitude")
@@ -465,6 +473,72 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
         }
     }
 
+
+
+    /*
+				// facet information
+				("facet-enable", po::value<int>(), "Attributes which are used to create facets.")
+				("attribute-facet-type", po::value<int>(), "Type of facet to be created on each attribute.") // 0 : simple, 1 : range
+				("attribute-facet", po::value<string>(), "Attributes which are used to create facets.")
+				("attribute-facet-start", po::value<string>(), "The start value of range attributes.")
+				("attribute-facet-end", po::value<string>(), "The start value of range attributes.")
+				("attribute-facet-gap", po::value<string>(), "The start value of range attributes.")
+     */
+
+	if (vm.count("facet-enable"))
+	{
+		facetEnabled = vm["facet-enable"].as<int>();
+	}else {
+		facetEnabled = false;
+	}
+
+	if(facetEnabled){
+		// now all the other options are required.
+		if (vm.count("attribute-facet-type")) {
+			vector<string> temp;
+			boost::split(temp,
+					vm["attribute-facet-type"].as<string>(), boost::is_any_of(","));
+			for(vector<string>::iterator type = temp.begin();type != temp.end() ; ++type){
+				int t = atoi(type->c_str());
+				if(t != 0 && t != 1){
+					t = 0;
+				}
+				facetTypes.push_back(t);
+			}
+		}else{
+			parseError << "Not enough information for facet. Facet canceled..\n";
+			facetEnabled = false;
+		}
+		if (vm.count("attribute-facet")) {
+			boost::split(facetAttributes,
+					vm["attribute-facet"].as<string>(), boost::is_any_of(","));
+		}else{
+			parseError << "Not enough information for facet. Facet canceled..\n";
+			facetEnabled = false;
+		}
+		if (vm.count("attribute-facet-start")) {
+			boost::split(facetStarts,
+					vm["attribute-facet-start"].as<string>(), boost::is_any_of(","));
+		}else{
+			parseError << "Not enough information for facet. Facet canceled..\n";
+			facetEnabled = false;
+		}
+		if (vm.count("attribute-facet-end")) {
+			boost::split(facetEnds,
+					vm["attribute-facet-end"].as<string>(), boost::is_any_of(","));
+		}else{
+			parseError << "Not enough information for facet. Facet canceled..\n";
+			facetEnabled = false;
+		}
+		if (vm.count("attribute-facet-gap")) {
+			boost::split(facetGaps,
+					vm["attribute-facet-gap"].as<string>(), boost::is_any_of(","));
+		}else{
+			parseError << "Not enough information for facet. Facet canceled..\n";
+			facetEnabled = false;
+		}
+
+	}
 
 
 	recordBoostAttributeSet = false;
@@ -904,6 +978,28 @@ const vector<string> * Srch2ServerConf::getAttributesToReturnName() const
 	return &attributesToReturn;
 }
 
+
+
+
+bool Srch2ServerConf::isFacetEnabled() const {
+	return facetEnabled;
+}
+const vector<string> * Srch2ServerConf::getFacetAttributes() const {
+	return &facetAttributes;
+}
+const vector<int> * Srch2ServerConf::getFacetTypes() const {
+	return &facetTypes;
+}
+const vector<string> * Srch2ServerConf::getFacetStarts() const {
+	return &facetStarts;
+}
+const vector<string> * Srch2ServerConf::getFacetEnds() const {
+	return &facetEnds;
+}
+
+const vector<string> * Srch2ServerConf::getFacetGaps() const {
+	return &facetGaps;
+}
 
 
 

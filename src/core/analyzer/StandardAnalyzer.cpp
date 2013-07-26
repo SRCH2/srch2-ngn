@@ -15,6 +15,8 @@
 namespace srch2 {
 namespace instantsearch {
 
+
+
 // create operator flow and link share pointer to the data
 TokenOperator * StandardAnalyzer::createOperatorFlow() {
 	TokenOperator *tokenOperator = new StandardTokenizer();

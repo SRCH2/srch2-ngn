@@ -18,6 +18,8 @@
 #include "query/QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
 
+#include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change
+
 #include <sys/queue.h>
 #include <event.h>
 #include <evhttp.h>
@@ -40,8 +42,9 @@ class HTTPRequestHandler
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
 
 	private:
+
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
-				const URLParserHelper &urlParserHelper,
+				const QueryPlan &queryPlan,
 				const Srch2ServerConf *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const Query *query,

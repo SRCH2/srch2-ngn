@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <instantsearch/platform.h>
 
@@ -156,6 +157,8 @@ public:
      */
     double getPhysicalDistance(const unsigned position) const ;
 
+    const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
+
     //TODO: These three functions for internal debugging. remove from the header
     void printStats() const ;
 
@@ -167,6 +170,9 @@ public:
      * Destructor of the QueryResults object.
      */
     ~QueryResults();
+
+
+
 
 
 

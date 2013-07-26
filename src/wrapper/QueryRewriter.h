@@ -24,8 +24,13 @@
 
 #include "ParsedParameterContainer.h"
 #include "instantsearch/Analyzer.h"
+#include "instantsearch/Schema.h"
+#include "analyzer/StandardAnalyzer.h"
+#include "analyzer/SimpleAnalyzer.h"
 
 using srch2::instantsearch::Analyzer;
+using srch2::instantsearch::Schema;
+
 
 namespace srch2{
 
@@ -35,15 +40,20 @@ namespace httpwrapper{
 class QueryRewriter
 {
 public:
-	QueryRewriter(const Analyzer & analyzer ,ParsedParameterContainer * paramContainer){
-	}
+	QueryRewriter(const Srch2ServerConf *indexDataContainerConf,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
 
-	void rewrite(){
-		// go through the summary and call the analyzer on the query if needed.
-		// 1. Field filter should be changed from field names to field bit filter
-		// 2. if a field facet type is range, if it does not have all the 3 needed pieces, fill them using configuration file
-		//    if it's not even in configuration file remove that field from facets and save error message.
-	}
+	void rewrite();
+
+private:
+	const Schema & schema;
+	const Analyzer & analyzer ;
+	ParsedParameterContainer * paramContainer;
+	const Srch2ServerConf *indexDataContainerConf;
+
+	void applyAnalyzer();
+	// this function creates the bit sequence needed for field filter based on the filter names
+	void prepareFieldFilters();
+	void prepareFacetFilterInfo();
 };
 
 }

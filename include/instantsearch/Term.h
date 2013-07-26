@@ -21,6 +21,7 @@
 #define __TERM_H__
 
 #include <instantsearch/platform.h>
+#include <instantsearch/Constants.h>
 #include <string>
 #include <stdint.h>
 #include "util/encoding.h"
@@ -30,11 +31,7 @@ namespace srch2
 namespace instantsearch
 {
 
-typedef enum
-{
-    PREFIX = 0,
-    COMPLETE = 1
-} TermType;
+
 
 /**
  * This class defines a Term representing a word from text, which can

@@ -32,17 +32,14 @@
 #include "instantsearch/Schema.h"
 #include "instantsearch/Score.h"
 #include "instantsearch/IndexSearcher.h"
-#include "util/Assert.h"
+#include <instantsearch/Constants.h>
+
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-typedef enum{
-	Simple,
-	Range
-} FacetType;
 
 class FacetedSearchFilterInternal;
 
@@ -56,14 +53,20 @@ public:
 	~FacetedSearchFilter();
 
 
-	void initialize(std::vector<FacetType> types,
+	void initialize(std::vector<srch2is::FacetType> types,
 			std::vector<std::string> fields,
 			std::vector<std::string> rangeStarts,
 			std::vector<std::string> rangeEnds,
 			std::vector<std::string> rangeGaps);
+
 private:
 
 	FacetedSearchFilterInternal * impl;
+
+
+
+
+
 
 
 

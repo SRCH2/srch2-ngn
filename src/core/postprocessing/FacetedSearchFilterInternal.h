@@ -42,38 +42,116 @@ public:
 
 	void facetByCountAggregation(const Score & attributeValue ,
 			const std::vector<Score> & lowerBounds ,
-			std::vector<float>  * counts ){
+			std::vector<pair<string, float> >  * counts ){
 
-		unsigned i = 0;
-		for(std::vector<Score>::const_iterator lowerBound = lowerBounds.begin() ; lowerBound!=lowerBounds.end() ; ++lowerBound){
-			bool fallsInThisCategory = false;
-			// It's assumed that lowerBound list is sorted so the
-			// first category also accepts records things which are less than it.
-			if(i == 0) {
-				fallsInThisCategory = true;
-			}else{ // in normal case if the value is greater than lowerBound it's potentially in this category.
-				if(*lowerBound <= attributeValue){
-					fallsInThisCategory = true;
+		if(lowerBounds.empty()){ // simple facet
+			// move on results to see if this value is seen before (increment) or is new (add and initialize)
+			for(std::vector<pair<string, float> >::iterator p = counts->begin() ; p != counts->end() ; ++p){
+				if(p->first.compare(attributeValue.toString()) == 0){
+					p->second = p->second + 1;
+					return;
 				}
 			}
-			if(fallsInThisCategory){
-				// if this is not the last category, the value should also be less than the next lowerBound
-				if(i != lowerBounds.size()-1){
-					if(*(lowerBound + 1) <= attributeValue){
-						fallsInThisCategory = false;
+			counts->push_back(make_pair(attributeValue.toString() , 1));
+			return;
+		}else{
+			unsigned i = 0;
+			for(std::vector<Score>::const_iterator lowerBound = lowerBounds.begin() ; lowerBound!=lowerBounds.end() ; ++lowerBound){
+				bool fallsInThisCategory = false;
+				// It's assumed that lowerBound list is sorted so the
+				// first category also accepts records things which are less than it.
+				if(i == 0) {
+					fallsInThisCategory = true;
+				}else{ // in normal case if the value is greater than lowerBound it's potentially in this category.
+					if(*lowerBound <= attributeValue){
+						fallsInThisCategory = true;
 					}
 				}
+				if(fallsInThisCategory){
+					// if this is not the last category, the value should also be less than the next lowerBound
+					if(i != lowerBounds.size()-1){
+						if(*(lowerBound + 1) <= attributeValue){
+							fallsInThisCategory = false;
+						}
+					}
+				}
+				if(fallsInThisCategory){
+					counts->at(i).second = counts->at(i).second + 1;
+					return;
+				}
+				//
+				++i;
 			}
-			if(fallsInThisCategory){
-				counts->at(i) = counts->at(i) + 1;
-				return;
-			}
-			//
-			++i;
+			// normally we should never reach to this point because each record should fall in at least one of the categories.
+			ASSERT(false);
 		}
-		// normally we should never reach to this point because each record should fall in at least one of the categories.
-		ASSERT(false);
+
+
 	}
+
+	// this function prepares the lowebound structure from the paraller string vectors
+	void prepareFacetInputs(IndexSearcher *indexSearcher){
+
+
+		IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+		Schema * schema = indexSearcherInternal->getSchema();
+		ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+
+
+		std::vector<Score> rangeStartScores;
+		std::vector<Score> rangeEndScores;
+		std::vector<Score> rangeGapScores;
+		// 1. parse the values into Score.
+		unsigned f = 0;
+		for(std::vector<std::string>::iterator field = this->fields.begin() ;
+				field != this->fields.end() ; ++field){
+			FilterType type = schema->getTypeOfNonSearchableAttribute(schema->getNonSearchableAttributeId(*field));
+			Score start;
+			start.setScore(type , this->rangeStarts.at(f));
+			rangeStartScores.push_back(start);
+
+			Score end;
+			end.setScore(type , this->rangeEnds.at(f));
+			rangeStartScores.push_back(end);
+
+			Score gap;
+			gap.setScore(type , this->rangeGaps.at(f));
+			rangeStartScores.push_back(gap);
+
+			//
+			f++;
+		}
+
+
+		// 2. create the lowebound vector for each attribute
+
+		unsigned t = 0;
+		for(std::vector<FacetType>::iterator type = types.begin() ; type != types.end() ; ++type){
+			std::vector<Score> lowerBounds;
+			if(type != Simple){ // range filter
+				Score & start = rangeStartScores.at(t);
+				Score & end = rangeEndScores.at(t);
+				Score & gap = rangeGapScores.at(t);
+
+
+				Score temp = start;
+				lowerBounds.push_back(temp.minimumValue()); // to collect data smaller than start
+				while(temp < end){
+					lowerBounds.push_back(temp); // data of normal categories
+					temp = temp + gap;
+				}
+				lowerBounds.push_back(temp); // to collect data greater than end
+			}
+			lowerBoundsOfCategories[fields.at(t )] = lowerBounds;
+
+			//
+			t++;
+		}
+
+
+
+	}
+
 
 	//
 	std::vector<FacetType> types;
@@ -81,6 +159,11 @@ public:
 	std::vector<std::string> rangeStarts;
 	std::vector<std::string> rangeEnds;
 	std::vector<std::string> rangeGaps;
+
+
+
+
+	std::map<std::string , std::vector<Score> > lowerBoundsOfCategories;
 
 };
 
