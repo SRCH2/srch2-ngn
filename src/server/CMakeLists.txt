@@ -17,7 +17,7 @@ INCLUDE_DIRECTORIES(
 )
 set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
-    set(GPERFTOOL_LIBS "${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a -lunwind")
+    set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
