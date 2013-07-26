@@ -27,8 +27,10 @@
 #include "ParserUtility.h"
 #include <instantsearch/Score.h>
 #include <instantsearch/ResultsPostProcessor.h>
+#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
 #include "WrapperConstants.h"
 #include "exprtk.hpp"
+#include "boost/regex.hpp"
 
 #ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
 
@@ -38,6 +40,9 @@ using namespace std;
 using srch2::instantsearch::Score;
 using srch2::instantsearch::FilterType;
 using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
+using srch2::instantsearch::BooleanOperation;
+using srch2::instantsearch::AttributeCriterionOperation;
+
 namespace srch2
 {
 namespace httpwrapper
@@ -79,25 +84,25 @@ public:
 
 	bool parse(){
 
-		std::string attributeName = this->expressionString.substr(0,this->expressionString.find(":",0));
-		if(attributeName.at(0) == '-'){
-			this->negative = true;
-			attributeName = attributeName.substr(1,attributeName.size()-1);
-		}
-		std::string attributeValue = this->expressionString.substr(
-				this->expressionString.find(":",0)+1,this->expressionString.size()-(this->expressionString.find(":",0)+1));
-		if(std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName) ==
-				this->nonSearchableAttributeNames.end()){ // if a name is used which is not in attributes
-			return false;
-		}
-
-		// find the type of this attribute
-		FilterType type = this->nonSearchableAttributeTypes.at(
-				std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName)
-		- this->nonSearchableAttributeNames.begin());
-		this->attributeName = attributeName;
-		this->attributeValue.setScore(type, attributeValue);
-		this->operation = EQUALS;
+//		std::string attributeName = this->expressionString.substr(0,this->expressionString.find(":",0));
+//		if(attributeName.at(0) == '-'){
+//			this->negative = true;
+//			attributeName = attributeName.substr(1,attributeName.size()-1);
+//		}
+//		std::string attributeValue = this->expressionString.substr(
+//				this->expressionString.find(":",0)+1,this->expressionString.size()-(this->expressionString.find(":",0)+1));
+//		if(std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName) ==
+//				this->nonSearchableAttributeNames.end()){ // if a name is used which is not in attributes
+//			return false;
+//		}
+//
+//		// find the type of this attribute
+//		FilterType type = this->nonSearchableAttributeTypes.at(
+//				std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName)
+//		- this->nonSearchableAttributeNames.begin());
+//		this->attributeName = attributeName;
+//		this->attributeValue.setScore(type, attributeValue);
+//		this->operation = EQUALS;
 
 		// TODO : NOT FINISHED YET
 
@@ -107,33 +112,33 @@ public:
 
 
 	bool getBooleanValue(std::map<std::string, Score> nonSearchableAttributeValues){
-		bool result ;
-		// first find the value coming from the record
-		Score value = nonSearchableAttributeValues[this->attributeName];
-
-
-		switch (whichPartHasStar) {
-			case 0:
-
-				break;
-			case 0:
-
-				break;
-			case 0:
-
-				break;
-			case 0:
-
-				break;
-		}
-		return result;
+//		bool result ;
+//		// first find the value coming from the record
+//		Score value = nonSearchableAttributeValues[this->attributeName];
+//
+//
+//		switch (whichPartHasStar) {
+//			case 0:
+//
+//				break;
+//			case 0:
+//
+//				break;
+//			case 0:
+//
+//				break;
+//			case 0:
+//
+//				break;
+//		}
+//		return result;
 	}
 
 	Score getScoreValue(std::map<std::string, Score> nonSearchableAttributeValues){
 		return attributeValueLower;
 	}
 
-	~SolrQueryExpression(){};
+	~SolrRangeQueryExpression(){};
 
 private:
 	std::string attributeName ;
@@ -178,7 +183,7 @@ public:
 		- this->nonSearchableAttributeNames.begin());
 		this->attributeName = attributeName;
 		this->attributeValue.setScore(type, attributeValue);
-		this->operation = EQUALS;
+		this->operation = srch2::instantsearch::EQUALS;
 
 
 		return true;
@@ -201,12 +206,12 @@ public:
 		return attributeValue;
 	}
 
-	~SolrQueryExpression(){};
+	~SolrAssignmentQueryExpression(){};
 
 private:
 	std::string attributeName ;
 	Score attributeValue;
-	BooleanOperation operation;
+	AttributeCriterionOperation operation;
 	bool negative;
 
 
@@ -258,7 +263,7 @@ private:
 		exprtk::symbol_table<float> symbol_table;
 
 		for(unsigned i =0;i<nonSearchableAttributeNames.size();i++){
-			if(nonSearchableAttributeTypes[i] != TEXT){
+			if(nonSearchableAttributeTypes[i] != srch2::instantsearch::TEXT){
 				symbolVariables[nonSearchableAttributeNames[i]] = 0;
 				symbol_table.add_variable(nonSearchableAttributeNames[i],symbolVariables[nonSearchableAttributeNames[i]]);
 			}
@@ -322,7 +327,7 @@ public:
 
 	bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues){
 		switch (operation) {
-			case AND:
+			case srch2::instantsearch::AND:
 				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
 								criterion != criteria.end() ; ++criterion){
 					QueryExpression * qe = *criterion;
@@ -332,7 +337,7 @@ public:
 
 				}
 				return true;
-			case OR:
+			case srch2::instantsearch::OR:
 				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
 								criterion != criteria.end() ; ++criterion){
 					QueryExpression * qe = *criterion;
@@ -342,6 +347,8 @@ public:
 
 				}
 				return false;
+				break;
+			default:
 				break;
 		}
 		return false; // TODO : should change to ASSERT(false); because it should never reach here

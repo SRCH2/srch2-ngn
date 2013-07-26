@@ -76,7 +76,7 @@ namespace srch2
         virtual ~Ranker() {};
     };
     
-    
+    typedef Ranker DefaultTopKRanker;
 
     class GetAllResultsRanker : public Ranker
     {

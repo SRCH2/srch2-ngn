@@ -46,7 +46,7 @@ namespace srch2
     	bool operator>(const Score& score) const;
     	bool operator<=(const Score& score) const;
     	bool operator>=(const Score& score) const;
-    	Score operator+(const Score& a,const Score& b);
+    	Score operator+(const Score& a);
 
     	Score(){
     	};
@@ -71,6 +71,7 @@ namespace srch2
 
     	Score minimumValue();
 
+    	float castToFloat();
 
 
 

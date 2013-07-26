@@ -39,9 +39,9 @@ class SortFilterEvaluator : public SortEvaluator
 public:
 	int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const{
 
-		for(std::vector<std::string>::iterator f = field.begin() ; f != field.end() ; ++f){
-			if(compare(left[*f] , right[*f]) != 0){
-				return compare(left[*f] , right[*f]);
+		for(std::vector<std::string>::const_iterator f = field.begin() ; f != field.end() ; ++f){
+			if(compare(left.at(*f) , right.at(*f)) != 0){
+				return compare(left.at(*f) , right.at(*f));
 			}
 		}
 		return 0;
@@ -51,18 +51,18 @@ public:
 	const std::vector<std::string> * getParticipatingAttributes() const {
 		return &field;
 	}
-	~SortEvaluator(){
+	~SortFilterEvaluator(){
 
 	}
 
 	std::vector<std::string> field;
-	std::vector<SortOrder> order;
+	srch2::instantsearch::SortOrder order;
 
 private:
 
-	int compare(const Score & left , const Score & right){
+	int compare(const Score & left , const Score & right) const{
 		if(left == right ) return 0;
-		if(order == Ascending){
+		if(order == srch2::instantsearch::Ascending){
 			if(left < right) return 1;
 			else return -1;
 		}else{

@@ -51,9 +51,6 @@ private:
 
 public:
 
-	SortFilter::~SortFilter(){
-		delete evaluator; // this object is allocated in plan Generator
-	}
 
 
 	ResultNonSearchableAttributeComparator(SortFilter * filter , ForwardIndex* forwardIndex , Schema * schema,const Query * query) {
@@ -75,7 +72,7 @@ public:
 		ASSERT(isValid);
 		const VariableLengthAttributeContainer * lhsContainer = list->getNonSearchableAttributeContainer();
 
-		bool isValid = false;
+		isValid = false;
 		list = forwardIndex->getForwardList(rhs->internalRecordId , isValid);
 		ASSERT(isValid);
 		const VariableLengthAttributeContainer * rhsContainer = list->getNonSearchableAttributeContainer();
@@ -124,6 +121,9 @@ public:
 	}
 };
 
+SortFilter::~SortFilter(){
+	delete evaluator; // this object is allocated in plan Generator
+}
 
 // TODO : we don't need query in new design
 void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,

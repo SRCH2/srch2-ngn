@@ -27,6 +27,7 @@
 #include "instantsearch/Schema.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
+#include "Srch2ServerConf.h"
 
 using srch2::instantsearch::Analyzer;
 using srch2::instantsearch::Schema;
@@ -50,6 +51,7 @@ private:
 	ParsedParameterContainer * paramContainer;
 	const Srch2ServerConf *indexDataContainerConf;
 
+	void prepareKeywordInfo();
 	void applyAnalyzer();
 	// this function creates the bit sequence needed for field filter based on the filter names
 	void prepareFieldFilters();

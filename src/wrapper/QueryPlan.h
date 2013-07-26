@@ -114,6 +114,9 @@ public:
 			case srch2http::GeoSearchType:
 				return 2;
 				break;
+			default:
+
+				break;
 		}
 		return 0;
 	}

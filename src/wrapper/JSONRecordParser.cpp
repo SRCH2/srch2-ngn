@@ -437,15 +437,15 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 
 	// now check to see if it has proper date/time format
 
-    for(size_t i=0; i<formats; ++i)
+    for(size_t i=0; i<localeFormats; ++i)
     {
         std::istringstream ss(temp);
-        ss.imbue(inputs[i]);
+        ss.imbue(localeInputs[i]);
         boost::posix_time::ptime this_time;
         ss >> this_time;
 
         if(this_time != boost::posix_time::not_a_date_time){
-        	time_t value = ptime_to_time_t(this_time);
+        	time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
         	long valueLong = value;
         	stringValue = convertToStr(valueLong);
         	return;

@@ -19,9 +19,8 @@ const char* const QueryParser::fieldListParamName = "fl";
 
 
 QueryParser::QueryParser(const evkeyvalq &headers,
-		ParsedParameterContainer * container){
+		ParsedParameterContainer * container) : headers(headers){
 	this->container = container;
-	this->headers = headers;
 
 }
 
@@ -104,7 +103,9 @@ void QueryParser::fieldListParser(){
 
 		this->container->summary.push_back(srch2::httpwrapper::ReponseAttributesList);
 
-		char * pch = strtok(fl.c_str() , QueryParser::fieldListDelimiter);
+
+		char * fieldStr = strdup(fl.c_str());
+		char * pch = strtok(fieldStr , QueryParser::fieldListDelimiter);
 
 		while(! pch){
 
@@ -118,8 +119,10 @@ void QueryParser::fieldListParser(){
 			this->container->responseAttributesList.push_back(field);
 
 			//
-			pch = strtok(fl.c_str() , NULL);
+			pch = strtok(fieldStr, NULL);
 		}
+
+		delete fieldStr;
 
 	}
 

@@ -29,6 +29,8 @@
 
 #include "instantsearch/Score.h"
 
+#include "operation/IndexSearcherInternal.h"
+
 namespace srch2
 {
 namespace instantsearch
@@ -128,19 +130,24 @@ public:
 		unsigned t = 0;
 		for(std::vector<FacetType>::iterator type = types.begin() ; type != types.end() ; ++type){
 			std::vector<Score> lowerBounds;
-			if(type != Simple){ // range filter
-				Score & start = rangeStartScores.at(t);
-				Score & end = rangeEndScores.at(t);
-				Score & gap = rangeGapScores.at(t);
+
+			switch (*type) {
+				case Range:
+					break;
+				case Simple:
+					Score & start = rangeStartScores.at(t);
+					Score & end = rangeEndScores.at(t);
+					Score & gap = rangeGapScores.at(t);
 
 
-				Score temp = start;
-				lowerBounds.push_back(temp.minimumValue()); // to collect data smaller than start
-				while(temp < end){
-					lowerBounds.push_back(temp); // data of normal categories
-					temp = temp + gap;
-				}
-				lowerBounds.push_back(temp); // to collect data greater than end
+					Score temp = start;
+					lowerBounds.push_back(temp.minimumValue()); // to collect data smaller than start
+					while(temp < end){
+						lowerBounds.push_back(temp); // data of normal categories
+						temp = temp + gap;
+					}
+					lowerBounds.push_back(temp); // to collect data greater than end
+					break;
 			}
 			lowerBoundsOfCategories[fields.at(t )] = lowerBounds;
 

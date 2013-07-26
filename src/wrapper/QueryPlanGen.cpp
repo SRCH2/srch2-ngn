@@ -40,8 +40,8 @@ namespace srch2{
 namespace httpwrapper{
 
 
-QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer , const Srch2ServerConf *indexDataContainerConf ){
-	this->paramsContainer = paramsContainer;
+QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer ,
+		const Srch2ServerConf *indexDataContainerConf ) : paramsContainer(paramsContainer){
 	this->indexDataContainerConf = indexDataContainerConf;
 }
 
@@ -89,7 +89,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan){
 
 		// look for Facet filter
 		if ( paramsContainer.getAllResultsParameterContainer->hasParameterInSummary(FacetQueryHandler)  ){ // there is a sort filter
-			srch2is::FacetedSearchFilter * facetFilter = new FacetedSearchFilter();
+			srch2is::FacetedSearchFilter * facetFilter = new srch2is::FacetedSearchFilter();
 			FacetQueryContainer * container = paramsContainer.getAllResultsParameterContainer->facetQueryContainer;
 			facetFilter->initialize(container->types,
 					container->fields,
@@ -109,7 +109,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan){
 
 		// look for Facet filter
 		if ( paramsContainer.geoParameterContainer->hasParameterInSummary(FacetQueryHandler) ){ // there is a sort filter
-			srch2is::FacetedSearchFilter * facetFilter = new FacetedSearchFilter();
+			srch2is::FacetedSearchFilter * facetFilter = new srch2is::FacetedSearchFilter();
 			FacetQueryContainer * container = paramsContainer.geoParameterContainer->facetQueryContainer;
 			facetFilter->initialize(container->types,
 					container->fields,
@@ -170,7 +170,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan){
 
 	// 4. set the number of results to retrieve
 	if ( paramsContainer.hasParameterInSummary(NumberOfResults)){
-		plan->setResultsToRetrieve(paramsContainer.numberOfResults)
+		plan->setResultsToRetrieve(paramsContainer.numberOfResults);
 	} else { // get it from configuration file
 		plan->setResultsToRetrieve(indexDataContainerConf->getDefaultResultsToRetrieve());
 	}
@@ -185,6 +185,9 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan){
 		break;
 	case GeoSearchType:
 		createExactAndFuzzyQueriesForGeo(plan);
+		break;
+	default:
+		// SOME SORT OF ASSERT(false) debug gaurd
 		break;
 	}
 
@@ -274,7 +277,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 	for(int i=0;i<rawQueryKeywords.size();i++){
 		srch2is::Term *exactTerm;
 		exactTerm = new srch2is::Term(rawQueryKeywords[i],
-				(keywordPrefixComplete[i] == PREFIX)? srch2is::PREFIX:srch2is::COMPLETE,
+						keywordPrefixComplete[i],
 						keywordBoostLevel[i],
 						keywordFuzzyLevel[i],
 						0);
@@ -287,7 +290,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 		for(int i=0;i<rawQueryKeywords.size();i++){
 			srch2is::Term *fuzzyTerm;
 			fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
-					(keywordPrefixComplete[i] == PREFIX)? srch2is::PREFIX:srch2is::COMPLETE,
+							keywordPrefixComplete[i],
 							keywordBoostLevel[i],
 							keywordFuzzyLevel[i],
 							srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i])));

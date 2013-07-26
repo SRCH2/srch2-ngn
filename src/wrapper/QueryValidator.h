@@ -46,7 +46,7 @@ public:
 private:
 	ParsedParameterContainer * paramContainer;
 	const Schema & schema;
-	const Srch2ServerConf *indexDataContainerConf
+	const Srch2ServerConf *indexDataContainerConf;
 
 	bool validateExistanceOfAttributesInFieldList();
 
@@ -56,7 +56,7 @@ private:
 
 	// this function validates the value stored in "value" based on the type which is passed to it by "type"
 	// for example, if the string is "123rt" and the type is UNSIGNED it returns false
-	bool validateValueWithType(srch2is::FilterType type, string value);
+	bool validateValueWithType(srch2::instantsearch::FilterType type, string value);
 
 
 };

@@ -73,7 +73,7 @@ class FacetQueryContainer
 
 public:
 	// these vectors must be parallel and same size all the time
-	std::vector<srch2is::FacetType> types;
+	std::vector<srch2::instantsearch::FacetType> types;
 	std::vector<std::string> fields;
 	std::vector<std::string> rangeStarts;
 	std::vector<std::string> rangeEnds;
@@ -251,7 +251,7 @@ public:
 		return result;
 	}
 
-	bool hasParameterInSummary(ParameterName param){
+	bool hasParameterInSummary(ParameterName param) const{
 		return
 				(std::find(summary.begin() ,summary.end() , param) != summary.end());
 	}

@@ -18,6 +18,8 @@
 #include "query/QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
 
+#include "QueryPlan.h"
+
 #include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change
 
 #include <sys/queue.h>

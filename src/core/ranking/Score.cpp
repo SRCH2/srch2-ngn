@@ -24,7 +24,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <util/Assert.h>
-#include <limits.h>
+#include <limits>
 
 
 namespace srch2
@@ -94,23 +94,21 @@ namespace srch2
 		ASSERT(type == score.type);
 		return !(*this < score);
 	}
-	Score Score::operator+(const Score& a,const Score& b){
-		ASSERT(a.type == b.type);
-    	type = a.type;
+	Score Score::operator+(const Score& a){
+		ASSERT(a.type == this->type);
     	Score result;
-
-    	switch (type) {
+    	switch (this->type) {
 			case UNSIGNED:
-				result.setScore(a.getIntScore() + b.getIntScore());
+				result.setScore(a.getIntScore() + this->getIntScore());
 				break;
 			case FLOAT:
-				result.setScore(a.getFloatScore() + b.getFloatScore());
+				result.setScore(a.getFloatScore() + this->getFloatScore());
 				break;
 			case TEXT:
-				result.setScore(a.getTextScore() + b.getTextScore());
+				result.setScore(a.getTextScore() + this->getTextScore());
 				break;
 			case TIME:
-				result.setScore(a.getTimeScore() + b.getTimeScore());
+				result.setScore(a.getTimeScore() + this->getTimeScore());
 				break;
 		}
 
@@ -209,6 +207,27 @@ namespace srch2
 					break;
 				case TIME:
 					result.setScore((long)std::numeric_limits<long>::min());
+					break;
+			}
+
+		return result;
+	}
+
+	float Score::castToFloat(){
+		float result ;
+		switch (type) {
+				case UNSIGNED:
+					result = (float) getIntScore();
+					break;
+				case FLOAT:
+					result = getFloatScore();
+					break;
+				case TEXT:
+					result = -1;
+					ASSERT(false);
+					break;
+				case TIME:
+					result = (float) getTimeScore();
 					break;
 			}
 

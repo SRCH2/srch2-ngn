@@ -36,9 +36,10 @@ namespace srch2{
 namespace httpwrapper{
 
 
-QueryValidator::QueryValidator(const Schema & schema ,const Srch2ServerConf *indexDataContainerConf,ParsedParameterContainer * paramContainer){
+QueryValidator::QueryValidator(const Schema & schema ,
+		const Srch2ServerConf *indexDataContainerConf,
+		ParsedParameterContainer * paramContainer) : schema(schema){
 	this->paramContainer = paramContainer;
-	this->schema = schema;
 	this->indexDataContainerConf = indexDataContainerConf;
 }
 
@@ -95,7 +96,7 @@ bool QueryValidator::validate(){
 	if(paramContainer->hasParameterInSummary(GeoSearchType)){
 		if(! (paramContainer->geoParameterContainer->hasParameterInSummary(GeoTypeRectangular)) // no rectangular values
 				&&
-				! (paramContainer->geoParameterContainer->hasParameterInSummary(GeoTypeCicular))){ // no circular values
+				! (paramContainer->geoParameterContainer->hasParameterInSummary(GeoTypeCircular))){ // no circular values
 			if (paramContainer->rawQueryKeywords.size() == 0){
 				paramContainer->messages.push_back(std::make_pair(MessageError,
 						"No latitude longitude provided for geo search." ));
@@ -235,7 +236,7 @@ bool QueryValidator::validateExistanceOfAttributesInFacetFiler(){
 			FilterType type =  schema.getTypeOfNonSearchableAttribute(schema.getNonSearchableAttributeId(*field));
 
 			if( !(type == srch2is::UNSIGNED || type == srch2is::FLOAT || type == srch2is::TIME) &&
-					facetQueryContainer->types.at(index) == srch2http::Range){
+					facetQueryContainer->types.at(index) == srch2is::Range){
 				paramContainer->messages.push_back(std::make_pair(MessageWarning,
 						"Field " + *field + " is not a proper field for range facet. No facet will be calculated on this field. " ));
 
@@ -270,7 +271,7 @@ bool QueryValidator::validateExistanceOfAttributesInFacetFiler(){
 			;//FIXME : should we delete facet container here ?
 		}
 		// remove all facet fields which are not among nonSearchable attributes
-		std::vector<FacetType> types;
+		std::vector<srch2is::FacetType> types;
 		std::vector<std::string> fields;
 		std::vector<std::string> rangeStarts;
 		std::vector<std::string> rangeEnds;
@@ -295,7 +296,7 @@ bool QueryValidator::validateExistanceOfAttributesInFacetFiler(){
 
 }
 
-bool validateValueWithType(srch2is::FilterType type, string value){
+bool QueryValidator::validateValueWithType(srch2is::FilterType type, string value){
 	switch (type) {
 		case srch2is::UNSIGNED:
 			return isInteger(value);

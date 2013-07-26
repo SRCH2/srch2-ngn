@@ -22,6 +22,7 @@
 
 #include <instantsearch/Constants.h>
 
+
 namespace srch2
 {
 namespace httpwrapper
@@ -109,6 +110,7 @@ typedef enum {
 
 }
 
+namespace srch2http = srch2::httpwrapper;
 
 
 #endif  // __INCLUDE_INSTANTSEARCH__WRAPPERCONSTANTS_H__

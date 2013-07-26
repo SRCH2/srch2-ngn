@@ -272,7 +272,6 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = { "pink", "floyd", "shine"};
 
     cout<<"\n***COMPLETE EXACT***\nQuery:";
@@ -329,7 +328,6 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pin","floy","shi"
     };
@@ -381,7 +379,6 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
@@ -436,7 +433,6 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pionn","fllio","shiii"
     };

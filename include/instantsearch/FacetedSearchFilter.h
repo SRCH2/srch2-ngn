@@ -47,13 +47,15 @@ class FacetedSearchFilter : public ResultsPostProcessorFilter
 {
 
 public:
+
+	FacetedSearchFilter();
 	// TODO : we don't need query in new design
 	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
 
 
-	void initialize(std::vector<srch2is::FacetType> types,
+	void initialize(std::vector<FacetType> types,
 			std::vector<std::string> fields,
 			std::vector<std::string> rangeStarts,
 			std::vector<std::string> rangeEnds,

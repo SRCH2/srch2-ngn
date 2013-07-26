@@ -21,8 +21,12 @@
 #define __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
 
 
+
+
+
 namespace srch2 {
 namespace instantsearch {
+
 
 
 
@@ -102,12 +106,13 @@ typedef enum
 
 typedef enum{
 	AND,
-	OR
+	OR,
+	OP_NOT_SPECIFIED
 } BooleanOperation;
 
 ///  Ranker constants
 
-typedef Ranker DefaultTopKRanker;
+
 
 /// Record constants
 
@@ -152,8 +157,9 @@ typedef enum
 
 typedef enum
 {
-    PREFIX = 0,
-    COMPLETE = 1
+    PREFIX ,
+    COMPLETE ,
+    NOT_SPECIFIED
 } TermType;
 
 ///
@@ -163,3 +169,7 @@ typedef enum
 
 }
 }
+
+namespace srch2is = srch2::instantsearch;
+
+#endif // __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
