@@ -381,7 +381,6 @@ class LeafNodeSetIterator
 {
 private:
     std::vector<LeafNodeSetIteratorItem > resultVector;
-    boost::unordered_map<const TrieNode*, bool> activeNodes;
     unsigned cursor;
 
 public:
@@ -445,23 +444,22 @@ public:
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
 
+    	map<const TrieNode*, unsigned> activeNodes;
 		const TrieNode *trieNode;
 		unsigned distance;
 
 		// assume the iterator returns the active nodes in an ascending order of their edit distance
 		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
 		for (; !ani.isDone(); ani.next()){
-			ani.getActiveNode(trieNode);
-			activeNodes[trieNode] = false; // initially all active nodes are not visited.
-		}
-		ani.refresh();
-
-		for (; !ani.isDone(); ani.next()) {
-			// get the trie node and its distance
 			ani.getItem(trieNode, distance);
-
-			// append the leaf nodes of this active node to the vector
-			_appendLeafNodes(trieNode, trieNode, distance);
+			activeNodes[trieNode] = distance; // initially all active nodes are not visited.
+		}
+		for(map<const TrieNode*, unsigned>::iterator iter = activeNodes.begin(); iter != activeNodes.end();)
+		{
+			trieNode = iter->first;
+			distance = iter->second;
+			iter++;
+			_appendLeafNodes(trieNode, trieNode, distance, iter);
 		}
 
 		// init the cursor
@@ -470,14 +468,12 @@ private:
 
     // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
     // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance) {
-    	boost::unordered_map<const TrieNode*, bool>::iterator iter = activeNodes.find(trieNode);
-		if(iter != activeNodes.end()){ // if this node is one of the active nodes
-			if(iter->second) // if this active node is visited, directly return
-				return;
-			else // mark this active node visited
-				iter->second = true;
-		}
+    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, map<const TrieNode*, unsigned>::iterator &expect) {
+    	//meet the expect node
+    	if(trieNode == expect->first){
+    		editDistance = std::min<unsigned>(editDistance, expect->second);
+    		expect++;
+    	}
 
         if (trieNode->isTerminalNode()) {
             // TODO: prefix might not be unique. Should we return the longest matching prefix?
@@ -486,7 +482,7 @@ private:
 
         // go through the children
         for (unsigned childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator ++)
-            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance);
+            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance, expect);
     }
 };
 

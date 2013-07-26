@@ -201,6 +201,12 @@ public:
     	insertCounters = (insertCounters & 0xffff0000) + (counter & 0xffff);
     }
 
+	bool operator < (const TrieNode* t)
+	{
+		return this->getMinId() < t->getMinId() ||
+				(this->getMinId() == t->getMinId() && this->getMaxId() > t->getMaxId());
+	}
+
 private:
     // a compact representation of leftInsertCounter and rightInsertCounter
     unsigned insertCounters; 
