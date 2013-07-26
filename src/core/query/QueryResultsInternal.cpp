@@ -226,28 +226,6 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
 }
 
 
-void QueryResultsInternal::printResult() const
-{
-	// show attributeBitmaps
-	vector<unsigned> attributeBitmaps;
-	vector<vector<unsigned> > attributes;
-	vector<string> matchedKeywords;
-    Logger::debug("Result count %d" ,this->getNumberOfResults());
-	for(int i = 0; i < this->getNumberOfResults(); i++)
-	{
-        Logger::debug("Result #%d" ,i);
-		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
-		this->getMatchingKeywords(i, matchedKeywords);
-		this->getMatchedAttributes(i, attributes);
-		for(int j = 0; j < attributeBitmaps.size(); j++)
-		{
-            Logger::debug("%s %d {", matchedKeywords[j].c_str(), attributeBitmaps[j]);
-			for(int k = 0; k < attributes[j].size(); k++)
-                Logger::debug("%d", attributes[j][k]);
-            Logger::debug("}");
-		}
-
-	}
 
 
 

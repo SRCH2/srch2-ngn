@@ -219,7 +219,9 @@ bool checkResults(QueryResults *queryResults, set<unsigned> *resultSet)
         queryResults->getEditDistances(resultCounter, editDistances);
 
 
-        Logger::debug("Result-(%d) RecordId:%s\tScore:%.5f", resultCounter, (queryResults->getRecordId(resultCounter)).c_str(), queryResults->getResultScore(resultCounter));
+        Logger::debug("Result-(%d) RecordId:%s\tScore:%s",
+        		resultCounter,
+        		(queryResults->getRecordId(resultCounter)).c_str(), queryResults->getResultScore(resultCounter).toString().c_str());
         Logger::debug("Matching Keywords:");
 
         unsigned counter = 0;

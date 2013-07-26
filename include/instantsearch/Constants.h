@@ -157,8 +157,8 @@ typedef enum
 
 typedef enum
 {
-    PREFIX ,
-    COMPLETE ,
+    TERM_TYPE_PREFIX ,
+    TERM_TYPE_COMPLETE ,
     NOT_SPECIFIED
 } TermType;
 

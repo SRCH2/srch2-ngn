@@ -81,7 +81,7 @@ void QueryRewriter::prepareKeywordInfo(){
 		}
 
 		if(paramContainer->hasParameterInSummary(QueryPrefixCompleteFlag) && paramContainer->keywordPrefixComplete.at(k) == srch2is::NOT_SPECIFIED){
-			paramContainer->keywordPrefixComplete.at(k) = indexDataContainerConf->getQueryTermType() ? srch2is::PREFIX : srch2is::COMPLETE ; // TODO : make sure false means prefix
+			paramContainer->keywordPrefixComplete.at(k) = indexDataContainerConf->getQueryTermType() ? srch2is::TERM_TYPE_PREFIX: srch2is::TERM_TYPE_COMPLETE ; // TODO : make sure false means prefix
 		}
 
 		if(paramContainer->hasParameterInSummary(FieldFilter) && paramContainer->fieldFilterOps.at(k) == srch2is::OP_NOT_SPECIFIED){

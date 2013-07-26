@@ -255,7 +255,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 		keywordPrefixComplete = paramsContainer.keywordPrefixComplete;
 	} else { // get it from configuration file
 		for(unsigned i=0;i<rawQueryKeywords.size() ; i++){
-			keywordPrefixComplete.push_back(indexDataContainerConf->getQueryTermType()? srch2is::PREFIX : srch2is::COMPLETE);
+			keywordPrefixComplete.push_back(indexDataContainerConf->getQueryTermType()? srch2is::TERM_TYPE_PREFIX : srch2is::TERM_TYPE_COMPLETE);
 			// TODO: Make sure true means PREFIX and false means COMPLETE
 		}
 	}

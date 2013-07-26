@@ -159,7 +159,6 @@ public:
     
     void fillVisitedList(std::set<unsigned> &visitedList); // fill visitedList with the recordIds in sortedFinalResults
     void finalizeResults(const ForwardIndex *forwardIndex);
-
     const Query* getQuery() const {
         return this->query;
     }
