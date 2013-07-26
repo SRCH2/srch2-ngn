@@ -4,7 +4,12 @@ INCLUDE_DIRECTORIES(
     ${Boost_INCLUDE_DIRS}
 )
 
-SET(UNIT_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a -lunwind)
+set(GPERFTOOL_LIBS "")
+IF(ENABLE_PROFILER)
+    set(GPERFTOOL_LIBS "${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a -lunwind")
+ENDIF()
+
+SET(UNIT_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${GPERFTOOL_LIBS})
 	
 ADD_EXECUTABLE(Logger_Test Logger_Test.cpp)
 TARGET_LINK_LIBRARIES(Logger_Test ${UNIT_TEST_LIBS})

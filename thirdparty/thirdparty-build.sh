@@ -22,6 +22,13 @@ echo "INSTALLING LIBEVENT in $CURRENTDIR/../"
 ./configure --prefix=$CURRENTDIR/../
 make install
 
+cd ../../libunwind
+tar -xvf libunwind-0.99-beta.tar.gz
+cd libunwind-0.99-beta
+CFLAGS=-fPIC ./configure
+make CFLAGS=-fPIC
+make CFLAGS=-fPIC install
+
 cd ../../gperftools
 tar -xvf gperftools-2.0.tar.gz
 cd gperftools-2.0.tar.gz
