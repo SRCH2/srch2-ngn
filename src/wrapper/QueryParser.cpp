@@ -110,11 +110,11 @@ bool verifyMainQuery(const string &input) {
             "(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // verifies the syntax of keyword
     const string keywordWithModsRegexString = keywordRegexString
             + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
-    std::string termModRegex = "(" + keywordWithModsRegexString + "|"
+    std::string termModRegexString = "(" + keywordWithModsRegexString + "|"
             + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
 
     std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
-            + termModRegex + "(\\s+(AND|&&)\\s+" + termModRegex + ")*\\s*"; // verifies the systax of complete query string.
+            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString + ")*\\s*"; // verifies the systax of complete query string.
     // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
 
     boost::regex queryRegex(queryRegexString);
