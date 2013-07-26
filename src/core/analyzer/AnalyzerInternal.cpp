@@ -28,6 +28,7 @@
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 #include "AnalyzerInternal.h"
+#include "util/encoding.h"
 using std::pair;
 using namespace std;
 
@@ -93,6 +94,25 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	this->synonymFilePath = synonymFilePath;
 	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 
+}
+
+string AnalyzerInternal::applyFilters(string input) {
+	TokenOperator * tokenOperator = this->createOperatorFlow();
+	// TEST 1
+	// input string
+
+	this->loadData(input);
+
+	string result = "";
+	while (tokenOperator->incrementToken()) {
+		vector<CharType> charVector;
+		tokenOperator->getCurrentToken(charVector);
+		string tmp;
+		charTypeVectorToUtf8String(charVector, tmp);
+		result += tmp;
+		break;//only returns the first output of filters
+	}
+	return result;
 }
 
 void AnalyzerInternal::loadData(const string &s) const {

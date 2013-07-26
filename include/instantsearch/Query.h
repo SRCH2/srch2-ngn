@@ -22,8 +22,10 @@
 
 #include <instantsearch/platform.h>
 #include <instantsearch/Term.h>
+#include <instantsearch/Constants.h>
 #include <vector>
 #include <string>
+
 
 namespace srch2
 {
@@ -33,41 +35,7 @@ namespace instantsearch
 class Ranker;
 class ResultsPostProcessorPlan;
 
-typedef enum
-{
-    TopKQuery ,
-    GetAllResultsQuery ,
-    MapQuery
-} QueryType;
 
-typedef enum
-{
-	LESS_THAN ,
-	EQUALS,
-	GREATER_THAN,
-	LESS_THAN_EQUALS,
-	GREATER_THAN_EQUALS,
-	NOT_EQUALS
-
-} AttributeCriterionOperation;
-
-typedef enum
-{
-	NO_FILTER ,
-	RANGE_CHECK
-} PostProcessingFilterFlag;
-
-typedef enum
-{
-    Ascending ,
-    Descending
-} SortOrder;
-
-
-typedef enum
-{
-	Count
-} FacetedSearchAggregationType;
 /**
  * This class defines a query that is passed to the IndexSearcher. A
  * query has a list of Term objects. We can add more terms to a

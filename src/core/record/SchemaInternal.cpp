@@ -210,7 +210,9 @@ bool SchemaInternal::isNonSearchableAttributeSortable(const unsigned nonSearchab
     return this->nonSearchableAttributeIsSortableVector[nonSearchableAttributeNameId];
 }
 
-
+const std::map<std::string , unsigned> * SchemaInternal::getNonSearchableAttributes() const {
+	return &this->nonSearchableAttributeNameToId;
+}
 
 unsigned SchemaInternal::getBoostOfSearchableAttribute(const unsigned attributeId) const
 {

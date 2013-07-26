@@ -31,6 +31,8 @@
 #include "index/ForwardIndex.h"
 #include "instantsearch/Score.h"
 
+using namespace std;
+
 namespace srch2
 {
 namespace instantsearch
@@ -46,28 +48,14 @@ private:
 	const Query * query;
 	SortFilter * filter;
 
-	// based on the expression given in query, a value is assigned to each result and then
-	// results are sorted based on these values.
-	void getResultScoreForPostProcessingSort(const QueryResult * & result,Score * score) const{
-		// TODO: this must change to get score based on a expression from query
 
-
-		// getting attributeID from schema
-		unsigned attributeId = schema->getNonSearchableAttributeId(filter->attributeName);
-
-		// attribute type
-		FilterType attributeType = schema->getTypeOfNonSearchableAttribute(attributeId);
-
-		bool isValid = false;
-		const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
-		ASSERT(isValid);
-		const VariableLengthAttributeContainer * nonSearchableAttributes = list->getNonSearchableAttributeContainer();
-
-		nonSearchableAttributes->getAttribute(attributeId,schema, score);
-
-
-	}
 public:
+
+	SortFilter::~SortFilter(){
+		delete evaluator; // this object is allocated in plan Generator
+	}
+
+
 	ResultNonSearchableAttributeComparator(SortFilter * filter , ForwardIndex* forwardIndex , Schema * schema,const Query * query) {
 		this->filter = filter;
 		this->forwardIndex = forwardIndex;
@@ -78,18 +66,65 @@ public:
 	// this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
 	bool operator() (const QueryResult * lhs, const QueryResult * rhs) const
 	{
-		Score lhsScore,rhsScore;
-		getResultScoreForPostProcessingSort(lhs , &lhsScore);
-		getResultScoreForPostProcessingSort(rhs , &rhsScore);
-		return (filter->order==srch2::instantsearch::Ascending)?
-				lhsScore < rhsScore :
-				!(lhsScore < rhsScore);
+		//1. First get the value of non-searchable attributes for the participating attributes from forward index
+		const vector<string> * attributes =  filter->evaluator->getParticipatingAttributes();
+
+
+		bool isValid = false;
+		const ForwardList * list = forwardIndex->getForwardList(lhs->internalRecordId , isValid);
+		ASSERT(isValid);
+		const VariableLengthAttributeContainer * lhsContainer = list->getNonSearchableAttributeContainer();
+
+		bool isValid = false;
+		list = forwardIndex->getForwardList(rhs->internalRecordId , isValid);
+		ASSERT(isValid);
+		const VariableLengthAttributeContainer * rhsContainer = list->getNonSearchableAttributeContainer();
+
+		vector<unsigned> attributeIds;
+		vector<unsigned> attributeIdsToSort;
+
+		for(vector<string>::const_iterator attributeName = attributes->begin() ;
+				attributeName != attributes->end() ; ++attributeName){
+			unsigned id = schema->getNonSearchableAttributeId(*attributeName);
+			attributeIds.push_back(id);
+			attributeIdsToSort.push_back(id);
+		}
+		// sort because container expects the input ids to be ascending
+		sort(attributeIdsToSort.begin() , attributeIdsToSort.end());
+
+		// now get the values from the container
+		vector<Score> lhsScoresAfterSort;
+		lhsContainer->getBatchOfAttributes(attributeIdsToSort,schema, &lhsScoresAfterSort);
+
+		vector<Score> rhsScoresAfterSort;
+		rhsContainer->getBatchOfAttributes(attributeIdsToSort,schema, &rhsScoresAfterSort);
+
+		// since sort has changed the places of items, we should "unsort"
+		map<string,Score> lhsScores,rhsScores;
+
+		unsigned a=0;
+		for(vector<unsigned>::iterator id = attributeIdsToSort.begin();
+				id != attributeIdsToSort.end() ; ++id){
+			vector<unsigned>::iterator oldPlace = find(attributeIds.begin() , attributeIds.end() , *id);
+			lhsScores[attributes->at(oldPlace - attributeIds.begin())] = lhsScoresAfterSort.at(a); // TODO : subtracting iterators might not be safe
+			rhsScores[attributes->at(oldPlace - attributeIds.begin())] = rhsScoresAfterSort.at(a);
+
+			//
+			a++;
+		}
+
+
+		//2. then do the comparison
+		if ( filter->evaluator->compare(lhsScores , rhsScores) >= 0 ){
+			return true;
+		}else{
+			return false;
+		}
+
 	}
 };
 
-SortFilter::~SortFilter(){
 
-}
 // TODO : we don't need query in new design
 void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
 		QueryResults * input, QueryResults * output){

@@ -182,7 +182,7 @@ public:
     
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
-	std::map<std::string , std::vector<float> > facetResults;
+	std::map<std::string , std::vector<std::pair<std::string, float> > > facetResults;
     Stat *stat;
     
  private:

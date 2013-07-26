@@ -37,17 +37,39 @@ namespace httpwrapper
 class SortFilterEvaluator : public SortEvaluator
 {
 public:
-	void evaluate(std::map<std::string, Score> nonSearchableAttributeValues,Score * score) const {
+	int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const{
 
+		for(std::vector<std::string>::iterator f = field.begin() ; f != field.end() ; ++f){
+			if(compare(left[*f] , right[*f]) != 0){
+				return compare(left[*f] , right[*f]);
+			}
+		}
+		return 0;
 
+	}
+
+	const std::vector<std::string> * getParticipatingAttributes() const {
+		return &field;
 	}
 	~SortEvaluator(){
 
 	}
 
-private:
 	std::vector<std::string> field;
 	std::vector<SortOrder> order;
+
+private:
+
+	int compare(const Score & left , const Score & right){
+		if(left == right ) return 0;
+		if(order == Ascending){
+			if(left < right) return 1;
+			else return -1;
+		}else{
+			if(left < right) return -1;
+			else return 1;
+		}
+	}
 
 
 };

@@ -22,7 +22,7 @@
 #include <sstream>
 
 #include "Srch2KafkaConsumer.h"
-#include "HTTPResponse.h"
+#include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
 #include "util/Logger.h"
@@ -39,7 +39,7 @@ namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
 
 using srch2http::Srch2Server;
-using srch2http::HTTPResponse;
+using srch2http::HTTPRequestHandler;
 using srch2http::Srch2ServerConf;
 using namespace srch2::util;
 
@@ -168,7 +168,7 @@ static void ajax_search_command(struct mg_connection *conn,
 								const struct mg_request_info *request_info,
 								Srch2Server *server)
 {
-	HTTPResponse::searchCommand(conn, request_info, server);
+	HTTPRequestHandler::searchCommand(conn, request_info, server);
 }
 */
 
@@ -195,7 +195,7 @@ void cb_bmsearch(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	srch2http::HTTPResponse::searchCommand(req, server);
+	srch2http::HTTPRequestHandler::searchCommand(req, server);
 }
 
 /**
@@ -208,7 +208,7 @@ void cb_bmlookup(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	srch2http::HTTPResponse::lookupCommand(req, server);
+	srch2http::HTTPRequestHandler::lookupCommand(req, server);
 }
 
 /**
@@ -227,7 +227,7 @@ void cb_bminfo(evhttp_request *req, void *arg) {
     string versioninfo;
     getVersionInfo(versioninfo);
 
-	HTTPResponse::infoCommand(req, server, versioninfo);
+	HTTPRequestHandler::infoCommand(req, server, versioninfo);
 }
 
 /**
@@ -240,7 +240,7 @@ void cb_bmwrite_v0(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	HTTPResponse::writeCommand_v0(req, server);
+	HTTPRequestHandler::writeCommand_v0(req, server);
 }
 
 void cb_bmupdate(evhttp_request *req, void *arg) {
@@ -248,7 +248,7 @@ void cb_bmupdate(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	HTTPResponse::updateCommand(req, server);
+	HTTPRequestHandler::updateCommand(req, server);
 }
 
 void cb_bmsave(evhttp_request *req, void *arg) {
@@ -256,7 +256,7 @@ void cb_bmsave(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	HTTPResponse::saveCommand(req, server);
+	HTTPRequestHandler::saveCommand(req, server);
 }
 
 /**
@@ -269,7 +269,7 @@ void cb_bmwrite_v1(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	HTTPResponse::writeCommand_v1(req, server);
+	HTTPRequestHandler::writeCommand_v1(req, server);
 }
 
 /**
@@ -282,7 +282,7 @@ void cb_bmactivate(evhttp_request *req, void *arg) {
 	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
 	evhttp_add_header(req->output_headers, "Content-Type",
                     "application/json; charset=UTF-8");
-	HTTPResponse::activateCommand(req, server);
+	HTTPRequestHandler::activateCommand(req, server);
 }
 
 

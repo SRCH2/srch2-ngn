@@ -5,7 +5,10 @@
 #include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
+#include "util/Assert.h"
 
+
+using namespace std;
 namespace srch2
 {
 namespace instantsearch
@@ -16,7 +19,7 @@ FacetedSearchFilter::FacetedSearchFilter(){
 }
 
 FacetedSearchFilter::~FacetedSearchFilter(){
-
+	delete impl;
 }
 
 
@@ -29,32 +32,25 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 
 
 
-	// these two maps must be parallel
-	ASSERT(lowerBoundsOfCategories.size() == facetedSearchAggregationTypes.size());
 
 	// first copy all input results to output
 	input->impl->copyForPostProcessing(output->impl);
 
 	// initialize results of each attribute
-	for(std::map<std::string , std::vector<Score> >::iterator iter = lowerBoundsOfCategories.begin();
-			iter != lowerBoundsOfCategories.end(); ++iter){
+	for(std::map<std::string , std::vector<Score> >::iterator iter = impl->lowerBoundsOfCategories.begin();
+			iter != impl->lowerBoundsOfCategories.end(); ++iter){
 
-		std::vector<float> zeroCounts( iter->second.size() , 0);
-		switch (facetedSearchAggregationTypes[iter->first]) {
-		case srch2::instantsearch::Count:
-			//initialize facet vector by zero.
-			output->impl->facetResults[iter->first] = zeroCounts;
-			break;
-		default:
-			ASSERT(false);
-			break;
+		std::vector<std::pair< std::string, float > > zeroCounts;
+		for(vector<Score>::iterator lb = iter->second.begin() ; lb != iter->second.end() ; ++lb){
+			zeroCounts.push_back(make_pair(lb->toString() , 0));
 		}
+		output->impl->facetResults[iter->first] = zeroCounts;
 	}
 
 	// translate list of attribute names to list of attribue IDs
 	std::vector<unsigned> attributeIds;
-	for(std::map<std::string , std::vector<Score> >::iterator iter = lowerBoundsOfCategories.begin();
-			iter != lowerBoundsOfCategories.end(); ++iter){
+	for(std::map<std::string , std::vector<Score> >::iterator iter = impl->lowerBoundsOfCategories.begin();
+			iter != impl->lowerBoundsOfCategories.end(); ++iter){
 
 		attributeIds.push_back(schema->getNonSearchableAttributeId(iter->first));
 	}
@@ -80,7 +76,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 		nonSearchableAttributes->getBatchOfAttributes(attributeIds, schema, &attributeDataValues);
 
 		// now iterate on attributes and incrementally update the facet results
-		for(std::map<std::string , std::vector<float> >::iterator attrIter = output->impl->facetResults.begin();
+		for(std::map<std::string , std::vector<pair<string,float> > >::iterator attrIter = output->impl->facetResults.begin();
 				attrIter != output->impl->facetResults.end(); ++attrIter){
 
 
@@ -95,22 +91,32 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 			Score & attributeValue = attributeDataValues.at(indexOfThisAttributeInAtributeIds);
 			//				std::cout << " ,value = " << attributeValue.toString() << std::endl;
 			// choose the type of aggregation for this attribute
-			switch (facetedSearchAggregationTypes[attrIter->first]) {
-			case srch2::instantsearch::Count :
-				// increments the correct facet by one
-				impl->facetByCountAggregation(attributeValue ,
-						lowerBoundsOfCategories[attrIter->first] ,
-						&(attrIter->second));
-				break;
-			default:
-				break;
-			}
+			// increments the correct facet by one
+			impl->facetByCountAggregation(attributeValue ,
+					impl->lowerBoundsOfCategories[attrIter->first] ,
+					&(attrIter->second));
 
 
 		}
 		//			std::cout << "===================  Result processed. ==================" <<std::endl;
 
 	}
+
+}
+
+void FacetedSearchFilter::initialize(std::vector<srch2is::FacetType> types,
+		std::vector<std::string> fields,
+		std::vector<std::string> rangeStarts,
+		std::vector<std::string> rangeEnds,
+		std::vector<std::string> rangeGaps){
+
+	this->impl->fields = fields;
+	this->impl->types = types;
+	this->impl->rangeStarts = rangeStarts;
+	this->impl->rangeEnds = rangeEnds;
+	this->impl->rangeGaps = rangeGaps;
+
+
 
 }
 

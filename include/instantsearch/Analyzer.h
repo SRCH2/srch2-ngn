@@ -21,7 +21,7 @@
 #define __INCLUDE_INSTANTSEARCH__ANALYZER_H__
 
 #include <instantsearch/platform.h>
-
+#include <instantsearch/Constants.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -29,29 +29,7 @@
 namespace srch2 {
 namespace instantsearch {
 
-typedef enum {
-	// there is no numbering for this enum. By default the numbers start from 0
-	DISABLE_STEMMER_NORMALIZER, // Disables stemming
-	ENABLE_STEMMER_NORMALIZER, // Enables stemming
-	ONLY_NORMALIZER
-} StemmerNormalizerFlagType;
 
-typedef enum {
-	DICTIONARY_PORTER_STEMMER
-// We can add other kinds of stemmer here, like MIRROR_STEMMER
-
-} StemmerType; // TODO: I should remove the '_' from the name, (it is temporary)
-
-typedef enum {
-	SYNONYM_KEEP_ORIGIN, // Disables stemming
-	SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
-} SynonymKeepOriginFlag;
-
-
-typedef enum {
-	STANDARD_ANALYZER,    // StandardAnalyzer
-	SIMPLE_ANALYZER       // SimpleAnalyzer
-} AnalyzerType;
 
 /**
  * An Analyzer is used at query time to tokenize a queryString into
@@ -76,6 +54,8 @@ public:
 	virtual void setRecordAllowedSpecialCharacters(
 			const std::string &delimiters) = 0;
 	virtual const std::string& getRecordAllowedSpecialCharacters() const = 0;
+
+	virtual string applyFilters(string input) = 0 ;
 
 	/**
 	 * @param[in] queryString - The query string .

@@ -27,6 +27,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/Score.h>
 #include <instantsearch/ResultsPostProcessor.h>
+#include "WrapperConstants.h"
 #include "exprtk.hpp"
 
 #ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
@@ -42,23 +43,7 @@ namespace srch2
 namespace httpwrapper
 {
 
-typedef enum
-{
-	LESS_THAN ,
-	EQUALS,
-	GREATER_THAN,
-	LESS_THAN_EQUALS,
-	GREATER_THAN_EQUALS,
-	NOT_EQUALS
 
-} AttributeCriterionOperation;
-
-
-typedef enum
-{
-    AND,
-    OR
-} FilterOperation;
 
 class QueryExpression
 {
@@ -221,7 +206,7 @@ public:
 private:
 	std::string attributeName ;
 	Score attributeValue;
-	AttributeCriterionOperation operation;
+	BooleanOperation operation;
 	bool negative;
 
 
@@ -329,7 +314,7 @@ public:
 
 	FilterQueryEvaluator(const std::vector< std::string > nonSearchableAttributeNames ,
 					  const std::vector< FilterType > nonSearchableAttributeTypes,
-					  FilterOperation op){
+					  BooleanOperation op){
 		this->nonSearchableAttributeNames = nonSearchableAttributeNames;
 		this->nonSearchableAttributeTypes = nonSearchableAttributeTypes;
 		this->operation = op;
@@ -411,7 +396,7 @@ private:
 	std::vector< FilterType > nonSearchableAttributeTypes;
 
 	std::vector<QueryExpression * > criteria;
-	FilterOperation operation;
+	BooleanOperation operation;
 
 };
 

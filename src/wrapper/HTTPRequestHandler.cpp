@@ -104,8 +104,8 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void HTTPRequestHandler::printResults( evhttp_request *req, const evkeyvalq &headers,
-        const URLParserHelper &urlParserHelper,
+static void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyvalq &headers,
+        const QueryPlan &queryPlan,
         const Srch2ServerConf *indexDataContainerConf,
         const QueryResults *queryResults,
         const Query *query,
@@ -114,8 +114,7 @@ void HTTPRequestHandler::printResults( evhttp_request *req, const evkeyvalq &hea
         const unsigned end,
         const unsigned retrievedResults,
         const unsigned ts1,
-        struct timespec &tstart, struct timespec &tend)
-{
+        struct timespec &tstart, struct timespec &tend){
     Json::FastWriter writer;
     Json::Value root;
 
@@ -127,7 +126,7 @@ void HTTPRequestHandler::printResults( evhttp_request *req, const evkeyvalq &hea
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     unsigned counter = 0;
-    if(urlParserHelper.searchType==SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS&&query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+    if(queryPlan.getSearchType()==GeoSearchType  &&  query->getQueryTerms()->empty()) //check if the query type is range query without keywords
     {
 		for(unsigned i = start; i < end; ++i)
 		{
@@ -207,7 +206,7 @@ void HTTPRequestHandler::printResults( evhttp_request *req, const evkeyvalq &hea
 			logQueries += term;
 		}
 
-		root["fuzzy"] = (int)urlParserHelper.isFuzzy;
+		root["fuzzy"] = (int)queryPlan.isIsFuzzy();
     }
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -215,24 +214,41 @@ void HTTPRequestHandler::printResults( evhttp_request *req, const evkeyvalq &hea
 
     // return some meta data
 
-    root["type"] = urlParserHelper.searchType;
+    root["type"] = queryPlan.getSearchTypeCode()();
     root["offset"] = start;
     root["limit"] = end - start;
 
-    if (urlParserHelper.searchType)
+    if (queryPlan.getSearchType() == GetAllResultsSearchType || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
     {
         root["results_found"] = retrievedResults;
 
-        if (urlParserHelper.searchType==1)
-        {
-            root["sortby"] = urlParserHelper.sortby;
-            root["order"] = (int)urlParserHelper.order;
-        }
     }
+
+    const std::map<std::string , std::vector<std::pair<std::string, float> > > * facetResults = queryResults->getFacetResults();
+    if(! facetResults->empty()){ // we have facet results to print
+    	root["facets"].resize(facetResults->size());
+
+    	for(std::map<std::string , std::vector<std::pair<std::string, float> > >::const_iterator attr = facetResults->begin();
+    			attr != facetResults->end() ; ++attr ){
+    		unsigned attributeCounter = attr - facetResults->begin();
+    		root["facets"][attributeCounter]["category"].resize(attr->second.size());
+    		for(std::vector<std::pair<std::string, float> >::const_iterator category = attr->second.begin();
+    				category != attr->second.end() ; ++ category){
+				root["facets"]
+				     [attributeCounter]["category"]
+				               [(category - attr->second.begin())]
+				                ["category_name"] = category->first;
+				root["facets"]
+				     [attributeCounter]["category"]
+				               [(category - attr->second.begin())]
+				                ["category_value"] = category->second;
+    		}
+    	}
+    }
+
 
     Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
-
 }
 
 void HTTPRequestHandler::writeCommand_v0(evhttp_request *req, Srch2Server *server)
@@ -534,12 +550,12 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req, Srch2Server *server)
         //lookup the record on the index
         switch(server->indexer->lookupRecord(primaryKeyStringValue))
         {
-            case LU_ABSENT_OR_TO_BE_DELETED:
+            case srch2is::LU_ABSENT_OR_TO_BE_DELETED:
             {
                 response_msg << "absent or to be deleted\"}";
                 break;
             }
-            case LU_TO_BE_INSERTED:
+            case srch2is::LU_TO_BE_INSERTED:
             {
                 response_msg << "to be inserted\"}";
                 break;
@@ -561,11 +577,11 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req, Srch2Server *server)
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
 {
+	// start the timer for search
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
     const Srch2ServerConf *indexDataContainerConf = server->indexDataContainerConf;
-    const Analyzer *analyzer = server->indexer->getAnalyzer();
 
     ParsedParameterContainer paramContainer;
 
@@ -603,11 +619,81 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
+
+    // compute elapsed time in ms , end the timer
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+
     //6. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
+    switch (plan.getSearchType()) {
+		case TopKSearchType:
+
+            finalResults->printStats();
+            HTTPRequestHandler::printResults(
+            		req,
+            		headers,
+            		plan,
+            		indexDataContainerConf,
+            		finalResults,
+            		plan.getExactQuery(),
+            		server->indexer,
+                    plan.getOffset(),
+                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(),
+                    ts1,
+                    tstart,
+                    tend);
+
+			break;
+		case GetAllResultsSearchType:
+		case GeoSearchType:
+
+        	finalResults->printStats();
+
+        	if (plan.getOffset() + plan.getResultsToRetrieve()  > finalResults->getNumberOfResults()) // Case where you have return 10,20, but we got only 0,15 results.
+        	{
+        		HTTPRequestHandler::printResults(req,
+        				headers,
+        				plan,
+        				indexDataContainerConf,
+        				finalResults,
+        				plan.getExactQuery(),
+        				server->indexer,
+        				plan.getOffset(),
+        				finalResults->getNumberOfResults(),
+        				finalResults->getNumberOfResults(),
+        				ts1,
+        				tstart,
+        				tend);
+        	}
+        	else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+        	{
+        		HTTPRequestHandler::printResults(req,
+        				headers,
+        				plan,
+        				indexDataContainerConf,
+        				finalResults,
+        				plan.getExactQuery(),
+        				server->indexer,
+        				plan.getOffset(),
+        				plan.getOffset() + plan.getResultsToRetrieve(),
+        				finalResults->getNumberOfResults(),
+        				ts1,
+        				tstart,
+        				tend);
+        	}
+
+			break;
+
+	}
+
 
 
     // 7. delete allocated structures
+    // Free the objects
+    evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
 

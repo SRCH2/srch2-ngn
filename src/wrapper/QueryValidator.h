@@ -24,6 +24,7 @@
 
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
+#include "Srch2ServerConf.h"
 
 namespace srch2{
 
@@ -36,37 +37,26 @@ class QueryValidator
 
 public:
 
-	QueryValidator(const Schema & schema ,ParsedParameterContainer * paramContainer){
-		this->paramContainer = paramContainer;
-		this->schema = schema;
-	}
+	QueryValidator(const Schema & schema ,const Srch2ServerConf *indexDataContainerConf, ParsedParameterContainer * paramContainer);
 
 
 	// this function goes through the sumary and based on that validates the query.
-	bool validate(){
-
-
-		/*
-		 * things that validator needs to validate :
-		 * 1. existence of fields
-		 * 2. is a field sortable or not
-		 * 3. is a field searchable or not
-		 * 4. the value of "numberOfResultsLimit"
-		 * 5. is a facet field nonSearchable
-		 * 6. Only one of the search types should exist in summary
-		 * 7. if search type is TopK or GetAllResults query keywords should not be empty
-		 * 8. If search type is Geo, some latitude longitude must be provided.
-		 * 9. If facet is off desabled by configuration facet information should be removed.
-		 * 10. facet field names must be among non-searchable attributes.
-		 * 11. Sort field name must be among non-searchable attributes.
-		 *
-		 */
-	}
+	bool validate();
 
 private:
 	ParsedParameterContainer * paramContainer;
 	const Schema & schema;
+	const Srch2ServerConf *indexDataContainerConf
 
+	bool validateExistanceOfAttributesInFieldList();
+
+	bool validateExistanceOfAttributesInSortFiler();
+
+	bool validateExistanceOfAttributesInFacetFiler();
+
+	// this function validates the value stored in "value" based on the type which is passed to it by "type"
+	// for example, if the string is "123rt" and the type is UNSIGNED it returns false
+	bool validateValueWithType(srch2is::FilterType type, string value);
 
 
 };

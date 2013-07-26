@@ -14,6 +14,7 @@
 #include <instantsearch/Analyzer.h>
 #include <boost/regex.hpp>
 #include "TokenOperator.h"
+#include <string>
 
 using std::vector;
 using std::map;
@@ -55,6 +56,9 @@ public:
 			const std::string &stopWordFilePath = "",
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
+
+
+	string applyFilters(string input) ;
 
 	void loadData(const std::string &s) const;
 

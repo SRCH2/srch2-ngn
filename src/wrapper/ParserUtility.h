@@ -3,6 +3,14 @@
 #ifndef _WRAPPER_PARSERUTILITY_H_
 #define _WRAPPER_PARSERUTILITY_H_
 #include <string>
+#include <cstdlib>
+#include <iostream>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+
+using boost::posix_time::time_input_facet;
+using std::locale;
+
 
 using namespace std;
 
@@ -71,6 +79,63 @@ static inline std::vector<std::string>  &split(std::string &s, std::string delim
 	}
 	return result;
 
+}
+
+inline bool isInteger(const std::string & s)
+{
+   if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+
+   char * p ;
+   strtol(s.c_str(), &p, 10) ;
+
+   return (*p == 0) ;
+}
+
+
+
+inline bool isFloat(const std::string & s)
+{
+   if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+
+   char * p ;
+   strtof(s.c_str(), &p);
+
+   return (*p == 0) ;
+}
+
+inline bool isTime(const std::string & s)
+{
+	return true; // FIXME ???????????????????????????????
+}
+
+
+const locale inputs[] = {
+    locale(locale::classic(), new time_input_facet("%m/%d/%Y")),
+    locale(locale::classic(), new time_input_facet("%Y-%m-%d %H:%M:%S")),
+    locale(locale::classic(), new time_input_facet("%Y%m%d%H%M%S")),
+    locale(locale::classic(), new time_input_facet("%Y%m%d%H%M")),
+    locale(locale::classic(), new time_input_facet("%Y%m%d")) };
+const size_t formats = sizeof(inputs)/sizeof(inputs[0]);
+
+time_t ptime_to_time_t(boost::posix_time::ptime t)
+{
+       static boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
+       return (t-epoch).ticks() / boost::posix_time::time_duration::ticks_per_second();
+}
+int main()
+{
+       std::string msg = "2010-08-04 08:34:12";
+
+       for(size_t i=0; i<formats; ++i)
+       {
+           std::istringstream ss(msg);
+           ss.imbue(inputs[i]);
+           boost::posix_time::ptime this_time;
+           ss >> this_time;
+
+           if(this_time != boost::posix_time::not_a_date_time)
+               std::cout << this_time << " or " << ptime_to_time_t(this_time) << std::endl;
+       }
 }
 
 }

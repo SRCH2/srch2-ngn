@@ -191,6 +191,11 @@ double QueryResults::getPhysicalDistance(const unsigned position) const {
     return impl->sortedFinalResults.at(position)->physicalDistance;
 }
 
+const std::map<std::string , std::vector<std::pair<std::string, float> > > * QueryResults::getFacetResults() const{
+	return &impl->facetResults;
+}
+
+
 //TODO: These three functions for internal debugging. remove from the header
 void QueryResults::printStats() const {
     impl->stat->print();

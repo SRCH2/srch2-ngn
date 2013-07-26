@@ -37,10 +37,11 @@ namespace instantsearch
 {
 
 NonSearchableAttributeExpressionFilter::NonSearchableAttributeExpressionFilter(){
-	impl = new NonSearchableAttributeExpressionFilterInternal();
+	impl = new NonSearchableAttributeExpressionFilterInternal(this);
 }
 NonSearchableAttributeExpressionFilter::~NonSearchableAttributeExpressionFilter(){
-
+	delete evaluator; // this object is allocated in plan Generator
+	delete impl;
 }
 void NonSearchableAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
 		QueryResults * input, QueryResults * output){
