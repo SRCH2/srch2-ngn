@@ -35,6 +35,7 @@ public:
 		this->analyzerType = SIMPLE_ANALYZER;
 		this->tokenOperator = createOperatorFlow();
 	}
+
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {
 		this->analyzerType = SIMPLE_ANALYZER;

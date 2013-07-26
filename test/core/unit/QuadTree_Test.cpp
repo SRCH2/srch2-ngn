@@ -199,7 +199,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 		if(isFuzzy)
 		{
 			Term *term = FuzzyTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0,
 					getNormalizedThresholdGeo(keywords[i].size()));
@@ -208,7 +208,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 		else
 		{
 			Term *term = ExactTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0);
 			query->add(term);
@@ -255,7 +255,7 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 		if(isFuzzy)
 		{
 			Term *term = FuzzyTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0,
 					getNormalizedThresholdGeo(keywords[i].size()));
@@ -264,7 +264,7 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 		else
 		{
 			Term *term = ExactTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0);
 			query->add(term);
@@ -311,7 +311,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 		if(isFuzzy)
 		{
 			Term *term = FuzzyTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0,
 					getNormalizedThresholdGeo(keywords[i].size()));
@@ -320,7 +320,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 		else
 		{
 			Term *term = ExactTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0);
 			query->add(term);
@@ -363,7 +363,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 		if(isFuzzy)
 		{
 			Term *term = FuzzyTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0,
 					getNormalizedThresholdGeo(keywords[i].size()));
@@ -372,7 +372,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 		else
 		{
 			Term *term = ExactTerm::create(keywords[i],
-					PREFIX,
+					TERM_TYPE_PREFIX,
 					1,
 					100.0);
 			query->add(term);

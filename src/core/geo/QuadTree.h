@@ -375,14 +375,10 @@ public:
      // This is here because we don't want unnecessary copies during node split.
     vector<GeoElement*> geoElementIndex; //TODO make it private
 
-    int log_level;
-
     QuadTree(ForwardIndex *forwardIndex, Trie *trie);
 
     QuadTree()
     {
-        this->log_level = -1;
-
         this->root = NULL;
         this->cFiltersOfQuadTree = NULL;
         this->oFiltersOfQuadTree = NULL;

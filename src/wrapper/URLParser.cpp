@@ -49,7 +49,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
     if (indexDataContainerConf->getSearchType() == SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS){//check if the query is a range query but without information
 
 		 const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
-		 if (!keywordsParamName){//check if keywords information is empty
+		 if (!keywordsParamName){//check if keyword information is empty
 			 if(indexDataContainerConf->getAttributeLatitude()!="IGNORE"&&indexDataContainerConf->getAttributeLongitude()!="IGNORE"){// if the Attribute Latitude and Longitude are not IGNORE, we say query contains the range
 				urlParserHelper.parserSuccess=true;
 				urlParserHelper.searchType = 2;
@@ -62,7 +62,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 						urlParserHelper.offset = atoi(resultsToRetrieveStartParamName_cstar);
 						delete resultsToRetrieveStartParamName_cstar;
 					}
-					else{//default set the valus is 0
+					else{//default value is 0
 						urlParserHelper.offset = 0;
 					}
 				}
@@ -169,7 +169,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         urlParserHelper.searchType = indexDataContainerConf->getSearchType(); //TopK: 0; Advanced: 1
         string sep;
         sep += URLParser::queryDelimiter;
-        vector<string> queryKeywordsVector;
+        vector<string> queryKeywordVector;
         vector<srch2is::TermType> termTypeVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
@@ -186,20 +186,20 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
                 if (indexDataContainerConf->getSupportAttributeBasedSearch()){
                 	// get searchable attribute to get map from attribute name to Id
-                    analyzer->tokenizeQueryWithFilter(keywordsParamName_cstar, queryKeywordsVector, URLParser::queryDelimiter,
+                    analyzer->tokenizeQueryWithFilter(keywordsParamName_cstar, queryKeywordVector, URLParser::queryDelimiter,
                             URLParser::filterDelimiter, URLParser::fieldsAndDelimiter, URLParser::fieldsOrDelimiter,
                             schema->getSearchableAttribute(), filters);
                 }
                 else{
-                    analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordsVector);
+                    analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordVector);
                     //check whether or not the last character is a whitespace (which is transformed from "+")
                     //For example, for a query "q=trus+", we will take "trus" as a complete term.
                     string query=string(keywordsParamName_cstar);
 
 					if(query.substr(query.length()-1, 1) == " "){
-						queryKeywordsVector.push_back(" ");
+						queryKeywordVector.push_back(" ");
 					}
-						filters.assign(queryKeywordsVector.size(), 1);
+						filters.assign(queryKeywordVector.size(), 1);
                 }
                 delete keywordsParamName_cstar;
             }
@@ -210,7 +210,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             }
 
             
-            if (queryKeywordsVector.size() == 0){
+            if (queryKeywordVector.size() == 0){
                 urlParserHelper.parserSuccess = false;
                 urlParserHelper.parserErrorMessage << "{\"error\":\"Query keywords are malformed\"}";
                 return;
@@ -247,7 +247,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
 
 
-        unsigned numberOfKeywords = queryKeywordsVector.size();
+        unsigned numberOfKeywords = queryKeywordVector.size();
 
         {
             const char *termTypesParamName = evhttp_find_header(&headers, URLParser::termTypesParamName);
@@ -260,13 +260,12 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
                 for (unsigned idx=0; idx<termTypesParamName_str.size(); idx++){
 					if (termTypesParamName_str[idx] == '0'){
-						termTypeVector.push_back(srch2is::PREFIX);
+						termTypeVector.push_back(srch2is::TERM_TYPE_PREFIX);
 					}
 					else if (termTypesParamName_str[idx] == '1')
-						termTypeVector.push_back(srch2is::COMPLETE);
+						termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
 				}
-                //use delimiter to decode options for every keyword
-                //boost::split(termTypeStringVector, termTypesParamName_str, boost::is_any_of(" "));
+
                 if (termTypeVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of TermTypes doesn't match the number of keywords\"}";
@@ -278,16 +277,17 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             else{
                 if (numberOfKeywords >= 1){
                     for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++){
-                        termTypeVector.push_back(srch2is::COMPLETE);
+                        termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
                     }
-                    if(queryKeywordsVector[numberOfKeywords - 1] != " "){
+                    if(queryKeywordVector[numberOfKeywords - 1] != " "){
                     	if (!indexDataContainerConf->getQueryTermType())
-                    		termTypeVector.push_back(srch2is::PREFIX);
+                    		//The QueryTermType in conf is only decide query type of the last keyword
+                    		termTypeVector.push_back(srch2is::TERM_TYPE_PREFIX);
                     	else
-                    		termTypeVector.push_back(srch2is::COMPLETE);
+                    		termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
                     }
                     else{
-                    	queryKeywordsVector.pop_back();
+                    	queryKeywordVector.pop_back();
                     	numberOfKeywords = numberOfKeywords - 1;
                     }
 
@@ -565,6 +565,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         fuzzyQuery->setPrefixMatchPenalty(indexDataContainerConf->getPrefixMatchPenalty());
 
         //for each keyword, build the exact terms
+
         for (unsigned i = 0; i < numberOfKeywords; ++i){
             srch2is::TermType termType = termTypeVector[i];
 
@@ -595,18 +596,19 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
             srch2is::Term *exactTerm;
             srch2is::Term *fuzzyTerm;
-            if(urlParserHelper.isFuzzy){
-                exactTerm = new srch2is::Term(queryKeywordsVector[i],
-                		termType,
-                        termBoost,
-                        similarityBoost,
-                        0);
 
-                fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
+            if(urlParserHelper.isFuzzy){
+            	exactTerm = new srch2is::Term(queryKeywordVector[i],
+            			termType,
+            			termBoost,
+            			similarityBoost,
+            			0);
+
+                fuzzyTerm = new srch2is::Term(queryKeywordVector[i],
                 		termType,
-                        termBoost,
-                        similarityBoost,
-                        srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
+                		termBoost,
+                		similarityBoost,
+                		srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -615,11 +617,11 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 this->fuzzyQuery->add(fuzzyTerm);
 
             }else{
-                exactTerm = new srch2is::Term(queryKeywordsVector[i],
+                exactTerm = new srch2is::Term(queryKeywordVector[i],
                 		termType,
-                        termBoost,
-                        similarityBoost,
-                        0);
+                		termBoost,
+                		similarityBoost,
+                		0);
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 this->exactQuery->add(exactTerm);

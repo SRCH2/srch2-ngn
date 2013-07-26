@@ -222,7 +222,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         }
     }
 
-    Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
+    Logger::info("ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms", req->remote_host, req->remote_port, req->uri+1, ts1, ts2);
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
     
 }
