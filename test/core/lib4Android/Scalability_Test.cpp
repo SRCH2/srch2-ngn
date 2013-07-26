@@ -43,7 +43,8 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 	/// Read records from file
 	/// the file should have two fields, seperated by '^'
 	/// the first field is the primary key, the second field is a searchable attribute
-	clock_t timebegin = clock();
+	timespec timebegin;
+    setStartTime(&timebegin);
 	int cline = 0;
 	while (getline(data, line)) {
 		if (++cline > lineLimit) {
@@ -70,11 +71,12 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 	}
 
 	indexer->commit();
-	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
+	Logger::console("#Docs Read: %d, index commited, time spend: %2.6f milliseconds",
 			docsCounter, getTimeSpan(timebegin));
-	clock_t savingbegin = clock();
+    timespec savingbegin;
+    setStartTime(&savingbegin);
 	indexer->save();
-	Logger::console("Index Saving time: %.5f seconds, total time: %.5f seconds",
+	Logger::console("Index Saving time: %2.6f milliseconds, total time: %2.6f milliseconds",
 			getTimeSpan(savingbegin), getTimeSpan(timebegin));
 	Logger::console("Index mem usage %d kb. ", getRAMUsageValue());
 
@@ -112,7 +114,8 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 	/// Read records from file
 	/// the file should have two fields, seperated by '^'
 	/// the first field is the primary key, the second field is a searchable attribute
-	clock_t timebegin = clock();
+    timespec timebegin;
+    setStartTime(&timebegin);
 	int cline = 0;
 	while (getline(data, line)) {
 		if (++cline > lineLimit) {
@@ -144,11 +147,12 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 	}
 
 	indexer->commit();
-	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
+	Logger::console("#Docs Read: %d, index commited, time spend: %2.6f milliseconds",
 			docsCounter, getTimeSpan(timebegin));
-	clock_t savingbegin = clock();
+    timespec savingbegin;
+    setStartTime(&savingbegin);
 	indexer->save();
-	Logger::console("Index Saving time: %.5f seconds, total time: %.5f seconds",
+	Logger::console("Index Saving time: %2.6f milliseconds, total time: %2.6f milliseconds",
 			getTimeSpan(savingbegin), getTimeSpan(timebegin));
 	Logger::console("Index mem usage %d kb. ", getRAMUsageValue());
 
@@ -210,8 +214,13 @@ void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
 //      Logger::console("Query: %s", (*vectIter).c_str());
 //      clock_gettime(CLOCK_REALTIME, &t1_inner);
 
-		bool hasRes = pingForScalabilityTest(analyzer, indexSearcher, *vectIter,
+        QueryResults * queryresult = query(analyzer, indexSearcher,*vectIter,
 				ed, termType);
+        bool hasRes = queryresult->getNumberOfResults()>0;
+        delete queryresult;
+//		bool hasRes = pingForScalabilityTest(analyzer, indexSearcher, *vectIter,
+//				ed, termType);
+//
 
 //      clock_gettime(CLOCK_REALTIME, &t2_inner);
 //      double time_span_inner = (double) ((t2_inner.tv_sec - t1_inner.tv_sec)
@@ -345,14 +354,15 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 		buildGeoIndex(geo_data_file, strIndexPath, lineLimit);
 	}
 
-	clock_t begin = clock();
+    timespec start;
+    setStartTime(&start);
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites, strIndexPath, "");
 	Indexer *index = Indexer::load(indexMetaData);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
-	Logger::console("Index loaded. time spend : %.5f seconds",
-			getTimeSpan(begin));
+	Logger::console("Index loaded. time spend : %2.6f milliseconds",
+			getTimeSpan(start));
 
 	const Analyzer *analyzer = index->getAnalyzer();
 

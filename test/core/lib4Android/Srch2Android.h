@@ -10,7 +10,9 @@
 #include "../integration/IntegrationTestHelper.h"
 #include "../integration/MapSearchTestHelper.h"
 
-#include <ctime>
+#include <sys/time.h>
+#include <stdio.h>
+#include <unistd.h>
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -21,7 +23,8 @@ namespace sdk {
 const unsigned mergeEveryNSeconds = 3;
 const unsigned mergeEveryMWrites = 5;
 
-float getTimeSpan(clock_t begin);
+void setStartTime(timespec* startTime);
+double getTimeSpan(timespec startTime);
 
 int parseLine(char* line);
 

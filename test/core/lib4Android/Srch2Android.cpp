@@ -16,8 +16,16 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace sdk {
 
-float getTimeSpan(clock_t begin) {
-	return (((float) (clock() - begin)) / CLOCKS_PER_SEC);
+
+void setStartTime(timespec *startTime){
+    clock_gettime(CLOCK_REALTIME, startTime);
+}
+
+double getTimeSpan(timespec startTime){
+    timespec endTime;
+    clock_gettime(CLOCK_REALTIME, &endTime);
+    return (double)((endTime.tv_sec - startTime.tv_sec) * 1000)
+        + (double)(endTime.tv_nsec - startTime.tv_nsec) / 1000000.0;
 }
 
 int parseLine(char* line) {
@@ -187,7 +195,8 @@ Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
 		bool isGeo) {
 	Indexer *indexer = createIndex(indexDir, isGeo);
 
-	clock_t timebegin = clock();
+    timespec timebegin;
+    setStartTime(&timebegin);
 	unsigned docsCounter = 0;
 	if (isGeo) {
 		docsCounter = loadGeoData(dataFile, lineLimit, indexer,
@@ -198,7 +207,7 @@ Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
 	}
 
 	indexer->commit();
-	Logger::console("#Docs Read: %d, index commited, time spend: %.5f seconds",
+	Logger::console("#Docs Read: %d, index commited, time spend: %2.6f milliseconds",
 			docsCounter, getTimeSpan(timebegin));
 
 	return indexer;
@@ -211,19 +220,21 @@ void commitIndex(Indexer* indexer) {
 }
 
 void saveIndex(Indexer *indexer) {
-	clock_t savingbegin = clock();
+    timespec savingbegin;
+    setStartTime(&savingbegin);
 	indexer->save();
-	Logger::console("Index Saving time: %.5f seconds",
+	Logger::console("Index Saving time: %2.6f milliseconds",
 			getTimeSpan(savingbegin));
 	Logger::console("Index mem usage %d kb. ", getRAMUsageValue());
 }
 
 Indexer* loadIndex(const string& strIndexPath) {
-	clock_t begin = clock();
+    timespec begin ;
+    setStartTime(&begin);
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites, strIndexPath, "");
 	Indexer *index = Indexer::load(indexMetaData);
-	Logger::console("Index loaded. time spend : %.5f seconds",
+	Logger::console("Index loaded. time spend : %2.6f milliseconds",
 			getTimeSpan(begin));
 	return index;
 }
@@ -232,14 +243,15 @@ QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 		const string& queryString, unsigned ed,
 		srch2::instantsearch::TermType termType) {
 	Logger::console("srch2::sdk::query:%s", queryString.c_str());
-	clock_t begin = clock();
+    timespec begin;
+    setStartTime(&begin);
 	Query *query = new Query(srch2::instantsearch::TopKQuery);
 	parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
 	int resultCount = 10;
 
 	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
 	indexSearcher->search(query, queryResults, resultCount);
-	Logger::console("srch2::sdk::queryresults:%d, time spend: %.5f seconds",
+	Logger::console("srch2::sdk::queryresults:%d, time spend: %2.6f milliseconds",
 			queryResults->getNumberOfResults(), getTimeSpan(begin));
 	delete query;
 	return queryResults;

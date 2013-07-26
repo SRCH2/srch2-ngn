@@ -161,7 +161,8 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_commitIndex(JNIEnv* env,
 extern "C" {
 #endif
 JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
-		jobject javaThis, jlong indexPtr, jstring queryStr, jboolean isGeo) {
+		jobject javaThis, jlong indexPtr, jstring queryStr, jint editDistance,
+		jboolean isGeo) {
 
 	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
 	string queryString(nativeStringQuery);
@@ -170,8 +171,8 @@ JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
-	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
-			srch2::instantsearch::TERM_TYPE_PREFIX);
+	QueryResults* queryResults = query(analyzer, indexSearcher, queryString,
+			editDistance, srch2::instantsearch::TERM_TYPE_PREFIX);
 
 	string result = printQueryResult(queryResults, indexer);
 	jstring jstr = env->NewStringUTF(result.c_str());
@@ -188,7 +189,8 @@ vector<unsigned> editDistances;
 extern "C" {
 #endif
 JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
-		jobject javaThis, jlong indexPtr, jstring queryStr, jboolean isGeo) {
+		jobject javaThis, jlong indexPtr, jstring queryStr, jint editDistance,
+		jboolean isGeo) {
 
 	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
 	string queryString(nativeStringQuery);
@@ -197,8 +199,8 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
-	QueryResults* queryResults = query(analyzer, indexSearcher, queryString, 2,
-			srch2::instantsearch::TERM_TYPE_PREFIX);
+	QueryResults* queryResults = query(analyzer, indexSearcher, queryString,
+			editDistance, srch2::instantsearch::TERM_TYPE_PREFIX);
 
 	// Find java ArrayList
 	jclass clsArrayList = env->FindClass("java/util/ArrayList");
@@ -235,8 +237,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 		jobjectArray jstrArray = (jobjectArray) env->NewObjectArray(size,
 				env->FindClass("java/lang/String"), jstrEmpty);
 		for (int j = 0; j < size; j++) {
-			jstring jstrMatch = env->NewStringUTF(
-					(matchedKeywords)[j].c_str());
+			jstring jstrMatch = env->NewStringUTF((matchedKeywords)[j].c_str());
 			env->SetObjectArrayElement(jstrArray, j, jstrMatch);
 			env->DeleteLocalRef(jstrMatch);
 		}
