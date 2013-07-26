@@ -25,12 +25,12 @@
 #include <assert.h>
 #include <iostream>
 
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "util/Assert.h"
 
 #include <boost/array.hpp>
 
-//using std::cout;
+using srch2::util::Logger;
 using std::string;
 using std::pair;
 using std::make_pair;
@@ -103,98 +103,51 @@ void ForwardIndex::resetDeleteFlag(unsigned internalRecordId)
 
 void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema)
 {
-    LOG_REGION(0,
-           std::cout << "External Id: " << fl->getExternalRecordId() << std::endl;
-           );
 
-    LOG_REGION(0,
-		   std::cout <<"RecordBoost: " << fl->getRecordBoost() << std::endl << "Size: " << fl->getNumberOfKeywords() << std::endl;
-		   );
-
-
-    // non searchable attribute list   // TODO how can we get number of non searchable attributes
-	LOG_REGION(0,
-					std::cout << "nonSearchableAttributeList: ";
-					);
+    Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
+    Logger::debug("RecordBoost: %.3f, Size: %d" , fl->getRecordBoost(), fl->getNumberOfKeywords());
+    Logger::debug("sortableAttributeList:");	std::cout << "nonSearchableAttributeList: ";
 
 	for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes(); idx ++) {
-		LOG_REGION(0,
-				std::cout << "[" << fl->getNonSearchableAttributeValue(idx,NULL) << "]"; // TODO TODO
-				);
+		Logger::debug("[%.5f]", fl->getNonSearchableAttributeValue(idx , schema).c_str());
 	}
-	LOG_REGION(0,
-					std::cout <<std::endl;
-					);
+	//keyword Id list
+	Logger::debug("keywordIdList: ");
 
 
 
-    //keyword Id list
-	LOG_REGION(0,
-						std::cout << "keywordIdList: ";
-						);
-
+	//keyword Id list
 	for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
-		LOG_REGION(0,
-				std::cout << "[" << fl->getKeywordId(idx) << "]";
-				);
+        Logger::debug("[%d]", fl->getKeywordId(idx));
 	}
-
-	LOG_REGION(0,
-					   std::cout <<std::endl;
-					   );
 
 
     // keyword score list
-	LOG_REGION(0,
-							std::cout << "keywordRecordStaticScore: ";
-							);
-
+    Logger::debug("keywordRecordStaticScore:");
 	for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
-		LOG_REGION(0,
-				std::cout << "[" << fl->getKeywordRecordStaticScore(idx) << "]";
-				);
+        Logger::debug("[%.5f]", fl->getKeywordRecordStaticScore(idx) );
 	}
 
-	LOG_REGION(0,
-								   std::cout <<std::endl;
-								   );
 
     // keyword attribute list
 	if (fl->getKeywordAttributeBitmaps() != NULL)
 	{
 
-		LOG_REGION(0,
-									std::cout << "keywordAttributeList: ";
-									);
-
+        Logger::debug("keywordAttributeList: ");
 		for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
-				LOG_REGION(0,
-					   std::cout << "[" << fl->getKeywordAttributeBitmap(idx) << "]";
-				);
+            Logger::debug("[%d]", fl->getKeywordAttributeBitmap(idx));
 		}
-		LOG_REGION(0,
-		   std::cout << std::endl;
-		);
 	}
 }
 
 void printVector(const vector<unsigned> *fl)
 {
-    //const ForwardList* fl = *iter;
-    LOG_REGION(0,
-           std::cout << "( 1o0o1 ) Size:" << fl->size();
-           );
+    Logger::debug("( 1o0o1 ) Size: %ld", fl->size());
     
     for (vector<unsigned>::const_iterator flIter = fl->begin();
-     flIter != fl->end();
-     ++flIter ) {
-        LOG_REGION(0,
-                std::cout << "[" << *flIter << "]";
-                );
+     flIter != fl->end(); ++flIter ) {
+        Logger::debug("[%d]", *flIter);
     }
-    LOG_REGION(0,
-           std::cout << std::endl;
-           );
 }
 
 // do binary search to probe in forward list
@@ -536,15 +489,12 @@ unsigned ForwardIndex::getNumberOfBytes() const
 // Print a forwardIndex to debugging
 void ForwardIndex::print_test()
 {
-    //TODO
-    LOG_REGION(0,
-            std::cout<<"\n\nForwardIndex:\n";
-    );
+    Logger::debug("ForwardIndex:");
 
     ts_shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
 
-    std::cout << "readView size:" << readView->size() << std::endl;
+    Logger::debug("readView size: %d",readView->size());
 
     for (unsigned counter = 0; counter < readView->size(); ++counter)
     {
@@ -559,7 +509,7 @@ void ForwardIndex::print_test()
 
 void ForwardIndex::print_size() const
 {
-    std::cout << "Forward Index Size: " << getNumberOfBytes() << " bytes" << std::endl;
+    Logger::debug("Forward Index Size: %d bytes" , getNumberOfBytes());
 }
 
 

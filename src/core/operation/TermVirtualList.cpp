@@ -21,9 +21,11 @@
 #include <instantsearch/Ranker.h>
 #include "TermVirtualList.h"
 #include "util/Assert.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
+
+using srch2::util::Logger;
 namespace srch2
 {
 namespace instantsearch
@@ -67,7 +69,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (this->numberOfItemsInPartialHeap == 0)
             this->currentMaxEditDistanceOnHeap = distance;
 
-        if (this->getTermType() == srch2::instantsearch::PREFIX) { // prefix term
+        if (this->getTermType() == srch2::instantsearch::TERM_TYPE_PREFIX) { // prefix term
             bool isPrefixMatch = (prefixNode != leafNode);
             float termRecordRuntimeScore =
                 DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
@@ -123,7 +125,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentMaxEditDistanceOnHeap = 0;
 
     // check the TermType
-    if (this->getTermType() == PREFIX) { //case 1: Term is prefix
+    if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         for (LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
@@ -341,19 +343,11 @@ void TermVirtualList::getCursors(std::vector<unsigned>* &invertedListCursors)
 
 void TermVirtualList::print_test() const
 {
-    LOG_REGION(0,
-            std::cout<<"\n\nItemsHeap--- Size"<<this->itemsHeap.size();
-    );
-    std::cout<<"\n\nItemsHeap--- Size"<<this->itemsHeap.size();
+    Logger::debug("ItemsHeap Size %d", this->itemsHeap.size());
     for (vector<HeapItem* >::const_iterator heapIterator = this->itemsHeap.begin();
             heapIterator != this->itemsHeap.end(); heapIterator++) {
-        /*LOG_REGION(0,
-          std::cout<<"\nInvListPosition:"<<"\tRecord:"<<(*heapIterator)->recordId<<"\tscore:"<<(*heapIterator)->score;
-          );*/
-        std::cout << "\nInvListPosition:"<<"\tRecord:"<<(*heapIterator)->recordId
-              << "\tscore:"<<(*heapIterator)->termRecordRuntimeScore;
+        Logger::debug("InvListPosition:\tRecord: %d\t Score:%.5f", (*heapIterator)->recordId, (*heapIterator)->termRecordRuntimeScore);
     }
-    std::cout << std::endl;
 }
 unsigned TermVirtualList::getVirtualListTotalLength() {
 	unsigned totalLen = 0;

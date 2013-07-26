@@ -46,6 +46,7 @@ class NonSearchableAttributeExpressionFilter : public ResultsPostProcessorFilter
 {
 
 public:
+	NonSearchableAttributeExpressionFilter();
 	void doFilter(IndexSearcher * indexSearcher,   const Query * query,
 			QueryResults * input, QueryResults * output);
 	~NonSearchableAttributeExpressionFilter();

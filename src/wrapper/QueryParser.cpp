@@ -32,9 +32,10 @@ const char* const lpFieldFilterParamName = "defaultSearchFields";
 const char* const lpFieldFilterDelimiter = ",";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
-        ParsedParameterContainer * container) {
+        ParsedParameterContainer * container) :
+        headers(headers) {
     this->container = container;
-    this->headers = headers;
+
 }
 
 // parses the URL to a query object
@@ -114,7 +115,8 @@ bool verifyMainQuery(const string &input) {
             + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
 
     std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
-            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString + ")*\\s*"; // verifies the systax of complete query string.
+            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString
+            + ")*\\s*"; // verifies the systax of complete query string.
     // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
 
     boost::regex queryRegex(queryRegexString);
@@ -160,29 +162,22 @@ void QueryParser::fieldListParser() {
     if (flTemp) { // if this parameter exists
         size_t st;
         string fl = evhttp_uridecode(flTemp, 0, &st);
-
         this->container->summary.push_back(
                 srch2::httpwrapper::ReponseAttributesList);
-
-        char * pch = strtok(fl.c_str(), QueryParser::fieldListDelimiter);
-
+        char * fieldStr = strdup(fl.c_str());
+        char * pch = strtok(fieldStr, QueryParser::fieldListDelimiter);
         while (pch) {
-
             string field = pch;
             if (field == "*") {
                 this->container->responseAttributesList.clear();
                 this->container->responseAttributesList.push_back("*");
                 return;
             }
-
-            this->container->responseAttributesList.push_back(field);
-
             //
-            pch = strtok(fl.c_str(), NULL);
+            pch = strtok(fieldStr, NULL);
         }
-
+        delete fieldStr;
     }
-
 }
 
 void QueryParser::debugQueryParser() {
@@ -190,7 +185,7 @@ void QueryParser::debugQueryParser() {
      * if there is a debug query parameter
      * then parse it and fill the helper up
      */
-    //1. first check to see if debugQuery exists in the headers
+//1. first check to see if debugQuery exists in the headers
     const char * debugQueryTemp = evhttp_find_header(&headers,
             QueryParser::debugControlParamName);
     if (debugQueryTemp) { // if this parameter exists
@@ -234,15 +229,15 @@ void QueryParser::startOffsetParameterParser() {
      * if there is a start offset
      * fills the helper up
      */
-    // 1. check for start parameter.
+// 1. check for start parameter.
     const char * startTemp = evhttp_find_header(&headers,
             QueryParser::startParamName);
     if (startTemp) { // if this parameter exists
         size_t st;
         string startStr = evhttp_uridecode(startTemp, 0, &st);
-        // convert the startStr to integer.
+// convert the startStr to integer.
         this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
-        // populate the summary
+// populate the summary
         this->container->summary.push_back(ResultsStartOffset);
     }
 }
@@ -252,15 +247,15 @@ void QueryParser::numberOfResultsParser() {
      * if there is a number of results
      * fills the helper up
      */
-    // 1. check for rows parameter.
+// 1. check for rows parameter.
     const char * rowsTemp = evhttp_find_header(&headers,
             QueryParser::rowsParamName);
     if (rowsTemp) { // if this parameter exists
         size_t st;
         string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
-        // convert the rowsStr to integer.
+// convert the rowsStr to integer.
         this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
-        // populate the summary
+// populate the summary
         this->container->summary.push_back(NumberOfResults);
     }
 }
@@ -275,9 +270,9 @@ void QueryParser::timeAllowedParameterParser() {
     if (timeAllowedTemp) { // if this parameter exists
         size_t st;
         string timeAllowedStr = evhttp_uridecode(timeAllowedTemp, 0, &st);
-        // convert the Str to integer.
+// convert the Str to integer.
         this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
-        // populate the summary
+// populate the summary
         this->container->summary.push_back(MaxTimeAllowed);
     }
 }
@@ -292,13 +287,13 @@ void QueryParser::omitHeaderParameterParser() {
     if (ommitHeaderTemp) { // if this parameter exists
         size_t st;
         string ommitHeader = evhttp_uridecode(ommitHeaderTemp, 0, &st);
-        // check if "true"
+// check if "true"
         if (boost::iequals("true", ommitHeader)) {
             this->container->isOmitHeader = true;
         } else {
             this->container->isOmitHeader = false; // this is default.
         }
-        // populate the summary
+// populate the summary
         this->container->summary.push_back(IsOmitHeader); // should we change this ParameterName to OmitHeader?
     }
 }
@@ -314,7 +309,7 @@ void QueryParser::responseWriteTypeParameterParser() {
         size_t st;
         string responseWriteType = evhttp_uridecode(responseWriteTypeTemp, 0,
                 &st);
-        // check if "true"
+// check if "true"
         if (boost::iequals("json", responseWriteType)) {
             this->container->responseResultsFormat = JSON;
         } else {
@@ -324,7 +319,7 @@ void QueryParser::responseWriteTypeParameterParser() {
                             "Unknown value for parameter wt. using wt=json"));
             this->container->responseResultsFormat = JSON; // this is default.
         }
-        // populate the summary
+// populate the summary
         this->container->summary.push_back(ResponseFormat); // should we change this ParameterName to OmitHeader?
     }
 }
@@ -353,8 +348,8 @@ void QueryParser::sortParser() {
     if (sortTemp) { // if this parameter exists
         size_t st;
         string sortString = evhttp_uridecode(sortTemp, 0, &st);
-        // we have sortString, we need to tokenize this string and populate the
-        // parameters in SortQueryEvaluator class object.
+// we have sortString, we need to tokenize this string and populate the
+// parameters in SortQueryEvaluator class object.
     }
 }
 
@@ -362,31 +357,31 @@ void QueryParser::localParameterParser(string *input) {
     /* TODO: break this funcion into smaller functions like:
      * it checks if localparamertes are present in the input. extracts the key/value pairs and puts them in the helper.
      */
-    // check if input string might have a local parameter info
+// check if input string might have a local parameter info
     std::string localParametersString; // string to contain the localparameter string only
     std::string lpRegexString =
             "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*\\}";
     boost::regex localParameterRegex(lpRegexString); // TODO: compile this regex when the engine starts. that would be more efficient.
     boost::smatch clpMatches;
     if (boost::regex_search(*input, clpMatches, localParameterRegex)) {
-        // mathc found input has localParameters
-        // remove the localparameter string part form the input.
+// mathc found input has localParameters
+// remove the localparameter string part form the input.
         input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
         localParametersString = clpMatches[0];  // get the locaparamter part
-        // now get the pairs from the local parameter string
+// now get the pairs from the local parameter string
         string lpPairsRegexString = "\\w+\\s*=\\s*\\w+"; // regex to get field = val pairs from {field1=val1 field2 = val2}
         boost::regex lPPairRegex(lpPairsRegexString); //TODO: compile this regex when the engine starts.
         boost::sregex_token_iterator itr(localParametersString.begin(),
                 localParametersString.end(), lpPairsRegexString, 0); // get the iterator for the matches
         boost::sregex_token_iterator end;
-        // iterate on matched pairs
-        // parse the key value pairs and populate the container
+// iterate on matched pairs
+// parse the key value pairs and populate the container
         for (; itr != end; ++itr) {
             string pair = *itr;
             // split by "=" (localParamDelimiter) and fill the container
             char *result = strdup((*input).c_str()); // strtok takes char* and not const char* so creating duplicate of input.
             char * token = strtok(result, localParamDelimiter);
-            vector<string> tokens;
+            vector < string > tokens;
             while (token) { // should give two tokesns only
                 // this first token is filed name and second is its value
                 // get the local parameter field
@@ -457,7 +452,7 @@ void QueryParser::localParameterParser(string *input) {
         }
 
     } else {
-        // does not contain any localParameter info.
+// does not contain any localParameter info.
     }
 }
 

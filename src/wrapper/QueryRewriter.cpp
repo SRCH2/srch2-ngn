@@ -31,9 +31,10 @@ namespace srch2{
 
 namespace httpwrapper{
 
-QueryRewriter::QueryRewriter(const Srch2ServerConf *indexDataContainerConf, const Schema & schema,const Analyzer & analyzer ,ParsedParameterContainer * paramContainer){
-	this->schema = schema;
-	this->analyzer = analyzer;
+QueryRewriter::QueryRewriter(const Srch2ServerConf *indexDataContainerConf,
+		const Schema & schema,
+		const Analyzer & analyzer ,
+		ParsedParameterContainer * paramContainer) : schema(schema),analyzer(analyzer){
 	this->paramContainer = paramContainer;
 	this->indexDataContainerConf = indexDataContainerConf;
 }
@@ -41,6 +42,9 @@ QueryRewriter::QueryRewriter(const Srch2ServerConf *indexDataContainerConf, cons
 void QueryRewriter::rewrite(){
 	// go through the summary and call the analyzer on the query if needed.
 
+
+	// make sure keyword paraller vectors have valid information
+	prepareKeywordInfo();
 
 	// apply the analyzer on the query, TODO: analyzer framework needs to expose enough API to apply filters. The following code should e temporary.
 	applyAnalyzer();
@@ -61,6 +65,35 @@ void QueryRewriter::rewrite(){
 
 
 }
+
+void QueryRewriter::prepareKeywordInfo(){
+
+	unsigned k =0;
+	for(vector<string>::iterator keyword = paramContainer->rawQueryKeywords.begin();
+			keyword != paramContainer->rawQueryKeywords.end() ; ++keyword){
+
+		if(paramContainer->hasParameterInSummary(KeywordBoostLevel) && paramContainer->keywordBoostLevel.at(k) < 0){
+			paramContainer->keywordBoostLevel.at(k) = indexDataContainerConf->getQueryTermBoost();
+		}
+
+		if(paramContainer->hasParameterInSummary(KeywordFuzzyLevel) && paramContainer->keywordFuzzyLevel.at(k) < 0){
+			paramContainer->keywordFuzzyLevel.at(k) = indexDataContainerConf->getQueryTermSimilarityBoost();
+		}
+
+		if(paramContainer->hasParameterInSummary(QueryPrefixCompleteFlag) && paramContainer->keywordPrefixComplete.at(k) == srch2is::NOT_SPECIFIED){
+			paramContainer->keywordPrefixComplete.at(k) = indexDataContainerConf->getQueryTermType() ? srch2is::TERM_TYPE_PREFIX: srch2is::TERM_TYPE_COMPLETE ; // TODO : make sure false means prefix
+		}
+
+		if(paramContainer->hasParameterInSummary(FieldFilter) && paramContainer->fieldFilterOps.at(k) == srch2is::OP_NOT_SPECIFIED){
+			paramContainer->fieldFilterOps.at(k) =  srch2is::OR;
+		}
+
+
+		//
+		k ++;
+	}
+}
+
 
 
 void QueryRewriter::applyAnalyzer(){
@@ -115,19 +148,24 @@ void QueryRewriter::prepareFieldFilters(){
 		srch2is::BooleanOperation op = paramContainer->fieldFilterOps.at(f);
 
 		unsigned filter = 0;
-		for (std::vector<std::string>::iterator field = fields->begin(); field != fields->end() ; ++field) {
+		if(fields->size() != 0){
+			// get it from configuration file
+			filter = 1; // TODO : temporary
+		}else{
+			for (std::vector<std::string>::iterator field = fields->begin(); field != fields->end() ; ++field) {
 
-			if(field->compare("*")){ // all fields
-				filter = 1;
-				break;
+				if(field->compare("*")){ // all fields
+					filter = 1;
+					break;
+				}
+				unsigned id = schema.getSearchableAttributeId(*field);
+				unsigned bit = 1;
+				bit <<= id;
+				filter |= bit;
 			}
-			unsigned id = schema.getSearchableAttributeId(*field);
-			unsigned bit = 1;
-			bit <<= id;
-			filter |= bit;
-		}
-		if (op == srch2is::AND){
-			filter |= 0x80000000;
+			if (op == srch2is::AND){
+				filter |= 0x80000000;
+			}
 		}
 		paramContainer->fieldFilterNumbers.at(f) = filter;
 
@@ -169,7 +207,7 @@ void QueryRewriter::prepareFacetFilterInfo(){
 
 		// 2. Fill out the empty places in facet info vectors
 		unsigned t=0;
-		for(std::vector<FacetType>::iterator type = facetQueryContainer->types.begin();
+		for(std::vector<srch2is::FacetType>::iterator type = facetQueryContainer->types.begin();
 								type != facetQueryContainer->types.end() ; ++type ){
 			if(*type == srch2is::Simple){ // just makes sure those vactors are not used.
 				facetQueryContainer->rangeStarts.at(t) = "";
@@ -178,7 +216,7 @@ void QueryRewriter::prepareFacetFilterInfo(){
 			}else if(*type == srch2is::Range){ /// fills out the empty places
 				if(facetQueryContainer->rangeStarts.at(t).compare("") == 0){
 					// should get the value from config
-					vector<string>::iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
+					vector<string>::const_iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
 							indexDataContainerConf->getFacetAttributes()->end() , facetQueryContainer->fields.at(t) );
 					if(tmp != indexDataContainerConf->getFacetAttributes()->end()){ // this attribute is in config
 						string startFromConfig =
@@ -189,7 +227,7 @@ void QueryRewriter::prepareFacetFilterInfo(){
 
 				if(facetQueryContainer->rangeEnds.at(t).compare("") == 0){
 					// should get the value from config
-					vector<string>::iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
+					vector<string>::const_iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
 							indexDataContainerConf->getFacetAttributes()->end() , facetQueryContainer->fields.at(t) );
 					if(tmp != indexDataContainerConf->getFacetAttributes()->end()){ // this attribute is in config
 						string endFromConfig =
@@ -200,7 +238,7 @@ void QueryRewriter::prepareFacetFilterInfo(){
 
 				if(facetQueryContainer->rangeGaps.at(t).compare("") == 0){
 					// should get the value from config
-					vector<string>::iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
+					vector<string>::const_iterator tmp = find(indexDataContainerConf->getFacetAttributes()->begin() ,
 							indexDataContainerConf->getFacetAttributes()->end() , facetQueryContainer->fields.at(t) );
 					if(tmp != indexDataContainerConf->getFacetAttributes()->end()){ // this attribute is in config
 						string gapFromConfig =

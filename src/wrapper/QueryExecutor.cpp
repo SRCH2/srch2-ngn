@@ -20,13 +20,16 @@
 #include <instantsearch/IndexSearcher.h>
 #include <instantsearch/Indexer.h>
 #include "ParsedParameterContainer.h" // only for ParameterName enum , FIXME : must be changed when we fix constants problem
+#include "query/QueryResultsInternal.h"
+#include "operation/IndexSearcherInternal.h"
 
 namespace srch2{
 namespace httpwrapper{
 
 
-QueryExecutor::QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory  ,Srch2Server *server){
-	this->queryPlan = queryPlan;
+QueryExecutor::QueryExecutor(QueryPlan & queryPlan ,
+		QueryResultFactory * resultsFactory  ,
+		Srch2Server *server) : queryPlan(queryPlan){
 	this->queryResultFactory = resultsFactory;
 	this->server = server;
 }
@@ -37,7 +40,7 @@ void QueryExecutor::execute(QueryResults * finalResults){
     //evhttp_clear_headers(&headers);
     this->indexSearcher = srch2is::IndexSearcher::create(server->indexer);
     //do the search
-    switch(queryPlan.searchType)
+    switch(queryPlan.getSearchType())
     {
     case TopKSearchType://TopK
     {
@@ -57,6 +60,9 @@ void QueryExecutor::execute(QueryResults * finalResults){
     	executeGeo(finalResults);
     }
     break;
+    default:
+    	// TODO
+    	break;
     };
 
     // Free objects

@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <sstream>
 
+#include "Srch2ServerConf.h"
 using namespace std;
 
 

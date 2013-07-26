@@ -21,6 +21,8 @@
 #include "QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
 
+
+using srch2::util::Logger;
 namespace srch2
 {
 namespace instantsearch
@@ -203,26 +205,25 @@ void QueryResults::printStats() const {
 
 void QueryResults::printResult() const {
 	// show attributeBitmaps
-		vector<unsigned> attributeBitmaps;
-		vector<vector<unsigned> > attributes;
-		vector<string> matchedKeywords;
-		cout << "Result count" <<": " << this->getNumberOfResults() << endl;;
-		for(int i = 0; i < this->getNumberOfResults(); i++)
+	vector<unsigned> attributeBitmaps;
+	vector<vector<unsigned> > attributes;
+	vector<string> matchedKeywords;
+    Logger::debug("Result count %d" ,this->getNumberOfResults());
+	for(int i = 0; i < this->getNumberOfResults(); i++)
+	{
+        Logger::debug("Result #%d" ,i);
+		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
+		this->getMatchingKeywords(i, matchedKeywords);
+		this->getMatchedAttributes(i, attributes);
+		for(int j = 0; j < attributeBitmaps.size(); j++)
 		{
-			std::cout << "Result #" << i << ":" <<endl;
-			this->getMatchedAttributeBitmaps(i, attributeBitmaps);
-			this->getMatchingKeywords(i, matchedKeywords);
-			this->getMatchedAttributes(i, attributes);
-			for(int j = 0; j < attributeBitmaps.size(); j++)
-			{
-				cout << matchedKeywords[j] << " " << attributeBitmaps[j] << "{";
-				for(int k = 0; k < attributes[j].size(); k++)
-					cout << attributes[j][k] << " ";
-				cout << "} | ";
-			}
-
-			cout << endl;
+            Logger::debug("%s %d {", matchedKeywords[j].c_str(), attributeBitmaps[j]);
+			for(int k = 0; k < attributes[j].size(); k++)
+                Logger::debug("%d", attributes[j][k]);
+            Logger::debug("}");
 		}
+
+	}
 
 }
 

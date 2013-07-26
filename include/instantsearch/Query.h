@@ -147,11 +147,7 @@ public:
     std::string getNonSearchableAttributeValue() const;
 
 
-    void setPostProcessingFilter(PostProcessingFilterFlag code);
-    PostProcessingFilterFlag getPostProcessingFilter() const;
 
-    void setPostProcessingFilterOperation(AttributeCriterionOperation code);
-    AttributeCriterionOperation getPostProcessingFilterOperation() const;
 
 
     void setPostProcessingPlan(ResultsPostProcessorPlan * plan);

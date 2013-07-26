@@ -104,7 +104,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 
 }
 
-void FacetedSearchFilter::initialize(std::vector<srch2is::FacetType> types,
+void FacetedSearchFilter::initialize(std::vector<FacetType> types,
 		std::vector<std::string> fields,
 		std::vector<std::string> rangeStarts,
 		std::vector<std::string> rangeEnds,

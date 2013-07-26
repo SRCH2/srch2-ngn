@@ -98,13 +98,12 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
 {
     
     Query *query = new Query(srch2::instantsearch::TopKQuery);
-    query->setPostProcessingFilter(NO_FILTER);
     QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
     {
-        TermType type = PREFIX;
-        Term *term = ExactTerm::create(searchKeywords[i], type, 1, 0.5);
+        TermType termType = TERM_TYPE_PREFIX;
+        Term *term = ExactTerm::create(searchKeywords[i], termType, 1, 0.5);
         term->addAttributeToFilterTermHits(filter);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);

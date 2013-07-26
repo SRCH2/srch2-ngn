@@ -22,11 +22,13 @@
 #include "operation/TermVirtualList.h"
 //#include "index/Trie.h"
 #include "operation/IndexSearcherInternal.h"
+#include "util/Logger.h"
 #include <instantsearch/Query.h>
 //#include <instantsearch/Term.h>
 #include <sstream>
 
 using std::vector;
+using srch2::util::Logger;
 
 namespace srch2
 {

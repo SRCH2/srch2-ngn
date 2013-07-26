@@ -24,6 +24,8 @@
  */
 
 #include "index/Trie.h"
+#include "util/Logger.h"
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -101,8 +103,6 @@ TrieNode::~TrieNode()  {
 	this->leftMostDescendant = NULL;
 	this->rightMostDescendant = NULL;
 	//this->parent = NULL;
-	//cout << "deleting trienode" << endl;
-	//cout << "deleting trienode" << endl;
 }
 
 
@@ -121,22 +121,21 @@ void TrieNode::print_TrieNode() const
 	if (this == NULL)
 		return;
 
-	std::cout << "X|" << this->id << "|" << this->invertedListOffset
-			<< "|" << this->getCharacter()
-			<< "|" << this->getDepth();
-	if (this->leftMostDescendant != NULL)
-		std::cout << "|min|" << this->getMinId();
-	if (this->leftMostDescendant != NULL)
-		std::cout << "|max|" << this-> getMaxId();
-	std::cout << std::endl;
+    Logger::debug("X|%d|%d|%d|%d", 
+            this->id, this->invertedListOffset, 
+            this->getCharacter(), this->getDepth());
+	if (this->leftMostDescendant != NULL){
+        Logger::debug("|min|%d", this->getMinId());
+    }
+	if (this->leftMostDescendant != NULL){
+        Logger::debug("|max|%d", this->getMaxId());
+    }
 
 	for (unsigned it =0; it != this->childrenPointerList.size(); ++it)
 	{
 		const TrieNode* childNode = this->childrenPointerList.at(it);
-		std::cout << childNode->character  << "|"<< std::endl;
+        Logger::debug("%d" ,childNode->character);
 	}
-	std::cout << std::endl;
-
 }
 
 
@@ -1492,7 +1491,7 @@ void Trie::getKeywordMinMaxIdLength(unsigned keywordId, unsigned &minId, unsigne
 	}
 
 	// should not reach here
-	cout << "Failed to find the keyword on Trie: " << keywordId << endl;
+    Logger::debug("Failed to find the keyword on Trie: %d ", keywordId);
 	ASSERT(false);
 	minId = 0;
 	maxId = MAX_ALLOCATED_KEYWORD_ID;
@@ -1656,11 +1655,11 @@ void Trie::print_Trie() const
 	TrieNode *root = rootSharedPtr->root;
 
 	set<unsigned> keywordIds;
-	std::cout << "------------------------------" <<  std::endl;
+    Logger::debug("------------------------------" );
 	//this->printSubTrie(this->getRoot());
 	this->printSubTrie(root, root, keywordIds);
 
-	std::cout << "------------------------------" <<  std::endl;
+    Logger::debug("------------------------------" );
 }
 
 }

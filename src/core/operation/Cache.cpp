@@ -20,6 +20,7 @@
 
 #include "Cache.h"
 #include "util/Assert.h"
+#include "util/Logger.h"
 
 #include <string>
 #include <map>
@@ -100,13 +101,13 @@ bool Cache::_termPointerComparator(const Term *leftTerm, const Term *rightTerm)
 
         if ((*leftString).compare(*rightString) == 0)
         {
-
-            std::cout << "T2|" << *leftString << "|" << *rightString << "|" <<  leftTerm->getAttributeToFilterTermHits() << "|" << rightTerm->getAttributeToFilterTermHits()
+            std::stringstream ss;
+            ss << "T2|" << *leftString << "|" << *rightString << "|" <<  leftTerm->getAttributeToFilterTermHits() << "|" << rightTerm->getAttributeToFilterTermHits()
                 << "|" << leftTerm->getBoost() << "|" << rightTerm->getBoost()
                 << "|" << leftTerm->getTermType() << "|" << rightTerm->getTermType()
                 << "|" << leftTerm->getSimilarityBoost() << "|" << rightTerm->getSimilarityBoost()
                 << "|" <<  leftTerm->getThreshold() << "|" << rightTerm->getThreshold() << std::endl;
-
+            Logger::debug(ss.str().c_str());
             return true;
         }
     }

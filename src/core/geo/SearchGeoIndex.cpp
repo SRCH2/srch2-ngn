@@ -104,7 +104,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
 
         bool isPrefixMatch = ( (!skippedExpansion->expansionNodePtr->isTerminalNode()) || (minId != keywordId) );
 
-        bool isPrefixTerm = ( mapSearcherTermVector[termToSkip].termPtr->getTermType() == PREFIX );
+        bool isPrefixTerm = ( mapSearcherTermVector[termToSkip].termPtr->getTermType() == TERM_TYPE_PREFIX );
 
         if (isPrefixMatch && !isPrefixTerm)
             return false;
@@ -136,7 +136,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
             termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId, mapSearcherTermVector[i].termPtr->getAttributeToFilterTermHits(), keywordId, attributeBitmap, score);
 
             bool isPrefixMatch = ( (!mapSearcherTermVector[i].expansionStructureVector[j].expansionNodePtr->isTerminalNode()) || (minId != keywordId) );
-            bool isPrefixTerm = ( mapSearcherTermVector[i].termPtr->getTermType() == PREFIX );
+            bool isPrefixTerm = ( mapSearcherTermVector[i].termPtr->getTermType() == TERM_TYPE_PREFIX );
             
             if (isPrefixMatch && !isPrefixTerm)
                 termResult = false;

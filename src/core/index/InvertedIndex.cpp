@@ -20,7 +20,7 @@
 
 #include "index/InvertedIndex.h"
 #include "util/Assert.h"
-#include "util/Log.h"
+#include "util/Logger.h"
 #include <math.h>
 
 #include <algorithm>
@@ -31,6 +31,7 @@
 
 using std::endl;
 using std::vector;
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -80,7 +81,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 		elem[i].positionIndexOffset = forwardIndex->getKeywordOffset(elem[i].recordId, keywordId);
 	}
 
-	//std::cout << "SortnMerge:" << "|" << readViewListSize << "|" << writeViewListSize << std::endl;
+    Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
 
 	std::sort( elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
 
@@ -244,8 +245,6 @@ void InvertedIndex::commit( ForwardList *forwardList,
         //unsigned sumOfOccurancesOfAllKeywordsInRecord = 0;
         float recordBoost = forwardList->getRecordBoost();
 
-        //std::cout << "|rid:" << *recordIterator << "|recordBoost:" << recordBoost << std::endl;
-
         for (unsigned counter = 0; counter < forwardList->getNumberOfKeywords(); counter++)
         {
             //unsigned keywordId = forwardIndex->getForwardListElementByDirectory(forwardListOffset , counter);//->keywordId;
@@ -282,13 +281,7 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 
     for (unsigned iter = 0; iter < sizeOfList; ++iter)
     {
-    	//std::cout << "----------------before sorting------------" << std::endl;
-        //this->printInvList(iter);
-
     	writeView->at(iter)->sortAndMergeBeforeCommit(keywordIdsWriteView->getElement(iter), this->forwardIndex, needToSortEachInvertedList);
-
-        //std::cout << "----------------after sorting------------" << std::endl;
-        //this->printInvList(iter);
     }
 
     this->invertedIndexVector->commit();
@@ -398,22 +391,14 @@ unsigned InvertedIndex::getTotalNumberOfInvertedLists_ReadView() const
 
 int InvertedIndex::getNumberOfBytes() const
 {
-    //TODO update the sizes
-    /*    LOG_REGION(0,
-            cout<<"Total length of InvertedLists:\t"<<this->totalSizeOfInvertedIndex<<" * sizeof(InvertedListElement)"<<sizeof(InvertedListElement)<<"\n";
-    cout<<"Total number of InvertedLists:\t"<<invertedIndexVector->size()<<" * sizeof(InvertedList)"<<sizeof(InvertedList)<<"\n";
-    );
 
-    return (sizeof(InvertedListElement) * this->totalSizeOfInvertedIndex) + sizeof(invertedIndexVector) + sizeof(this->totalSizeOfInvertedIndex) + sizeof(this->forwardIndex);
-     */
+    //return (sizeof(InvertedListElement) * this->totalSizeOfInvertedIndex) + sizeof(invertedIndexVector) + sizeof(this->totalSizeOfInvertedIndex) + sizeof(this->forwardIndex);
     return ~0;
 }
 
 void InvertedIndex::print_test() const
 {
-    LOG_REGION(0,
-            std::cerr<<"\n\nInvertedIndex:\n";
-    );
+    Logger::debug("InvertedIndex is:");
     ts_shared_ptr<vectorview<InvertedListContainerPtr> > readView;
     this->invertedIndexVector->getReadView(readView);
     ts_shared_ptr<vectorview<unsigned> > keywordIdsReadView;
@@ -422,7 +407,7 @@ void InvertedIndex::print_test() const
             vectorIterator != readView->size();
             vectorIterator++)
     {
-    	std::cerr << "Inverted List: "<< vectorIterator << " KeywordId:" << keywordIdsReadView->at(vectorIterator) << endl;
+        Logger::debug("Inverted List: %d, KeywordId: %d", vectorIterator , keywordIdsReadView->at(vectorIterator));
     	this->printInvList(vectorIterator);
     }
 }

@@ -22,7 +22,7 @@
 //#include <instantsearch/Query.h>
 //#include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
-#include "util/Log.h"
+#include "util/Logger.h"
 #include "record/LocationRecordUtil.h"
 #include <string>
 
@@ -49,8 +49,6 @@ struct Query::Impl
     std::string nonSearchableAttributeName ;
     std::string nonSearchableAttributeValue ;
 
-    PostProcessingFilterFlag postProcessingFilterCode;
-    AttributeCriterionOperation postProcessingFilterOperationCode;
 
     ResultsPostProcessorPlan *  plan;
 
@@ -233,19 +231,6 @@ std::string Query::getNonSearchableAttributeValue() const{
 	return this->impl->nonSearchableAttributeValue;
 }
 
-
-void Query::setPostProcessingFilter(PostProcessingFilterFlag code){
-	this->impl->postProcessingFilterCode = code;
-}
-PostProcessingFilterFlag Query::getPostProcessingFilter() const{
-	return this->impl->postProcessingFilterCode;
-}
-void Query::setPostProcessingFilterOperation(AttributeCriterionOperation code){
-	this->impl->postProcessingFilterOperationCode = code;
-}
-AttributeCriterionOperation Query::getPostProcessingFilterOperation() const{
-	return this->impl->postProcessingFilterOperationCode;
-}
 
 
 void Query::setPostProcessingPlan(ResultsPostProcessorPlan * plan){

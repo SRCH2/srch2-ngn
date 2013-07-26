@@ -20,6 +20,7 @@
 #include "QueryRewriter.h"
 #include "QueryPlanGen.h"
 #include "QueryPlan.h"
+#include "QueryExecutor.h"
 
 #include <event2/http.h>
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
@@ -104,7 +105,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-static void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyvalq &headers,
+void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyvalq &headers,
         const QueryPlan &queryPlan,
         const Srch2ServerConf *indexDataContainerConf,
         const QueryResults *queryResults,
@@ -214,7 +215,7 @@ static void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyval
 
     // return some meta data
 
-    root["type"] = queryPlan.getSearchTypeCode()();
+    root["type"] = queryPlan.getSearchTypeCode();
     root["offset"] = start;
     root["limit"] = end - start;
 
@@ -228,9 +229,9 @@ static void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyval
     if(! facetResults->empty()){ // we have facet results to print
     	root["facets"].resize(facetResults->size());
 
+    	unsigned attributeCounter = 0;
     	for(std::map<std::string , std::vector<std::pair<std::string, float> > >::const_iterator attr = facetResults->begin();
     			attr != facetResults->end() ; ++attr ){
-    		unsigned attributeCounter = attr - facetResults->begin();
     		root["facets"][attributeCounter]["category"].resize(attr->second.size());
     		for(std::vector<std::pair<std::string, float> >::const_iterator category = attr->second.begin();
     				category != attr->second.end() ; ++ category){
@@ -243,11 +244,14 @@ static void HTTPRequestHandler::printResults(evhttp_request *req, const evkeyval
 				               [(category - attr->second.begin())]
 				                ["category_value"] = category->second;
     		}
+
+    		//
+    		attributeCounter ++;
     	}
     }
 
 
-    Logger::info("Processing Query %s, searcher_time: %2f, payload_access_time: %.2f, logQuries.c_str(), ts1, ts2");
+    Logger::info("ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms", req->remote_host, req->remote_port, req->uri+1, ts1, ts2);
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root) , headers);
 }
 
@@ -511,7 +515,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server)
         {
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
             Logger::error("The request has an invalid or missing argument. See Srch2 API documentation for details");
-        }const Schema & schema
+        }
     };
 }
 
@@ -594,7 +598,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     QueryParser qp(headers,&paramContainer);
 
     //2. validate the query
-    QueryValidator qv(*(server->indexer->getSchema()) , &paramContainer);
+    QueryValidator qv(*(server->indexer->getSchema())  , server->indexDataContainerConf , &paramContainer);
 
     bool isValid = qv.validate();
 
@@ -606,7 +610,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     }
 
     //3. rewrite the query and apply analyzer and other stuff ...
-    QueryRewriter qr(server->indexer->getAnalyzer() , &paramContainer);
+    QueryRewriter qr(server->indexDataContainerConf , *(server->indexer->getSchema()), *(server->indexer->getAnalyzer()) , &paramContainer);
     qr.rewrite();
 
     //4. generate the queries and the plans
@@ -615,7 +619,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
 
     //5. now execute the plan
     srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
-    QueryExecutor qe(plan,resultsFactory);
+    QueryExecutor qe(plan,resultsFactory , server);
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
@@ -685,6 +689,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
         				tend);
         	}
 
+			break;
+		default :
 			break;
 
 	}
