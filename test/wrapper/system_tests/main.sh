@@ -43,7 +43,7 @@ echo '----do geo test--------------'
 python geo.py queriesAndResults.txt
 
 cd ..
-cd geo
+cd term_type
 echo '----do term type test--------------'
 python term_type.py queriesAndResults.txt
 
