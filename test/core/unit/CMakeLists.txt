@@ -67,10 +67,6 @@ ADD_EXECUTABLE(Licensing_Test Licensing_Test.cpp)
 TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS Licensing_Test)
 	
-ADD_EXECUTABLE(Stemmer_Test Stemmer_Test.cpp)
-TARGET_LINK_LIBRARIES(Stemmer_Test ${UNIT_TEST_LIBS} )
-LIST(APPEND UNIT_TESTS Stemmer_Test)
-	
 ADD_EXECUTABLE(Normalizer_Test Normalizer_Test.cpp)
 TARGET_LINK_LIBRARIES(Normalizer_Test ${UNIT_TEST_LIBS} )
 LIST(APPEND UNIT_TESTS Normalizer_Test)
