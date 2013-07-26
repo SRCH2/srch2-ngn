@@ -1,6 +1,5 @@
 // $Id$ 07/11/13 Jamshid
 
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -18,13 +17,8 @@
  * Copyright �� 2013 SRCH2 Inc. All rights reserved
  */
 
-
 #ifndef _WRAPPER_QUERYPARSER_H__
 #define _WRAPPER_QUERYPARSER_H__
-
-
-
-
 
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
@@ -33,7 +27,6 @@
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>
-
 
 #include "Srch2ServerConf.h"
 #include "instantsearch/Analyzer.h"
@@ -44,190 +37,161 @@ namespace srch2is = srch2::instantsearch;
 using srch2is::Schema;
 using srch2is::Analyzer;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
-class QueryParser
-{
+class QueryParser {
 public:
 
-	QueryParser(const evkeyvalq &headers,
-			ParsedParameterContainer * container);
+    QueryParser(const evkeyvalq &headers, ParsedParameterContainer * container);
 
-
-	// parses the URL to a query object , fills out the container
-	void parse();
-
-
-
+    // parses the URL to a query object , fills out the container
+    void parse();
 
 private:
 
+    ParsedParameterContainer * container;
+    const evkeyvalq & headers;
 
-	ParsedParameterContainer * container;
-	const evkeyvalq & headers;
+    // constants used by this class
+    static const char* const fieldListDelimiter;
 
+    static const char* const fieldListParamName;
+    static const char* const debugControlParamName;
+    static const char* const debugParamName;
+    static const char* const startParamName;
+    static const char* const rowsParamName;
+    static const char* const timeAllowedParamName;
+    static const char* const ommitHeaderParamName;
+    static const char* const responseWriteTypeParamName;
+    static const char* const sortParamName;
+    static const char* const sortFiledsDelimiter;
+    static const char* const keywordQueryParamName;
+    static const char* const localParamDelimiter;
+    static const char* const lpQueryBooleanOperatorParamName;
+    static const char* const lpKeywordFuzzyLevelParamName;
+    static const char* const lpKeywordBoostLevelParamName;
+    static const char* const lpKeywordPrefixCompleteParamName;
+    static const char* const lpFieldFilterParamName;
+    static const char* const lpFieldFilterDelimiter;
 
+    // TODO: change the prototypes to reflect input/outputs
+    /*
+     *
+     * input:
+     * 		1. the key value map
+     * 		2. the query string: q={key=val key2=val2}field1:keyword1 AND keyword2~2.5
+     *
+     * output:
+     * 		1. It fills up the queryHelper object
+     */
+    void mainQueryParser();
 
-	// constants used by this class
-	static const char* const fieldListDelimiter;
+    /// is fuzzy parser
+    void isFuzzyParser();
 
-	static const char* const fieldListParamName;
-	static const char* const debugControlParamName;
-	static const char* const debugParamName;
-	static const char* const startParamName;
-	static const char* const rowsParamName;
-	static const char* const timeAllowedParamName;
-	static const char* const ommitHeaderParamName;
-	static const char* const responseWriteTypeParamName;
-	static const char* const sortParamName;
-	static const char* const sortFiledsDelimiter;
-	static const char* const keywordQueryParamName;
+    /// length boost parser
+    void lengthBoostParser();
 
+    /// prefix match penalty parser
+    void prefixMatchPenaltyParser();
 
-	// TODO: change the prototypes to reflect input/outputs
-	/*
-	 *
-	 * input:
-	 * 		1. the key value map
-	 * 		2. the query string: q={key=val key2=val2}field1:keyword1 AND keyword2~2.5
-	 *
-	 * output:
-	 * 		1. It fills up the queryHelper object
-	 */
-	void mainQueryParser();
+    /*
+     * this function looks to see if there is a debug key/value pairs in headers
+     * input:
+     * 		1. the key value map
+     * outpu:
+     * 		2. fills up the helper
+     */
+    void debugQueryParser();
 
+    /*
+     * it looks to see if we have a field list (fl=field1,field2,field3 or fl=*)
+     * if we have field list it fills up the helper accordingly
+     */
+    void fieldListParser();
 
-	/// is fuzzy parser
-	void isFuzzyParser();
+    /*
+     * it looks to see if we have a start offset (start=)
+     * if we have start offset it fills up the helper accordingly
+     */
+    void startOffsetParameterParser();
 
+    /*
+     * it looks to see if we have a number of results (start=)
+     * if we have number of results it fills up the helper accordingly
+     */
+    void numberOfResultsParser();
 
-	/// length boost parser
-	void lengthBoostParser();
+    /*
+     * it looks to see if we have a time limitation
+     * if we have time limitation it fills up the helper accordingly
+     */
+    void timeAllowedParameterParser();
 
+    /*
+     * it looks to see if we have a omit header
+     * if we have omit header it fills up the helper accordingly.
+     */
+    void omitHeaderParameterParser();
 
-	/// prefix match penalty parser
-	void prefixMatchPenaltyParser();
+    /*
+     * it looks to see if we have a responce type
+     * if we have reponce type it fills up the helper accordingly.
+     */
+    void responseWriteTypeParameterParser();
 
-	/*
-	 * this function looks to see if there is a debug key/value pairs in headers
-	 * input:
-	 * 		1. the key value map
-	 * outpu:
-	 * 		2. fills up the helper
-	 */
-	void debugQueryParser();
+    /*
+     * it looks to see if there is any post processing filter
+     * if there is then it fills up the helper accordingly
+     */
+    void filterQueryParameterParser();
 
-	/*
-	 * it looks to see if we have a field list (fl=field1,field2,field3 or fl=*)
-	 * if we have field list it fills up the helper accordingly
-	 */
-	void fieldListParser();
+    /*
+     * parses the parameters facet=true/false , and it is true it parses the rest of
+     * parameters which are related to faceted search.
+     */
+    void facetParser();
 
+    /*
+     * looks for the parameter sort which defines the post processing sort job
+     */
+    void sortParser();
 
+    /*
+     * this function parses the local parameters section of all parts
+     * input:
+     * 		1. local parameters string : {key=val key2=val2}
+     * output:
+     * 		1. it fills up the metadata of the queryHelper object
+     */
+    void localParameterParser(string* input);
 
-	/*
-	 * it looks to see if we have a start offset (start=)
-	 * if we have start offset it fills up the helper accordingly
-	 */
-	void startOffsetParameterParser();
+    /*
+     * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
+     * input: keyword string : keyword1 AND keyword2~2.5
+     * output: fills up the helper
+     */
+    void keywordParser(string* input);
 
-	/*
-	 * it looks to see if we have a number of results (start=)
-	 * if we have number of results it fills up the helper accordingly
-	 */
-	void numberOfResultsParser();
+    /*
+     * this function parsers only the parameters which are specific to Top-K
+     */
+    void topKParameterParser();
 
+    /*
+     * this function parsers only the parameters which are specific to get all results search type
+     */
+    void getAllResultsParser();
 
+    /*
+     * this function parsers the parameters related to geo search like latitude and longitude .
+     */
+    void getGeoParser();
 
-	/*
-	 * it looks to see if we have a time limitation
-	 * if we have time limitation it fills up the helper accordingly
-	 */
-	void timeAllowedParameterParser();
-
-
-
-
-	/*
-	 * it looks to see if we have a omit header
-	 * if we have omit header it fills up the helper accordingly.
-	 */
-	void omitHeaderParameterParser();
-
-
-	/*
-	 * it looks to see if we have a responce type
-	 * if we have reponce type it fills up the helper accordingly.
-	 */
-	void responseWriteTypeParameterParser();
-
-
-
-	/*
-	 * it looks to see if there is any post processing filter
-	 * if there is then it fills up the helper accordingly
-	 */
-	void filterQueryParameterParser();
-
-
-	/*
-	 * parses the parameters facet=true/false , and it is true it parses the rest of
-	 * parameters which are related to faceted search.
-	 */
-	void facetParser();
-
-
-	/*
-	 * looks for the parameter sort which defines the post processing sort job
-	 */
-	void sortParser();
-
-
-
-	/*
-	 * this function parses the local parameters section of all parts
-	 * input:
-	 * 		1. local parameters string : {key=val key2=val2}
-	 * output:
-	 * 		1. it fills up the metadata of the queryHelper object
-	 */
-	void localParameterParser(string* input);
-
-
-
-	/*
-	 * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
-	 * input: keyword string : keyword1 AND keyword2~2.5
-	 * output: fills up the helper
-	 */
-	void keywordParser(string* input);
-
-
-
-	/*
-	 * this function parsers only the parameters which are specific to Top-K
-	 */
-	void topKParameterParser();
-
-	/*
-	 * this function parsers only the parameters which are specific to get all results search type
-	 */
-	void getAllResultsParser();
-
-
-	/*
-	 * this function parsers the parameters related to geo search like latitude and longitude .
-	 */
-	void getGeoParser();
-
-	bool verifyMainQuery(const string &input);
+    bool verifyMainQuery(const string &input);
 
 };
-
-
 
 }
 }

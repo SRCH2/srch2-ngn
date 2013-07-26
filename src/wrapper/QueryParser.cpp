@@ -23,6 +23,13 @@ const char* const QueryParser::responseWriteTypeParamName = "wt";
 const char* const QueryParser::sortParamName = "sort";
 const char* const QueryParser::sortFiledsDelimiter = ",";
 const char* const QueryParser::keywordQueryParamName = "q";
+const char* const QueryParser::localParamDelimiter = "=";
+const char* const lpQueryBooleanOperatorParamName = "defaultOperator";
+const char* const lpKeywordFuzzyLevelParamName = "defaultfuzzyLevel";
+const char* const lpKeywordBoostLevelParamName = "defaultBoostLevel";
+const char* const lpKeywordPrefixCompleteParamName = "defaultPrefixComplete";
+const char* const lpFieldFilterParamName = "defaultSearchFields";
+const char* const lpFieldFilterDelimiter = ",";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) {
@@ -74,14 +81,19 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         size_t st;
         string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
         // check if mainQueryStr is valid.
-        boost::algorithm::trim(mainQueryStr);
+        boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
         if (this->verifyMainQuery(mainQueryStr)) {
             // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
+            // for reveiwer: we can pass a duplicate of the mainQueryString too. I don't see a point why, so passing the mainQueryStr itself. Any thoughts?
             this->localParameterParser(&mainQueryStr);
-            // 3. call the keywordParser(). this will take care of rest of the keyword string.
+            // the mainQueryStr now doesn't have the lopcalparameter part.
+            // 3. call the keywordParser().
             this->keywordParser(&mainQueryStr);
+        } else {
+            // invalid query return
         }
-
+    } else {
+        //
     }
 
 }
@@ -90,11 +102,12 @@ bool verifyMainQuery(const string &input) {
     // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
     const string lpRegexString =
             "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
-    const string fieldRegexString = "\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
+    std::string fieldRegexString = "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)|\\*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
     const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
     const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
     const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
-    const string keywordRegexString = "\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}"; // verifies the syntax of keyword
+    std::string keywordRegexString =
+            "(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // verifies the syntax of keyword
     const string keywordWithModsRegexString = keywordRegexString
             + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
     std::string termModRegex = "(" + keywordWithModsRegexString + "|"
@@ -103,6 +116,7 @@ bool verifyMainQuery(const string &input) {
     std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
             + termModRegex + "(\\s+(AND|&&)\\s+" + termModRegex + ")*\\s*"; // verifies the systax of complete query string.
     // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
+
     boost::regex queryRegex(queryRegexString);
     // the above regex block needs to be compiled once only
     /*
@@ -345,21 +359,102 @@ void QueryParser::sortParser() {
 }
 
 void QueryParser::localParameterParser(string *input) {
-    /*
+    /* TODO: break this funcion into smaller functions like:
      * it checks if localparamertes are present in the input. extracts the key/value pairs and puts them in the helper.
      */
     // check if input string might have a local parameter info
     std::string localParametersString; // string to contain the localparameter string only
     std::string lpRegexString =
             "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*\\}";
-    boost::regex localParameterRegex(lpRegexString);
+    boost::regex localParameterRegex(lpRegexString); // TODO: compile this regex when the engine starts. that would be more efficient.
     boost::smatch clpMatches;
-    if (boost::regex_search(input, clpMatches, localParameterRegex)) {
+    if (boost::regex_search(*input, clpMatches, localParameterRegex)) {
+        // mathc found input has localParameters
         // remove the localparameter string part form the input.
-        input = boost::regex_replace(input, localParameterRegex, ""); // input is modified. lp info is being removed.
-        localParametersString = clpMatches[0];
-
+        input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
+        localParametersString = clpMatches[0];  // get the locaparamter part
+        // now get the pairs from the local parameter string
+        string lpPairsRegexString = "\\w+\\s*=\\s*\\w+"; // regex to get field = val pairs from {field1=val1 field2 = val2}
+        boost::regex lPPairRegex(lpPairsRegexString); //TODO: compile this regex when the engine starts.
+        boost::sregex_token_iterator itr(localParametersString.begin(),
+                localParametersString.end(), lpPairsRegexString, 0); // get the iterator for the matches
+        boost::sregex_token_iterator end;
+        // iterate on matched pairs
         // parse the key value pairs and populate the container
+        for (; itr != end; ++itr) {
+            string pair = *itr;
+            // split by "=" (localParamDelimiter) and fill the container
+            char *result = strdup((*input).c_str()); // strtok takes char* and not const char* so creating duplicate of input.
+            char * token = strtok(result, localParamDelimiter);
+            vector<string> tokens;
+            while (token) { // should give two tokesns only
+                // this first token is filed name and second is its value
+                // get the local parameter field
+                boost::algorithm::trim(token);
+                tokens.push_back(token);
+                token = strtok(NULL, localParamDelimiter);
+            }
+            if (lpQueryBooleanOperatorParamName == tokens[0]) {
+                string val = tokens[1];
+                boost::to_upper(val); // convert to upper case.
+                if ("OR" == val) {
+                    //this->container->lpQueryBooleanOperator = OR; // set default operator as OR,
+                    // we do not support OR as of now so raising a warning and setting it to AND.
+                    // generate warning and use AND
+                    this->container->messages.insert(
+                            std::pair<MessageType, string>(Warning,
+                                    "We do not supprt OR  specified, ignoring it and using 'AND'."));
+                    this->container->lpQueryBooleanOperator = AND;
+                } else if ("AND" == val) {
+                    this->container->lpQueryBooleanOperator = AND;
+                } else {
+                    // generate warning and use AND
+                    this->container->messages.insert(
+                            std::pair<MessageType, string>(Warning,
+                                    "Invalid boolean operator specified. " + val
+                                            + ", ignoring it and using 'AND'."));
+                    this->container->lpQueryBooleanOperator = AND;
+                }
+            } else if (lpKeywordFuzzyLevelParamName == tokens[0]) { // i tried using vecotr.at(index) showed me compile errors.
+                string val = tokens[1];
+                float f = atof(val.c_str());
+                this->container->lpKeywordFuzzyLevel = f;
+            } else if (lpKeywordPrefixCompleteParamName == tokens[0]) {
+                string val = tokens[1];
+                boost::to_upper(val);
+                if ("PREFIX" == val) {
+                    this->container->lpKeywordPrefixComplete = PREFIX;
+                } else if ("COMPLETE" == val) {
+                    this->container->lpKeywordPrefixComplete = COMPLETE;
+                } else {
+                    // generate warning and use prefix
+                    this->container->messages.insert(
+                            std::pair<MessageType, string>(Warning,
+                                    "Invalid choice " + val
+                                            + ",we support prefix and complete search on keyword only. ignoring it and using 'Prefix'."));
+                    this->container->lpKeywordPrefixComplete = PREFIX;
+                }
+            } else if (lpFieldFilterParamName == tokens[0]) {
+                string val = tokens[1];
+                // val might be a comma separated string of fields.  field1,field2..
+                // tokenize it on ',' and set the vector in container.
+                char *fieldStr = strdup(val.c_str()); // the strtok function takes char* and not const char* so create dulpicate of val as char*.
+                char * fieldToken = strtok(fieldStr, lpFieldFilterDelimiter);
+                while (fieldToken) {
+                    boost::algorithm::trim(fieldToken); // trim the token
+                    this->container->lpFieldFilter.push_back(fieldToken); // set field in container
+                    fieldToken = strtok(NULL, lpFieldFilterDelimiter); // get the next filed. (the syntax is weird, but thats how it works.)
+                }
+                free(fieldStr); // free the fieldStr, duplicate of val.
+            } else {
+                // this localparameter is not supported. raise a warning msg.
+                this->container->messages.insert(
+                        std::pair<MessageType, string>(Warning,
+                                "Invalid local parameter " + tokens[0]
+                                        + ", ignoring it."));
+            }
+            free(result); // free the result, duplicate of input.
+        }
 
     } else {
         // does not contain any localParameter info.
