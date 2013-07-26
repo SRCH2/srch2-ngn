@@ -2,6 +2,7 @@
 
 #include "URLParser.h"
 
+using namespace srch2::instantsearch;
 using srch2::instantsearch::Query;
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
@@ -40,7 +41,7 @@ const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
-URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper)
+URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
 {
     this->exactQuery = NULL;
     this->fuzzyQuery = NULL;
@@ -82,7 +83,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 				}
 				//use the exactQuery to construct the query for the range query without keywords
 				//for this query, only need to set the range of query
-				this->exactQuery = new Query(srch2is::MapQuery);
+				this->exactQuery = new Query(MapQuery);
 				//set the rectangle range
 				const char *paramIter_latLB = evhttp_find_header(&headers, URLParser::leftBottomLatitudeParamName);
 				const char *paramIter_lngLB = evhttp_find_header(&headers, URLParser::leftBottomLongitudeParamName);
@@ -170,7 +171,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         string sep;
         sep += URLParser::queryDelimiter;
         vector<string> queryKeywordVector;
-        vector<srch2is::TermType> termTypeVector;
+        vector<TermType> termTypeVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
         float lengthBoost;
@@ -196,10 +197,10 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                     //For example, for a query "q=trus+", we will take "trus" as a complete term.
                     string query=string(keywordsParamName_cstar);
 
-					if(query.substr(query.length()-1, 1) == " "){
-						queryKeywordVector.push_back(" ");
-					}
-						filters.assign(queryKeywordVector.size(), 1);
+                    if(query.substr(query.length()-1, 1) == " "){
+                    	queryKeywordVector.push_back(" ");
+                    }
+                    filters.assign(queryKeywordVector.size(), 1);
                 }
                 delete keywordsParamName_cstar;
             }
@@ -260,10 +261,10 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
                 for (unsigned idx=0; idx<termTypesParamName_str.size(); idx++){
 					if (termTypesParamName_str[idx] == '0'){
-						termTypeVector.push_back(srch2is::TERM_TYPE_PREFIX);
+						termTypeVector.push_back(TERM_TYPE_PREFIX);
 					}
 					else if (termTypesParamName_str[idx] == '1')
-						termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
+						termTypeVector.push_back(TERM_TYPE_COMPLETE);
 				}
 
                 if (termTypeVector.size() != numberOfKeywords){
@@ -277,14 +278,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
             else{
                 if (numberOfKeywords >= 1){
                     for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++){
-                        termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
+                        termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
                     if(queryKeywordVector[numberOfKeywords - 1] != " "){
                     	if (!indexDataContainerConf->getQueryTermType())
-                    		//The QueryTermType in conf is only decide query type of the last keyword
-                    		termTypeVector.push_back(srch2is::TERM_TYPE_PREFIX);
+                    		//The QueryTermType in the configure file decided the type of the last keyword only.
+                    		termTypeVector.push_back(TERM_TYPE_PREFIX);
                     	else
-                    		termTypeVector.push_back(srch2is::TERM_TYPE_COMPLETE);
+                    		termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
                     else{
                     	queryKeywordVector.pop_back();
@@ -363,7 +364,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         urlParserHelper.offset = 0; //default
         urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve(); //atoi(values[5].c_str());
         int sortAttribute = indexDataContainerConf->getAttributeToSort(); //atoi(values[6].c_str());
-        srch2is::SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? srch2is::Ascending : srch2is::Descending; //(atoi(values[7].c_str()) == 0) ? srch2is::Ascending : srch2is::Descending;
+        SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? Ascending : Descending; //(atoi(values[7].c_str()) == 0) ? Ascending : Descending;
 
         {
             const char *searchTypeParamName = evhttp_find_header(&headers, URLParser::searchTypeParamName);
@@ -425,8 +426,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         switch (urlParserHelper.searchType)
         {
             case 0:
-                this->exactQuery = new Query(srch2is::TopKQuery);
-                this->fuzzyQuery = new Query(srch2is::TopKQuery);
+                this->exactQuery = new Query(TopKQuery);
+                this->fuzzyQuery = new Query(TopKQuery);
                 break;
 
             case 1:
@@ -452,19 +453,19 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                     if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
                         delete orderParamName_cstar;
                     }
                     else{
-                        order = (indexDataContainerConf->getOrdering() == 0) ? srch2is::Ascending : srch2is::Descending;
+                        order = (indexDataContainerConf->getOrdering() == 0) ? Ascending : Descending;
                     }
                 }
 
                 urlParserHelper.sortby = sortAttribute;
                 urlParserHelper.order = order;
 
-                this->exactQuery = new Query(srch2is::GetAllResultsQuery);
-                this->fuzzyQuery = new Query(srch2is::GetAllResultsQuery);
+                this->exactQuery = new Query(GetAllResultsQuery);
+                this->fuzzyQuery = new Query(GetAllResultsQuery);
 
                 this->exactQuery->setSortableAttribute(sortAttribute, order);
                 this->fuzzyQuery->setSortableAttribute(sortAttribute, order);
@@ -472,15 +473,15 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 break;
 
             case 2:
-                this->exactQuery = new Query(srch2is::MapQuery);
-                this->fuzzyQuery = new Query(srch2is::MapQuery);
+                this->exactQuery = new Query(MapQuery);
+                this->fuzzyQuery = new Query(MapQuery);
 
                 {
                     const char *orderParamName = evhttp_find_header(&headers, URLParser::orderParamName);
                     if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
                         delete orderParamName_cstar;
                     }
 
@@ -567,7 +568,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         //for each keyword, build the exact terms
 
         for (unsigned i = 0; i < numberOfKeywords; ++i){
-            srch2is::TermType termType = termTypeVector[i];
+            TermType termType = termTypeVector[i];
 
             unsigned termBoost;
             if (termBoostsVectorValid){
@@ -594,21 +595,21 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 similarityBoost = indexDataContainerConf->getQueryTermSimilarityBoost();
             }
 
-            srch2is::Term *exactTerm;
-            srch2is::Term *fuzzyTerm;
+            Term *exactTerm;
+            Term *fuzzyTerm;
 
             if(urlParserHelper.isFuzzy){
-            	exactTerm = new srch2is::Term(queryKeywordVector[i],
+            	exactTerm = new Term(queryKeywordVector[i],
             			termType,
             			termBoost,
             			similarityBoost,
             			0);
 
-                fuzzyTerm = new srch2is::Term(queryKeywordVector[i],
+                fuzzyTerm = new Term(queryKeywordVector[i],
                 		termType,
                 		termBoost,
                 		similarityBoost,
-                		srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
+                		Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -617,7 +618,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 this->fuzzyQuery->add(fuzzyTerm);
 
             }else{
-                exactTerm = new srch2is::Term(queryKeywordVector[i],
+                exactTerm = new Term(queryKeywordVector[i],
                 		termType,
                 		termBoost,
                 		similarityBoost,
