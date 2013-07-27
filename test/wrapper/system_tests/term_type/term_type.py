@@ -1,4 +1,4 @@
-#This case tests whether whether the last character is a whitespace (which is transformed from "+")
+#This case tests  whether the last character is a whitespace (which is transformed from "+")
 #For example, for a query "q=trus+", we will take "trus" as a complete term.
 
 #using: python term_type.py queriesAndResults.txt
