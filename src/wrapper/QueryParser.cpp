@@ -24,12 +24,12 @@ const char* const QueryParser::sortParamName = "sort";
 const char* const QueryParser::sortFiledsDelimiter = ",";
 const char* const QueryParser::keywordQueryParamName = "q";
 const char* const QueryParser::localParamDelimiter = "=";
-const char* const lpQueryBooleanOperatorParamName = "defaultOperator";
-const char* const lpKeywordFuzzyLevelParamName = "defaultfuzzyLevel";
-const char* const lpKeywordBoostLevelParamName = "defaultBoostLevel";
-const char* const lpKeywordPrefixCompleteParamName = "defaultPrefixComplete";
-const char* const lpFieldFilterParamName = "defaultSearchFields";
-const char* const lpFieldFilterDelimiter = ",";
+const char* const QueryParser::lpQueryBooleanOperatorParamName = "defaultOperator";
+const char* const QueryParser::lpKeywordFuzzyLevelParamName = "defaultfuzzyLevel";
+const char* const QueryParser::lpKeywordBoostLevelParamName = "defaultBoostLevel";
+const char* const QueryParser::lpKeywordPrefixCompleteParamName = "defaultPrefixComplete";
+const char* const QueryParser::lpFieldFilterParamName = "defaultSearchFields";
+const char* const QueryParser::lpFieldFilterDelimiter = ",";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
@@ -99,7 +99,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
 
 }
 
-bool verifyMainQuery(const string &input) {
+bool QueryParser::verifyMainQuery(const string &input) {
     // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
     const string lpRegexString =
             "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
@@ -191,7 +191,7 @@ void QueryParser::debugQueryParser() {
     if (debugQueryTemp) { // if this parameter exists
         size_t st;
         string debugQuery = evhttp_uridecode(debugQueryTemp, 0, &st);
-        if (boost::iequals(debugQuery, 'true')) {
+        if (boost::iequals(debugQuery, "true")) {
             this->container->isDebugEnabled = true;
             this->container->summary.push_back(IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName ?
             // look for debug paramter. it decides the debug level, if it is not set, set the debug level to complete.
@@ -199,7 +199,7 @@ void QueryParser::debugQueryParser() {
                     QueryParser::debugParamName);
             if (debugTemp) { // if this parameter exists
                 size_t st;
-                string debug = evhttp_uridecode()(debugTemp, 0, &st);
+                string debug = evhttp_uridecode(debugTemp, 0, &st);
                 //check what is the debug level
                 if (boost::iequals("true", debug)) {
                     this->container->queryDebugLevel = CompleteDebug;
@@ -210,10 +210,10 @@ void QueryParser::debugQueryParser() {
                 } else if (boost::iequals("timing", debug)) {
                     this->container->queryDebugLevel = TimingDebug;
                 } else {
-                    // not supported level, generate a warning message and set debug to complete.
-                    this->container->messages.insert(
-                            std::pair<MessageType, string>(Warning,
-                                    "Unknown value for parameter debug. using debug=true"));
+                    // not supported level, generate a MessageWarning message and set debug to complete.
+                    /*this->container->messages.insert(
+                     std::pair<MessageType, string>(MessageWarning,
+                     "Unknown value for parameter debug. using debug=true"));*/
                     this->container->queryDebugLevel = CompleteDebug;
                 }
             } else {
@@ -314,9 +314,9 @@ void QueryParser::responseWriteTypeParameterParser() {
             this->container->responseResultsFormat = JSON;
         } else {
             // create warning, we only support json as of now.
-            this->container->messages.insert(
-                    make_pair(Warning,
-                            "Unknown value for parameter wt. using wt=json"));
+            /*this->container->messages.insert(
+             make_pair(MessageWarning,
+             "Unknown value for parameter wt. using wt=json"));*/
             this->container->responseResultsFormat = JSON; // this is default.
         }
 // populate the summary
@@ -366,13 +366,13 @@ void QueryParser::localParameterParser(string *input) {
     if (boost::regex_search(*input, clpMatches, localParameterRegex)) {
 // mathc found input has localParameters
 // remove the localparameter string part form the input.
-        input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
-        localParametersString = clpMatches[0];  // get the locaparamter part
+        *input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
+        localParametersString = clpMatches[0].str();  // get the locaparamter part
 // now get the pairs from the local parameter string
         string lpPairsRegexString = "\\w+\\s*=\\s*\\w+"; // regex to get field = val pairs from {field1=val1 field2 = val2}
         boost::regex lPPairRegex(lpPairsRegexString); //TODO: compile this regex when the engine starts.
         boost::sregex_token_iterator itr(localParametersString.begin(),
-                localParametersString.end(), lpPairsRegexString, 0); // get the iterator for the matches
+                localParametersString.end(), lPPairRegex, 0); // get the iterator for the matches
         boost::sregex_token_iterator end;
 // iterate on matched pairs
 // parse the key value pairs and populate the container
@@ -381,12 +381,13 @@ void QueryParser::localParameterParser(string *input) {
             // split by "=" (localParamDelimiter) and fill the container
             char *result = strdup((*input).c_str()); // strtok takes char* and not const char* so creating duplicate of input.
             char * token = strtok(result, localParamDelimiter);
-            vector < string > tokens;
+            vector<string> tokens;
             while (token) { // should give two tokesns only
                 // this first token is filed name and second is its value
                 // get the local parameter field
-                boost::algorithm::trim(token);
-                tokens.push_back(token);
+                string sToken = string(token);
+                boost::algorithm::trim(sToken);
+                tokens.push_back(sToken);
                 token = strtok(NULL, localParamDelimiter);
             }
             if (lpQueryBooleanOperatorParamName == tokens[0]) {
@@ -394,20 +395,20 @@ void QueryParser::localParameterParser(string *input) {
                 boost::to_upper(val); // convert to upper case.
                 if ("OR" == val) {
                     //this->container->lpQueryBooleanOperator = OR; // set default operator as OR,
-                    // we do not support OR as of now so raising a warning and setting it to AND.
-                    // generate warning and use AND
-                    this->container->messages.insert(
-                            std::pair<MessageType, string>(Warning,
-                                    "We do not supprt OR  specified, ignoring it and using 'AND'."));
+                    // we do not support OR as of now so raising a MessageWarning and setting it to AND.
+                    // generate MessageWarning and use AND
+                    /*this->container->messages.insert(
+                     std::pair<MessageType, string>(MessageWarning,
+                     "We do not supprt OR  specified, ignoring it and using 'AND'."));*/
                     this->container->lpQueryBooleanOperator = AND;
                 } else if ("AND" == val) {
                     this->container->lpQueryBooleanOperator = AND;
                 } else {
-                    // generate warning and use AND
-                    this->container->messages.insert(
-                            std::pair<MessageType, string>(Warning,
-                                    "Invalid boolean operator specified. " + val
-                                            + ", ignoring it and using 'AND'."));
+                    // generate MessageWarning and use AND
+                    /* this->container->messages.insert(
+                     std::pair<MessageType, string>(MessageWarning,
+                     "Invalid boolean operator specified. " + val
+                     + ", ignoring it and using 'AND'."));*/
                     this->container->lpQueryBooleanOperator = AND;
                 }
             } else if (lpKeywordFuzzyLevelParamName == tokens[0]) { // i tried using vecotr.at(index) showed me compile errors.
@@ -422,11 +423,11 @@ void QueryParser::localParameterParser(string *input) {
                 } else if ("COMPLETE" == val) {
                     this->container->lpKeywordPrefixComplete = COMPLETE;
                 } else {
-                    // generate warning and use prefix
-                    this->container->messages.insert(
-                            std::pair<MessageType, string>(Warning,
-                                    "Invalid choice " + val
-                                            + ",we support prefix and complete search on keyword only. ignoring it and using 'Prefix'."));
+                    // generate MessageWarning and use prefix
+                    /*this->container->messages.insert(
+                     std::pair<MessageType, string>(MessageWarning,
+                     "Invalid choice " + val
+                     + ",we support prefix and complete search on keyword only. ignoring it and using 'Prefix'."));*/
                     this->container->lpKeywordPrefixComplete = PREFIX;
                 }
             } else if (lpFieldFilterParamName == tokens[0]) {
@@ -436,17 +437,18 @@ void QueryParser::localParameterParser(string *input) {
                 char *fieldStr = strdup(val.c_str()); // the strtok function takes char* and not const char* so create dulpicate of val as char*.
                 char * fieldToken = strtok(fieldStr, lpFieldFilterDelimiter);
                 while (fieldToken) {
-                    boost::algorithm::trim(fieldToken); // trim the token
-                    this->container->lpFieldFilter.push_back(fieldToken); // set field in container
+                    string sToken = string(fieldToken);
+                    boost::algorithm::trim(sToken); // trim the token
+                    this->container->lpFieldFilter.push_back(sToken); // set field in container
                     fieldToken = strtok(NULL, lpFieldFilterDelimiter); // get the next filed. (the syntax is weird, but thats how it works.)
                 }
                 free(fieldStr); // free the fieldStr, duplicate of val.
             } else {
-                // this localparameter is not supported. raise a warning msg.
-                this->container->messages.insert(
-                        std::pair<MessageType, string>(Warning,
-                                "Invalid local parameter " + tokens[0]
-                                        + ", ignoring it."));
+                // this localparameter is not supported. raise a MessageWarning msg.
+                /*this->container->messages.insert(
+                 std::pair<MessageType, string>(MessageWarning,
+                 "Invalid local parameter " + tokens[0]
+                 + ", ignoring it."));*/
             }
             free(result); // free the result, duplicate of input.
         }

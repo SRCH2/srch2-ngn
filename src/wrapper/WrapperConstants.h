@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __INCLUDE_INSTANTSEARCH__WRAPPERCONSTANTS_H__
@@ -22,95 +22,80 @@
 
 #include <instantsearch/Constants.h>
 
-
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
 /// Filter query constants
 
-
-
 /// Parse related constants
 
+typedef enum {
 
-typedef enum{
-
-	RawQueryKeywords,
-	IsFuzzyFlag,
-	LengthBoostFlag,
-	PrefixMatchPenaltyFlag,
-	QueryBooleanOperatorFlag,
-	KeywordFuzzyLevel,
-	KeywordBoostLevel,
-	FieldFilter,
-	QueryPrefixCompleteFlag,
-	IsDebugEnabled,
-	ReponseAttributesList,
-	ResultsStartOffset,
-	NumberOfResults,
-	MaxTimeAllowed,
-	IsOmitHeader,
-	ResponseFormat,
-	FilterQueryEvaluatorFlag,
-	TopKSearchType,
-	GetAllResultsSearchType,
-	GeoSearchType,
-	// values related to search type specific parameters
-	FacetQueryHandler,
-	SortQueryHandler,
-	GeoTypeRectangular,
-	GeoTypeCircular
+    RawQueryKeywords,
+    IsFuzzyFlag,
+    LengthBoostFlag,
+    PrefixMatchPenaltyFlag,
+    QueryBooleanOperatorFlag,
+    KeywordFuzzyLevel,
+    KeywordBoostLevel,
+    FieldFilter,
+    QueryPrefixCompleteFlag,
+    IsDebugEnabled,
+    ReponseAttributesList,
+    ResultsStartOffset,
+    NumberOfResults,
+    MaxTimeAllowed,
+    IsOmitHeader,
+    ResponseFormat,
+    FilterQueryEvaluatorFlag,
+    TopKSearchType,
+    GetAllResultsSearchType,
+    GeoSearchType,
+    // values related to search type specific parameters
+    FacetQueryHandler,
+    SortQueryHandler,
+    GeoTypeRectangular,
+    GeoTypeCircular
 } ParameterName;
 
-
-typedef enum{
-	TimingDebug,
-	QueryDebug,
-	ResultsDebug,
-	CompleteDebug
+typedef enum {
+    TimingDebug, QueryDebug, ResultsDebug, CompleteDebug
 } QueryDebugLevel;
 
-
-typedef enum{
-	JSON
+typedef enum {
+    JSON
 } ResponseResultsFormat;
 
-
-
-
-typedef enum{
-	MessageError,
-	MessageWarning
+typedef enum {
+    MessageError, MessageWarning
 } MessageType;
-
-
 
 /// Configuration related constants
 
 typedef enum {
-	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
+    KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
 } WriteApiType;
 
 typedef enum {
-	INDEXCREATE = 0, INDEXLOAD = 1
+    INDEXCREATE = 0, INDEXLOAD = 1
 } IndexCreateOrLoad;
 
 typedef enum {
-	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
+    FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
 } DataSourceType;
 
+typedef enum {
+    AND
+} QueryBooleanOperator;
 
-
-
-
+typedef enum {
+    PREFIX, COMPLETE
+} QueryPrefixComplete;
 
 }
 
 }
 
 namespace srch2http = srch2::httpwrapper;
-
 
 #endif  // __INCLUDE_INSTANTSEARCH__WRAPPERCONSTANTS_H__

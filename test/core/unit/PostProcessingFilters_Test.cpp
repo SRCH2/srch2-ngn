@@ -12,7 +12,6 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/RangeQueryFilter.h>
 #include <instantsearch/SortFilter.h>
 #include <instantsearch/NonSearchableAttributeExpressionFilter.h>
 #include <instantsearch/FacetedSearchFilter.h>
