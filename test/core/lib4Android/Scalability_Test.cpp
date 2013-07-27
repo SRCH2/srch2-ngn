@@ -324,7 +324,7 @@ extern "C" {
 #endif
 JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 		JNIEnv* env, jobject javaThis, jstring testFileDir, jstring indexDir,
-		jstring logfile, jint lineLimit, jboolean isGeo) {
+		jstring logfile, jint lineLimit, jint editDistance, jboolean isGeo) {
 	Logger::console("Test begins.");
 	const char *nativeStringDataFile = env->GetStringUTFChars(testFileDir,
 			NULL);
@@ -387,9 +387,9 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 		readQueriesAndDoQueries(double_exact_keywords_file, "double exact",
 				analyzer, indexSearcher, 0, termType);
 		readQueriesAndDoQueries(single_fuzzy_keywords_file, "single fuzzy",
-				analyzer, indexSearcher, 1, termType);
+				analyzer, indexSearcher, editDistance, termType);
 		readQueriesAndDoQueries(double_fuzzy_keywords_file, "double fuzzy",
-				analyzer, indexSearcher, 1, termType);
+				analyzer, indexSearcher, editDistance, termType);
 		Logger::console("query mem usage %d kb. ", getRAMUsageValue());
 	} else {
 		warmUpGeo(analyzer, indexSearcher);
@@ -418,9 +418,9 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 				"double exact geo", analyzer, indexSearcher, 0, termType);
 
 		readGeoQueriesAndDoQueries(geo_single_fuzzy_keywords_file,
-				"single fuzzy geo", analyzer, indexSearcher, 1, termType);
+				"single fuzzy geo", analyzer, indexSearcher, editDistance, termType);
 		readGeoQueriesAndDoQueries(geo_double_fuzzy_keywords_file,
-				"double fuzzy geo", analyzer, indexSearcher, 1, termType);
+				"double fuzzy geo", analyzer, indexSearcher, editDistance, termType);
 		Logger::console("query mem usage %d kb. ", getRAMUsageValue());
 	}
 
