@@ -25,6 +25,7 @@
 #include <instantsearch/Term.h>
 #include "util/BusyBit.h"
 #include "util/Assert.h"
+#include <stack>
 
 namespace srch2
 {
@@ -51,6 +52,13 @@ struct ResultNode {
             editDistance(in_editDistance),prefixLength(in_prefixLength){}
 };
 
+struct trieNodeComparision{
+	bool operator() (const TrieNode* t1, const TrieNode* t2)
+	{
+		return t1->getMinId() < t2->getMinId() ||
+				(t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
+	}
+};
 
 class PrefixActiveNodeSet
 {
@@ -438,47 +446,44 @@ public:
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
 
-    	map<const TrieNode*, unsigned> activeNodes;
-		const TrieNode *trieNode;
+    	map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
+		const TrieNode *curNode;
 		unsigned distance;
 
 		// assume the iterator returns the active nodes in an ascending order of their edit distance
 		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
 		for (; !ani.isDone(); ani.next()){
-			ani.getItem(trieNode, distance);
-			activeNodes[trieNode] = distance; // initially all active nodes are not visited.
+			ani.getItem(curNode, distance);
+			activeNodes[curNode] = distance; // initially all active nodes are not visited.
 		}
-		for(map<const TrieNode*, unsigned>::iterator iter = activeNodes.begin(),curIter; iter != activeNodes.end();)
-		{
-			curIter = iter;
-			iter++;
-			_appendLeafNodes(curIter, trieNode, iter);
-		}
+		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
+		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), prevActiveNode; nextActiveNode != activeNodes.end();){
+			prevActiveNode = nextActiveNode;
+			curNode = prevActiveNode->first;
+			nextActiveNode++;
+			activeNodeStack.push(std::make_pair(prevActiveNode, curNode));
+			while(!activeNodeStack.empty()){
+				std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
+				prevActiveNode = stackTop.first;
+				curNode = stackTop.second;
+				activeNodeStack.pop();
 
+				if(nextActiveNode != activeNodes.end() && curNode == nextActiveNode->first){
+					if(nextActiveNode->second <= prevActiveNode->second)
+						prevActiveNode = nextActiveNode;
+					nextActiveNode++;
+				}
+				if (curNode->isTerminalNode())
+					resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, curNode, prevActiveNode->second));
+
+				for (int childIterator = curNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
+					activeNodeStack.push(std::make_pair(prevActiveNode, curNode->getChild(childIterator)));
+			}
+		}
 		// init the cursor
 		cursor = 0;
     }
 
-    // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
-    // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(map<const TrieNode*, unsigned>::iterator prevActiveNode, const TrieNode *curNode, map<const TrieNode*, unsigned>::iterator &nextActiveNode) {
-    	//meet the expect node
-    	if(curNode == nextActiveNode->first){
-    		if(nextActiveNode->second <= prevActiveNode->second){
-    			prevActiveNode = nextActiveNode;
-    		}
-    		nextActiveNode++;
-    	}
-
-        if (curNode->isTerminalNode()) {
-            // TODO: prefix might not be unique. Should we return the longest matching prefix?
-            resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, curNode, prevActiveNode->second));
-        }
-
-        // go through the children
-        for (unsigned childIterator = 0; childIterator < curNode->getChildrenCount(); childIterator ++)
-            _appendLeafNodes(prevActiveNode, curNode->getChild(childIterator), nextActiveNode);
-    }
 };
 
 }}
