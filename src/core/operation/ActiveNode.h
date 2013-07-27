@@ -26,6 +26,9 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include <stack>
+#include "util/Logger.h"
+
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -432,14 +435,14 @@ public:
         typedef LeafNodeSetIteratorItem leafStar;
         typedef const TrieNode* trieStar;
         std::vector<leafStar>::const_iterator vecIter;
-        std::cout << "LeafNodes " << std::endl;
+        Logger::debug("LeafNodes");
         for ( vecIter = this->resultVector.begin(); vecIter!= this->resultVector.end(); vecIter++ )
         {
             leafStar temp = *vecIter;
             trieStar prefixNode = temp.leafNode;
             string prefix;
             trie->getPrefixString_NotThreadSafe(prefixNode, prefix);
-            std::cout << "Prefix:" << prefix << "|Distance" << temp.distance << std::endl;
+            Logger::debug("Prefix: %s|Distance %d", prefix.c_str(), temp.distance);
         }
     }
 
