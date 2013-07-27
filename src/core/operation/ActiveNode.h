@@ -26,7 +26,6 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 
-
 namespace srch2
 {
 namespace instantsearch
@@ -449,12 +448,11 @@ private:
 			ani.getItem(trieNode, distance);
 			activeNodes[trieNode] = distance; // initially all active nodes are not visited.
 		}
-		for(map<const TrieNode*, unsigned>::iterator iter = activeNodes.begin(); iter != activeNodes.end();)
+		for(map<const TrieNode*, unsigned>::iterator iter = activeNodes.begin(),curIter; iter != activeNodes.end();)
 		{
-			trieNode = iter->first;
-			distance = iter->second;
+			curIter = iter;
 			iter++;
-			_appendLeafNodes(trieNode, trieNode, distance, iter);
+			_appendLeafNodes(curIter, trieNode, iter);
 		}
 
 		// init the cursor
@@ -463,24 +461,23 @@ private:
 
     // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
     // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, map<const TrieNode*, unsigned>::iterator &expect) {
+    void _appendLeafNodes(map<const TrieNode*, unsigned>::iterator prevActiveNode, const TrieNode *curNode, map<const TrieNode*, unsigned>::iterator &nextActiveNode) {
     	//meet the expect node
-    	if(trieNode == expect->first){
-    		if(expect->second <= editDistance){
-    			editDistance = expect->second;
-    			prefixNode = expect->first;
+    	if(curNode == nextActiveNode->first){
+    		if(nextActiveNode->second <= prevActiveNode->second){
+    			prevActiveNode = nextActiveNode;
     		}
-    		expect++;
+    		nextActiveNode++;
     	}
 
-        if (trieNode->isTerminalNode()) {
+        if (curNode->isTerminalNode()) {
             // TODO: prefix might not be unique. Should we return the longest matching prefix?
-            resultVector.push_back(LeafNodeSetIteratorItem(prefixNode, trieNode, editDistance));
+            resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, curNode, prevActiveNode->second));
         }
 
         // go through the children
-        for (unsigned childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator ++)
-            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance, expect);
+        for (unsigned childIterator = 0; childIterator < curNode->getChildrenCount(); childIterator ++)
+            _appendLeafNodes(prevActiveNode, curNode->getChild(childIterator), nextActiveNode);
     }
 };
 
