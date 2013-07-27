@@ -1,4 +1,6 @@
-#this test is used for setting term type 
+#This case tests whether whether the last character is a whitespace (which is transformed from "+")
+#For example, for a query "q=trus+", we will take "trus" as a complete term.
+
 #using: python term_type.py queriesAndResults.txt
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
@@ -61,8 +63,9 @@ def testTermType(queriesAndResultsPath):
 	    #construct the query
 	    query='http://localhost:' + port + '/search?q='
 	    for i in range(0, len(queryValue)):
-		if i == (len(queryValue)-1):
-		    query=query+queryValue[i]
+		if i == (len(queryValue)-1) :
+                    if queryValue[i] != '+': #if the last keyword is '+', we take it as space
+		        query=query+queryValue[i]
 		else:
 		    query=query+queryValue[i]+'+'
 	    
