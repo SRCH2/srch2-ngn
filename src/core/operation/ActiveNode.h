@@ -26,11 +26,6 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 
-#include <vector>
-#include <map>
-#include <set>
-#include <iostream>
-#include <boost/unordered_map.hpp>
 
 namespace srch2
 {
@@ -471,7 +466,10 @@ private:
     void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, map<const TrieNode*, unsigned>::iterator &expect) {
     	//meet the expect node
     	if(trieNode == expect->first){
-    		editDistance = std::min<unsigned>(editDistance, expect->second);
+    		if(expect->second <= editDistance){
+    			editDistance = expect->second;
+    			prefixNode = expect->first;
+    		}
     		expect++;
     	}
 
