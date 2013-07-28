@@ -59,8 +59,7 @@ struct ResultNode {
 struct trieNodeComparision{
 	bool operator() (const TrieNode* t1, const TrieNode* t2)
 	{
-		return t1->getMinId() < t2->getMinId() ||
-				(t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
+		return t1->getMinId() < t2->getMinId() || (t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
 	}
 };
 
@@ -315,23 +314,15 @@ public:
         //ASSERT(distance != 0);
     }
 
-    // Get current active node, if we have finished the iteration, return NULL
+    // Get current active node. If we have finished the iteration, return NULL
     void getActiveNode(const TrieNode *&trieNode) {
 	   if (isDone()) {
 		   trieNode = NULL;
 	   }
 	   else {
-		   // return current active node, which is the offsetCursor one in editDistanceCursor array
+		   // Return the current active node, which is the offsetCursor-th member in the editDistanceCursor array
 		   trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
 	   }
-	}
-
-	void reset(){
-		this->editDistanceCursor = 0;
-		this->offsetCursor = 0;
-		while (editDistanceCursor <= edUpperBound &&
-			trieNodeSetVector->at(editDistanceCursor).size() == 0)
-		editDistanceCursor ++;
 	}
 
 private:
@@ -460,34 +451,35 @@ private:
 			ani.getItem(currentNode, distance);
 			activeNodes[currentNode] = distance; // active nodes that are not visited.
 		}
+		// Use a stack to avoid recursive function calls.
 		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
-		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), prevActiveNode; nextActiveNode != activeNodes.end();){
-			prevActiveNode = nextActiveNode;
-			currentNode = prevActiveNode->first;
+		// We are using an ordered map in which the active nodes are sorted in a pre-order. So this iterator returns the active nodes in an ascending order.
+		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), previousActiveNode; nextActiveNode != activeNodes.end();){
+			previousActiveNode = nextActiveNode;
+			currentNode = previousActiveNode->first;
 			nextActiveNode++;
-			activeNodeStack.push(std::make_pair(prevActiveNode, currentNode));
-			// non-recursive traverse
+			activeNodeStack.push(std::make_pair(previousActiveNode, currentNode));
+			// non-recursive traversal
 			while(!activeNodeStack.empty()){
-
 				// get and pop the top item
 				std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
-				prevActiveNode = stackTop.first;
+				previousActiveNode = stackTop.first;
 				currentNode = stackTop.second;
 				activeNodeStack.pop();
 
-				// check if we move to the next active node
+				// check if this current trie node is the next active node in the set
 				if(nextActiveNode != activeNodes.end() && currentNode == nextActiveNode->first){
-					// if the next active node's ed is less than the prev's, we will update it.
-					if(nextActiveNode->second <= prevActiveNode->second)
-						prevActiveNode = nextActiveNode;
+					// If the next active node's ed is <= the ed of the previous active node, we will set change the previous node to the next node.
+					if(nextActiveNode->second <= previousActiveNode->second)
+						previousActiveNode = nextActiveNode;
 					nextActiveNode++;
 				}
 				if (currentNode->isTerminalNode())
-					resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, currentNode, prevActiveNode->second));
+					resultVector.push_back(LeafNodeSetIteratorItem(previousActiveNode->first, currentNode, previousActiveNode->second));
 
 				// push all the children from right to left to stack, so that after pop we can access them from left to right.
 				for (int childIterator = currentNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
-					activeNodeStack.push(std::make_pair(prevActiveNode, currentNode->getChild(childIterator)));
+					activeNodeStack.push(std::make_pair(previousActiveNode, currentNode->getChild(childIterator)));
 			}
 		}
 		// init the cursor
