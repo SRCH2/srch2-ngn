@@ -21,11 +21,11 @@
 #ifndef __ACTIVENODE_H__
 #define __ACTIVENODE_H__
 
+#include <stack>
 #include "index/Trie.h"
-#include <instantsearch/Term.h>
+#include "instantsearch/Term.h"
 #include "util/BusyBit.h"
 #include "util/Assert.h"
-#include <stack>
 #include "util/Logger.h"
 
 using srch2::util::Logger;
@@ -55,6 +55,7 @@ struct ResultNode {
             editDistance(in_editDistance),prefixLength(in_prefixLength){}
 };
 
+// this comparison is based on preorder.
 struct trieNodeComparision{
 	bool operator() (const TrieNode* t1, const TrieNode* t2)
 	{
@@ -325,7 +326,7 @@ public:
 	   }
 	}
 
-	void refresh(){
+	void reset(){
 		this->editDistanceCursor = 0;
 		this->offsetCursor = 0;
 		while (editDistanceCursor <= edUpperBound &&
@@ -450,37 +451,43 @@ private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
 
     	map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
-		const TrieNode *curNode;
+		const TrieNode *currentNode;
 		unsigned distance;
 
 		// assume the iterator returns the active nodes in an ascending order of their edit distance
 		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
 		for (; !ani.isDone(); ani.next()){
-			ani.getItem(curNode, distance);
-			activeNodes[curNode] = distance; // initially all active nodes are not visited.
+			ani.getItem(currentNode, distance);
+			activeNodes[currentNode] = distance; // active nodes that are not visited.
 		}
 		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
 		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), prevActiveNode; nextActiveNode != activeNodes.end();){
 			prevActiveNode = nextActiveNode;
-			curNode = prevActiveNode->first;
+			currentNode = prevActiveNode->first;
 			nextActiveNode++;
-			activeNodeStack.push(std::make_pair(prevActiveNode, curNode));
+			activeNodeStack.push(std::make_pair(prevActiveNode, currentNode));
+			// non-recursive traverse
 			while(!activeNodeStack.empty()){
+
+				// get and pop the top item
 				std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
 				prevActiveNode = stackTop.first;
-				curNode = stackTop.second;
+				currentNode = stackTop.second;
 				activeNodeStack.pop();
 
-				if(nextActiveNode != activeNodes.end() && curNode == nextActiveNode->first){
+				// check if we move to the next active node
+				if(nextActiveNode != activeNodes.end() && currentNode == nextActiveNode->first){
+					// if the next active node's ed is less than the prev's, we will update it.
 					if(nextActiveNode->second <= prevActiveNode->second)
 						prevActiveNode = nextActiveNode;
 					nextActiveNode++;
 				}
-				if (curNode->isTerminalNode())
-					resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, curNode, prevActiveNode->second));
+				if (currentNode->isTerminalNode())
+					resultVector.push_back(LeafNodeSetIteratorItem(prevActiveNode->first, currentNode, prevActiveNode->second));
 
-				for (int childIterator = curNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
-					activeNodeStack.push(std::make_pair(prevActiveNode, curNode->getChild(childIterator)));
+				// push all the children from right to left to stack, so that after pop we can access them from left to right.
+				for (int childIterator = currentNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
+					activeNodeStack.push(std::make_pair(prevActiveNode, currentNode->getChild(childIterator)));
 			}
 		}
 		// init the cursor
