@@ -119,9 +119,15 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_loadIndex(JNIEnv* env,
 	string strIndexDir(nativeStringIndexPath);
 
 	Logger::console("Load index from %s", strIndexDir.c_str());
-	Indexer* indexer = loadIndex(strIndexDir);
+    long ptr = 0;
+    try{
+        Indexer* indexer = loadIndex(strIndexDir);
+        ptr = (long) indexer;
+    }catch(std::runtime_error e){ 
+        Logger::console("LoadIndex exception:%s", e.what());
+        ptr = 0;   
+    }
 	env->ReleaseStringUTFChars(indexDir, nativeStringIndexPath);
-	long ptr = (long) indexer;
 	Logger::console("loadIndex done");
 	return ptr;
 }

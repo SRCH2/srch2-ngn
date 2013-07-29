@@ -40,7 +40,8 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <exception>
+//#include <exception>
+#include <stdexcept>
 //#include <unordered_set> 
 //#include <unordered_map>
 
@@ -68,7 +69,7 @@ IndexData::IndexData(const string &directoryName,
 
     if(!checkDirExistence(directoryName.c_str())){
 		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
+            throw std::runtime_error("Directory not exist");
 		}
 	}
 
@@ -114,12 +115,15 @@ IndexData::IndexData(const string& directoryName)
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
-		}
+        Logger::error("Given index path %s does not exist", directoryName.c_str());
+        throw std::runtime_error("Index load exception");
 	}
 
     std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+    if (!ifs.is_open()){
+        Logger::error("Given index path %s does not contains an index", directoryName.c_str());
+        throw std::runtime_error("Index load exception");
+    }
 	boost::archive::binary_iarchive ia(ifs);
 	AnalyzerType analyzerType;
 	ia >> analyzerType;
