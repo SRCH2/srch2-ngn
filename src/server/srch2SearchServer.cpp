@@ -152,9 +152,9 @@ void getMemoryInfo(std::string &meminfo)
 	meminfo = mem_info.str();
 }*/
 
-void getCurrentVersion(std::string &versioninfo)
+std::string getCurrentVersion()
 {
-    versioninfo = Version.getCurrentVersion();
+    return Version::getCurrentVersion();
 }
 
 /*
@@ -219,8 +219,7 @@ void cb_bminfo(evhttp_request *req, void *arg) {
     /*string meminfo;
     getMemoryInfo(meminfo);*/
 
-    string versioninfo;
-    getCurrentVersion(versioninfo);
+    string versioninfo = getCurrentVersion();
 
 	HTTPResponse::infoCommand(req, server, versioninfo);
 }

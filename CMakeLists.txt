@@ -35,7 +35,7 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 
 ##SET this option to "on", if you want detailed makefile execution
-SET(VERBOSE ON CACHE BOOL "Build verbose makefiles and output. Default ON")
+SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")

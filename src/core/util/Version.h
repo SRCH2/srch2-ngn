@@ -12,6 +12,6 @@ class Version{
         static const string getCurrentVersion() {
             return CURRENT_VERSION;
         }
-}        
+};        
 
 #endif 
