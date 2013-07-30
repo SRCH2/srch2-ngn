@@ -43,6 +43,11 @@ echo '----do geo test--------------'
 python geo.py queriesAndResults.txt
 
 cd ..
+cd term_type
+echo '----do term type test--------------'
+python term_type.py queriesAndResults.txt
+
+cd ..
 cd top_k
 echo '----do top_k test--------------'
 python test_srch2_top_k.py food 10 20
