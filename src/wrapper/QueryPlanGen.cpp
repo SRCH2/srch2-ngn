@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 #include "QueryPlanGen.h"
 #include <instantsearch/Query.h>
@@ -239,7 +239,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 		}
 	}
 
-	vector<float> keywordBoostLevel;
+	vector<unsigned> keywordBoostLevel;
 
 	if ( paramsContainer.hasParameterInSummary(KeywordBoostLevel)){
 		keywordBoostLevel = paramsContainer.keywordBoostLevel;

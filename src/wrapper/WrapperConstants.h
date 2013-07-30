@@ -84,13 +84,6 @@ typedef enum {
     FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
 } DataSourceType;
 
-typedef enum {
-    AND
-} QueryBooleanOperator;
-
-typedef enum {
-    PREFIX, COMPLETE
-} QueryPrefixComplete;
 
 }
 

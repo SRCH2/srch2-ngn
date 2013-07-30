@@ -4,8 +4,9 @@
 #include <evhttp.h>
 #include <string>
 #include "boost/regex.hpp"
-
+#include "util/Logger.h"
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -24,10 +25,14 @@ const char* const QueryParser::sortParamName = "sort";
 const char* const QueryParser::sortFiledsDelimiter = ",";
 const char* const QueryParser::keywordQueryParamName = "q";
 const char* const QueryParser::localParamDelimiter = "=";
-const char* const QueryParser::lpQueryBooleanOperatorParamName = "defaultOperator";
-const char* const QueryParser::lpKeywordFuzzyLevelParamName = "defaultfuzzyLevel";
-const char* const QueryParser::lpKeywordBoostLevelParamName = "defaultBoostLevel";
-const char* const QueryParser::lpKeywordPrefixCompleteParamName = "defaultPrefixComplete";
+const char* const QueryParser::lpQueryBooleanOperatorParamName =
+        "defaultOperator";
+const char* const QueryParser::lpKeywordFuzzyLevelParamName =
+        "defaultfuzzyLevel";
+const char* const QueryParser::lpKeywordBoostLevelParamName =
+        "defaultBoostLevel";
+const char* const QueryParser::lpKeywordPrefixCompleteParamName =
+        "defaultPrefixComplete";
 const char* const QueryParser::lpFieldFilterParamName = "defaultSearchFields";
 const char* const QueryParser::lpFieldFilterDelimiter = ",";
 
@@ -89,7 +94,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
             this->localParameterParser(&mainQueryStr);
             // the mainQueryStr now doesn't have the lopcalparameter part.
             // 3. call the keywordParser().
-            this->keywordParser(&mainQueryStr);
+            this->keywordParser(mainQueryStr);
         } else {
             // invalid query return
         }
@@ -103,12 +108,14 @@ bool QueryParser::verifyMainQuery(const string &input) {
     // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
     const string lpRegexString =
             "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
-    std::string fieldRegexString = "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)|\\*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
+    std::string fieldRegexString =
+            "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)\\s*|\\*\\s*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
     const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
     const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
     const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
     std::string keywordRegexString =
-            "(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // verifies the syntax of keyword
+            "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)";
+    ; // verifies the syntax of keyword
     const string keywordWithModsRegexString = keywordRegexString
             + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
     std::string termModRegexString = "(" + keywordWithModsRegexString + "|"
@@ -367,7 +374,7 @@ void QueryParser::localParameterParser(string *input) {
 // mathc found input has localParameters
 // remove the localparameter string part form the input.
         *input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
-        localParametersString = clpMatches[0].str();  // get the locaparamter part
+        localParametersString = clpMatches[0].str(); // get the locaparamter part
 // now get the pairs from the local parameter string
         string lpPairsRegexString = "\\w+\\s*=\\s*\\w+"; // regex to get field = val pairs from {field1=val1 field2 = val2}
         boost::regex lPPairRegex(lpPairsRegexString); //TODO: compile this regex when the engine starts.
@@ -400,16 +407,19 @@ void QueryParser::localParameterParser(string *input) {
                     /*this->container->messages.insert(
                      std::pair<MessageType, string>(MessageWarning,
                      "We do not supprt OR  specified, ignoring it and using 'AND'."));*/
-                    this->container->lpQueryBooleanOperator = AND;
+                    this->container->lpQueryBooleanOperator =
+                            srch2::instantsearch::AND;
                 } else if ("AND" == val) {
-                    this->container->lpQueryBooleanOperator = AND;
+                    this->container->lpQueryBooleanOperator =
+                            srch2::instantsearch::AND;
                 } else {
                     // generate MessageWarning and use AND
                     /* this->container->messages.insert(
                      std::pair<MessageType, string>(MessageWarning,
                      "Invalid boolean operator specified. " + val
                      + ", ignoring it and using 'AND'."));*/
-                    this->container->lpQueryBooleanOperator = AND;
+                    this->container->lpQueryBooleanOperator =
+                            srch2::instantsearch::AND;
                 }
             } else if (lpKeywordFuzzyLevelParamName == tokens[0]) { // i tried using vecotr.at(index) showed me compile errors.
                 string val = tokens[1];
@@ -419,16 +429,19 @@ void QueryParser::localParameterParser(string *input) {
                 string val = tokens[1];
                 boost::to_upper(val);
                 if ("PREFIX" == val) {
-                    this->container->lpKeywordPrefixComplete = PREFIX;
+                    this->container->lpKeywordPrefixComplete =
+                            srch2::instantsearch::TERM_TYPE_PREFIX;
                 } else if ("COMPLETE" == val) {
-                    this->container->lpKeywordPrefixComplete = COMPLETE;
+                    this->container->lpKeywordPrefixComplete =
+                            srch2::instantsearch::TERM_TYPE_COMPLETE;
                 } else {
                     // generate MessageWarning and use prefix
                     /*this->container->messages.insert(
                      std::pair<MessageType, string>(MessageWarning,
                      "Invalid choice " + val
                      + ",we support prefix and complete search on keyword only. ignoring it and using 'Prefix'."));*/
-                    this->container->lpKeywordPrefixComplete = PREFIX;
+                    this->container->lpKeywordPrefixComplete =
+                            srch2::instantsearch::TERM_TYPE_PREFIX;
                 }
             } else if (lpFieldFilterParamName == tokens[0]) {
                 string val = tokens[1];
@@ -458,10 +471,225 @@ void QueryParser::localParameterParser(string *input) {
     }
 }
 
-void QueryParser::keywordParser(string * input) {
+void QueryParser::keywordParser(const string &input) {
     /*
-     * parses the keyword string and fills up the helper by term information
+     * parses the keyword string and fills up the container by term information
      */
+    Logger::info("inside keyword parser.");
+    Logger::debug("input received is %s", input.c_str());
+    string operatorRegexString = "\\s+(AND|&&|OR)\\s+";
+    boost::regex re(operatorRegexString);
+    boost::sregex_iterator i(input.begin(), input.end(), re);
+    boost::sregex_iterator j;
+    vector<string> terms;
+    vector<string> termOperators;
+    size_t start = 0;
+    for (; i != j; ++i) {
+        size_t len = (*i).position() - start;
+        string candidate = input.substr(start, len);
+        terms.push_back(candidate);
+        start = (*i).position() + (*i).length();
+        // cout << "term: " << candidate << endl;
+        termOperators.push_back((*i).str());
+    }
+    terms.push_back(input.substr(start)); // push back the last token
+    // set the termOperators in container
+    QueryParser::populateTermBooleanOperators(termOperators);
+    // parse the terms
+    QueryParser::parseTerms(terms);
+
+}
+
+void QueryParser::populateTermBooleanOperators(
+        const vector<string> &termOperators) {
+    for (std::vector<string>:: const_iterator itr = termOperators.begin();
+            itr != termOperators.end(); ++itr) {
+        if ("OR" == *itr) {
+            // we do not support OR as of now so raising a MessageWarning and setting it to AND.
+            // generate MessageWarning and use AND
+            /*this->container->messages.insert(
+             std::pair<MessageType, string>(MessageWarning,
+             "We do not supprt OR  specified, ignoring it and using 'AND'."));*/
+            this->container->termBooleanOperators.push_back(
+                    srch2::instantsearch::AND);
+        } else if ("AND" == *itr) {
+            this->container->termBooleanOperators.push_back(
+                    srch2::instantsearch::AND);
+        } else {
+            // generate MessageWarning and use AND
+            /*string message = "Invalid boolean operator specified. %s , ignoring it and using 'AND'.",*itr;
+            this->container->messages.insert(
+                    std::make_pair(srch2::httpwrapper::MessageWarning,message));*/
+            this->container->termBooleanOperators.push_back(
+                    srch2::instantsearch::AND);
+        }
+    }
+}
+
+void QueryParser::parseTerms(vector<string>&terms) {
+    string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
+    boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
+    for (std::vector<string>::iterator it = terms.begin(); it != terms.end();
+            ++it) {
+        QueryParser::parseTerm(*it, fieldDelimeterRegex);
+    }
+}
+
+void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) {
+    Logger::debug("term: %s", term.c_str());
+    boost::sregex_iterator i(term.begin(), term.end(), fieldDelimeterRegex);
+    boost::sregex_iterator j;
+    size_t st = 0;
+    // look for ":"
+    size_t len = (*i).position();
+    string candidateField = term.substr(st, len);
+    st = (*i).position() + (*i).length();
+    string candidateKeyword;
+    if (0 == st) {
+        // it's not a field:keyword pair
+        QueryParser::populateFieldFilterUsingLp();
+        candidateKeyword = candidateField; // there is no field, only keyword
+    } else {
+        // canditate is the field. create a vector and populate container->fieldFilter.
+        QueryParser::populateFieldFilterUsingQueryFields(candidateField);
+        candidateKeyword = term.substr(st); // this second token is keyword
+    }
+    QueryParser::parseKeyword(candidateKeyword);
+
+    // if ":" is present, we have field information, create a vector and populate the fieldFilter vector in container
+    //else: check if lpFieldFilter in container has fields. if yes, create a vector of these fields and populate the vector
+    // else: create an empty vector and poplate the fieldFilter vector in container.
+    // in parallel populate the rawQueryKeywords vector in container. / this will need to populate boost and similarity boost vectors too. also add "NOT_DEFINED" in
+    // prefixcomplete enum and populate the keywordPrefixComplete vector.
+    // NOTE: populating fileds will also need to look for . and + in them and populate the fieldFilterOps vector.
+
+}
+void QueryParser::parseKeyword(string &input) {
+    // fills up rawkeywords, keyPrefixComp, boost, simBoost.
+    // check if '^' is present
+    if (input.find('^') != string::npos) {
+        // '^ is present'
+        boost::smatch matches;
+        QueryParser::checkForBoostNums(input, matches); // check if boost value is present
+        if (matches[0].matched) {
+            // get the boost value;
+            boost::smatch numMatches;
+            QueryParser::extractNumbers(matches[0].str(), numMatches);
+            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
+            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
+        } else {
+            // there is no value specified
+            this->container->keywordBoostLevel.push_back(
+                    this->container->lpKeywordBoostLevel); // selts the localParameter specified value
+        }
+    }
+    if (input.find('~') != string::npos) {
+        // '~' is present
+        boost::smatch matches;
+        QueryParser::checkForFuzzyNums(input, matches); // check if boost value is present
+        if (matches[0].matched) {
+            // get the fuzzy value;
+            boost::smatch numMatches;
+            QueryParser::extractNumbers(matches[0].str(), numMatches);
+            float fuzzyNum = atof(("." + numMatches[0].str()).c_str()); // convert to integer
+            this->container->keywordFuzzyLevel.push_back(fuzzyNum); // push to the container.
+        } else {
+            // there is no value specified
+            this->container->keywordFuzzyLevel.push_back(
+                    this->container->lpKeywordFuzzyLevel); // selts the localParameter specified value
+        }
+    }
+    if (input.find('*') != string::npos) {
+        // '*' is present
+        this->container->keywordPrefixComplete.push_back(
+                srch2::instantsearch::TERM_TYPE_PREFIX);
+    } else {
+        this->container->keywordPrefixComplete.push_back(
+                this->container->lpKeywordPrefixComplete);
+    }
+    QueryParser::populateRawKeywords(input);
+}
+void QueryParser::populateRawKeywords(const string &input) {
+    string regexString = "\\w+";
+    boost::smatch matches;
+    boost::regex re(regexString);
+    cout << "printing" << endl;
+    boost::regex_search(input, matches, re);
+    if (matches[0].matched) {
+        this->container->rawQueryKeywords.push_back(matches[0].str());
+    }
+}
+
+void QueryParser::checkForBoostNums(const string &input,
+        boost::smatch &matches) {
+    string boostRegexString = "\\^\\d+";
+    boost::regex boostRegex(boostRegexString);
+    cout << "printing" << endl;
+    boost::regex_search(input, matches, boostRegex);
+}
+
+void QueryParser::checkForFuzzyNums(const string &input,
+        boost::smatch &matches) {
+    string regexString = "\\~\\.\\d+";
+    boost::regex re(regexString);
+    boost::regex_search(input, matches, re);
+}
+void QueryParser::extractNumbers(const string &input, boost::smatch& matches) {
+    string regexString = "\\d+";
+    boost::regex re(regexString);
+    cout << "printing" << endl;
+    boost::regex_search(input, matches, re);
+}
+void QueryParser::populateFieldFilterUsingLp() {
+    // check if lpFieldFilter are set in container
+    if (this->container->lpFieldFilter.empty()) {
+        // lpFieldFilter is set. use this to create a vector
+        this->container->fieldFilter.push_back(this->container->lpFieldFilter);
+    } else {
+        this->container->fieldFilter.push_back(vector<string>());
+    }
+
+}
+
+void QueryParser::populateFieldFilterUsingQueryFields(string &input) {
+    // check if '.'s are present
+    // check if '+' are present
+    // tokenize on . or + and populate a vector<string> fields
+    // populate the fieldFilterOps with given boolean operator
+    string fieldAndBoolOpDelimeterRegexString = "\\.";
+    string fieldOrBoolOpDelimeterRegexString = "\\+";
+    string fieldBoolOpDelimeterRegexString;
+    if (input.find('.') != string::npos) {
+        fieldBoolOpDelimeterRegexString = fieldAndBoolOpDelimeterRegexString;
+
+        this->container->fieldFilterOps.push_back(srch2::instantsearch::AND);
+    } else if (input.find('+') != string::npos) {
+        fieldBoolOpDelimeterRegexString = fieldOrBoolOpDelimeterRegexString;
+        this->container->fieldFilterOps.push_back(srch2::instantsearch::OR);
+    } else {
+        // it one field only.no boolean operators here.
+        // create a vector and add it to the container.
+        vector<string> candidate;
+        candidate.push_back(input);
+        this->container->fieldFilter.push_back(candidate);
+        return;
+    }
+    boost::regex fieldDelimeterRegex(fieldBoolOpDelimeterRegexString);
+    boost::sregex_iterator i(input.begin(), input.end(), fieldDelimeterRegex);
+    boost::sregex_iterator j;
+    cout << "input " << input << endl;
+    vector<string> fields;
+    size_t start = 0;
+    for (; i != j; ++i) {
+        size_t len = (*i).position() - start;
+        string candidate = input.substr(start, len);
+        fields.push_back(candidate);
+        start = (*i).position() + (*i).length();
+    }
+    string candidate = input.substr(start);
+    fields.push_back(input.substr(start)); // push back the last field in the string.
+    // push back the fields vector in container.
+    this->container->fieldFilter.push_back(fields);
 }
 
 void QueryParser::topKParameterParser() {

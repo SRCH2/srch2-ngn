@@ -25,51 +25,39 @@
 #include <map>
 #include <algorithm>
 
-
-
 #include "WrapperConstants.h"
 #include "FilterQueryEvaluator.h"
 #include "SortFilterEvaluator.h"
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
-
-
-
-class FilterQueryContainer
-{
+class FilterQueryContainer {
 public:
-    FilterQueryContainer(){
+    FilterQueryContainer() {
         evaluator = NULL;
     }
-    ~FilterQueryContainer(){
+    ~FilterQueryContainer() {
         // do not free evaluator here, it's freed in filter
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     FilterQueryEvaluator * evaluator;
 };
 
-
-class SortQueryContainer
-{
+class SortQueryContainer {
 
 public:
-    SortQueryContainer(){
+    SortQueryContainer() {
         evaluator = NULL;
     }
-    ~SortQueryContainer(){
+    ~SortQueryContainer() {
         // do not free evaluator here, it's freed in filter
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     SortFilterEvaluator * evaluator;
 };
 
-
-class FacetQueryContainer
-{
+class FacetQueryContainer {
 
 public:
     // these vectors must be parallel and same size all the time
@@ -80,8 +68,7 @@ public:
     std::vector<std::string> rangeGaps;
 };
 
-class TopKParameterContainer
-{
+class TopKParameterContainer {
 public:
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
@@ -90,56 +77,56 @@ public:
     // no parameters known as of now
 
     //
-    bool doesHaveParameterInSummary(ParameterName param){
-        return
-                (std::find(summary.begin() ,summary.end() , param) != summary.end());
+    bool doesHaveParameterInSummary(ParameterName param) {
+        return (std::find(summary.begin(), summary.end(), param)
+                != summary.end());
     }
 };
 
-class GetAllResultsParameterContainer
-{
+class GetAllResultsParameterContainer {
 public:
-    GetAllResultsParameterContainer(){
+    GetAllResultsParameterContainer() {
         facetQueryContainer = NULL;
         sortQueryContainer = NULL;
     }
-    ~GetAllResultsParameterContainer(){
-        if(facetQueryContainer != NULL) delete facetQueryContainer;
-        if(sortQueryContainer != NULL) delete sortQueryContainer;
+    ~GetAllResultsParameterContainer() {
+        if (facetQueryContainer != NULL)
+            delete facetQueryContainer;
+        if (sortQueryContainer != NULL)
+            delete sortQueryContainer;
     }
 
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
     std::vector<ParameterName> summary;
-
 
     // facet parser parameters
     FacetQueryContainer * facetQueryContainer;
     // sort parser parameters
     SortQueryContainer * sortQueryContainer;
 
-    bool hasParameterInSummary(ParameterName param){
-        return
-                (std::find(summary.begin() ,summary.end() , param) != summary.end());
+    bool hasParameterInSummary(ParameterName param) {
+        return (std::find(summary.begin(), summary.end(), param)
+                != summary.end());
     }
 
 };
 
-class GeoParameterContainer
-{
+class GeoParameterContainer {
 public:
-    GeoParameterContainer(){
+    GeoParameterContainer() {
         facetQueryContainer = NULL;
         sortQueryContainer = NULL;
     }
-    ~GeoParameterContainer(){
-        if(facetQueryContainer != NULL) delete facetQueryContainer;
-        if(sortQueryContainer != NULL) delete sortQueryContainer;
+    ~GeoParameterContainer() {
+        if (facetQueryContainer != NULL)
+            delete facetQueryContainer;
+        if (sortQueryContainer != NULL)
+            delete sortQueryContainer;
     }
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
     std::vector<ParameterName> summary;
-
 
     // this object is created in planGenerator but freed when the filter is being destroyed.
     // facet parser parameters
@@ -148,33 +135,35 @@ public:
     SortQueryContainer * sortQueryContainer;
 
     // geo related parameters
-    float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
-    float centerLatitude,centerLongitude,radius;
+    float leftBottomLatitude, leftBottomLongitude, rightTopLatitude,
+            rightTopLongitude;
+    float centerLatitude, centerLongitude, radius;
 
-    bool hasParameterInSummary(ParameterName param){
-        return
-                (std::find(summary.begin() ,summary.end() , param) != summary.end());
+    bool hasParameterInSummary(ParameterName param) {
+        return (std::find(summary.begin(), summary.end(), param)
+                != summary.end());
     }
 };
 
-
-
-class ParsedParameterContainer
-{
+class ParsedParameterContainer {
 public:
 
-    ParsedParameterContainer(){
+    ParsedParameterContainer() {
         filterQueryContainer = NULL;
         topKParameterContainer = NULL;
         getAllResultsParameterContainer = NULL;
         geoParameterContainer = NULL;
     }
 
-    ~ParsedParameterContainer(){
-        if (filterQueryContainer != NULL) delete filterQueryContainer;
-        if (topKParameterContainer != NULL) delete topKParameterContainer;
-        if (getAllResultsParameterContainer != NULL) delete getAllResultsParameterContainer;
-        if (geoParameterContainer != NULL) delete geoParameterContainer;
+    ~ParsedParameterContainer() {
+        if (filterQueryContainer != NULL)
+            delete filterQueryContainer;
+        if (topKParameterContainer != NULL)
+            delete topKParameterContainer;
+        if (getAllResultsParameterContainer != NULL)
+            delete getAllResultsParameterContainer;
+        if (geoParameterContainer != NULL)
+            delete geoParameterContainer;
     }
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
@@ -183,13 +172,13 @@ public:
     // main query parser parameters
 
     // TODO add members related to local parameters
-     QueryBooleanOperator lpQueryBooleanOperator; // TODO: when we want to all NOT or OR this part should change
-     float lpKeywordFuzzyLevel;
-     float lpKeywordBoostLevel;
-     QueryPrefixComplete lpKeywordPrefixComplete;
-     std::vector<std::string> lpFieldFilter;
+    BooleanOperation lpQueryBooleanOperator; // TODO: when we want to add NOT or OR this part should change
+    float lpKeywordFuzzyLevel =-1.0;
+    unsigned lpKeywordBoostLevel=-1;
+    srch2::instantsearch::TermType lpKeywordPrefixComplete=srch2::instantsearch::NOT_SPECIFIED;
+    std::vector<std::string> lpFieldFilter;
 
-     // localparamter related variables end
+    // localparamter related variables end
 
     bool isFuzzy;
     float lengthBoost;
@@ -197,19 +186,17 @@ public:
     //// the following six vectors must be parallel
     std::vector<std::string> rawQueryKeywords;
     std::vector<float> keywordFuzzyLevel;
-    std::vector<float> keywordBoostLevel;
+    std::vector<unsigned> keywordBoostLevel;
     std::vector<srch2::instantsearch::TermType> keywordPrefixComplete;
     std::vector<std::vector<std::string> > fieldFilter;
     std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps;
 
     std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors
 
-
     BooleanOperation queryBooleanOperator; // TODO: when we want to all NOT or OR this part should change
     // debug query parser parameters
     bool isDebugEnabled;
     QueryDebugLevel queryDebugLevel;
-
 
     // field list parser
     std::vector<std::string> responseAttributesList;
@@ -232,44 +219,40 @@ public:
     // filter query parser parameters
     FilterQueryContainer * filterQueryContainer;
 
-
     // different search type specific parameters
     TopKParameterContainer * topKParameterContainer;
     GetAllResultsParameterContainer * getAllResultsParameterContainer;
     GeoParameterContainer * geoParameterContainer;
 
-
-
     /// messages for the query processing pipeline
     std::vector<std::pair<MessageType, std::string> > messages;
 
-    std::string getMessageString(){
+    std::string getMessageString() {
         std::string result = "";
-        for(std::vector<std::pair<MessageType, std::string> >::iterator m = messages.begin();
-                                        m != messages.end() ; ++m){
+        for (std::vector<std::pair<MessageType, std::string> >::iterator m =
+                messages.begin(); m != messages.end(); ++m) {
             switch (m->first) {
-                case MessageError:
-                    result += "ERROR : " + m->second + "\n";
-                    break;
-                case MessageWarning:
-                    result += "WARNING : " + m->second + "\n";
-                    break;
+            case MessageError:
+                result += "ERROR : " + m->second + "\n";
+                break;
+            case MessageWarning:
+                result += "WARNING : " + m->second + "\n";
+                break;
             }
         }
         return result;
     }
 
-    bool hasParameterInSummary(ParameterName param) const{
-        return
-                (std::find(summary.begin() ,summary.end() , param) != summary.end());
+    bool hasParameterInSummary(ParameterName param) const {
+        return (std::find(summary.begin(), summary.end(), param)
+                != summary.end());
     }
+
+    // term operator vector
+    vector<BooleanOperation> termBooleanOperators;
 };
 
-
-
 }
 }
-
-
 
 #endif // _WRAPPER_PARSEDPARAMETERCONTAINER_H_

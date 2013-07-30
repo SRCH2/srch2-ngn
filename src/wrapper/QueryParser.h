@@ -172,7 +172,7 @@ private:
      * input: keyword string : keyword1 AND keyword2~2.5
      * output: fills up the helper
      */
-    void keywordParser(string* input);
+    void keywordParser(const string &input);
 
     /*
      * this function parsers only the parameters which are specific to Top-K
@@ -191,6 +191,16 @@ private:
 
     bool verifyMainQuery(const string &input);
 
+    void parseTerms(vector<string>& terms);
+    void parseTerm(string &term, boost::regex &fieldDelimeterRegex);
+    void populateFieldFilterUsingLp();
+    void populateFieldFilterUsingQueryFields(string &input);
+    void parseKeyword(string &input);
+    void checkForBoostNums(const string &input, boost::smatch &matches);
+    void extractNumbers(const string &input, boost::smatch &matches);
+    void checkForFuzzyNums(const string &input, boost::smatch &matches);
+    void populateRawKeywords(const string &input);
+    void populateTermBooleanOperators(const vector<string> &termOperators);
 };
 
 }
