@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
@@ -160,7 +160,7 @@ typedef enum
     TERM_TYPE_PREFIX ,
     TERM_TYPE_COMPLETE ,
     NOT_SPECIFIED
-} TermType;
+} TermType;  // TOASK: when do we use NOT_SPECIFIED?
 
 ///
 

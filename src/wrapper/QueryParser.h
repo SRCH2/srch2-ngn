@@ -194,7 +194,7 @@ private:
     void parseTerms(vector<string>& terms);
     void parseTerm(string &term, boost::regex &fieldDelimeterRegex);
     void populateFieldFilterUsingLp();
-    void populateFieldFilterUsingQueryFields(string &input);
+    void populateFieldFilterUsingQueryFields(const string &input);
     void parseKeyword(string &input);
     void checkForBoostNums(const string &input, boost::smatch &matches);
     void extractNumbers(const string &input, boost::smatch &matches);
