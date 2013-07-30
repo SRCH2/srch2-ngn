@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(
 
 set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
-    set(GPERFTOOL_LIBS "-lprofiler -lunwind")
+    set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
 EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}

@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(
 
 set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
-    set(GPERFTOOL_LIBS "-lprofiler -lunwind")
+    set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
 SET(UNIT_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${GPERFTOOL_LIBS})
@@ -66,10 +66,6 @@ LIST(APPEND UNIT_TESTS IndexSearcherInternal_Test)
 ADD_EXECUTABLE(Licensing_Test Licensing_Test.cpp)
 TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS Licensing_Test)
-	
-ADD_EXECUTABLE(Stemmer_Test Stemmer_Test.cpp)
-TARGET_LINK_LIBRARIES(Stemmer_Test ${UNIT_TEST_LIBS} )
-LIST(APPEND UNIT_TESTS Stemmer_Test)
 	
 ADD_EXECUTABLE(Normalizer_Test Normalizer_Test.cpp)
 TARGET_LINK_LIBRARIES(Normalizer_Test ${UNIT_TEST_LIBS} )
