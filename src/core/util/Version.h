@@ -1,5 +1,5 @@
-#ifndef _CORE_UTIL_VERSION_H_
-#define _CORE_UTIL_VERSION_H_
+#ifndef __CORE_UTIL_VERSION_H__
+#define __CORE_UTIL_VERSION_H__
 
 #define CURRENT_VERSION "3.1.0"
 
