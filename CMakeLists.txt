@@ -71,6 +71,7 @@ ELSE(BUILD_RELEASE)
     SET (CMAKE_BUILD_TYPE Debug)
     SET (DO_PROFILE OFF)
     SET (DO_COVERAGE OFF)
+    SET (DO_ASSERT ON)
 ENDIF(BUILD_RELEASE)
 
 # http://stackoverflow.com/questions/6578484/telling-gcc-directly-to-link-a-library-statically

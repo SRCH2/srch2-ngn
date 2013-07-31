@@ -2,6 +2,7 @@
 
 #include "URLParser.h"
 
+using namespace srch2::instantsearch;
 using srch2::instantsearch::Query;
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
@@ -40,33 +41,29 @@ const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
-URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper)
+URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
 {
     this->exactQuery = NULL;
     this->fuzzyQuery = NULL;
 
     //first check range query without keywords: (1)searchType=SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS;(2)keywords is null;(3)Attribute Latitude and Longitude are not "IGNORE"
-    if (indexDataContainerConf->getSearchType() == SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS)//check if the query is a range query but without information
-	{
+    if (indexDataContainerConf->getSearchType() == SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS){//check if the query is a range query but without information
+
 		 const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
-		 if (!keywordsParamName)//check if keywords information is empty
-		 {
-			 if(indexDataContainerConf->getAttributeLatitude()!="IGNORE"&&indexDataContainerConf->getAttributeLongitude()!="IGNORE")// if the Attribute Latitude and Longitude are not IGNORE, we say query contains the range
-			 {
+		 if (!keywordsParamName){//check if keyword information is empty
+			 if(indexDataContainerConf->getAttributeLatitude()!="IGNORE"&&indexDataContainerConf->getAttributeLongitude()!="IGNORE"){// if the Attribute Latitude and Longitude are not IGNORE, we say query contains the range
 				urlParserHelper.parserSuccess=true;
 				urlParserHelper.searchType = 2;
 				//set the position which the results starts from to retrieve
 				{
 					const char *resultsToRetrieveStartParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveStartParamName);
-					if (resultsToRetrieveStartParamName)
-					{
+					if (resultsToRetrieveStartParamName){
 						size_t sz;
 						char *resultsToRetrieveStartParamName_cstar = evhttp_uridecode(resultsToRetrieveStartParamName, 0, &sz);
 						urlParserHelper.offset = atoi(resultsToRetrieveStartParamName_cstar);
 						delete resultsToRetrieveStartParamName_cstar;
 					}
-					else//default set the valus is 0
-					{
+					else{//default value is 0
 						urlParserHelper.offset = 0;
 					}
 				}
@@ -74,21 +71,19 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 				//get the limited number of results to retrieval
 				{
 					const char *resultsToRetrieveLimitParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveLimitParamName);
-					if (resultsToRetrieveLimitParamName)
-					{
+					if (resultsToRetrieveLimitParamName){
 						size_t sz;
 						char *resultsToRetrieveLimitParamName_cstar = evhttp_uridecode(resultsToRetrieveLimitParamName, 0, &sz);
 						urlParserHelper.resultsToRetrieve = atoi(resultsToRetrieveLimitParamName_cstar);
 						delete resultsToRetrieveLimitParamName_cstar;
 					}
-					else
-					{
+					else{
 						urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve();
 					}
 				}
 				//use the exactQuery to construct the query for the range query without keywords
 				//for this query, only need to set the range of query
-				this->exactQuery = new Query(srch2is::MapQuery);
+				this->exactQuery = new Query(MapQuery);
 				//set the rectangle range
 				const char *paramIter_latLB = evhttp_find_header(&headers, URLParser::leftBottomLatitudeParamName);
 				const char *paramIter_lngLB = evhttp_find_header(&headers, URLParser::leftBottomLongitudeParamName);
@@ -101,8 +96,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
 				//check the parameters of rectangle are not null and set rectangle range
 				if ( paramIter_latLB && paramIter_lngLB
-					 && paramIter_latRT && paramIter_lngRT )
-				{
+					 && paramIter_latRT && paramIter_lngRT ){
 					size_t sz1;
 					char *paramIter_latLB_cstar = evhttp_uridecode(paramIter_latLB, 0, &sz1);
 					double range_min_x = atof(paramIter_latLB_cstar);
@@ -126,8 +120,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 					exactQuery->setRange(range_min_x, range_min_y, range_max_x, range_max_y);
 
 				}
-				else if (paramIter_latCT && paramIter_lngCT && paramIter_radius)//check the parameters of circle are not null and set the circle range
-				{
+				else if (paramIter_latCT && paramIter_lngCT && paramIter_radius){//check the parameters of circle are not null and set the circle range
 					size_t sz1;
 					char *paramIter_latCT_cstar = evhttp_uridecode(paramIter_latCT, 0, &sz1);
 					double x = atof(paramIter_latCT_cstar);
@@ -145,8 +138,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
 					exactQuery->setRange(x, y, r);
 				}
-				else
-				{
+				else{
 					urlParserHelper.parserSuccess=false;
 				}
 				return;
@@ -178,8 +170,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         urlParserHelper.searchType = indexDataContainerConf->getSearchType(); //TopK: 0; Advanced: 1
         string sep;
         sep += URLParser::queryDelimiter;
-        vector<string> queryKeywordsVector;
-        vector<string> termTypesVector;
+        vector<string> queryKeywordVector;
+        vector<TermType> termTypeVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
         float lengthBoost;
@@ -188,44 +180,38 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
         {
             const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
-            if (keywordsParamName)
-            {
+            if (keywordsParamName){
             	//cout << string(keywordsParamName)<<endl;
                 size_t sz;
                 char *keywordsParamName_cstar = evhttp_uridecode(keywordsParamName, 0, &sz);
 
-                if (indexDataContainerConf->getSupportAttributeBasedSearch())
-                {
+                if (indexDataContainerConf->getSupportAttributeBasedSearch()){
                 	// get searchable attribute to get map from attribute name to Id
-                    analyzer->tokenizeQueryWithFilter(keywordsParamName_cstar, queryKeywordsVector, URLParser::queryDelimiter,
+                    analyzer->tokenizeQueryWithFilter(keywordsParamName_cstar, queryKeywordVector, URLParser::queryDelimiter,
                             URLParser::filterDelimiter, URLParser::fieldsAndDelimiter, URLParser::fieldsOrDelimiter,
                             schema->getSearchableAttribute(), filters);
                 }
-                else
-                {
-                    analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordsVector);
-                    //check the last character is whitespace(which is transformed by "+")
-                    //and eg: "q=trus+", take "trus" as complete search
+                else{
+                    analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordVector);
+                    //check whether or not the last character is a whitespace (which is transformed from "+")
+                    //For example, for a query "q=trus+", we will take "trus" as a complete term.
                     string query=string(keywordsParamName_cstar);
 
-	            if(query.substr(query.length()-1, 1) == " ")
-	            {
-	            	queryKeywordsVector.push_back(" ");
-	            }
-                    filters.assign(queryKeywordsVector.size(), 1);
+                    if(query.substr(query.length()-1, 1) == " "){
+                    	queryKeywordVector.push_back(" ");
+                    }
+                    filters.assign(queryKeywordVector.size(), 1);
                 }
                 delete keywordsParamName_cstar;
             }
-            else
-            {
+            else{
             	urlParserHelper.parserSuccess = false;
             	urlParserHelper.parserErrorMessage << "{\"error\":\"Empty search query\"}";
             	return;
             }
 
             
-            if (queryKeywordsVector.size() == 0)
-            {
+            if (queryKeywordVector.size() == 0){
                 urlParserHelper.parserSuccess = false;
                 urlParserHelper.parserErrorMessage << "{\"error\":\"Query keywords are malformed\"}";
                 return;
@@ -237,70 +223,72 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         {
 
             const char *fuzzyQueryParamName = evhttp_find_header(&headers, URLParser::fuzzyQueryParamName);
-            if (fuzzyQueryParamName)
-            {
+            if (fuzzyQueryParamName){
                 size_t sz;
                 char *fuzzyQueryParamName_cstar = evhttp_uridecode(fuzzyQueryParamName, 0, &sz);
 
                 std::string fuzzyQueryParamName_str = string(fuzzyQueryParamName_cstar);
                 delete fuzzyQueryParamName_cstar;
 
-                if (fuzzyQueryParamName_str.compare("1") == 0)
-                {
+                if (fuzzyQueryParamName_str.compare("1") == 0){
                     urlParserHelper.isFuzzy = true;
                 }
-                else if(fuzzyQueryParamName_str.compare("0") == 0)
-                {
+                else if(fuzzyQueryParamName_str.compare("0") == 0){
                     urlParserHelper.isFuzzy = false;
                 }
-                else
-                {
+                else{
                     urlParserHelper.isFuzzy = indexDataContainerConf->getIsFuzzyTermsQuery();
                 }
 
             }
-            else
-            {
+            else{
                 urlParserHelper.isFuzzy = indexDataContainerConf->getIsFuzzyTermsQuery();
             }
         }
 
 
 
-        unsigned numberOfKeywords = queryKeywordsVector.size();
+        unsigned numberOfKeywords = queryKeywordVector.size();
 
         {
             const char *termTypesParamName = evhttp_find_header(&headers, URLParser::termTypesParamName);
-            if (termTypesParamName)
-            {
+            if (termTypesParamName){
                 size_t sz;
                 char *termTypesParamName_cstar = evhttp_uridecode(termTypesParamName, 0, &sz);
 
                 std::string termTypesParamName_str = string(termTypesParamName_cstar);
                 delete termTypesParamName_cstar;
 
-                //use delimiter to decode options for every keyword
-                boost::split(termTypesVector, termTypesParamName_str, boost::is_any_of(sep));
-                if(termTypesVector.size() != numberOfKeywords){
+                for (unsigned idx=0; idx<termTypesParamName_str.size(); idx++){
+					if (termTypesParamName_str[idx] == '0'){
+						termTypeVector.push_back(TERM_TYPE_PREFIX);
+					}
+					else if (termTypesParamName_str[idx] == '1')
+						termTypeVector.push_back(TERM_TYPE_COMPLETE);
+				}
+
+                if (termTypeVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of TermTypes doesn't match the number of keywords\"}";
                     return;
                 }
 
+
             }
-            else
-            {
-                if (numberOfKeywords >= 1)
-                {
-                    for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++)
-                    {
-                        termTypesVector.push_back("1");
+            else{
+                if (numberOfKeywords >= 1){
+                    for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++){
+                        termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
-                    if(queryKeywordsVector[numberOfKeywords - 1] != " ")
-                    	termTypesVector.push_back("0");
-                    else
-                    {
-                    	queryKeywordsVector.pop_back();
+                    if(queryKeywordVector[numberOfKeywords - 1] != " "){
+                    	if (!indexDataContainerConf->getQueryTermType())
+                    		//The QueryTermType in the configure file decided the type of the last keyword only.
+                    		termTypeVector.push_back(TERM_TYPE_PREFIX);
+                    	else
+                    		termTypeVector.push_back(TERM_TYPE_COMPLETE);
+                    }
+                    else{
+                    	queryKeywordVector.pop_back();
                     	numberOfKeywords = numberOfKeywords - 1;
                     }
 
@@ -312,8 +300,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
         {
             const char *termBoostsParamName = evhttp_find_header(&headers, URLParser::termBoostsParamName);
-            if (termBoostsParamName)
-            {
+            if (termBoostsParamName){
                 size_t sz;
                 char *termBoostsParamName_cstar = evhttp_uridecode(termBoostsParamName, 0, &sz);
 
@@ -321,15 +308,13 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 delete termBoostsParamName_cstar;
 
                 boost::split(termBoostsVector, termBoostsParamName_str, boost::is_any_of(sep));
-                if(termBoostsVector.size() != numberOfKeywords)
-                {
+                if (termBoostsVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of termBoosts doesn't match the number of keywords\"}";
                     return;
                 }
             }
-            else
-            {
+            else{
                 //Raise error; //needed? ax
             }
         }
@@ -338,8 +323,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
         {
             const char *lengthBoostParamName = evhttp_find_header(&headers, URLParser::lengthBoostParamName);
-            if (lengthBoostParamName)
-            {
+            if (lengthBoostParamName){
                 size_t sz;
                 char *lengthBoostParamName_cstar = evhttp_uridecode(lengthBoostParamName, 0, &sz);
 
@@ -348,8 +332,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 delete lengthBoostParamName_cstar;
 
             }
-            else
-            {
+            else{
                 lengthBoost = indexDataContainerConf->getQueryTermLengthBoost();
             }
         }
@@ -358,8 +341,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
         {
             const char *similarityBoostsParamName = evhttp_find_header(&headers, URLParser::similarityBoostsParamName);
-            if (similarityBoostsParamName)
-            {
+            if (similarityBoostsParamName){
                 size_t sz;
                 char *similarityBoostsParamName_cstar = evhttp_uridecode(similarityBoostsParamName, 0, &sz);
                 string similarityBoostsParamName_str = string(similarityBoostsParamName_cstar);
@@ -367,8 +349,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 delete similarityBoostsParamName_cstar;
 
                 boost::split(similarityBoostsVector, similarityBoostsParamName_str, boost::is_any_of(sep));
-                if(similarityBoostsVector.size() != numberOfKeywords)
-                {
+                if (similarityBoostsVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"The number of similarityBoosts doesn't match the number of keywords\"}";
                     return;
@@ -383,47 +364,41 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         urlParserHelper.offset = 0; //default
         urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve(); //atoi(values[5].c_str());
         int sortAttribute = indexDataContainerConf->getAttributeToSort(); //atoi(values[6].c_str());
-        srch2is::SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? srch2is::Ascending : srch2is::Descending; //(atoi(values[7].c_str()) == 0) ? srch2is::Ascending : srch2is::Descending;
+        SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? Ascending : Descending; //(atoi(values[7].c_str()) == 0) ? Ascending : Descending;
 
         {
             const char *searchTypeParamName = evhttp_find_header(&headers, URLParser::searchTypeParamName);
-            if (searchTypeParamName)
-            {
+            if (searchTypeParamName){
                 size_t sz;
                 char *searchTypeParamName_cstar = evhttp_uridecode(searchTypeParamName, 0, &sz);
                 string searchTypeParamName_str = string(searchTypeParamName_cstar);
 
                 delete searchTypeParamName_cstar;
 
-                if(searchTypeParamName_str.compare("0") != 0 && searchTypeParamName_str.compare("1") != 0 && searchTypeParamName_str.compare("2") != 0)
-                {
+                if (searchTypeParamName_str.compare("0") != 0 && searchTypeParamName_str.compare("1") != 0 && searchTypeParamName_str.compare("2") != 0){
                     urlParserHelper.searchType = indexDataContainerConf->getSearchType();
                 }
-                else
-                {
+                else{
                     urlParserHelper.searchType = atoi(searchTypeParamName_str.c_str());
 
                     if (indexDataContainerConf->getSortableAttributesName()->size()==0 && urlParserHelper.searchType==1)
                         urlParserHelper.searchType = 0;
                 }
             }
-            else
-            {
+            else{
                 urlParserHelper.searchType = indexDataContainerConf->getSearchType();
             }
 
             {
                 const char *resultsToRetrieveStartParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveStartParamName);
-                if (resultsToRetrieveStartParamName)
-                {
+                if (resultsToRetrieveStartParamName){
                     size_t sz;
                     char *resultsToRetrieveStartParamName_cstar = evhttp_uridecode(resultsToRetrieveStartParamName, 0, &sz);
                     urlParserHelper.offset = atoi(resultsToRetrieveStartParamName_cstar);
 
                     delete resultsToRetrieveStartParamName_cstar;
                 }
-                else
-                {
+                else{
                     urlParserHelper.offset = 0;
                 }
             }
@@ -431,38 +406,34 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
             {
                 const char *resultsToRetrieveLimitParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveLimitParamName);
-                if (resultsToRetrieveLimitParamName)
-                {
+                if (resultsToRetrieveLimitParamName){
                     size_t sz;
                     char *resultsToRetrieveLimitParamName_cstar = evhttp_uridecode(resultsToRetrieveLimitParamName, 0, &sz);
                     urlParserHelper.resultsToRetrieve = atoi(resultsToRetrieveLimitParamName_cstar);
 
                     delete resultsToRetrieveLimitParamName_cstar;
                 }
-                else
-                {
+                else{
                     urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve();
                 }
             }
         }
 
-        if (indexDataContainerConf->getSearchType() == 2)
-        {
+        if (indexDataContainerConf->getSearchType() == 2){
             urlParserHelper.searchType = 2;
         }
 
         switch (urlParserHelper.searchType)
         {
             case 0:
-                this->exactQuery = new Query(srch2is::TopKQuery);
-                this->fuzzyQuery = new Query(srch2is::TopKQuery);
+                this->exactQuery = new Query(TopKQuery);
+                this->fuzzyQuery = new Query(TopKQuery);
                 break;
 
             case 1:
                 {
                     const char *attributeToSortParamName = evhttp_find_header(&headers, URLParser::attributeToSortParamName);
-                    if (attributeToSortParamName)
-                    {
+                    if (attributeToSortParamName){
                         size_t sz;
                         char *attributeToSortParamName_cstar = evhttp_uridecode(attributeToSortParamName, 0, &sz);
                         sortAttribute = atoi(attributeToSortParamName_cstar);
@@ -472,32 +443,29 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
                         delete attributeToSortParamName_cstar;
                     }
-                    else
-                    {
+                    else{
                         sortAttribute = indexDataContainerConf->getAttributeToSort();
                     }
                 }
 
                 {
                     const char *orderParamName = evhttp_find_header(&headers, URLParser::orderParamName);
-                    if (orderParamName)
-                    {
+                    if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
                         delete orderParamName_cstar;
                     }
-                    else
-                    {
-                        order = (indexDataContainerConf->getOrdering() == 0) ? srch2is::Ascending : srch2is::Descending;
+                    else{
+                        order = (indexDataContainerConf->getOrdering() == 0) ? Ascending : Descending;
                     }
                 }
 
                 urlParserHelper.sortby = sortAttribute;
                 urlParserHelper.order = order;
 
-                this->exactQuery = new Query(srch2is::GetAllResultsQuery);
-                this->fuzzyQuery = new Query(srch2is::GetAllResultsQuery);
+                this->exactQuery = new Query(GetAllResultsQuery);
+                this->fuzzyQuery = new Query(GetAllResultsQuery);
 
                 this->exactQuery->setSortableAttribute(sortAttribute, order);
                 this->fuzzyQuery->setSortableAttribute(sortAttribute, order);
@@ -505,16 +473,15 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 break;
 
             case 2:
-                this->exactQuery = new Query(srch2is::MapQuery);
-                this->fuzzyQuery = new Query(srch2is::MapQuery);
+                this->exactQuery = new Query(MapQuery);
+                this->fuzzyQuery = new Query(MapQuery);
 
                 {
                     const char *orderParamName = evhttp_find_header(&headers, URLParser::orderParamName);
-                    if (orderParamName)
-                    {
+                    if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? srch2is::Ascending : srch2is::Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
                         delete orderParamName_cstar;
                     }
 
@@ -528,8 +495,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                     const char *paramIter_radius= evhttp_find_header(&headers, URLParser::radiusParamName);
 
                     if ( paramIter_latLB && paramIter_lngLB
-                            && paramIter_latRT && paramIter_lngRT )
-                    {
+                            && paramIter_latRT && paramIter_lngRT ){
                         size_t sz1;
                         char *paramIter_latLB_cstar = evhttp_uridecode(paramIter_latLB, 0, &sz1);
                         double range_min_x = atof(paramIter_latLB_cstar);
@@ -553,8 +519,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                         exactQuery->setRange(range_min_x, range_min_y, range_max_x, range_max_y);
                         fuzzyQuery->setRange(range_min_x, range_min_y, range_max_x, range_max_y);
                     }
-                    else if (paramIter_latCT && paramIter_lngCT && paramIter_radius)
-                    {
+                    else if (paramIter_latCT && paramIter_lngCT && paramIter_radius){
                         size_t sz1;
                         char *paramIter_latCT_cstar = evhttp_uridecode(paramIter_latCT, 0, &sz1);
                         double x = atof(paramIter_latCT_cstar);
@@ -573,8 +538,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                         exactQuery->setRange(x, y, r);
                         fuzzyQuery->setRange(x, y, r);
                     }
-                    else
-                    {
+                    else{
                         urlParserHelper.parserSuccess = false;
                         urlParserHelper.parserErrorMessage << "{\"error\":\"latlong for mapquery is invalid.\"}";
                         return;
@@ -602,22 +566,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
         fuzzyQuery->setPrefixMatchPenalty(indexDataContainerConf->getPrefixMatchPenalty());
 
         //for each keyword, build the exact terms
-        for (unsigned i = 0; i < numberOfKeywords; ++i)
-        {
-            srch2is::TermType termType;
-            if (indexDataContainerConf->getQueryTermType())
-            {
-            	termType = srch2is::TERM_TYPE_COMPLETE;
-            }
-            else
-            {
-            	termType = atoi(termTypesVector[i].c_str()) == 0 ? srch2is::TERM_TYPE_PREFIX : srch2is::TERM_TYPE_COMPLETE;
-            }
+
+        for (unsigned i = 0; i < numberOfKeywords; ++i){
+            TermType termType = termTypeVector[i];
+
             unsigned termBoost;
             if (termBoostsVectorValid){
                 termBoost = atoi(termBoostsVector[i].c_str());
-                if(termBoost == 0 && termBoostsVector[i].compare("0") != 0)
-                {
+                if (termBoost == 0 && termBoostsVector[i].compare("0") != 0){
                     urlParserHelper.parserSuccess = false;
                     urlParserHelper.parserErrorMessage << "{\"error\":\"Invalid value for termBoost option\"}";
                     return;
@@ -639,21 +595,21 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 similarityBoost = indexDataContainerConf->getQueryTermSimilarityBoost();
             }
 
-            srch2is::Term *exactTerm;
-            srch2is::Term *fuzzyTerm;
-            if(urlParserHelper.isFuzzy)
-            {
-            	exactTerm = new srch2is::Term(queryKeywordsVector[i],
+            Term *exactTerm;
+            Term *fuzzyTerm;
+
+            if(urlParserHelper.isFuzzy){
+            	exactTerm = new Term(queryKeywordVector[i],
             			termType,
             			termBoost,
             			similarityBoost,
             			0);
 
-                fuzzyTerm = new srch2is::Term(queryKeywordsVector[i],
+                fuzzyTerm = new Term(queryKeywordVector[i],
                 		termType,
                 		termBoost,
                 		similarityBoost,
-                		srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordsVector[i])));
+                		Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -662,7 +618,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
                 this->fuzzyQuery->add(fuzzyTerm);
 
             }else{
-                exactTerm = new srch2is::Term(queryKeywordsVector[i],
+                exactTerm = new Term(queryKeywordVector[i],
                 		termType,
                 		termBoost,
                 		similarityBoost,
@@ -679,13 +635,11 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Anal
 
 URLToDoubleQuery::~URLToDoubleQuery()
 {
-    if(this->exactQuery != NULL)
-    {
+    if(this->exactQuery != NULL){
         delete this->exactQuery;
     }
 
-    if(this->fuzzyQuery != NULL)
-    {
+    if(this->fuzzyQuery != NULL){
         delete this->fuzzyQuery;
     }
 

@@ -222,7 +222,7 @@ void cb_bminfo(evhttp_request *req, void *arg) {
 
     string versioninfo = getCurrentVersion();
 
-	HTTPResponse::infoCommand(req, server, versioninfo);
+    HTTPResponse::infoCommand(req, server, versioninfo);
 }
 
 /**
