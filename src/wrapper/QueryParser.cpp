@@ -414,6 +414,13 @@ void QueryParser::facetParser() {
         //parse other facet related parameters if this is true
         if(boost::iequals("true",facet)){
             // facet param is true
+            FacetQueryContainer *fqc = new FacetQueryContainer();
+            // parse other facet fields
+        }else if(boost::iequals("false",facet)){
+            // facet is off. no need to parse any facet params
+        }else{
+            // unkonown value. raise warning and set facet to false
+
         }
     }
 }
