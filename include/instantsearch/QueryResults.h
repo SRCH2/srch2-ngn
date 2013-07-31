@@ -159,6 +159,10 @@ public:
 
     const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
 
+    void copyForPostProcessing(QueryResults * destination) const ;
+
+    void clear();
+
     //TODO: These three functions for internal debugging. remove from the header
     void printStats() const ;
 
@@ -170,7 +174,6 @@ public:
      * Destructor of the QueryResults object.
      */
     ~QueryResults();
-
 
 
 

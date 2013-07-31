@@ -620,6 +620,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req, Srch2Server *server)
     //5. now execute the plan
     srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
     QueryExecutor qe(plan,resultsFactory , server);
+    // in here just allocate an empty QueryResults object, it will be initialized in execute.
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 

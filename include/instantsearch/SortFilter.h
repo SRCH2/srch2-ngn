@@ -42,7 +42,7 @@ class SortEvaluator
 public:
 	virtual int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
-	virtual ~SortEvaluator();
+	virtual ~SortEvaluator(){};
 	SortOrder order;
 };
 

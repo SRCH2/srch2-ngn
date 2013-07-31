@@ -40,7 +40,7 @@ public:
 	int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const{
 
 		for(std::vector<std::string>::const_iterator f = field.begin() ; f != field.end() ; ++f){
-			if(compare(left.at(*f) , right.at(*f)) != 0){
+			if(compare(left.at(*f) , right.at(*f)) != 0){ // if left and right are equal on this attribute go to the next
 				return compare(left.at(*f) , right.at(*f));
 			}
 		}
@@ -62,7 +62,7 @@ private:
 
 	int compare(const Score & left , const Score & right) const{
 		if(left == right ) return 0;
-		if(order == srch2::instantsearch::Ascending){
+		if(order == srch2::instantsearch::Ascending){ // TODO should be checked in test to see if this function is returning proper result
 			if(left < right) return 1;
 			else return -1;
 		}else{

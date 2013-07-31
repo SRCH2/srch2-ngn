@@ -67,9 +67,9 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan){
 
 	// NOTE: FacetedSearchFilter should be always the last filter.
 	// this function goes through the summary and uses the members of parsedInfo to fill out the query objects and
-	// also create and set the plan
+	// also creates and sets the plan
 
-	// 1. create the plan
+	// 1. allocate the post processing plan, it will be freed when the QueryPlan object is destroyed.
 	plan->setPostProcessingPlan(new ResultsPostProcessorPlan());
 	// 2. If there is a filter query, allocate the filter and add it to the plan
 	if (paramsContainer.hasParameterInSummary(FilterQueryEvaluatorFlag) ){ // there is a filter query
@@ -121,10 +121,6 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan){
 		}
 	}
 
-
-
-
-
 }
 
 void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan){
@@ -138,21 +134,9 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan){
 		plan->setSearchType(GetAllResultsSearchType);
 	} else if ( paramsContainer.hasParameterInSummary(GeoSearchType)) { // GEO
 		plan->setSearchType(GeoSearchType);
-	} else { // get it from config file
-		switch (indexDataContainerConf->getSearchType()) {
-		case 0:
-			plan->setSearchType(TopKSearchType);
-			break;
-		case 1:
-			plan->setSearchType(GetAllResultsSearchType);
-			break;
-		case 2:
-			plan->setSearchType(GeoSearchType);
-			break;
-		}
-	}
+	}// else : there is no else because validator makes sure type is set in parser
 
-	// 2. see if it is a fuzzy search or exact search, if there is no keyword then fuzzy is always false
+	// 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search) then fuzzy is always false
 	if ( paramsContainer.hasParameterInSummary(IsFuzzyFlag) ){
 		plan->setIsFuzzy(paramsContainer.isFuzzy && (paramsContainer.rawQueryKeywords.size() != 0));
 	} else { // get it from configuration file
@@ -165,7 +149,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan){
 	if ( paramsContainer.hasParameterInSummary(ResultsStartOffset) ){
 		plan->setOffset(paramsContainer.resultsStartOffset);
 	} else { // get it from configuration file
-		plan->setOffset(0);
+		plan->setOffset(0); // default is zero
 	}
 
 	// 4. set the number of results to retrieve
@@ -209,24 +193,32 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 	// length boost
 	if ( paramsContainer.hasParameterInSummary(LengthBoostFlag)){
 		plan->getExactQuery()->setLengthBoost(paramsContainer.lengthBoost);
-		plan->getFuzzyQuery()->setLengthBoost(paramsContainer.lengthBoost);
+		if(plan->isIsFuzzy()){
+			plan->getFuzzyQuery()->setLengthBoost(paramsContainer.lengthBoost);
+		}
 	} else { // get it from configuration file
 		plan->getExactQuery()->setLengthBoost(indexDataContainerConf->getQueryTermLengthBoost());
-		plan->getFuzzyQuery()->setLengthBoost(indexDataContainerConf->getQueryTermLengthBoost());
+		if(plan->isIsFuzzy()){
+			plan->getFuzzyQuery()->setLengthBoost(indexDataContainerConf->getQueryTermLengthBoost());
+		}
 	}
 
 	// prefix match penalty flag
 
 	if ( paramsContainer.hasParameterInSummary(PrefixMatchPenaltyFlag)){
 		plan->getExactQuery()->setPrefixMatchPenalty(paramsContainer.prefixMatchPenalty);
-		plan->getFuzzyQuery()->setPrefixMatchPenalty(paramsContainer.prefixMatchPenalty);
+		if(plan->isIsFuzzy()){
+			plan->getFuzzyQuery()->setPrefixMatchPenalty(paramsContainer.prefixMatchPenalty);
+		}
 	} else { // get it from configuration file
 		plan->getExactQuery()->setPrefixMatchPenalty(indexDataContainerConf->getPrefixMatchPenalty());
-		plan->getFuzzyQuery()->setPrefixMatchPenalty(indexDataContainerConf->getPrefixMatchPenalty());
+		if(plan->isIsFuzzy()){
+			plan->getFuzzyQuery()->setPrefixMatchPenalty(indexDataContainerConf->getPrefixMatchPenalty());
+		}
 	}
 
 	// get query keywords
-	std::vector<std::string> rawQueryKeywords = paramsContainer.rawQueryKeywords;
+	const std::vector<std::string> & rawQueryKeywords = paramsContainer.rawQueryKeywords;
 
 
 	vector<float> keywordFuzzyLevel;
@@ -255,8 +247,9 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 		keywordPrefixComplete = paramsContainer.keywordPrefixComplete;
 	} else { // get it from configuration file
 		for(unsigned i=0;i<rawQueryKeywords.size() ; i++){
-			keywordPrefixComplete.push_back(indexDataContainerConf->getQueryTermType()? srch2is::TERM_TYPE_PREFIX : srch2is::TERM_TYPE_COMPLETE);
-			// TODO: Make sure true means PREFIX and false means COMPLETE
+			keywordPrefixComplete.push_back(
+					indexDataContainerConf->getQueryTermType()? srch2is::TERM_TYPE_COMPLETE : srch2is::TERM_TYPE_PREFIX);
+			// true means COMPLETE
 		}
 	}
 
@@ -266,13 +259,12 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 		fieldFilter = paramsContainer.fieldFilterNumbers;
 	} else { // get it from configuration file
 		for(unsigned i=0;i<rawQueryKeywords.size() ; i++){
-			fieldFilter.push_back(1); // TODO : make sure setting it to 1 is correct
+			fieldFilter.push_back(1); // 1 means all attributes with OR operator
 		}
 	}
 
 
 	// 3. Fill up query objects
-	srch2is::Term *fuzzyTerm;
 	// exact query
 	for(int i=0;i<rawQueryKeywords.size();i++){
 		srch2is::Term *exactTerm;
@@ -304,7 +296,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * pla
 }
 
 void QueryPlanGen::createExactAndFuzzyQueriesForTopK(QueryPlan * plan){
-	// 2. allocate the objects
+	// allocate the objects
 	plan->setExactQuery(new Query(srch2is::TopKQuery));
 	if(plan->isIsFuzzy()){
 		plan->setFuzzyQuery(new Query(srch2is::TopKQuery));
@@ -315,6 +307,11 @@ void QueryPlanGen::createExactAndFuzzyQueriesForGetAllTResults(QueryPlan * plan)
 	plan->setExactQuery(new Query(srch2is::GetAllResultsQuery));
 	srch2is::SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? srch2is::Ascending : srch2is::Descending;
 	plan->getExactQuery()->setSortableAttribute(indexDataContainerConf->getAttributeToSort() , order);
+	// TODO : sortableAttribute and order must be removed from here, all sort jobs must be transfered to
+	//        to sort filter, now, when it's GetAllResults, it fisrt finds the results based on an the order given here
+	//        and then also applies the sort filter. When this is removed, core also must be changed to not need this
+	//        sortable attribute anymore.
+
 	if(plan->isIsFuzzy()){
 		plan->setFuzzyQuery(new Query(srch2is::GetAllResultsQuery));
 		plan->getFuzzyQuery()->setSortableAttribute(indexDataContainerConf->getAttributeToSort() , order);

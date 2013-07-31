@@ -65,12 +65,17 @@ private:
 	// creates a post processing plan based on information from Query
 	void createPostProcessingPlan(QueryPlan * plan);
 
+	// top level structure of creating exact and fuzzy query objects
 	void createExactAndFuzzyQueries(QueryPlan * plan);
 
+	// fills the query objects with information which is not related to search type
 	void fillExactAndFuzzyQueriesWithCommonInformation(QueryPlan * plan );
-	void createExactAndFuzzyQueriesForTopK(QueryPlan * plan);
-	void createExactAndFuzzyQueriesForGetAllTResults(QueryPlan * plan);
 
+	// creates query objects based for TopK search type
+	void createExactAndFuzzyQueriesForTopK(QueryPlan * plan);
+	// creates query objects for GetAllResults search type
+	void createExactAndFuzzyQueriesForGetAllTResults(QueryPlan * plan);
+	// creates query objects for Geo search type and sets lat/long values
 	void createExactAndFuzzyQueriesForGeo(QueryPlan * plan);
 
 

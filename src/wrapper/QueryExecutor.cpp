@@ -61,7 +61,7 @@ void QueryExecutor::execute(QueryResults * finalResults){
     }
     break;
     default:
-    	// TODO
+    	// TODO some debug operation like ASSERT(false) : becauee flow should never reach here
     	break;
     };
 
@@ -246,35 +246,30 @@ void QueryExecutor::executePostProcessingPlan(Query * query,QueryResults * input
 
 
 		// run a plan by iterating on filters and running
+		ResultsPostProcessorPlan * plan = this->queryPlan.getPostProcessingPlan();
+		plan->beginIteration();
 
 		// short circuit in case the plan doesn't have any filters in it.
-		ResultsPostProcessorPlan * plan = this->queryPlan.getPostProcessingPlan();
-
-
-
-
-		// if no plan is set in Query, there is no post processing, just mirror the results
-		if(plan == NULL){
-			input->impl->copyForPostProcessing(output->impl);
+		// if no plan is set in Query or there is no filter in it,
+		// then there is no post processing so just mirror the results
+		if(plan == NULL || ! plan->hasMoreFilters()){
+			input->copyForPostProcessing(output);
 			return;
 		}
 
 		// iterating on filters and applying them on list of results
-		QueryResults * inputOperand = input;
-		plan->beginIteration();
 		while(plan->hasMoreFilters()){
 			ResultsPostProcessorFilter * filter = plan->nextFilter();
 
-			QueryResults outputOperand(this->queryResultFactory,indexSearcherInternal,query);
-			filter->doFilter(indexSearcher, query, inputOperand, &outputOperand);
-
-			if(!plan->hasMoreFilters()){ // TODO : after adding pointer logic reimplement this logic
-				// copy new results to the output
-				outputOperand.impl->copyForPostProcessing(output->impl);
-			}else{
-				// pass the input to the next filter
-				inputOperand = &outputOperand;
+			// clear the output to be ready to accept the result of the filter
+			output->clear();
+			// apply the filter on the input and put the results in output
+			filter->doFilter(indexSearcher, query, input, output);
+			// if there is going to be other filters, chain the output to the input
+			if(plan->hasMoreFilters()){
+				output->copyForPostProcessing(input);
 			}
+
 		}
 		plan->closeIteration();
 

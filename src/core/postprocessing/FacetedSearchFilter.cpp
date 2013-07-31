@@ -31,15 +31,20 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
 
+	// first prepare internal structures based on the input
+	this->impl->prepareFacetInputs(indexSearcher);
 
 
-	// first copy all input results to output
-	input->impl->copyForPostProcessing(output->impl);
+	// also copy all input results to output to save previous filter works
+	input->copyForPostProcessing(output);
 
 	// initialize results of each attribute
 	for(std::map<std::string , std::vector<Score> >::iterator iter = impl->lowerBoundsOfCategories.begin();
 			iter != impl->lowerBoundsOfCategories.end(); ++iter){
 
+		// inserts the same number of zero scores as the number of lowerbounds
+		// in the vector (each one as the initial value of a category)
+		// NOTE: if it's a Simple facet field no category will be initialized
 		std::vector<std::pair< std::string, float > > zeroCounts;
 		for(vector<Score>::iterator lb = iter->second.begin() ; lb != iter->second.end() ; ++lb){
 			zeroCounts.push_back(make_pair(lb->toString() , 0));
@@ -98,7 +103,6 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,  const Query * 
 
 
 		}
-		//			std::cout << "===================  Result processed. ==================" <<std::endl;
 
 	}
 
@@ -115,8 +119,6 @@ void FacetedSearchFilter::initialize(std::vector<FacetType> types,
 	this->impl->rangeStarts = rangeStarts;
 	this->impl->rangeEnds = rangeEnds;
 	this->impl->rangeGaps = rangeGaps;
-
-
 
 }
 

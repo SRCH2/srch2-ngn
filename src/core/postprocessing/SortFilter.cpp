@@ -86,7 +86,7 @@ public:
 			attributeIds.push_back(id);
 			attributeIdsToSort.push_back(id);
 		}
-		// sort because container expects the input ids to be ascending
+		// sort because container expects the input ids to be ascending and user might enter them in another order
 		sort(attributeIdsToSort.begin() , attributeIdsToSort.end());
 
 		// now get the values from the container
@@ -134,7 +134,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
 	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
 	// first copy all input results to output
-	input->impl->copyForPostProcessing(output->impl);
+	input->copyForPostProcessing(output);
 
 	// now sort the results based on the comparator
 	std::sort(output->impl->sortedFinalResults.begin(), output->impl->sortedFinalResults.end() ,

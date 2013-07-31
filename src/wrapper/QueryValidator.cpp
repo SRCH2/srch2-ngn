@@ -48,21 +48,6 @@ QueryValidator::QueryValidator(const Schema & schema ,
 bool QueryValidator::validate(){
 
 
-	// validate filter query
-	if(! validateExistanceOfAttributesInFieldList()){
-		return false;
-	}
-
-	// validate sort filter
-	if(! validateExistanceOfAttributesInSortFiler()){
-		return false;
-	}
-
-
-	// validate facet filter
-	if(! validateExistanceOfAttributesInFacetFiler()){
-		return false;
-	}
 
 	// validation case : Only one of the search types should exist in summary
 	int tmp = 0;
@@ -81,6 +66,7 @@ bool QueryValidator::validate(){
 		return false;
 	}
 
+
 	// validation case: if search type is TopK or GetAllResults query keywords should not be empty
 	if(paramContainer->hasParameterInSummary(TopKSearchType)  ||
 			paramContainer->hasParameterInSummary(GetAllResultsSearchType)){ // search type is either TopK or GetAllResults
@@ -97,11 +83,9 @@ bool QueryValidator::validate(){
 		if(! (paramContainer->geoParameterContainer->hasParameterInSummary(GeoTypeRectangular)) // no rectangular values
 				&&
 				! (paramContainer->geoParameterContainer->hasParameterInSummary(GeoTypeCircular))){ // no circular values
-			if (paramContainer->rawQueryKeywords.size() == 0){
-				paramContainer->messages.push_back(std::make_pair(MessageError,
-						"No latitude longitude provided for geo search." ));
-				return false;
-			}
+			paramContainer->messages.push_back(std::make_pair(MessageError,
+					"No latitude longitude provided for geo search." ));
+			return false;
 		}
 	}
 
@@ -123,6 +107,26 @@ bool QueryValidator::validate(){
 			return false;
 		}
 	}
+
+	// validate filter query
+	if(! validateExistanceOfAttributesInFieldList()){
+		return false;
+	}
+
+	// validate sort filter
+	if(! validateExistanceOfAttributesInSortFiler()){
+		return false;
+	}
+
+
+	// validate facet filter
+	if(! validateExistanceOfAttributesInFacetFiler()){
+		return false;
+	}
+
+
+
+
 
 	return true;
 }
@@ -163,38 +167,46 @@ bool QueryValidator::validateExistanceOfAttributesInSortFiler(){
 		}
 	}
 
-	// now if we have sort filter validate the fields
-	if(sortQueryContainer != NULL){ // we have sort filter
-		bool sortFilterShouldBeRemoved = false;
-		for(std::vector<std::string>::iterator field = sortQueryContainer->evaluator->field.begin() ;
-					field != sortQueryContainer->evaluator->field.end() ; ++field){
-			if(schema.getNonSearchableAttributeId(*field) == -1){ // field does not exist
-				// Warning : Sort will be canceled.
-				paramContainer->messages.push_back(std::make_pair(MessageWarning,
-						"Field " + *field + " is not a searchable field. No sort will be performed. " ));
 
-				sortFilterShouldBeRemoved = true;
-				break;
-			}
-		}
-		if(sortFilterShouldBeRemoved){
-			if(paramContainer->hasParameterInSummary(GetAllResultsSearchType)){ // get all results search
+	if(sortQueryContainer == NULL){ // no sort filter to validate
+		return true;
+	}
 
-				paramContainer->getAllResultsParameterContainer->summary.erase(
-						remove(paramContainer->getAllResultsParameterContainer->summary.begin(),
-								paramContainer->getAllResultsParameterContainer->summary.end(), SortQueryHandler) ,
-								paramContainer->getAllResultsParameterContainer->summary.end());
-				// FIXME : should we delete sort container here ?
-			}else if(paramContainer->hasParameterInSummary(GeoSearchType) ){
 
-				paramContainer->geoParameterContainer->summary.erase(
-						remove(paramContainer->geoParameterContainer->summary.begin(),
-								paramContainer->geoParameterContainer->summary.end(), SortQueryHandler) ,
-								paramContainer->geoParameterContainer->summary.end());
-			}
 
+	// now validate the fields , if one field is not found in attributes sort will be canceled.
+
+	bool sortFilterShouldBeRemoved = false;
+	for(std::vector<std::string>::iterator field = sortQueryContainer->evaluator->field.begin() ;
+				field != sortQueryContainer->evaluator->field.end() ; ++field){
+		if(schema.getNonSearchableAttributeId(*field) == -1){ // field does not exist
+			// Warning : Sort will be canceled.
+			paramContainer->messages.push_back(std::make_pair(MessageWarning,
+					"Field " + *field + " is not a searchable field. No sort will be performed. " ));
+
+			sortFilterShouldBeRemoved = true;
+			break;
 		}
 	}
+	if(sortFilterShouldBeRemoved){
+		if(paramContainer->hasParameterInSummary(GetAllResultsSearchType)){ // get all results search
+
+			paramContainer->getAllResultsParameterContainer->summary.erase(
+					remove(paramContainer->getAllResultsParameterContainer->summary.begin(),
+							paramContainer->getAllResultsParameterContainer->summary.end(), SortQueryHandler) ,
+							paramContainer->getAllResultsParameterContainer->summary.end());
+		}else if(paramContainer->hasParameterInSummary(GeoSearchType) ){
+
+			paramContainer->geoParameterContainer->summary.erase(
+					remove(paramContainer->geoParameterContainer->summary.begin(),
+							paramContainer->geoParameterContainer->summary.end(), SortQueryHandler) ,
+							paramContainer->geoParameterContainer->summary.end());
+		}
+		// container and its validator must be freed here
+		delete sortQueryContainer->evaluator;
+		delete sortQueryContainer;
+	}
+
 
 	return true;
 
@@ -216,81 +228,108 @@ bool QueryValidator::validateExistanceOfAttributesInFacetFiler(){
 		}
 	}
 
-	if(facetQueryContainer != NULL){ // there is a facet filter request
-		int index = 0;
-		vector<int> indexesToErase;
-		for(std::vector<std::string>::iterator field = facetQueryContainer->fields.begin();
-				field != facetQueryContainer->fields.end() ; ++field){
+	if(facetQueryContainer == NULL){ // there is no facet query to validate
 
-			//1. Validate the existence of attribites
-			if(schema.getNonSearchableAttributeId(*field) == -1){ // field does not exist
-				// Warning : Facet will be canceled for this field.
-				paramContainer->messages.push_back(std::make_pair(MessageWarning,
-						"Field " + *field + " is not a proper field. No facet will be calculated on this field. " ));
-
-				indexesToErase.push_back(index);
-				continue;// no need to do anymore validation for this field because it'll be removed from facets.
-			}
-
-			//2. Range facets should be of type unsigned or float or date
-			FilterType type =  schema.getTypeOfNonSearchableAttribute(schema.getNonSearchableAttributeId(*field));
-
-			if( !(type == srch2is::UNSIGNED || type == srch2is::FLOAT || type == srch2is::TIME) &&
-					facetQueryContainer->types.at(index) == srch2is::Range){
-				paramContainer->messages.push_back(std::make_pair(MessageWarning,
-						"Field " + *field + " is not a proper field for range facet. No facet will be calculated on this field. " ));
-
-				indexesToErase.push_back(index);
-				continue;
-			}
-
-
-			//3. validate the start,end, gap values
-			bool valid = true;
-			if(facetQueryContainer->rangeStarts.at(index).compare("") != 0){
-				valid = validateValueWithType(type, facetQueryContainer->rangeStarts.at(index));
-			}
-			if(valid && facetQueryContainer->rangeEnds.at(index).compare("") != 0){
-				valid = validateValueWithType(type, facetQueryContainer->rangeEnds.at(index));
-			}
-			if(valid && facetQueryContainer->rangeGaps.at(index).compare("") != 0){
-				valid = validateValueWithType(type, facetQueryContainer->rangeGaps.at(index));
-			}
-			if(! valid){ // start,end or gap value is not compatible with attribute type
-				paramContainer->messages.push_back(std::make_pair(MessageWarning,
-						"Start,End or Gap value for field " + *field + " is not compatible with its type. No facet will be calculated on this field. " ));
-
-				indexesToErase.push_back(index);
-				continue;
-			}
-
-			//
-			index++;
-		}
-		if(indexesToErase.size() == facetQueryContainer->fields.size()){ // all facet fields are removed.
-			;//FIXME : should we delete facet container here ?
-		}
-		// remove all facet fields which are not among nonSearchable attributes
-		std::vector<srch2is::FacetType> types;
-		std::vector<std::string> fields;
-		std::vector<std::string> rangeStarts;
-		std::vector<std::string> rangeEnds;
-		std::vector<std::string> rangeGaps;
-		for(int i=0;i<facetQueryContainer->types.size() ; i++){
-			if(find(indexesToErase.begin(),indexesToErase.end(),i) == indexesToErase.end()){ // don't erase
-				types.push_back(facetQueryContainer->types.at(i));
-				fields.push_back(facetQueryContainer->fields.at(i));
-				rangeStarts.push_back(facetQueryContainer->rangeStarts.at(i));
-				rangeEnds.push_back(facetQueryContainer->rangeEnds.at(i));
-				rangeGaps.push_back(facetQueryContainer->rangeGaps.at(i));
-			}
-		}
-		facetQueryContainer->types = types;
-		facetQueryContainer->fields = fields;
-		facetQueryContainer->rangeStarts = rangeStarts;
-		facetQueryContainer->rangeEnds = rangeEnds;
-		facetQueryContainer->rangeGaps = rangeGaps;
+		return true;
 	}
+
+
+	int index = 0;
+	vector<int> indexesToErase;
+	for(std::vector<std::string>::iterator field = facetQueryContainer->fields.begin();
+			field != facetQueryContainer->fields.end() ; ++field){
+
+		//1. Validate the existence of attribites
+		if(schema.getNonSearchableAttributeId(*field) == -1){ // field does not exist
+			// Warning : Facet will be canceled for this field.
+			paramContainer->messages.push_back(std::make_pair(MessageWarning,
+					"Field " + *field + " is not a proper field. No facet will be calculated on this field. " ));
+
+			indexesToErase.push_back(index);
+			continue;// no need to do anymore validation for this field because it'll be removed from facets.
+		}
+
+		//2. Range facets should be of type unsigned or float or date
+		FilterType type =  schema.getTypeOfNonSearchableAttribute(schema.getNonSearchableAttributeId(*field));
+
+		if( !(type == srch2is::UNSIGNED || type == srch2is::FLOAT || type == srch2is::TIME) &&
+				facetQueryContainer->types.at(index) == srch2is::Range){
+			paramContainer->messages.push_back(std::make_pair(MessageWarning,
+					"Field " + *field + " is not a proper field for range facet. No facet will be calculated on this field. " ));
+
+			indexesToErase.push_back(index);
+			continue;
+		}
+
+
+		//3. validate the start,end, gap values
+		bool valid = true;
+		if(facetQueryContainer->rangeStarts.at(index).compare("") != 0){
+			valid = validateValueWithType(type, facetQueryContainer->rangeStarts.at(index));
+		}
+		// TODO : else : then this field must exist in config file
+		if(valid && facetQueryContainer->rangeEnds.at(index).compare("") != 0){
+			valid = validateValueWithType(type, facetQueryContainer->rangeEnds.at(index));
+		}
+		// TODO : else : then this field must exist in config file
+		if(valid && facetQueryContainer->rangeGaps.at(index).compare("") != 0){
+			valid = validateValueWithType(type, facetQueryContainer->rangeGaps.at(index));
+		}
+		// TODO :  else : then this field must exist in config file
+		if(! valid){ // start,end or gap value is not compatible with attribute type
+			paramContainer->messages.push_back(std::make_pair(MessageWarning,
+					"Start,End or Gap value for field " + *field + " is not compatible with its type. No facet will be calculated on this field. " ));
+
+			indexesToErase.push_back(index);
+			continue;
+		}
+
+		//
+		index++;
+	}
+	if(indexesToErase.size() == facetQueryContainer->fields.size()){ // all facet fields are removed, so there is no facet query anymore
+		// facet must be removed from summary
+		if(paramContainer->hasParameterInSummary(GetAllResultsSearchType)){ // get all results search
+
+			paramContainer->getAllResultsParameterContainer->summary.erase(
+					remove(paramContainer->getAllResultsParameterContainer->summary.begin(),
+							paramContainer->getAllResultsParameterContainer->summary.end(), FacetQueryHandler) ,
+							paramContainer->getAllResultsParameterContainer->summary.end());
+		}else if(paramContainer->hasParameterInSummary(GeoSearchType) ){
+
+			paramContainer->geoParameterContainer->summary.erase(
+					remove(paramContainer->geoParameterContainer->summary.begin(),
+							paramContainer->geoParameterContainer->summary.end(), FacetQueryHandler) ,
+							paramContainer->geoParameterContainer->summary.end());
+		}
+		// facet container should be freed here
+		delete facetQueryContainer;
+	}
+
+
+	// remove all facet fields must be removed
+	// Becaue we collected indexes, first copy the rest of them in temp vectors and then copy all back
+	std::vector<srch2is::FacetType> types;
+	std::vector<std::string> fields;
+	std::vector<std::string> rangeStarts;
+	std::vector<std::string> rangeEnds;
+	std::vector<std::string> rangeGaps;
+	for(int i=0;i<facetQueryContainer->types.size() ; i++){
+		if(find(indexesToErase.begin(),indexesToErase.end(),i) == indexesToErase.end()){ // index not in eraseVector so don't erase
+			types.push_back(facetQueryContainer->types.at(i));
+			fields.push_back(facetQueryContainer->fields.at(i));
+			rangeStarts.push_back(facetQueryContainer->rangeStarts.at(i));
+			rangeEnds.push_back(facetQueryContainer->rangeEnds.at(i));
+			rangeGaps.push_back(facetQueryContainer->rangeGaps.at(i));
+		}
+	}
+	// now copy back
+	facetQueryContainer->types = types;
+	facetQueryContainer->fields = fields;
+	facetQueryContainer->rangeStarts = rangeStarts;
+	facetQueryContainer->rangeEnds = rangeEnds;
+	facetQueryContainer->rangeGaps = rangeGaps;
+
 
 	return true;
 

@@ -102,6 +102,8 @@ public:
 		return searchType;
 	}
 
+
+	// this function translates searchType enum flags to correspondent unsigned values
 	unsigned getSearchTypeCode() const {
 		// TODO : there must be some functions in Config file that give us these codes.
 		switch (getSearchType()) {

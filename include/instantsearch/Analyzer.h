@@ -55,6 +55,11 @@ public:
 			const std::string &delimiters) = 0;
 	virtual const std::string& getRecordAllowedSpecialCharacters() const = 0;
 
+
+	/*
+	 * this function applies the filter chain on the input and returns only the first output of
+	 * the chain. It's assumed the input is just one word and only the first output is of interest.
+	 */
 	virtual std::string applyFilters(std::string input) = 0 ;
 
 	/**
