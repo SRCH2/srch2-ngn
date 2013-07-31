@@ -35,7 +35,7 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 
 ##SET this option to "on", if you want detailed makefile execution
-SET(VERBOSE ON CACHE BOOL "Build verbose makefiles and output. Default ON")
+SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
@@ -71,6 +71,7 @@ ELSE(BUILD_RELEASE)
     SET (CMAKE_BUILD_TYPE Debug)
     SET (DO_PROFILE OFF)
     SET (DO_COVERAGE OFF)
+    SET (DO_ASSERT ON)
 ENDIF(BUILD_RELEASE)
 
 # http://stackoverflow.com/questions/6578484/telling-gcc-directly-to-link-a-library-statically
