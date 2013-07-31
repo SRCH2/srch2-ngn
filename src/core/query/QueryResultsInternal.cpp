@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "QueryResultsInternal.h"
@@ -73,8 +73,8 @@ bool QueryResultsInternal::checkCacheHit(
             vectorIterator != queryTerms->end(); vectorIterator++) {
         // compute the active nodes for this term
         Term *term = *vectorIterator;
-        PrefixActiveNodeSet *termActiveNodeSet =
-                indexSearcherInternal->computeActiveNodeSet(term);
+        PrefixActiveNodeSet *termActiveNodeSet = indexSearcherInternal
+                ->computeActiveNodeSet(term);
 
         // compute the virtual list for this term
         TermVirtualList *termVirtualList = new TermVirtualList(
@@ -177,8 +177,8 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
                 externalRecordId)) {
             QueryResult * qs = resultsFactory->impl->createQueryResult();
             qs->externalRecordId = externalRecordId;
-            qs->internalRecordId =
-                    this->nextKResultsHeap.top()->internalRecordId;
+            qs->internalRecordId = this->nextKResultsHeap.top()
+                    ->internalRecordId;
             qs->_score.setScore(this->nextKResultsHeap.top()->_score); //TODO
             qs->matchingKeywords.assign(
                     this->nextKResultsHeap.top()->matchingKeywords.begin(),
