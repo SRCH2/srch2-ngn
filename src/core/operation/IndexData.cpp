@@ -77,14 +77,15 @@ IndexData::IndexData(const string &directoryName,
      * //TODO Need to serialise Analyzer for stopwords
      */
     // get the analyzer type to instantiate a new analyzer
-    AnalyzerType analyzerType = dynamic_cast<AnalyzerInternal *>(analyzer)->getAnalyzerType();
+//    AnalyzerType analyzerType = dynamic_cast<AnalyzerInternal *>(analyzer)->getAnalyzerType();
+    AnalyzerType analyzerType = analyzer->analyzerInternal->getAnalyzerType();
     switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-			this->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer)));
+			this->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal)));
 			break;
 		default:
-			this->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer)));
+			this->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal)));
 	}
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -775,7 +776,8 @@ void IndexData::printNumberOfBytes() const
 
 const Analyzer* IndexData::getAnalyzer() const
 {
-    return dynamic_cast<const Analyzer *>(this->analyzerInternal);
+//    return dynamic_cast<const Analyzer *>(this->analyzerInternal);
+    return new Analyzer(this->analyzerInternal);
 }
 
 const Schema* IndexData::getSchema() const
