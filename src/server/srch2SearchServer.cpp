@@ -26,7 +26,7 @@
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
 #include "util/Logger.h"
-
+#include "util/Version.h"
 #include <event2/http.h>
 
 #include <sys/types.h>
@@ -152,14 +152,9 @@ void getMemoryInfo(std::string &meminfo)
 	meminfo = mem_info.str();
 }*/
 
-void getVersionInfo(std::string &versioninfo)
+std::string getCurrentVersion()
 {
-    stringstream version_info;
-    version_info
-        << "{" << "\"version\":" <<  3.0  //TODO: SVNVERSION
-        << "}";
-
-    versioninfo = version_info.str();
+    return Version::getCurrentVersion();
 }
 
 /*
@@ -224,10 +219,9 @@ void cb_bminfo(evhttp_request *req, void *arg) {
     /*string meminfo;
     getMemoryInfo(meminfo);*/
 
-    string versioninfo;
-    getVersionInfo(versioninfo);
+    string versioninfo = getCurrentVersion();
 
-	HTTPRequestHandler::infoCommand(req, server, versioninfo);
+    HTTPRequestHandler::infoCommand(req, server, versioninfo);
 }
 
 /**
@@ -312,7 +306,7 @@ void cb_busy_indexing(evhttp_request *req, void *arg)
 
 void printVersion()
 {
-	std::cout << "srch2-search-server-version:" << "3.0" << std::endl;
+	std::cout << "srch2-search-server-version:" << getCurrentVersion() << std::endl;
 }
 
 int bindSocket(const char * hostname , int port) {

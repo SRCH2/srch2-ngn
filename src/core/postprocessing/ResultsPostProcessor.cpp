@@ -55,7 +55,7 @@ ResultsPostProcessorFilter * ResultsPostProcessorPlan::nextFilter(){
 	++(impl->iter);
 	return result;
 }
-bool ResultsPostProcessorPlan::hasMoreFilters(){
+bool ResultsPostProcessorPlan::hasMoreFilters() const{
 	if(impl->iter != impl->plan.end()) return true;
 	else{
 		return false;

@@ -193,10 +193,24 @@ double QueryResults::getPhysicalDistance(const unsigned position) const {
     return impl->sortedFinalResults.at(position)->physicalDistance;
 }
 
-const std::map<std::string , std::vector<std::pair<std::string, float> > > * QueryResults::getFacetResults() const{
+const std::map<std::string, std::vector<std::pair<std::string, float> > > * QueryResults::getFacetResults() const{
 	return &impl->facetResults;
 }
 
+
+// pass information to the destination QueryResults object
+// can be seen as destination := this (only for structures related to post processing)
+void QueryResults::copyForPostProcessing(QueryResults * destination) const {
+	destination->impl->sortedFinalResults = this->impl->sortedFinalResults;
+	destination->impl->facetResults = this->impl->facetResults;
+}
+
+void QueryResults::clear(){
+
+	this->impl->sortedFinalResults.clear();
+	this->impl->facetResults.clear();
+
+}
 
 //TODO: These three functions for internal debugging. remove from the header
 void QueryResults::printStats() const {

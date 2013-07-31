@@ -21,16 +21,12 @@
 #ifndef __ACTIVENODE_H__
 #define __ACTIVENODE_H__
 
+#include <stack>
 #include "index/Trie.h"
-#include <instantsearch/Term.h>
+#include "instantsearch/Term.h"
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
-
-#include <vector>
-#include <map>
-#include <set>
-#include <iostream>
 
 using srch2::util::Logger;
 
@@ -59,6 +55,13 @@ struct ResultNode {
             editDistance(in_editDistance),prefixLength(in_prefixLength){}
 };
 
+// this comparison is based on preorder.
+struct trieNodeComparision{
+	bool operator() (const TrieNode* t1, const TrieNode* t2)
+	{
+		return t1->getMinId() < t2->getMinId() || (t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
+	}
+};
 
 class PrefixActiveNodeSet
 {
@@ -311,6 +314,17 @@ public:
         //ASSERT(distance != 0);
     }
 
+    // Get current active node. If we have finished the iteration, return NULL
+    void getActiveNode(const TrieNode *&trieNode) {
+	   if (isDone()) {
+		   trieNode = NULL;
+	   }
+	   else {
+		   // Return the current active node, which is the offsetCursor-th member in the editDistanceCursor array
+		   trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
+	   }
+	}
+
 private:
     typedef std::vector<const TrieNode* > TrieNodeSet;
 
@@ -426,42 +440,52 @@ public:
 
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
-        std::set<const TrieNode*> visitedTrieNodes;
 
-        // assume the iterator returns the active nodes in an ascending order of their edit distance
-        for (ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound); !ani.isDone(); ani.next()) {
-            // get the trie node and its distance
-            const TrieNode *trieNode;
-            unsigned distance;
-            ani.getItem(trieNode, distance);
+    	map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
+		const TrieNode *currentNode;
+		unsigned distance;
 
-            // append the leaf nodes of this active node to the vector
-            _appendLeafNodes(trieNode, trieNode, distance, visitedTrieNodes);
-        }
+		// assume the iterator returns the active nodes in an ascending order of their edit distance
+		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
+		for (; !ani.isDone(); ani.next()){
+			ani.getItem(currentNode, distance);
+			activeNodes[currentNode] = distance; // active nodes that are not visited.
+		}
+		// Use a stack to avoid recursive function calls.
+		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
+		// We are using an ordered map in which the active nodes are sorted in a pre-order. So this iterator returns the active nodes in an ascending order.
+		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), previousActiveNode; nextActiveNode != activeNodes.end();){
+			previousActiveNode = nextActiveNode;
+			currentNode = previousActiveNode->first;
+			nextActiveNode++;
+			activeNodeStack.push(std::make_pair(previousActiveNode, currentNode));
+			// non-recursive traversal
+			while(!activeNodeStack.empty()){
+				// get and pop the top item
+				std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
+				previousActiveNode = stackTop.first;
+				currentNode = stackTop.second;
+				activeNodeStack.pop();
 
-        // init the cursor
-        cursor = 0;
+				// check if this current trie node is the next active node in the set
+				if(nextActiveNode != activeNodes.end() && currentNode == nextActiveNode->first){
+					// If the next active node's ed is <= the ed of the previous active node, we will set change the previous node to the next node.
+					if(nextActiveNode->second <= previousActiveNode->second)
+						previousActiveNode = nextActiveNode;
+					nextActiveNode++;
+				}
+				if (currentNode->isTerminalNode())
+					resultVector.push_back(LeafNodeSetIteratorItem(previousActiveNode->first, currentNode, previousActiveNode->second));
+
+				// push all the children from right to left to stack, so that after pop we can access them from left to right.
+				for (int childIterator = currentNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
+					activeNodeStack.push(std::make_pair(previousActiveNode, currentNode->getChild(childIterator)));
+			}
+		}
+		// init the cursor
+		cursor = 0;
     }
 
-    // add the leaf nodes of the given trieNode to a vector.  Add those decendant nodes to visitedTrieNodes.
-    // Ignore those decendants that are already in visitedTrieNodes
-    void _appendLeafNodes(const TrieNode *prefixNode, const TrieNode *trieNode, unsigned editDistance, std::set<const TrieNode*> &visitedTrieNodes) {
-        // do nothing if this node has already been visited
-        if (visitedTrieNodes.find(trieNode) != visitedTrieNodes.end())
-            return;
-
-        // mark this node visited
-        visitedTrieNodes.insert(trieNode);
-
-        if (trieNode->isTerminalNode()) {
-            // TODO: prefix might not be unique. Should we return the longest matching prefix?
-            resultVector.push_back(LeafNodeSetIteratorItem(prefixNode, trieNode, editDistance));
-        }
-
-        // go through the children
-        for (unsigned childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator ++)
-            _appendLeafNodes(prefixNode, trieNode->getChild(childIterator), editDistance, visitedTrieNodes);
-    }
 };
 
 }}

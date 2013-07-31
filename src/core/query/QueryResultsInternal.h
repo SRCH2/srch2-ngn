@@ -26,6 +26,7 @@
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
 #include <instantsearch/Score.h>
+
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 
@@ -42,7 +43,7 @@ namespace instantsearch
 
 class IndexSearcherInternal;
 class QueryResultFactoryInternal;
-
+class FacetedSearchFilter;
 
 class QueryResult {
 public:
@@ -138,7 +139,7 @@ class QueryResultsInternal
 {
 public:
 	friend class QueryResults;
-	friend class ResultsPostProcessor;
+    friend class ResultsPostProcessor;
 	QueryResultsInternal();
 	void init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
 
@@ -171,11 +172,6 @@ public:
     bool checkCacheHit(IndexSearcherInternal *indexSearcherInternal, Query *query);
     
     
-    void copyForPostProcessing(QueryResultsInternal * destination) const {
-    	destination->sortedFinalResults = this->sortedFinalResults;
-    	destination->facetResults = this->facetResults;
-    }
-
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     

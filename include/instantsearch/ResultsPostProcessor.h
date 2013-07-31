@@ -58,7 +58,7 @@ public:
 	void clearPlan();
 	void beginIteration();
 	ResultsPostProcessorFilter * nextFilter();
-	bool hasMoreFilters();
+	bool hasMoreFilters() const;
 	void closeIteration();
 private:
 	ResultsPostProcessorPlanInternal * impl;

@@ -47,16 +47,16 @@ public:
 			std::vector<pair<string, float> >  * counts ){
 
 		if(lowerBounds.empty()){ // simple facet
-			// move on results to see if this value is seen before (increment) or is new (add and initialize)
+			// move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
 			for(std::vector<pair<string, float> >::iterator p = counts->begin() ; p != counts->end() ; ++p){
 				if(p->first.compare(attributeValue.toString()) == 0){
-					p->second = p->second + 1;
+					p->second = p->second + 1; // this value is seen before
 					return;
 				}
 			}
-			counts->push_back(make_pair(attributeValue.toString() , 1));
+			counts->push_back(make_pair(attributeValue.toString() , 1)); // add a new value
 			return;
-		}else{
+		}else{ // Range facet
 			unsigned i = 0;
 			for(std::vector<Score>::const_iterator lowerBound = lowerBounds.begin() ; lowerBound!=lowerBounds.end() ; ++lowerBound){
 				bool fallsInThisCategory = false;
@@ -91,7 +91,7 @@ public:
 
 	}
 
-	// this function prepares the lowebound structure from the paraller string vectors
+	// this function prepares the lowebound structure from the parallel string vectors
 	void prepareFacetInputs(IndexSearcher *indexSearcher){
 
 
@@ -107,18 +107,25 @@ public:
 		unsigned f = 0;
 		for(std::vector<std::string>::iterator field = this->fields.begin() ;
 				field != this->fields.end() ; ++field){
-			FilterType type = schema->getTypeOfNonSearchableAttribute(schema->getNonSearchableAttributeId(*field));
-			Score start;
-			start.setScore(type , this->rangeStarts.at(f));
-			rangeStartScores.push_back(start);
+			if(this->types.at(f) == Simple){ // Simple facet
+				Score start; // just insert place holders
+				rangeStartScores.push_back(start);
+				rangeEndScores.push_back(start);
+				rangeGapScores.push_back(start);
+			}else{ // Range facet
+				FilterType type = schema->getTypeOfNonSearchableAttribute(schema->getNonSearchableAttributeId(*field));
+				Score start;
+				start.setScore(type , this->rangeStarts.at(f));
+				rangeStartScores.push_back(start);
 
-			Score end;
-			end.setScore(type , this->rangeEnds.at(f));
-			rangeStartScores.push_back(end);
+				Score end;
+				end.setScore(type , this->rangeEnds.at(f));
+				rangeEndScores.push_back(end);
 
-			Score gap;
-			gap.setScore(type , this->rangeGaps.at(f));
-			rangeStartScores.push_back(gap);
+				Score gap;
+				gap.setScore(type , this->rangeGaps.at(f));
+				rangeGapScores.push_back(gap);
+			}
 
 			//
 			f++;
@@ -132,9 +139,9 @@ public:
 			std::vector<Score> lowerBounds;
 
 			switch (*type) {
-				case Range:
+				case Simple: // lower bounds vector is empty, because lower bounds are not determined before results
 					break;
-				case Simple:
+				case Range:
 					Score & start = rangeStartScores.at(t);
 					Score & end = rangeEndScores.at(t);
 					Score & gap = rangeGapScores.at(t);
@@ -149,7 +156,7 @@ public:
 					lowerBounds.push_back(temp); // to collect data greater than end
 					break;
 			}
-			lowerBoundsOfCategories[fields.at(t )] = lowerBounds;
+			lowerBoundsOfCategories[fields.at(t)] = lowerBounds;
 
 			//
 			t++;
