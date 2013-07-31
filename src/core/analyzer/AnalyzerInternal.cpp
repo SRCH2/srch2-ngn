@@ -68,7 +68,7 @@ bool isEmpty(const string &inString)
 AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
 	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
 	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
+	tokenStreamContainer.reset(new TokenStreamContainer);
 	this->stemmerType = analyzerInternal.stemmerType;
 	this->stemmerFilePath = analyzerInternal.stemmerFilePath;
 	this->stopWordFilePath = analyzerInternal.stopWordFilePath;
@@ -86,7 +86,7 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
 	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
+	tokenStreamContainer.reset(new TokenStreamContainer);
 	this->stemmerType = stemmerFlag;
 	this->stemmerFilePath = stemmerFilePath;
 	this->stopWordFilePath = stopWordFilePath;
@@ -98,9 +98,9 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 void AnalyzerInternal::loadData(const string &s) const {
 	std::vector<CharType> charVector;
 	utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-	this->sharedToken->currentToken.clear();
-	this->sharedToken->completeCharVector = charVector;
-	this->sharedToken->offset = 0;
+	this->tokenStreamContainer->currentToken.clear();
+	this->tokenStreamContainer->completeCharVector = charVector;
+	this->tokenStreamContainer->offset = 0;
 }
 
 /**
@@ -132,10 +132,10 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 			tokens.clear();
 			loadData(*attributeValue);
 			string currentToken = "";
-			while (tokenOperator->incrementToken()) //process the token one by one
+			while (tokenStream->processToken()) //process the token one by one
 			{
 				vector<CharType> charVector;
-				tokenOperator->getCurrentToken(charVector);
+				charVector = tokenStream->getProcessedToken();
 				charTypeVectorToUtf8String(charVector, currentToken);
 				tokens.push_back(currentToken);
 				//cout<<currentToken<<endl;
@@ -168,10 +168,10 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
 	queryKeywords.clear();
 	loadData(queryString);
 	string currentToken = "";
-	while (tokenOperator->incrementToken()) //process the token one by one
+	while (tokenStream->processToken()) //process the token one by one
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, currentToken);
 		queryKeywords.push_back(currentToken);
 		//cout<<currentToken<<endl;

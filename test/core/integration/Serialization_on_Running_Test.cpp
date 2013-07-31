@@ -36,7 +36,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2is::DISABLE_STEMMER_NORMALIZER,
+                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
@@ -172,7 +173,8 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2is::DISABLE_STEMMER_NORMALIZER,
+                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");

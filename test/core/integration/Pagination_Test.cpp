@@ -35,7 +35,8 @@ void buildIndex(string data_file, string index_dir)
     schema->setScoringExpression("idf_score*doc_boost");
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = Analyzer::create(srch2is::DISABLE_STEMMER_NORMALIZER,
+                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;

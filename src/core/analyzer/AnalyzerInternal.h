@@ -13,7 +13,7 @@
 #include <fstream>
 #include <instantsearch/Analyzer.h>
 #include <boost/regex.hpp>
-#include "TokenOperator.h"
+#include "TokenStream.h"
 #include "util/Logger.h"
 
 using std::vector;
@@ -47,7 +47,7 @@ struct TokenAttributeHits {
 	vector<unsigned> attributeList;
 };
 
-class AnalyzerInternal: public Analyzer {
+class AnalyzerInternal {
 public:
 
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
@@ -62,7 +62,7 @@ public:
 	void loadData(const std::string &s) const;
 
 
-	virtual TokenOperator * createOperatorFlow() = 0;
+	virtual TokenStream * createOperatorFlow() = 0;
 	virtual ~AnalyzerInternal() {
 	}
 
@@ -154,9 +154,9 @@ public:
 			vector<unsigned> &filter) const;
 
 protected:
-	boost::shared_ptr<SharedToken> sharedToken;
+	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
 
-	TokenOperator* tokenOperator;
+	TokenStream* tokenStream;
 	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.

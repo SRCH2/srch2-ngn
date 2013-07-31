@@ -10,7 +10,7 @@
 #include <vector>
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerInternal.h"
-#include "TokenOperator.h"
+#include "TokenStream.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -37,15 +37,15 @@ public:
 						synonymFilePath,
 						synonymKeepOriginFlag) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
+		this->tokenStream = createOperatorFlow();
 	}
 
 	StandardAnalyzer(const StandardAnalyzer &standardAnalyzer) :
 			AnalyzerInternal(standardAnalyzer) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
+		this->tokenStream = createOperatorFlow();
 	}
-	TokenOperator *createOperatorFlow();
+	TokenStream *createOperatorFlow();
 	virtual ~StandardAnalyzer();
 };
 

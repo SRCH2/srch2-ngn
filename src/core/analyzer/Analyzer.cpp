@@ -20,34 +20,57 @@
 #include "AnalyzerInternal.h"
 #include "StandardAnalyzer.h"
 #include "SimpleAnalyzer.h"
+#include <instantsearch/Analyzer.h>
 
 namespace srch2 {
 namespace instantsearch {
 // TODO: remove create. The constructor is called directly
-Analyzer *Analyzer::create( const StemmerNormalizerFlagType &stemmerFlag,
-							const std::string &stemmerFilePath,
-							const std::string &stopWordFilePath,
-							const std::string &synonymFilePath,
-							const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-							const std::string &delimiters,
-							const AnalyzerType &analyzerType) {
+Analyzer *Analyzer::create(const StemmerNormalizerFlagType &stemmerFlag,
+            const std::string &stemmerFilePath,
+            const std::string &stopWordFilePath,
+            const std::string &synonymFilePath,
+            const SynonymKeepOriginFlag &synonymKeepOriginFlag,
+            const std::string &delimiters,
+            const AnalyzerType &analyzerType) {
 
-	switch (analyzerType) {
-	case SIMPLE_ANALYZER:
-		return new SimpleAnalyzer(stemmerFlag,
-								  stemmerFilePath,
-							   	  stopWordFilePath,
-								  synonymFilePath,
-								  synonymKeepOriginFlag,
-								  delimiters);
-	default:
-		return new StandardAnalyzer(stemmerFlag,
-									stemmerFilePath,
-									stopWordFilePath,
-									synonymFilePath,
-									synonymKeepOriginFlag,
-									delimiters);
-	}
+    switch (analyzerType) {
+    case SIMPLE_ANALYZER:
+        return new Analyzer(
+                new SimpleAnalyzer(stemmerFlag, stemmerFilePath, stopWordFilePath,
+                        synonymFilePath, synonymKeepOriginFlag, delimiters));
+        break;
+    default:
+        return new Analyzer(
+                new StandardAnalyzer(stemmerFlag, stemmerFilePath,
+                        stopWordFilePath, synonymFilePath,
+                        synonymKeepOriginFlag, delimiters));
+        break;
+    }
+}
+
+void Analyzer::setRecordAllowedSpecialCharacters(
+        const std::string &delimiters) {
+    this->analyzerInternal->setRecordAllowedSpecialCharacters(delimiters);
+}
+
+const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
+    return this->analyzerInternal->getRecordAllowedSpecialCharacters();
+}
+
+void Analyzer::tokenizeQuery(const std::string &queryString,
+        std::vector<std::string> &queryKeywords) const {
+    return this->analyzerInternal->tokenizeQuery(queryString, queryKeywords);
+}
+// TODO: Refactor the function and its arguments. Possibly move to wrapper
+void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
+        std::vector<std::string> &queryKeywords, const char &splitterCharacter,
+        const char &filterSplitterCharacter, const char &fieldsAndCharacter,
+        const char &fieldsOrCharacter,
+        const std::map<std::string, unsigned> &searchableAttributesNameToId,
+        std::vector<unsigned> &filter) const{
+    return this->analyzerInternal->tokenizeQueryWithFilter(queryString,
+            queryKeywords, splitterCharacter, filterSplitterCharacter, fieldsAndCharacter,
+            fieldsOrCharacter, searchableAttributesNameToId,filter);
 }
 
 }

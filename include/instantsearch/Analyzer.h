@@ -29,6 +29,7 @@
 namespace srch2 {
 namespace instantsearch {
 
+class AnalyzerInternal;
 typedef enum {
 	// there is no numbering for this enum. By default the numbers start from 0
 	DISABLE_STEMMER_NORMALIZER, // Disables stemming
@@ -60,6 +61,10 @@ typedef enum {
 class MYLIB_EXPORT Analyzer {
 public:
 
+    Analyzer(AnalyzerInternal *analyzerInternal){
+        this->analyzerInternal = analyzerInternal;
+    }
+
 	/**
 	 * Creates an Analyzer.
 	 */
@@ -73,9 +78,11 @@ public:
 			const std::string &delimiters,
 			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
 
-	virtual void setRecordAllowedSpecialCharacters(
-			const std::string &delimiters) = 0;
-	virtual const std::string& getRecordAllowedSpecialCharacters() const = 0;
+	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
+	const std::string& getRecordAllowedSpecialCharacters() const ;
+
+
+	AnalyzerInternal * analyzerInternal;
 
 	/**
 	 * @param[in] queryString - The query string .
@@ -92,8 +99,8 @@ public:
 	 * Note that the input string queryString is a declared as const
 	 * and the above changes are not applied directly to the string.
 	 */
-	virtual void tokenizeQuery(const std::string &queryString,
-			std::vector<std::string> &queryKeywords) const = 0;
+	void tokenizeQuery(const std::string &queryString,
+			std::vector<std::string> &queryKeywords) const;
 
 	/*
 	 *   Example URL: http://localhost:8081/search?q=hospital:title,description+services:description
@@ -109,12 +116,12 @@ public:
 	 *   Note that the searchableAttributesNameToId is used to map an attribute name to its Id, which will be used in Attribute-based search
 	 */
 	// TODO: Refactor the function and its arguments. Possibly move to wrapper
-	virtual void tokenizeQueryWithFilter(const std::string &queryString,
+	void tokenizeQueryWithFilter(const std::string &queryString,
 			std::vector<std::string> &queryKeywords,
 			const char &splitterCharacter, const char &filterSplitterCharacter,
 			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
 			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			std::vector<unsigned> &filter) const = 0;
+			std::vector<unsigned> &filter) const ;
 
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.

@@ -35,22 +35,22 @@ void testSimpleAnalyzer()
 {
 	string src="We are美丽 Chinese";
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 	simpleAnlyzer->loadData(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are美丽");
 	vectorString.push_back("chinese");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 //StandardAnalyzer organizes a tokenizer treating characters >= 256 as a single token and   a "ToLowerCase" filter
@@ -58,7 +58,7 @@ void testStandardAnalyzer()
 {
 	string src="We are美丽 Chineseㄓㄠ";
 	AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
-	TokenOperator * tokenOperator = standardAnalyzer->createOperatorFlow();
+	TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
 	standardAnalyzer->loadData(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
@@ -68,15 +68,15 @@ void testStandardAnalyzer()
 	vectorString.push_back("chinese");
 	vectorString.push_back("ㄓㄠ");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete standardAnalyzer;
 }
 
@@ -90,7 +90,7 @@ void testLowerCase() {
 			"",
 			"",
 			SYNONYM_DONOT_KEEP_ORIGIN);
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
 	string src = "Here IS A Set OF some inStructIOns fOR WHo has the bOOks";
 	simpleAnlyzer->loadData(src);
@@ -124,9 +124,9 @@ void testLowerCase() {
 	vectorString.push_back("books");
 
 	int i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
@@ -134,7 +134,7 @@ void testLowerCase() {
 	}
 
 	// deleting the objects
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 
@@ -150,7 +150,7 @@ void testStemmerFilter(string dataDir) {
 			ENABLE_STEMMER_NORMALIZER,
 			dataDir + "/StemmerHeadwords.txt",
 			"", "", SYNONYM_DONOT_KEEP_ORIGIN );
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
 	cout << "TEST 1: No Stemming" << endl;
 	// TEST 1 (no stemming)
@@ -175,9 +175,9 @@ void testStemmerFilter(string dataDir) {
 	vectorString.push_back("good");
 
 	int i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
@@ -207,9 +207,9 @@ void testStemmerFilter(string dataDir) {
 	vectorString.push_back("result");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
@@ -243,9 +243,9 @@ void testStemmerFilter(string dataDir) {
 	vectorString.push_back("following");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
@@ -253,7 +253,7 @@ void testStemmerFilter(string dataDir) {
 	}
 
 	// deleting the objects
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 
@@ -272,7 +272,7 @@ void testStopFilter(string dataDir) {
 			dataDir + "/stopWordsFile.txt",
 			"",
 			SYNONYM_DONOT_KEEP_ORIGIN);
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
 	string src = "Here IS A Set OF some instructions for who has the books";
 	simpleAnlyzer->loadData(src);
@@ -302,9 +302,9 @@ void testStopFilter(string dataDir) {
 	vectorString.push_back("books");
 
 	int i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << originalWords[i] << "   =>   " << src << " " << endl;
 		ASSERT(vectorString[i] == src);
@@ -312,7 +312,7 @@ void testStopFilter(string dataDir) {
 	}
 
 	// deleting the objects
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 
@@ -332,7 +332,7 @@ void testSynonymFilter(string dataDir) {
 			dataDir + "/stopWordsFile.txt",
 			dataDir + "/synonymFile.txt",
 			SYNONYM_KEEP_ORIGIN);
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
 	// TEST 1
 	// input string
@@ -352,9 +352,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("ny"); // new york
 
 	int i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -369,7 +369,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "new wal new wal mart new york new new york city";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -391,9 +391,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("nyc"); // new york city
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -410,7 +410,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "new bill bring your own bill bring your own beverage your own beverage bring";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -436,9 +436,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("bring");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -454,7 +454,7 @@ void testSynonymFilter(string dataDir) {
 				"",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "a b c d e f g a b c d e f t a b c d e f";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -487,9 +487,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("z");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -504,7 +504,7 @@ void testSynonymFilter(string dataDir) {
 				"",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -552,9 +552,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("مشتی");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -569,7 +569,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "bill";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -581,9 +581,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("william");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "------- SynonymFilter:  " <<  src << endl;
 		ASSERT(vectorString[i] == src);
@@ -596,7 +596,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 
 	// TEST 7
 	// input string
@@ -611,9 +611,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("ny"); // new york
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -628,7 +628,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "new wal new wal mart new york new new york city";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -643,9 +643,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("nyc"); // new york city
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -659,7 +659,7 @@ void testSynonymFilter(string dataDir) {
 				dataDir + "/stopWordsFile.txt",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "new bill bring your own bill bring your own beverage your own beverage bring";
 	simpleAnlyzer->loadData(src);
 	// to print out the results
@@ -676,9 +676,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("bring");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "+++++++ SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -693,7 +693,7 @@ void testSynonymFilter(string dataDir) {
 				"",
 				dataDir + "/synonymFile.txt",
 				SYNONYM_DONOT_KEEP_ORIGIN);
-	tokenOperator = simpleAnlyzer->createOperatorFlow();
+	tokenStream = simpleAnlyzer->createOperatorFlow();
 	src = "a b c d e f g a b c d e f t a b c d e f";
 	simpleAnlyzer->loadData(src);
 	cout << "## Test 10:  " << src << endl;
@@ -707,9 +707,9 @@ void testSynonymFilter(string dataDir) {
 	vectorString.push_back("z");
 
 	i = 0;
-	while (tokenOperator->incrementToken()) {
+	while (tokenStream->processToken()) {
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		cout << "------- SynonymFilter:  " << src  << endl;
 		ASSERT(vectorString[i] == src);
@@ -719,7 +719,7 @@ void testSynonymFilter(string dataDir) {
 
 
 	// deleting the objects
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 
