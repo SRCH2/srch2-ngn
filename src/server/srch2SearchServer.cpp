@@ -33,6 +33,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -347,7 +348,17 @@ void* dispatch(void *arg)
     event_base_dispatch((struct event_base*)arg);
     return NULL;
 }
+ 
+void parseProgramArguments(int argc, char** argv, po::options_description& description, po::variables_map& vm_command_line_args)
+{
+    config.add_options()
+    ("help", "produce a help message")
+    ("config-file", po::value<string>(), "config file")
+    ;
 
+    po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
+    po::notify(vm_command_line_args);
+}
 int main(int argc, char** argv)
 {		
 	if(argc > 1)
@@ -356,19 +367,56 @@ int main(int argc, char** argv)
 		{
 			printVersion();
 			return 0;
-		}	/*
-		else if(strcmp(argv[1], "--help") == 0)
-		{
-						
-		}*/
+		}	
 	}	
+    // Parse command line arguments
+    po::options_description description("Description");
+    po::variables_map vm_command_line_args;
+    parseProgramArguments(argc, argv, description, vm_command_line_args);
+
+    if (vm_command_line_args.count("help")) {
+        cout << description << endl; 
+        return 0;
+    }
+
+    std::string srch2HomePath = "";
+    char * srch2HomePathCStr= getenv("SRCH2_HOME");
+    if (srch2HomePathCStr != NULL)
+        srch2HomePath = srch2HomePathCStr;
+
+    std::string srch2_config_file = "";
+    if (vm_command_line_args.count("config-file"){
+        srch2_config_file = vm_command_line_args["config-file"].as<string>();
+        if (!boost::filesystem::exists(srch2_config_file))
+        {
+           std::cout << "config file = '"<< srch2_config_file <<"' not found" << std::endl;    
+           return -1;
+        }
+    }
+    else{
+        if (srch2HomePath != ""){
+            srch2_config_file = srch2HomePath + "/conf/srch2_config.ini";
+            if (!boost::filesystem::exists(srch2_config_file))
+            {
+                std::cout << "config file = '"<< srch2_config_file <<"' not found" << std::endl;
+                std::cout << "Please check whether SRCH2_HOME is set correctly" << std::endl
+                return -1;
+            }
+        }
+        else{
+            std::cout << "Environment variable SRCH2_HOME is not set " << std::endl;
+            std::cout << "Please read README file " << std::endl;
+            return -1;
+        }
+    }
+    
 	
-	//read command line arguments
-	bool parseSuccess = true;
-	std::stringstream parseError;
-	Srch2ServerConf *serverConf = new Srch2ServerConf(argc, argv, parseSuccess, parseError);
-	// check the license file
+    Srch2ServerConf *serverConf = new Srch2ServerConf(srch2_config_file);
+
+    serverConf->loadConfigFile();
+	
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+    
     FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
     if(logFile == NULL){
     	Logger::setOutputFile(stdout);

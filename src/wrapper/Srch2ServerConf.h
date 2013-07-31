@@ -110,10 +110,10 @@ private:
 	Logger::LogLevel loglevel;
 	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
+    string configFile;
 
 public:
-	Srch2ServerConf(int argc, char** argv, bool &configSuccess,
-			std::stringstream &parseError);
+	Srch2ServerConf(std::string& configfile);
 	virtual ~Srch2ServerConf();
 
 	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,

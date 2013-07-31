@@ -21,115 +21,30 @@ namespace httpwrapper
 
 const char * ignoreOption = "IGNORE";
 
-Srch2ServerConf::Srch2ServerConf(int argc,
-								char** argv,
-								bool &configSuccess,
-								std::stringstream &parseError) {
-	// Declare the supported options.
-	po::options_description config("Configuration");
+Srch2ServerConf::Srch2ServerConf(std::string& configFile) {
+    this->configFile = configFile;
+}
 
-	config.add_options()
-				("help", "produce a help message")
-				("config-file", po::value<string>(), "config file") // If set, all the following options on command line are ignored.
+void Srch2ServerConf::loadConfigFile(){
+    std::cout << "Reading config file: " << this->configFile 
+              << std::endl;
 
-				//("customer-name", po::value<string>(), "customer name") // REQUIRED
-				("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-				("index-type",  po::value<int>(), "index-type") // REQUIRED
-				("index-load-or-create",  po::value<bool>(), "index-load-or-create")
-				("data-source-type",  po::value<bool>(), "Data source type")
-
-				("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
-				("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
-				("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
-				("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
-				("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
-				("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
-				("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
-				("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
-				("number-of-threads", po::value<int>(), "number-of-threads")
-
-				("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
-				("listening-port", po::value<string>(), "port to listen") // REQUIRED
-				("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
-				("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
-				("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
-				("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
-				//("number-of-threads",  po::value<int>(), "number-of-threads")
-				("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-
-				("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
-				("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
-				("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-				("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
-				("attribute-record-boost", po::value<string>(), "record-boost")
-				("attribute-latitude", po::value<string>(), "record-attribute-latitude")
-				("attribute-longitude", po::value<string>(), "record-attribute-longitude")
-				("record-score-expression", po::value<string>(), "record-score-expression")
-				("attribute-boosts", po::value<string>(), "Attributes Boosts")
-				("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
-				("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
-				("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
-
-				("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
-				("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
-				("default-searcher-type", po::value<int>(), "Searcher-type")
-				("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
-				("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
-				("default-query-term-boost", po::value<int>(), "Default query term boost")
-				("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
-				("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
-				("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
-				("support-attribute-based-search", po::value<int>(), "If support attribute based search")
-				("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
-				("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
-				("default-order", po::value<int>(), "sort order")
-				("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
-
-				//("listening-port", po::value<string>(), "HTTP indexDataContainer listening port")
-				//("document-root", po::value<string>(), "HTTP indexDataContainer document root to put html files")
-				("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
-				("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
-				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
-				("log-level", po::value<int>(), "srch2 log level")
-				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
-				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
-				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
-				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
-				("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
-				("stemmer-file", po::value<string>(), "Stemmer File")
-				("install-directory", po::value<string>(), "Install Directory")
-				;
-
-	po::variables_map vm_command_line_args;
-	po::store(po::parse_command_line(argc, argv, config), vm_command_line_args);
-	po::notify(vm_command_line_args);
-
-	if (vm_command_line_args.count("help")) {
-		parseError << config;
-		configSuccess = false;
-		return;
-	} else {
-		if (vm_command_line_args.count("config-file")
-				&& (vm_command_line_args["config-file"].as<string>().compare(
-						ignoreOption) != 0)) {
-			std::cout << "Reading config file: "
-					<< vm_command_line_args["config-file"].as<string>()
-					<< std::endl;
-
-			string configFile =
-					vm_command_line_args["config-file"].as<string>();
-
-			fstream fs(configFile.c_str(), fstream::in);
-			po::variables_map vm_config_file;
-			po::store(po::parse_config_file(fs, config), vm_config_file);
-			po::notify(vm_config_file);
-			this->parse(vm_config_file, configSuccess, parseError);
-		} else {
-			this->parse(vm_command_line_args, configSuccess, parseError);
-		}
-	}
+    po::options_description config("Config");
+    fstream fs(configFile.c_str(), fstream::in);
+    po::variables_map vm_config_file;
+    po::store(po::parse_config_file(fs, config), vm_config_file);
+    po::notify(vm_config_file);
+	
+    bool configSuccess = false;
+    std::stringstream parseError; 
+    this->parse(vm_config_file, configSuccess, parseError);
+    
+    if (!configSuccess)
+    {
+        cout << "Error while reading the config file" << endl;
+        cout << parseError << endl;  // assumption: parseError is set properly
+        exit(-1);
+    }
 }
 
 void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
