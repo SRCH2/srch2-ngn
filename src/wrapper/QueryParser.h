@@ -74,7 +74,16 @@ private:
     static const char* const lpKeywordPrefixCompleteParamName;
     static const char* const lpFieldFilterParamName;
     static const char* const lpFieldFilterDelimiter;
-
+    static const char* const isFuzzyParamName;
+    static const char* const leftBottomLatParamName;
+    static const char* const leftBottomLongParamName;
+    static const char* const rightTopLatParamName;
+    static const char* const rightTopLongParamName;
+    static const char* const centerLatParamName;
+    static const char* const centerLongParamName;
+    static const char* const radiusParamName;
+    static const char* const facetParamName;
+    static const char* const orderParamName;
     // TODO: change the prototypes to reflect input/outputs
     /*
      *
@@ -187,7 +196,7 @@ private:
     /*
      * this function parsers the parameters related to geo search like latitude and longitude .
      */
-    void getGeoParser();
+    void geoParser();
 
     bool verifyMainQuery(const string &input);
 
@@ -201,6 +210,15 @@ private:
     void checkForFuzzyNums(const string &input, boost::smatch &matches);
     void populateRawKeywords(const string &input);
     void populateTermBooleanOperators(const vector<string> &termOperators);
+    void extractSearchType();
+    void setInSummaryIfNotSet(ParameterName param);
+    void setFuzzyLevelInContainer(const float f);
+    void setGeoContainerProperties(const char* leftBottomLatTemp,
+            const char* leftBottomLongTemp, const char* rightTopLatTemp,
+            const char* rightTopLongTemp);
+    void setGeoContainerProperties(const char*centerLatTemp,
+            const char* centerLongTemp, const char* radiusParamTemp);
+    string orderByParser();
 };
 
 }

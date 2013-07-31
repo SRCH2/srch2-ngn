@@ -172,12 +172,12 @@ public:
     // main query parser parameters
 
     // TODO add members related to local parameters
-    BooleanOperation lpQueryBooleanOperator; // TODO: when we want to add NOT or OR this part should change
+    BooleanOperation lpFieldFilterBooleanOperator; // TODO: when we want to add NOT or OR this part should change
     float lpKeywordFuzzyLevel =-1.0;
     unsigned lpKeywordBoostLevel=-1;
     srch2::instantsearch::TermType lpKeywordPrefixComplete=srch2::instantsearch::NOT_SPECIFIED;
     std::vector<std::string> lpFieldFilter;
-
+    bool isLpFieldFilterBooleanOperatorAssigned =false;
     // localparamter related variables end
 
     bool isFuzzy;

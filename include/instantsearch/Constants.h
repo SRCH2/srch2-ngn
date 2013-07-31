@@ -101,7 +101,8 @@ typedef enum
 typedef enum
 {
     Ascending ,
-    Descending
+    Descending,
+    ORDER_NOT_SPECIFIED
 } SortOrder;
 
 typedef enum{
