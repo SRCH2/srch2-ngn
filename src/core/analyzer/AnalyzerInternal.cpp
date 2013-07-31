@@ -44,19 +44,18 @@ namespace instantsearch {
  * Position -> Last 24 bits -> Position within the attribute where the token hit occurred.
  */
 unsigned setAttributePositionBitVector(unsigned attribute, unsigned position) {
-	///assert that attribute is less than maximum allowed attributes
-	ASSERT(attribute < 0xff);
+    ///assert that attribute is less than maximum allowed attributes
+    ASSERT(attribute < 0xff);
 
-	///assert that position is less than maximum allowed document size
-	ASSERT(position < 0xffffff);
+    ///assert that position is less than maximum allowed document size
+    ASSERT(position < 0xffffff);
 
-	return ((attribute + 1) << 24) + (position & 0xffffff);
+    return ((attribute + 1) << 24) + (position & 0xffffff);
 
 //    return 1 << attribute;
 }
 
-bool isEmpty(const string &inString)
-{
+bool isEmpty(const string &inString) {
     return inString.compare("") == 0;
 }
 /*
@@ -67,59 +66,59 @@ bool isEmpty(const string &inString)
  */
 
 AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
-	this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
-	this->stemmerType = analyzerInternal.stemmerType;
-	this->stemmerFilePath = analyzerInternal.stemmerFilePath;
-	this->stopWordFilePath = analyzerInternal.stopWordFilePath;
-	this->synonymFilePath = analyzerInternal.synonymFilePath;
-	this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
+    this->recordAllowedSpecialCharacters =
+            analyzerInternal.recordAllowedSpecialCharacters;
+    prepareRegexExpression();
+    sharedToken.reset(new SharedToken);
+    this->stemmerType = analyzerInternal.stemmerType;
+    this->stemmerFilePath = analyzerInternal.stemmerFilePath;
+    this->stopWordFilePath = analyzerInternal.stopWordFilePath;
+    this->synonymFilePath = analyzerInternal.synonymFilePath;
+    this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
 }
 
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-		const string &recordAllowedSpecialCharacters,
-		const string &stemmerFilePath,
-		const string &stopWordFilePath,
-		const string &synonymFilePath,
-		const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
+        const string &recordAllowedSpecialCharacters,
+        const string &stemmerFilePath, const string &stopWordFilePath,
+        const string &synonymFilePath,
+        const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
-	this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-	CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-	prepareRegexExpression();
-	sharedToken.reset(new SharedToken);
-	this->stemmerType = stemmerFlag;
-	this->stemmerFilePath = stemmerFilePath;
-	this->stopWordFilePath = stopWordFilePath;
-	this->synonymFilePath = synonymFilePath;
-	this->synonymKeepOriginFlag = synonymKeepOriginFlag;
+    this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+    CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+    prepareRegexExpression();
+    sharedToken.reset(new SharedToken);
+    this->stemmerType = stemmerFlag;
+    this->stemmerFilePath = stemmerFilePath;
+    this->stopWordFilePath = stopWordFilePath;
+    this->synonymFilePath = synonymFilePath;
+    this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 
 }
 
 string AnalyzerInternal::applyFilters(string input) {
 
-	TokenOperator * tokenOperator = this->createOperatorFlow();
+    TokenOperator * tokenOperator = this->createOperatorFlow();
 
-	this->loadData(input);
+    this->loadData(input);
 
-	string result = "";
-	while (tokenOperator->incrementToken()) {
-		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
-		string tmp;
-		charTypeVectorToUtf8String(charVector, tmp);
-		result += tmp;
-		break;//only returns the first output of filters
-	}
-	return result;
+    string result = "";
+    while (tokenOperator->incrementToken()) {
+        vector<CharType> charVector;
+        tokenOperator->getCurrentToken(charVector);
+        string tmp;
+        charTypeVectorToUtf8String(charVector, tmp);
+        result += tmp;
+        break; //only returns the first output of filters
+    }
+    return result;
 }
 
 void AnalyzerInternal::loadData(const string &s) const {
-	std::vector<CharType> charVector;
-	utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-	this->sharedToken->currentToken.clear();
-	this->sharedToken->completeCharVector = charVector;
-	this->sharedToken->offset = 0;
+    std::vector<CharType> charVector;
+    utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
+    this->sharedToken->currentToken.clear();
+    this->sharedToken->completeCharVector = charVector;
+    this->sharedToken->offset = 0;
 }
 
 /**
@@ -134,171 +133,172 @@ void AnalyzerInternal::loadData(const string &s) const {
  *      2. We iterate over these tokens and fill the map
  */
 void AnalyzerInternal::tokenizeRecord(const Record *record,
-		map<string, TokenAttributeHits> &tokenAttributeHitsMap) const {
-	tokenAttributeHitsMap.clear();
-	const Schema *schema = record->getSchema();
-	// token string to vector<CharType>
-	vector <string> tokens;
-	vector <string>::iterator tokenIterator;
-	unsigned positionIterator;
-	unsigned size;
-	for (unsigned attributeIterator = 0;
-			attributeIterator < schema->getNumberOfSearchableAttributes();
-			attributeIterator++) {
-		string *attributeValue = record->getSearchableAttributeValue(
-				attributeIterator);
-		if (attributeValue != NULL) {
-			tokens.clear();
-			loadData(*attributeValue);
-			string currentToken = "";
-			while (tokenOperator->incrementToken()) //process the token one by one
-			{
-				vector<CharType> charVector;
-				tokenOperator->getCurrentToken(charVector);
-				charTypeVectorToUtf8String(charVector, currentToken);
-				tokens.push_back(currentToken);
-				//cout<<currentToken<<endl;
-			}
-			size = tokens.size();
+        map<string, TokenAttributeHits> &tokenAttributeHitsMap) const {
+    tokenAttributeHitsMap.clear();
+    const Schema *schema = record->getSchema();
+    // token string to vector<CharType>
+    vector<string> tokens;
+    vector<string>::iterator tokenIterator;
+    unsigned positionIterator;
+    unsigned size;
+    for (unsigned attributeIterator = 0;
+            attributeIterator < schema->getNumberOfSearchableAttributes();
+            attributeIterator++) {
+        string *attributeValue = record->getSearchableAttributeValue(
+                attributeIterator);
+        if (attributeValue != NULL) {
+            tokens.clear();
+            loadData(*attributeValue);
+            string currentToken = "";
+            while (tokenOperator->incrementToken()) //process the token one by one
+            {
+                vector<CharType> charVector;
+                tokenOperator->getCurrentToken(charVector);
+                charTypeVectorToUtf8String(charVector, currentToken);
+                tokens.push_back(currentToken);
+                //cout<<currentToken<<endl;
+            }
+            size = tokens.size();
 
-			positionIterator = 1;
-			for (tokenIterator = tokens.begin(); tokenIterator != tokens.end();
-					++tokenIterator, ++positionIterator) {
+            positionIterator = 1;
+            for (tokenIterator = tokens.begin(); tokenIterator != tokens.end();
+                    ++tokenIterator, ++positionIterator) {
 
-				///TODO OPT: Remove this comparison and make sure, split returns no empty strings.
-				if (tokenIterator->size()) {
-					//Convert to lowercase
-					std::transform(tokenIterator->begin(), tokenIterator->end(),
-							tokenIterator->begin(), ::tolower);
+                ///TODO OPT: Remove this comparison and make sure, split returns no empty strings.
+                if (tokenIterator->size()) {
+                    //Convert to lowercase
+                    std::transform(tokenIterator->begin(), tokenIterator->end(),
+                            tokenIterator->begin(), ::tolower);
 
-					tokenAttributeHitsMap[*tokenIterator].attributeList.push_back(
-							setAttributePositionBitVector(attributeIterator,
-									positionIterator));
-				}
-			}
+                    tokenAttributeHitsMap[*tokenIterator].attributeList.push_back(
+                            setAttributePositionBitVector(attributeIterator,
+                                    positionIterator));
+                }
+            }
 
-		}
-	}
+        }
+    }
 }
 
 //token utf-8 string to vector<vector<CharType> >
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
-		vector<string> &queryKeywords) const {
-	queryKeywords.clear();
-	loadData(queryString);
-	string currentToken = "";
-	while (tokenOperator->incrementToken()) //process the token one by one
-	{
-		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
-		charTypeVectorToUtf8String(charVector, currentToken);
-		queryKeywords.push_back(currentToken);
-		//cout<<currentToken<<endl;
-	}
+        vector<string> &queryKeywords) const {
+    queryKeywords.clear();
+    loadData(queryString);
+    string currentToken = "";
+    while (tokenOperator->incrementToken()) //process the token one by one
+    {
+        vector<CharType> charVector;
+        tokenOperator->getCurrentToken(charVector);
+        charTypeVectorToUtf8String(charVector, currentToken);
+        queryKeywords.push_back(currentToken);
+        //cout<<currentToken<<endl;
+    }
 
-	if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0]))
-		queryKeywords.clear();
+    if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0]))
+        queryKeywords.clear();
 }
 
 bool queryIsEmpty(string str) {
-	return str.empty();
+    return str.empty();
 }
 
 void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
-		vector<string> &queryKeywords, const char &delimiterCharacter,
-		const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
-		const char &fieldsOrCharacter,
-		const std::map<string, unsigned> &searchableAttributesNameToId,
-		vector<unsigned> &filters) const {
-	stringstream charToString;
-	string delimiter;
-	string filterDelimiter;
-	string fieldDelimiter;
-	charToString << delimiterCharacter;
-	charToString >> delimiter;
-	charToString.clear();
-	charToString << filterDelimiterCharacter;
-	charToString >> filterDelimiter;
-	charToString.clear();
-	charToString << fieldsAndCharacter;
-	charToString << fieldsOrCharacter;
-	charToString >> fieldDelimiter;
+        vector<string> &queryKeywords, const char &delimiterCharacter,
+        const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
+        const char &fieldsOrCharacter,
+        const std::map<string, unsigned> &searchableAttributesNameToId,
+        vector<unsigned> &filters) const {
+    stringstream charToString;
+    string delimiter;
+    string filterDelimiter;
+    string fieldDelimiter;
+    charToString << delimiterCharacter;
+    charToString >> delimiter;
+    charToString.clear();
+    charToString << filterDelimiterCharacter;
+    charToString >> filterDelimiter;
+    charToString.clear();
+    charToString << fieldsAndCharacter;
+    charToString << fieldsOrCharacter;
+    charToString >> fieldDelimiter;
 
-	string query = queryString;
-	queryKeywords.clear();
-	filters.clear();
-	std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+    string query = queryString;
+    queryKeywords.clear();
+    filters.clear();
+    std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
-	vector <string> parts;
-	replace_if(query.begin(), query.end(), boost::is_any_of(delimiter),
-			DEFAULT_DELIMITER);
+    vector<string> parts;
+    replace_if(query.begin(), query.end(), boost::is_any_of(delimiter),
+            DEFAULT_DELIMITER);
 
-	boost::split(parts, query, boost::is_any_of(" "));
-	std::vector<string>::iterator iter = std::remove_if(parts.begin(),
-			parts.end(), queryIsEmpty);
-	parts.erase(iter, parts.end());
-	// print the queries
-	//std::cout<<"parts number:" << parts.size()<<std::endl;
+    boost::split(parts, query, boost::is_any_of(" "));
+    std::vector<string>::iterator iter = std::remove_if(parts.begin(),
+            parts.end(), queryIsEmpty);
+    parts.erase(iter, parts.end());
+    // print the queries
+    //std::cout<<"parts number:" << parts.size()<<std::endl;
 
-	bool malformed = false;
-	for (unsigned i = 0; i < parts.size(); i++) {
-		replace_if(parts[i].begin(), parts[i].end(),
-				boost::is_any_of(filterDelimiter), DEFAULT_DELIMITER);
-		vector <string> one_pair;
-		boost::split(one_pair, parts[i], boost::is_any_of(" "));
+    bool malformed = false;
+    for (unsigned i = 0; i < parts.size(); i++) {
+        replace_if(parts[i].begin(), parts[i].end(),
+                boost::is_any_of(filterDelimiter), DEFAULT_DELIMITER);
+        vector<string> one_pair;
+        boost::split(one_pair, parts[i], boost::is_any_of(" "));
 
-		if (one_pair.size() > 2 || one_pair.size() == 0) {
-			malformed = true;
-			break;
-		}
+        if (one_pair.size() > 2 || one_pair.size() == 0) {
+            malformed = true;
+            break;
+        }
 
-		const string cleanString = this->cleanString(one_pair[0]);
-		queryKeywords.push_back(cleanString);
+        const string cleanString = this->cleanString(one_pair[0]);
+        queryKeywords.push_back(cleanString);
 
-		if (one_pair.size() == 1) {// have no filter information
-			filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
-			continue;
-		}
+        if (one_pair.size() == 1) { // have no filter information
+            filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
+            continue;
+        }
 
-		vector <string> fields;
+        vector<string> fields;
 
-		bool AND = false;
-		bool OR = false;
-		if (one_pair[1].find(fieldsAndCharacter) != string::npos)
-			AND = true;
-		if (one_pair[1].find(fieldsOrCharacter) != string::npos)
-			OR = true;
-		if (AND && OR) {
-			malformed = true;
-			break;
-		}
+        bool AND = false;
+        bool OR = false;
+        if (one_pair[1].find(fieldsAndCharacter) != string::npos)
+            AND = true;
+        if (one_pair[1].find(fieldsOrCharacter) != string::npos)
+            OR = true;
+        if (AND && OR) {
+            malformed = true;
+            break;
+        }
 
-		boost::split(fields, one_pair[1], boost::is_any_of(fieldDelimiter));
-		unsigned filter = 0;
-		for (unsigned j = 0; j < fields.size(); j++) {
-			map<string, unsigned>::const_iterator iter =
-					searchableAttributesNameToId.find(fields[j]);
-			if (iter == searchableAttributesNameToId.end()) {
-				malformed = true;
-				break;
-			}
+        boost::split(fields, one_pair[1], boost::is_any_of(fieldDelimiter));
+        unsigned filter = 0;
+        for (unsigned j = 0; j < fields.size(); j++) {
+            map<string, unsigned>::const_iterator iter =
+                    searchableAttributesNameToId.find(fields[j]);
+            if (iter == searchableAttributesNameToId.end()) {
+                malformed = true;
+                break;
+            }
 
-			unsigned bit = 1;
-			ASSERT(iter->second < 31); // the left most bit is reserved for indicating the AND/OR relation between fields
-			bit <<= iter->second;
-			filter |= bit;
-		}
-		if (AND)
-			filter |= 0x80000000;
+            unsigned bit = 1;
+            ASSERT(iter->second < 31);
+            // the left most bit is reserved for indicating the AND/OR relation between fields
+            bit <<= iter->second;
+            filter |= bit;
+        }
+        if (AND)
+            filter |= 0x80000000;
 
-		if (malformed)
-			break;
-		else
-			filters.push_back(filter);
-	}
+        if (malformed)
+            break;
+        else
+            filters.push_back(filter);
+    }
 
-	if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])))
-		queryKeywords.clear();
+    if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])))
+        queryKeywords.clear();
 }
 
 }

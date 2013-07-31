@@ -139,7 +139,7 @@ class QueryResultsInternal
 {
 public:
 	friend class QueryResults;
-	friend class ResultsPostProcessor;
+    friend class ResultsPostProcessor;
 	QueryResultsInternal();
 	void init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
 

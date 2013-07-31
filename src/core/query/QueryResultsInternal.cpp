@@ -1,4 +1,3 @@
-
 // $Id: QueryResultsInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
@@ -30,86 +29,77 @@
 using std::vector;
 using srch2::util::Logger;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 class Term;
 class Query;
 class IndexSearcherInternal;
 class TermVirtualList;
 
-
-
-
-
-
-
-
-
 /////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
 
-QueryResultsInternal::QueryResultsInternal(){
+QueryResultsInternal::QueryResultsInternal() {
 
 }
 
-void QueryResultsInternal::init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query){
-	this->resultsFactory = resultsFactory;
+void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
+        const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+    this->resultsFactory = resultsFactory;
     this->query = query;
-    this->virtualListVector = new vector<TermVirtualList* >;
+    this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
 }
 
-QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory ,const IndexSearcherInternal *indexSearcherInternal, Query *query)
-{
-	this->resultsFactory = resultsFactory;
+QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
+        const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+    this->resultsFactory = resultsFactory;
     this->query = query;
-    this->virtualListVector = new vector<TermVirtualList* >;
+    this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
 }
-    
+
 // DEBUG function. Used in CacheIntegration_Test
-bool QueryResultsInternal::checkCacheHit(IndexSearcherInternal *indexSearcherInternal, Query *query)
-{
+bool QueryResultsInternal::checkCacheHit(
+        IndexSearcherInternal *indexSearcherInternal, Query *query) {
     this->query = query;
-    this->virtualListVector = new vector<TermVirtualList* >;
+    this->virtualListVector = new vector<TermVirtualList*>;
 
     bool returnValue = false;
-    const vector<Term* > *queryTerms = query->getQueryTerms();
-    
+    const vector<Term*> *queryTerms = query->getQueryTerms();
+
     for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
-     vectorIterator != queryTerms->end(); vectorIterator++) {
+            vectorIterator != queryTerms->end(); vectorIterator++) {
         // compute the active nodes for this term
         Term *term = *vectorIterator;
-        PrefixActiveNodeSet *termActiveNodeSet = indexSearcherInternal->computeActiveNodeSet(term);
+        PrefixActiveNodeSet *termActiveNodeSet =
+                indexSearcherInternal->computeActiveNodeSet(term);
 
         // compute the virtual list for this term
-        TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), 
-                                       termActiveNodeSet, term, query->getPrefixMatchPenalty());
+        TermVirtualList *termVirtualList = new TermVirtualList(
+                indexSearcherInternal->getInvertedIndex(), termActiveNodeSet,
+                term, query->getPrefixMatchPenalty());
 
         // check if termActiveNodeSet is cached, if not delete it to prevent memory leaks.
         if (termActiveNodeSet->isResultsCached() == false) {
             delete termActiveNodeSet;
-        }
-        else {
+        } else {
             returnValue = true;
         }
-    
+
         this->virtualListVector->push_back(termVirtualList);
     }
     return returnValue;
 }
 
-QueryResultsInternal::~QueryResultsInternal()
-{
+QueryResultsInternal::~QueryResultsInternal() {
     // TODO: if we use caching, we can leave them in the cache
     for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
         delete virtualListVector->at(i);
     }
     delete virtualListVector;
-    
+
     sortedFinalResults.clear();
     while (!nextKResultsHeap.empty()) {
         nextKResultsHeap.pop();
@@ -118,116 +108,112 @@ QueryResultsInternal::~QueryResultsInternal()
     delete this->stat;
 }
 
-
-
-
-    
-
-
-
-void QueryResultsInternal::setNextK(const unsigned k)
-{
+void QueryResultsInternal::setNextK(const unsigned k) {
     this->nextK = k;
 }
 
-void QueryResultsInternal::insertResult(QueryResult * queryResult)
-{
+void QueryResultsInternal::insertResult(QueryResult * queryResult) {
     if (this->query->getQueryType() == srch2::instantsearch::TopKQuery) {
         ASSERT(this->nextKResultsHeap.size() <= this->nextK);
         if (this->nextKResultsHeap.size() < this->nextK) {
             this->nextKResultsHeap.push(queryResult);
-        }
-        else {
-        	//TODO
+        } else {
+            //TODO
             if (this->nextKResultsHeap.top()->_score < queryResult->_score) {
                 this->nextKResultsHeap.pop();
                 this->nextKResultsHeap.push(queryResult);
             }
         }
-    }
-    else {
+    } else {
         this->nextKResultsHeap.push(queryResult);
     }
 }
 
 // if the queue has k results and the min score in the queue >= maxScore, return true
-bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords)
-{
-	float temp1,temp2;
-	if(this->nextKResultsHeap.size() == 0){
-		return false;
-	}
-	Score tempScore = this->nextKResultsHeap.top()->getResultScore();
-	ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
-	temp1 = tempScore.getFloatScore();
-	temp2 = maxScoreForUnvisitedRecords;
-    if ((this->nextKResultsHeap.size() == this->nextK) && ( temp1 >= temp2 ))
+bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords) {
+    float temp1, temp2;
+    if (this->nextKResultsHeap.size() == 0) {
+        return false;
+    }
+    Score tempScore = this->nextKResultsHeap.top()->getResultScore();
+    ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
+    temp1 = tempScore.getFloatScore();
+    temp2 = maxScoreForUnvisitedRecords;
+    if ((this->nextKResultsHeap.size() == this->nextK) && (temp1 >= temp2))
         return true;
 
-  return false;
+    return false;
 }
 
-void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList)
-{
-    vector<QueryResult *>::const_iterator begin = this->sortedFinalResults.begin();
-    vector<QueryResult * >::const_iterator end = this->sortedFinalResults.end();
+void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
+    vector<QueryResult *>::const_iterator begin =
+            this->sortedFinalResults.begin();
+    vector<QueryResult *>::const_iterator end = this->sortedFinalResults.end();
 
-    for (vector<QueryResult *>::const_iterator iterator = begin; iterator != end; iterator++) {
-    	QueryResult * result = *iterator;
+    for (vector<QueryResult *>::const_iterator iterator = begin;
+            iterator != end; iterator++) {
+        QueryResult * result = *iterator;
         visitedList.insert(result->internalRecordId);
     }
 }
 
-void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
-{
-    bool descending = (this->query->getSortableAttributeIdSortOrder() == srch2::instantsearch::Descending);
+void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
+    bool descending = (this->query->getSortableAttributeIdSortOrder()
+            == srch2::instantsearch::Descending);
 
     int numberOfSortedResults = this->sortedFinalResults.size();
 
-    this->sortedFinalResults.resize(numberOfSortedResults+this->nextKResultsHeap.size());
-    unsigned tailIndex = numberOfSortedResults+this->nextKResultsHeap.size() - 1;
+    this->sortedFinalResults.resize(
+            numberOfSortedResults + this->nextKResultsHeap.size());
+    unsigned tailIndex = numberOfSortedResults + this->nextKResultsHeap.size()
+            - 1;
     unsigned index = 0;
     unsigned falseHits = 0; // Deleted Rids
 
     while (this->nextKResultsHeap.size() > 0) {
         string externalRecordId;
-        if (forwardIndex->getExternalRecordId_ReadView(this->nextKResultsHeap.top()->internalRecordId,
-                               externalRecordId)) {
+        if (forwardIndex->getExternalRecordId_ReadView(
+                this->nextKResultsHeap.top()->internalRecordId,
+                externalRecordId)) {
             QueryResult * qs = resultsFactory->impl->createQueryResult();
             qs->externalRecordId = externalRecordId;
-            qs->internalRecordId = this->nextKResultsHeap.top()->internalRecordId;
-            qs->_score.setScore(this->nextKResultsHeap.top()->_score);//TODO
-            qs->matchingKeywords.assign(this->nextKResultsHeap.top()->matchingKeywords.begin(),
-                           this->nextKResultsHeap.top()->matchingKeywords.end());
-            qs->attributeBitmaps.assign(this->nextKResultsHeap.top()->attributeBitmaps.begin(),
-            				this->nextKResultsHeap.top()->attributeBitmaps.end());
-            qs->editDistances.assign(this->nextKResultsHeap.top()->editDistances.begin(),
-                           this->nextKResultsHeap.top()->editDistances.end());
+            qs->internalRecordId =
+                    this->nextKResultsHeap.top()->internalRecordId;
+            qs->_score.setScore(this->nextKResultsHeap.top()->_score); //TODO
+            qs->matchingKeywords.assign(
+                    this->nextKResultsHeap.top()->matchingKeywords.begin(),
+                    this->nextKResultsHeap.top()->matchingKeywords.end());
+            qs->attributeBitmaps.assign(
+                    this->nextKResultsHeap.top()->attributeBitmaps.begin(),
+                    this->nextKResultsHeap.top()->attributeBitmaps.end());
+            qs->editDistances.assign(
+                    this->nextKResultsHeap.top()->editDistances.begin(),
+                    this->nextKResultsHeap.top()->editDistances.end());
             if (descending)
-                this->sortedFinalResults[tailIndex-index] = qs;
+                this->sortedFinalResults[tailIndex - index] = qs;
             else
                 this->sortedFinalResults[index] = qs;
             ++index;
-        }
-        else {
+        } else {
             ++falseHits;
         }
         this->nextKResultsHeap.pop();
     }
 
     if (descending)
-        this->sortedFinalResults.erase(this->sortedFinalResults.begin() + numberOfSortedResults, 
-                                       this->sortedFinalResults.begin() + numberOfSortedResults + falseHits);
+        this->sortedFinalResults.erase(
+                this->sortedFinalResults.begin() + numberOfSortedResults,
+                this->sortedFinalResults.begin() + numberOfSortedResults
+                        + falseHits);
     else
-        this->sortedFinalResults.erase(this->sortedFinalResults.begin() + numberOfSortedResults + index, 
-                                       this->sortedFinalResults.begin() + numberOfSortedResults + index + falseHits);
+        this->sortedFinalResults.erase(
+                this->sortedFinalResults.begin() + numberOfSortedResults
+                        + index,
+                this->sortedFinalResults.begin() + numberOfSortedResults + index
+                        + falseHits);
 
     ASSERT(this->nextKResultsHeap.size() == 0);
 }
 
-
-
-
-
-
-}}
+}
+}

@@ -247,31 +247,31 @@ void QueryExecutor::executePostProcessingPlan(Query * query,QueryResults * input
 
 		// run a plan by iterating on filters and running
 		ResultsPostProcessorPlan * plan = this->queryPlan.getPostProcessingPlan();
-		plan->beginIteration();
+    plan->beginIteration();
 
-		// short circuit in case the plan doesn't have any filters in it.
-		// if no plan is set in Query or there is no filter in it,
-		// then there is no post processing so just mirror the results
-		if(plan == NULL || ! plan->hasMoreFilters()){
-			input->copyForPostProcessing(output);
-			return;
-		}
+    // short circuit in case the plan doesn't have any filters in it.
+    // if no plan is set in Query or there is no filter in it,
+    // then there is no post processing so just mirror the results
+    if (plan == NULL || !plan->hasMoreFilters()) {
+        input->copyForPostProcessing(output);
+        return;
+    }
 
-		// iterating on filters and applying them on list of results
-		while(plan->hasMoreFilters()){
-			ResultsPostProcessorFilter * filter = plan->nextFilter();
+    // iterating on filters and applying them on list of results
+    while (plan->hasMoreFilters()) {
+        ResultsPostProcessorFilter * filter = plan->nextFilter();
 
-			// clear the output to be ready to accept the result of the filter
-			output->clear();
-			// apply the filter on the input and put the results in output
-			filter->doFilter(indexSearcher, query, input, output);
-			// if there is going to be other filters, chain the output to the input
-			if(plan->hasMoreFilters()){
-				output->copyForPostProcessing(input);
-			}
+        // clear the output to be ready to accept the result of the filter
+        output->clear();
+        // apply the filter on the input and put the results in output
+        filter->doFilter(indexSearcher, query, input, output);
+        // if there is going to be other filters, chain the output to the input
+        if (plan->hasMoreFilters()) {
+            output->copyForPostProcessing(input);
+        }
 
-		}
-		plan->closeIteration();
+    }
+    plan->closeIteration();
 
 }
 
