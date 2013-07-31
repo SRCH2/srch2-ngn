@@ -1,5 +1,5 @@
 
-// $Id: QueryResultsInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: QueryResultsInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -35,12 +35,38 @@ namespace srch2
 namespace instantsearch
 {
 class Term;
-QueryResultsInternal::QueryResultsInternal(IndexSearcherInternal *indexSearcherInternal, Query *query)
-{
+class Query;
+class IndexSearcherInternal;
+class TermVirtualList;
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
+
+QueryResultsInternal::QueryResultsInternal(){
+
+}
+
+void QueryResultsInternal::init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query){
+	this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList* >;
     this->indexSearcherInternal = indexSearcherInternal;
-    
+    this->stat = new Stat();
+}
+
+QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory ,const IndexSearcherInternal *indexSearcherInternal, Query *query)
+{
+	this->resultsFactory = resultsFactory;
+    this->query = query;
+    this->virtualListVector = new vector<TermVirtualList* >;
+    this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
 }
     
@@ -88,94 +114,23 @@ QueryResultsInternal::~QueryResultsInternal()
     while (!nextKResultsHeap.empty()) {
         nextKResultsHeap.pop();
     }
-    
+
     delete this->stat;
 }
 
-unsigned QueryResultsInternal::getNumberOfResults() const
-{
-    return this->sortedFinalResults.size();
-}
 
-std::string QueryResultsInternal::getRecordId(unsigned position) const
-{
-    ASSERT (position < this->getNumberOfResults());
-    return this->sortedFinalResults.at(position).externalRecordId;
-}
 
-unsigned QueryResultsInternal::getInternalRecordId(unsigned position) const
-{
-    ASSERT (position < this->getNumberOfResults());
-    return this->sortedFinalResults.at(position).internalRecordId;
-}
 
-std::string QueryResultsInternal::getInMemoryRecordString(unsigned position) const
-{
-    unsigned internalRecordId = this->getInternalRecordId(position);
-    return this->indexSearcherInternal->getInMemoryData(internalRecordId);
-}
-
-float QueryResultsInternal::getResultScore(unsigned position) const
-{
-    ASSERT (position < this->getNumberOfResults());
-    return this->sortedFinalResults.at(position).score;
-}
-
-double QueryResultsInternal::getPhysicalDistance(const unsigned position) const
-{
-    ASSERT (position < this->getNumberOfResults());
-    return this->sortedFinalResults.at(position).physicalDistance;
-}
-
-void QueryResultsInternal::getMatchingKeywords(const unsigned position, vector<string> &matchingKeywords) const
-{
-    matchingKeywords.assign(this->sortedFinalResults[position].matchingKeywords.begin(),
-    		this->sortedFinalResults[position].matchingKeywords.end());
-}
     
-void QueryResultsInternal::getEditDistances(const unsigned position, vector<unsigned> &editDistances) const
-{
-    editDistances.assign(this->sortedFinalResults[position].editDistances.begin(),
-    		this->sortedFinalResults[position].editDistances.end());
-}
-
-void QueryResultsInternal::getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const
-{
-	matchedAttributeBitmaps.assign(this->sortedFinalResults[position].attributeBitmaps.begin(),
-			this->sortedFinalResults[position].attributeBitmaps.end());
-}
 
 
-// return the matchedAttributes indexed from 0
-void QueryResultsInternal::getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const
-{
-	//TODO opt
-	const vector<unsigned> &matchedAttributeBitmaps = this->sortedFinalResults[position].attributeBitmaps;
-	matchedAttributes.resize(matchedAttributeBitmaps.size());
-
-	for(int i = 0; i < matchedAttributeBitmaps.size(); i++)
-	{
-		unsigned idx = 0;
-		unsigned matchedAttributeBitmap = matchedAttributeBitmaps[i];
-		matchedAttributes[i].clear();
-		while(matchedAttributeBitmap)
-		{
-			if(matchedAttributeBitmap & 0x1)
-			{
-				matchedAttributes[i].push_back(idx);
-			}
-			matchedAttributeBitmap >>= 1;
-			++idx;
-		}
-	}
-}
 
 void QueryResultsInternal::setNextK(const unsigned k)
 {
     this->nextK = k;
 }
 
-void QueryResultsInternal::insertResult(QueryResult &queryResult)
+void QueryResultsInternal::insertResult(QueryResult * queryResult)
 {
     if (this->query->getQueryType() == srch2::instantsearch::TopKQuery) {
         ASSERT(this->nextKResultsHeap.size() <= this->nextK);
@@ -183,7 +138,8 @@ void QueryResultsInternal::insertResult(QueryResult &queryResult)
             this->nextKResultsHeap.push(queryResult);
         }
         else {
-            if (this->nextKResultsHeap.top().score < queryResult.score) {
+        	//TODO
+            if (this->nextKResultsHeap.top()->_score < queryResult->_score) {
                 this->nextKResultsHeap.pop();
                 this->nextKResultsHeap.push(queryResult);
             }
@@ -197,8 +153,15 @@ void QueryResultsInternal::insertResult(QueryResult &queryResult)
 // if the queue has k results and the min score in the queue >= maxScore, return true
 bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords)
 {
-    if ((this->nextKResultsHeap.size() == this->nextK)
-    && (this->nextKResultsHeap.top().score >= maxScoreForUnvisitedRecords))
+	float temp1,temp2;
+	if(this->nextKResultsHeap.size() == 0){
+		return false;
+	}
+	Score tempScore = this->nextKResultsHeap.top()->getResultScore();
+	ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
+	temp1 = tempScore.getFloatScore();
+	temp2 = maxScoreForUnvisitedRecords;
+    if ((this->nextKResultsHeap.size() == this->nextK) && ( temp1 >= temp2 ))
         return true;
 
   return false;
@@ -206,11 +169,12 @@ bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords)
 
 void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList)
 {
-    vector<QueryResult>::const_iterator begin = this->sortedFinalResults.begin();
-    vector<QueryResult>::const_iterator end = this->sortedFinalResults.end();
+    vector<QueryResult *>::const_iterator begin = this->sortedFinalResults.begin();
+    vector<QueryResult * >::const_iterator end = this->sortedFinalResults.end();
 
-    for (vector<QueryResult>::const_iterator iterator = begin; iterator != end; iterator++) {
-        visitedList.insert(iterator->internalRecordId);
+    for (vector<QueryResult *>::const_iterator iterator = begin; iterator != end; iterator++) {
+    	QueryResult * result = *iterator;
+        visitedList.insert(result->internalRecordId);
     }
 }
 
@@ -218,7 +182,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
 {
     bool descending = (this->query->getSortableAttributeIdSortOrder() == srch2::instantsearch::Descending);
 
-    int numberOfSortedResults = this->getNumberOfResults();
+    int numberOfSortedResults = this->sortedFinalResults.size();
 
     this->sortedFinalResults.resize(numberOfSortedResults+this->nextKResultsHeap.size());
     unsigned tailIndex = numberOfSortedResults+this->nextKResultsHeap.size() - 1;
@@ -227,18 +191,18 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
 
     while (this->nextKResultsHeap.size() > 0) {
         string externalRecordId;
-        if (forwardIndex->getExternalRecordId_ReadView(this->nextKResultsHeap.top().internalRecordId, 
+        if (forwardIndex->getExternalRecordId_ReadView(this->nextKResultsHeap.top()->internalRecordId,
                                externalRecordId)) {
-            QueryResult qs;
-            qs.externalRecordId = externalRecordId;
-            qs.internalRecordId = this->nextKResultsHeap.top().internalRecordId;
-            qs.score = this->nextKResultsHeap.top().score;
-            qs.matchingKeywords.assign(this->nextKResultsHeap.top().matchingKeywords.begin(),
-                           this->nextKResultsHeap.top().matchingKeywords.end());
-            qs.attributeBitmaps.assign(this->nextKResultsHeap.top().attributeBitmaps.begin(),
-            				this->nextKResultsHeap.top().attributeBitmaps.end());
-            qs.editDistances.assign(this->nextKResultsHeap.top().editDistances.begin(),
-                           this->nextKResultsHeap.top().editDistances.end());
+            QueryResult * qs = resultsFactory->impl->createQueryResult();
+            qs->externalRecordId = externalRecordId;
+            qs->internalRecordId = this->nextKResultsHeap.top()->internalRecordId;
+            qs->_score.setScore(this->nextKResultsHeap.top()->_score);//TODO
+            qs->matchingKeywords.assign(this->nextKResultsHeap.top()->matchingKeywords.begin(),
+                           this->nextKResultsHeap.top()->matchingKeywords.end());
+            qs->attributeBitmaps.assign(this->nextKResultsHeap.top()->attributeBitmaps.begin(),
+            				this->nextKResultsHeap.top()->attributeBitmaps.end());
+            qs->editDistances.assign(this->nextKResultsHeap.top()->editDistances.begin(),
+                           this->nextKResultsHeap.top()->editDistances.end());
             if (descending)
                 this->sortedFinalResults[tailIndex-index] = qs;
             else
@@ -261,35 +225,9 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex)
     ASSERT(this->nextKResultsHeap.size() == 0);
 }
 
-void QueryResultsInternal::printStats() const
-{
-    this->stat->print();
-}
 
-void QueryResultsInternal::printResult() const
-{
-	// show attributeBitmaps
-	vector<unsigned> attributeBitmaps;
-	vector<vector<unsigned> > attributes;
-	vector<string> matchedKeywords;
-    Logger::debug("Result count %d" ,this->getNumberOfResults());
-	for(int i = 0; i < this->getNumberOfResults(); i++)
-	{
-        Logger::debug("Result #%d" ,i);
-		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
-		this->getMatchingKeywords(i, matchedKeywords);
-		this->getMatchedAttributes(i, attributes);
-		for(int j = 0; j < attributeBitmaps.size(); j++)
-		{
-            Logger::debug("%s %d {", matchedKeywords[j].c_str(), attributeBitmaps[j]);
-			for(int k = 0; k < attributes[j].size(); k++)
-                Logger::debug("%d", attributes[j][k]);
-            Logger::debug("}");
-		}
 
-	}
 
-}
 
 
 }}

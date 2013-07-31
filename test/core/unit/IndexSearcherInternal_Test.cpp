@@ -1,5 +1,5 @@
 
-//$Id: IndexSearcherInternal_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
@@ -268,6 +268,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = { "pink", "floyd", "shine"};
 
     cout<<"\n***COMPLETE EXACT***\nQuery:";
@@ -275,7 +276,8 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[0]<< "\n";
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
-    QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
+
     indexSearcherInternal->search(query, queryResults, resultCount);
     ASSERT( checkResults(queryResults, &resultSet0) == true);
     printResults(queryResults);
@@ -284,7 +286,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[1]<< "\n";
     Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
-    QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
     checkResults(queryResults1, &resultSet1);
     printResults(queryResults1);
@@ -293,7 +295,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[2]<< "\n";
     Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
-    QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
     checkResults(queryResults2, &resultSet2);
     printResults(queryResults2);
@@ -323,6 +325,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pin","floy","shi"
     };
@@ -332,7 +335,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[0]<< "\n";
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
-    QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults, resultCount);
     checkResults(queryResults, &resultSet0);
 
@@ -340,7 +343,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[1]<< "\n";
     Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
-    QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
     checkResults(queryResults1, &resultSet1);
 
@@ -348,7 +351,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[2]<< "\n";
     Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
-    QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
     checkResults(queryResults2, &resultSet2);
     //printResults(queryResults2);
@@ -374,6 +377,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pgnk","flayd","sheine"
     };
@@ -383,7 +387,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[0]<< "\n";
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);
-    QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults, resultCount);
     checkResults(queryResults, &resultSet0);
 
@@ -391,7 +395,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[1]<< "\n";
     Term *term1 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
     query->add(term1);
-    QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
     checkResults(queryResults1, &resultSet1);
 
@@ -399,7 +403,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[2]<< "\n";
     Term *term2 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
     query->add(term2);
-    QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
     checkResults(queryResults2, &resultSet2);
 
@@ -428,6 +432,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     int resultCount = 10;
     // create a query
     Query *query = new Query(srch2is::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     string keywords[3] = {
             "pionn","fllio","shiii"
     };
@@ -437,7 +442,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[0]<< "\n";
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);
-    QueryResults *queryResults = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults, resultCount);
     checkResults(queryResults, &resultSet0);
 
@@ -445,7 +450,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[1]<< "\n";
     Term *term1 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
     query->add(term1);
-    QueryResults *queryResults1 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults1, resultCount);
     checkResults(queryResults1, &resultSet1);
 
@@ -453,7 +458,7 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     cout<<keywords[2]<< "\n";
     Term *term2 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
     query->add(term2);
-    QueryResults *queryResults2 = QueryResults::create(indexSearcherInternal, query);
+    QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(), indexSearcherInternal, query);
     indexSearcherInternal->search(query, queryResults2, resultCount);
     checkResults(queryResults2, &resultSet2);
 

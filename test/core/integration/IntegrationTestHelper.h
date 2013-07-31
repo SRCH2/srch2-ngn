@@ -1,4 +1,4 @@
-//$Id: IntegrationTestHelper.h 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: IntegrationTestHelper.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -400,7 +400,7 @@ void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
         // Output the result information
         cout << "\nResult-(" << resultIter << ") RecordId:"
              << queryResults->getRecordId(resultIter)
-             << "\tScore:" << queryResults->getResultScore(resultIter);
+             << "\tScore:" << queryResults->getResultScoreString(resultIter);
 
         cout << "\nMatching Keywords:" << endl;
         unsigned editDistancesIter = 0;
@@ -432,7 +432,7 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
         // Output the result information
         cout << "\nResult-(" << resultIter << ") RecordId:"
              << queryResults->getRecordId(resultIter)
-             << "\tScore:" << queryResults->getResultScore(resultIter);
+             << "\tScore:" << queryResults->getResultScoreString(resultIter);
 
         cout << "\nMatching Keywords:" << endl;
         unsigned editDistancesIter = 0;
@@ -461,12 +461,14 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
     unsigned resultsToRetrieve = 10;
 
     Query *exactQuery = new Query(srch2::instantsearch::TopKQuery);
+    exactQuery->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, exactQuery, queryString, -1);
 
     IndexSearcherInternal *searcher1 = dynamic_cast<IndexSearcherInternal *>(indexSearcher1);
     cacheHit_exact = searcher1->cacheHit(exactQuery);
 
-    QueryResults *exactQueryResults = QueryResults::create(indexSearcher1, exactQuery);
+    QueryResults *exactQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher1, exactQuery);
+
     unsigned idsExactFound = indexSearcher1->search(exactQuery, exactQueryResults, 0, offset + resultsToRetrieve);
 
     //fill visitedList
@@ -483,24 +485,25 @@ bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher
     {
         fuzzy_reached = true;
         Query *fuzzyQuery = new Query(srch2::instantsearch::TopKQuery);
+        fuzzyQuery->setPostProcessingFilter(NO_FILTER);
         parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, -1);
 
         IndexSearcherInternal *searcher2 = dynamic_cast<IndexSearcherInternal *>(indexSearcher2);
         cacheHit_fuzzy = searcher2->cacheHit(fuzzyQuery);
 
-        QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher2, fuzzyQuery);
+        QueryResults *fuzzyQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher2, fuzzyQuery);
         idsFuzzyFound = indexSearcher2->search(fuzzyQuery, fuzzyQueryResults, 0, offset + resultsToRetrieve);
 
         // create final queryResults to print.
-        QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-        QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+        QueryResultsInternal *exact_qs = exactQueryResults->impl;
+        QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
         unsigned fuzzyQueryResultsIter = 0;
 
         while (exact_qs->sortedFinalResults.size() < offset + resultsToRetrieve
                 && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
         {
-            string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+            string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
             if ( ! exactVisitedList.count(recordId) )// recordid not there
             {
                 exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -531,9 +534,10 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     unsigned resultsToRetrieve = numberofHits;
 
     Query *exactQuery = new Query(srch2::instantsearch::TopKQuery);
+    exactQuery->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, exactQuery, queryString, attributeIdToFilter);
 
-    QueryResults *exactQueryResults = QueryResults::create(indexSearcher, exactQuery);
+    QueryResults *exactQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher, exactQuery);
     unsigned idsExactFound = indexSearcher->search(exactQuery, exactQueryResults, 0, offset + resultsToRetrieve);
 
     //IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
@@ -557,8 +561,9 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
         {
             //fuzzy_reached = 1;
             Query *fuzzyQuery = new Query(srch2::instantsearch::TopKQuery);
+            fuzzyQuery->setPostProcessingFilter(NO_FILTER);
             parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, attributeIdToFilter);
-            QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, fuzzyQuery);
+            QueryResults *fuzzyQueryResults = new QueryResults(new QueryResultFactory(),indexSearcher, fuzzyQuery);
 
             idsFuzzyFound = indexSearcher->search(fuzzyQuery, fuzzyQueryResults, 0, offset + resultsToRetrieve);
 
@@ -566,15 +571,15 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
             //cacheHit_fuzzy = searcher->cacheHit(fuzzyQuery);
 
             // create final queryResults to print.
-            QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-            QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+            QueryResultsInternal *exact_qs = exactQueryResults->impl;
+            QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
             unsigned fuzzyQueryResultsIter = 0;
 
             while (exact_qs->sortedFinalResults.size() < offset + resultsToRetrieve
                     && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
             {
-                string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+                string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
                 if ( ! exactVisitedList.count(recordId) )// recordid not there
                 {
                     exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -615,13 +620,14 @@ bool doubleSearcherPing(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
 bool pingNormalQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = numberofHits;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, 0, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -767,7 +773,7 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
             }
             else
             {
-                cout << "[" << resultCounter << "]" << queryResults->getRecordId(resultCounter) << "[" << queryResults->getResultScore(resultCounter) << "]" << endl;
+                cout << "[" << resultCounter << "]" << queryResults->getRecordId(resultCounter) << "[" << queryResults->getResultScoreString(resultCounter) << "]" << endl;
                 if ( (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()) == recordIDs[resultCounter])
                 //if (queryResults->getRecordId(resultCounter) == recordIDs[resultCounter])
                 {
@@ -786,6 +792,7 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
 bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter, int attributeIdToSort = -1)
 {
     Query *query = new Query(srch2::instantsearch::GetAllResultsQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     query->setSortableAttribute(attributeIdToSort,srch2is::Descending);
 
@@ -794,7 +801,7 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -808,6 +815,7 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
 void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, bool descending, vector<string> &recordIds, int attributeIdToFilter, int attributeIdToSort = -1)
 {
     Query *query = new Query(srch2::instantsearch::GetAllResultsQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     
     if (descending)
@@ -820,7 +828,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *index
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     for (unsigned resultCounter = 0; resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
@@ -838,12 +846,13 @@ bool pingCache1(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
     bool returnValue = false;
 
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults =  new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
-    QueryResultsInternal *q = dynamic_cast<QueryResultsInternal *>(queryResults);
+    QueryResultsInternal *q = queryResults->impl;
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
 
     if( q->checkCacheHit(searcher,query) )
@@ -860,11 +869,12 @@ bool pingCache1(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 bool pingCache2(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     bool returnValue = searcher->cacheHit(query);
@@ -880,11 +890,12 @@ bool pingCache2(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 bool ping_DUMMY(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     IndexSearcherInternal *searcher = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     searcher->cacheHit(query);
@@ -910,13 +921,14 @@ bool ping_DUMMY(const Analyzer *analyzer, IndexSearcher *indexSearcher, string q
 bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -937,13 +949,14 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
 bool pingExactPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -957,13 +970,14 @@ bool pingExactPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
 bool pingFuzzyPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -977,13 +991,14 @@ bool pingFuzzyPrefix(const Analyzer *analyzer, IndexSearcher *indexSearcher, str
 bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -997,13 +1012,14 @@ bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1018,17 +1034,18 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resVal = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
     return resVal;
@@ -1037,13 +1054,14 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
 bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed, srch2::instantsearch::TermType termType)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1058,6 +1076,7 @@ bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearch
 void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits = 10)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     int resultCount = 10;
@@ -1065,7 +1084,7 @@ void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
@@ -1086,12 +1105,13 @@ bool topK1ConsistentWithTopK2(const Analyzer *analyzer, IndexSearcher *indexSear
     }
 
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
 
-    QueryResults *queryResultsK1 = QueryResults::create(indexSearcher, query);
-    QueryResults *queryResultsK2 = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK1 = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+    QueryResults *queryResultsK2 = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK1, k1);
     indexSearcher->search(query, queryResultsK2, k2);
@@ -1117,11 +1137,12 @@ bool existsInTopK(const Analyzer *analyzer, IndexSearcher *indexSearcher, string
 {
 
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
 
     //cout << "[" << queryString << "]" << endl;
 
-    QueryResults *queryResultsK = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK =new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK, k);
 
@@ -1148,13 +1169,14 @@ bool existsInTopK(const Analyzer *analyzer, IndexSearcher *indexSearcher, string
 unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::TopKQuery);
+    query->setPostProcessingFilter(NO_FILTER);
     parseExactPrefixQuery(analyzer, query, queryString, -1);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
     unsigned returnvalue =  queryResults->getNumberOfResults();
@@ -1163,6 +1185,7 @@ unsigned pingExactTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     delete query;
     return returnvalue;
 }
+
 
 void csvline_populate(vector<string> &record, const string& line, char delimiter)
 {

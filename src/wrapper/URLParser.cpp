@@ -1,4 +1,4 @@
-//$Id: URLParser.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: URLParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include "URLParser.h"
 
@@ -381,7 +381,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 else{
                     urlParserHelper.searchType = atoi(searchTypeParamName_str.c_str());
 
-                    if (indexDataContainerConf->getSortableAttributesName()->size()==0 && urlParserHelper.searchType==1)
+                    if (indexDataContainerConf->getNonSearchableAttributes()->size()==0 && urlParserHelper.searchType==1)
                         urlParserHelper.searchType = 0;
                 }
             }
@@ -438,8 +438,10 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                         char *attributeToSortParamName_cstar = evhttp_uridecode(attributeToSortParamName, 0, &sz);
                         sortAttribute = atoi(attributeToSortParamName_cstar);
                         
-                        if (sortAttribute < 0 || sortAttribute > indexDataContainerConf->getSortableAttributesName()->size()-1)
+                        if (sortAttribute < 0 || sortAttribute > indexDataContainerConf->getNonSearchableAttributes()->size()-1)
+                        {
                             sortAttribute = indexDataContainerConf->getAttributeToSort();
+                        }
 
                         delete attributeToSortParamName_cstar;
                     }

@@ -115,7 +115,7 @@ void query(IndexSearcher *indexSearcher, string keyword, unsigned numberofHits ,
 
 	query->setRange(-200.0, -200.0, 200.0, 200.0);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 

@@ -1,4 +1,4 @@
-//$Id: Query.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Query.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -23,6 +23,7 @@
 #include <instantsearch/platform.h>
 #include <instantsearch/Term.h>
 #include <vector>
+#include <string>
 
 namespace srch2
 {
@@ -30,20 +31,43 @@ namespace instantsearch
 {
 
 class Ranker;
+class ResultsPostProcessorPlan;
 
 typedef enum
 {
-    TopKQuery = 0,
-    GetAllResultsQuery = 1,
-    MapQuery = 2
+    TopKQuery ,
+    GetAllResultsQuery ,
+    MapQuery
 } QueryType;
 
 typedef enum
 {
-    Ascending = 0,
-    Descending = 1
+	LESS_THAN ,
+	EQUALS,
+	GREATER_THAN,
+	LESS_THAN_EQUALS,
+	GREATER_THAN_EQUALS,
+	NOT_EQUALS
+
+} AttributeCriterionOperation;
+
+typedef enum
+{
+	NO_FILTER ,
+	RANGE_CHECK
+} PostProcessingFilterFlag;
+
+typedef enum
+{
+    Ascending ,
+    Descending
 } SortOrder;
 
+
+typedef enum
+{
+	Count
+} FacetedSearchAggregationType;
 /**
  * This class defines a query that is passed to the IndexSearcher. A
  * query has a list of Term objects. We can add more terms to a
@@ -144,6 +168,27 @@ public:
      */
     void setSortableAttribute(unsigned filterAttributeId, srch2::instantsearch::SortOrder order);
     unsigned getSortableAttributeId() const;
+
+
+
+    // TODO temperory functions, to test range search filter
+    void setNonSearchableAttributeName(std::string name);
+    std::string getNonSearchableAttributeName() const;
+
+    void setNonSearchableAttributeValue(std::string value);
+    std::string getNonSearchableAttributeValue() const;
+
+
+    void setPostProcessingFilter(PostProcessingFilterFlag code);
+    PostProcessingFilterFlag getPostProcessingFilter() const;
+
+    void setPostProcessingFilterOperation(AttributeCriterionOperation code);
+    AttributeCriterionOperation getPostProcessingFilterOperation() const;
+
+
+    void setPostProcessingPlan(ResultsPostProcessorPlan * plan);
+    ResultsPostProcessorPlan * getPostProcessingPlan();
+
 
     /*
      * TODO Should change this function's name to

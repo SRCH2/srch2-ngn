@@ -1,5 +1,5 @@
 
-// $Id: Query.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Query.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -24,6 +24,7 @@
 #include <instantsearch/Ranker.h>
 #include "util/Logger.h"
 #include "record/LocationRecordUtil.h"
+#include <string>
 
 #include <iostream>
 
@@ -45,6 +46,14 @@ struct Query::Impl
     Shape *range;
     Ranker *ranker;
 
+    std::string nonSearchableAttributeName ;
+    std::string nonSearchableAttributeValue ;
+
+    PostProcessingFilterFlag postProcessingFilterCode;
+    AttributeCriterionOperation postProcessingFilterOperationCode;
+
+    ResultsPostProcessorPlan *  plan;
+
     Impl()
     {
         sortableAttributeId = 0;
@@ -53,6 +62,8 @@ struct Query::Impl
         prefixMatchPenalty = 0.90;
 
         range = NULL;
+
+        plan = NULL;
     }
 
     virtual ~Impl()
@@ -206,6 +217,44 @@ unsigned Query::getSortableAttributeId() const
 {
     return this->impl->sortableAttributeId;
 }
+
+// TODO temperory functions, to test range search filter
+void Query::setNonSearchableAttributeName(std::string name){
+	this->impl->nonSearchableAttributeName = name;
+}
+std::string Query::getNonSearchableAttributeName() const{
+	return this->impl->nonSearchableAttributeName;
+}
+
+void Query::setNonSearchableAttributeValue(std::string value){
+	this->impl->nonSearchableAttributeValue = value;
+}
+std::string Query::getNonSearchableAttributeValue() const{
+	return this->impl->nonSearchableAttributeValue;
+}
+
+
+void Query::setPostProcessingFilter(PostProcessingFilterFlag code){
+	this->impl->postProcessingFilterCode = code;
+}
+PostProcessingFilterFlag Query::getPostProcessingFilter() const{
+	return this->impl->postProcessingFilterCode;
+}
+void Query::setPostProcessingFilterOperation(AttributeCriterionOperation code){
+	this->impl->postProcessingFilterOperationCode = code;
+}
+AttributeCriterionOperation Query::getPostProcessingFilterOperation() const{
+	return this->impl->postProcessingFilterOperationCode;
+}
+
+
+void Query::setPostProcessingPlan(ResultsPostProcessorPlan * plan){
+	this->impl->plan = plan;
+}
+ResultsPostProcessorPlan * Query::getPostProcessingPlan(){
+	return this->impl->plan;
+}
+
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
 {

@@ -114,7 +114,7 @@ void smallTest(string INDEX_DIR)
 
 	query->setRange(-150.0, -150.0, -50.0, -50.0);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 	// Step 6: Search the index and display results
 
@@ -180,7 +180,7 @@ void bigTest(string INDEX_DIR)
 
 	query->setRange(33.926866, -117.440088, 33.946866, -117.420088);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 	// Step 4: Search the index and display results
 

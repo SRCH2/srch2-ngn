@@ -122,7 +122,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
 
@@ -149,7 +149,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
     rectangleRange->min.y = lb_lng;
     rectangleRange->max.x = rt_lat;
     rectangleRange->max.y = rt_lng;
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(*rectangleRange, queryResults);
     ASSERT(expected.size() == queryResults->getNumberOfResults());
@@ -174,7 +174,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 	pnt.y=lb_lng;
 	Circle *circleRange = new Circle(pnt,radius);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 	indexSearcher->search(*circleRange,queryResults);
 	ASSERT(expected.size() == queryResults->getNumberOfResults());
 	for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)

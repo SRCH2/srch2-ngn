@@ -1,5 +1,5 @@
 
-// $Id: ForwardIndex.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: ForwardIndex.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -43,26 +43,7 @@ namespace instantsearch
 
 bool ForwardList::isAttributeBasedSearch = false;
 
-float ForwardIndex::_getSortableAttributeValue(unsigned sortableAttributeIndex,
-                                const string* sortableAttributeValueString) const
-{
-    if (sortableAttributeValueString == NULL ||  sortableAttributeValueString->compare("") == 0) {
-        sortableAttributeValueString = this->schemaInternal->getDefaultValueOfSortableAttribute(sortableAttributeIndex);
-    }
 
-    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(sortableAttributeIndex);
-
-    if (filterType == srch2::instantsearch::UNSIGNED) {
-        unsigned value = (unsigned)( atoi(sortableAttributeValueString->c_str()) ) ;
-        return  value;
-    }
-
-    // filterType == srch2::instantsearch::FLOAT
-
-    float value = (float)( atof(sortableAttributeValueString->c_str()) );
-
-    return value;
-}
 
 ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal)
 {
@@ -120,7 +101,7 @@ void ForwardIndex::resetDeleteFlag(unsigned internalRecordId)
 }
 
 
-void printForwardList(unsigned id, const ForwardList *fl)
+void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema)
 {
     Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
     Logger::debug("RecordBoost: %.3f, Size: %d" , fl->getRecordBoost(), fl->getNumberOfKeywords());
@@ -235,26 +216,37 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
  //   return this->keywordIdVector->at(cursor);
 //}
 
-float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaSortableAttributeId) const
-{
-    ASSERT( schemaSortableAttributeId < schemaInternal->getNumberOfSortableAttributes() );
 
-    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(schemaSortableAttributeId);
 
-    float scoreItem = 0.0;
+Score ForwardList::getForwardListNonSearchableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaNonSearchableAttributeId) const{
 
-    if (filterType == srch2::instantsearch::UNSIGNED) {
-        scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
-    }
-    else if (filterType == srch2::instantsearch::FLOAT) {
-        scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
-    }
-    else
-    {
-        ASSERT(false);
-    }
+    ASSERT( schemaNonSearchableAttributeId < schemaInternal->getNumberOfNonSearchableAttributes() );
 
-    return scoreItem;
+    FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(schemaNonSearchableAttributeId);
+
+    Score score;
+
+    switch (filterType) {
+		case srch2::instantsearch::UNSIGNED:
+			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::FLOAT:
+			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::TEXT:
+			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::TIME:
+			score.setScore((unsigned)1000000); // TODO , time and long should be converted, when ? where ? here ?
+			//score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		default:
+			ASSERT(false);
+			break;
+	}
+
+    return score;
+
 }
 
 // WriteView
@@ -290,21 +282,21 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
     if(keywordIdList.size() >= KEYWORD_THRESHOLD)
     	keywordIdList.resize(KEYWORD_THRESHOLD);
 
-    unsigned sortableAttributeListCapacity = this->schemaInternal->getNumberOfSortableAttributes();
     unsigned keywordListCapacity = keywordIdList.size();
 
-    ForwardList *forwardList = new ForwardList(sortableAttributeListCapacity, keywordListCapacity);
+    ForwardList *forwardList = new ForwardList(keywordListCapacity);
     forwardList->setExternalRecordId(record->getPrimaryKey());
     forwardList->setRecordBoost(record->getRecordBoost());
     forwardList->setInMemoryData(record->getInMemoryData());
     forwardList->setNumberOfKeywords(keywordIdList.size());
 
 
-    //Adding Sortable Attribute list
-    for ( unsigned iter = 0; iter < this->schemaInternal->getNumberOfSortableAttributes() ; ++iter)
+    //Adding Non searchable Attribute list
+    for ( unsigned iter = 0; iter < this->schemaInternal->getNumberOfNonSearchableAttributes() ; ++iter)
     {
-        const string* sortableAttributeValueString = record->getSortableAttributeValue(iter);
-        forwardList->setSortableAttribute(iter, this->_getSortableAttributeValue(iter, sortableAttributeValueString));
+
+        const string * nonSearchableAttributeValueString = record->getNonSearchableAttributeValue(iter);
+        forwardList->setNonSearchableAttributeValue(iter, this->schemaInternal , *nonSearchableAttributeValueString);
     }
 
     // Add KeywordId List
@@ -357,7 +349,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
 void ForwardIndex::addDummyFirstRecord()// For Trie bootstrap
 {
     ForwardListPtr managedForwardListPtr;
-    managedForwardListPtr.first = new ForwardList(0,0);
+    managedForwardListPtr.first = new ForwardList(0);
     managedForwardListPtr.second = false;
     ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
     this->forwardListDirectory->getWriteView(writeView);
@@ -503,7 +495,7 @@ void ForwardIndex::print_test()
 
         if (valid == false)
             continue;
-        printForwardList(counter, fl);
+        printForwardList(counter, fl , this->schemaInternal);
     }
 }
 

@@ -1,4 +1,4 @@
-//$Id: HTTPResponse.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: HTTPResponse.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #ifndef _HTTPRESPONSE_H_
 #define _HTTPRESPONSE_H_
@@ -16,6 +16,7 @@
 #include <instantsearch/IndexSearcher.h>
 
 #include "query/QueryResultsInternal.h"
+#include "operation/IndexSearcherInternal.h"
 
 #include <sys/queue.h>
 #include <event.h>

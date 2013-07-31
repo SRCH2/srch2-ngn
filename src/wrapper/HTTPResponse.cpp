@@ -1,4 +1,4 @@
-//$Id: HTTPResponse.cpp 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: HTTPResponse.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
@@ -12,6 +12,9 @@
 
 #include "HTTPResponse.h"
 #include "IndexWriteUtil.h"
+#include "instantsearch/Score.h"
+#include "instantsearch/ResultsPostProcessor.h"
+
 
 #include <event2/http.h>
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
@@ -124,7 +127,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		for(unsigned i = start; i < end; ++i)
 		{
 			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = (0-queryResults->getResultScore(i));//the actual distance between the point of record and the center point of the range
+			root["results"][counter]["score"] = (0-queryResults->getResultScore(i).getFloatScore());//the actual distance between the point of record and the center point of the range
 			if (indexDataContainerConf->getSearchResponseFormat() == 0
 					|| indexDataContainerConf->getSearchResponseFormat() == 2)
 			{
@@ -150,7 +153,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		{
 
 			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = queryResults->getResultScore(i);
+			root["results"][counter]["score"] = queryResults->getResultScore(i).getFloatScore();
 
 			// print edit distance vector
 			vector<unsigned> editDistances;
@@ -576,6 +579,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     {
         int idsExactFound = 0;
         srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+        srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
 
         //do the search
         switch(urlParserHelper.searchType)
@@ -589,7 +593,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
             else
             {
 
-              srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+              srch2is::QueryResults *exactQueryResults = new srch2is::QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->exactQuery);
               idsExactFound = indexSearcher->search(urlToDoubleQuery->exactQuery, exactQueryResults, 0, urlParserHelper.offset + urlParserHelper.resultsToRetrieve);
 
                 //fill visitedList
@@ -603,19 +607,19 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 if ( urlParserHelper.isFuzzy && (idsExactFound < (int)(urlParserHelper.resultsToRetrieve + urlParserHelper.offset)))
                 {
-                    QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, urlToDoubleQuery->fuzzyQuery);
+                    QueryResults *fuzzyQueryResults = new QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->fuzzyQuery);
                     idsFuzzyFound = indexSearcher->search(urlToDoubleQuery->fuzzyQuery, fuzzyQueryResults, 0, urlParserHelper.offset + urlParserHelper.resultsToRetrieve);
                     // create final queryResults to print.
 
-                    QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-                    QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+                    QueryResultsInternal *exact_qs = exactQueryResults->impl;
+                    QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
                     unsigned fuzzyQueryResultsIter = 0;
 
                     while (exact_qs->sortedFinalResults.size() < (unsigned)(urlParserHelper.offset + urlParserHelper.resultsToRetrieve)
                             && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
                     {
-                        std::string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+                        std::string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
                         if ( ! exactVisitedList.count(recordId) )// recordid not there
                         {
                             exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -624,6 +628,18 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
                     }
                     delete fuzzyQueryResults;
                 }
+
+
+
+
+
+//                ResultsPostProcessor postProcessor(indexSearcher);
+
+
+                QueryResults * finalQueryResults = new QueryResults(resultsFactory,indexSearcher,urlToDoubleQuery->exactQuery);
+//                postProcessor.runPlan(urlToDoubleQuery->exactQuery, exactQueryResults , finalQueryResults);
+
+
 
                 // compute elapsed time in ms
                 struct timespec tend;
@@ -637,14 +653,27 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
                 //TODO: Logging
                 //cry_wrapper(conn, search_time.str().c_str());
 
-                unsigned idsFound = exactQueryResults->getNumberOfResults();
+                unsigned idsFound = finalQueryResults->getNumberOfResults();
 
-                exactQueryResults->printStats();
+                finalQueryResults->printStats();
 
-                HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
-                        urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
+                HTTPResponse::printResults(
+                		req,
+                		headers,
+                		urlParserHelper,
+                		indexDataContainerConf,
+                		finalQueryResults,
+                		urlToDoubleQuery->exactQuery,
+                		server->indexer,
+                        urlParserHelper.offset,
+                        idsFound,
+                        idsFound,
+                        ts1,
+                        tstart,
+                        tend);
 
                 delete exactQueryResults;
+                delete finalQueryResults;
             }
         }
         break;
@@ -658,46 +687,62 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
             else
             {
 
-              srch2is::QueryResults *queryResults = NULL;
-              unsigned idsFound = 0;
-              
-              if ( !urlParserHelper.isFuzzy )
-              {
-                queryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
-                idsFound = indexSearcher->search(urlToDoubleQuery->exactQuery, queryResults, 0);
-              }
-              else
-                {
-                    queryResults = QueryResults::create(indexSearcher, urlToDoubleQuery->fuzzyQuery);
-                    idsFound = indexSearcher->search(urlToDoubleQuery->fuzzyQuery, queryResults, 0);
-                }
+            	srch2is::QueryResults *queryResults = NULL;
+            	unsigned idsFound = 0;
 
-                // compute elapsed time in ms
-                struct timespec tend;
-                clock_gettime(CLOCK_REALTIME, &tend);
-                unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+            	if ( !urlParserHelper.isFuzzy )
+            	{
+            		queryResults = new srch2is::QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->exactQuery);
+            		idsFound = indexSearcher->search(urlToDoubleQuery->exactQuery, queryResults, 0);
+            	}
+            	else
+            	{
+            		queryResults =  new QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->fuzzyQuery);
+            		idsFound = indexSearcher->search(urlToDoubleQuery->fuzzyQuery, queryResults, 0);
+            	}
 
-                //std::stringstream search_time;
-                //search_time << req->uri << "|" << idsExactFound <<"[executed in " << ts1 << " ms]";
+            	// compute elapsed time in ms
+            	struct timespec tend;
+            	clock_gettime(CLOCK_REALTIME, &tend);
+            	unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-                //std::cout << search_time.str() << std::endl;
-                //TODO: Logging
-                //cry_wrapper(conn, search_time.str().c_str());
+            	//std::stringstream search_time;
+            	//search_time << req->uri << "|" << idsExactFound <<"[executed in " << ts1 << " ms]";
 
-                queryResults->printStats();
+            	//std::cout << search_time.str() << std::endl;
+            	//TODO: Logging
+            	//cry_wrapper(conn, search_time.str().c_str());
 
-                if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
-                {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
-                            urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
-                }
-                else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-                {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
-                            urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
-                }
 
-                delete queryResults;
+
+//            	ResultsPostProcessor postProcessor(indexSearcher);
+
+
+            	QueryResults * finalQueryResults = new QueryResults(resultsFactory,indexSearcher,
+    					(urlParserHelper.isFuzzy)?urlToDoubleQuery->fuzzyQuery:urlToDoubleQuery->exactQuery);
+
+//            	postProcessor.runPlan(
+//            			(urlParserHelper.isFuzzy)?urlToDoubleQuery->fuzzyQuery:urlToDoubleQuery->exactQuery,
+//            					queryResults , finalQueryResults);
+
+
+
+
+            	queryResults->printStats();
+
+            	if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
+            	{
+            		HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, finalQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+            				urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
+            	}
+            	else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+            	{
+            		HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, finalQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+            				urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
+            	}
+
+            	delete queryResults;
+            	delete finalQueryResults;
             }
         }
         break;
@@ -711,7 +756,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
             else
             {
             	// for the range query without keywords.
-				srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+				srch2is::QueryResults *exactQueryResults = new srch2is::QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->exactQuery);
 				if(urlToDoubleQuery->exactQuery->getQueryTerms()->empty())//check if query type is a range query without keywords
 				{
 					vector<double> values;
@@ -756,20 +801,20 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
 					if ( urlParserHelper.isFuzzy && idsExactFound < (int)(urlParserHelper.resultsToRetrieve+urlParserHelper.offset))
 					{
-						QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, urlToDoubleQuery->fuzzyQuery);
+						QueryResults *fuzzyQueryResults = new QueryResults(resultsFactory,indexSearcher, urlToDoubleQuery->fuzzyQuery);
 						indexSearcher->search( urlToDoubleQuery->fuzzyQuery, fuzzyQueryResults);
 						idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
 
 						// create final queryResults to print.
-						QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-						QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+						QueryResultsInternal *exact_qs = exactQueryResults->impl;
+						QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
 						unsigned fuzzyQueryResultsIter = 0;
 
 						while (exact_qs->sortedFinalResults.size() < (unsigned)(urlParserHelper.offset + urlParserHelper.resultsToRetrieve)
 								&& fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
 						{
-							std::string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+							std::string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
 							if ( ! exactVisitedList.count(recordId) )// recordid not there
 							{
 								exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -812,6 +857,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
         }
         };
         delete indexSearcher;
+        delete resultsFactory;
     }
     else
     {

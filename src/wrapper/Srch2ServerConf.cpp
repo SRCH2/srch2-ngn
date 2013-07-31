@@ -1,8 +1,9 @@
 
-// $Id: Srch2ServerConf.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Srch2ServerConf.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include "Srch2ServerConf.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -59,10 +60,16 @@ Srch2ServerConf::Srch2ServerConf(int argc,
 
 				("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
 				("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
+
 				("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-				("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
+				("attributes-search-default" , po::value<string>(), "Default values for searchable attributes")
+				("attributes-search-required" , po::value<string>(), "Flag to indicate if searchable attributes are nullable")
+
+				("non-searchable-attributes", po::value<string>(), "Attributes/fields in data for sorting and range query")
+				("non-searchable-attributes-types", po::value<string>(), "Types of attributes/fields in data for sorting and range query")
+				("non-searchable-attributes-default", po::value<string>(), "Default values of attributes/fields in data for sorting and range query")
+				("non-searchable-attributes-sort" , po::value<string>() , "Flag to indicate if a non-searchable attribute can be used to sort results.")
+
 				("attribute-record-boost", po::value<string>(), "record-boost")
 				("attribute-latitude", po::value<string>(), "record-attribute-latitude")
 				("attribute-longitude", po::value<string>(), "record-attribute-longitude")
@@ -83,7 +90,7 @@ Srch2ServerConf::Srch2ServerConf(int argc,
 				("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
 				("support-attribute-based-search", po::value<int>(), "If support attribute based search")
 				("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
-				("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
+				("default-attribute-to-sort", po::value<string>(), "attribute used to sort the results")
 				("default-order", po::value<int>(), "sort order")
 				("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
 
@@ -177,13 +184,7 @@ void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &confi
 	}
 }
 
-void Srch2ServerConf::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector)
-{
-    for(unsigned iter=0; iter < searchableAttributesVector.size(); iter++)
-    {
-        searchableAttributesTriple[searchableAttributesVector[iter]] = pair<unsigned, unsigned>(iter, 1);
-    }
-}
+
 
 void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
@@ -299,6 +300,27 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		return;
 	}
 
+	vector<string> searchableAttributesDefaultVector(searchableAttributesVector.size());
+	if (vm.count("attributes-search-default") && (vm["attributes-search-default"].as<string>().compare(ignoreOption) != 0)) {
+		boost::split(searchableAttributesDefaultVector, vm["attributes-search-default"].as<string>(), boost::is_any_of(","));
+	}else {
+		std::fill(searchableAttributesDefaultVector.begin() , searchableAttributesDefaultVector.end() , "");
+		parseError << "OPTIONAL: Attributes Search Default is not set.\n";
+	}
+
+	vector<bool> searchableAttributesRequiredFlagVector(searchableAttributesVector.size());
+	if (vm.count("attributes-search-required") && (vm["attributes-search-required"].as<string>().compare(ignoreOption) != 0)) {
+		vector<string> temp(searchableAttributesVector.size());
+		boost::split(temp, vm["attributes-search-required"].as<string>(), boost::is_any_of(","));
+		for(unsigned iter = 0 ; iter < temp.size() ; iter++){
+			searchableAttributesRequiredFlagVector[iter] = atoi(temp[iter].c_str());
+		}
+	}else {
+		std::fill(searchableAttributesRequiredFlagVector.begin() , searchableAttributesRequiredFlagVector.end() , false); // in default nothing is required
+		parseError << "OPTIONAL: Attributes Search required flag is not set.\n";
+	}
+
+
     bool attrBoostParsed = false;
 	if (vm.count("attribute-boosts")  && (vm["attribute-boosts"].as<string>().compare(ignoreOption) != 0))
     {
@@ -308,7 +330,12 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
         {
 		    for(unsigned iter=0; iter<values.size(); iter++)
 		    {
-                searchableAttributesTriple[searchableAttributesVector[iter]] = pair<unsigned, unsigned>(0, (unsigned)atoi(values[iter].c_str()));
+                searchableAttributesInfo[searchableAttributesVector[iter]] =
+                		pair<bool , pair<string, pair<unsigned, unsigned> > >(searchableAttributesRequiredFlagVector[iter] ,
+                								pair<string, pair<unsigned, unsigned> >(searchableAttributesDefaultVector[iter],
+                										pair<unsigned, unsigned>(0,
+                												(unsigned)atoi(values[iter].c_str()))));
+
 		    }
             attrBoostParsed = true;
         }
@@ -322,46 +349,94 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		parseError << "OPTIONAL: Attributes Boosts is not set.\n";
     }
 
-    // give each searchable attribute an id based on the order in the triple
+    // give each searchable attribute an id based on the order in the info map
     // should be consistent with the id in the schema
     unsigned idIter = 0;
-    map<string, pair<unsigned, unsigned> >::iterator searchableAttributeIter = searchableAttributesTriple.begin();
-    for ( ; searchableAttributeIter != searchableAttributesTriple.end();
-                         searchableAttributeIter++)
+    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
+    for( ; searchableAttributeIter != searchableAttributesInfo.end(); searchableAttributeIter++ )
     {
-        searchableAttributeIter->second.first = idIter;
-        idIter++;
+    	searchableAttributeIter->second.second.first = idIter;
+    	idIter++;
     }
 
     if (!attrBoostParsed)
     {
-		this->_setDefaultSearchableAttributeBoosts(searchableAttributesVector);
+	    for(unsigned iter=0; iter<searchableAttributesVector.size(); iter++)
+	    {
+            searchableAttributesInfo[searchableAttributesVector[iter]] =
+            		pair<bool , pair<string, pair<unsigned, unsigned> > >(searchableAttributesRequiredFlagVector[iter] ,
+            								pair<string, pair<unsigned, unsigned> >(searchableAttributesDefaultVector[iter],
+            										pair<unsigned, unsigned>(iter,1)));
+
+	    }
+
 		parseError << "All Attributes Boosts are set to 1.\n";
     }
 
-	if ( vm.count("attributes-sort") && (vm["attributes-sort"].as<string>().compare(ignoreOption) != 0) )
+
+    unsigned isDefaultSortAttributeNeeded = false;
+
+    if ( vm.count("non-searchable-attribute") && (vm["non-searchable-attribute"].as<string>().compare(ignoreOption) != 0) )
     {
-        if (vm.count("attributes-sort-type") && (vm["attributes-sort-type"].as<string>().compare(ignoreOption) != 0)
-			&& vm.count("attributes-sort-default-value") && (vm["attributes-sort-default-value"].as<string>().compare(ignoreOption) != 0) )
+    	vector<string> attributeNames;
+    	boost::split(attributeNames, vm["non-searchable-attribute"].as<string>(), boost::is_any_of(","));
+
+
+    	vector<bool> attributeIsSortable;
+	    if (vm.count("non-searchable-attributes-sort") && (vm["non-searchable-attributes-sort"].as<string>().compare(ignoreOption) != 0))
 	    {
-		    vector<string> attributeNames;
+	    	vector<string> attributeTypesTmp;
+	    	boost::split(attributeTypesTmp, vm["non-searchable-attributes-sort"].as<string>(), boost::is_any_of(","));
+	    	for(unsigned iter=0; iter<attributeTypesTmp.size(); iter++)
+	    	{
+	    		if (attributeTypesTmp[iter].compare("0") == 0){
+	    			attributeIsSortable.push_back(false);
+	    		}else if(attributeTypesTmp[iter].compare("1") == 0){
+	    			attributeIsSortable.push_back(true);
+	    			isDefaultSortAttributeNeeded = true;
+	    		}else {
+			        parseError << "Non-searchable-attributes-sort only accepts 0 and 1.\n";
+			        configSuccess = false;
+			        return;
+		        }
+	    	}
+
+	    	if(attributeIsSortable.size() != attributeNames.size()){
+	    		parseError << "Non-searchable related options were not set correctly.\n";
+	    		configSuccess = false;
+	    		return;
+	    	}
+
+	    }else{ // default value is false
+	    	attributeIsSortable.insert(attributeIsSortable.begin(),attributeNames.size(), false);
+	    }
+
+
+        if (vm.count("non-searchable-attributes-types") && (vm["non-searchable-attributes-types"].as<string>().compare(ignoreOption) != 0)
+			&& vm.count("non-searchable-attributes-default") && (vm["non-searchable-attributes-default"].as<string>().compare(ignoreOption) != 0) )
+        {
 		    vector<srch2::instantsearch::FilterType> attributeTypes;
 		    vector<string> attributeDefaultValues;
 
-		    boost::split(attributeNames, vm["attributes-sort"].as<string>(), boost::is_any_of(","));
-		    boost::split(attributeDefaultValues, vm["attributes-sort-default-value"].as<string>(), boost::is_any_of(","));
+
+		    boost::split(attributeDefaultValues, vm["non-searchable-attributes-default"].as<string>(), boost::is_any_of(","));
 
 		    {
 			    vector<string> attributeTypesTmp;
-			    boost::split(attributeTypesTmp, vm["attributes-sort-type"].as<string>(), boost::is_any_of(","));
+			    boost::split(attributeTypesTmp, vm["non-searchable-attributes-types"].as<string>(), boost::is_any_of(","));
 			    for(unsigned iter=0; iter<attributeTypesTmp.size(); iter++)
 			    {
-				    if (attributeTypesTmp[iter].compare("0") == 0)
+				    if (attributeTypesTmp[iter].compare("int") == 0)
 					    attributeTypes.push_back(srch2::instantsearch::UNSIGNED);
-				    else if (attributeTypesTmp[iter].compare("1") == 0)
+				    else if (attributeTypesTmp[iter].compare("float") == 0)
 					    attributeTypes.push_back(srch2::instantsearch::FLOAT);
+				    else if (attributeTypesTmp[iter].compare("text") == 0)
+				    	attributeTypes.push_back(srch2::instantsearch::TEXT);
+				    else if (attributeTypesTmp[iter].compare("time") == 0)
+				    	attributeTypes.push_back(srch2::instantsearch::TIME);
 			    }
 		    }
+
 
 		    if (attributeNames.size() == attributeTypes.size()
 				&& attributeNames.size() == attributeDefaultValues.size())
@@ -369,25 +444,28 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 
 			    for(unsigned iter=0; iter<attributeNames.size(); iter++)
 			    {
-				    sortableAttributes.push_back(attributeNames[iter]);
-				    sortableAttributesType.push_back(attributeTypes[iter]);
-				    sortableAttributesDefaultValue.push_back(attributeDefaultValues[iter]);
+
+			    	/// map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >
+			    	nonSearchableAttributesInfo[attributeNames[iter]] =
+			    			pair< srch2::instantsearch::FilterType, pair<string, bool> >(
+			    					attributeTypes[iter], pair<string, bool>(attributeDefaultValues[iter], attributeIsSortable[iter]));
 			    }
 		    }
             else
             {
-		        parseError << "Attributes-sort related options were not set correctly.\n";
+		        parseError << "Non-searchable attribute related options were not set correctly.\n";
 		        configSuccess = false;
 		        return;
 	        }
-	    }
-        else
-        {
-		    parseError << "Attributes-sort related options were not set correctly.\n";
-		    configSuccess = false;
-		    return;
-	    }
+
+        }else{
+        	parseError << "Non-searchable attribute related options were not set correctly.\n";
+        	configSuccess = false;
+        	return;
+        }
     }
+
+
 
 	recordBoostAttributeSet = false;
 	if (vm.count("attribute-record-boost") && (vm["attribute-record-boost"].as<string>().compare(ignoreOption) != 0))
@@ -629,12 +707,12 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		//parseError << "\n";
 	}
 
-	if (supportAttributeBasedSearch && searchableAttributesTriple.size() > 31) {
-		parseError
-				<< "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-		configSuccess = false;
-		return;
-	}
+    if (supportAttributeBasedSearch && searchableAttributesInfo.size()>31)
+    {
+        parseError << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
+        configSuccess = false;
+        return;
+    }
 
 	if (vm.count("default-results-to-retrieve")) {
 		resultsToRetrieve = vm["default-results-to-retrieve"].as<int>();
@@ -643,11 +721,50 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 		//parseError << "resultsToRetrieve is not set.\n";
 	}
 
-	if (vm.count("default-attribute-to-sort")) {
-		attributeToSort = vm["default-attribute-to-sort"].as<int>();
-	} else {
-		attributeToSort = 0;
-		//parseError << "attributeToSort is not set.\n";
+//	if (vm.count("default-attribute-to-sort")) {
+//		attributeToSort = vm["default-attribute-to-sort"].as<string>();
+//		if(! nonSearchableAttributesInfo[attributeToSort].second.second){
+//	        parseError << "Default attribute to sort is not specified as sortable in non-searchable-attributes-sort.\n";
+//	        configSuccess = false;
+//	        return;
+//		}
+//	}else {
+//		if (isDefaultSortAttributeNeeded){
+//	        parseError << "Some attributes are sortable but no default sortable attribute is specified.\n";
+//	        configSuccess = false;
+//	        return;
+//		}
+//
+//		attributeToSort = "";
+//		//parseError << "attributeToSort is not set.\n";
+//	}
+	if (vm.count("default-attribute-to-sort") && (vm["default-attribute-to-sort"].as<string>().compare(ignoreOption) != 0)) {
+
+
+		string attributeToSortTmp = vm["default-attribute-to-sort"].as<string>();
+		attributeToSort = -1;
+		int i=0;
+		for(map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator iter = nonSearchableAttributesInfo.begin();
+				iter != nonSearchableAttributesInfo.end(); ++iter){
+			if(attributeToSortTmp.compare(iter->first) == 0 && iter->second.second.second){
+				attributeToSort = i;
+			}
+			i++;
+		}
+		if(attributeToSort == -1){
+	        parseError << "Default attribute to be used for sort is not set correctly.\n";
+	        configSuccess = false;
+	        return;
+		}
+		// 	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
+	}else{
+
+		if(isDefaultSortAttributeNeeded){
+	        parseError << "Default attribute to be used for sort is not specified.\n";
+	        configSuccess = false;
+	        return;
+		}
+		attributeToSort = 0 ;
 	}
 
 	if (vm.count("default-order")) {
@@ -769,25 +886,27 @@ const string& Srch2ServerConf::getPrimaryKey() const {
 	return primaryKey;
 }
 
-const map<string, pair<unsigned, unsigned> > * Srch2ServerConf::getSearchableAttributes() const {
-	return &searchableAttributesTriple;
+
+
+const map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > * Srch2ServerConf::getSearchableAttributes() const
+{
+	return & searchableAttributesInfo;
 }
 
-const vector<string> * Srch2ServerConf::getAttributesToReturnName() const {
+
+const map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > * Srch2ServerConf::getNonSearchableAttributes() const
+{
+	return & nonSearchableAttributesInfo;
+}
+
+const vector<string> * Srch2ServerConf::getAttributesToReturnName() const
+{
 	return &attributesToReturn;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesName() const {
-	return &sortableAttributes;
-}
 
-const vector<srch2::instantsearch::FilterType> * Srch2ServerConf::getSortableAttributesType() const {
-	return &sortableAttributesType;
-}
 
-const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() const {
-	return &sortableAttributesDefaultValue;
-}
+
 
 /*const vector<unsigned> * Srch2ServerConf::getAttributesBoosts() const
  {

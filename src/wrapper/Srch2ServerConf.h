@@ -1,4 +1,4 @@
-//$Id: Srch2ServerConf.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Srch2ServerConf.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
@@ -64,14 +64,17 @@ private:
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
-	// < keyword, < offset, boost > >
-	map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
-	vector<string> sortableAttributes;
-	string attributeRecordBoost;
 
+    // < name, <required, <default, <offset, boost> > > >
+    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
+
+	string attributeRecordBoost;
 	string scoringExpressionString;
-	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-	vector<string> sortableAttributesDefaultValue;
+
+
+	// < name, <type, <default, isSortable>>>
+	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
+
 
 	//vector<unsigned> attributesBoosts;
 
@@ -116,12 +119,8 @@ public:
 			std::stringstream &parseError);
 	virtual ~Srch2ServerConf();
 
-	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,
-			std::stringstream &parseError);
-	void _setDefaultSearchableAttributeBoosts(
-			const vector<string> &searchableAttributesVector);
-	void parse(const boost::program_options::variables_map &vm,
-			bool &configSuccess, std::stringstream &parseError);
+	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
+	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
 
 	const std::string& getCustomerName() const;
 	uint32_t getDocumentLimit() const;
@@ -131,12 +130,13 @@ public:
 	const std::string& getFilePath() const;
 	const std::string& getPrimaryKey() const;
 
-	const map<string, pair<unsigned, unsigned> > * getSearchableAttributes() const;
-	const vector<string> * getAttributesToReturnName() const;
+	const map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > * getSearchableAttributes() const;
 
-	const vector<string> * getSortableAttributesName() const;
-	const vector<srch2::instantsearch::FilterType> * getSortableAttributesType() const;
-	const vector<string> * getSortableAttributesDefaultValue() const;
+	const map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > * getNonSearchableAttributes() const;
+
+    const vector<string> * getAttributesToReturnName() const;
+
+
 
 	//const vector<unsigned>* getAttributesBoosts() const;
 	const std::string& getAttributeRecordBoostName() const;

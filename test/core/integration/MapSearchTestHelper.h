@@ -225,7 +225,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 		// Output the result information
 		cout << "\nResult-(" << resultIter << ") RecordId:"
 				<< queryResults->getRecordId(resultIter)
-				<< "\tScore:" << queryResults->getResultScore(resultIter)
+				<< "\tScore:" << queryResults->getResultScoreString(resultIter)
 				<< "\nDistance:" << queryResults->getPhysicalDistance(resultIter);
 
 		cout << "\nMatching Keywords:" << endl;
@@ -264,12 +264,12 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
     //printGeoResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resVal = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
     return resVal;
@@ -301,7 +301,7 @@ bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearc
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
     printGeoResults(queryResults);
@@ -330,7 +330,7 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     }
 
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
-    QueryResults *queryResultsK = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK);
 

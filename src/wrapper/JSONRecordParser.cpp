@@ -1,5 +1,5 @@
 
-// $Id: JSONRecordParser.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: JSONRecordParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include <iostream>
 #include <sstream>
@@ -102,44 +102,54 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         record->setInMemoryData(compressedInputLine);
     }
 
-    for (map<string, pair<unsigned, unsigned> >::const_iterator attributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
-            attributeIter != indexDataContainerConf->getSearchableAttributes()->end();
-            ++attributeIter)
+
+    for (map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator attributeIter
+    		= indexDataContainerConf->getSearchableAttributes()->begin();
+    		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
-        string attributeKeyName = attributeIter->first;
-        //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
-        //Json::Value localValue = root.get(attributeKeyName, "NULL" );
-        //string attributeStringValue = localValue.asString();
+    	string attributeKeyName = attributeIter->first;
+
         string attributeStringValue;
         getJsonValueString(root, attributeKeyName, attributeStringValue, "attributes-search");
 
         if (attributeStringValue.compare("NULL") != 0)
         {
             record->setSearchableAttributeValue(attributeKeyName,attributeStringValue);
+        }else{ // error if required or set to default
+        	if(attributeIter->second.first){ // true means required
+        		// ERROR
+                error << "\nRequired field has a null value.";
+                return false;// Raise Error
+        	}else{
+        		// passing the default value from config file
+        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+        	}
         }
     }
 
-    for (vector<string>::const_iterator attributeIter = indexDataContainerConf->getSortableAttributesName()->begin();
-            attributeIter != indexDataContainerConf->getSortableAttributesName()->end();
+
+    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator attributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+            attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
             ++attributeIter)
     {
-        string attributeKeyName = *attributeIter;
+        string attributeKeyName = attributeIter->first;
         //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
         string attributeStringValue;
-        getJsonValueString(root, attributeKeyName, attributeStringValue, "attributes-sort");
+        getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
         if (attributeStringValue=="") // if the attribute is int or float, convert it to string
         {
             double attributeDoubleValue;
-            getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "attributes-sort");
+            getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
             stringstream s;
             s << attributeDoubleValue;
             attributeStringValue = s.str();
         }
+        // TODO : how should user enter data/time attributes ? right now it should be a long value as an string.
 
         if (attributeStringValue.compare("NULL") != 0)
         {
-            record->setSortableAttributeValue(attributeKeyName, attributeStringValue);
+            record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
         }
     }
 
@@ -250,23 +260,25 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     }
 
     // Set SearchableAttributes
-    map<string, pair<unsigned, unsigned> >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
-        schema->setSearchableAttribute(searchableAttributeIter->first, searchableAttributeIter->second.second); // searchable text
+        schema->setSearchableAttribute(searchableAttributeIter->first, searchableAttributeIter->second.second.second.second); // searchable text
     }
 
-    // Set SortableAttributes
-    vector<string>::const_iterator sortableAttributeNameIter = indexDataContainerConf->getSortableAttributesName()->begin();
-    vector<srch2::instantsearch::FilterType>::const_iterator sortableAttributeTypeIter = indexDataContainerConf->getSortableAttributesType()->begin();
-    vector<string>::const_iterator sortableAttributeDefaultValueIter = indexDataContainerConf->getSortableAttributesDefaultValue()->begin();
-    for ( ; sortableAttributeNameIter != indexDataContainerConf->getSortableAttributesName()->end();
-            ++sortableAttributeNameIter, ++sortableAttributeTypeIter, ++sortableAttributeDefaultValueIter)
+
+    // Set NonSearchableAttributes
+    map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator
+    	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
     {
-        //schema->setSortableAttribute("score",srch2::instantsearch::FLOAT, "1");
-        schema->setSortableAttribute(*sortableAttributeNameIter,*sortableAttributeTypeIter,*sortableAttributeDefaultValueIter); // sortable attribute
+
+        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first, nonSearchableAttributeIter->second.first ,
+        		nonSearchableAttributeIter->second.second.first, nonSearchableAttributeIter->second.second.second);
     }
+
 
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);

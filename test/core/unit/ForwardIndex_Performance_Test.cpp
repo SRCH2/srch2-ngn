@@ -1,5 +1,5 @@
 
-//$Id: ForwardIndex_Performance_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: ForwardIndex_Performance_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /**
   This test case is create for evaluating the performance of the ForwardIndex

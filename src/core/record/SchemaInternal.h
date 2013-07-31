@@ -1,4 +1,4 @@
-//$Id: SchemaInternal.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: SchemaInternal.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -108,6 +108,9 @@ public:
 
     int setSortableAttribute(const std::string &attributeName, FilterType type, std::string defaultValue);
 
+
+    int setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string & defaultValue, bool isSortable);
+
     /**
      * Returns the AttributeName of the primaryKey
      */
@@ -119,19 +122,17 @@ public:
      * "0" if the attribute does not exist.
      */
     unsigned getBoostOfSearchableAttribute(const unsigned searchableAttributeNameId) const;
-
     const std::map<std::string, unsigned>& getSearchableAttribute() const;
-
     /**
      * Gets the sum of all attribute boosts in the schema.  The
      * returned value can be used for the normalization of
      * attribute boosts.
      */
     unsigned getBoostSumOfSearchableAttributes() const;
-
-    const std::string* getDefaultValueOfSortableAttribute(const unsigned sortableAttributeNameId) const;
-    srch2::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const;
-
+    /**
+     * @returns the number of attributes in the schema.
+     */
+    unsigned getNumberOfSearchableAttributes() const;
     /**
      * Gets the index of an attribute name by doing an internal
      * lookup. The index of an attribute depends on the order in
@@ -141,14 +142,21 @@ public:
      */
     int getSearchableAttributeId(const std::string &searchableAttributeName) const;
 
-    int getSortableAttributeId(const std::string &searchableAttributeName) const;
 
-    /**
-     * @returns the number of attributes in the schema.
-     */
-    unsigned getNumberOfSearchableAttributes() const;
 
-    unsigned getNumberOfSortableAttributes() const;
+
+
+
+
+    const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const;
+    FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const;
+    bool isNonSearchableAttributeSortable(const unsigned searchableAttributeNameId) const;
+    int getNonSearchableAttributeId(const std::string &searchableAttributeName) const;
+    unsigned getNumberOfNonSearchableAttributes() const;
+
+
+
+
 
     int commit(){
         this->commited = 1;
@@ -195,9 +203,13 @@ private:
 
     std::vector<unsigned> searchableAttributeBoostVector;
 
-    std::map< std::string , unsigned> sortableAttributeNameToId;
-    std::vector<FilterType> sortableAttributeTypeVector;
-    std::vector<std::string> sortableAttributeDefaultValueVector;
+
+    std::map< std::string , unsigned> nonSearchableAttributeNameToId;
+    std::vector<FilterType> nonSearchableAttributeTypeVector;
+    std::vector<std::string> nonSearchableAttributeDefaultValueVector;
+    std::vector<bool> nonSearchableAttributeIsSortableVector;
+
+
 
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -215,9 +227,10 @@ private:
         ar & scoringExpressionString;
         ar & searchableAttributeNameToId;
         ar & searchableAttributeBoostVector;
-        ar & sortableAttributeNameToId;
-        ar & sortableAttributeTypeVector;
-        ar & sortableAttributeDefaultValueVector;
+        ar & nonSearchableAttributeNameToId;
+        ar & nonSearchableAttributeTypeVector;
+        ar & nonSearchableAttributeDefaultValueVector;
+        ar & nonSearchableAttributeIsSortableVector;
         ar & indexType;
         ar & positionIndexType;
     }
