@@ -245,7 +245,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     }
 
-    vector<float> keywordBoostLevel;
+    vector<unsigned> keywordBoostLevel;
 
     if (paramsContainer.hasParameterInSummary(KeywordBoostLevel)) {
         keywordBoostLevel = paramsContainer.keywordBoostLevel;
