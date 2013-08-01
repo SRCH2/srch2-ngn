@@ -3,7 +3,7 @@ of SRCH2 package.
 
 OR
 
-Provide the config location as an program argument using '--config-file'.
+Provide the config file location as a program argument using '--config-file'.
 
 type /path/to/search/server/exe --help for more detail.
 

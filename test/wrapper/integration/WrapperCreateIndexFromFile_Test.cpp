@@ -157,14 +157,13 @@ bool test(int argc, char** argv)
     try{
         po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
         po::notify(vm_command_line_args);
-    }catch(exception &ex)
-    {
+    }catch(exception &ex) {
         cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
     }
 
     std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
 
-	srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(srch2_config_file);
+    srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(srch2_config_file);
     serverConf->loadConfigFile();
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
