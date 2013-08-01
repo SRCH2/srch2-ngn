@@ -1,6 +1,11 @@
-Run install.sh script with licence key path as an input parameter.
+Please set an environment variable 'SRCH2_HOME' referring to the base directory
+of SRCH2 package.
 
-Note: We advise you to run the install script to setup the config file properly.
+OR
+
+Provide the config location as an program argument using '--config-file'.
+
+type /path/to/search/server/exe --help for more detail.
 
 directory layout:
 

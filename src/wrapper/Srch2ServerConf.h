@@ -200,6 +200,7 @@ public:
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
+    void loadConfigFile() ;
 };
 
 }

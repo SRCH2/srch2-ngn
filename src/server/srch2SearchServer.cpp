@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string>
 #include <sstream>
-
+#include <unistd.h>
 #include "Srch2KafkaConsumer.h"
 #include "HTTPResponse.h"
 #include "Srch2Server.h"
@@ -307,7 +307,7 @@ void cb_busy_indexing(evhttp_request *req, void *arg)
 
 void printVersion()
 {
-	std::cout << "srch2-search-server-version:" << getCurrentVersion() << std::endl;
+	std::cout << "SRCH2 server version:" << getCurrentVersion() << std::endl;
 }
 
 int bindSocket(const char * hostname , int port) {
@@ -351,13 +351,22 @@ void* dispatch(void *arg)
  
 void parseProgramArguments(int argc, char** argv, po::options_description& description, po::variables_map& vm_command_line_args)
 {
-    config.add_options()
-    ("help", "produce a help message")
-    ("config-file", po::value<string>(), "config file")
+    description.add_options()
+    ("help", "Prints help message")
+    ("version", "Prints version number of the engine")
+    ("config-file", po::value<string>(), "Path to the config file")
     ;
-
-    po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
-    po::notify(vm_command_line_args);
+    try{
+        po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
+        po::notify(vm_command_line_args);
+    }
+    catch(exception &ex)
+    {
+        cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
+        cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
+        cout << description << endl;
+        exit(-1);
+    }
 }
 int main(int argc, char** argv)
 {		
@@ -370,11 +379,12 @@ int main(int argc, char** argv)
 		}	
 	}	
     // Parse command line arguments
-    po::options_description description("Description");
+    po::options_description description("Optional Arguments");
     po::variables_map vm_command_line_args;
     parseProgramArguments(argc, argv, description, vm_command_line_args);
 
     if (vm_command_line_args.count("help")) {
+        cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
         cout << description << endl; 
         return 0;
     }
@@ -385,21 +395,23 @@ int main(int argc, char** argv)
         srch2HomePath = srch2HomePathCStr;
 
     std::string srch2_config_file = "";
-    if (vm_command_line_args.count("config-file"){
+    if (vm_command_line_args.count("config-file")){
         srch2_config_file = vm_command_line_args["config-file"].as<string>();
-        if (!boost::filesystem::exists(srch2_config_file))
+        int status = ::access(srch2_config_file.c_str(), F_OK);
+        if (status != 0)
         {
-           std::cout << "config file = '"<< srch2_config_file <<"' not found" << std::endl;    
+           std::cout << "config file = '"<< srch2_config_file <<"' not found or could not be read" << std::endl;    
            return -1;
         }
     }
     else{
         if (srch2HomePath != ""){
             srch2_config_file = srch2HomePath + "/conf/srch2_config.ini";
-            if (!boost::filesystem::exists(srch2_config_file))
+            int status = ::access(srch2_config_file.c_str(), F_OK);
+            if (status != 0)
             {
-                std::cout << "config file = '"<< srch2_config_file <<"' not found" << std::endl;
-                std::cout << "Please check whether SRCH2_HOME is set correctly" << std::endl
+                std::cout << "config file = '"<< srch2_config_file <<"' not found or could not be read" << std::endl;
+                std::cout << "Please check whether SRCH2_HOME is set correctly" << std::endl;
                 return -1;
             }
         }
@@ -426,11 +438,11 @@ int main(int argc, char** argv)
     	Logger::setOutputFile(logFile);
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
-	if (not parseSuccess)
-	{
-		std::cout << "[Error in parsing args]" << parseError.str() << std::endl;
-		return 0;
-	}
+	//if (not parseSuccess)
+	//{
+	//	std::cout << "[Error in parsing args]" << parseError.str() << std::endl;
+	//	return 0;
+	//}
 
 	//load the index from the data source
 	server.init(serverConf);
