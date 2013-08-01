@@ -147,11 +147,27 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
 bool test(int argc, char** argv)
 {
 	//read configuration file
-	bool parseSuccess = true;
-	std::stringstream parseError;
-	srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(argc, argv, parseSuccess, parseError);
+    po::options_description description("Description");
+    po::variables_map vm_command_line_args;
+
+    description.add_options()
+    ("help", "produce a help message")
+    ("config-file", po::value<string>(), "config file");
+
+    try{
+        po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
+        po::notify(vm_command_line_args);
+    }catch(exception &ex) {
+        cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
+    }
+
+    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
+
+    srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(srch2_config_file);
+    serverConf->loadConfigFile();
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+
 	FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
 	if(logFile == NULL){
 		Logger::setOutputFile(stdout);
@@ -160,12 +176,6 @@ bool test(int argc, char** argv)
 	else
 		Logger::setOutputFile(logFile);
 	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
-
-	if (not parseSuccess)
-	{
-		std::cout << "[Error in parsing args]" << parseError.str() << std::endl;
-		return false;
-	}
 
 	// create IndexMetaData
 	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
