@@ -437,7 +437,7 @@ private:
         for (; !ani.isDone(); ani.next()) {
             ani.getItem(currentNode, distance);
             map<const TrieNode*, unsigned>::iterator nodeIter = activeNodes.find(currentNode);
-            //if the current node is already in activeNodes
+            //if the current node is already in activeNodes, we keep the minimum value in activeNodes
             if (nodeIter != activeNodes.end())
                 nodeIter->second = std::min<unsigned>(nodeIter->second, distance);
             else //else we will add it
