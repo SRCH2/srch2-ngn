@@ -70,15 +70,17 @@ public:
 	 *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
 	 *  for setting/getting the special characters.
 	 */
-	void setRecordAllowedSpecialCharacters(
-			const std::string &recordAllowedSpecialCharacters) {
-		this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-		CharSet::setRecordAllowedSpecialCharacters(
-				recordAllowedSpecialCharacters);
-	}
-	const std::string& getRecordAllowedSpecialCharacters() const {
-		return this->recordAllowedSpecialCharacters;
-	}
+//	void setRecordAllowedSpecialCharacters(
+//			const std::string &recordAllowedSpecialCharacters) {
+//		this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+//		CharSet::setRecordAllowedSpecialCharacters(
+//				recordAllowedSpecialCharacters);
+//	}
+
+
+//	const std::string& getRecordAllowedSpecialCharacters() const {
+//		return this->recordAllowedSpecialCharacters;
+//	}
 
 	void prepareRegexExpression() {
 		//allow all characters
@@ -143,23 +145,25 @@ public:
 	 * @param[in, out] queryKeywords
 	 * @param[in] delimiterCharater
 	 */
-	void tokenizeQuery(const string &queryString,
-			vector<string> &queryKeywords) const;
+//	void tokenizeQuery(const string &queryString,
+//			vector<string> &queryKeywords) const;
+//
+//	void tokenizeQueryWithFilter(const string &queryString,
+//			vector<string> &queryKeywords, const char &delimiterCharacter,
+//			const char &filterDelimiterCharacter,
+//			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
+//			const std::map<std::string, unsigned> &searchableAttributesNameToId,
+//			vector<unsigned> &filter) const;
 
-	void tokenizeQueryWithFilter(const string &queryString,
-			vector<string> &queryKeywords, const char &delimiterCharacter,
-			const char &filterDelimiterCharacter,
-			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
-			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			vector<unsigned> &filter) const;
+
 
 protected:
 	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
 
 	TokenStream* tokenStream;
-	string recordAllowedSpecialCharacters;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.
+	string recordAllowedSpecialCharacters;
 	string stopWordFilePath;
 	string synonymFilePath;
 	string stemmerFilePath;
@@ -170,6 +174,7 @@ protected:
 	boost::regex headTailSpaceRegex;
 
 	friend class boost::serialization::access;
+	friend class Analyzer;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {

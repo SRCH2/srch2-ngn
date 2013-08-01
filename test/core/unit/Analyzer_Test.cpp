@@ -30,6 +30,7 @@ using namespace std;
 using namespace srch2::instantsearch;
 
 
+
 //SimpleAnalyzer organizes a tokenizer using " " as the delimiter and a "ToLowerCase" filter
 void testSimpleAnalyzer()
 {

@@ -274,7 +274,8 @@ public:
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
-    AnalyzerInternal *analyzerInternal;
+//    AnalyzerInternal *analyzerInternal; // iman: previous one
+    Analyzer *analyzer;
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;

@@ -31,7 +31,7 @@ void buildIndex(string data_file, string index_dir)
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    Analyzer *analyzer = Analyzer::create(srch2is::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
                     "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
@@ -101,7 +101,7 @@ void buildGeoIndex(string data_file, string index_dir)
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    Analyzer *analyzer = Analyzer::create(srch2is::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
                     "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer

@@ -61,22 +61,31 @@ typedef enum {
 class MYLIB_EXPORT Analyzer {
 public:
 
-    Analyzer(AnalyzerInternal *analyzerInternal){
-        this->analyzerInternal = analyzerInternal;
-    }
+    Analyzer(const StemmerNormalizerFlagType &stemNormType,
+            const std::string &stemmerFilePath,
+            const std::string &stopWordFilePath,
+            const std::string &synonymFilePath,
+            const SynonymKeepOriginFlag &synonymKeepOriginFlag,
+            const std::string &delimiters,
+            const AnalyzerType &analyzerType = STANDARD_ANALYZER);
+
+
+    Analyzer(AnalyzerInternal *analyzerInternal);
+
+
 
 	/**
 	 * Creates an Analyzer.
 	 */
 	/*static Analyzer *create();// Default is NO_STEMMER_NORMALIZER
 	 static Analyzer *create( StemmerNormalizerType stemNormType);*/
-	static Analyzer *create(const StemmerNormalizerFlagType &stemNormType,
-			const std::string &stemmerFilePath,
-			const std::string &stopWordFilePath,
-			const std::string &synonymFilePath,
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-			const std::string &delimiters,
-			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
+//	static Analyzer *create(const StemmerNormalizerFlagType &stemNormType,
+//			const std::string &stemmerFilePath,
+//			const std::string &stopWordFilePath,
+//			const std::string &synonymFilePath,
+//			const SynonymKeepOriginFlag &synonymKeepOriginFlag,
+//			const std::string &delimiters,
+//			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
 
 	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
 	const std::string& getRecordAllowedSpecialCharacters() const ;
@@ -128,6 +137,14 @@ public:
 	 */
 	virtual ~Analyzer() {
 	};
+
+protected:
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & analyzerInternal;
+    }
+
+
 
 };
 

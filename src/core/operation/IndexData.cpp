@@ -32,6 +32,7 @@
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
 #include <instantsearch/Record.h>
+#include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
 
 #include <stdio.h>  /* defines FILENAME_MAX */
@@ -82,10 +83,12 @@ IndexData::IndexData(const string &directoryName,
     switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-			this->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal)));
+//			this->analyzer->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal)));
+			this->analyzer = new Analyzer( new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal))));
 			break;
 		default:
-			this->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal)));
+//			this->analyzer->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal)));
+		    this->analyzer = new Analyzer( new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal))));
 	}
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -128,13 +131,15 @@ IndexData::IndexData(const string& directoryName)
     switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-			this->analyzerInternal = new SimpleAnalyzer;
+//			this->analyzer->analyzerInternal = new SimpleAnalyzer;
+			this->analyzer = new Analyzer(new SimpleAnalyzer);
 			break;
 		default:
-			this->analyzerInternal = new StandardAnalyzer;
+//			this->analyzer->analyzerInternal = new StandardAnalyzer;
+			this->analyzer = new Analyzer(new StandardAnalyzer);
 	}
     // cout << "directoryName = " << directoryName << endl;
-    AnalyzerInternal::load(*(this->analyzerInternal), ia);
+    AnalyzerInternal::load(*(this->analyzer->analyzerInternal), ia);
     ifs.close();
     //this->analyzerInternal->setIndexDirectory(directoryName);
 
@@ -197,7 +202,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
         this->mergeRequired = true;
         /// analyze the record (tokenize it, remove stop words)
         map<string, TokenAttributeHits > tokenAttributeHitsMap;
-        this->analyzerInternal->tokenizeRecord(record, tokenAttributeHitsMap);
+        this->analyzer->analyzerInternal->tokenizeRecord(record, tokenAttributeHitsMap);
 
         KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
@@ -333,7 +338,8 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
             {
                 std::vector<std::string> keywords;
                 //char c = '.';
-                this->analyzerInternal->tokenizeQuery(line, keywords);
+//                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
+                this->analyzer->tokenizeQuery(line, keywords);
 
                 for (std::vector<std::string>::const_iterator kiter = keywords.begin();
                             kiter != keywords.end();
@@ -758,8 +764,8 @@ void IndexData::_save(const string &directoryName) const
         QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
     std::ofstream ofs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
-    oa << dynamic_cast<AnalyzerInternal *>(analyzerInternal)->getAnalyzerType();
-    AnalyzerInternal::save(*this->analyzerInternal, oa);
+    oa << dynamic_cast<AnalyzerInternal *>(this->analyzer->analyzerInternal)->getAnalyzerType();
+    AnalyzerInternal::save(*this->analyzer->analyzerInternal, oa);
     ofs.close();
     this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
 }
@@ -777,7 +783,7 @@ void IndexData::printNumberOfBytes() const
 const Analyzer* IndexData::getAnalyzer() const
 {
 //    return dynamic_cast<const Analyzer *>(this->analyzerInternal);
-    return new Analyzer(this->analyzerInternal);
+    return this->analyzer;
 }
 
 const Schema* IndexData::getSchema() const
@@ -787,7 +793,8 @@ const Schema* IndexData::getSchema() const
 
 IndexData::~IndexData()
 {
-    delete this->analyzerInternal;
+//    delete this->analyzerInternal;
+    delete this->analyzer;
     delete this->trie;
     delete this->forwardIndex;
 
