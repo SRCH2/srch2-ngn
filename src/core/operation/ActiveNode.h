@@ -444,12 +444,18 @@ private:
     	map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
 		const TrieNode *currentNode;
 		unsigned distance;
+		map<const TrieNode*, unsigned>::iterator activeNodesIter;
 
 		// assume the iterator returns the active nodes in an ascending order of their edit distance
 		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
 		for (; !ani.isDone(); ani.next()){
 			ani.getItem(currentNode, distance);
-			activeNodes[currentNode] = distance; // active nodes that are not visited.
+			activeNodesIter = activeNodes.find(currentNode);
+			//if the activeNodes is already in activeNodes
+			if(activeNodesIter != activeNodes.end())
+			    activeNodesIter->second = std::min<unsigned>(activeNodesIter->second, distance);
+			else //else we will add it
+			    activeNodes[currentNode] = distance; // active nodes that are not visited.
 		}
 		// Use a stack to avoid recursive function calls.
 		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
