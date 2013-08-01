@@ -26,61 +26,56 @@
 
 namespace srch2 {
 namespace instantsearch {
-// TODO: remove create. The constructor is called directly
-//Analyzer *Analyzer::create(const StemmerNormalizerFlagType &stemmerFlag,
-//            const std::string &stemmerFilePath,
-//            const std::string &stopWordFilePath,
-//            const std::string &synonymFilePath,
-//            const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-//            const std::string &delimiters,
-//            const AnalyzerType &analyzerType) {
-//
-//
-//}
-
 
 Analyzer::Analyzer(const StemmerNormalizerFlagType &stemNormType,
-        const std::string &stemmerFilePath,
-        const std::string &stopWordFilePath,
+        const std::string &stemmerFilePath, const std::string &stopWordFilePath,
         const std::string &synonymFilePath,
         const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-        const std::string &delimiters,
-        const AnalyzerType &analyzerType){
+        const std::string &delimiters, const AnalyzerType &analyzerType) {
     switch (analyzerType) {
-        case SIMPLE_ANALYZER:
-            this->analyzerInternal = new SimpleAnalyzer(stemNormType, stemmerFilePath, stopWordFilePath,
-                            synonymFilePath, synonymKeepOriginFlag, delimiters);
-            break;
-        default:
-            this->analyzerInternal = new StandardAnalyzer(stemNormType, stemmerFilePath, stopWordFilePath,
-                            synonymFilePath, synonymKeepOriginFlag, delimiters);
-            break;
-        }
+    case SIMPLE_ANALYZER:
+        this->analyzerInternal = new SimpleAnalyzer(stemNormType,
+                stemmerFilePath, stopWordFilePath, synonymFilePath,
+                synonymKeepOriginFlag, delimiters);
+        break;
+    default:
+        this->analyzerInternal = new StandardAnalyzer(stemNormType,
+                stemmerFilePath, stopWordFilePath, synonymFilePath,
+                synonymKeepOriginFlag, delimiters);
+        break;
+    }
 }
 
 Analyzer::Analyzer(AnalyzerInternal *analyzerInternal) {
     this->analyzerInternal = analyzerInternal;
 }
 
-bool isEmpty(const string &inString)
-{
+bool isEmpty(const string &inString) {
     return inString.compare("") == 0;
 }
 
-// moved
+/*
+ *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
+ *  for setting/getting the special characters.
+ */
 void Analyzer::setRecordAllowedSpecialCharacters(
         const std::string &recordAllowedSpecialCharacters) {
-    this->analyzerInternal->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+    this->analyzerInternal->recordAllowedSpecialCharacters =
+            recordAllowedSpecialCharacters;
     CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 }
 
-// moved
 const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
     return this->analyzerInternal->recordAllowedSpecialCharacters;
 }
 
-
-// moved
+/**
+ * Function to tokenize a given query.
+ * Remove duplicates like in query, "nose bleed nose" -> "nose bleed"
+ * @param[in] queryString
+ * @param[in, out] queryKeywords
+ * @param[in] delimiterCharater
+ */
 void Analyzer::tokenizeQuery(const std::string &queryString,
         std::vector<std::string> &queryKeywords) const {
     queryKeywords.clear();
@@ -94,7 +89,7 @@ void Analyzer::tokenizeQuery(const std::string &queryString,
         queryKeywords.push_back(currentToken);
     }
 
-    if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])){
+    if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])) {
         queryKeywords.clear();
     }
 }
@@ -108,7 +103,7 @@ void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
         const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
         const char &fieldsOrCharacter,
         const std::map<std::string, unsigned> &searchableAttributesNameToId,
-        std::vector<unsigned> &filters) const{
+        std::vector<unsigned> &filters) const {
 
     stringstream charToString;
     string delimiter;
@@ -129,7 +124,7 @@ void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
     filters.clear();
     std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
-    vector <string> parts;
+    vector<string> parts;
     replace_if(query.begin(), query.end(), boost::is_any_of(delimiter),
             DEFAULT_DELIMITER);
 
@@ -137,14 +132,12 @@ void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
     std::vector<string>::iterator iter = std::remove_if(parts.begin(),
             parts.end(), queryIsEmpty);
     parts.erase(iter, parts.end());
-    // print the queries
-    //std::cout<<"parts number:" << parts.size()<<std::endl;
 
     bool malformed = false;
     for (unsigned i = 0; i < parts.size(); i++) {
         replace_if(parts[i].begin(), parts[i].end(),
                 boost::is_any_of(filterDelimiter), DEFAULT_DELIMITER);
-        vector <string> one_pair;
+        vector<string> one_pair;
         boost::split(one_pair, parts[i], boost::is_any_of(" "));
 
         if (one_pair.size() > 2 || one_pair.size() == 0) {
@@ -152,15 +145,16 @@ void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
             break;
         }
         // TODO: this or not this
-        const string cleanString = this->analyzerInternal->cleanString(one_pair[0]);
+        const string cleanString = this->analyzerInternal->cleanString(
+                one_pair[0]);
         queryKeywords.push_back(cleanString);
 
-        if (one_pair.size() == 1) {// have no filter information
+        if (one_pair.size() == 1) { // have no filter information
             filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
             continue;
         }
 
-        vector <string> fields;
+        vector<string> fields;
 
         bool AND = false;
         bool OR = false;
@@ -199,7 +193,6 @@ void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
 
     if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])))
         queryKeywords.clear();
-
 
 }
 

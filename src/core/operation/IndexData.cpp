@@ -1,5 +1,5 @@
 
-// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -42,8 +42,6 @@
 #include <map>
 #include <memory>
 #include <exception>
-//#include <unordered_set> 
-//#include <unordered_map>
 
 using std::string;
 using std::vector;
@@ -78,16 +76,13 @@ IndexData::IndexData(const string &directoryName,
      * //TODO Need to serialise Analyzer for stopwords
      */
     // get the analyzer type to instantiate a new analyzer
-//    AnalyzerType analyzerType = dynamic_cast<AnalyzerInternal *>(analyzer)->getAnalyzerType();
     AnalyzerType analyzerType = analyzer->analyzerInternal->getAnalyzerType();
     switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-//			this->analyzer->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal)));
 			this->analyzer = new Analyzer( new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal))));
 			break;
 		default:
-//			this->analyzer->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal)));
 		    this->analyzer = new Analyzer( new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal))));
 	}
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
@@ -131,11 +126,9 @@ IndexData::IndexData(const string& directoryName)
     switch(analyzerType)
 	{
 		case SIMPLE_ANALYZER:
-//			this->analyzer->analyzerInternal = new SimpleAnalyzer;
 			this->analyzer = new Analyzer(new SimpleAnalyzer);
 			break;
 		default:
-//			this->analyzer->analyzerInternal = new StandardAnalyzer;
 			this->analyzer = new Analyzer(new StandardAnalyzer);
 	}
     // cout << "directoryName = " << directoryName << endl;

@@ -66,21 +66,6 @@ public:
 	virtual ~AnalyzerInternal() {
 	}
 
-	/*
-	 *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
-	 *  for setting/getting the special characters.
-	 */
-//	void setRecordAllowedSpecialCharacters(
-//			const std::string &recordAllowedSpecialCharacters) {
-//		this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-//		CharSet::setRecordAllowedSpecialCharacters(
-//				recordAllowedSpecialCharacters);
-//	}
-
-
-//	const std::string& getRecordAllowedSpecialCharacters() const {
-//		return this->recordAllowedSpecialCharacters;
-//	}
 
 	void prepareRegexExpression() {
 		//allow all characters
@@ -137,25 +122,6 @@ public:
 	 */
 	void tokenizeRecord(const Record *record,
 			map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
-
-	/**
-	 * Function to tokenize a given query.
-	 * Remove duplicates like in query, "nose bleed nose" -> "nose bleed"
-	 * @param[in] queryString
-	 * @param[in, out] queryKeywords
-	 * @param[in] delimiterCharater
-	 */
-//	void tokenizeQuery(const string &queryString,
-//			vector<string> &queryKeywords) const;
-//
-//	void tokenizeQueryWithFilter(const string &queryString,
-//			vector<string> &queryKeywords, const char &delimiterCharacter,
-//			const char &filterDelimiterCharacter,
-//			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
-//			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-//			vector<unsigned> &filter) const;
-
-
 
 protected:
 	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;

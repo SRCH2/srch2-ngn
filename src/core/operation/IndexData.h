@@ -1,5 +1,5 @@
 
-// $Id: IndexData.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexData.h 3480 2013-06-19 08:00:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -274,7 +274,6 @@ public:
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
-//    AnalyzerInternal *analyzerInternal; // iman: previous one
     Analyzer *analyzer;
     SchemaInternal *schemaInternal;
     

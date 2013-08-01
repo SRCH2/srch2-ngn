@@ -22,15 +22,6 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
 
-	if (this->stemmerType == ENABLE_STEMMER_NORMALIZER) {
-		struct stat stResult;
-		if(stat(this->stemmerFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new StemmerFilter(tokenStream, this->stemmerFilePath);
-		} else {
-			this->stemmerType = DISABLE_STEMMER_NORMALIZER;
-            Logger::error("The stemmer file %s is not valid. Please provide a valid file path.", this->stemmerFilePath.c_str());
-		}
-	}
 
 	if (this->stopWordFilePath.compare("") != 0) {
 		struct stat stResult;
@@ -47,6 +38,16 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 		    tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
 		} else {
             Logger::error("The synonym file %s is not valid. Please provide a valid file path.", this->synonymFilePath.c_str());
+		}
+	}
+
+	if (this->stemmerType == ENABLE_STEMMER_NORMALIZER) {
+		struct stat stResult;
+		if(stat(this->stemmerFilePath.c_str(), &stResult) == 0) {
+		    tokenStream = new StemmerFilter(tokenStream, this->stemmerFilePath);
+		} else {
+			this->stemmerType = DISABLE_STEMMER_NORMALIZER;
+            Logger::error("The stemmer file %s is not valid. Please provide a valid file path.", this->stemmerFilePath.c_str());
 		}
 	}
 

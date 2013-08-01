@@ -1,4 +1,4 @@
-//$Id: Analyzer.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Analyzer.h 3456 2013-07-29 02:11:13Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -72,24 +72,8 @@ public:
 
     Analyzer(AnalyzerInternal *analyzerInternal);
 
-
-
-	/**
-	 * Creates an Analyzer.
-	 */
-	/*static Analyzer *create();// Default is NO_STEMMER_NORMALIZER
-	 static Analyzer *create( StemmerNormalizerType stemNormType);*/
-//	static Analyzer *create(const StemmerNormalizerFlagType &stemNormType,
-//			const std::string &stemmerFilePath,
-//			const std::string &stopWordFilePath,
-//			const std::string &synonymFilePath,
-//			const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-//			const std::string &delimiters,
-//			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
-
 	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
 	const std::string& getRecordAllowedSpecialCharacters() const ;
-
 
 	AnalyzerInternal * analyzerInternal;
 

@@ -741,6 +741,9 @@ int main() {
 	testStandardAnalyzer();
 	cout << "StandardAnalyzer test passed" << endl;
 
+	testLowerCase();
+	cout << "LowerCaseFilter test passed" << endl;
+
 	testStemmerFilter(dataDir);
 	cout << "StemmerFilter test passed" << endl;
 
