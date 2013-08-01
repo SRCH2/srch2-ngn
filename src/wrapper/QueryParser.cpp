@@ -203,6 +203,72 @@ void QueryParser::isFuzzyParser() {
     }
 }
 
+void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
+    const char* key = "facet.field";
+    vector<string> values;
+    custom_evhttp_find_headers(&headers, key, values);
+    for (vector<string>::iterator it = values.begin(); it != values.end();
+            ++it) {
+        fqc.fields.push_back(*it);
+        fqc.types.push_back(srch2::instantsearch::Simple);
+        // populate parallel vectors with empty string
+        fqc.rangeEnds.push_back("");
+        fqc.rangeGaps.push_back("");
+        fqc.rangeStarts.push_back("");
+    }
+}
+
+void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
+    const char* key = "facet.range";
+    vector<string> values;
+    custom_evhttp_find_headers(&headers, key, values);
+    for (vector<string>::iterator it = values.begin(); it != values.end();
+            ++it) {
+        string field = *it;
+        fqc.fields.push_back(field);
+        fqc.types.push_back(srch2::instantsearch::Range);
+        // populate parallel vectors with empty string
+        populateParallelRangeVectors(fqc, field);
+    }
+}
+
+void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
+        string &field) {
+    stringstream startKey;
+    startKey << "f." << field << ".facet.range.start";
+    string startKeyStr = startKey.str();
+    const char* rangeStartTemp = evhttp_find_header(&headers,
+            startKeyStr.c_str());
+    if (rangeStartTemp) {
+        size_t st;
+        string rangeStart = evhttp_uridecode(rangeStartTemp, 0, &st);
+        fqc.rangeStarts.push_back(rangeStart);
+    } else {
+        fqc.rangeStarts.push_back("");
+    }
+    stringstream endKey;
+    endKey << "f." << field << ".facet.range.end";
+    string endKeyStr = endKey.str();
+    const char* rangeEndTemp = evhttp_find_header(&headers, endKeyStr.c_str());
+    if (rangeEndTemp) {
+        size_t st;
+        string rangeEnd = evhttp_uridecode(rangeEndTemp, 0, &st);
+        fqc.rangeEnds.push_back(rangeEnd);
+    } else {
+        fqc.rangeEnds.push_back("");
+    }
+    stringstream gapKey;
+    gapKey << "f." << field << ".facet.range.end";
+    string gapKeyStr = gapKey.str();
+    const char* rangeGapTemp = evhttp_find_header(&headers, gapKeyStr.c_str());
+    if (rangeGapTemp) {
+        size_t st;
+        string rangeGap = evhttp_uridecode(rangeGapTemp, 0, &st);
+        fqc.rangeGaps.push_back(rangeGap);
+    } else {
+        fqc.rangeGaps.push_back("");
+    }
+}
 void QueryParser::lengthBoostParser() {
 
 }
@@ -407,18 +473,30 @@ void QueryParser::facetParser() {
     const char * facetTemp = evhttp_find_header(&headers,
             QueryParser::facetParamName);
     if (facetTemp) { // if this parameter exists
-
         size_t st;
         string facet = evhttp_uridecode(facetTemp, 0, &st);
         // we have facet,
         //parse other facet related parameters if this is true
-        if(boost::iequals("true",facet)){
+        if (boost::iequals("true", facet)) {
             // facet param is true
             FacetQueryContainer *fqc = new FacetQueryContainer();
+            populateFacetFieldsSimple(*fqc);
+            populateFacetFieldsRange(*fqc);
+            //// set the summary
+            if (this->container->hasParameterInSummary(GeoSearchType)) {
+                this->container->geoParameterContainer->summary.push_back(
+                        FacetQueryHandler);
+                this->container->geoParameterContainer->facetQueryContainer = fqc;
+            } else if (this->container->hasParameterInSummary(
+                    GetAllResultsSearchType)) {
+                this->container->getAllResultsParameterContainer->summary
+                        .push_back(FacetQueryHandler);
+                this->container->getAllResultsParameterContainer->facetQueryContainer = fqc;
+            }
             // parse other facet fields
-        }else if(boost::iequals("false",facet)){
+        } else if (boost::iequals("false", facet)) {
             // facet is off. no need to parse any facet params
-        }else{
+        } else {
             // unkonown value. raise warning and set facet to false
 
         }
@@ -473,10 +551,12 @@ void QueryParser::sortParser() {
             if (this->container->hasParameterInSummary(GeoSearchType)) {
                 this->container->geoParameterContainer->summary.push_back(
                         SortQueryHandler);
+                this->container->geoParameterContainer->sortQueryContainer = sortQueryContainer;
             } else if (this->container->hasParameterInSummary(
                     GetAllResultsSearchType)) {
                 this->container->getAllResultsParameterContainer->summary
                         .push_back(SortQueryHandler);
+                this->container->getAllResultsParameterContainer->sortQueryContainer = sortQueryContainer;
             }
         }
         delete result; // free copy

@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <event.h>
+#include <evhttp.h>
+#include <event2/http.h>
+#include <sys/queue.h>
 
 
 using boost::posix_time::time_input_facet;
@@ -55,7 +59,8 @@ const locale localeInputs[] = {
 const size_t localeFormats = sizeof(localeInputs)/sizeof(localeInputs[0]);
 
 time_t convertPtimeToTimeT(boost::posix_time::ptime t);
-
+void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
+        vector<string> &values);
 }
 }
 

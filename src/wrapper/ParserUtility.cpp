@@ -116,5 +116,18 @@ time_t convertPtimeToTimeT(boost::posix_time::ptime t)
        return (t-epoch).ticks() / boost::posix_time::time_duration::ticks_per_second();
 }
 
+void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
+        vector<string> &values) {
+    struct evkeyval *header;
+    int c =0;
+    TAILQ_FOREACH(header, headers, next)
+    {
+        if (evutil_ascii_strcasecmp(header->key, key) == 0) {
+            ++c;
+            values.push_back(header->value);
+        }
+    }
+}
+
 }
 }

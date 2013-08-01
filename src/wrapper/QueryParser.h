@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2013 SRCH2 Inc. All rights reserved
+ * Copyright ������ 2013 SRCH2 Inc. All rights reserved
  */
 
 #ifndef _WRAPPER_QUERYPARSER_H__
@@ -219,6 +219,9 @@ private:
     void setGeoContainerProperties(const char*centerLatTemp,
             const char* centerLongTemp, const char* radiusParamTemp);
     string orderByParser();
+    void populateFacetFieldsSimple(FacetQueryContainer &fqc);
+    void populateFacetFieldsRange(FacetQueryContainer &fqc);
+    void populateParallelRangeVectors(FacetQueryContainer &fqc, string &field);
 };
 
 }
