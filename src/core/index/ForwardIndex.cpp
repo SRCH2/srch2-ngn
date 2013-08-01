@@ -93,17 +93,21 @@ void ForwardIndex::resetDeleteFlag(unsigned internalRecordId) {
 
 void printForwardList(unsigned id, const ForwardList *fl,
         const Schema * schema) {
-
     Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
     Logger::debug("RecordBoost: %.3f, Size: %d", fl->getRecordBoost(),
             fl->getNumberOfKeywords());
     Logger::debug("sortableAttributeList:");
+    std::cout << "nonSearchableAttributeList: ";
 
-    for (unsigned idx = 0; idx < fl->getNumberOfSortableAttributes(); idx++) {
-        Logger::debug("[%.5f]", fl->getSortableAttribute(idx));
+    for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes();
+            idx++) {
+        Logger::debug("[%.5f]",
+                fl->getNonSearchableAttributeValue(idx, schema).c_str());
     }
     //keyword Id list
     Logger::debug("keywordIdList: ");
+
+    //keyword Id list
     for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
         Logger::debug("[%d]", fl->getKeywordId(idx));
     }
@@ -207,7 +211,6 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId) {
 //TODO check bounds
 //   return this->keywordIdVector->at(cursor);
 //}
-
 Score ForwardList::getForwardListNonSearchableAttributeScore(
         const SchemaInternal* schemaInternal,
         unsigned schemaNonSearchableAttributeId) const {
