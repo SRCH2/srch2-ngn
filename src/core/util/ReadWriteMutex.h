@@ -17,10 +17,11 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef __READWRITEMUTEX_H__
-#define __READWRITEMUTEX_H__
+#ifndef __CORE_UTIL_READWRITEMUTEX_H__
+#define __CORE_UTIL_READWRITEMUTEX_H__
 
 #include "mypthread.h"
+#include "util/Logger.h"
 #include <semaphore.h>
 #include <iostream>
 #include <errno.h>
@@ -40,28 +41,28 @@ namespace instantsearch
 class ReadWriteMutex
 {
 public:
-	ReadWriteMutex(int maxReaders = 1000)
-{
-		max_readers = maxReaders;
-		//As we can see in the following link. sem_init is not supported on the mac. So in order to create semaphores we should use sem_open.
-		//http://stackoverflow.com/questions/1413785/sem-init-on-os-x
-		//Base on the issue discussed in http://stackoverflow.com/questions/8063613/c-macs-os-x-semaphore-h-trouble-with-sem-open-and-sem-wait
-		//I put sem_unlick before sem_open to make sure this sem_open creates the semaphore.
-		//Since each semaphore should have a unique name, there is a gen_random_name function that creates random name.
-		//The name length can not be too long otherwise it gives us the error number 63 which is "File name too long"
-
-		//sem_init(&m_semaphore, 0, max_readers);
-		//pthread_spin_init(&m_spinlock, 0);
-
-		gen_random_name(semaphoreName,SEMAPHORE_NAME_LENGTH);
-		sem_unlink(semaphoreName);
-		m_semaphore=sem_open(semaphoreName, O_CREAT,0,max_readers);
-		if(m_semaphore==SEM_FAILED){
-			std::cerr<< "Semaphore creation failed!! with error no " << errno << std::endl;
-		}
-
-		pthread_mutex_init(&mutex, 0);
-}
+  ReadWriteMutex(int maxReaders = 1000)
+    {
+      max_readers = maxReaders;
+      //As we can see in the following link. sem_init is not supported on the mac. So in order to create semaphores we should use sem_open.
+      //http://stackoverflow.com/questions/1413785/sem-init-on-os-x
+      //Base on the issue discussed in http://stackoverflow.com/questions/8063613/c-macs-os-x-semaphore-h-trouble-with-sem-open-and-sem-wait
+      //We put sem_unlick before sem_open to make sure this sem_open creates the semaphore.
+      //Since each semaphore should have a unique name, there is a gen_random_name function that creates random name.
+      //The name length can not be too long otherwise it gives us the error number 63 which is "File name too long"
+      
+      //sem_init(&m_semaphore, 0, max_readers);
+      //pthread_spin_init(&m_spinlock, 0);
+      
+      gen_random_name(semaphoreName, SEMAPHORE_NAME_LENGTH);
+      sem_unlink(semaphoreName);
+      m_semaphore = sem_open(semaphoreName, O_CREAT,0,max_readers);
+      if (m_semaphore == SEM_FAILED) {
+	srch2::util::Logger::error("Semaphore creation failed with an error no %d", errno);
+      }
+      
+      pthread_mutex_init(&mutex, 0);
+    }
 
 	void lockRead()
 	{
@@ -143,4 +144,4 @@ private:
 
 }}
 
-#endif /* __READWRITEMUTEX_H__ */
+#endif /* __CORE_UTIL_READWRITEMUTEX_H__ */
