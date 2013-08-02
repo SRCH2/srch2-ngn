@@ -26,7 +26,7 @@ def checkResult(query, responseJson,resultValue):
 			     print 'query results||given results'
 			     print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
 			     for i in range(0, len(responseJson)):
-				   print responseJson[i]['record']['id']+'||'+resultValue[i]
+				     print responseJson[i]['record']['id']+'||'+resultValue[i]
 			     break
         else:
 		isPass=0
@@ -36,19 +36,19 @@ def checkResult(query, responseJson,resultValue):
 		maxLen = max(len(responseJson),len(resultValue))
 		for i in range(0, maxLen):
 		    if i >= len(resultValue):
-			 print responseJson[i]['record']['id']+'||'
+			    print responseJson[i]['record']['id']+'||'
 		    elif i >= len(responseJson):
-			 print '  '+'||'+resultValue[i]
+			    print '  '+'||'+resultValue[i]
 		    else:
-			 print responseJson[i]['record']['id']+'||'+resultValue[i]
+			    print responseJson[i]['record']['id']+'||'+resultValue[i]
 
         if isPass == 1:
-		print  query+' test pass'
+		    print  query+' test pass'
 
-def testTermType(queriesAndResultsPath):
+def testTermType(queriesAndResultsPath, conf ):
 	#Start the engine server
 	binary='../../../../build/src/server/srch2-search-server'
-	binary=binary+' --config-file=conf.ini &'
+	binary=binary+' --config-file='+ conf +' &'
 	os.popen(binary)
 
 	pingServer()
@@ -87,6 +87,9 @@ def testTermType(queriesAndResultsPath):
 if __name__ == '__main__':      
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
-    queriesAndResultsPath = sys.argv[1]      
-    testTermType(queriesAndResultsPath)
+    queriesAndResultsPath = sys.argv[1]  
+  
+    testTermType(queriesAndResultsPath, 'conf.ini')
+    print '--------Term type test  for attribute_based_search--------------'  
+    testTermType(queriesAndResultsPath, 'conf_for_attribute_based_search.ini')
 
