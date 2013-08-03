@@ -1,58 +1,40 @@
-cd exact_a1
+SYSTEM_TEST_DIR=$1
+SRCH2_ENGINE_DIR=$2
+PWD_DIR='pwd'
+cd $SYSTEM_TEST_DIR
 echo '----do exact_A1 test--------------'
-python exact_A1.py queriesAndResults.txt
+python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt
 
-cd ..
-cd fuzzy_a1
 echo '----do fuzzy_A1 test--------------'
-python fuzzy_a1.py queriesAndResults.txt
+python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE_DIR ./fuzzy_a1/queriesAndResults.txt
 
-cd ..
-cd exact_m1
 echo '----do exact_M1 test--------------'
-python exact_M1.py queriesAndResults.txt
+python ./exact_m1/exact_M1.py $SRCH2_ENGINE_DIR ./exact_m1/queriesAndResults.txt
 
-cd ..
-cd fuzzy_m1
 echo '----do fuzzy_M1 test--------------'
-python fuzzy_M1.py queriesAndResults.txt
+python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE_DIR ./fuzzy_m1/queriesAndResults.txt
 
-cd ..
-cd exact_attribute_based_search
 echo '----do exact_Attribute_Based_Search test--------------'
-python exact_Attribute_Based_Search.py queriesAndResults.txt
+python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search/queriesAndResults.txt
 
-cd ..
-cd fuzzy_attribute_based_search
 echo '----do fuzzy_Attribute_Based_Search test--------------'
-python fuzzy_Attribute_Based_Search.py queriesAndResults.txt
+python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search/queriesAndResults.txt
 
-cd ..
-cd exact_attribute_based_search_geo
 echo '----do exact_Attribute_Based_Search_Geo test--------------'
-python exact_Attribute_Based_Search_Geo.py queriesAndResults.txt
+python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search_geo/queriesAndResults.txt
 
-cd ..
-cd fuzzy_attribute_based_search_geo
 echo '----do fuzzy_Attribute_Based_Search_Geo test--------------'
-python fuzzy_Attribute_Based_Search_Geo.py queriesAndResults.txt
+python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search_geo/queriesAndResults.txt
 
-cd ..
-cd geo
 echo '----do geo test--------------'
-python geo.py queriesAndResults.txt
+python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt
 
-cd ..
-cd term_type
 echo '----do term type test--------------'
-python term_type.py queriesAndResults.txt
+python ./term_type/term_type.py $SRCH2_ENGINE_DIR ./term_type/queriesAndResults.txt
 
-cd ..
-cd top_k
 echo '----do top_k test--------------'
-python test_srch2_top_k.py food 10 20
+python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE_DIR food 10 20
 
-cd ..
-cd tests_used_for_statemedia
 echo '----do tests_used_for_statemedia--------------'
-sh autotest.sh
+./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
+cd $PWD_DIR
