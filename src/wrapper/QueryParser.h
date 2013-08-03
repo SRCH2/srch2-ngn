@@ -222,6 +222,9 @@ private:
     void populateFacetFieldsSimple(FacetQueryContainer &fqc);
     void populateFacetFieldsRange(FacetQueryContainer &fqc);
     void populateParallelRangeVectors(FacetQueryContainer &fqc, string &field);
+    bool verifyFqSyntax(string &fq);
+    void populateFilterQueryTermBooleanOperators(
+            const vector<string> &termOperators);
 };
 
 }

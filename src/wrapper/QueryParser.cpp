@@ -54,6 +54,7 @@ QueryParser::QueryParser(const evkeyvalq &headers,
 }
 
 // parses the URL to a query object
+// TODO: change this to bool
 void QueryParser::parse() {
 
     /*
@@ -463,6 +464,60 @@ void QueryParser::filterQueryParameterParser() {
      * it looks to see if there is any post processing filter
      * if there is then it fills up the helper accordingly
      */
+    const char* key = "fq";
+    const char* fqTmp = evhttp_find_header(&headers, key);
+    if (fqTmp) {
+        size_t st;
+        string fq = evhttp_uridecode(fqTmp, 0, &st);
+        // see if fq matches a valid regex.
+        if (this->verifyFqSyntax(fq)) {
+            FilterQueryContainer* filterQueryContainer =
+                    new FilterQueryContainer();
+            FilterQueryEvaluator* fqe = new FilterQueryEvaluator();
+            filterQueryContainer->evaluator = fqe;
+            this->container->filterQueryContainer = filterQueryContainer;
+            this->container->summary.push_back(FilterQueryEvaluatorFlag);
+            // tokenise on the basis of boolean operator
+            string operatorRegexString = "\\s+(AND|&&|OR)\\s+";
+            boost::regex re(operatorRegexString); //TODO: move this regex compilation from here. It should happen when the engine starts
+            boost::sregex_iterator i(fq.begin(), fq.end(), re);
+            boost::sregex_iterator j;
+            vector<string> terms;
+            vector<string> termOperators;
+            size_t start = 0;
+            for (; i != j; ++i) {
+                size_t len = (*i).position() - start;
+                string candidate = fq.substr(start, len);
+                terms.push_back(candidate);
+                start = (*i).position() + (*i).length();
+                termOperators.push_back((*i).str());
+            }
+            terms.push_back(fq.substr(start)); // push back the last token
+            // set the termOperators in container
+            this->populateFilterQueryTermBooleanOperators(termOperators);
+            // get the first boolean operator and set that in evaluator. It's decided that we will only support one of AND,OR.
+            if(!this->container->termBooleanOperators.empty()){
+                fqe->setOperation(this->container->termFQBooleanOperators.at(0));
+            }
+            // parse the terms
+            for (vector<string>::iterator it = terms.begin(); it != terms.end();
+                    ++it) {
+                string term = *it;
+                fqe->addCriterion(term);
+            }
+        } else {
+            //TODO: raise error saying fq doesn't match the correct syntax
+        }
+        // if yes, move further, else raise error msg
+        // tokenise on the basis of boolean operator
+        // set the boolean operation in fqv.
+        // for each token call the fqv.addCriterion method.
+    }
+}
+
+bool QueryParser::verifyFqSyntax(string &fq) {
+
+    return true; // not implementing it
 }
 
 void QueryParser::facetParser() {
@@ -486,12 +541,14 @@ void QueryParser::facetParser() {
             if (this->container->hasParameterInSummary(GeoSearchType)) {
                 this->container->geoParameterContainer->summary.push_back(
                         FacetQueryHandler);
-                this->container->geoParameterContainer->facetQueryContainer = fqc;
+                this->container->geoParameterContainer->facetQueryContainer =
+                        fqc;
             } else if (this->container->hasParameterInSummary(
                     GetAllResultsSearchType)) {
                 this->container->getAllResultsParameterContainer->summary
                         .push_back(FacetQueryHandler);
-                this->container->getAllResultsParameterContainer->facetQueryContainer = fqc;
+                this->container->getAllResultsParameterContainer
+                        ->facetQueryContainer = fqc;
             }
             // parse other facet fields
         } else if (boost::iequals("false", facet)) {
@@ -551,12 +608,14 @@ void QueryParser::sortParser() {
             if (this->container->hasParameterInSummary(GeoSearchType)) {
                 this->container->geoParameterContainer->summary.push_back(
                         SortQueryHandler);
-                this->container->geoParameterContainer->sortQueryContainer = sortQueryContainer;
+                this->container->geoParameterContainer->sortQueryContainer =
+                        sortQueryContainer;
             } else if (this->container->hasParameterInSummary(
                     GetAllResultsSearchType)) {
                 this->container->getAllResultsParameterContainer->summary
                         .push_back(SortQueryHandler);
-                this->container->getAllResultsParameterContainer->sortQueryContainer = sortQueryContainer;
+                this->container->getAllResultsParameterContainer
+                        ->sortQueryContainer = sortQueryContainer;
             }
         }
         delete result; // free copy
@@ -773,6 +832,26 @@ void QueryParser::populateTermBooleanOperators(
         }
     }
 }
+void QueryParser::populateFilterQueryTermBooleanOperators(
+        const vector<string> &termOperators) {
+    for (std::vector<string>::const_iterator itr = termOperators.begin();
+            itr != termOperators.end(); ++itr) {
+        if ("OR" == *itr) {
+            this->container->termFQBooleanOperators.push_back(
+                    srch2::instantsearch::OR);
+        } else if ("AND" == *itr) {
+            this->container->termFQBooleanOperators.push_back(
+                    srch2::instantsearch::AND);
+        } else {
+            // generate MessageWarning and use AND
+            /*string message = "Invalid boolean operator specified. %s , ignoring it and using 'AND'.",*itr;
+             this->container->messages.insert(
+             std::make_pair(srch2::httpwrapper::MessageWarning,message));*/
+            this->container->termFQBooleanOperators.push_back(
+                    srch2::instantsearch::AND);
+        }
+    }
+}
 
 void QueryParser::parseTerms(vector<string>&terms) {
     string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
@@ -798,7 +877,7 @@ void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) {
         // it has field. create a vector and populate container->fieldFilter.
         string fieldStr = term.substr(0, matches.position()); // extract the field
         this->populateFieldFilterUsingQueryFields(fieldStr);
-        candidateKeyword = term.substr(matches.position() + 1); // extract the keyword
+        candidateKeyword = term.substr(matches.position()+matches.length()); // extract the keyword
     } else {
         // its a keyword, no field specified. look for the fields in localparameter
         this->populateFieldFilterUsingLp();
@@ -807,6 +886,7 @@ void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) {
     this->parseKeyword(candidateKeyword);
 
 }
+
 void QueryParser::parseKeyword(string &input) {
     // fills up rawkeywords, keyPrefixComp, boost, simBoost.
     // check if '^' is present

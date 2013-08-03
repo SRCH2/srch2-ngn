@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef _WRAPPER_PARSEDPARAMETERCONTAINER_H_
@@ -250,6 +250,8 @@ public:
 
     // term operator vector
     vector<BooleanOperation> termBooleanOperators;
+    // FilterQuery term operator vector
+    vector<BooleanOperation> termFQBooleanOperators;
 };
 
 }
