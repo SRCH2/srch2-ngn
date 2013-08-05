@@ -1,7 +1,6 @@
+//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-// $Id: Srch2ServerConf.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 #include <string>
 #include <vector>
@@ -14,18 +13,16 @@
 using namespace std;
 namespace po = boost::program_options;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
 const char * ignoreOption = "IGNORE";
 
-Srch2ServerConf::Srch2ServerConf(std::string& configFile) {
+ConfigManager::ConfigManager(std::string& configFile) {
     this->configFile = configFile;
 }
 
-void Srch2ServerConf::loadConfigFile(){
+void ConfigManager::loadConfigFile(){
     std::cout << "Reading config file: " << this->configFile 
               << std::endl;
 
@@ -120,7 +117,7 @@ void Srch2ServerConf::loadConfigFile(){
     }
 }
 
-void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
+void ConfigManager::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
 	if (vm.count("kafka-consumer-topicname")
 			&& (vm["kafka-consumer-topicname"].as<string>().compare(
@@ -165,7 +162,7 @@ void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &confi
 	}
 }
 
-void Srch2ServerConf::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector)
+void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector)
 {
     for(unsigned iter=0; iter < searchableAttributesVector.size(); iter++)
     {
@@ -173,7 +170,7 @@ void Srch2ServerConf::_setDefaultSearchableAttributeBoosts(const vector<string> 
     }
 }
 
-void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
+void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
 	if (vm.count("license-file") && (vm["license-file"].as<string>().compare(ignoreOption) != 0)) {
 		licenseKeyFile = vm["license-file"].as<string>();
@@ -689,91 +686,91 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 	}
 }
 
-Srch2ServerConf::~Srch2ServerConf() {
+ConfigManager::~ConfigManager() {
 
 }
 
-const std::string& Srch2ServerConf::getCustomerName() const {
+const std::string& ConfigManager::getCustomerName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getDocumentLimit() const {
+uint32_t ConfigManager::getDocumentLimit() const {
 	return documentLimit;
 }
 
-uint64_t Srch2ServerConf::getMemoryLimit() const {
+uint64_t ConfigManager::getMemoryLimit() const {
 	return memoryLimit;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryNSeconds() const {
+uint32_t ConfigManager::getMergeEveryNSeconds() const {
 	return mergeEveryNSeconds;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryMWrites() const {
+uint32_t ConfigManager::getMergeEveryMWrites() const {
 	return mergeEveryMWrites;
 }
 
-int Srch2ServerConf::getIndexType() const {
+int ConfigManager::getIndexType() const {
 	return indexType;
 }
 
-const string& Srch2ServerConf::getAttributeLatitude() const {
+const string& ConfigManager::getAttributeLatitude() const {
 	return attributeLatitude;
 }
 
-const string& Srch2ServerConf::getAttributeLongitude() const {
+const string& ConfigManager::getAttributeLongitude() const {
 	return attributeLongitude;
 }
 
-float Srch2ServerConf::getDefaultSpatialQueryBoundingBox() const {
+float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
 	return defaultSpatialQueryBoundingBox;
 }
 
-int Srch2ServerConf::getNumberOfThreads() const {
+int ConfigManager::getNumberOfThreads() const {
 	return numberOfThreads;
 }
 
-DataSourceType Srch2ServerConf::getDataSourceType() const {
+DataSourceType ConfigManager::getDataSourceType() const {
 	return dataSourceType;
 }
 
-IndexCreateOrLoad Srch2ServerConf::getIndexCreateOrLoad() const {
+IndexCreateOrLoad ConfigManager::getIndexCreateOrLoad() const {
 	return indexCreateOrLoad;
 }
 
-WriteApiType Srch2ServerConf::getWriteApiType() const {
+WriteApiType ConfigManager::getWriteApiType() const {
 	return writeApiType;
 }
 
-const string& Srch2ServerConf::getIndexPath() const {
+const string& ConfigManager::getIndexPath() const {
 	return indexPath;
 }
 
-const string& Srch2ServerConf::getFilePath() const {
+const string& ConfigManager::getFilePath() const {
 	return this->filePath;
 }
 
-const string& Srch2ServerConf::getPrimaryKey() const {
+const string& ConfigManager::getPrimaryKey() const {
 	return primaryKey;
 }
 
-const map<string, pair<unsigned, unsigned> > * Srch2ServerConf::getSearchableAttributes() const {
+const map<string, pair<unsigned, unsigned> > * ConfigManager::getSearchableAttributes() const {
 	return &searchableAttributesTriple;
 }
 
-const vector<string> * Srch2ServerConf::getAttributesToReturnName() const {
+const vector<string> * ConfigManager::getAttributesToReturnName() const {
 	return &attributesToReturn;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesName() const {
+const vector<string> * ConfigManager::getSortableAttributesName() const {
 	return &sortableAttributes;
 }
 
-const vector<srch2::instantsearch::FilterType> * Srch2ServerConf::getSortableAttributesType() const {
+const vector<srch2::instantsearch::FilterType> * ConfigManager::getSortableAttributesType() const {
 	return &sortableAttributesType;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() const {
+const vector<string> * ConfigManager::getSortableAttributesDefaultValue() const {
 	return &sortableAttributesDefaultValue;
 }
 
@@ -782,31 +779,31 @@ const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() cons
  return &attributesBoosts;
  }*/
 
-string Srch2ServerConf::getInstallDir() const {
+string ConfigManager::getInstallDir() const {
 	return installDir;
 }
 
-bool Srch2ServerConf::getStemmerFlag() const {
+bool ConfigManager::getStemmerFlag() const {
 	return stemmerFlag;
 }
 
-string Srch2ServerConf::getStemmerFile() const {
+string ConfigManager::getStemmerFile() const {
 	return stemmerFile;
 }
 
-string Srch2ServerConf::getSynonymFilePath() const {
+string ConfigManager::getSynonymFilePath() const {
 	return synonymFilterFilePath;
 }
 
-bool Srch2ServerConf::getSynonymKeepOrigFlag() const {
+bool ConfigManager::getSynonymKeepOrigFlag() const {
 	return synonymKeepOrigFlag;
 }
 
-string Srch2ServerConf::getStopFilePath() const {
+string ConfigManager::getStopFilePath() const {
 	return stopFilterFilePath;
 }
 
-const string& Srch2ServerConf::getAttributeRecordBoostName() const {
+const string& ConfigManager::getAttributeRecordBoostName() const {
 	return attributeRecordBoost;
 }
 
@@ -815,132 +812,132 @@ const string& Srch2ServerConf::getAttributeRecordBoostName() const {
  return defaultAttributeRecordBoost;
  }*/
 
-const std::string& Srch2ServerConf::getScoringExpressionString() const {
+const std::string& ConfigManager::getScoringExpressionString() const {
 	return scoringExpressionString;
 }
 
-int Srch2ServerConf::getSearchResponseJSONFormat() const {
+int ConfigManager::getSearchResponseJSONFormat() const {
 	return searchResponseJsonFormat;
 }
 
-const string& Srch2ServerConf::getRecordAllowedSpecialCharacters() const {
+const string& ConfigManager::getRecordAllowedSpecialCharacters() const {
 	return allowedRecordTokenizerCharacters;
 }
 
-int Srch2ServerConf::getSearchType() const {
+int ConfigManager::getSearchType() const {
 	return searchType;
 }
 
-int Srch2ServerConf::getIsPrimSearchable() const {
+int ConfigManager::getIsPrimSearchable() const {
 	return isPrimSearchable;
 }
 
-bool Srch2ServerConf::getIsFuzzyTermsQuery() const {
+bool ConfigManager::getIsFuzzyTermsQuery() const {
 	return exactFuzzy;
 }
 
-bool Srch2ServerConf::getQueryTermType() const {
+bool ConfigManager::getQueryTermType() const {
 	return queryTermType;
 }
 
-unsigned Srch2ServerConf::getQueryTermBoost() const {
+unsigned ConfigManager::getQueryTermBoost() const {
 	return queryTermBoost;
 }
 
-float Srch2ServerConf::getQueryTermSimilarityBoost() const {
+float ConfigManager::getQueryTermSimilarityBoost() const {
 	return queryTermSimilarityBoost;
 }
 
-float Srch2ServerConf::getQueryTermLengthBoost() const {
+float ConfigManager::getQueryTermLengthBoost() const {
 	return queryTermLengthBoost;
 }
 
-float Srch2ServerConf::getPrefixMatchPenalty() const {
+float ConfigManager::getPrefixMatchPenalty() const {
 	return prefixMatchPenalty;
 }
 
-bool Srch2ServerConf::getSupportAttributeBasedSearch() const {
+bool ConfigManager::getSupportAttributeBasedSearch() const {
 	return supportAttributeBasedSearch;
 }
 
-int Srch2ServerConf::getSearchResponseFormat() const {
+int ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
 
-const string& Srch2ServerConf::getAttributeStringForMySQLQuery() const {
+const string& ConfigManager::getAttributeStringForMySQLQuery() const {
 	return attributeStringForMySQLQuery;
 }
 
-const string& Srch2ServerConf::getLicenseKeyFileName() const {
+const string& ConfigManager::getLicenseKeyFileName() const {
 	return licenseKeyFile;
 }
 
-const std::string& Srch2ServerConf::getTrieBootstrapDictFileName() const {
+const std::string& ConfigManager::getTrieBootstrapDictFileName() const {
 	return this->trieBootstrapDictFile;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningHostname() const {
+const string& ConfigManager::getHTTPServerListeningHostname() const {
 	return httpServerListeningHostname;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningPort() const {
+const string& ConfigManager::getHTTPServerListeningPort() const {
 	return httpServerListeningPort;
 }
 
-const string& Srch2ServerConf::getKafkaBrokerHostName() const {
+const string& ConfigManager::getKafkaBrokerHostName() const {
 	return kafkaBrokerHostName;
 }
 
-uint16_t Srch2ServerConf::getKafkaBrokerPort() const {
+uint16_t ConfigManager::getKafkaBrokerPort() const {
 	return kafkaBrokerPort;
 }
 
-const string& Srch2ServerConf::getKafkaConsumerTopicName() const {
+const string& ConfigManager::getKafkaConsumerTopicName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getKafkaConsumerPartitionId() const {
+uint32_t ConfigManager::getKafkaConsumerPartitionId() const {
 	return kafkaConsumerPartitionId;
 }
 
-uint32_t Srch2ServerConf::getWriteReadBufferInBytes() const {
+uint32_t ConfigManager::getWriteReadBufferInBytes() const {
 	return writeReadBufferInBytes;
 }
 
-uint32_t Srch2ServerConf::getPingKafkaBrokerEveryNSeconds() const {
+uint32_t ConfigManager::getPingKafkaBrokerEveryNSeconds() const {
 	return pingKafkaBrokerEveryNSeconds;
 }
 
-int Srch2ServerConf::getDefaultResultsToRetrieve() const {
+int ConfigManager::getDefaultResultsToRetrieve() const {
 	return resultsToRetrieve;
 }
 
-int Srch2ServerConf::getAttributeToSort() const {
+int ConfigManager::getAttributeToSort() const {
 	return attributeToSort;
 }
 
-int Srch2ServerConf::getOrdering() const {
+int ConfigManager::getOrdering() const {
 	return ordering;
 }
 
-bool Srch2ServerConf::isRecordBoostAttributeSet() const {
+bool ConfigManager::isRecordBoostAttributeSet() const {
 	return recordBoostAttributeSet;
 }
 
-const string& Srch2ServerConf::getHTTPServerAccessLogFile() const {
+const string& ConfigManager::getHTTPServerAccessLogFile() const {
 	return httpServerAccessLogFile;
 }
 
-const Logger::LogLevel& Srch2ServerConf::getHTTPServerLogLevel() const
+const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const
 {
 	return loglevel;
 }
 
-const string& Srch2ServerConf::getHTTPServerErrorLogFile() const {
+const string& ConfigManager::getHTTPServerErrorLogFile() const {
 	return httpServerErrorLogFile;
 }
 
-unsigned Srch2ServerConf::getCacheSizeInBytes() const {
+unsigned ConfigManager::getCacheSizeInBytes() const {
 	return cacheSizeInBytes;
 }
 

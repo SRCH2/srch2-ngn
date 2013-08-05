@@ -98,7 +98,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  */
 void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         const URLParserHelper &urlParserHelper,
-        const Srch2ServerConf *indexDataContainerConf,
+        const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults,
         const Query *query,
         const Indexer *indexer,
@@ -507,7 +507,7 @@ void HTTPResponse::lookupCommand(evhttp_request *req, Srch2Server *server)
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const Srch2ServerConf *indexDataContainerConf = server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 
@@ -556,7 +556,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const Srch2ServerConf *indexDataContainerConf = server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
     const Analyzer *analyzer = server->indexer->getAnalyzer();
 
     URLParserHelper urlParserHelper;

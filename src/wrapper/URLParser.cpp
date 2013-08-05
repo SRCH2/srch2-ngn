@@ -41,7 +41,7 @@ const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
-URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
+URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const ConfigManager *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
 {
     this->exactQuery = NULL;
     this->fuzzyQuery = NULL;

@@ -44,7 +44,7 @@ std::string WStringToString(const std::wstring& s)
 
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
-                        const Srch2ServerConf *indexDataContainerConf,
+                        const ConfigManager *indexDataContainerConf,
                         std::stringstream &error)
 {
     if (not (root.type() == Json::objectValue))
@@ -186,7 +186,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Srch2ServerConf *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const ConfigManager *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -214,7 +214,7 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Sr
     return true;
 }
 
-srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerConf *indexDataContainerConf)
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager *indexDataContainerConf)
 {
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -274,7 +274,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const Srch2ServerConf *indexDataContainerConf)
+void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());

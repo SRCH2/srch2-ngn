@@ -9,7 +9,7 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/Indexer.h>
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 namespace srch2is = srch2::instantsearch;
 
@@ -22,11 +22,11 @@ namespace httpwrapper
 class JSONRecordParser
 {
  public:
-  static bool populateRecordFromJSON( const std::string &inputLine, const Srch2ServerConf *indexDataContainerConf,
+  static bool populateRecordFromJSON( const std::string &inputLine, const ConfigManager *indexDataContainerConf,
 				      srch2is::Record *record, std::stringstream &error);
   static bool _JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine, const Json::Value &root,
-				       const Srch2ServerConf *indexDataContainerConf, std::stringstream &error);
-  static srch2is::Schema* createAndPopulateSchema( const Srch2ServerConf *indexDataContainerConf);
+				       const ConfigManager *indexDataContainerConf, std::stringstream &error);
+  static srch2is::Schema* createAndPopulateSchema( const ConfigManager *indexDataContainerConf);
 
  private:
   static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::string &stringValue, const string &configName);
@@ -36,7 +36,7 @@ class JSONRecordParser
 class DaemonDataSource
 {
 	public:
-		static void createNewIndexFromFile(srch2is::Indexer *indexer, const Srch2ServerConf *indexDataContainerConf);
+		static void createNewIndexFromFile(srch2is::Indexer *indexer, const ConfigManager *indexDataContainerConf);
 };
 
 

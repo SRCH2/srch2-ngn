@@ -3,7 +3,7 @@
 #ifndef _HTTPRESPONSE_H_
 #define _HTTPRESPONSE_H_
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 #include "URLParser.h"
 #include "json/json.h"
 #include "Srch2Server.h"
@@ -41,7 +41,7 @@ class HTTPResponse
 	private:
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const URLParserHelper &urlParserHelper,
-				const Srch2ServerConf *indexDataContainerConf,
+				const ConfigManager *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,
