@@ -95,7 +95,7 @@ namespace instantsearch
 class InvertedIndex;
 class QuadTree;
 //class ForwardIndex;
-class AnalyzerInternal;
+class Analyzer;
 class SchemaInternal;
 class ForwardList;
 typedef std::pair<ForwardList*, bool> ForwardListPtr;

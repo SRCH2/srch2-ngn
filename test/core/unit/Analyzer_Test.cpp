@@ -26,6 +26,16 @@
 #include <stdlib.h>
 #include "analyzer/SimpleAnalyzer.h"
 
+#include "index/InvertedIndex.h"
+#include "operation/IndexerInternal.h"
+#include "operation/IndexSearcherInternal.h"
+#include <iostream>
+#include <functional>
+#include <map>
+#include <cstring>
+#include "util/cowvector/compression/cowvector_S16.h"
+#include <assert.h>
+
 using namespace std;
 using namespace srch2::instantsearch;
 
@@ -724,6 +734,111 @@ void testSynonymFilter(string dataDir) {
 	delete simpleAnlyzer;
 }
 
+void testAnalyzerSerilization(string dataDir) {
+
+    unsigned mergeEveryNSeconds = 3;
+    unsigned mergeEveryMWrites = 5;
+    string INDEX_DIR = ".";
+
+    /*
+     * Test 1
+     */
+    // INDEXING
+    ///Create Schema
+     Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
+     schema->setPrimaryKey("article_id"); // integer, not searchable
+     schema->setSearchableAttribute("article_id"); // convert id to searchable text
+     schema->setSearchableAttribute("article_authors", 2); // searchable text
+     schema->setSearchableAttribute("article_title", 7); // searchable text
+
+     Record *record = new Record(schema);
+
+
+     Analyzer *analyzer = new Analyzer(
+              ENABLE_STEMMER_NORMALIZER,
+              dataDir + "/StemmerHeadwords.txt",
+              dataDir + "/stopWordsFile.txt",
+              dataDir + "/synonymFile.txt",
+              SYNONYM_KEEP_ORIGIN, "", SIMPLE_ANALYZER);
+
+
+     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+
+     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+
+     record->setPrimaryKey(1001);
+     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
+     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
+     record->setRecordBoost(10);
+     index->addRecord(record, 0);
+
+     index->commit();
+     index->save();
+
+     delete schema;
+     delete record;
+     delete analyzer;
+     delete index;
+     delete indexMetaData;
+
+     // LOADING
+    IndexMetaData *indexMetaData2 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexReaderWriter *indexReaderWriter = new IndexReaderWriter(indexMetaData2);
+
+    delete indexReaderWriter;
+    delete indexMetaData2;
+
+    cout << endl << endl ;
+
+    /*
+    * Test 2
+    */
+   // INDEXING
+   ///Create Schema
+    Schema *schema2 = Schema::create(srch2::instantsearch::DefaultIndex);
+    schema2->setPrimaryKey("article_id"); // integer, not searchable
+    schema2->setSearchableAttribute("article_id"); // convert id to searchable text
+    schema2->setSearchableAttribute("article_authors", 2); // searchable text
+    schema2->setSearchableAttribute("article_title", 7); // searchable text
+
+    Record *record2 = new Record(schema2);
+
+
+    Analyzer *analyzer2 = new Analyzer(
+             DISABLE_STEMMER_NORMALIZER,
+             dataDir + "/StemmerHeadwords.txt",
+             "",
+             dataDir + "/synonymFile.txt",
+             SYNONYM_DONOT_KEEP_ORIGIN, "", STANDARD_ANALYZER);
+
+    IndexMetaData *indexMetaData3 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+
+    Indexer *index2 = Indexer::create(indexMetaData3, analyzer2, schema2);
+
+    record2->setPrimaryKey(1001);
+    record2->setSearchableAttributeValue("article_authors", " and Jack Lennon");
+    record2->setSearchableAttributeValue("article_title", "Yeste More");
+    record2->setRecordBoost(10);
+    index2->addRecord(record2, 0);
+
+    index2->commit();
+    index2->save();
+
+    delete schema2;
+    delete record2;
+    delete analyzer2;
+    delete index2;
+    delete indexMetaData3;
+
+    // LOADING
+   IndexMetaData *indexMetaData4 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+   IndexReaderWriter *indexReaderWriter2 = new IndexReaderWriter(indexMetaData4);
+
+   delete indexReaderWriter2;
+   delete indexMetaData4;
+
+}
+
 
 int main() {
 	if ((getenv("dataDir") == NULL) ) {
@@ -752,5 +867,8 @@ int main() {
 
 	testSynonymFilter(dataDir);
 	cout << "SynonymFilter test passed" << endl;
+
+	testAnalyzerSerilization(dataDir);
+	cout << "Analyzer Serialization test passed" << endl;
 	return 0;
 }

@@ -19,7 +19,6 @@
  */
 
 #include "IndexData.h"
-#include "analyzer/AnalyzerInternal.h"
 #include "record/SchemaInternal.h"
 #include "index/IndexUtil.h"
 #include "index/Trie.h"
@@ -51,10 +50,8 @@ using srch2::util::Logger;
 //using std::unordered_set;
 using namespace srch2::util;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
@@ -76,15 +73,8 @@ IndexData::IndexData(const string &directoryName,
      * //TODO Need to serialise Analyzer for stopwords
      */
     // get the analyzer type to instantiate a new analyzer
-    AnalyzerType analyzerType = analyzer->analyzerInternal->getAnalyzerType();
-    switch(analyzerType)
-	{
-		case SIMPLE_ANALYZER:
-			this->analyzer = new Analyzer( new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer->analyzerInternal))));
-			break;
-		default:
-		    this->analyzer = new Analyzer( new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer->analyzerInternal))));
-	}
+    this->analyzer = new Analyzer(*analyzer);
+
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
     this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
@@ -123,16 +113,17 @@ IndexData::IndexData(const string& directoryName)
 	AnalyzerType analyzerType;
 	ia >> analyzerType;
 
-    switch(analyzerType)
-	{
-		case SIMPLE_ANALYZER:
-			this->analyzer = new Analyzer(new SimpleAnalyzer);
-			break;
-		default:
-			this->analyzer = new Analyzer(new StandardAnalyzer);
-	}
-    // cout << "directoryName = " << directoryName << endl;
-    AnalyzerInternal::load(*(this->analyzer->analyzerInternal), ia);
+	this->analyzer = new Analyzer(
+	                    DISABLE_STEMMER_NORMALIZER,
+                        "",
+                        "",
+                        "",
+                        SYNONYM_DONOT_KEEP_ORIGIN,
+                        "",
+                        analyzerType);
+
+    this->analyzer->load(ia);
+
     ifs.close();
     //this->analyzerInternal->setIndexDirectory(directoryName);
 
@@ -195,7 +186,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
         this->mergeRequired = true;
         /// analyze the record (tokenize it, remove stop words)
         map<string, TokenAttributeHits > tokenAttributeHitsMap;
-        this->analyzer->analyzerInternal->tokenizeRecord(record, tokenAttributeHitsMap);
+        this->analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
         KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
@@ -757,8 +748,8 @@ void IndexData::_save(const string &directoryName) const
         QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
     std::ofstream ofs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
-    oa << dynamic_cast<AnalyzerInternal *>(this->analyzer->analyzerInternal)->getAnalyzerType();
-    AnalyzerInternal::save(*this->analyzer->analyzerInternal, oa);
+    oa << this->analyzer->getAnalyzerType();
+    this->analyzer->save(oa);
     ofs.close();
     this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
 }
@@ -775,7 +766,6 @@ void IndexData::printNumberOfBytes() const
 
 const Analyzer* IndexData::getAnalyzer() const
 {
-//    return dynamic_cast<const Analyzer *>(this->analyzerInternal);
     return this->analyzer;
 }
 
@@ -786,7 +776,6 @@ const Schema* IndexData::getSchema() const
 
 IndexData::~IndexData()
 {
-//    delete this->analyzerInternal;
     delete this->analyzer;
     delete this->trie;
     delete this->forwardIndex;
