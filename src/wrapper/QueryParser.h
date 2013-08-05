@@ -84,6 +84,8 @@ private:
     static const char* const radiusParamName;
     static const char* const facetParamName;
     static const char* const orderParamName;
+    static const char* const lengthBoostParamName;
+    static const char* const prefixMatchPenaltyParamName;
     // TODO: change the prototypes to reflect input/outputs
     /*
      *

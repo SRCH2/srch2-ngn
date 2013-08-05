@@ -375,7 +375,6 @@ public:
                 "\\s*(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s+TO\\s+(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s*"; // yyyy/mm/dd
         std::string rangeCriterionRegexString = filedRegexString + ":\\s*\\[("
                 + validDateRegexString + "|" + validNumRegexString + ")\\]\\s*";
-        // check i
         boost::regex rangeCriterionRegex(rangeCriterionRegexString);
         std::string assignmentCriterionRegexString = filedRegexString + ":"
                 + keywordRegexString;

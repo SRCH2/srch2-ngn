@@ -45,6 +45,9 @@ const char* const QueryParser::centerLongParamName = "clong";
 const char* const QueryParser::radiusParamName = "radius";
 const char* const QueryParser::facetParamName = "facet";
 const char* const QueryParser::orderParamName = "orderby";
+const char* const QueryParser::lengthBoostParamName = "lengthBoost";
+const char* const QueryParser::prefixMatchPenaltyParamName = "pmp";
+
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
@@ -271,11 +274,25 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
     }
 }
 void QueryParser::lengthBoostParser() {
-
+    const char * lengthBoostTmp = evhttp_find_header(&headers,
+            QueryParser::lengthBoostParamName);
+    if (lengthBoostTmp) { // if this parameter exists
+        size_t st;
+        string lengthBoost = evhttp_uridecode(lengthBoostTmp, 0, &st);
+        this->container->summary.push_back(srch2::httpwrapper::LengthBoostFlag);
+        this->container->lengthBoost = atof(lengthBoost.c_str());
+    }
 }
 
 void QueryParser::prefixMatchPenaltyParser() {
-
+    const char * prefixMatchPenaltyTmp = evhttp_find_header(&headers,
+            QueryParser::prefixMatchPenaltyParamName);
+    if (prefixMatchPenaltyTmp) { // if this parameter exists
+        size_t st;
+        string prefixMatchPenalty = evhttp_uridecode(prefixMatchPenaltyTmp, 0, &st);
+        this->container->summary.push_back(srch2::httpwrapper::PrefixMatchPenaltyFlag);
+        this->container->prefixMatchPenalty = atof(prefixMatchPenalty.c_str());
+    }
 }
 
 void QueryParser::fieldListParser() {
@@ -496,8 +513,9 @@ void QueryParser::filterQueryParameterParser() {
             // set the termOperators in container
             this->populateFilterQueryTermBooleanOperators(termOperators);
             // get the first boolean operator and set that in evaluator. It's decided that we will only support one of AND,OR.
-            if(!this->container->termBooleanOperators.empty()){
-                fqe->setOperation(this->container->termFQBooleanOperators.at(0));
+            if (!this->container->termBooleanOperators.empty()) {
+                fqe->setOperation(
+                        this->container->termFQBooleanOperators.at(0));
             }
             // parse the terms
             for (vector<string>::iterator it = terms.begin(); it != terms.end();
@@ -877,7 +895,7 @@ void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) {
         // it has field. create a vector and populate container->fieldFilter.
         string fieldStr = term.substr(0, matches.position()); // extract the field
         this->populateFieldFilterUsingQueryFields(fieldStr);
-        candidateKeyword = term.substr(matches.position()+matches.length()); // extract the keyword
+        candidateKeyword = term.substr(matches.position() + matches.length()); // extract the keyword
     } else {
         // its a keyword, no field specified. look for the fields in localparameter
         this->populateFieldFilterUsingLp();
