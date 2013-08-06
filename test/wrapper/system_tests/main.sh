@@ -1,4 +1,6 @@
+# $1 is <srch2-main-dir>/test/wrapper/system_tests
 SYSTEM_TEST_DIR=$1
+# $2 is <srch2-main-dir>/build/src/server
 SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
@@ -97,4 +99,9 @@ if [ $? -gt 0 ]; then
     echo " --- error ---"
     exit -1
 fi
+# clear the output directory. First make sure that we are in correct directory
+if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
+    rm -rf data
+fi
+
 cd $PWD_DIR
