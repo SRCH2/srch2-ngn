@@ -1,3 +1,4 @@
+#!/bin/sh
 # $1 is <srch2-main-dir>/test/wrapper/system_tests
 SYSTEM_TEST_DIR=$1
 # $2 is <srch2-main-dir>/build/src/server
