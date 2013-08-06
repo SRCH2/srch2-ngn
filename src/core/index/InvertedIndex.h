@@ -105,37 +105,31 @@ public:
 
     const unsigned getInvertedListElement(unsigned index) const
     {
-        ts_shared_ptr<vectorview<unsigned> > readView;
+        shared_ptr<vectorview<unsigned> > readView;
         this->invList->getReadView(readView);
         return readView->getElement(index);
     };
 
     unsigned getReadViewSize() const
     {
-        ts_shared_ptr<vectorview<unsigned> > readView;
+        shared_ptr<vectorview<unsigned> > readView;
         this->invList->getReadView(readView);
         return readView->size();
     };
 
     unsigned getWriteViewSize() const
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        return writeView->size();
+        return this->invList->getWriteView()->size();
     };
 
     void setInvertedListElement(unsigned index, unsigned recordId)
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        writeView->at(index) = recordId;
+        this->invList->getWriteView()->at(index) = recordId;
     };
 
     void addInvertedListElement(unsigned recordId)
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        writeView->push_back(recordId);
+        this->invList->getWriteView()->push_back(recordId);
     };
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
@@ -235,7 +229,7 @@ public:
 
     void printInvList(const unsigned invertedListId) const
     {
-        ts_shared_ptr<vectorview<InvertedListContainerPtr> > readView;
+        shared_ptr<vectorview<InvertedListContainerPtr> > readView;
         this->invertedIndexVector->getReadView(readView);
 
         unsigned readViewListSize = readView->getElement(invertedListId)->getReadViewSize();

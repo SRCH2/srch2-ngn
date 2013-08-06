@@ -20,6 +20,8 @@
 #ifndef __COWVECTOR_H__
 #define __COWVECTOR_H__
 
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/vector.hpp>
 #include "ts_shared_ptr.h"
 
 using boost::shared_ptr;
@@ -69,30 +71,22 @@ public:
 
     void forceCreateCopy()
     {
-        shared_ptr<array<T> > a;
-        m_array.get(a);
-        size_t capacity = a->capacity;
+        size_t capacity = m_array->capacity;
         shared_ptr<array<T> > acopy(new array<T>(capacity));
-        for(size_t i = 0; i < m_size; ++i) {
-            acopy->extent[i] = a->extent[i];
-        }
+        memcpy(acopy->extent, m_array->extent, m_size*sizeof(T));
         m_array = acopy;
     }
 
     T& at(unsigned i)
     {
-        shared_ptr<array<T> > a;
-        m_array.get(a);
-        size_t capacity = a->capacity;
+        size_t capacity = m_array->capacity;
         if (i >= capacity) {
             while(i >= capacity) {
                 capacity *= 2;
                 capacity += 1;
             }
             shared_ptr<array<T> > acopy(new array<T>(capacity));
-            for(size_t i = 0; i < m_size; ++i) {
-                acopy->extent[i] = a->extent[i];
-            }
+            memcpy(acopy->extent, m_array->extent, m_size*sizeof(T));
             m_array = acopy;
         }
         if (i >= m_size) {
@@ -111,7 +105,7 @@ public:
         return m_array->extent[i];
     }
 
-    void getArrayForWriteView(ts_shared_ptr<array<T> > &writeView)
+    void getArrayForWriteView(shared_ptr<array<T> > &writeView)
     //array<T>* getArrayForInvertedListSortAndMerge() // DO NOT use in readView.
     {
         writeView = this->m_array;
@@ -126,7 +120,7 @@ public:
     size_t size() const { return m_size; }
 
 private:
-    ts_shared_ptr<array<T> > m_array;
+    shared_ptr<array<T> > m_array;
     size_t m_size;
 
     friend class boost::serialization::access;
@@ -135,8 +129,7 @@ private:
     void save(Archive & ar, const unsigned int version) const
     {
         ar << this->m_size;
-        for(unsigned i = 0; i < this->m_size; ++i)
-            ar << this->getElement(i);
+        ar << boost::serialization::make_array(this->m_array->extent, this->m_size);
     }
 
     template<class Archive>
@@ -145,9 +138,7 @@ private:
         ar >> this->m_size;
 
         shared_ptr<array<T> > acopy(new array<T>(this->m_size));
-        for(size_t i = 0; i < m_size; ++i) {
-            ar >> acopy->extent[i];
-        }
+        ar >> boost::serialization::make_array(acopy->extent, this->m_size);
         m_array = acopy;
     }
 
@@ -165,8 +156,9 @@ template <class T>
 class cowvector {
 
 private:
-    ts_shared_ptr<vectorview<T> > m_readView;
-    ts_shared_ptr<vectorview<T> > m_writeView;
+    shared_ptr<vectorview<T> > m_readView;
+    shared_ptr<vectorview<T> > m_writeView;
+    mutable pthread_spinlock_t m_spinlock;
 
     friend class boost::serialization::access;
 
@@ -198,6 +190,7 @@ public:
     cowvector() {
         m_readView.reset(new vectorview<T>(1));
         m_writeView = m_readView;
+        pthread_spin_init(&m_spinlock, 0);
     };
     cowvector(size_t capacity) //Constructor
     {
@@ -205,24 +198,32 @@ public:
             capacity = 1;
         m_readView.reset(new vectorview<T>(capacity));
         m_writeView = m_readView;
+        pthread_spin_init(&m_spinlock, 0);
     }
 
-    virtual ~cowvector() {}
-
-    void getReadView(ts_shared_ptr<vectorview<T> >& view) const
+    virtual ~cowvector()
     {
+        pthread_spin_destroy(&m_spinlock);
+    }
+
+    void getReadView(shared_ptr<vectorview<T> >& view) const
+    {
+        pthread_spin_lock(&m_spinlock);
         view = m_readView;
+        pthread_spin_unlock(&m_spinlock);
     }
 
-    void getWriteView(ts_shared_ptr<vectorview<T> >& view)
+    shared_ptr<vectorview<T> >& getWriteView()
     {
-        view = m_writeView;
+        return m_writeView;
     }
 
     void commit() //Set readView to writeView and create new a writeView from readViewCopy.
     {
+        pthread_spin_lock(&m_spinlock);
         m_readView = m_writeView;
         m_writeView.reset(new vectorview<T>(*m_readView));
+        pthread_spin_unlock(&m_spinlock);
     }
 };
 
