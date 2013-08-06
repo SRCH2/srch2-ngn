@@ -98,7 +98,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  */
 void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         const URLParserHelper &urlParserHelper,
-        const ConfigManager *indexDataContainerConf,
+        const ConfigManager *configManager,
         const QueryResults *queryResults,
         const Query *query,
         const Indexer *indexer,
@@ -125,8 +125,8 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 		{
 			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
 			root["results"][counter]["score"] = (0-queryResults->getResultScore(i));//the actual distance between the point of record and the center point of the range
-			if (indexDataContainerConf->getSearchResponseFormat() == 0
-					|| indexDataContainerConf->getSearchResponseFormat() == 2)
+			if (configManager->getSearchResponseFormat() == 0
+					|| configManager->getSearchResponseFormat() == 2)
 			{
 				unsigned internalRecordId = queryResults->getInternalRecordId(i);
 				std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
@@ -172,8 +172,8 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
 				root["results"][counter]["matching_prefix"][j] = matchingKeywords[j];
 			}
 
-			if (indexDataContainerConf->getSearchResponseFormat() == 0
-					|| indexDataContainerConf->getSearchResponseFormat() == 2)
+			if (configManager->getSearchResponseFormat() == 0
+					|| configManager->getSearchResponseFormat() == 2)
 			{
 				unsigned internalRecordId = queryResults->getInternalRecordId(i);
 				std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
@@ -507,8 +507,8 @@ void HTTPResponse::lookupCommand(evhttp_request *req, Srch2Server *server)
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
-    string primaryKeyName = indexDataContainerConf->getPrimaryKey();
+    const ConfigManager *configManager = server->indexDataContainerConf;
+    string primaryKeyName = configManager->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 
     std::stringstream response_msg;
@@ -556,7 +556,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+    const ConfigManager *configManager = server->indexDataContainerConf;
     const Analyzer *analyzer = server->indexer->getAnalyzer();
 
     URLParserHelper urlParserHelper;
@@ -567,7 +567,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     // CHENLI: DEBUG
     //std::cout << "[" << req->uri << "]" << std::endl;
 
-    URLToDoubleQuery *urlToDoubleQuery = new URLToDoubleQuery(headers, analyzer, indexDataContainerConf, server->indexer->getSchema(), urlParserHelper);
+    URLToDoubleQuery *urlToDoubleQuery = new URLToDoubleQuery(headers, analyzer, configManager, server->indexer->getSchema(), urlParserHelper);
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
@@ -582,7 +582,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
         {
         case 0://TopK
         {
-            if (indexDataContainerConf->getIndexType() != 0)
+            if (configManager->getIndexType() != 0)
             {
                 evhttp_send_reply(req, HTTP_BADREQUEST, "Query type is wrong", NULL);
             }
@@ -641,7 +641,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 exactQueryResults->printStats();
 
-                HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                         urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
 
                 delete exactQueryResults;
@@ -651,7 +651,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
         case 1://GetAllResults
         {
-            if (indexDataContainerConf->getIndexType() != 0)
+            if (configManager->getIndexType() != 0)
             {
                 evhttp_send_reply(req, HTTP_BADREQUEST, "Query type is wrong", NULL);
             }
@@ -688,12 +688,12 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
                 }
                 else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
                 }
 
@@ -704,7 +704,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
         case 2://MapQuery
         {
-            if (indexDataContainerConf->getIndexType() != 1)
+            if (configManager->getIndexType() != 1)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", "{\"error\":\"query type is wrong\"}", headers);
             }
@@ -798,12 +798,12 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
                 }
                 else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
                 }
 

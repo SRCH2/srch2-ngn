@@ -41,7 +41,7 @@ class HTTPResponse
 	private:
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const URLParserHelper &urlParserHelper,
-				const ConfigManager *indexDataContainerConf,
+				const ConfigManager *configManager,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,
