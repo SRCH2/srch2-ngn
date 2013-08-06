@@ -19,30 +19,28 @@ namespace httpwrapper {
 
 const char * ignoreOption = "IGNORE";
 
-Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess,
-        std::stringstream &parseError) {
-    // Declare the supported options.
-    po::options_description config("Configuration");
+Srch2ServerConf::Srch2ServerConf(std::string& configFile) {
+    this->configFile = configFile;
+}
+void Srch2ServerConf::loadConfigFile(){
+    std::cout << "Reading config file: " << this->configFile
+              << std::endl;
 
-    config.add_options()("help", "produce a help message")("config-file",
-            po::value<string>(), "config file") // If set, all the following options on command line are ignored.
+    po::options_description config("Config");
 
+    config.add_options()
     //("customer-name", po::value<string>(), "customer name") // REQUIRED
     ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
     ("index-type", po::value<int>(), "index-type") // REQUIRED
-    ("index-load-or-create", po::value<bool>(), "index-load-or-create")(
-            "data-source-type", po::value<bool>(), "Data source type")
+    ("index-load-or-create", po::value<bool>(), "index-load-or-create")
+    ("data-source-type", po::value<bool>(), "Data source type")
 
-    ("kafka-consumer-topicname", po::value<string>(),
-            "Kafka consumer topic name") // REQUIRED
+    ("kafka-consumer-topicname", po::value<string>(),"Kafka consumer topic name") // REQUIRED
     ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
     ("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
-    ("kafka-consumer-partitionid", po::value<uint32_t>(),
-            "Kafka consumer partitionid") // REQUIRED
-    ("kafka-consumer-read-buffer", po::value<uint32_t>(),
-            "Kafka consumer socket read buffer") // REQUIRED
-    ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(),
-            "Kafka consumer ping every n seconds") // REQUIRED
+    ("kafka-consumer-partitionid", po::value<uint32_t>(),"Kafka consumer partitionid") // REQUIRED
+    ("kafka-consumer-read-buffer", po::value<uint32_t>(),"Kafka consumer socket read buffer") // REQUIRED
+    ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(),"Kafka consumer ping every n seconds") // REQUIRED
     ("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
     ("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
     ("number-of-threads", po::value<int>(), "number-of-threads")
@@ -51,31 +49,21 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess,
     ("listening-port", po::value<string>(), "port to listen") // REQUIRED
     ("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
     ("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
-    ("license-file", po::value<string>(),
-            "File name with path to the srch2 license key file") // REQUIRED
-    ("trie-bootstrap-dict-file", po::value<string>(),
-            "bootstrap trie with initial keywords") // REQUIRED
+    ("license-file", po::value<string>(),"File name with path to the srch2 license key file") // REQUIRED
+    ("trie-bootstrap-dict-file", po::value<string>(),"bootstrap trie with initial keywords") // REQUIRED
     //("number-of-threads",  po::value<int>(), "number-of-threads")
     ("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
 
     ("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
     ("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
 
-    ("attributes-search", po::value<string>(),
-            "Attributes/fields in data for searching") // REQUIRED
-    ("attributes-search-default", po::value<string>(),
-            "Default values for searchable attributes")(
-            "attributes-search-required", po::value<string>(),
-            "Flag to indicate if searchable attributes are nullable")
-
-    ("non-searchable-attributes", po::value<string>(),
-            "Attributes/fields in data for sorting and range query")(
-            "non-searchable-attributes-types", po::value<string>(),
-            "Types of attributes/fields in data for sorting and range query")(
-            "non-searchable-attributes-default", po::value<string>(),
-            "Default values of attributes/fields in data for sorting and range query")(
-            "non-searchable-attributes-sort", po::value<string>(),
-            "Flag to indicate if a non-searchable attribute can be used to sort results.")
+    ("attributes-search", po::value<string>(),"Attributes/fields in data for searching") // REQUIRED
+    ("attributes-search-default", po::value<string>(),"Default values for searchable attributes")
+    ("attributes-search-required", po::value<string>(),"Flag to indicate if searchable attributes are nullable")
+    ("non-searchable-attributes", po::value<string>(),"Attributes/fields in data for sorting and range query")
+    ("non-searchable-attributes-types", po::value<string>(),"Types of attributes/fields in data for sorting and range query")
+    ("non-searchable-attributes-default", po::value<string>(),"Default values of attributes/fields in data for sorting and range query")
+    ("non-searchable-attributes-sort", po::value<string>(),"Flag to indicate if a non-searchable attribute can be used to sort results.")
 
     // facet information
     ("facet-enable", po::value<int>(),
@@ -102,73 +90,50 @@ Srch2ServerConf::Srch2ServerConf(int argc, char** argv, bool &configSuccess,
             "search-response-JSON-format", po::value<int>(),
             "search-response-JSON-format")
 
-    ("query-tokenizer-character", po::value<char>(),
-            "Query Tokenizer character")("allowed-record-special-characters",
-            po::value<string>(), "Record Tokenizer characters")(
-            "default-searcher-type", po::value<int>(), "Searcher-type")(
-            "default-query-term-match-type", po::value<int>(),
-            "Exact term or fuzzy term")("default-query-term-type",
-            po::value<int>(), "Query has complete terms or fuzzy terms")(
-            "default-query-term-boost", po::value<int>(),
-            "Default query term boost")("default-query-term-similarity-boost",
-            po::value<float>(), "Default query term similarity boost")(
-            "default-query-term-length-boost", po::value<float>(),
-            "Default query term length boost")("prefix-match-penalty",
-            po::value<float>(), "Penalty for prefix matching")(
-            "support-attribute-based-search", po::value<int>(),
-            "If support attribute based search")("default-results-to-retrieve",
-            po::value<int>(), "number of results to retrieve")(
-            "default-attribute-to-sort", po::value<string>(),
-            "attribute used to sort the results")("default-order",
-            po::value<int>(), "sort order")(
-            "default-spatial-query-bounding-square-side-length",
-            po::value<float>(), "Query has complete terms or fuzzy terms")
+    ("query-tokenizer-character", po::value<char>(),"Query Tokenizer character")
+    ("allowed-record-special-characters",po::value<string>(), "Record Tokenizer characters")
+    ("default-searcher-type", po::value<int>(), "Searcher-type")
+    ("default-query-term-match-type", po::value<int>(),"Exact term or fuzzy term")
+    ("default-query-term-type",po::value<int>(), "Query has complete terms or fuzzy terms")
+    ("default-query-term-boost", po::value<int>(),"Default query term boost")
+    ("default-query-term-similarity-boost",po::value<float>(), "Default query term similarity boost")(
+    "default-query-term-length-boost", po::value<float>(),"Default query term length boost")
+    ("prefix-match-penalty",po::value<float>(), "Penalty for prefix matching")
+    ("support-attribute-based-search", po::value<int>(),"If support attribute based search")
+    ("default-results-to-retrieve",po::value<int>(), "number of results to retrieve")
+    ("default-attribute-to-sort", po::value<string>(),"attribute used to sort the results")
+    ("default-order",po::value<int>(), "sort order")
+    ("default-spatial-query-bounding-square-side-length",po::value<float>(), "Query has complete terms or fuzzy terms")
 
     //("listening-port", po::value<string>(), "HTTP indexDataContainer listening port")
     //("document-root", po::value<string>(), "HTTP indexDataContainer document root to put html files")
     ("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
     ("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
-    ("access-log-file", po::value<string>(),
-            "HTTP indexDataContainer access log file") // DEPRECATED
-    ("log-level", po::value<int>(), "srch2 log level")("error-log-file",
-            po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
-    ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")(
-            "stop-filter-file-path", po::value<string>(),
-            "Stop Filter file path or IGNORE")("synonym-filter-file-path",
-            po::value<string>(), "Synonym Filter file path or IGNORE")(
-            "default-synonym-keep-origin-flag", po::value<int>(),
-            "Synonym keep origin word or not")("stemmer-file",
-            po::value<string>(), "Stemmer File")("install-directory",
-            po::value<string>(), "Install Directory");
+    ("access-log-file", po::value<string>(),"HTTP indexDataContainer access log file") // DEPRECATED
+    ("log-level", po::value<int>(), "srch2 log level")
+    ("error-log-file",po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
+    ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
+    ("stop-filter-file-path", po::value<string>(),"Stop Filter file path or IGNORE")
+    ("synonym-filter-file-path",po::value<string>(), "Synonym Filter file path or IGNORE")
+    ("default-synonym-keep-origin-flag", po::value<int>(),"Synonym keep origin word or not")
+    ("stemmer-file",po::value<string>(), "Stemmer File")
+    ("install-directory",po::value<string>(), "Install Directory");
 
-    po::variables_map vm_command_line_args;
-    po::store(po::parse_command_line(argc, argv, config), vm_command_line_args);
-    po::notify(vm_command_line_args);
+    fstream fs(configFile.c_str(), fstream::in);
+     po::variables_map vm_config_file;
+     po::store(po::parse_config_file(fs, config), vm_config_file);
+     po::notify(vm_config_file);
 
-    if (vm_command_line_args.count("help")) {
-        parseError << config;
-        configSuccess = false;
-        return;
-    } else {
-        if (vm_command_line_args.count("config-file")
-                && (vm_command_line_args["config-file"].as<string>().compare(
-                        ignoreOption) != 0)) {
-            std::cout << "Reading config file: "
-                    << vm_command_line_args["config-file"].as<string>()
-                    << std::endl;
+     bool configSuccess = true;
+     std::stringstream parseError;
+     this->parse(vm_config_file, configSuccess, parseError);
 
-            string configFile =
-                    vm_command_line_args["config-file"].as<string>();
-
-            fstream fs(configFile.c_str(), fstream::in);
-            po::variables_map vm_config_file;
-            po::store(po::parse_config_file(fs, config), vm_config_file);
-            po::notify(vm_config_file);
-            this->parse(vm_config_file, configSuccess, parseError);
-        } else {
-            this->parse(vm_command_line_args, configSuccess, parseError);
-        }
-    }
+     if (!configSuccess)
+     {
+         cout << "Error while reading the config file" << endl;
+         cout << parseError.str() << endl;  // assumption: parseError is set properly
+         exit(-1);
+     }
 }
 
 void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm,
