@@ -64,7 +64,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			std::string  synonymFilterFilePath = indexDataContainerConf->getSynonymFilePath();
 
 			// Create an analyzer
-			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemmerFlag,
+			srch2is::Analyzer *analyzer = new Analyzer(stemmerFlag,
 					stemmerFilterFilePath,
 					stopFilterFilePath,
 					synonymFilterFilePath,

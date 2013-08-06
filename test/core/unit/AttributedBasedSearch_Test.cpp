@@ -31,7 +31,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER, "","","",
+            srch2is::SYNONYM_DONOT_KEEP_ORIGIN,"",srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;

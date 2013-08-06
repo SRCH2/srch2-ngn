@@ -56,7 +56,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     
     unsigned mergeEveryNSeconds = 3;    
@@ -108,7 +108,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
@@ -869,7 +869,7 @@ void test11()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
