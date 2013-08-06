@@ -31,6 +31,7 @@
 #include <vector>
 #include <queue>
 #include <set>
+#include "util/cowvector/cowvector.h"
 
 using std::vector;
 using std::queue;
@@ -182,6 +183,8 @@ private:
      *
      * Enables the functions getCursors and setCursors for Caching purpose
      */
+    // a vector to keep all the inverted list readviews in current term virtual list
+    vector<shared_ptr<vectorview<unsigned> > > invertedListVector;
     vector<unsigned> cursorVector;
     //int addInvertedList(const InvertedList& invertedList);
 

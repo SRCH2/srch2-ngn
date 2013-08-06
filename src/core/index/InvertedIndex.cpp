@@ -345,16 +345,12 @@ void InvertedIndex::addInvertedListElement(unsigned keywordId, unsigned recordId
     writeView->at(keywordId)->addInvertedListElement(recordId);
 }
 
-const unsigned InvertedIndex::getInvertedListElementByDirectory(const unsigned invertedListId, const unsigned cursor) const
+void InvertedIndex::getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const
 {
-    /*if(invertedListId > this->getTotalNumberOfInvertedLists_ReadView() )
-    {
-        return NULL;
-    }*/
-	assert(invertedListId < this->getTotalNumberOfInvertedLists_ReadView());
-    shared_ptr<vectorview<InvertedListContainerPtr> > readView;
-    this->invertedIndexVector->getReadView(readView);
-    return readView->getElement(invertedListId)->getInvertedListElement(cursor);
+    assert(invertedListId < this->getTotalNumberOfInvertedLists_ReadView());
+    shared_ptr<vectorview<InvertedListContainerPtr> > invertedListReadView;
+    this->invertedIndexVector->getReadView(invertedListReadView);
+    invertedListReadView->getElement(invertedListId)->getInvertedList(readview);
 }
 
 //ReadView InvertedListSize

@@ -700,13 +700,15 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
         map<unsigned, unsigned>::const_iterator keywordIdMapperIter = keywordIdMapper.find(invertedListId);
         keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
         // Jamshid : since it happens after the commit of other index structures it uses read view
-        unsigned invertedListSize = this->invertedIndex->getInvertedListSize_ReadView(invertedListId);
+        shared_ptr<vectorview<unsigned> > readview;
+        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+        unsigned invertedListSize = readview->size();
         // go through each record id on the inverted list
         InvertedListElement invertedListElement;
         for (unsigned i = 0; i < invertedListSize; i ++) {
             /*if (invertedListElement == NULL)
                 continue;*/
-            unsigned recordId =  this->invertedIndex->getInvertedListElementByDirectory(invertedListId, i);
+            unsigned recordId = readview->getElement(i);
 
             // re-map it only it is not done before
             if (processedRecordIds.find (recordId) == processedRecordIds.end()) {

@@ -36,7 +36,10 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
 {
     unsigned invertedListId = leafNode->getInvertedListOffset();
     unsigned invertedListCounter = 0;
-    unsigned recordId = this->invertedIndex->getInvertedListElementByDirectory(invertedListId, invertedListCounter);
+
+    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+    unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
     unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
     ++ invertedListCounter;
@@ -52,8 +55,8 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
             break;
         }
     
-        if (invertedListCounter < this->invertedIndex->getInvertedListSize_ReadView(invertedListId)) {
-        	recordId = this->invertedIndex->getInvertedListElementByDirectory(invertedListId, invertedListCounter);
+        if (invertedListCounter < invertedListReadView->size()) {
+            recordId = invertedListReadView->getElement(invertedListCounter);
         	// calculate record offset online
         	recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
             ++invertedListCounter;
@@ -77,7 +80,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                                                                  term->getKeyword()->size(),
                                                                  isPrefixMatch,
                                                                  this->prefixMatchPenalty);
-            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(), 
+            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, prefixNode,
                                                    distance, isPrefixMatch));
@@ -89,13 +92,15 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                                                                  term->getKeyword()->size(),
                                                                  false,
                                                                  this->prefixMatchPenalty);// prefix match == false
-            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(), 
+            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, leafNode, distance, false));
         }
     
         // Cursor points to the next element on InvertedList
         this->cursorVector.push_back(invertedListCounter);
+        // keep the inverted list readviews in invertedListVector such that we can safely access them
+        this->invertedListVector.push_back(invertedListReadView);
     }
 }
 
@@ -126,7 +131,10 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
 
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        for (LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        cursorVector.reserve(iter.size());
+        invertedListVector.reserve(iter.size());
+        for (; !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
@@ -135,7 +143,10 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         }
     }
     else { // case 2: Term is complete
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        cursorVector.reserve(iter.size());
+        invertedListVector.reserve(iter.size());
+        for (; !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
@@ -158,6 +169,7 @@ TermVirtualList::~TermVirtualList()
     }
     this->itemsHeap.clear();
     this->cursorVector.clear();
+    this->invertedListVector.clear();
     this->term = NULL;
     this->invertedIndex = NULL;
     
@@ -256,8 +268,9 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         
         unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
-        unsigned currentHeapMaxInvertedListSize = 
-            this->invertedIndex->getInvertedListSize_ReadView(currentHeapMax->invertedListId);
+        this->invertedListVector.clear();
+        const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListVector[currentHeapMax->cursorVectorPosition];
+        unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
             
         bool foundValidHit = 0;
 
@@ -265,8 +278,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         while (currentHeapMaxCursor < currentHeapMaxInvertedListSize) {
             // InvertedList has more elements. Push invertedListElement at cursor into virtualList.
 
-            unsigned recordId = this->invertedIndex->getInvertedListElementByDirectory(currentHeapMaxInvertetedListId,
-                                           currentHeapMaxCursor);
+            unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
             unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
             unsigned termAttributeBitmap = 0;
@@ -353,9 +365,7 @@ unsigned TermVirtualList::getVirtualListTotalLength() {
 	unsigned totalLen = 0;
 	for (unsigned i=0; i<itemsHeap.size(); i++)
 	{
-		unsigned invId = itemsHeap[i]->invertedListId;
-		unsigned itemLen = invertedIndex->getInvertedListSize_ReadView(invId);
-		totalLen += itemLen;
+	    totalLen += this->invertedListVector[itemsHeap[i]->cursorVectorPosition]->size();
 	}
 	return totalLen;
 }

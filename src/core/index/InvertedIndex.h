@@ -110,6 +110,11 @@ public:
         return readView->getElement(index);
     };
 
+    void getInvertedList(shared_ptr<vectorview<unsigned> >& readview) const
+    {
+        this->invList->getReadView(readview);
+    }
+
     unsigned getReadViewSize() const
     {
         shared_ptr<vectorview<unsigned> > readView;
@@ -158,8 +163,9 @@ public:
      * [invertedList.offset,invertedList.currentHitCount] and return the InvertedListElement at invertedList.offset + cursor.
      * We make assertions to check if offset, offset + currentHitCount is within getTotalLengthOfInvertedLists(). Also, assert to check if currentHitCount > cursor.
      */
-    const unsigned getInvertedListElementByDirectory(const unsigned invertedListId, const unsigned cursor) const;
+    void getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;
     unsigned getInvertedListSize_ReadView(const unsigned invertedListId) const;
+
     bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset, 
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
