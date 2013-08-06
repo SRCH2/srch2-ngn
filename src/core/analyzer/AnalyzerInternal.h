@@ -55,12 +55,6 @@ public:
             CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
     }
 
-
-    const std::string& getRecordAllowedSpecialCharacters() const {
-            return this->recordAllowedSpecialCharacters;
-    }
-
-
 	void prepareRegexExpression() {
 		//allow all characters
 		string regexString = "[^A-Za-z0-9 "
@@ -77,7 +71,6 @@ public:
 		multipleSpaceRegex = boost::regex(" +");
 		headTailSpaceRegex = boost::regex("^[ \t]+|[ \t]+$");
 	}
-
 
 	const string cleanString(const std::string &inputString) const {
 		// example: " ab$(cd " -> " ab  cd "
@@ -103,9 +96,6 @@ public:
 		Logger::debug("Analyzer Type:                 %s\n\n\n", this->analyzerType);
 	    return;
 	};
-	const AnalyzerType& getAnalyzerType() const {
-		return analyzerType;
-	}
 
 	void save(boost::archive::binary_oarchive &oa) {
 		oa << *this;
@@ -136,6 +126,14 @@ public:
                     const std::map<std::string, unsigned> &searchableAttributesNameToId,
                     vector<unsigned> &filter) const;
 
+    // getter for the protected fields
+    const AnalyzerType& getAnalyzerType() const;
+    const StemmerNormalizerFlagType& getStemmerFlag() const;
+    const string& getRecordAllowedSpecialCharacters() const;
+    const string& getStopWordFilePath() const;
+    const string& getSynonymFilePath() const;
+    const string& getStemmerFilePath() const;
+    const SynonymKeepOriginFlag& getSynonymKeepOriginFlag() const;
 
 protected:
 	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
@@ -154,7 +152,6 @@ protected:
 	boost::regex headTailSpaceRegex;
 
 	friend class boost::serialization::access;
-	friend class Analyzer;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {

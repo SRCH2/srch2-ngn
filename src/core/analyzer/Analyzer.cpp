@@ -53,22 +53,22 @@ Analyzer::Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
 }
 
 Analyzer::Analyzer(Analyzer& analyzerObject) {
-    switch (analyzerObject.analyzerInternal->analyzerType) {
+    switch (analyzerObject.analyzerInternal->getAnalyzerType()) {
     case SIMPLE_ANALYZER:
-        this->analyzerInternal = new SimpleAnalyzer(analyzerObject.analyzerInternal->stemmerFlag,
-                analyzerObject.analyzerInternal->stemmerFilePath,
-                analyzerObject.analyzerInternal->stopWordFilePath,
-                analyzerObject.analyzerInternal->synonymFilePath,
-                analyzerObject.analyzerInternal->synonymKeepOriginFlag,
-                analyzerObject.analyzerInternal->recordAllowedSpecialCharacters);
+        this->analyzerInternal = new SimpleAnalyzer(analyzerObject.analyzerInternal->getStemmerFlag(),
+                analyzerObject.analyzerInternal->getStemmerFilePath(),
+                analyzerObject.analyzerInternal->getStopWordFilePath(),
+                analyzerObject.analyzerInternal->getSynonymFilePath(),
+                analyzerObject.analyzerInternal->getSynonymKeepOriginFlag(),
+                analyzerObject.analyzerInternal->getRecordAllowedSpecialCharacters());
         break;
     default:
-        this->analyzerInternal = new StandardAnalyzer(analyzerObject.analyzerInternal->stemmerFlag,
-                analyzerObject.analyzerInternal->stemmerFilePath,
-                analyzerObject.analyzerInternal->stopWordFilePath,
-                analyzerObject.analyzerInternal->synonymFilePath,
-                analyzerObject.analyzerInternal->synonymKeepOriginFlag,
-                analyzerObject.analyzerInternal->recordAllowedSpecialCharacters);
+        this->analyzerInternal = new StandardAnalyzer(analyzerObject.analyzerInternal->getStemmerFlag(),
+                analyzerObject.analyzerInternal->getStemmerFilePath(),
+                analyzerObject.analyzerInternal->getStopWordFilePath(),
+                analyzerObject.analyzerInternal->getSynonymFilePath(),
+                analyzerObject.analyzerInternal->getSynonymKeepOriginFlag(),
+                analyzerObject.analyzerInternal->getRecordAllowedSpecialCharacters());
         break;
     }
 }

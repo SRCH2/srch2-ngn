@@ -282,5 +282,34 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
         queryKeywords.clear();
 }
 
+const AnalyzerType& AnalyzerInternal::getAnalyzerType() const{
+    return this->analyzerType;
+}
+
+const StemmerNormalizerFlagType& AnalyzerInternal::getStemmerFlag() const{
+    return this->stemmerFlag;
+}
+
+const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
+    return this->recordAllowedSpecialCharacters;
+}
+
+const string& AnalyzerInternal::getStopWordFilePath() const{
+    return stopWordFilePath;
+}
+
+const string& AnalyzerInternal::getSynonymFilePath() const{
+    return this->synonymFilePath;
+}
+
+const string& AnalyzerInternal::getStemmerFilePath() const{
+    return this->stemmerFilePath;
+}
+
+const SynonymKeepOriginFlag& AnalyzerInternal::getSynonymKeepOriginFlag() const{
+    return synonymKeepOriginFlag;
+}
+
+
 }
 }
