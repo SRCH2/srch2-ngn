@@ -98,7 +98,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code, const char *reaso
  */
 void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
         const URLParserHelper &urlParserHelper,
-        const ConfigManager *configManager,
+        const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults,
         const Query *query,
         const Indexer *indexer,
@@ -121,85 +121,85 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
     unsigned counter = 0;
     if(urlParserHelper.searchType==SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS&&query->getQueryTerms()->empty()) //check if the query type is range query without keywords
     {
-		for(unsigned i = start; i < end; ++i)
-		{
-			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = (0-queryResults->getResultScore(i));//the actual distance between the point of record and the center point of the range
-			if (configManager->getSearchResponseFormat() == 0
-					|| configManager->getSearchResponseFormat() == 2)
-			{
-				unsigned internalRecordId = queryResults->getInternalRecordId(i);
-				std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
+        for(unsigned i = start; i < end; ++i)
+        {
+            root["results"][counter]["record_id"] = queryResults->getRecordId(i);
+            root["results"][counter]["score"] = (0-queryResults->getResultScore(i));//the actual distance between the point of record and the center point of the range
+            if (indexDataContainerConf->getSearchResponseFormat() == 0
+                    || indexDataContainerConf->getSearchResponseFormat() == 2)
+            {
+                unsigned internalRecordId = queryResults->getInternalRecordId(i);
+                std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
 
-				std::string uncompressedInMemoryRecordString;
+                std::string uncompressedInMemoryRecordString;
 
-				snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
+                snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
 
-				Json::Value in_mem_String;
-				Json::Reader reader;
-				reader.parse(uncompressedInMemoryRecordString, in_mem_String, false);
-				root["results"][counter]["record"] = in_mem_String;
-			}
-			++counter;
-		}
+                Json::Value in_mem_String;
+                Json::Reader reader;
+                reader.parse(uncompressedInMemoryRecordString, in_mem_String, false);
+                root["results"][counter]["record"] = in_mem_String;
+            }
+            ++counter;
+        }
 
     }
     else // the query is including keywords:(1)only keywords (2)keywords+geo
     {
-		for(unsigned i = start; i < end; ++i)
-		{
+        for(unsigned i = start; i < end; ++i)
+        {
 
-			root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-			root["results"][counter]["score"] = queryResults->getResultScore(i);
+            root["results"][counter]["record_id"] = queryResults->getRecordId(i);
+            root["results"][counter]["score"] = queryResults->getResultScore(i);
 
-			// print edit distance vector
-			vector<unsigned> editDistances;
-			queryResults->getEditDistances(i, editDistances);
+            // print edit distance vector
+            vector<unsigned> editDistances;
+            queryResults->getEditDistances(i, editDistances);
 
-			root["results"][counter]["edit_dist"].resize(editDistances.size());
-			for(unsigned int j = 0; j < editDistances.size(); ++j)
-			{
-				root["results"][counter]["edit_dist"][j] = editDistances[j];
-			}
+            root["results"][counter]["edit_dist"].resize(editDistances.size());
+            for(unsigned int j = 0; j < editDistances.size(); ++j)
+            {
+                root["results"][counter]["edit_dist"][j] = editDistances[j];
+            }
 
-			// print matching keywords vector
-			vector<std::string> matchingKeywords;
-			queryResults->getMatchingKeywords(i, matchingKeywords);
+            // print matching keywords vector
+            vector<std::string> matchingKeywords;
+            queryResults->getMatchingKeywords(i, matchingKeywords);
 
-			root["results"][counter]["matching_prefix"].resize(matchingKeywords.size());
-			for(unsigned int j = 0; j < matchingKeywords.size(); ++j)
-			{
-				root["results"][counter]["matching_prefix"][j] = matchingKeywords[j];
-			}
+            root["results"][counter]["matching_prefix"].resize(matchingKeywords.size());
+            for(unsigned int j = 0; j < matchingKeywords.size(); ++j)
+            {
+                root["results"][counter]["matching_prefix"][j] = matchingKeywords[j];
+            }
 
-			if (configManager->getSearchResponseFormat() == 0
-					|| configManager->getSearchResponseFormat() == 2)
-			{
-				unsigned internalRecordId = queryResults->getInternalRecordId(i);
-				std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
+            if (indexDataContainerConf->getSearchResponseFormat() == 0
+                    || indexDataContainerConf->getSearchResponseFormat() == 2)
+            {
+                unsigned internalRecordId = queryResults->getInternalRecordId(i);
+                std::string compressedInMemoryRecordString = indexer->getInMemoryData(internalRecordId);
 
-				std::string uncompressedInMemoryRecordString;
+                std::string uncompressedInMemoryRecordString;
 
-				snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
+                snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
 
-				Json::Value in_mem_String;
-				Json::Reader reader;
-				reader.parse(uncompressedInMemoryRecordString, in_mem_String, false);
-				root["results"][counter]["record"] = in_mem_String;
-			}
-			++counter;
-		}
-		root["query_keywords"].resize(query->getQueryTerms()->size());
-		for(unsigned i = 0; i < query->getQueryTerms()->size(); i++)
-		{
-			string &term = *(query->getQueryTerms()->at(i)->getKeyword());
-			root["query_keywords"][i] = term;
-			if(i)
-				logQueries += "";
-			logQueries += term;
-		}
+                Json::Value in_mem_String;
+                Json::Reader reader;
+                reader.parse(uncompressedInMemoryRecordString, in_mem_String, false);
+                root["results"][counter]["record"] = in_mem_String;
+            }
+            ++counter;
+        }
+        root["query_keywords"].resize(query->getQueryTerms()->size());
+        for(unsigned i = 0; i < query->getQueryTerms()->size(); i++)
+        {
+            string &term = *(query->getQueryTerms()->at(i)->getKeyword());
+            root["query_keywords"][i] = term;
+            if(i)
+                logQueries += "";
+            logQueries += term;
+        }
 
-		root["fuzzy"] = (int)urlParserHelper.isFuzzy;
+        root["fuzzy"] = (int)urlParserHelper.isFuzzy;
     }
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -507,8 +507,8 @@ void HTTPResponse::lookupCommand(evhttp_request *req, Srch2Server *server)
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const ConfigManager *configManager = server->indexDataContainerConf;
-    string primaryKeyName = configManager->getPrimaryKey();
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+    string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 
     std::stringstream response_msg;
@@ -556,7 +556,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const ConfigManager *configManager = server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
     const Analyzer *analyzer = server->indexer->getAnalyzer();
 
     URLParserHelper urlParserHelper;
@@ -567,7 +567,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     // CHENLI: DEBUG
     //std::cout << "[" << req->uri << "]" << std::endl;
 
-    URLToDoubleQuery *urlToDoubleQuery = new URLToDoubleQuery(headers, analyzer, configManager, server->indexer->getSchema(), urlParserHelper);
+    URLToDoubleQuery *urlToDoubleQuery = new URLToDoubleQuery(headers, analyzer, indexDataContainerConf, server->indexer->getSchema(), urlParserHelper);
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
@@ -582,7 +582,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
         {
         case 0://TopK
         {
-            if (configManager->getIndexType() != 0)
+            if (indexDataContainerConf->getIndexType() != 0)
             {
                 evhttp_send_reply(req, HTTP_BADREQUEST, "Query type is wrong", NULL);
             }
@@ -641,7 +641,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 exactQueryResults->printStats();
 
-                HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                         urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
 
                 delete exactQueryResults;
@@ -651,7 +651,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
         case 1://GetAllResults
         {
-            if (configManager->getIndexType() != 0)
+            if (indexDataContainerConf->getIndexType() != 0)
             {
                 evhttp_send_reply(req, HTTP_BADREQUEST, "Query type is wrong", NULL);
             }
@@ -688,12 +688,12 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
                 }
                 else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, queryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
                 }
 
@@ -704,81 +704,81 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
         case 2://MapQuery
         {
-            if (configManager->getIndexType() != 1)
+            if (indexDataContainerConf->getIndexType() != 1)
             {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", "{\"error\":\"query type is wrong\"}", headers);
             }
             else
             {
-            	// for the range query without keywords.
-				srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
-				if(urlToDoubleQuery->exactQuery->getQueryTerms()->empty())//check if query type is a range query without keywords
-				{
-					vector<double> values;
-					urlToDoubleQuery->exactQuery->getRange(values);//get  query range: use the number of values to decide if it is rectangle range or circle range
-					//range query with a circle
-					if (values.size()==3)
-					{
-						Point p;
-						p.x = values[0];
-						p.y = values[1];
-						Circle *circleRange = new Circle(p, values[2]);
-						indexSearcher->search(*circleRange, exactQueryResults);
-						delete circleRange;
-					}
-					else
-					{
-						pair<pair<double, double>, pair<double, double> > rect;
-						rect.first.first = values[0];
-						rect.first.second = values[1];
-						rect.second.first = values[2];
-						rect.second.second = values[3];
-						Rectangle *rectangleRange = new Rectangle(rect);
-						indexSearcher->search(*rectangleRange, exactQueryResults);
-						delete rectangleRange;
-					}
-				}
-            	else// keywords and geo search
-            	{
-					//cout << "reached map query" << endl;
-					//srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
-					indexSearcher->search(urlToDoubleQuery->exactQuery, exactQueryResults);
-					idsExactFound = exactQueryResults->getNumberOfResults();
+                // for the range query without keywords.
+                srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+                if(urlToDoubleQuery->exactQuery->getQueryTerms()->empty())//check if query type is a range query without keywords
+                {
+                    vector<double> values;
+                    urlToDoubleQuery->exactQuery->getRange(values);//get  query range: use the number of values to decide if it is rectangle range or circle range
+                    //range query with a circle
+                    if (values.size()==3)
+                    {
+                        Point p;
+                        p.x = values[0];
+                        p.y = values[1];
+                        Circle *circleRange = new Circle(p, values[2]);
+                        indexSearcher->search(*circleRange, exactQueryResults);
+                        delete circleRange;
+                    }
+                    else
+                    {
+                        pair<pair<double, double>, pair<double, double> > rect;
+                        rect.first.first = values[0];
+                        rect.first.second = values[1];
+                        rect.second.first = values[2];
+                        rect.second.second = values[3];
+                        Rectangle *rectangleRange = new Rectangle(rect);
+                        indexSearcher->search(*rectangleRange, exactQueryResults);
+                        delete rectangleRange;
+                    }
+                }
+                else// keywords and geo search
+                {
+                    //cout << "reached map query" << endl;
+                    //srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+                    indexSearcher->search(urlToDoubleQuery->exactQuery, exactQueryResults);
+                    idsExactFound = exactQueryResults->getNumberOfResults();
 
-					//fill visitedList
-					std::set<std::string> exactVisitedList;
-					for(unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i)
-					{
-						exactVisitedList.insert(exactQueryResults->getRecordId(i));// << queryResults->getRecordId(i);
-					}
+                    //fill visitedList
+                    std::set<std::string> exactVisitedList;
+                    for(unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i)
+                    {
+                        exactVisitedList.insert(exactQueryResults->getRecordId(i));// << queryResults->getRecordId(i);
+                    }
 
-					int idsFuzzyFound = 0;
+                    int idsFuzzyFound = 0;
 
-					if ( urlParserHelper.isFuzzy && idsExactFound < (int)(urlParserHelper.resultsToRetrieve+urlParserHelper.offset))
-					{
-						QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, urlToDoubleQuery->fuzzyQuery);
-						indexSearcher->search( urlToDoubleQuery->fuzzyQuery, fuzzyQueryResults);
-						idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
+                    if ( urlParserHelper.isFuzzy && idsExactFound < (int)(urlParserHelper.resultsToRetrieve+urlParserHelper.offset))
+                    {
+                        QueryResults *fuzzyQueryResults = QueryResults::create(indexSearcher, urlToDoubleQuery->fuzzyQuery);
+                        indexSearcher->search( urlToDoubleQuery->fuzzyQuery, fuzzyQueryResults);
+                        idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
 
-						// create final queryResults to print.
-						QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
-						QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
+                        // create final queryResults to print.
+                        QueryResultsInternal *exact_qs = dynamic_cast<QueryResultsInternal *>(exactQueryResults);
+                        QueryResultsInternal *fuzzy_qs = dynamic_cast<QueryResultsInternal *>(fuzzyQueryResults);
 
-						unsigned fuzzyQueryResultsIter = 0;
+                        unsigned fuzzyQueryResultsIter = 0;
 
-						while (exact_qs->sortedFinalResults.size() < (unsigned)(urlParserHelper.offset + urlParserHelper.resultsToRetrieve)
-								&& fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
-						{
-							std::string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
-							if ( ! exactVisitedList.count(recordId) )// recordid not there
-							{
-								exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
-							}
-							fuzzyQueryResultsIter++;
-						}
-						delete fuzzyQueryResults;
-					}
-            	}
+                        while (exact_qs->sortedFinalResults.size() < (unsigned)(urlParserHelper.offset + urlParserHelper.resultsToRetrieve)
+                                && fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
+                        {
+                            std::string recordId = fuzzy_qs->getRecordId(fuzzyQueryResultsIter);
+                            if ( ! exactVisitedList.count(recordId) )// recordid not there
+                            {
+                                exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
+                            }
+                            fuzzyQueryResultsIter++;
+                        }
+                        delete fuzzyQueryResults;
+                    }
+                }
                 // compute elapsed time in ms
                 struct timespec tend;
                 clock_gettime(CLOCK_REALTIME, &tend);
@@ -798,12 +798,12 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
 
                 if (urlParserHelper.offset + urlParserHelper.resultsToRetrieve  > idsFound) // Case where you have return 10,20, but we got only 0,15 results.
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, idsFound, idsFound, ts1, tstart, tend);
                 }
                 else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
                 {
-                    HTTPResponse::printResults(req, headers, urlParserHelper, configManager, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
+                    HTTPResponse::printResults(req, headers, urlParserHelper, indexDataContainerConf, exactQueryResults, urlToDoubleQuery->exactQuery, server->indexer,
                             urlParserHelper.offset, urlParserHelper.offset + urlParserHelper.resultsToRetrieve, idsFound, ts1, tstart, tend);
                 }
 

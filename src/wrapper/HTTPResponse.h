@@ -28,28 +28,28 @@ namespace httpwrapper
 
 class HTTPResponse
 {
-	public:
-		static void searchCommand(evhttp_request *req, Srch2Server *server);
-		static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
-		static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
-		static void updateCommand(evhttp_request *req, Srch2Server *server);
-		static void saveCommand(evhttp_request *req, Srch2Server *server);
+    public:
+        static void searchCommand(evhttp_request *req, Srch2Server *server);
+        static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
+        static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
+        static void updateCommand(evhttp_request *req, Srch2Server *server);
+        static void saveCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
-		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
-		static void activateCommand(evhttp_request *req, Srch2Server *server);
-		
-	private:
-		static void printResults(evhttp_request *req, const evkeyvalq &headers,
-				const URLParserHelper &urlParserHelper,
-				const ConfigManager *configManager,
-				const QueryResults *queryResults,
-				const Query *query,
-				const srch2is::Indexer *indexer,
-				const unsigned offset,
-				const unsigned nextK,
-				const unsigned retrievedResults,
-				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend);
+        static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
+        static void activateCommand(evhttp_request *req, Srch2Server *server);
+
+    private:
+        static void printResults(evhttp_request *req, const evkeyvalq &headers,
+                const URLParserHelper &urlParserHelper,
+                const ConfigManager *indexDataContainerConf,
+                const QueryResults *queryResults,
+                const Query *query,
+                const srch2is::Indexer *indexer,
+                const unsigned offset,
+                const unsigned nextK,
+                const unsigned retrievedResults,
+                const unsigned ts1,
+                struct timespec &tstart, struct timespec &tend);
 };
 
 }}
