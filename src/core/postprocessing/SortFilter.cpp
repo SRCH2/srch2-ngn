@@ -52,63 +52,10 @@ public:
 
     // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
     bool operator()(const QueryResult * lhs, const QueryResult * rhs) const {
-        //1. First get the value of non-searchable attributes for the participating attributes from forward index
-        const vector<string> * attributes =
-                filter->evaluator->getParticipatingAttributes();
 
-        bool isValid = false;
-        const ForwardList * list = forwardIndex->getForwardList(
-                lhs->internalRecordId, isValid);
-        ASSERT(isValid);
-        const VariableLengthAttributeContainer * lhsContainer =
-                list->getNonSearchableAttributeContainer();
-
-        isValid = false;
-        list = forwardIndex->getForwardList(rhs->internalRecordId, isValid);
-        ASSERT(isValid);
-        const VariableLengthAttributeContainer * rhsContainer =
-                list->getNonSearchableAttributeContainer();
-
-        vector<unsigned> attributeIds;
-        vector<unsigned> attributeIdsToSort;
-
-        for (vector<string>::const_iterator attributeName = attributes->begin();
-                attributeName != attributes->end(); ++attributeName) {
-            unsigned id = schema->getNonSearchableAttributeId(*attributeName);
-            attributeIds.push_back(id);
-            attributeIdsToSort.push_back(id);
-        }
-        // sort because container expects the input ids to be ascending and user might enter them in another order
-        sort(attributeIdsToSort.begin(), attributeIdsToSort.end());
-
-        // now get the values from the container
-        vector<Score> lhsScoresAfterSort;
-        lhsContainer->getBatchOfAttributes(attributeIdsToSort, schema,
-                &lhsScoresAfterSort);
-
-        vector<Score> rhsScoresAfterSort;
-        rhsContainer->getBatchOfAttributes(attributeIdsToSort, schema,
-                &rhsScoresAfterSort);
-
-        // since sort has changed the places of items, we should "unsort"
-        map<string, Score> lhsScores, rhsScores;
-
-        unsigned a = 0;
-        for (vector<unsigned>::iterator id = attributeIdsToSort.begin();
-                id != attributeIdsToSort.end(); ++id) {
-            vector<unsigned>::iterator oldPlace = find(attributeIds.begin(),
-                    attributeIds.end(), *id);
-            lhsScores[attributes->at(oldPlace - attributeIds.begin())] =
-                    lhsScoresAfterSort.at(a); // TODO : subtracting iterators might not be safe
-            rhsScores[attributes->at(oldPlace - attributeIds.begin())] =
-                    rhsScoresAfterSort.at(a);
-
-            //
-            a++;
-        }
-
-        //2. then do the comparison
-        if (filter->evaluator->compare(lhsScores, rhsScores) >= 0) {
+        // do the comparison
+        if (filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
+                rhs->valuesOfParticipatingNonSearchableAttributes) >= 0) {
             return true;
         } else {
             return false;
@@ -125,15 +72,56 @@ SortFilter::~SortFilter() {
 void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
         QueryResults * input, QueryResults * output) {
 
+    ASSERT(evaluator != NULL);
+    if(evaluator == NULL) return;
+
     IndexSearcherInternal * indexSearcherInternal =
             dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Schema * schema = indexSearcherInternal->getSchema();
     ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
     // first copy all input results to output
-    input->copyForPostProcessing(output);
+    output->copyForPostProcessing(input);
 
-    // now sort the results based on the comparator
+    // extract all the information from forward index
+    // 1. find the participating attributes
+    /*
+     * Example : for example if the query contains "name,age,bdate ASC" , the participating attributes are
+     *           name, age and bdate.
+     */
+    const vector<string> * attributes =
+            evaluator->getParticipatingAttributes();
+    vector<unsigned> attributeIds;
+    for (vector<string>::const_iterator attributeName = attributes->begin();
+            attributeName != attributes->end(); ++attributeName) {
+        unsigned id = schema->getNonSearchableAttributeId(*attributeName);
+        attributeIds.push_back(id);
+    }
+    // 2. extract the data from forward index.
+    for(std::vector<QueryResult *>::iterator queryResultIterator = output->impl->sortedFinalResults.begin() ;
+            queryResultIterator != output->impl->sortedFinalResults.end() ; ++queryResultIterator){
+        QueryResult * queryResult = *queryResultIterator;
+        bool isValid = false;
+        const ForwardList * list = forwardIndex->getForwardList(
+                queryResult->internalRecordId, isValid);
+        ASSERT(isValid);
+        const VariableLengthAttributeContainer * nonSearchableAttributeContainer =
+                list->getNonSearchableAttributeContainer();
+        // now get the values from the container
+        vector<Score> scores;
+        nonSearchableAttributeContainer->getBatchOfAttributes(attributeIds, schema,
+                &scores);
+        // save the values in QueryResult objects
+        for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
+                attributesIterator != attributes->end() ; ++attributesIterator){
+            queryResult->valuesOfParticipatingNonSearchableAttributes[*attributesIterator] =
+                    scores.at(std::distance(attributes->begin() , attributesIterator));
+        }
+
+
+    }
+
+    // 3. now sort the results based on the comparator
     std::sort(output->impl->sortedFinalResults.begin(),
             output->impl->sortedFinalResults.end(),
             ResultNonSearchableAttributeComparator(this, forwardIndex, schema,

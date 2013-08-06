@@ -107,7 +107,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
 
     Term *term = NULL;
@@ -142,7 +142,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
 {
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
     query->setRange(lb_lat,lb_lng,rt_lat,rt_lng);
     Rectangle *rectangleRange = new Rectangle();
     rectangleRange->min.x = lb_lat;
@@ -167,7 +167,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 {
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-	Query *query = new Query(srch2::instantsearch::MapQuery);
+	Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 	query->setRange(lb_lat,lb_lng,radius);
 	Point pnt;
 	pnt.x=lb_lat;

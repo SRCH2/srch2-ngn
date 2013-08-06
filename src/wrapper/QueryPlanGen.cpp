@@ -47,16 +47,12 @@ QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer,
  * 1. creates exact and fuzzy queries
  * 2. Generates the post processing plan
  */
-QueryPlan QueryPlanGen::generatePlan() {
+void QueryPlanGen::generatePlan(QueryPlan * queryPlan) {
 
-    QueryPlan plan;
     // create query objects
-    createExactAndFuzzyQueries(&plan);
+    createExactAndFuzzyQueries(queryPlan);
     // generate post processing plan
-    createPostProcessingPlan(&plan);
-
-    return plan;
-
+    createPostProcessingPlan(queryPlan);
 }
 
 // creates a post processing plan based on information from Query
@@ -69,7 +65,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
     // 1. allocate the post processing plan, it will be freed when the QueryPlan object is destroyed.
     plan->setPostProcessingPlan(new ResultsPostProcessorPlan());
     // 2. If there is a filter query, allocate the filter and add it to the plan
-    if (paramsContainer.hasParameterInSummary(FilterQueryEvaluatorFlag)) { // there is a filter query
+    if (paramsContainer.hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
         srch2is::NonSearchableAttributeExpressionFilter * filterQuery =
                 new srch2is::NonSearchableAttributeExpressionFilter();
         filterQuery->evaluator =
@@ -80,7 +76,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
     // 3. If the search type is GetAllResults or Geo, look for Sort and Facet
     if (plan->getSearchType() == GetAllResultsSearchType) {
         // look for SortFiler
-        if (paramsContainer.getAllResultsParameterContainer->hasParameterInSummary(
+        if (paramsContainer.getAllResultsParameterContainer->hasParameterInQuery(
                 SortQueryHandler)) { // there is a sort filter
             srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
             sortFilter->evaluator =
@@ -89,7 +85,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         }
 
         // look for Facet filter
-        if (paramsContainer.getAllResultsParameterContainer->hasParameterInSummary(
+        if (paramsContainer.getAllResultsParameterContainer->hasParameterInQuery(
                 FacetQueryHandler)) { // there is a sort filter
             srch2is::FacetedSearchFilter * facetFilter =
                     new srch2is::FacetedSearchFilter();
@@ -103,7 +99,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         }
     } else if (plan->getSearchType() == GeoSearchType) {
         // look for SortFiler
-        if (paramsContainer.geoParameterContainer->hasParameterInSummary(
+        if (paramsContainer.geoParameterContainer->hasParameterInQuery(
                 SortQueryHandler)) { // there is a sort filter
             srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
             sortFilter->evaluator =
@@ -112,7 +108,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         }
 
         // look for Facet filter
-        if (paramsContainer.geoParameterContainer->hasParameterInSummary(
+        if (paramsContainer.geoParameterContainer->hasParameterInQuery(
                 FacetQueryHandler)) { // there is a sort filter
             srch2is::FacetedSearchFilter * facetFilter =
                     new srch2is::FacetedSearchFilter();
@@ -132,35 +128,33 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
     // move on summary of the container and build the query object
 
     //1. first find the search type
-    if (paramsContainer.hasParameterInSummary(TopKSearchType)) { // search type is TopK
+    if (paramsContainer.hasParameterInQuery(TopKSearchType)) { // search type is TopK
         plan->setSearchType(TopKSearchType);
-    } else if (paramsContainer.hasParameterInSummary(GetAllResultsSearchType)) { // get all results
+    } else if (paramsContainer.hasParameterInQuery(GetAllResultsSearchType)) { // get all results
         plan->setSearchType(GetAllResultsSearchType);
-    } else if (paramsContainer.hasParameterInSummary(GeoSearchType)) { // GEO
+    } else if (paramsContainer.hasParameterInQuery(GeoSearchType)) { // GEO
         plan->setSearchType(GeoSearchType);
     } // else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search) then fuzzy is always false
-    if (paramsContainer.hasParameterInSummary(IsFuzzyFlag)) {
-        plan->setIsFuzzy(
-                paramsContainer.isFuzzy
+    if (paramsContainer.hasParameterInQuery(IsFuzzyFlag)) {
+        plan->setFuzzy(paramsContainer.isFuzzy
                         && (paramsContainer.rawQueryKeywords.size() != 0));
     } else { // get it from configuration file
-        plan->setIsFuzzy(
-                indexDataContainerConf->getIsFuzzyTermsQuery()
+        plan->setFuzzy(indexDataContainerConf->getIsFuzzyTermsQuery()
                         && (paramsContainer.rawQueryKeywords.size() != 0));
     }
 
     // 3. set the offset of results to retrieve
 
-    if (paramsContainer.hasParameterInSummary(ResultsStartOffset)) {
+    if (paramsContainer.hasParameterInQuery(ResultsStartOffset)) {
         plan->setOffset(paramsContainer.resultsStartOffset);
     } else { // get it from configuration file
         plan->setOffset(0); // default is zero
     }
 
     // 4. set the number of results to retrieve
-    if (paramsContainer.hasParameterInSummary(NumberOfResults)) {
+    if (paramsContainer.hasParameterInQuery(NumberOfResults)) {
         plan->setResultsToRetrieve(paramsContainer.numberOfResults);
     } else { // get it from configuration file
         plan->setResultsToRetrieve(
@@ -190,23 +184,23 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
 void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         QueryPlan * plan) {
 
-    // 1. first check to see if there is any keywords in the query
-    if (paramsContainer.hasParameterInSummary(RawQueryKeywords)) {
+    // 1. first check to see if there is any keyword in the query
+    if (! paramsContainer.hasParameterInQuery(RawQueryKeywords)) {
         return;
     }
 
     // 2. Extract the common information from the container
 
     // length boost
-    if (paramsContainer.hasParameterInSummary(LengthBoostFlag)) {
+    if (paramsContainer.hasParameterInQuery(LengthBoostFlag)) {
         plan->getExactQuery()->setLengthBoost(paramsContainer.lengthBoost);
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setLengthBoost(paramsContainer.lengthBoost);
         }
     } else { // get it from configuration file
         plan->getExactQuery()->setLengthBoost(
                 indexDataContainerConf->getQueryTermLengthBoost());
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setLengthBoost(
                     indexDataContainerConf->getQueryTermLengthBoost());
         }
@@ -214,17 +208,17 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     // prefix match penalty flag
 
-    if (paramsContainer.hasParameterInSummary(PrefixMatchPenaltyFlag)) {
+    if (paramsContainer.hasParameterInQuery(PrefixMatchPenaltyFlag)) {
         plan->getExactQuery()->setPrefixMatchPenalty(
                 paramsContainer.prefixMatchPenalty);
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setPrefixMatchPenalty(
                     paramsContainer.prefixMatchPenalty);
         }
     } else { // get it from configuration file
         plan->getExactQuery()->setPrefixMatchPenalty(
                 indexDataContainerConf->getPrefixMatchPenalty());
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setPrefixMatchPenalty(
                     indexDataContainerConf->getPrefixMatchPenalty());
         }
@@ -236,7 +230,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     vector<float> keywordFuzzyLevel;
 
-    if (paramsContainer.hasParameterInSummary(KeywordFuzzyLevel)) {
+    if (paramsContainer.hasParameterInQuery(KeywordFuzzyLevel)) {
         keywordFuzzyLevel = paramsContainer.keywordFuzzyLevel;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
@@ -247,7 +241,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     vector<float> keywordBoostLevel;
 
-    if (paramsContainer.hasParameterInSummary(KeywordBoostLevel)) {
+    if (paramsContainer.hasParameterInQuery(KeywordBoostLevel)) {
         keywordBoostLevel = paramsContainer.keywordBoostLevel;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
@@ -258,7 +252,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     vector<srch2is::TermType> keywordPrefixComplete;
 
-    if (paramsContainer.hasParameterInSummary(QueryPrefixCompleteFlag)) {
+    if (paramsContainer.hasParameterInQuery(QueryPrefixCompleteFlag)) {
         keywordPrefixComplete = paramsContainer.keywordPrefixComplete;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
@@ -272,11 +266,12 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     vector<unsigned> fieldFilter;
 
-    if (paramsContainer.hasParameterInSummary(FieldFilter)) {
+    if (paramsContainer.hasParameterInQuery(FieldFilter)) {
         fieldFilter = paramsContainer.fieldFilterNumbers;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
-            fieldFilter.push_back(1); // 1 means all attributes with OR operator
+            fieldFilter.push_back(0x7fffffff); // 0x7fffffff means all attributes with OR operator
+            // TODO : define a constant which keeps this value : 0x7fffffff
         }
     }
 
@@ -292,14 +287,15 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         plan->getExactQuery()->add(exactTerm);
     }
     // fuzzy query
-    if (plan->isIsFuzzy()) {
+    if (plan->isFuzzy()) {
         for (int i = 0; i < rawQueryKeywords.size(); i++) {
             srch2is::Term *fuzzyTerm;
             fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
                     keywordPrefixComplete[i], keywordBoostLevel[i],
                     keywordFuzzyLevel[i],
-                    srch2is::Term::getNormalizedThreshold(
-                            getUtf8StringCharacterNumber(rawQueryKeywords[i])));
+                    srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i])));
+                    // this is the place that we do normalization, in case we want to make this
+                    // configurable we should change this place.
             fuzzyTerm->addAttributeToFilterTermHits(fieldFilter[i]);
 
             plan->getExactQuery()->add(fuzzyTerm);
@@ -310,52 +306,52 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
 void QueryPlanGen::createExactAndFuzzyQueriesForTopK(QueryPlan * plan) {
     // allocate the objects
-    plan->setExactQuery(new Query(srch2is::TopKQuery));
-    if (plan->isIsFuzzy()) {
-        plan->setFuzzyQuery(new Query(srch2is::TopKQuery));
+    plan->setExactQuery(new Query(srch2is::SearchTypeTopKQuery));
+    if (plan->isFuzzy()) {
+        plan->setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
     }
 
 }
 void QueryPlanGen::createExactAndFuzzyQueriesForGetAllTResults(
         QueryPlan * plan) {
-    plan->setExactQuery(new Query(srch2is::GetAllResultsQuery));
+    plan->setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
             (indexDataContainerConf->getOrdering() == 0) ?
-                    srch2is::Ascending : srch2is::Descending;
+                    srch2is::SortOrderAscending : srch2is::SortOrderDescending;
     plan->getExactQuery()->setSortableAttribute(
             indexDataContainerConf->getAttributeToSort(), order);
     // TODO : sortableAttribute and order must be removed from here, all sort jobs must be transfered to
-    //        to sort filter, now, when it's GetAllResults, it fisrt finds the results based on an the order given here
+    //        to sort filter, now, when it's GetAllResults, it first finds the results based on an the order given here
     //        and then also applies the sort filter. When this is removed, core also must be changed to not need this
     //        sortable attribute anymore.
 
-    if (plan->isIsFuzzy()) {
-        plan->setFuzzyQuery(new Query(srch2is::GetAllResultsQuery));
+    if (plan->isFuzzy()) {
+        plan->setFuzzyQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
         plan->getFuzzyQuery()->setSortableAttribute(
                 indexDataContainerConf->getAttributeToSort(), order);
     }
 }
 
 void QueryPlanGen::createExactAndFuzzyQueriesForGeo(QueryPlan * plan) {
-    plan->setExactQuery(new Query(srch2is::MapQuery));
-    if (plan->isIsFuzzy()) {
-        plan->setFuzzyQuery(new Query(srch2is::MapQuery));
+    plan->setExactQuery(new Query(srch2is::SearchTypeMapQuery));
+    if (plan->isFuzzy()) {
+        plan->setFuzzyQuery(new Query(srch2is::SearchTypeMapQuery));
     }
     GeoParameterContainer * gpc = paramsContainer.geoParameterContainer;
 
-    if (gpc->hasParameterInSummary(GeoTypeRectangular)) {
+    if (gpc->hasParameterInQuery(GeoTypeRectangular)) {
         plan->getExactQuery()->setRange(gpc->leftBottomLatitude,
                 gpc->leftBottomLongitude, gpc->rightTopLatitude,
                 gpc->rightTopLongitude);
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setRange(gpc->leftBottomLatitude,
                     gpc->leftBottomLongitude, gpc->rightTopLatitude,
                     gpc->rightTopLongitude);
         }
-    } else if (gpc->hasParameterInSummary(GeoTypeCircular)) {
+    } else if (gpc->hasParameterInQuery(GeoTypeCircular)) {
         plan->getExactQuery()->setRange(gpc->centerLatitude,
                 gpc->centerLongitude, gpc->radius);
-        if (plan->isIsFuzzy()) {
+        if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setRange(gpc->centerLatitude,
                     gpc->centerLongitude, gpc->radius);
         }

@@ -21,8 +21,8 @@
 
 
 
-#ifndef _INSTANTSEARCH_SCORE_H__
-#define _INSTANTSEARCH_SCORE_H__
+#ifndef __INSTANTSEARCH_SCORE_H__
+#define __INSTANTSEARCH_SCORE_H__
 
 #include <cstring>
 #include <ctime>
@@ -36,7 +36,7 @@ namespace srch2
     namespace instantsearch
     {
 
-    class Score
+    class Score // TODO : change the name to something like Value
     {
     public:
     	Score(const Score& score);
@@ -50,16 +50,16 @@ namespace srch2
 
     	Score(){
     	};
-    	void setScore(unsigned intS);
-    	void setScore(float floatS);
-    	void setScore(double doubleS);
-    	void setScore(string stringS);
-    	void setScore(long timeS);
+    	void setScore(unsigned intScore);
+    	void setScore(float floatScore);
+    	void setScore(double doubleScore);
+    	void setScore(string stringScore);
+    	void setScore(long timeScore);
     	void setScore(const Score& score);
     	void setScore(FilterType type , string value);
 
     	FilterType getType(){
-    		return type;
+    		return valueType;
     	}
 
     	unsigned getIntScore() const;
@@ -80,7 +80,7 @@ namespace srch2
 
 
     private:
-    	FilterType type;
+    	FilterType valueType;
     	unsigned intScore;
     	float floatScore;
     	string stringScore;

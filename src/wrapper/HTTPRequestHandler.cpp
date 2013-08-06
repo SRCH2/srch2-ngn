@@ -209,7 +209,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             logQueries += term;
         }
 
-        root["fuzzy"] = (int) queryPlan.isIsFuzzy();
+        root["fuzzy"] = (int) queryPlan.isFuzzy();
     }
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
@@ -237,15 +237,16 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         unsigned attributeCounter = 0;
         for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attr =
                 facetResults->begin(); attr != facetResults->end(); ++attr) {
-            root["facets"][attributeCounter]["category"].resize(
+            root["facets"][attributeCounter]["facet_field_name"] = attr->first;
+            root["facets"][attributeCounter]["facet_info"].resize(
                     attr->second.size());
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
                     attr->second.begin(); category != attr->second.end();
                     ++category) {
-                root["facets"][attributeCounter]["category"][(category
+                root["facets"][attributeCounter]["facet_info"][(category
                         - attr->second.begin())]["category_name"] =
                         category->first;
-                root["facets"][attributeCounter]["category"][(category
+                root["facets"][attributeCounter]["facet_info"][(category
                         - attr->second.begin())]["category_value"] =
                         category->second;
             }
@@ -603,19 +604,18 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);
 
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            server->indexDataContainerConf, &paramContainer);
+            *(server->indexDataContainerConf), &paramContainer);
 
     bool isValid = qv.validate();
 
     if (!isValid) {
-        /*
-         * if the query is not valid print the error message to the response
-         */
+         // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
     }
@@ -626,13 +626,15 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             &paramContainer);
     qr.rewrite();
 
-    //4. generate the queries and the plans
+    //4. generate the queries and the plan
     QueryPlanGen qpg(paramContainer, indexDataContainerConf);
-    QueryPlan plan = qpg.generatePlan();
+    QueryPlan plan;
+    qpg.generatePlan(&plan);
 
     //5. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();
+    // TODO : is it possible to make executor and planGen singleton ?
     QueryExecutor qe(plan, resultsFactory, server);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     QueryResults * finalResults = new QueryResults();

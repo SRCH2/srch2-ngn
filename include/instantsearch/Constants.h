@@ -59,8 +59,8 @@ typedef enum {
 /// Faceted search filter
 
 typedef enum{
-	Simple,
-	Range
+	FacetTypeCategorical,
+	FacetTypeRange
 } FacetType;
 
 typedef enum
@@ -78,12 +78,12 @@ typedef enum {
 } INDEXWRITE_RETVAL;
 
 /// Query constants
-
+// TODO : change getAllResults in the code to FindAllResults
 typedef enum
 {
-    TopKQuery ,
-    GetAllResultsQuery ,
-    MapQuery
+    SearchTypeTopKQuery ,
+    SearchTypeGetAllResultsQuery ,
+    SearchTypeMapQuery
 } QueryType;
 
 typedef enum
@@ -100,13 +100,13 @@ typedef enum
 
 typedef enum
 {
-    Ascending ,
-    Descending
+    SortOrderAscending ,
+    SortOrderDescending
 } SortOrder;
 
 typedef enum{
-	AND,
-	OR,
+	BooleanOperatorAND,
+	BooleanOperatorOR,
 	OP_NOT_SPECIFIED
 } BooleanOperation;
 
@@ -126,17 +126,18 @@ typedef enum {
 
 typedef enum
 {
-    DefaultIndex = 0,
-    LocationIndex = 1
+    DefaultIndex,
+    LocationIndex
 } IndexType;
 
 // change the names, they are too general
 typedef enum
 {
-    UNSIGNED = 0,
-    FLOAT = 1,
-    TEXT = 2,
-    TIME = 3
+    ATTRIBUTE_TYPE_UNSIGNED,
+    ATTRIBUTE_TYPE_FLOAT ,
+    ATTRIBUTE_TYPE_TEXT ,
+    ATTRIBUTE_TYPE_TIME // Time is kept as a long integer in the core.
+         // The meaning of this long integer is the number of seconds past from January 1st, 1970
 } FilterType;
 
 /*typedef enum
@@ -148,9 +149,9 @@ typedef enum
 
 typedef enum
 {
-    FULLPOSITIONINDEX = 0, // the index of keyword in the record
-    FIELDBITINDEX = 1,// keeps the attribute in which a keyword appears in
-    NOPOSITIONINDEX = 2 // For stemmer to work, positionIndex must be enabled.
+    FULLPOSITIONINDEX , // the index of keyword in the record
+    FIELDBITINDEX ,// keeps the attribute in which a keyword appears in
+    NOPOSITIONINDEX // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
 /// Term constants
@@ -159,7 +160,7 @@ typedef enum
 {
     TERM_TYPE_PREFIX ,
     TERM_TYPE_COMPLETE ,
-    NOT_SPECIFIED
+    TERM_TYPE_NOT_SPECIFIED
 } TermType;
 
 ///

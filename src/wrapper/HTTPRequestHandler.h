@@ -1,7 +1,7 @@
 //$Id: HTTPResponse.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
-#ifndef _WRAPPER_HTTPREQUESTHANDLER_H_
-#define _WRAPPER_HTTPREQUESTHANDLER_H_
+#ifndef __WRAPPER_HTTPREQUESTHANDLER_H__
+#define __WRAPPER_HTTPREQUESTHANDLER_H__
 
 #include "Srch2ServerConf.h"
 #include "URLParser.h"

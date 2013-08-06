@@ -192,7 +192,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -248,7 +248,7 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -305,7 +305,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -358,7 +358,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{

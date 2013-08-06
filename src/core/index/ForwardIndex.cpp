@@ -235,21 +235,17 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(const SchemaInterna
     Score score;
 
     switch (filterType) {
-		case srch2::instantsearch::UNSIGNED:
+		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
 			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
-		case srch2::instantsearch::FLOAT:
+		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
 			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
-		case srch2::instantsearch::TEXT:
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
 			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
-		case srch2::instantsearch::TIME:
-			score.setScore((unsigned)1000000); // TODO , time and long should be converted, when ? where ? here ?
-			//score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
-			break;
-		default:
-			ASSERT(false);
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
 	}
 
@@ -300,12 +296,15 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
 
 
     //Adding Non searchable Attribute list
+    vector<string> nonSearchableAttributeValues;
     for ( unsigned iter = 0; iter < this->schemaInternal->getNumberOfNonSearchableAttributes() ; ++iter)
     {
 
         const string * nonSearchableAttributeValueString = record->getNonSearchableAttributeValue(iter);
-        forwardList->setNonSearchableAttributeValue(iter, this->schemaInternal , *nonSearchableAttributeValueString);
+        nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
+    forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
+
 
     // Add KeywordId List
     for (unsigned iter=0; iter < keywordIdList.size(); ++iter)

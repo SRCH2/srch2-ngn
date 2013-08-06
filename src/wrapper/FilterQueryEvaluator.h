@@ -263,7 +263,7 @@ private:
 		exprtk::symbol_table<float> symbol_table;
 
 		for(unsigned i =0;i<nonSearchableAttributeNames.size();i++){
-			if(nonSearchableAttributeTypes[i] != srch2::instantsearch::TEXT){
+			if(nonSearchableAttributeTypes[i] != srch2::instantsearch::ATTRIBUTE_TYPE_TEXT){
 				symbolVariables[nonSearchableAttributeNames[i]] = 0;
 				symbol_table.add_variable(nonSearchableAttributeNames[i],symbolVariables[nonSearchableAttributeNames[i]]);
 			}
@@ -327,7 +327,7 @@ public:
 
 	bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues){
 		switch (operation) {
-			case srch2::instantsearch::AND:
+			case srch2::instantsearch::BooleanOperatorAND:
 				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
 								criterion != criteria.end() ; ++criterion){
 					QueryExpression * qe = *criterion;
@@ -337,7 +337,7 @@ public:
 
 				}
 				return true;
-			case srch2::instantsearch::OR:
+			case srch2::instantsearch::BooleanOperatorOR:
 				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
 								criterion != criteria.end() ; ++criterion){
 					QueryExpression * qe = *criterion;

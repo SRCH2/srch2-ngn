@@ -243,7 +243,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 
 float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -277,7 +277,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
 
 bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed, srch2::instantsearch::TermType termType)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -315,7 +315,7 @@ bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearc
 
 unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);

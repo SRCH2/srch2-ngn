@@ -113,7 +113,7 @@ void QueryResultsInternal::setNextK(const unsigned k) {
 }
 
 void QueryResultsInternal::insertResult(QueryResult * queryResult) {
-    if (this->query->getQueryType() == srch2::instantsearch::TopKQuery) {
+    if (this->query->getQueryType() == srch2::instantsearch:: SearchTypeTopKQuery) {
         ASSERT(this->nextKResultsHeap.size() <= this->nextK);
         if (this->nextKResultsHeap.size() < this->nextK) {
             this->nextKResultsHeap.push(queryResult);
@@ -136,7 +136,7 @@ bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords) {
         return false;
     }
     Score tempScore = this->nextKResultsHeap.top()->getResultScore();
-    ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
+    ASSERT(tempScore.getType() == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT);
     temp1 = tempScore.getFloatScore();
     temp2 = maxScoreForUnvisitedRecords;
     if ((this->nextKResultsHeap.size() == this->nextK) && (temp1 >= temp2))
@@ -159,7 +159,7 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
     bool descending = (this->query->getSortableAttributeIdSortOrder()
-            == srch2::instantsearch::Descending);
+            == srch2::instantsearch::SortOrderDescending);
 
     int numberOfSortedResults = this->sortedFinalResults.size();
 

@@ -34,35 +34,35 @@ namespace instantsearch
 
 ResultsPostProcessorPlan::ResultsPostProcessorPlan(){
 	impl = new ResultsPostProcessorPlanInternal();
-	impl->iter = impl->plan.end();
+	impl->filterIterator = impl->filterVector.end();
 }
 ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
 	delete impl;
 }
 
 void ResultsPostProcessorPlan::addFilterToPlan(ResultsPostProcessorFilter * filter){
-	impl->plan.push_back(filter);
+	impl->filterVector.push_back(filter);
 }
 void ResultsPostProcessorPlan::clearPlan(){
-	impl->plan.clear();
+	impl->filterVector.clear();
 }
 void ResultsPostProcessorPlan::beginIteration(){
-	impl->iter = impl->plan.begin();
+	impl->filterIterator = impl->filterVector.begin();
 }
 ResultsPostProcessorFilter * ResultsPostProcessorPlan::nextFilter(){
-	if(impl->iter == impl->plan.end()) return NULL;
-	ResultsPostProcessorFilter * result = *impl->iter;
-	++(impl->iter);
-	return result;
+	if(impl->filterIterator == impl->filterVector.end()) return NULL;
+	ResultsPostProcessorFilter * resultsPostProcessingFilter = *impl->filterIterator;
+	++(impl->filterIterator);
+	return resultsPostProcessingFilter;
 }
 bool ResultsPostProcessorPlan::hasMoreFilters() const{
-	if(impl->iter != impl->plan.end()) return true;
+	if(impl->filterIterator != impl->filterVector.end()) return true;
 	else{
 		return false;
 	}
 }
 void ResultsPostProcessorPlan::closeIteration(){
-	impl->iter = impl->plan.end();
+	impl->filterIterator = impl->filterVector.end();
 }
 
 

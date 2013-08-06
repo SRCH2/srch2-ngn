@@ -199,10 +199,10 @@ const std::map<std::string, std::vector<std::pair<std::string, float> > > * Quer
 
 
 // pass information to the destination QueryResults object
-// can be seen as destination := this (only for structures related to post processing)
-void QueryResults::copyForPostProcessing(QueryResults * destination) const {
-	destination->impl->sortedFinalResults = this->impl->sortedFinalResults;
-	destination->impl->facetResults = this->impl->facetResults;
+// can be seen as this := sourceQueryResults (only for structures related to post processing)
+void QueryResults::copyForPostProcessing(QueryResults * sourceQueryResults) const {
+    this->impl->sortedFinalResults = sourceQueryResults->impl->sortedFinalResults ;
+    this->impl->facetResults = sourceQueryResults->impl->facetResults ;
 }
 
 void QueryResults::clear(){

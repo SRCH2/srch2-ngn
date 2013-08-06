@@ -53,6 +53,10 @@ public:
 };
 
 
+/*
+ * TODO : Extend this design to have multiple sort orders
+ * for multiple sort fields ...
+ */
 class SortQueryContainer
 {
 
@@ -85,14 +89,14 @@ class TopKParameterContainer
 public:
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
-	std::vector<ParameterName> summary;
+	std::vector<ParameterName> parametersInQuery;
 
 	// no parameters known as of now
 
 	//
-	bool doesHaveParameterInSummary(ParameterName param){
+	bool hasParameterInQuery(ParameterName param){
 		return
-				(std::find(summary.begin() ,summary.end() , param) != summary.end());
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
 	}
 };
 
@@ -110,7 +114,7 @@ public:
 
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
-	std::vector<ParameterName> summary;
+	std::vector<ParameterName> parametersInQuery;
 
 
 	// facet parser parameters
@@ -118,9 +122,9 @@ public:
 	// sort parser parameters
 	SortQueryContainer * sortQueryContainer;
 
-	bool hasParameterInSummary(ParameterName param){
+	bool hasParameterInQuery(ParameterName param){
 		return
-				(std::find(summary.begin() ,summary.end() , param) != summary.end());
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
 	}
 
 };
@@ -138,7 +142,7 @@ public:
 	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
-	std::vector<ParameterName> summary;
+	std::vector<ParameterName> parametersInQuery;
 
 
 	// this object is created in planGenerator but freed when the filter is being destroyed.
@@ -151,9 +155,9 @@ public:
 	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
 	float centerLatitude,centerLongitude,radius;
 
-	bool hasParameterInSummary(ParameterName param){
+	bool hasParameterInQuery(ParameterName param){
 		return
-				(std::find(summary.begin() ,summary.end() , param) != summary.end());
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
 	}
 };
 
@@ -178,7 +182,8 @@ public:
 	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
-	std::vector<ParameterName> summary;
+	// TODO : change to unordered set
+	std::vector<ParameterName> parametersInQuery;
 
 	// main query parser parameters
 
@@ -191,6 +196,17 @@ public:
 	std::vector<float> keywordFuzzyLevel;
 	std::vector<float> keywordBoostLevel;
 	std::vector<srch2::instantsearch::TermType> keywordPrefixComplete;
+	/*
+	 * Example : for example if the query is like : name,author:foo AND *:bar AND name.body:foobar
+	 * then the filter list will contain :
+	 * <
+	 * <name, author>,     <*>,    <name,body>
+	 * >
+	 * and the field operators will be :
+	 * <
+	 * AND,                AND,    OR
+	 * >
+	 */
 	std::vector<std::vector<std::string> > fieldFilter;
 	std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps;
 
@@ -199,12 +215,12 @@ public:
 
 	BooleanOperation queryBooleanOperator; // TODO: when we want to all NOT or OR this part should change
 	// debug query parser parameters
-	bool isDebugEnabled;
-	QueryDebugLevel queryDebugLevel;
+	bool isDebugEnabled; // not used yet
+	QueryDebugLevel queryDebugLevel; // not used yet
 
 
-	// field list parser
-	std::vector<std::string> responseAttributesList;
+	// field list parser , list of attributes to be returned to the user
+	std::vector<std::string> responseAttributesList; // not used yet
 
 	// start offset parser parameters
 	unsigned resultsStartOffset;
@@ -213,12 +229,12 @@ public:
 	unsigned numberOfResults;
 
 	// time allowed parser parameters
-	unsigned maxTimeAllowed; // zero means no time restriction
+	unsigned maxTimeAllowed; // zero means no time restriction // not used yet
 
 	// omit header parser parameters
-	bool isOmitHeader;
+	bool isOmitHeader; // not used yet
 
-	// reponse write type parameters
+	// response write type parameters
 	ResponseResultsFormat responseResultsFormat;
 
 	// filter query parser parameters
@@ -251,9 +267,9 @@ public:
 		return result;
 	}
 
-	bool hasParameterInSummary(ParameterName param) const{
+	bool hasParameterInQuery(ParameterName param) const{
 		return
-				(std::find(summary.begin() ,summary.end() , param) != summary.end());
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
 	}
 };
 

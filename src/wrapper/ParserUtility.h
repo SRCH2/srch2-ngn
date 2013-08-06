@@ -21,7 +21,9 @@ namespace httpwrapper
 {
 
 
-
+/*
+ * TODO : put these functions in a class and make them static
+ */
 
 
 // trim from start

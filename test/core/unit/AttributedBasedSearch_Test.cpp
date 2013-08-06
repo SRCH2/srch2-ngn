@@ -97,7 +97,7 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
                 unsigned numOfResults, const vector<string> &resultIds, const vector<vector<unsigned> > &resultAttributeBitmap)
 {
     
-    Query *query = new Query(srch2::instantsearch::TopKQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
     QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)

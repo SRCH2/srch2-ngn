@@ -56,7 +56,7 @@ public:
 	 * 1. creates exact and fuzzy queries
 	 * 2. Generates the post processing plan
 	 */
-	QueryPlan generatePlan();
+	void generatePlan(QueryPlan * queryPlan);
 
 private:
 	const ParsedParameterContainer & paramsContainer;

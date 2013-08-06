@@ -59,9 +59,9 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 {
     //TODO: check the queryResults was create using query.
     //TODO: Use edit distance and length in ranking
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->computeTermVirtualList(queryResults);
 
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
     // get the std::vector of virtual lists of each term
     std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
@@ -638,12 +638,12 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
     if (this->indexData->isCommited() == false)
         return returnValue;
     
-    if (query->getQueryType() == srch2::instantsearch::TopKQuery) {
+    if (query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchTopKQuery(query, offset, nextK, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
-    else if(query->getQueryType() == srch2::instantsearch::GetAllResultsQuery) {
+    else if(query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchGetAllResultsQuery(query, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
@@ -701,7 +701,7 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
 {
     const Query *query = queryResults->impl->getQuery();
     const vector<Term* > *queryTerms = query->getQueryTerms();
-    if (query->getQueryType() != MapQuery) {
+    if (query->getQueryType() != SearchTypeMapQuery) {
         for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
              vectorIterator != queryTerms->end();
              vectorIterator++ ) {

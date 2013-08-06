@@ -138,7 +138,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
         // if type is date/time check the syntax
-        if( attributeIter->second.first == srch2is::TIME){
+        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
         	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
         	if(attributeStringValue==""){
@@ -299,7 +299,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     {
 
         schema->setNonSearchableAttribute(nonSearchableAttributeIter->first, nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first, nonSearchableAttributeIter->second.second.second);
+        		nonSearchableAttributeIter->second.second.first);
     }
 
 
@@ -401,8 +401,8 @@ void convertValueToString(Json::Value value, string &stringValue){
   // get the string from a json value based on a key value.  Check the type first before
   // calling "asString()" to deal with the case where the input data was not formatted
   // properly.
-// if the type is int or double we convert it to string
-// Written by CHENLI
+  // if the type is int or double we convert it to string
+  // parameter configName is used to be included in error/warning messages to make them meaningful ...
 void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		const std::string &key,
 		std::string &stringValue,

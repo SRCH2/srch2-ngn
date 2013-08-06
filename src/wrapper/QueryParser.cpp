@@ -101,7 +101,7 @@ void QueryParser::fieldListParser(){
 		size_t st;
 		string fl = evhttp_uridecode(flTemp , 0, &st);
 
-		this->container->summary.push_back(srch2::httpwrapper::ReponseAttributesList);
+		this->container->parametersInQuery.push_back(srch2::httpwrapper::ReponseAttributesList);
 
 
 		char * fieldStr = strdup(fl.c_str());

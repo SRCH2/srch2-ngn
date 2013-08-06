@@ -1,4 +1,3 @@
-
 // $Id: SchemaInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
@@ -30,220 +29,188 @@ using std::string;
 using std::map;
 using std::pair;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
-SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType)
-{
+SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType,
+        srch2::instantsearch::PositionIndexType positionIndexType) {
     this->indexType = indexType;
     this->positionIndexType = positionIndexType;
     this->scoringExpressionString = "1"; // DEFAULT SCORE
 }
 
-SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal)
-{
+SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->primaryKey = schemaInternal.primaryKey;
-    this->searchableAttributeNameToId = schemaInternal.searchableAttributeNameToId;
-    this->searchableAttributeBoostVector = schemaInternal.searchableAttributeBoostVector;
-    this->nonSearchableAttributeNameToId = schemaInternal.nonSearchableAttributeNameToId;
-    this->nonSearchableAttributeTypeVector = schemaInternal.nonSearchableAttributeTypeVector;
-    this->nonSearchableAttributeDefaultValueVector = schemaInternal.nonSearchableAttributeDefaultValueVector;
-    this->nonSearchableAttributeIsSortableVector = schemaInternal.nonSearchableAttributeIsSortableVector;
+    this->searchableAttributeNameToId =
+            schemaInternal.searchableAttributeNameToId;
+    this->searchableAttributeBoostVector =
+            schemaInternal.searchableAttributeBoostVector;
+    this->nonSearchableAttributeNameToId =
+            schemaInternal.nonSearchableAttributeNameToId;
+    this->nonSearchableAttributeTypeVector =
+            schemaInternal.nonSearchableAttributeTypeVector;
+    this->nonSearchableAttributeDefaultValueVector =
+            schemaInternal.nonSearchableAttributeDefaultValueVector;
     this->scoringExpressionString = schemaInternal.scoringExpressionString;
     this->indexType = schemaInternal.indexType;
     this->positionIndexType = schemaInternal.positionIndexType;
     this->commited = schemaInternal.commited;
 }
 
-srch2::instantsearch::IndexType SchemaInternal::getIndexType() const
-{
+srch2::instantsearch::IndexType SchemaInternal::getIndexType() const {
     return this->indexType;
 }
 
-srch2::instantsearch::PositionIndexType SchemaInternal::getPositionIndexType() const
-{
+srch2::instantsearch::PositionIndexType SchemaInternal::getPositionIndexType() const {
     return this->positionIndexType;
 }
 
-unsigned SchemaInternal::getBoostSumOfSearchableAttributes() const
-{
-    return std::accumulate( this->searchableAttributeBoostVector.begin(), this->searchableAttributeBoostVector.end(), 0 );
+unsigned SchemaInternal::getBoostSumOfSearchableAttributes() const {
+    return std::accumulate(this->searchableAttributeBoostVector.begin(),
+            this->searchableAttributeBoostVector.end(), 0);
 }
 
-int SchemaInternal::getSearchableAttributeId(const string &attributeName) const
-{
-    map<string, unsigned >::const_iterator iter = this->searchableAttributeNameToId.find(attributeName.c_str());
+int SchemaInternal::getSearchableAttributeId(
+        const string &attributeName) const {
+    map<string, unsigned>::const_iterator iter =
+            this->searchableAttributeNameToId.find(attributeName.c_str());
     if (iter != this->searchableAttributeNameToId.end()) {
         return iter->second;
-    }
-    else {
+    } else {
         return -1;
     }
 }
 
+int SchemaInternal::getNonSearchableAttributeId(
+        const std::string &nonSearchableAttributeName) const {
 
-
-int SchemaInternal::getNonSearchableAttributeId(const std::string &nonSearchableAttributeName) const{
-
-	map<string, unsigned >::const_iterator iter = this->nonSearchableAttributeNameToId.find(nonSearchableAttributeName.c_str());
+    map<string, unsigned>::const_iterator iter =
+            this->nonSearchableAttributeNameToId.find(
+                    nonSearchableAttributeName.c_str());
     if (iter != this->nonSearchableAttributeNameToId.end()) {
         return iter->second;
-    }
-    else {
+    } else {
         return -1;
     }
 }
 
-
-SchemaInternal::~SchemaInternal()
-{
+SchemaInternal::~SchemaInternal() {
 
 }
 
-void SchemaInternal::setPrimaryKey(const string &primaryKey)
-{
+void SchemaInternal::setPrimaryKey(const string &primaryKey) {
     this->primaryKey = primaryKey;
 }
 
-const std::string* SchemaInternal::getPrimaryKey() const
-{
+const std::string* SchemaInternal::getPrimaryKey() const {
     return &this->primaryKey;
 }
 
 int SchemaInternal::setSearchableAttribute(const string &attributeName,
-        unsigned attributeBoost)
-{
+        unsigned attributeBoost) {
     //ASSERT (this->boostVector.size() <= 255);
 
-    if( this->searchableAttributeNameToId.size() > 255)
-    {
-        return -1;
-    }
+//    if( this->searchableAttributeNameToId.size() > 255)
+//    {
+//        return -1;
+//    }
 
-    if (attributeBoost < 1 || attributeBoost > 100)
-    {
+    if (attributeBoost < 1 || attributeBoost > 100) {
         attributeBoost = 100;
     }
 
-    map<string, unsigned >::iterator iter;
+    map<string, unsigned>::iterator iter;
     iter = this->searchableAttributeNameToId.find(attributeName);
     if (iter != this->searchableAttributeNameToId.end()) {
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
-    }
-    else {
-    	int searchAttributeMapSize= this->searchableAttributeNameToId.size();
-        this->searchableAttributeNameToId[attributeName] = searchAttributeMapSize;
+    } else {
+        int searchAttributeMapSize = this->searchableAttributeNameToId.size();
+        this->searchableAttributeNameToId[attributeName] =
+                searchAttributeMapSize;
         this->searchableAttributeBoostVector.push_back(attributeBoost);
     }
     return this->searchableAttributeNameToId.size() - 1;
 }
 
+int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName,
+        FilterType type, const std::string & defaultValue) {
+//    if (this->nonSearchableAttributeNameToId.size() > 255) {
+//        return -1;
+//    }
 
-
-
-int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName, FilterType type, const std::string & defaultValue, bool isSortable)
-{
-	if( this->nonSearchableAttributeNameToId.size() > 255)
-	{
-		return -1;
-	}
-
-    map<string, unsigned >::iterator iter;
+    map<string, unsigned>::iterator iter;
     iter = this->nonSearchableAttributeNameToId.find(attributeName);
     if (iter != this->nonSearchableAttributeNameToId.end()) {
-        this->nonSearchableAttributeDefaultValueVector[iter->second] = defaultValue;
+        this->nonSearchableAttributeDefaultValueVector[iter->second] =
+                defaultValue;
         this->nonSearchableAttributeTypeVector[iter->second] = type;
-        this->nonSearchableAttributeIsSortableVector[iter->second] = isSortable;
-    }
-    else {
-        this->nonSearchableAttributeNameToId[attributeName] = this->nonSearchableAttributeNameToId.size() - 1;
+    } else {
+        this->nonSearchableAttributeNameToId[attributeName] =
+                this->nonSearchableAttributeNameToId.size() - 1;
         this->nonSearchableAttributeDefaultValueVector.push_back(defaultValue);
         this->nonSearchableAttributeTypeVector.push_back(type);
-        this->nonSearchableAttributeIsSortableVector.push_back(isSortable);
     }
     return this->nonSearchableAttributeNameToId.size() - 1;
 
 }
 
-
-const std::string* SchemaInternal::getDefaultValueOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const{
-    if ( nonSearchableAttributeNameId < this->nonSearchableAttributeDefaultValueVector.size())
-    {
+const std::string* SchemaInternal::getDefaultValueOfNonSearchableAttribute(
+        const unsigned nonSearchableAttributeNameId) const {
+    if (nonSearchableAttributeNameId
+            < this->nonSearchableAttributeDefaultValueVector.size()) {
         return &this->nonSearchableAttributeDefaultValueVector[nonSearchableAttributeNameId];
-    }
-    else
-    {
+    } else {
         return NULL;
     }
     return NULL;
 }
 
-
-void SchemaInternal::setScoringExpression(const std::string &scoringExpression)
-{
+void SchemaInternal::setScoringExpression(
+        const std::string &scoringExpression) {
     this->scoringExpressionString = scoringExpression;
 }
 
-const std::string SchemaInternal::getScoringExpression() const
-{
+const std::string SchemaInternal::getScoringExpression() const {
     return this->scoringExpressionString;
 }
 
+FilterType SchemaInternal::getTypeOfNonSearchableAttribute(
+        const unsigned nonSearchableAttributeNameId) const {
 
-
-FilterType SchemaInternal::getTypeOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const{
-
-	if(nonSearchableAttributeNameId >= this->nonSearchableAttributeTypeVector.size()){
-		return srch2::instantsearch::TEXT; // TODO default is text, is it ok?
-	}
+    if (nonSearchableAttributeNameId
+            >= this->nonSearchableAttributeTypeVector.size()) {
+        ASSERT(false);
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT; // TODO default is text, is it ok?
+    }
     return this->nonSearchableAttributeTypeVector[nonSearchableAttributeNameId];
 
 }
 
-bool SchemaInternal::isNonSearchableAttributeSortable(const unsigned nonSearchableAttributeNameId) const{
-
-	if(nonSearchableAttributeNameId >= this->nonSearchableAttributeIsSortableVector.size()){
-		return false;
-	}
-    return this->nonSearchableAttributeIsSortableVector[nonSearchableAttributeNameId];
+const std::map<std::string, unsigned> * SchemaInternal::getNonSearchableAttributes() const {
+    return &this->nonSearchableAttributeNameToId;
 }
 
-const std::map<std::string , unsigned> * SchemaInternal::getNonSearchableAttributes() const {
-	return &this->nonSearchableAttributeNameToId;
-}
-
-unsigned SchemaInternal::getBoostOfSearchableAttribute(const unsigned attributeId) const
-{
-    if ( attributeId < this->searchableAttributeBoostVector.size())
-    {
+unsigned SchemaInternal::getBoostOfSearchableAttribute(
+        const unsigned attributeId) const {
+    if (attributeId < this->searchableAttributeBoostVector.size()) {
         return this->searchableAttributeBoostVector[attributeId];
-    }
-    else
-    {
+    } else {
         return 0;
     }
 }
 
-const std::map<std::string, unsigned>& SchemaInternal::getSearchableAttribute() const
-{
-	return this->searchableAttributeNameToId;
+const std::map<std::string, unsigned>& SchemaInternal::getSearchableAttribute() const {
+    return this->searchableAttributeNameToId;
 }
 
-unsigned SchemaInternal::getNumberOfSearchableAttributes() const
-{
+unsigned SchemaInternal::getNumberOfSearchableAttributes() const {
     return this->searchableAttributeNameToId.size();
 }
 
+unsigned SchemaInternal::getNumberOfNonSearchableAttributes() const {
 
-
-unsigned SchemaInternal::getNumberOfNonSearchableAttributes() const{
-
-	return this->nonSearchableAttributeNameToId.size();
+    return this->nonSearchableAttributeNameToId.size();
 }
 
-
-
-
-}}
+}
+}

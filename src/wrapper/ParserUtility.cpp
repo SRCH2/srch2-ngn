@@ -77,6 +77,7 @@ std::vector<std::string>  &split(std::string &s, std::string delimiter){
 
 }
 
+// source : http://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
 bool isInteger(const std::string & s)
 {
    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;

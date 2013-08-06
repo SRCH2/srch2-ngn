@@ -55,7 +55,7 @@ struct Query::Impl
     Impl()
     {
         sortableAttributeId = 0;
-        order = srch2::instantsearch::Descending;
+        order = srch2::instantsearch::SortOrderDescending;
         lengthBoost = 0.5;
         prefixMatchPenalty = 0.90;
 
@@ -161,13 +161,13 @@ Query::Query(QueryType type):impl(new Impl)
 
     switch ( impl->type )
     {
-        case srch2::instantsearch::TopKQuery:
+        case srch2::instantsearch::SearchTypeTopKQuery:
             impl->ranker = new DefaultTopKRanker();
             break;
-        case srch2::instantsearch::GetAllResultsQuery:
+        case srch2::instantsearch::SearchTypeGetAllResultsQuery:
             impl->ranker = new GetAllResultsRanker();
             break;
-        case srch2::instantsearch::MapQuery:
+        case srch2::instantsearch::SearchTypeMapQuery:
             impl->ranker = new SpatialRanker();
             break;
         default:

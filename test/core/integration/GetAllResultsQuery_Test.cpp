@@ -32,8 +32,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     schema->setScoringExpression(expression);
 
 
-    schema->setNonSearchableAttribute("id_for_sort",srch2::instantsearch::UNSIGNED, "0" , true);
-    schema->setNonSearchableAttribute("latitude", srch2::instantsearch::FLOAT, "1" , true);
+    schema->setNonSearchableAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0" );
+    schema->setNonSearchableAttribute("latitude", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     /// Create an Analyzer
     AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
