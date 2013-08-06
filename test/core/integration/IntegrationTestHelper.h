@@ -1029,10 +1029,10 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resultValue = queryResults->getResultScore(0);
     delete queryResults;
     delete query;
-    return resVal;
+    return resultValue;
 }
 
 int pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed)

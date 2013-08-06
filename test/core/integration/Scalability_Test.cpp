@@ -211,9 +211,9 @@ void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer
 
         if (verb >= 2) {
             clock_gettime(CLOCK_REALTIME, &t2_inner);
-            double time_span_inner = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
+            double time_span_on_one_query = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
             //TODO: revert this part
-            cout << "current search:  "<<*vectIter << "------" << time_span_inner << " milliseconds." << " Find "<< resultNumber << " resutls."<< endl;
+            cout << "current search:  "<<*vectIter << "------" << time_span_on_one_query << " milliseconds." << " Find "<< resultNumber << " resutls."<< endl;
             //cout << "current search:  "<<*vectIter << "------" << time_span_inner << " milliseconds." << endl;
         }
         if (!resultNumber) {
@@ -284,8 +284,8 @@ void readGeoQueriesAndDoQueries(bool isExact, string path, const Analyzer *analy
 
         if (verb >=2) {
             clock_gettime(CLOCK_REALTIME, &t2_inner);
-            double time_span_inner = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
-            cout << "current search: "<<*vectIter << "------"<< time_span_inner << " milliseconds." << " Find "<< resultsNumber << " resutls."<< endl;
+            double time_span_on_one_query = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
+            cout << "current search: "<<*vectIter << "------"<< time_span_on_one_query << " milliseconds." << " Find "<< resultsNumber << " resutls."<< endl;
         }
 
         if (resultsNumber == 0) {
