@@ -163,7 +163,7 @@ bool test(int argc, char** argv)
 
     std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
 
-    srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(srch2_config_file);
+    srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
