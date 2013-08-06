@@ -199,7 +199,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 //For example, for a query "q=trus+", we will take "trus" as a complete term.
                 string query=string(keywordsParamName_cstar);
 
-                if(query.substr(query.length()-1, 1) == " "){
+                if(!query.empty() && query.substr(query.length()-1, 1) == " "){
                     queryKeywordVector.push_back(" ");
                 }
                 delete keywordsParamName_cstar;
