@@ -98,7 +98,7 @@ void buildIndex(string indexDir)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
@@ -184,7 +184,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer

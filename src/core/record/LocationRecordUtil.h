@@ -187,8 +187,8 @@ public:
         double width = rect.max.x - rect.min.x;
         double height = rect.max.y - rect.min.y;
 
-        double distanceX = abs(center.x - rectX);
-        double distanceY = abs(center.y - rectY);
+        double distanceX = ::abs(center.x - rectX);
+        double distanceY = ::abs(center.y - rectY);
 
         if (distanceX > (width/2 + radius)) { return false; }
         if (distanceY > (height/2 + radius)) { return false; }

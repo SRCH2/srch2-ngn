@@ -1,5 +1,5 @@
 
-// $Id: IndexData.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexData.h 3480 2013-06-19 08:00:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -95,7 +95,7 @@ namespace instantsearch
 class InvertedIndex;
 class QuadTree;
 //class ForwardIndex;
-class AnalyzerInternal;
+class Analyzer;
 class SchemaInternal;
 class ForwardList;
 typedef std::pair<ForwardList*, bool> ForwardListPtr;
@@ -274,7 +274,7 @@ public:
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
-    AnalyzerInternal *analyzerInternal;
+    Analyzer *analyzer;
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;
