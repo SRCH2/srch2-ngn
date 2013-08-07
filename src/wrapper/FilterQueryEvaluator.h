@@ -30,6 +30,8 @@
 #include "WrapperConstants.h"
 #include "exprtk.hpp"
 #include "boost/regex.hpp"
+#include <boost/algorithm/string.hpp>
+//#include "Assert.h"
 
 #ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
 
@@ -53,7 +55,9 @@ public:
     virtual bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues)= 0;
 
-    virtual ~QueryExpression()=0;
+    virtual ~QueryExpression() {
+    }
+    ;
 
     std::string expressionString;
 private:
@@ -71,8 +75,7 @@ public:
         boost::smatch matches;
         string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
         boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
-        boost::regex_search(this->expressionString, matches,
-                fieldDelimeterRegex);
+        boost::regex_search(this->expressionString, matches,fieldDelimeterRegex);
         if (matches[0].matched) {
             // it has field. create a vector and populate container->fieldFilter.
             string fieldName = this->expressionString.substr(0,
@@ -94,6 +97,7 @@ public:
             return this->setLowerAndUpperValues(keyword);
         } else {
             //execution should never come here.
+            //ASSERT(false);
             return false;
         }
     }
@@ -128,8 +132,8 @@ public:
 
 private:
     std::string attributeName;
-    Score attributeValueLower;
-    Score attributeValueUpper;
+    string attributeValueLower;
+    string attributeValueUpper;
     unsigned whichPartHasStar; // 0: non, 1:left, 2:right, 3 both
     bool negative;
     bool setLowerAndUpperValues(string &keyword) {
@@ -149,6 +153,7 @@ private:
             this->attributeValueUpper = lowerVal;
             return true;
         } else {
+            //ASSERT(false);
             return false;
         }
     }
@@ -188,6 +193,7 @@ public:
             return true;
         } else {
             //execution should never come here.
+            //ASSERT(false);
             return false;
         }
     }
@@ -197,8 +203,7 @@ public:
         bool result;
         // first find the value coming from the record
         Score value = nonSearchableAttributeValues[this->attributeName];
-        result = value == this->attributeValue;
-
+        //result = value == this->attributeValue;
         if (this->negative) {
             return !result;
         }
@@ -233,17 +238,17 @@ public:
         boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
         boost::regex_search(this->expressionString, matches,
                 fieldDelimeterRegex);
-        string keyword;
+        string expressionString;
         if (matches[0].matched) {
-            // it has field. create a vector and populate container->fieldFilter.
-            keyword = this->expressionString.substr(
+            expressionString = this->expressionString.substr(
                     matches.position() + matches.length());
             // remove the last ')'
-            keyword = keyword.substr(0, keyword.length() - 1);
-            boost::algorithm::trim(keyword);
-            this->parsedExpression = keyword;
+            expressionString = expressionString.substr(0, expressionString.length() - 1);
+            boost::algorithm::trim(expressionString);
+            this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
             return true;
         } else {
+            //ASSERT(false);
             return false;
         }
     }
@@ -367,10 +372,10 @@ public:
     }
 
     bool addCriterion(std::string criteriaString) {
-        string filedRegexString = "\\s*\\w+(\\.{0,1}\\w+)+\\s*";
+        string filedRegexString = "\\s*\\w+(\\.{0,1}\\w+)+\\s*"; //TODO: alpha numeric or underscores, minus support also
         string keywordRegexString =
-                "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)";
-        string validNumRegexString = "\\s*(\\d+|\\*)\\s+TO\\s+(\\d+|\\*)\\s*";
+                "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // any value that is in double quotes, remove the double quote before setting it in the members
+        string validNumRegexString = "\\s*(\\d+|\\*)\\s+TO\\s+(\\d+|\\*)\\s*"; // TODO: add the string support too.
         string validDateRegexString =
                 "\\s*(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s+TO\\s+(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s*"; // yyyy/mm/dd
         std::string rangeCriterionRegexString = filedRegexString + ":\\s*\\[("
@@ -380,19 +385,16 @@ public:
                 + keywordRegexString;
         boost::regex assignmentCriterionRegex(assignmentCriterionRegexString);
         if (boost::regex_match(criteriaString, rangeCriterionRegex)) {
-            SolrRangeQueryExpression * sqe = new SolrRangeQueryExpression(
-                    criteriaString);
+            SolrRangeQueryExpression * sqe = new SolrRangeQueryExpression(criteriaString);
             bool isParsable = sqe->parse();
             if (!isParsable) {
-                return false;
+                return false; // TODO: get the message
             } else {
                 criteria.push_back(sqe);
                 return true;
             }
-        } else if (boost::regex_match(criteriaString,
-                assignmentCriterionRegex)) {
-            SolrAssignmentQueryExpression * sqe =
-                    new SolrAssignmentQueryExpression(criteriaString);
+        } else if (boost::regex_match(criteriaString,assignmentCriterionRegex)) {
+            SolrAssignmentQueryExpression * sqe = new SolrAssignmentQueryExpression(criteriaString);
             bool isParsable = sqe->parse();
             if (!isParsable) {
                 return false;
@@ -404,8 +406,7 @@ public:
             string complexExpressionRegexString = "\\s*CMPLX\\(.*\\)\\s*"; // need to be careful here. assumption is the fq regex has taken care of the right syntax
             boost::regex cmplxCriterionRegex(complexExpressionRegexString);
             if (boost::regex_match(criteriaString, cmplxCriterionRegex)) {
-                ComplexQueryExpression * cqe = new ComplexQueryExpression(
-                        criteriaString);
+                ComplexQueryExpression * cqe = new ComplexQueryExpression(criteriaString);
                 bool isParsable = cqe->parse();
                 if (!isParsable) {
                     return false;
@@ -413,8 +414,8 @@ public:
                     criteria.push_back(cqe);
                     return true;
                 }
-            }else{
-                return false;
+            } else {
+                return false; // TODO invalid filter syntax.
             }
         }
     }
