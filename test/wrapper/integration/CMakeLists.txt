@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
 	${CMAKE_SOURCE_DIR}/src/
 	${CMAKE_SOURCE_DIR}/src/core/
+	${CMAKE_SOURCE_DIR}/src/wrapper/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
@@ -25,5 +26,12 @@ TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
 						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
 					)
-
+					
+ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:KAFKA_OBJECTS>)
+TARGET_LINK_LIBRARIES(XMLParser_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
 ADD_DEPENDENCIES(WrapperCreateIndexFromFile_Test srch2_core)
+ADD_DEPENDENCIES(XMLParser_Test srch2_core)
