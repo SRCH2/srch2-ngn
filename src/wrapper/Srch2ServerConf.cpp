@@ -502,7 +502,8 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
      ("attribute-facet-gap", po::value<string>(), "The start value of range attributes.")
      */
 
-    if (vm.count("facet-enable")) {
+    if (vm.count("facet-enable") && (vm["facet-enable"].as<string>().compare(
+            ignoreOption) != 0)){
         facetEnabled = vm["facet-enable"].as<int>();
     } else {
         facetEnabled = false;
@@ -510,7 +511,8 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
 
     if (facetEnabled) {
         // now all the other options are required.
-        if (vm.count("facet-attribute-type")) {
+        if (vm.count("facet-attribute-type")&& (vm["facet-attribute-type"].as<string>().compare(
+                ignoreOption) != 0)) {
             vector<string> facetTypesStringVector;
             boost::split(facetTypesStringVector,
                     vm["facet-attribute-type"].as<string>(),
@@ -527,28 +529,32 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
         }
-        if (vm.count("facet-attributes")) {
+        if (vm.count("facet-attributes")&& (vm["facet-attributes"].as<string>().compare(
+                ignoreOption) != 0)) {
             boost::split(facetAttributes, vm["facet-attributes"].as<string>(),
                     boost::is_any_of(","));
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
         }
-        if (vm.count("facet-attribute-start")) {
+        if (vm.count("facet-attribute-start")&& (vm["facet-attribute-start"].as<string>().compare(
+                ignoreOption) != 0)) {
             boost::split(facetStarts, vm["facet-attribute-start"].as<string>(),
                     boost::is_any_of(","));
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
         }
-        if (vm.count("facet-attribute-end")) {
+        if (vm.count("facet-attribute-end")&& (vm["facet-attribute-end"].as<string>().compare(
+                ignoreOption) != 0)) {
             boost::split(facetEnds, vm["facet-attribute-end"].as<string>(),
                     boost::is_any_of(","));
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
         }
-        if (vm.count("facet-attribute-gap")) {
+        if (vm.count("facet-attribute-gap")&& (vm["facet-attribute-gap"].as<string>().compare(
+                ignoreOption) != 0)) {
             boost::split(facetGaps, vm["facet-attribute-gap"].as<string>(),
                     boost::is_any_of(","));
         } else {

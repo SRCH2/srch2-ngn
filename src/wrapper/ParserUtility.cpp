@@ -150,7 +150,18 @@ std::string convertTimeFormatToLong(std::string & timeString){
 }
 std::string convertLongToTimeFormat(std::string & timeLong){
     static boost::posix_time::ptime empch;
-
+}
+void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
+        vector<string> &values) {
+    struct evkeyval *header;
+    int c =0;
+    TAILQ_FOREACH(header, headers, next)
+    {
+        if (evutil_ascii_strcasecmp(header->key, key) == 0) {
+            ++c;
+            values.push_back(header->value);
+        }
+    }
 }
 
 }

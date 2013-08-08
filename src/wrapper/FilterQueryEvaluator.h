@@ -14,9 +14,8 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright ������ 2010 SRCH2 Inc. All rights reserved
  */
-
 
 #include <iostream>
 #include <string>
@@ -31,6 +30,8 @@
 #include "WrapperConstants.h"
 #include "exprtk.hpp"
 #include "boost/regex.hpp"
+#include <boost/algorithm/string.hpp>
+//#include "Assert.h"
 
 #ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
 
@@ -43,75 +44,66 @@ using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
 using srch2::instantsearch::BooleanOperation;
 using srch2::instantsearch::AttributeCriterionOperation;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
-
-
-class QueryExpression
-{
+class QueryExpression {
 public:
 
-	virtual bool parse() = 0;
+    virtual bool parse() = 0;
 
+    virtual bool getBooleanValue(
+            std::map<std::string, Score> nonSearchableAttributeValues)= 0;
 
-	virtual bool getBooleanValue(std::map<std::string, Score> nonSearchableAttributeValues)= 0;
+    virtual ~QueryExpression() {
+    }
+    ;
 
-	virtual Score getScoreValue(std::map<std::string, Score> nonSearchableAttributeValues) = 0;
-
-	virtual ~QueryExpression()=0;
-
-	std::vector< std::string > nonSearchableAttributeNames;
-	std::vector< FilterType > nonSearchableAttributeTypes;
-	std::string expressionString;
+    std::string expressionString;
 private:
 
 };
-class SolrRangeQueryExpression : public QueryExpression
-{
+class SolrRangeQueryExpression: public QueryExpression {
 public:
-	SolrRangeQueryExpression(const std::vector< std::string > nonSearchableAttributeNames ,
-					  const std::vector< FilterType > nonSearchableAttributeTypes ,
-					  const std::string expressionString ){
-		this->nonSearchableAttributeNames = nonSearchableAttributeNames;
-		this->nonSearchableAttributeTypes = nonSearchableAttributeTypes;
-		this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
+    SolrRangeQueryExpression(const std::string expressionString) {
+        this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
 
+    }
 
-	}
+    bool parse() {
+        string keyword;
+        boost::smatch matches;
+        string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
+        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
+        boost::regex_search(this->expressionString, matches,fieldDelimeterRegex);
+        if (matches[0].matched) {
+            // it has field. create a vector and populate container->fieldFilter.
+            string fieldName = this->expressionString.substr(0,
+                    matches.position()); // extract the field
+            boost::algorithm::trim(fieldName);
+            if (fieldName.at(0) == '-') {
+                this->negative = true;
+                fieldName = fieldName.substr(1);
+            } else {
+                this->negative = false;
+            }
+            this->attributeName = fieldName;
+            keyword = this->expressionString.substr(
+                    matches.position() + matches.length()); // extract the keyword
+            boost::algorithm::trim(keyword);
+            // remove '[' and ']'
+            keyword = keyword.substr(1, keyword.length() - 2);
+            // get the lower and uppper values.
+            return this->setLowerAndUpperValues(keyword);
+        } else {
+            //execution should never come here.
+            //ASSERT(false);
+            return false;
+        }
+    }
 
-	bool parse(){
-
-//		std::string attributeName = this->expressionString.substr(0,this->expressionString.find(":",0));
-//		if(attributeName.at(0) == '-'){
-//			this->negative = true;
-//			attributeName = attributeName.substr(1,attributeName.size()-1);
-//		}
-//		std::string attributeValue = this->expressionString.substr(
-//				this->expressionString.find(":",0)+1,this->expressionString.size()-(this->expressionString.find(":",0)+1));
-//		if(std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName) ==
-//				this->nonSearchableAttributeNames.end()){ // if a name is used which is not in attributes
-//			return false;
-//		}
-//
-//		// find the type of this attribute
-//		FilterType type = this->nonSearchableAttributeTypes.at(
-//				std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName)
-//		- this->nonSearchableAttributeNames.begin());
-//		this->attributeName = attributeName;
-//		this->attributeValue.setScore(type, attributeValue);
-//		this->operation = EQUALS;
-
-		// TODO : NOT FINISHED YET
-
-
-		return true;
-	}
-
-
-	bool getBooleanValue(std::map<std::string, Score> nonSearchableAttributeValues){
+    bool getBooleanValue(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
 //		bool result ;
 //		// first find the value coming from the record
 //		Score value = nonSearchableAttributeValues[this->attributeName];
@@ -132,278 +124,311 @@ public:
 //				break;
 //		}
 //		return result;
-	}
+    }
 
-	Score getScoreValue(std::map<std::string, Score> nonSearchableAttributeValues){
-		return attributeValueLower;
-	}
-
-	~SolrRangeQueryExpression(){};
+    ~SolrRangeQueryExpression() {
+    }
+    ;
 
 private:
-	std::string attributeName ;
-	Score attributeValueLower;
-	Score attributeValueUpper;
-	unsigned whichPartHasStar; // 0: non, 1:left, 2:right, 3 both
-	bool negative;
-
-
+    std::string attributeName;
+    string attributeValueLower;
+    string attributeValueUpper;
+    unsigned whichPartHasStar; // 0: non, 1:left, 2:right, 3 both
+    bool negative;
+    bool setLowerAndUpperValues(string &keyword) {
+        boost::smatch matches;
+        string fieldKeywordDelimeterRegexString = "\\s+TO\\s+";
+        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
+        boost::regex_search(keyword, matches, fieldDelimeterRegex);
+        if (matches[0].matched) {
+            // it has field. create a vector and populate container->fieldFilter.
+            string lowerVal = keyword.substr(0, matches.position()); // extract the field
+            boost::algorithm::trim(lowerVal);
+            this->attributeValueLower = lowerVal;
+            string upperVal = keyword.substr(
+                    matches.position() + matches.length()); // extract the keyword
+            boost::algorithm::trim(upperVal);
+            // remove '[' and ']'
+            this->attributeValueUpper = lowerVal;
+            return true;
+        } else {
+            //ASSERT(false);
+            return false;
+        }
+    }
 };
 
-class SolrAssignmentQueryExpression : public QueryExpression
-{
+class SolrAssignmentQueryExpression: public QueryExpression {
 public:
-	SolrAssignmentQueryExpression(const std::vector< std::string > nonSearchableAttributeNames ,
-					  const std::vector< FilterType > nonSearchableAttributeTypes ,
-					  const std::string expressionString ){
-		this->nonSearchableAttributeNames = nonSearchableAttributeNames;
-		this->nonSearchableAttributeTypes = nonSearchableAttributeTypes;
-		this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
+    SolrAssignmentQueryExpression(const std::string expressionString) {
+        this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
+        this->negative = false;
+        this->operation = srch2::instantsearch::EQUALS;
+    }
 
+    bool parse() {
+        string keyword;
+        boost::smatch matches;
+        string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
+        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
+        boost::regex_search(this->expressionString, matches,
+                fieldDelimeterRegex);
+        if (matches[0].matched) {
+            // it has field. create a vector and populate container->fieldFilter.
+            string fieldName = this->expressionString.substr(0,
+                    matches.position()); // extract the field
+            boost::algorithm::trim(fieldName);
+            if (fieldName.at(0) == '-') {
+                this->negative = true;
+                fieldName = fieldName.substr(1);
+            } else {
+                this->negative = false;
+            }
+            this->attributeName = fieldName;
+            keyword = this->expressionString.substr(
+                    matches.position() + matches.length()); // extract the keyword
+            boost::algorithm::trim(keyword);
+            this->attributeValue = keyword;
+            return true;
+        } else {
+            //execution should never come here.
+            //ASSERT(false);
+            return false;
+        }
+    }
 
-	}
+    bool getBooleanValue(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
+        bool result;
+        // first find the value coming from the record
+        Score value = nonSearchableAttributeValues[this->attributeName];
+        //result = value == this->attributeValue;
+        if (this->negative) {
+            return !result;
+        }
+        return result;
+    }
 
-	bool parse(){
-
-		std::string attributeName = this->expressionString.substr(0,this->expressionString.find(":",0));
-		if(attributeName.at(0) == '-'){
-			this->negative = true;
-			attributeName = attributeName.substr(1,attributeName.size()-1);
-		}
-		std::string attributeValue = this->expressionString.substr(
-				this->expressionString.find(":",0)+1,this->expressionString.size()-(this->expressionString.find(":",0)+1));
-		if(std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName) ==
-				this->nonSearchableAttributeNames.end()){ // if a name is used which is not in attributes
-			return false;
-		}
-
-		// find the type of this attribute
-		FilterType type = this->nonSearchableAttributeTypes.at(
-				std::find(this->nonSearchableAttributeNames.begin(),this->nonSearchableAttributeNames.end(),attributeName)
-		- this->nonSearchableAttributeNames.begin());
-		this->attributeName = attributeName;
-		this->attributeValue.setScore(type, attributeValue);
-		this->operation = srch2::instantsearch::EQUALS;
-
-
-		return true;
-	}
-
-
-	bool getBooleanValue(std::map<std::string, Score> nonSearchableAttributeValues){
-		bool result ;
-		// first find the value coming from the record
-		Score value = nonSearchableAttributeValues[this->attributeName];
-		result = value == this->attributeValue;
-
-		if(this->negative){
-			return !result;
-		}
-		return result;
-	}
-
-	Score getScoreValue(std::map<std::string, Score> nonSearchableAttributeValues){
-		return attributeValue;
-	}
-
-	~SolrAssignmentQueryExpression(){};
+    ~SolrAssignmentQueryExpression() {
+    }
+    ;
 
 private:
-	std::string attributeName ;
-	Score attributeValue;
-	AttributeCriterionOperation operation;
-	bool negative;
-
-
+    std::string attributeName;
+    string attributeValue;
+    AttributeCriterionOperation operation;
+    bool negative;
 };
 
 // this class gets a string which is an expression of nuon-searchable attribute names,it evluates the expression
 // based on the Score value of those attributes coming from records.
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
-class ComplexQueryExpression : public QueryExpression
-{
+class ComplexQueryExpression: public QueryExpression {
 public:
-	ComplexQueryExpression(const std::vector< std::string > nonSearchableAttributeNames ,
-					  const std::vector< FilterType > nonSearchableAttributeTypes ,
-					  const std::string expressionString ){
-		this->nonSearchableAttributeNames = nonSearchableAttributeNames;
-		this->nonSearchableAttributeTypes = nonSearchableAttributeTypes;
-		this->expressionString = expressionString; // CMPLX(some math expression)
+    ComplexQueryExpression(const std::string expressionString) {
+        this->expressionString = expressionString; // CMPLX(some math expression)
+    }
 
+    bool parse() {
+        boost::algorithm::trim(this->expressionString);
+        // extract the expression, remove the 'CMPLX(' and ')' part
+        boost::smatch matches;
+        string fieldKeywordDelimeterRegexString = "\\s*CMPLX\\(\\s*";
+        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
+        boost::regex_search(this->expressionString, matches,
+                fieldDelimeterRegex);
+        string expressionString;
+        if (matches[0].matched) {
+            expressionString = this->expressionString.substr(
+                    matches.position() + matches.length());
+            // remove the last ')'
+            expressionString = expressionString.substr(0, expressionString.length() - 1);
+            boost::algorithm::trim(expressionString);
+            this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
+            return true;
+        } else {
+            //ASSERT(false);
+            return false;
+        }
+    }
 
-	}
+    bool getBooleanValue(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
 
+        return getBooleanValueNumericalMode(nonSearchableAttributeValues);
 
-	bool parse(){
-		return parseNumerical();
-	}
+    }
 
+    Score getScoreValue(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
 
-	bool getBooleanValue(std::map<std::string, Score> nonSearchableAttributeValues){
+        return getScoreValueNumericalMode(nonSearchableAttributeValues);
 
-		return getBooleanValueNumericalMode(nonSearchableAttributeValues);
+    }
 
-	}
-
-	Score getScoreValue(std::map<std::string, Score> nonSearchableAttributeValues){
-
-		return getScoreValueNumericalMode(nonSearchableAttributeValues);
-
-	}
-
-	~ComplexQueryExpression(){};
+    ~ComplexQueryExpression() {
+    }
+    ;
 
 private:
-	exprtk::expression<float> expression;
-	std::map<std::string , float> symbolVariables;
+    string expressionString;
+    string parsedExpression;
+    exprtk::expression<float> expression;
+    std::map<std::string, float> symbolVariables;
 
-	bool parseNumerical(){
-		// initialize things related to numerical part
+    bool parseNumerical() {
+        // initialize things related to numerical part
 
-		exprtk::symbol_table<float> symbol_table;
+        /*exprtk::symbol_table<float> symbol_table;
 
-		for(unsigned i =0;i<nonSearchableAttributeNames.size();i++){
-			if(nonSearchableAttributeTypes[i] != srch2::instantsearch::ATTRIBUTE_TYPE_TEXT){
-				symbolVariables[nonSearchableAttributeNames[i]] = 0;
-				symbol_table.add_variable(nonSearchableAttributeNames[i],symbolVariables[nonSearchableAttributeNames[i]]);
-			}
-		}
-	   symbol_table.add_constants();
+         for(unsigned i =0;i<nonSearchableAttributeNames.size();i++){
+         if(nonSearchableAttributeTypes[i] != srch2::instantsearch::TEXT){
+         symbolVariables[nonSearchableAttributeNames[i]] = 0;
+         symbol_table.add_variable(nonSearchableAttributeNames[i],symbolVariables[nonSearchableAttributeNames[i]]);
+         }
+         }
+         symbol_table.add_constants();
 
-	   this->expression.register_symbol_table(symbol_table);
+         this->expression.register_symbol_table(symbol_table);
 
-	   exprtk::parser<float> parser;
-	   parser.compile(this->expressionString,this->expression);
+         exprtk::parser<float> parser;*/
+        //parser.compile(this->expressionString,this->expression);
+        return false;
+    }
 
-	}
+    bool getBooleanValueNumericalMode(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
 
-	bool getBooleanValueNumericalMode(std::map<std::string, Score> nonSearchableAttributeValues){
+        float result = getValueNumericalMode(nonSearchableAttributeValues);
 
-		float result = getValueNumericalMode(nonSearchableAttributeValues);
+        if (result == 0) {
+            return false;
+        }
+        return true;
 
-		if(result == 0){
-			return false;
-		}
-		return true;
+    }
 
-	}
+    Score getScoreValueNumericalMode(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
+        float result = getValueNumericalMode(nonSearchableAttributeValues);
 
-	Score getScoreValueNumericalMode(std::map<std::string, Score> nonSearchableAttributeValues){
-		float result = getValueNumericalMode(nonSearchableAttributeValues);
+        Score resultScore;
+        resultScore.setScore(result);
 
-		Score resultScore;
-		resultScore.setScore(result);
+        return resultScore;
+    }
 
-		return resultScore;
-	}
+    float getValueNumericalMode(
+            std::map<std::string, Score> nonSearchableAttributeValues) {
 
+        // set values of variables
+        for (std::map<std::string, float>::iterator symbol = symbolVariables
+                .begin(); symbol != symbolVariables.end(); ++symbol) {
+            symbol->second = nonSearchableAttributeValues[symbol->first]
+                    .castToFloat();
+        }
 
-	float getValueNumericalMode(std::map<std::string, Score> nonSearchableAttributeValues){
+        return this->expression.value();
 
-
-		// set values of variables
-		for(std::map<std::string , float>::iterator symbol = symbolVariables.begin();
-				symbol != symbolVariables.end(); ++symbol){
-			symbol->second = nonSearchableAttributeValues[symbol->first].castToFloat();
-		}
-
-		return this->expression.value();
-
-	}
-
+    }
 
 };
-class FilterQueryEvaluator : public NonSearchableAttributeExpressionEvaluator
-{
+class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
 public:
 
-	FilterQueryEvaluator(const std::vector< std::string > nonSearchableAttributeNames ,
-					  const std::vector< FilterType > nonSearchableAttributeTypes,
-					  BooleanOperation op){
-		this->nonSearchableAttributeNames = nonSearchableAttributeNames;
-		this->nonSearchableAttributeTypes = nonSearchableAttributeTypes;
-		this->operation = op;
-	}
+    FilterQueryEvaluator() {
+    }
+    void setOperation(BooleanOperation op) {
+        this->operation = op;
+    }
 
-	bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues){
-		switch (operation) {
-			case srch2::instantsearch::BooleanOperatorAND:
-				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
-								criterion != criteria.end() ; ++criterion){
-					QueryExpression * qe = *criterion;
-					if(! qe->getBooleanValue(nonSearchableAttributeValues)){
-						return false;
-					}
+    bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) {
+        switch (operation) {
+        case srch2::instantsearch::BooleanOperatorAND:
+            for (std::vector<QueryExpression *>::iterator criterion = criteria
+                    .begin(); criterion != criteria.end(); ++criterion) {
+                QueryExpression * qe = *criterion;
+                if (!qe->getBooleanValue(nonSearchableAttributeValues)) {
+                    return false;
+                }
 
-				}
-				return true;
-			case srch2::instantsearch::BooleanOperatorOR:
-				for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
-								criterion != criteria.end() ; ++criterion){
-					QueryExpression * qe = *criterion;
-					if(qe->getBooleanValue(nonSearchableAttributeValues)){
-						return true;
-					}
+            }
+            return true;
+        case srch2::instantsearch::BooleanOperatorOR:
+            for (std::vector<QueryExpression *>::iterator criterion = criteria
+                    .begin(); criterion != criteria.end(); ++criterion) {
+                QueryExpression * qe = *criterion;
+                if (qe->getBooleanValue(nonSearchableAttributeValues)) {
+                    return true;
+                }
+            }
+            return false;
+            break;
+        default:
+            break;
+        }
+        return false; // TODO : should change to ASSERT(false); because it should never reach here
+    }
 
-				}
-				return false;
-				break;
-			default:
-				break;
-		}
-		return false; // TODO : should change to ASSERT(false); because it should never reach here
-	}
+    bool addCriterion(std::string criteriaString) {
+        string filedRegexString = "\\s*\\w+(\\.{0,1}\\w+)+\\s*"; //TODO: alpha numeric or underscores, minus support also
+        string keywordRegexString =
+                "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // any value that is in double quotes, remove the double quote before setting it in the members
+        string validNumRegexString = "\\s*(\\d+|\\*)\\s+TO\\s+(\\d+|\\*)\\s*"; // TODO: add the string support too.
+        string validDateRegexString =
+                "\\s*(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s+TO\\s+(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s*"; // yyyy/mm/dd
+        std::string rangeCriterionRegexString = filedRegexString + ":\\s*\\[("
+                + validDateRegexString + "|" + validNumRegexString + ")\\]\\s*";
+        boost::regex rangeCriterionRegex(rangeCriterionRegexString);
+        std::string assignmentCriterionRegexString = filedRegexString + ":"
+                + keywordRegexString;
+        boost::regex assignmentCriterionRegex(assignmentCriterionRegexString);
+        if (boost::regex_match(criteriaString, rangeCriterionRegex)) {
+            SolrRangeQueryExpression * sqe = new SolrRangeQueryExpression(criteriaString);
+            bool isParsable = sqe->parse();
+            if (!isParsable) {
+                return false; // TODO: get the message
+            } else {
+                criteria.push_back(sqe);
+                return true;
+            }
+        } else if (boost::regex_match(criteriaString,assignmentCriterionRegex)) {
+            SolrAssignmentQueryExpression * sqe = new SolrAssignmentQueryExpression(criteriaString);
+            bool isParsable = sqe->parse();
+            if (!isParsable) {
+                return false;
+            } else {
+                criteria.push_back(sqe);
+                return true;
+            }
+        } else {
+            string complexExpressionRegexString = "\\s*CMPLX\\(.*\\)\\s*"; // need to be careful here. assumption is the fq regex has taken care of the right syntax
+            boost::regex cmplxCriterionRegex(complexExpressionRegexString);
+            if (boost::regex_match(criteriaString, cmplxCriterionRegex)) {
+                ComplexQueryExpression * cqe = new ComplexQueryExpression(criteriaString);
+                bool isParsable = cqe->parse();
+                if (!isParsable) {
+                    return false;
+                } else {
+                    criteria.push_back(cqe);
+                    return true;
+                }
+            } else {
+                return false; // TODO invalid filter syntax.
+            }
+        }
+    }
 
-	bool addCriterion(std::string criteriaString){
-		std::string assignmentCriterionRegexString = ".*:.*";
-		std::string rangeCriterionRegexString = ".*:\[.*TO.*\]";
-
-		boost::regex assignmentCriterionRegex(assignmentCriterionRegexString);
-		boost::regex rangeCriterionRegex(rangeCriterionRegexString);
-
-		if(boost::regex_match(criteriaString,assignmentCriterionRegex)){
-			SolrAssignmentQueryExpression * sqe = new SolrAssignmentQueryExpression(nonSearchableAttributeNames,nonSearchableAttributeTypes,criteriaString);
-			bool isParsable = sqe->parse();
-			if(!isParsable){
-				return false;
-			}else{
-				criteria.push_back(sqe);
-				return true;
-			}
-
-		}else if(boost::regex_match(criteriaString,rangeCriterionRegex)){
-			SolrRangeQueryExpression * sqe = new SolrRangeQueryExpression(nonSearchableAttributeNames,nonSearchableAttributeTypes,criteriaString);
-			bool isParsable = sqe->parse();
-			if(!isParsable){
-				return false;
-			}else{
-				criteria.push_back(sqe);
-				return true;
-			}
-		}else{
-			ComplexQueryExpression * cqe = new ComplexQueryExpression(nonSearchableAttributeNames,nonSearchableAttributeTypes,criteriaString);
-			bool isParsable = cqe->parse();
-			if(!isParsable){
-				return false;
-			}else{
-				criteria.push_back(cqe);
-				return true;
-			}
-		}
-	}
-
-	~FilterQueryEvaluator(){
-		for(std::vector<QueryExpression * >::iterator criterion = criteria.begin();
-				criterion != criteria.end(); ++criterion){
-				delete *criterion;
-		}
-	}
+    ~FilterQueryEvaluator() {
+        for (std::vector<QueryExpression *>::iterator criterion =
+                criteria.begin(); criterion != criteria.end(); ++criterion) {
+            delete *criterion;
+        }
+    }
 private:
-	std::vector< std::string > nonSearchableAttributeNames;
-	std::vector< FilterType > nonSearchableAttributeTypes;
-
-	std::vector<QueryExpression * > criteria;
-	BooleanOperation operation;
+    std::vector<QueryExpression *> criteria;
+    BooleanOperation operation;
 
 };
 

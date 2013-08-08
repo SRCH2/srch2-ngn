@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <event.h>
+#include <evhttp.h>
+#include <event2/http.h>
+#include <sys/queue.h>
 
 
 using boost::posix_time::time_input_facet;
@@ -61,6 +65,8 @@ time_t convertPtimeToTimeT(boost::posix_time::ptime t);
 std::string convertTimeFormatToLong(std::string & timeString);
 std::string convertLongToTimeFormat(std::string & timeLong);
 
+void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
+        vector<string> &values);
 }
 }
 

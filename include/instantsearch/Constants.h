@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
@@ -102,7 +102,8 @@ typedef enum
 typedef enum
 {
     SortOrderAscending ,
-    SortOrderDescending
+    SortOrderDescending,
+    SortOrderNotSpecified
 } SortOrder;
 
 typedef enum{

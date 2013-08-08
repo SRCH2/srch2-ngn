@@ -43,6 +43,30 @@ def checkResult(query, responseJson,resultValue):
         if isPass == 1:
 		print  query+' test pass'
 
+
+#prepare the query based on the valid syntax
+def prepareQuery(queryKeywords):
+    query = ''
+    #################  prepare main query part
+    query = query + 'q='
+    # local parameters
+    query = query + '{defaultPrefixComplete=COMPLETE}'
+    # keywords section
+    for i in range(0, len(queryKeywords)):
+        if i == (len(queryValue)-1):
+            query=query+queryKeywords[i]
+        else:
+            query=query+queryKeywords[i]+' AND '
+    
+    ################# fuzzy parameter
+    query = query + '&fuzzy=false'
+    
+    
+    ##################################
+    return query
+    
+
+
 def testExactA1(queriesAndResultsPath):
 	#Start the engine server
 	binary='../../../../build/src/server/srch2-search-server'
@@ -59,12 +83,8 @@ def testExactA1(queriesAndResultsPath):
 	    queryValue=value[0].split()
 	    resultValue=(value[1]).split()
 	    #construct the query
-	    query='http://localhost:' + port + '/search?q='
-	    for i in range(0, len(queryValue)):
-		if i == (len(queryValue)-1):
-		    query=query+queryValue[i]
-		else:
-		    query=query+queryValue[i]+'+'
+	    query='http://localhost:' + port + '/search?'
+	    query = query + prepareQuery(queryValue)
 	    
 	    #do the query
 	    response = urllib2.urlopen(query).read()
