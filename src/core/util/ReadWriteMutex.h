@@ -32,7 +32,7 @@
 //It is safe for both platforms to include them both here.
 
 #define SEMAPHORE_NAME_LENGTH 20
-#define TIME_STAMP_LENGTH 32
+#define TIME_STAMP_LENGTH 9
 
 namespace srch2
 {
@@ -55,11 +55,6 @@ public:
       //sem_init(&m_semaphore, 0, max_readers);
       //pthread_spin_init(&m_spinlock, 0);
       gen_random_name(semaphoreName, SEMAPHORE_NAME_LENGTH);
-      // add the timestamp
-      time_t now = time(0);
-      struct tm tstruct;
-      tstruct = *localtime(&now);
-      strftime(semaphoreName +SEMAPHORE_NAME_LENGTH, TIME_STAMP_LENGTH, "%F%X", &tstruct);
       sem_unlink(semaphoreName);
       m_semaphore = sem_open(semaphoreName, O_CREAT,0,max_readers);
       if (m_semaphore == SEM_FAILED) {
@@ -144,6 +139,9 @@ private:
 	    for (int i = 0; i < len; ++i) {
 	        s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
 	    }
+	    // add the timestamp
+        unsigned now = time(0);
+        sprintf(semaphoreName +SEMAPHORE_NAME_LENGTH, "%x", now);
 	}
 };
 
