@@ -58,6 +58,9 @@ const size_t localeFormats = sizeof(localeInputs)/sizeof(localeInputs[0]);
 
 time_t convertPtimeToTimeT(boost::posix_time::ptime t);
 
+std::string convertTimeFormatToLong(std::string & timeString);
+std::string convertLongToTimeFormat(std::string & timeLong);
+
 }
 }
 

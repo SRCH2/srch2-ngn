@@ -63,7 +63,7 @@ void Srch2ServerConf::loadConfigFile(){
     ("non-searchable-attributes", po::value<string>(),"Attributes/fields in data for sorting and range query")
     ("non-searchable-attributes-types", po::value<string>(),"Types of attributes/fields in data for sorting and range query")
     ("non-searchable-attributes-default", po::value<string>(),"Default values of attributes/fields in data for sorting and range query")
-    ("non-searchable-attributes-sort", po::value<string>(),"Flag to indicate if a non-searchable attribute can be used to sort results.")
+    ("non-searchable-attributes-required", po::value<string>(),"Flag to indicate if a non-searchable attribute is required.")
 
     // facet information
     ("facet-enable", po::value<int>(),
@@ -387,7 +387,6 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
         parseError << "All Attributes Boosts are set to 1.\n";
     }
 
-    unsigned isDefaultSortAttributeNeeded = false;
 
     if (vm.count("non-searchable-attribute")
             && (vm["non-searchable-attribute"].as<string>().compare(
@@ -397,29 +396,28 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
                 vm["non-searchable-attribute"].as<string>(),
                 boost::is_any_of(","));
 
-        vector<bool> attributeIsSortable;
-        if (vm.count("non-searchable-attributes-sort")
-                && (vm["non-searchable-attributes-sort"].as<string>().compare(
+        vector<bool> attributeIsRequired;
+        if (vm.count("non-searchable-attributes-required")
+                && (vm["non-searchable-attributes-required"].as<string>().compare(
                         ignoreOption) != 0)) {
             vector<string> attributeTypesTmp;
             boost::split(attributeTypesTmp,
-                    vm["non-searchable-attributes-sort"].as<string>(),
+                    vm["non-searchable-attributes-required"].as<string>(),
                     boost::is_any_of(","));
             for (unsigned iter = 0; iter < attributeTypesTmp.size(); iter++) {
                 if (attributeTypesTmp[iter].compare("0") == 0) {
-                    attributeIsSortable.push_back(false);
+                    attributeIsRequired.push_back(false);
                 } else if (attributeTypesTmp[iter].compare("1") == 0) {
-                    attributeIsSortable.push_back(true);
-                    isDefaultSortAttributeNeeded = true;
+                    attributeIsRequired.push_back(true);
                 } else {
                     parseError
-                            << "Non-searchable-attributes-sort only accepts 0 and 1.\n";
+                            << "Non-searchable-attributes-required only accepts 0 and 1.\n";
                     configSuccess = false;
                     return;
                 }
             }
 
-            if (attributeIsSortable.size() != attributeNames.size()) {
+            if (attributeIsRequired.size() != attributeNames.size()) {
                 parseError
                         << "Non-searchable related options were not set correctly.\n";
                 configSuccess = false;
@@ -427,7 +425,7 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
             }
 
         } else { // default value is false
-            attributeIsSortable.insert(attributeIsSortable.begin(),
+            attributeIsRequired.insert(attributeIsRequired.begin(),
                     attributeNames.size(), false);
         }
 
@@ -477,7 +475,7 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
                                     pair<string, bool> >(attributeTypes[iter],
                                     pair<string, bool>(
                                             attributeDefaultValues[iter],
-                                            attributeIsSortable[iter]));
+                                            attributeIsRequired[iter]));
                 }
             } else {
                 parseError
@@ -859,12 +857,12 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess,
         // 	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
     } else {
 
-        if (isDefaultSortAttributeNeeded) {
-            parseError
-                    << "Default attribute to be used for sort is not specified.\n";
-            configSuccess = false;
-            return;
-        }
+//        if (isDefaultSortAttributeNeeded) {
+//            parseError
+//                    << "Default attribute to be used for sort is not specified.\n";
+//            configSuccess = false;
+//            return;
+//        }
         attributeToSort = 0;
     }
 

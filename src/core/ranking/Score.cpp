@@ -159,6 +159,7 @@ namespace srch2
 				this->setScore(value);
 				break;
 			case ATTRIBUTE_TYPE_TIME:
+
 				this->setScore(atol(value.c_str()));
 				break;
 		}
@@ -238,6 +239,7 @@ namespace srch2
 				ss << stringScore ;
 				break;
 			case ATTRIBUTE_TYPE_TIME:
+
 				ss << timeScore ;
 				break;
 			default:

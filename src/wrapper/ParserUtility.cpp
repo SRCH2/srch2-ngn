@@ -117,5 +117,41 @@ time_t convertPtimeToTimeT(boost::posix_time::ptime t)
        return (t-epoch).ticks() / boost::posix_time::time_duration::ticks_per_second();
 }
 
+// convert other types to string
+template<class T>
+string convertToStr(T value) {
+  std::ostringstream o;
+  if (!(o << value))
+    return "";
+  return o.str();
+}
+
+
+std::string convertTimeFormatToLong(std::string & timeString){
+    std::string stringValue = "" ;
+    for(size_t i=0; i<localeFormats; ++i)
+    {
+        std::istringstream ss(timeString);
+        ss.imbue(localeInputs[i]);
+        boost::posix_time::ptime this_time;
+        ss >> this_time;
+
+        if(this_time != boost::posix_time::not_a_date_time){
+            time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
+            long valueLong = value;
+            std::ostringstream o;
+            o << valueLong;
+            stringValue = o.str();
+        }
+
+    }
+    return stringValue;
+
+}
+std::string convertLongToTimeFormat(std::string & timeLong){
+    static boost::posix_time::ptime empch;
+
+}
+
 }
 }

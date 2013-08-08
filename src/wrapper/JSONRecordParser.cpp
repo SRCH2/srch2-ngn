@@ -150,8 +150,14 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 {
                     record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
-                	// set the default value
-                	record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                    if(attributeIter->second.second.second){
+                        // ERROR
+                        error << "\nRequifred non-searchable attribute is null.";
+                        return false;// Raise Error
+                    }else{
+                        // set the default value
+                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                    }
                 }
         	}
         }else{
@@ -437,22 +443,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 
 	// now check to see if it has proper date/time format
 
-    for(size_t i=0; i<localeFormats; ++i)
-    {
-        std::istringstream ss(temp);
-        ss.imbue(localeInputs[i]);
-        boost::posix_time::ptime this_time;
-        ss >> this_time;
-
-        if(this_time != boost::posix_time::not_a_date_time){
-        	time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
-        	long valueLong = value;
-        	stringValue = convertToStr(valueLong);
-        	return;
-        }
-
-    }
-    stringValue = "";
+	stringValue = convertTimeFormatToLong(temp);
     return;
 
 }

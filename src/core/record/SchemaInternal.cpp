@@ -178,7 +178,7 @@ FilterType SchemaInternal::getTypeOfNonSearchableAttribute(
         const unsigned nonSearchableAttributeNameId) const {
 
     if (nonSearchableAttributeNameId
-            >= this->nonSearchableAttributeTypeVector.size()) {
+            >= this->nonSearchableAttributeTypeVector.size() || nonSearchableAttributeNameId < 0) {
         ASSERT(false);
         return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT; // TODO default is text, is it ok?
     }

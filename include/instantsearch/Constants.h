@@ -60,7 +60,8 @@ typedef enum {
 
 typedef enum{
 	FacetTypeCategorical,
-	FacetTypeRange
+	FacetTypeRange,
+	FacetTypeNonSpecified
 } FacetType;
 
 typedef enum

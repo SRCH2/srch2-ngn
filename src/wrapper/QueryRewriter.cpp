@@ -168,13 +168,16 @@ void QueryRewriter::prepareFieldFilters() {
 
         unsigned filter = 0;
         if (fields->size() == 0) {
-            filter = 0x7fffffff; // TODO : get it from configuration file
+            filter = 0x7fffffff;  // it can appear in all fields
+            // TODO : get it from configuration file
         } else {
+            bool shouldApplyAnd = true;
             for (std::vector<std::string>::iterator field = fields->begin();
                     field != fields->end(); ++field) {
 
                 if (field->compare("*")) { // all fields
                     filter = 0x7fffffff;
+                    shouldApplyAnd = false;
                     break;
                 }
                 unsigned id = schema.getSearchableAttributeId(*field);
@@ -182,7 +185,7 @@ void QueryRewriter::prepareFieldFilters() {
                 bit <<= id;
                 filter |= bit;
             }
-            if (op == srch2is::BooleanOperatorAND) {
+            if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
                 filter |= 0x80000000;
             }
         }
@@ -252,7 +255,49 @@ void QueryRewriter::prepareFacetFilterInfo() {
 
         return;
     }
-    // TODO : type should also be rewritten in case it's not given by the user.
+    // type should also be rewritten in case it's not given by the user.
+    if(facetQueryContainer->types.empty()){
+        for (std::vector<std::string>::iterator fieldName =
+                facetQueryContainer->fields.begin();
+                fieldName != facetQueryContainer->fields.end() ; ++fieldName){
+
+            vector<string>::const_iterator facetIteratorInConfVector = find(
+                    indexDataContainerConf->getFacetAttributes()->begin(),
+                    indexDataContainerConf->getFacetAttributes()->end(),
+                    *fieldName);
+            int fieldFacetTypeInt =
+                    indexDataContainerConf->getFacetTypes()->at(
+                            std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
+            // TODO : validation case : if there is any missing information and this field is not in config file either
+            // this field must be removed from facet fields.
+            if(fieldFacetTypeInt == 0){
+                facetQueryContainer->types.push_back(srch2is::FacetTypeCategorical);
+            }else if (fieldFacetTypeInt == 1){
+                facetQueryContainer->types.push_back(srch2is::FacetTypeRange);
+            }
+        }
+    }else{ // if types vector is not empty it's assumed to be equal size with fields (from parser)
+        for (std::vector<srch2is::FacetType>::iterator facetType =
+                facetQueryContainer->types.begin();
+                facetType != facetQueryContainer->types.end(); ++facetType) {
+            if(*facetType == srch2is::FacetTypeNonSpecified){
+                vector<string>::const_iterator facetIteratorInConfVector = find(
+                        indexDataContainerConf->getFacetAttributes()->begin(),
+                        indexDataContainerConf->getFacetAttributes()->end(),
+                        facetQueryContainer->fields.at(std::distance(facetType ,facetQueryContainer->types.begin() )));
+                int fieldFacetTypeInt =
+                        indexDataContainerConf->getFacetTypes()->at(
+                                std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
+                // TODO : validation case : if there is any missing information and this field is not in config file either
+                // this field must be removed from facet fields.
+                if(fieldFacetTypeInt == 0){
+                    *facetType = srch2is::FacetTypeCategorical;
+                }else if (fieldFacetTypeInt == 1){
+                    *facetType = srch2is::FacetTypeRange;
+                }
+            }
+        }
+    }
     // 2. Fill out the empty places in facet info vectors
     unsigned facetFieldIndex = 0;
     for (std::vector<srch2is::FacetType>::iterator type =

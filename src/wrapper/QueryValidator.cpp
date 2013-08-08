@@ -52,7 +52,7 @@ bool QueryValidator::validate() {
     if (paramContainer->hasParameterInQuery(GeoSearchType)) {
         numberOfProvidedSearchTypes++;
     }
-    if (numberOfProvidedSearchTypes > 1) { // search type is not clear , fatal error
+    if (numberOfProvidedSearchTypes != 1) { // search type is not clear , fatal error
         paramContainer->messages.push_back(
                 std::make_pair(MessageError,
                         "Search type is not clear. Fatal error."));
@@ -261,14 +261,19 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             continue; // no need to do anymore validation for this field because it'll be removed from facets.
         }
 
+
+
         //2. Range facets should be of type unsigned or float or date
         FilterType fieldType = schema.getTypeOfNonSearchableAttribute(
                 schema.getNonSearchableAttributeId(*field));
 
-        if (facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeRange &&
-                !(fieldType == srch2is::ATTRIBUTE_TYPE_UNSIGNED
-                || fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT
-                || fieldType == srch2is::ATTRIBUTE_TYPE_TIME)) {
+        if (   !facetQueryContainer->types.empty()
+            && facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeRange
+            && !(
+                    fieldType == srch2is::ATTRIBUTE_TYPE_UNSIGNED ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_TIME
+             )) {
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "Field " + *field
@@ -282,14 +287,15 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         // empty string is the place holder for start,end and gap of facets.
         //3. validate the start,end, gap values
         bool valid = true;
-        if (facetQueryContainer->rangeStarts.at(facetParallelVectorsIndex).compare(
+        if (!facetQueryContainer->rangeStarts.empty() &&
+                facetQueryContainer->rangeStarts.at(facetParallelVectorsIndex).compare(
                 "") != 0) {
             valid = validateValueWithType(fieldType,
                     facetQueryContainer->rangeStarts.at(
                             facetParallelVectorsIndex));
         }
         // TODO : else : then this field must exist in config file
-        if (valid
+        if (valid && !facetQueryContainer->rangeEnds.empty()
                 && facetQueryContainer->rangeEnds.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
             valid = validateValueWithType(fieldType,
@@ -297,7 +303,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                             facetParallelVectorsIndex));
         }
         // TODO : else : then this field must exist in config file
-        if (valid
+        if (valid && !facetQueryContainer->rangeGaps.empty()
                 && facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
             valid = validateValueWithType(fieldType,
@@ -352,15 +358,23 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
-    for (int i = 0; i < facetQueryContainer->types.size(); i++) {
+    for (int i = 0; i < facetQueryContainer->fields.size(); i++) {
         if (find(facetParallelVectorsIndexesToErase.begin(),
                 facetParallelVectorsIndexesToErase.end(), i)
                 == facetParallelVectorsIndexesToErase.end()) { // index not in eraseVector so don't erase
-            types.push_back(facetQueryContainer->types.at(i));
             fields.push_back(facetQueryContainer->fields.at(i));
-            rangeStarts.push_back(facetQueryContainer->rangeStarts.at(i));
-            rangeEnds.push_back(facetQueryContainer->rangeEnds.at(i));
-            rangeGaps.push_back(facetQueryContainer->rangeGaps.at(i));
+            if(!facetQueryContainer->types.empty()){
+                types.push_back(facetQueryContainer->types.at(i));
+            }
+            if(!facetQueryContainer->rangeStarts.empty()){
+                rangeStarts.push_back(facetQueryContainer->rangeStarts.at(i));
+            }
+            if(!facetQueryContainer->rangeEnds.empty()){
+                rangeEnds.push_back(facetQueryContainer->rangeEnds.at(i));
+            }
+            if(!facetQueryContainer->rangeGaps.empty()){
+                rangeGaps.push_back(facetQueryContainer->rangeGaps.at(i));
+            }
         }
     }
     // now copy back
