@@ -202,6 +202,7 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const uns
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
 {
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
     if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
     {
         valid = false;
