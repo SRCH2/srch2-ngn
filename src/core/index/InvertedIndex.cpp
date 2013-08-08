@@ -374,6 +374,7 @@ const unsigned InvertedIndex::getInvertedListElementByDirectory(const unsigned i
 //ReadView InvertedListSize
 unsigned InvertedIndex::getInvertedListSize_ReadView(const unsigned invertedListId) const
 {
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
     if(invertedListId >= this->getTotalNumberOfInvertedLists_ReadView() )
         return 0;
 
