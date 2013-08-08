@@ -96,7 +96,7 @@ private:
     static const char* const filterQueryParamName; //solr
     static const char* const isFuzzyParamName; //srch2
     // local parameter params
-    static const char* const localParamDelimiter; //solr
+    static const char* const lpKeyValDelimiter; //solr
     static const char* const lpQueryBooleanOperatorParamName; //srch2
     static const char* const lpKeywordFuzzyLevelParamName; // srch2
     static const char* const lpKeywordBoostLevelParamName; // srch2
@@ -259,7 +259,7 @@ private:
      * receives a vector of terms, field:keyword.
      * for each term it calls the parseTerm to parse the term.
      */
-    void parseTerms(vector<string>& terms);
+    void parseTerms(const vector<string>& terms);
     /*
      * example: field:keyword^3~.8
      * if ":" is present, we have field information, create a vector and populate the fieldFilter vector in container
@@ -270,7 +270,7 @@ private:
      * prefixcomplete enum and populate the keywordPrefixComplete vector.
      * NOTE: populating fileds will also need to look for . and + in them and populate the fieldFilterOps vector.
      */
-    void parseTerm(string &term, boost::regex &fieldDelimeterRegex);
+    void parseTerm(const string &term, boost::regex &fieldDelimeterRegex);
     /*
      * populates the fieldFilter using localparamters.
      * example: q=keyword , has no fieldFilter specified. it will look into the lpFieldFilters for the
@@ -289,7 +289,7 @@ private:
      * example: keyword*^3~.7
      * fills up rawkeywords, keyPrefixComp, boost, simBoost.
      */
-    void parseKeyword(string &input);
+    void parseKeyword(const string &input);
     /*
      * checks if boost value is present in the input
      * example: keyword^4 has boost value 4. keyword^ has no boost value
@@ -376,7 +376,7 @@ private:
     /*
      * verifies the syntax of filter query srting.
      */
-    bool verifyFqSyntax(string &fq);
+    bool verifyFqSyntax(const string &fq);
     /*
      * populates teh termFQBooleanOperators in container.
      */

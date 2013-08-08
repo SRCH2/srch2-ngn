@@ -31,7 +31,7 @@ const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
 const char* const QueryParser::filterQueryParamName = "fq"; //solr
 const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
 // local parameter params
-const char* const QueryParser::localParamDelimiter = "="; //solr
+const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
         "defaultFieldOperator"; //srch2
 const char* const QueryParser::lpKeywordFuzzyLevelParamName =
@@ -244,8 +244,8 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
     const char* key = "facet.field"; // TODO: usse a constant
     vector<string> facetFields;
     custom_evhttp_find_headers(&headers, key, facetFields);
-    for (vector<string>::iterator facetField = facetFields.begin(); facetField != facetFields.end();
-            ++facetField) {
+    for (vector<string>::iterator facetField = facetFields.begin();
+            facetField != facetFields.end(); ++facetField) {
         fqc.fields.push_back(*facetField);
         fqc.types.push_back(srch2::instantsearch::Simple);
         // populate parallel vectors with empty string
@@ -266,8 +266,8 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
     const char* key = "facet.range"; // TODO: use a constant
     vector<string> facetFields;
     custom_evhttp_find_headers(&headers, key, facetFields);
-    for (vector<string>::iterator facetField = facetFields.begin(); facetField != facetFields.end();
-            ++facetField) {
+    for (vector<string>::iterator facetField = facetFields.begin();
+            facetField != facetFields.end(); ++facetField) {
         fqc.fields.push_back(*facetField);
         fqc.types.push_back(srch2::instantsearch::Range);
         // populate parallel vectors with empty string
@@ -285,7 +285,8 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
     stringstream startKey;
     startKey << "f." << field << ".facet.range.start"; // TODO use normal string concat
     string startKeyStr = startKey.str();
-    const char* rangeStartTemp = evhttp_find_header(&headers,startKeyStr.c_str());
+    const char* rangeStartTemp = evhttp_find_header(&headers,
+            startKeyStr.c_str());
     if (rangeStartTemp) {
         Logger::debug("rangeStart parameter found, parsing it.");
         size_t st;
@@ -338,8 +339,18 @@ void QueryParser::lengthBoostParser() {
         Logger::debug("lengthBoostParser parameter found, parsing it.");
         size_t st;
         string lengthBoost = evhttp_uridecode(lengthBoostTmp, 0, &st);
-        this->container->summary.push_back(srch2::httpwrapper::LengthBoostFlag);
-        this->container->lengthBoost = atof(lengthBoost.c_str());
+        if (isFloat(lengthBoost)) {
+            this->container->summary.push_back(
+                    srch2::httpwrapper::LengthBoostFlag);
+            this->container->lengthBoost = atof(lengthBoost.c_str());
+        } else {
+            //raise error
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "lengthBoost should be a valid float number"));
+            this->container->isParsedError = true;
+        }
+
     }
     Logger::debug("returnig from lengthBoostParser function");
 }
@@ -357,9 +368,19 @@ void QueryParser::prefixMatchPenaltyParser() {
         size_t st;
         string prefixMatchPenalty = evhttp_uridecode(prefixMatchPenaltyTmp, 0,
                 &st);
-        this->container->summary.push_back(
-                srch2::httpwrapper::PrefixMatchPenaltyFlag);
-        this->container->prefixMatchPenalty = atof(prefixMatchPenalty.c_str());
+        if (isFloat(prefixMatchPenalty)) {
+            this->container->summary.push_back(
+                    srch2::httpwrapper::PrefixMatchPenaltyFlag);
+            this->container->prefixMatchPenalty = atof(
+                    prefixMatchPenalty.c_str());
+        } else {
+            //raise error
+            this->container->messages.push_back(
+                    make_pair(MessageError, string(prefixMatchPenaltyParamName) +
+                            " should be a valid float number"));
+            this->container->isParsedError = true;
+        }
+
     }
     Logger::debug("returnig from prefixMatchPenaltyParser function");
 }
@@ -385,7 +406,7 @@ void QueryParser::fieldListParser() {
         char * pch = strtok(fieldStr, QueryParser::fieldListDelimiter);
         while (pch) {
             string field = pch;
-            if (field == "*") {
+            if (field.compare("*") == 0) {
                 this->container->responseAttributesList.clear();
                 this->container->responseAttributesList.push_back("*");
                 return;
@@ -467,9 +488,17 @@ void QueryParser::startOffsetParameterParser() {
         size_t st;
         string startStr = evhttp_uridecode(startTemp, 0, &st);
 // convert the startStr to integer.
-        this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
-// populate the summary
-        this->container->summary.push_back(ResultsStartOffset);
+        if (isUnsigned(startStr)) {
+            this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
+            // populate the summary
+            this->container->summary.push_back(ResultsStartOffset);
+        } else {
+            // raise error
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "start parameter should be a positive integer"));
+            this->container->isParsedError = true;
+        }
     }
     Logger::debug("returning from startOffsetParameterParser function");
 }
@@ -490,9 +519,18 @@ void QueryParser::numberOfResultsParser() {
         size_t st;
         string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
 // convert the rowsStr to integer. e.g. rowsStr will contain string 20
-        this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
-// populate the summary
-        this->container->summary.push_back(NumberOfResults);
+        if (isUnsigned(rowsStr)) {
+            this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+            // populate the summary
+            this->container->summary.push_back(NumberOfResults);
+        } else {
+            // raise error
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "rows parameter should be a positive integer"));
+            this->container->isParsedError = true;
+        }
+
     }
     Logger::debug("returning from numberOfResultsParser function");
 }
@@ -513,9 +551,18 @@ void QueryParser::timeAllowedParameterParser() {
         size_t st;
         string timeAllowedStr = evhttp_uridecode(timeAllowedTemp, 0, &st);
 // convert the Str to integer.
-        this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
-// populate the summary
-        this->container->summary.push_back(MaxTimeAllowed);
+        if (isUnsigned(timeAllowedStr)) {
+            this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
+            // populate the summary
+            this->container->summary.push_back(MaxTimeAllowed);
+        } else {
+            // raise error
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "timeAllowed parameter should be a positive integer"));
+            this->container->isParsedError = true;
+        }
+
     }
     Logger::debug("returning from timeAllowedParameterParser function");
 }
@@ -604,7 +651,7 @@ void QueryParser::filterQueryParameterParser() {
             this->container->filterQueryContainer = filterQueryContainer;
             this->container->summary.push_back(FilterQueryEvaluatorFlag);
             // tokenise on the basis of boolean operator
-            string operatorRegexString = "\\s+(AND|&&|OR)\\s+";//TODO: OR and ||
+            string operatorRegexString = "\\s+(AND|&&|OR)\\s+"; //TODO: OR and ||
             //TODO: check exprtk library to see what boolean operator string they use.
             boost::regex re(operatorRegexString); //TODO: move this regex compilation from here. It should happen when the engine starts
             boost::sregex_iterator filterTermItr(fq.begin(), fq.end(), re);
@@ -613,10 +660,12 @@ void QueryParser::filterQueryParameterParser() {
             vector<string> filterTermOperators;
             size_t termStartPosition = 0;
             for (; filterTermItr != filterTermEndItr; ++filterTermItr) {
-                size_t termLength = (*filterTermItr).position() - termStartPosition;
+                size_t termLength = (*filterTermItr).position()
+                        - termStartPosition;
                 string filterTerm = fq.substr(termStartPosition, termLength);
                 filterTerms.push_back(filterTerm);
-                termStartPosition = (*filterTermItr).position() + (*filterTermItr).length();
+                termStartPosition = (*filterTermItr).position()
+                        + (*filterTermItr).length();
                 filterTermOperators.push_back((*filterTermItr).str());
             }
             filterTerms.push_back(fq.substr(termStartPosition)); // push back the last token
@@ -628,8 +677,8 @@ void QueryParser::filterQueryParameterParser() {
             // get the first boolean operator and set that in evaluator. It's decided that we will only support one of AND,OR.
             fqe->setOperation(this->container->termFQBooleanOperator);
             // parse the terms
-            for (vector<string>::iterator it = filterTerms.begin(); it != filterTerms.end();
-                    ++it) {
+            for (vector<string>::iterator it = filterTerms.begin();
+                    it != filterTerms.end(); ++it) {
                 string term = *it;
                 fqe->addCriterion(term); // TODO: // pass a pointer to a vector<pairs> to this function. check if it's false  set error msg and set isParsedError to true
             }
@@ -645,7 +694,7 @@ void QueryParser::filterQueryParameterParser() {
     Logger::debug("returning from filterQueryParameterParser function");
 }
 
-bool QueryParser::verifyFqSyntax(string &fq) {
+bool QueryParser::verifyFqSyntax(const string &fq) {
     /*
      * verifies the syntax of filter query srting.
      */
@@ -729,14 +778,14 @@ void QueryParser::sortParser() {
             boost::algorithm::trim(sToken);
             Logger::debug("token trimed %s", sToken.c_str());
             fieldTokens.push_back(sToken);
-            fieldToken = strtok(NULL, localParamDelimiter);
+            fieldToken = strtok(NULL, lpKeyValDelimiter);
         }
         if (!fieldTokens.empty()) {
             SortQueryContainer *sortQueryContainer = new SortQueryContainer();
             sortQueryContainer->evaluator = new SortFilterEvaluator();
             sortQueryContainer->evaluator->field = fieldTokens;
             string order = this->orderByParser();
-            if ("" == order) {
+            if (order.compare("") == 0) {
                 sortQueryContainer->evaluator->order =
                         srch2::instantsearch::ORDER_NOT_SPECIFIED;
             } else if (boost::iequals("asc", order)) {
@@ -780,7 +829,7 @@ string QueryParser::orderByParser() {
     Logger::debug("inside orderByParser function");
     const char * orderTemp = evhttp_find_header(&headers,
             QueryParser::orderParamName);
-    string order="";
+    string order = "";
     if (orderTemp) { // if this parameter exists
         Logger::debug("orderBy Parameter found, parsing it.");
         size_t st;
@@ -835,7 +884,7 @@ void QueryParser::localParameterParser(string *input) {
             Logger::debug("pair found %s", pair.c_str());
             // split by "=" (localParamDelimiter) and fill the container
             char *pairDup = strdup(pair.c_str()); // strtok takes char* and not const char* so creating duplicate of input.
-            char *pairToken = strtok(pairDup, localParamDelimiter);
+            char *pairToken = strtok(pairDup, lpKeyValDelimiter);
             vector<string> pairKeyVal;
             Logger::debug("tokenizing pair using delimiter");
             while (pairToken) { // should give two tokesns only
@@ -846,15 +895,14 @@ void QueryParser::localParameterParser(string *input) {
                 boost::algorithm::trim(sToken);
                 Logger::debug("token trimed %s", sToken.c_str());
                 pairKeyVal.push_back(sToken);
-                pairToken = strtok(NULL, localParamDelimiter);
+                pairToken = strtok(NULL, lpKeyValDelimiter);
             }
-            if (lpQueryBooleanOperatorParamName == pairKeyVal[0]) { // default Boolean operator to be used for the fields in the query terms
+            if (0 == pairKeyVal[0].compare(QueryParser::lpQueryBooleanOperatorParamName)) { // default Boolean operator to be used for the fields in the query terms
                 string val = pairKeyVal[1];
-                boost::to_upper(val); // convert to upper case.
-                if ("OR" == val) {
+                if (boost::iequals("OR", val)) {
                     this->container->lpFieldFilterBooleanOperator =
                             srch2::instantsearch::OR;
-                } else if ("AND" == val) {
+                } else if (boost::iequals("AND", val)) {
                     this->container->lpFieldFilterBooleanOperator =
                             srch2::instantsearch::AND;
                 } else {
@@ -867,17 +915,27 @@ void QueryParser::localParameterParser(string *input) {
                             srch2::instantsearch::AND;
                 }
                 this->container->isLpFieldFilterBooleanOperatorAssigned = true;
-            } else if (lpKeywordFuzzyLevelParamName == pairKeyVal[0]) { // i tried using vecotr.at(index) showed me compile errors.
+            } else if (0
+                    == pairKeyVal[0].compare(lpKeywordFuzzyLevelParamName)) { // i tried using vecotr.at(index) showed me compile errors.
                 string val = pairKeyVal[1];
-                float f = atof(val.c_str()); //TODO: add the validation
-                this->container->lpKeywordFuzzyLevel = f;
-            } else if (lpKeywordPrefixCompleteParamName == pairKeyVal[0]) { //TODO: look into this again, why do we need this parameter?
+                if (isFloat(val)) {
+                    float f = atof(val.c_str()); //TODO: add the validation
+                    this->container->lpKeywordFuzzyLevel = f;
+                } else {
+                    //warning
+                    this->container->messages.push_back(
+                            make_pair(MessageWarning,
+                                    string(lpKeywordFuzzyLevelParamName)
+                                            + " should be a valid float number"));
+                }
+            } else if (0
+                    == pairKeyVal[0].compare(
+                            lpKeywordPrefixCompleteParamName)) { //TODO: look into this again, why do we need this parameter?
                 string val = pairKeyVal[1];
-                boost::to_upper(val);
-                if ("PREFIX" == val) {
+                if (boost::iequals("PREFIX", val)) {
                     this->container->lpKeywordPrefixComplete =
                             srch2::instantsearch::TERM_TYPE_PREFIX;
-                } else if ("COMPLETE" == val) {
+                } else if (boost::iequals("COMPLETE", val)) {
                     this->container->lpKeywordPrefixComplete =
                             srch2::instantsearch::TERM_TYPE_COMPLETE;
                 } else {
@@ -889,7 +947,7 @@ void QueryParser::localParameterParser(string *input) {
                     this->container->lpKeywordPrefixComplete =
                             srch2::instantsearch::NOT_SPECIFIED;
                 }
-            } else if (lpFieldFilterParamName == pairKeyVal[0]) {
+            } else if (0 == pairKeyVal[0].compare(lpFieldFilterParamName)) {
                 string val = pairKeyVal[1];
                 // val might be a comma separated string of fields.  field1,field2..
                 // tokenize it on ',' and set the vector in container.
@@ -979,14 +1037,15 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
      * populates the termBooleanOperators in the container
      */
     Logger::debug("inside  populateTermBooleanOperator.");
-    if ("OR" == termOperator) {
+    if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
         // we do not support OR as of now so raising a MessageWarning and setting it to AND.
         // generate MessageWarning and use AND
         this->container->messages.push_back(
                 make_pair(MessageWarning,
                         "We do not supprt OR  specified, ignoring it and using 'AND'."));
         this->container->termBooleanOperator = srch2::instantsearch::AND;
-    } else if ("AND" == termOperator) {
+    } else if (boost::iequals("AND", termOperator)
+            || termOperator.compare("&&") == 0) {
         this->container->termBooleanOperator = srch2::instantsearch::AND;
     } else {
         // generate MessageWarning and use AND
@@ -1006,9 +1065,10 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
      */
     // TODO: check for && and || also
     Logger::debug("inside populateFilterQueryTermBooleanOperators.");
-    if ("OR" == termOperator) {
+    if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
         this->container->termFQBooleanOperator = srch2::instantsearch::OR;
-    } else if ("AND" == termOperator) {
+    } else if (boost::iequals("AND", termOperator)
+            || termOperator.compare("&&") == 0) {
         this->container->termFQBooleanOperator = srch2::instantsearch::AND;
     } else {
         // generate MessageWarning and use AND
@@ -1022,7 +1082,7 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
     Logger::debug("returning from populateFilterQueryTermBooleanOperators.");
 }
 
-void QueryParser::parseTerms(vector<string>&terms) { //TODO: change it to const vector<string &terms>
+void QueryParser::parseTerms(const vector<string>&terms) { //TODO: change it to const vector<string &terms>
     /*
      * receives a vector of terms, field:keyword.
      * for each term it calls the parseTerm to parse the term.
@@ -1030,14 +1090,14 @@ void QueryParser::parseTerms(vector<string>&terms) { //TODO: change it to const 
     Logger::debug("inside parseTerms function");
     string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
     boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString); // TODO: regex to compile at engine start
-    for (std::vector<string>::iterator termItr = terms.begin();
+    for (std::vector<string>::const_iterator termItr = terms.begin();
             termItr != terms.end(); ++termItr) {
         this->parseTerm(*termItr, fieldDelimeterRegex); // parse each term
     }
     Logger::debug("returning from  parseTerms function");
 }
 
-void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) { //TODO: const string
+void QueryParser::parseTerm(const string &term, boost::regex &fieldDelimeterRegex) { //TODO: const string
     /*
      * example: field:keyword^3~.8
      * if ":" is present, we have field information, create a vector and populate the fieldFilter vector in container
@@ -1066,7 +1126,7 @@ void QueryParser::parseTerm(string &term, boost::regex &fieldDelimeterRegex) { /
     Logger::debug("returning from  parseTerm function");
 }
 
-void QueryParser::parseKeyword(string &input) {
+void QueryParser::parseKeyword(const string &input) {
     /*
      * parses the keywords
      * example: keyword*^3~.7
@@ -1152,7 +1212,7 @@ void QueryParser::populateRawKeywords(const string &input) {
         this->setInSummaryIfNotSet(RawQueryKeywords);
         Logger::debug("raw keyword found: %s", matches[0].str().c_str());
         this->container->rawQueryKeywords.push_back(matches[0].str());
-    } else if ("*" == input) { //TODO check this while testing
+    } else if (0 == input.compare("*")) { //TODO check this while testing
         this->setInSummaryIfNotSet(RawQueryKeywords);
         Logger::debug("raw keyword found: *");
         this->container->rawQueryKeywords.push_back("*");
@@ -1383,14 +1443,43 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
     string rightTopLatStr = evhttp_uridecode(rightTopLat, 0, &st3);
     string rightTopLongStr = evhttp_uridecode(rightTopLong, 0, &st4);
 // convert the rowsStr to integer.
-    this->container->geoParameterContainer->leftBottomLatitude = atof(
-            leftBottomLatStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->leftBottomLongitude = atof(
-            leftBottomLongStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->rightTopLatitude = atof(
-            rightTopLatStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->rightTopLongitude = atof(
-            rightTopLongStr.c_str()); // convert the string to char* and pass it to atoi
+    if (isFloat(leftBottomLatStr)) {
+        this->container->geoParameterContainer->leftBottomLatitude = atof(
+                leftBottomLatStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "lblat should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+    if (isFloat(leftBottomLatStr)) {
+        this->container->geoParameterContainer->leftBottomLongitude = atof(
+                leftBottomLongStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "lblong should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+    if (isFloat(leftBottomLatStr)) {
+        this->container->geoParameterContainer->rightTopLatitude = atof(
+                rightTopLatStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "rtlat should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+    if (isFloat(leftBottomLatStr)) {
+        this->container->geoParameterContainer->rightTopLongitude = atof(
+                rightTopLongStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "rtlong should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+
     Logger::debug("returning from extrasetGeoContainerProperties");
 }
 
@@ -1405,12 +1494,32 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     string centerLongStr = evhttp_uridecode(centerLong, 0, &st2);
     string radiusParamStr = evhttp_uridecode(radiusParam, 0, &st3);
 // convert the rowsStr to integer.
-    this->container->geoParameterContainer->leftBottomLatitude = atof(
-            centerLatStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->leftBottomLongitude = atof(
-            centerLongStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->rightTopLatitude = atof(
-            radiusParamStr.c_str()); // convert the string to char* and pass it to atoi
+    if (isFloat(centerLatStr)) {
+        this->container->geoParameterContainer->leftBottomLatitude = atof(
+                centerLatStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError, "clat should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+    if (isFloat(centerLongStr)) {
+        this->container->geoParameterContainer->leftBottomLongitude = atof(
+                centerLongStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "clong should be a valid float number"));
+        this->container->isParsedError = true;
+    }
+    if (isFloat(radiusParamStr)) {
+        this->container->geoParameterContainer->rightTopLatitude = atof(
+                radiusParamStr.c_str()); // convert the string to char* and pass it to atof
+    } else {
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "radius should be a valid float number"));
+        this->container->isParsedError = true;
+    }
     Logger::debug("returning from setGeoContainerProperties");
 }
 void QueryParser::setInSummaryIfNotSet(ParameterName param) {

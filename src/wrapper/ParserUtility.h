@@ -43,7 +43,7 @@ std::vector<std::string>  &split(std::string &s, std::string delimiter);
 
 bool isInteger(const std::string & s);
 
-
+bool isUnsigned(const std::string & s);
 
 bool isFloat(const std::string & s);
 

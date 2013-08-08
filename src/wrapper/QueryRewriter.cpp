@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2013 SRCH2 Inc. All rights reserved
+ * Copyright �� 2013 SRCH2 Inc. All rights reserved
  */
 
 #include "QueryRewriter.h"
@@ -120,7 +120,7 @@ void QueryRewriter::applyAnalyzer() {
     // now erase the data of erased keywords
     std::vector<std::string> rawQueryKeywords;
     std::vector<float> keywordFuzzyLevel;
-    std::vector<unsigned> keywordBoostLevel;
+    std::vector<int> keywordBoostLevel;
     std::vector<srch2is::TermType> keywordPrefixComplete;
     std::vector<std::vector<std::string> > fieldFilter;
     std::vector<srch2is::BooleanOperation> fieldFilterOps;
