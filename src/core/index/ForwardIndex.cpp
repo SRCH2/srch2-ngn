@@ -202,7 +202,7 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const uns
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
 {
-    if (recordId > this->getTotalNumberOfForwardLists_ReadView())
+    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
     {
         valid = false;
         return NULL;
