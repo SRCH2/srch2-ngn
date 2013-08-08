@@ -73,9 +73,9 @@ unsigned getNormalizedThreshold(unsigned keywordLength)
 }
 
 
-void buildIndex(string index_dir)
+void buildIndex(string indexDir)
 {
-    string filepath = index_dir+"/dblp40000records.csv";
+    string filepath = indexDir+"/dblp40000records.csv";
     std::ifstream data(filepath.c_str());
 
     vector<string> fields;
@@ -98,13 +98,13 @@ void buildIndex(string index_dir)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -158,9 +158,9 @@ void buildIndex(string index_dir)
     delete analyzer;
 }
 
-void buildFactualIndex(string index_dir, unsigned docsToIndex)
+void buildFactualIndex(string indexDir, unsigned docsToIndex)
 {
-    string filepath = index_dir+"whole-us-data";
+    string filepath = indexDir+"whole-us-data";
     std::ifstream data(filepath.c_str());
 
     std::cout << filepath << std::endl;
@@ -184,13 +184,13 @@ void buildFactualIndex(string index_dir, unsigned docsToIndex)
     }
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -356,24 +356,25 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     queryKeywords.clear();
 }
 
-void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed, srch2::instantsearch::TermType termType)
+void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed)
 {
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
-    for (unsigned i = 0; i < queryKeywords.size(); ++i)
-    {
+    srch2is::TermType termType = TERM_TYPE_COMPLETE;
+    for (unsigned i = 0; i < queryKeywords.size(); ++i){
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         
         Term *term;
+        if(i == (queryKeywords.size()-1)){
+            termType = TERM_TYPE_PREFIX;
+        }
 
-        if(ed==0)
-        {
+        if(ed==0){
             term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
         }
-        else
-        {
+        else{
             term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
         }
         term->addAttributeToFilterTermHits(-1);
@@ -1029,16 +1030,16 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0).getFloatScore();
+    float resultValue = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
-    return resVal;
+    return resultValue;
 }
 
-bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed, srch2::instantsearch::TermType termType)
+int pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
+    parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -1050,10 +1051,10 @@ bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearch
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
     //printResults(queryResults);
     //cout << "Number of results: " << queryResults->getNumberOfResults() << endl;
-    bool returnvalue =  queryResults->getNumberOfResults()>0;
+    int returnValue =  queryResults->getNumberOfResults();
     delete queryResults;
     delete query;
-    return returnvalue;
+    return returnValue;
 }
 
 void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits = 10)

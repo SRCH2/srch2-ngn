@@ -38,7 +38,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer,
-        const Srch2ServerConf *indexDataContainerConf) :
+        const ConfigManager *indexDataContainerConf) :
         paramsContainer(paramsContainer) {
     this->indexDataContainerConf = indexDataContainerConf;
 }

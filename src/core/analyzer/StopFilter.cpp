@@ -37,9 +37,9 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch {
 
-StopFilter::StopFilter(TokenOperator *tokenOperator,
-		std::string &stopFilterFilePath) : TokenFilter(tokenOperator) {
-	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
+StopFilter::StopFilter(TokenStream *tokenStream,
+		std::string &stopFilterFilePath) : TokenFilter(tokenStream) {
+	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
 	this->createStopWordList(stopFilterFilePath); // construct the stopWordDictionary
 }
 
@@ -52,14 +52,14 @@ bool StopFilter::isStopWord(const std::string &token) const {
 			this->stopWordsVector.end(), token) != this->stopWordsVector.end());
 }
 
-bool StopFilter::incrementToken() {
+bool StopFilter::processToken() {
 	while (true) {
-		if (!this->tokenOperator->incrementToken()) {
+		if (!this->tokenStream->processToken()) {
 			return false;
 		}
 		std::string currentToken = "";
 		// converts the charType to string
-		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
+		charTypeVectorToUtf8String(tokenStreamContainer->currentToken, currentToken);
 		// returns true if the currentToken is one of the stop words.
 		if (!this->isStopWord(currentToken)) {
 			return true;

@@ -92,9 +92,10 @@ void addRecords() {
     schema->setNonSearchableAttribute("class", ATTRIBUTE_TYPE_TEXT, "Z");
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = srch2is::Analyzer::create(
-            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(
+            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

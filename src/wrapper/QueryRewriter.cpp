@@ -29,7 +29,7 @@ namespace srch2 {
 
 namespace httpwrapper {
 
-QueryRewriter::QueryRewriter(const Srch2ServerConf *indexDataContainerConf,
+QueryRewriter::QueryRewriter(const ConfigManager *indexDataContainerConf,
         const Schema & schema, const Analyzer & analyzer,
         ParsedParameterContainer * paramContainer) :
         schema(schema), analyzer(analyzer) {

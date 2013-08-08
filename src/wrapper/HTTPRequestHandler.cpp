@@ -104,7 +104,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
  */
 void HTTPRequestHandler::printResults(evhttp_request *req,
         const evkeyvalq &headers, const QueryPlan &queryPlan,
-        const Srch2ServerConf *indexDataContainerConf,
+        const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const unsigned ts1,
@@ -548,7 +548,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const Srch2ServerConf *indexDataContainerConf =
+    const ConfigManager *indexDataContainerConf =
             server->indexDataContainerConf;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
@@ -596,7 +596,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const Srch2ServerConf *indexDataContainerConf =
+    const ConfigManager *indexDataContainerConf =
             server->indexDataContainerConf;
 
     ParsedParameterContainer paramContainer;

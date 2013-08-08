@@ -32,7 +32,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 QueryValidator::QueryValidator(const Schema & schema,
-        const Srch2ServerConf &indexDataContainerConf,
+        const ConfigManager &indexDataContainerConf,
         ParsedParameterContainer * paramContainer) :
         schema(schema), indexDataContainerConf(indexDataContainerConf){
     this->paramContainer = paramContainer;

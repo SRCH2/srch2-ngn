@@ -3,7 +3,7 @@
 #ifndef __WRAPPER_HTTPREQUESTHANDLER_H__
 #define __WRAPPER_HTTPREQUESTHANDLER_H__
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 #include "URLParser.h"
 #include "json/json.h"
 #include "Srch2Server.h"
@@ -33,12 +33,12 @@ namespace httpwrapper
 
 class HTTPRequestHandler
 {
-	public:
-		static void searchCommand(evhttp_request *req, Srch2Server *server);
-		static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
-		static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
-		static void updateCommand(evhttp_request *req, Srch2Server *server);
-		static void saveCommand(evhttp_request *req, Srch2Server *server);
+    public:
+        static void searchCommand(evhttp_request *req, Srch2Server *server);
+        static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
+        static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
+        static void updateCommand(evhttp_request *req, Srch2Server *server);
+        static void saveCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
@@ -47,7 +47,7 @@ class HTTPRequestHandler
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const QueryPlan &queryPlan,
-				const Srch2ServerConf *indexDataContainerConf,
+				const ConfigManager *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,

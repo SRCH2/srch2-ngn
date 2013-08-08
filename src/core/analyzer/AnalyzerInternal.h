@@ -12,9 +12,10 @@
 #include <map>
 #include <fstream>
 #include <instantsearch/Analyzer.h>
+#include <instantsearch/Constants.h>
 #include <boost/regex.hpp>
-#include "TokenOperator.h"
 #include <string>
+#include "TokenStream.h"
 #include "util/Logger.h"
 
 using std::vector;
@@ -28,27 +29,7 @@ namespace instantsearch {
 
 class Record;
 
-struct TokenAttributeHits {
-	/** Each entry has position information as follows:
-	 *  Attribute -> First 8bits -> Attribute in which the token hit occurred
-	 *  Hits -> Last 24 bits -> Position within the attribute where the token hit occurred.
-	 *  The positions start from 1, this is because the positions in PositionIndex are ZERO terminated.
-	 *
-	 *  The maximum number of allowed Attributes is checked by the following assert
-	 *  ASSERT( attribute <  0xff);
-	 *
-	 *  i.e. 255
-	 *
-	 *  The maximum number of the positionHit is checked by the following assert
-	 *  ASSERT( position <  0xffffff);
-	 *
-	 * i.e. 4 294 967 295
-	 *
-	 */
-	vector<unsigned> attributeList;
-};
-
-class AnalyzerInternal: public Analyzer {
+class AnalyzerInternal {
 public:
 
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
@@ -66,23 +47,18 @@ public:
 	void loadData(const std::string &s) const;
 
 
-	virtual TokenOperator * createOperatorFlow() = 0;
-	virtual ~AnalyzerInternal() {
-	}
+	virtual TokenStream * createOperatorFlow() = 0;
 
-	/*
-	 *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
-	 *  for setting/getting the special characters.
-	 */
-	void setRecordAllowedSpecialCharacters(
-			const std::string &recordAllowedSpecialCharacters) {
-		this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-		CharSet::setRecordAllowedSpecialCharacters(
-				recordAllowedSpecialCharacters);
-	}
-	const std::string& getRecordAllowedSpecialCharacters() const {
-		return this->recordAllowedSpecialCharacters;
-	}
+	virtual ~AnalyzerInternal() {};
+
+	 /*
+     *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
+     *  for setting/getting the special characters.
+     */
+    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters) {
+            this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+            CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+    }
 
 	void prepareRegexExpression() {
 		//allow all characters
@@ -105,32 +81,30 @@ public:
 		// example: " ab$(cd " -> " ab  cd "
 		const std::string string1 = boost::regex_replace(inputString,
 				disallowedCharactersRegex, DEFAULT_DELIMITER_STRING);
-
 		// example: " ab  cd " -> " ab cd "
 		const std::string string2 = boost::regex_replace(string1,
 				multipleSpaceRegex, DEFAULT_DELIMITER_STRING);
 
 		// example: " ab cd " -> "ab cd"
-		const std::string string3 = boost::regex_replace(string2,
-				headTailSpaceRegex, "");
-
+		const std::string string3 = boost::regex_replace(string2,headTailSpaceRegex, "");
 		return string3;
 	}
 
-	static void load(AnalyzerInternal &analyzer,
-			boost::archive::binary_iarchive &ia) {
-		ia >> analyzer;
-	}
-	;
-	const AnalyzerType& getAnalyzerType() const {
-		return analyzerType;
-	}
+	void load(boost::archive::binary_iarchive &ia) {
+		ia >> *this;
+		Logger::debug("#### AnalyzerInternal Variables:   \n");
+		Logger::debug("Stemmer Flag:                  %s\n", this->stemmerFlag);
+		Logger::debug("Stemmer File Path :            %s\n", this->stemmerFilePath.c_str());
+		Logger::debug("Stop Word File Path:           %s\n", this->stopWordFilePath.c_str());
+		Logger::debug("Synonym File Path is:          %s\n", this->synonymFilePath.c_str());
+		Logger::debug("Synonym Keep Origin Flag is:   %s\n", this->synonymKeepOriginFlag);
+		Logger::debug("Analyzer Type:                 %s\n\n\n", this->analyzerType);
+	    return;
+	};
 
-	static void save(const AnalyzerInternal &analyzer,
-			boost::archive::binary_oarchive &oa) {
-		oa << analyzer;
-	}
-	;
+	void save(boost::archive::binary_oarchive &oa) {
+		oa << *this;
+	};
 
 	/**
 	 * Function to tokenize a given record.
@@ -140,30 +114,39 @@ public:
 	void tokenizeRecord(const Record *record,
 			map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
 
-	/**
-	 * Function to tokenize a given query.
-	 * Remove duplicates like in query, "nose bleed nose" -> "nose bleed"
-	 * @param[in] queryString
-	 * @param[in, out] queryKeywords
-	 * @param[in] delimiterCharater
-	 */
-	void tokenizeQuery(const string &queryString,
-			vector<string> &queryKeywords) const;
+	 /**
+     * Function to tokenize a given query.
+     * Remove duplicates like in query, "nose bleed nose" -> "nose bleed"
+     * @param[in] queryString
+     * @param[in, out] queryKeywords
+     * @param[in] delimiterCharater
+     */
+    void tokenizeQuery(const string &queryString,
+                    vector<string> &queryKeywords) const;
 
-	void tokenizeQueryWithFilter(const string &queryString,
-			vector<string> &queryKeywords, const char &delimiterCharacter,
-			const char &filterDelimiterCharacter,
-			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
-			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			vector<unsigned> &filter) const;
+    void tokenizeQueryWithFilter(const string &queryString,
+                    vector<string> &queryKeywords, const char &delimiterCharacter,
+                    const char &filterDelimiterCharacter,
+                    const char &fieldsAndCharacter, const char &fieldsOrCharacter,
+                    const std::map<std::string, unsigned> &searchableAttributesNameToId,
+                    vector<unsigned> &filter) const;
+
+    // getter for the protected fields
+    const AnalyzerType& getAnalyzerType() const;
+    const StemmerNormalizerFlagType& getStemmerFlag() const;
+    const string& getRecordAllowedSpecialCharacters() const;
+    const string& getStopWordFilePath() const;
+    const string& getSynonymFilePath() const;
+    const string& getStemmerFilePath() const;
+    const SynonymKeepOriginFlag& getSynonymKeepOriginFlag() const;
 
 protected:
-	boost::shared_ptr<SharedToken> sharedToken;
+	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
 
-	TokenOperator* tokenOperator;
-	string recordAllowedSpecialCharacters;
+	TokenStream* tokenStream;
 	AnalyzerType analyzerType;
-	StemmerNormalizerFlagType stemmerType; // This flag shows that we want to stem or not.
+	StemmerNormalizerFlagType stemmerFlag; // This flag shows that we want to stem or not.
+	string recordAllowedSpecialCharacters;
 	string stopWordFilePath;
 	string synonymFilePath;
 	string stemmerFilePath;
@@ -183,6 +166,7 @@ protected:
 		ar & synonymFilePath;
 		ar & synonymKeepOriginFlag;
 		ar & stemmerFilePath;
+		ar & stemmerFlag;
 	}
 
 };

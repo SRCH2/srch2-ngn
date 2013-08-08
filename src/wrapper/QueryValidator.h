@@ -22,7 +22,7 @@
 
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 namespace srch2 {
 
@@ -35,7 +35,7 @@ class QueryValidator {
 public:
 
     QueryValidator(const Schema & schema,
-            const Srch2ServerConf &indexDataContainerConf,
+            const ConfigManager &indexDataContainerConf,
             ParsedParameterContainer * paramContainer);
 
     // this function goes through the summary and based on that validates the query.
@@ -44,7 +44,7 @@ public:
 private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
-    const Srch2ServerConf &indexDataContainerConf;
+    const ConfigManager &indexDataContainerConf;
 
     /*
      * This function goes over the field names in Filter List and

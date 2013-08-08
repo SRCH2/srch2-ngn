@@ -41,7 +41,7 @@ namespace srch2http = srch2::httpwrapper;
 
 using srch2http::Srch2Server;
 using srch2http::HTTPRequestHandler;
-using srch2http::Srch2ServerConf;
+using srch2http::ConfigManager;
 using namespace srch2::util;
 
 using std::string;
@@ -420,7 +420,7 @@ int main(int argc, char** argv)
     }
     
 	
-    Srch2ServerConf *serverConf = new Srch2ServerConf(srch2_config_file);
+    ConfigManager *serverConf = new ConfigManager(srch2_config_file);
 
     serverConf->loadConfigFile();
 	

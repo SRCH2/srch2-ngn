@@ -28,7 +28,7 @@
 #include <evhttp.h>
 #include <event2/http.h>
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 #include "instantsearch/Analyzer.h"
 #include "instantsearch/Schema.h"
 #include "ParsedParameterContainer.h"

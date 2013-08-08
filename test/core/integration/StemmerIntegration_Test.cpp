@@ -38,7 +38,7 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 	srch2is::StemmerNormalizerFlagType stemType = srch2is::ENABLE_STEMMER_NORMALIZER;
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemType, " ");
+	srch2is::Analyzer *analyzer = srch2is::new Analyzer(stemType, " ");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	

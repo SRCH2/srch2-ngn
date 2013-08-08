@@ -58,6 +58,7 @@ unsigned setAttributePositionBitVector(unsigned attribute, unsigned position) {
 bool isEmpty(const string &inString) {
     return inString.compare("") == 0;
 }
+
 /*
  * Important:
  *   Since this AnalyzerInternal class can be inherited by other superclasses, it's a common practice to initialize these
@@ -69,8 +70,8 @@ AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
     this->recordAllowedSpecialCharacters =
             analyzerInternal.recordAllowedSpecialCharacters;
     prepareRegexExpression();
-    sharedToken.reset(new SharedToken);
-    this->stemmerType = analyzerInternal.stemmerType;
+    tokenStreamContainer.reset(new TokenStreamContainer);
+    this->stemmerFlag = analyzerInternal.stemmerFlag;
     this->stemmerFilePath = analyzerInternal.stemmerFilePath;
     this->stopWordFilePath = analyzerInternal.stopWordFilePath;
     this->synonymFilePath = analyzerInternal.synonymFilePath;
@@ -86,8 +87,8 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
     prepareRegexExpression();
-    sharedToken.reset(new SharedToken);
-    this->stemmerType = stemmerFlag;
+    tokenStreamContainer.reset(new TokenStreamContainer);
+    this->stemmerFlag = stemmerFlag;
     this->stemmerFilePath = stemmerFilePath;
     this->stopWordFilePath = stopWordFilePath;
     this->synonymFilePath = synonymFilePath;
@@ -97,14 +98,14 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 
 string AnalyzerInternal::applyFilters(string input) {
 
-    TokenOperator * tokenOperator = this->createOperatorFlow();
+    TokenStream * tokenStream = this->createOperatorFlow();
 
     this->loadData(input);
 
     string result = "";
-    while (tokenOperator->incrementToken()) {
+    while (tokenStream->processToken()) {
         vector<CharType> charVector;
-        tokenOperator->getCurrentToken(charVector);
+        charVector = tokenStream->getProcessedToken();
         string tmp;
         charTypeVectorToUtf8String(charVector, tmp);
         result += tmp;
@@ -116,9 +117,9 @@ string AnalyzerInternal::applyFilters(string input) {
 void AnalyzerInternal::loadData(const string &s) const {
     std::vector<CharType> charVector;
     utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-    this->sharedToken->currentToken.clear();
-    this->sharedToken->completeCharVector = charVector;
-    this->sharedToken->offset = 0;
+    this->tokenStreamContainer->currentToken.clear();
+    this->tokenStreamContainer->completeCharVector = charVector;
+    this->tokenStreamContainer->offset = 0;
 }
 
 /**
@@ -150,10 +151,10 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
             tokens.clear();
             loadData(*attributeValue);
             string currentToken = "";
-            while (tokenOperator->incrementToken()) //process the token one by one
+            while (tokenStream->processToken()) //process the token one by one
             {
                 vector<CharType> charVector;
-                tokenOperator->getCurrentToken(charVector);
+                charVector = tokenStream->getProcessedToken();
                 charTypeVectorToUtf8String(charVector, currentToken);
                 tokens.push_back(currentToken);
                 //cout<<currentToken<<endl;
@@ -186,10 +187,10 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
     queryKeywords.clear();
     loadData(queryString);
     string currentToken = "";
-    while (tokenOperator->incrementToken()) //process the token one by one
+    while (tokenStream->processToken()) //process the token one by one
     {
         vector<CharType> charVector;
-        tokenOperator->getCurrentToken(charVector);
+        charVector = this->tokenStream->getProcessedToken();
         charTypeVectorToUtf8String(charVector, currentToken);
         queryKeywords.push_back(currentToken);
         //cout<<currentToken<<endl;
@@ -254,7 +255,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
         const string cleanString = this->cleanString(one_pair[0]);
         queryKeywords.push_back(cleanString);
 
-        if (one_pair.size() == 1) { // have no filter information
+        if (one_pair.size() == 1) {        // have no filter information
             filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
             continue;
         }
@@ -283,8 +284,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
             }
 
             unsigned bit = 1;
-            ASSERT(iter->second < 31);
-            // the left most bit is reserved for indicating the AND/OR relation between fields
+            ASSERT(iter->second < 31); // the left most bit is reserved for indicating the AND/OR relation between fields
             bit <<= iter->second;
             filter |= bit;
         }
@@ -300,6 +300,35 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
     if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])))
         queryKeywords.clear();
 }
+
+const AnalyzerType& AnalyzerInternal::getAnalyzerType() const{
+    return this->analyzerType;
+}
+
+const StemmerNormalizerFlagType& AnalyzerInternal::getStemmerFlag() const{
+    return this->stemmerFlag;
+}
+
+const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
+    return this->recordAllowedSpecialCharacters;
+}
+
+const string& AnalyzerInternal::getStopWordFilePath() const{
+    return stopWordFilePath;
+}
+
+const string& AnalyzerInternal::getSynonymFilePath() const{
+    return this->synonymFilePath;
+}
+
+const string& AnalyzerInternal::getStemmerFilePath() const{
+    return this->stemmerFilePath;
+}
+
+const SynonymKeepOriginFlag& AnalyzerInternal::getSynonymKeepOriginFlag() const{
+    return synonymKeepOriginFlag;
+}
+
 
 }
 }

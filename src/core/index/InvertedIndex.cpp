@@ -374,7 +374,8 @@ const unsigned InvertedIndex::getInvertedListElementByDirectory(const unsigned i
 //ReadView InvertedListSize
 unsigned InvertedIndex::getInvertedListSize_ReadView(const unsigned invertedListId) const
 {
-    if(invertedListId > this->getTotalNumberOfInvertedLists_ReadView() )
+    // A valid list ID is in the range [0, 1, ..., directorySize - 1]
+    if(invertedListId >= this->getTotalNumberOfInvertedLists_ReadView() )
         return 0;
 
     ts_shared_ptr<vectorview<InvertedListContainerPtr> > readView;

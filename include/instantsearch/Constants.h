@@ -32,28 +32,29 @@ namespace instantsearch {
 
 /// Analyzer related constants
 typedef enum {
-	// there is no numbering for this enum. By default the numbers start from 0
-	DISABLE_STEMMER_NORMALIZER, // Disables stemming
-	ENABLE_STEMMER_NORMALIZER, // Enables stemming
-	ONLY_NORMALIZER
+    // there is no numbering for this enum. By default the numbers start from 0
+    DISABLE_STEMMER_NORMALIZER, // Disables stemming
+    ENABLE_STEMMER_NORMALIZER, // Enables stemming
+    ONLY_NORMALIZER
 } StemmerNormalizerFlagType;
 
 typedef enum {
-	DICTIONARY_PORTER_STEMMER
+    DICTIONARY_PORTER_STEMMER
 // We can add other kinds of stemmer here, like MIRROR_STEMMER
 
 } StemmerType; // TODO: I should remove the '_' from the name, (it is temporary)
 
 typedef enum {
-	SYNONYM_KEEP_ORIGIN, // Disables stemming
-	SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
+    SYNONYM_KEEP_ORIGIN, // Disables stemming
+    SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
 } SynonymKeepOriginFlag;
 
 
 typedef enum {
-	STANDARD_ANALYZER,    // StandardAnalyzer
-	SIMPLE_ANALYZER       // SimpleAnalyzer
+    STANDARD_ANALYZER,    // StandardAnalyzer
+    SIMPLE_ANALYZER       // SimpleAnalyzer
 } AnalyzerType;
+
 
 
 /// Faceted search filter

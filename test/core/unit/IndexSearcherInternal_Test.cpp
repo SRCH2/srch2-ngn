@@ -36,47 +36,42 @@ bool checkContainment(vector<string> &prefixVector, const string &prefix) {
 }
 
 // TODO Needs change in   indexSearcherInternal->computeActiveNodeSet(term) to run.
-void ActiveNodeSet_test() {
-    /*   // construct a trie for the searcher
-     Trie *trie = new Trie();
+void ActiveNodeSet_test()
+{
+ /*   // construct a trie for the searcher
+    Trie *trie = new Trie();
 
-     unsigned invertedIndexOffset;
-     trie->addKeyword("cancer", invertedIndexOffset);
-     trie->addKeyword("canada", invertedIndexOffset);
-     trie->addKeyword("canteen", invertedIndexOffset);
-     trie->addKeyword("can", invertedIndexOffset);
-     trie->addKeyword("cat", invertedIndexOffset);
-     trie->addKeyword("dog", invertedIndexOffset);
-     trie->commit();
-     */
+    unsigned invertedIndexOffset;
+    trie->addKeyword("cancer", invertedIndexOffset);
+    trie->addKeyword("canada", invertedIndexOffset);
+    trie->addKeyword("canteen", invertedIndexOffset);
+    trie->addKeyword("can", invertedIndexOffset);
+    trie->addKeyword("cat", invertedIndexOffset);
+    trie->addKeyword("dog", invertedIndexOffset);
+    trie->commit();
+*/
 
-    ///Create Schema
-    Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
-    schema->setPrimaryKey("article_id"); // integer, not searchable
-    schema->setSearchableAttribute("article_title", 7); // searchable text
+	///Create Schema
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
+	schema->setPrimaryKey("article_id"); // integer, not searchable
+	schema->setSearchableAttribute("article_title", 7); // searchable text
 
-    Record *record = new Record(schema);
-    Analyzer *analyzer = srch2is::Analyzer::create(
-            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Record *record = new Record(schema);
+	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
-    unsigned mergeEveryNSeconds = 3;
-    unsigned mergeEveryMWrites = 5;
-    srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
-            new Cache(134217728, 20000), mergeEveryNSeconds, mergeEveryMWrites,
-            INDEX_DIR, "");
-    srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData,
-            analyzer, schema);
+	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryMWrites = 5;
+	srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(new Cache(134217728,20000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+	srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData, analyzer, schema);
 
-    record->setPrimaryKey(1001);
-    record->setSearchableAttributeValue("article_title",
-            "cancer canada canteen can cat dog");
-    record->setInMemoryData("test string");
-    indexer->addRecord(record, 0);
-    indexer->commit();
+	record->setPrimaryKey(1001);
+	record->setSearchableAttributeValue("article_title", "cancer canada canteen can cat dog");
+	record->setInMemoryData("test string");
+	indexer->addRecord(record, 0);
+	indexer->commit();
 
-    IndexSearcherInternal *indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
+    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
 
     unsigned threshold = 2;
     Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
@@ -124,9 +119,8 @@ void addRecords() {
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = srch2is::Analyzer::create(
-            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

@@ -10,7 +10,7 @@ namespace util {
 
 bool checkDirExistence(const char *dirName)
 {
-	return access(dirName, NULL) == 0;
+	return access(dirName, F_OK) == 0;
 }
 
 int createDir(const char *pathName)

@@ -23,7 +23,7 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Analyzer.h>
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 using std::string;
 using std::stringstream;
@@ -113,7 +113,7 @@ class URLToDoubleQuery
         srch2is::Query *exactQuery;
         srch2is::Query *fuzzyQuery;
 
-        URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper);
+		URLToDoubleQuery(const evkeyvalq &headers, const srch2is::Analyzer *analyzer, const ConfigManager *indexDataContainerConf, const srch2is::Schema *schema, URLParserHelper &urlParserHelper);
 
         ~URLToDoubleQuery();
     private:

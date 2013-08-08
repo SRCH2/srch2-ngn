@@ -163,7 +163,7 @@ bool test(int argc, char** argv)
 
     std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
 
-    srch2http::Srch2ServerConf *serverConf = new srch2http::Srch2ServerConf(srch2_config_file);
+    srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
 	// check the license file
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
@@ -181,7 +181,7 @@ bool test(int argc, char** argv)
 	srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+	srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, serverConf->getRecordAllowedSpecialCharacters());
 
 	// Create a schema to the data source definition in the Srch2ServerConf
