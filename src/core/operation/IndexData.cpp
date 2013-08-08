@@ -688,7 +688,7 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
                                                const map<unsigned, unsigned> &keywordIdMapper,
                                                map<unsigned, unsigned> &processedRecordIds)
 {
-	shared_ptr<vectorview<unsigned> > &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
+	vectorview<unsigned>* &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
     for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
             iter != trieNodeIdMapper.end(); ++ iter)
     {

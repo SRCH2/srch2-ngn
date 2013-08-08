@@ -51,42 +51,73 @@ class vectorview {
 public:
     vectorview() {};
 
-    vectorview(vectorview<T>* vv)
-    : m_size(vv->m_size)
+    vectorview(vectorview<T>& vv)
+    : m_size(vv.m_size)
     {
-        m_array = vv->m_array;
+        m_array = vv.m_array;
+        viewType = true;
+        needToFreeOldArray = false;
     }
 
     vectorview(size_t capacity)
     : m_size(0)
     {
-        m_array.reset(new array<T>(capacity));
+        m_array =new array<T>(capacity);
+        viewType = true;
+        needToFreeOldArray = false;
     }
 
-    ~vectorview() {}
+    ~vectorview()
+    {
+        // only the last readview release the array
+        if(viewType == false)
+            delete m_array;
+    }
+
+    void setNeedToFreeOldArray(bool flag)
+    {
+        needToFreeOldArray = flag;
+    }
+
+    void setViewType(bool flag)
+    {
+        viewType = flag;
+    }
 
     void push_back(const T& inElement) {
+        //only writeview can push_back
+        assert(viewType == true);
         (*this)[m_size] = inElement;
     }
 
     void forceCreateCopy()
     {
         size_t capacity = m_array->capacity;
-        shared_ptr<array<T> > acopy(new array<T>(capacity));
+        array<T>* acopy = new array<T>(capacity);
         memcpy(acopy->extent, m_array->extent, m_size*sizeof(T));
+        if(needToFreeOldArray == false)
+            needToFreeOldArray = true;
+        else
+            delete m_array;
         m_array = acopy;
     }
 
     T& at(unsigned i)
     {
         size_t capacity = m_array->capacity;
+        // readview can only access the element [0, m_size-1] in the vectorview, writeview don't have such restrict
+        assert(viewType == true || i < m_size);
         if (i >= capacity) {
             while(i >= capacity) {
                 capacity *= 2;
                 capacity += 1;
             }
-            shared_ptr<array<T> > acopy(new array<T>(capacity));
+            array<T>* acopy = new array<T>(capacity);
             memcpy(acopy->extent, m_array->extent, m_size*sizeof(T));
+            if(needToFreeOldArray == false)
+                needToFreeOldArray = true;
+            else
+                delete m_array;
             m_array = acopy;
         }
         if (i >= m_size) {
@@ -119,9 +150,17 @@ public:
 
     size_t size() const { return m_size; }
 
+    array<T>* getArray() const {return m_array;}
+
+    void setSize(size_t size){m_size = size;}
+
 private:
-    shared_ptr<array<T> > m_array;
+    array<T>* m_array;
     size_t m_size;
+    // viewType if it's true it 's a writeview, else it's a readview
+    bool viewType;
+    // whether we need to free the old array when reallocate more space.
+    bool needToFreeOldArray;
 
     friend class boost::serialization::access;
 
@@ -137,7 +176,7 @@ private:
     {
         ar >> this->m_size;
 
-        shared_ptr<array<T> > acopy(new array<T>(this->m_size));
+        array<T>* acopy = new array<T>(this->m_size);
         ar >> boost::serialization::make_array(acopy->extent, this->m_size);
         m_array = acopy;
     }
@@ -157,7 +196,7 @@ class cowvector {
 
 private:
     shared_ptr<vectorview<T> > m_readView;
-    shared_ptr<vectorview<T> > m_writeView;
+    vectorview<T>* m_writeView;
     mutable pthread_spinlock_t m_spinlock;
 
     friend class boost::serialization::access;
@@ -174,7 +213,7 @@ private:
         /*if (this->m_readView.get() != NULL)
             delete this->m_readView.get();*/
         ar >> this->m_readView;
-        m_writeView = m_readView;
+        m_writeView = m_readView.get();
     }
 
     template<class Archive>
@@ -189,7 +228,8 @@ public:
     // TODO remove the serialization dependancy
     cowvector() {
         m_readView.reset(new vectorview<T>(1));
-        m_writeView = m_readView;
+        m_writeView = m_readView.get();
+        m_writeView->setNeedToFreeOldArray(true);
         pthread_spin_init(&m_spinlock, 0);
     };
     cowvector(size_t capacity) //Constructor
@@ -197,12 +237,15 @@ public:
         if (capacity == 0 )
             capacity = 1;
         m_readView.reset(new vectorview<T>(capacity));
-        m_writeView = m_readView;
+        m_writeView = m_readView.get();
+        m_writeView->setNeedToFreeOldArray(true);
         pthread_spin_init(&m_spinlock, 0);
     }
 
     virtual ~cowvector()
     {
+        if(m_readView.get() != m_writeView)
+            delete m_writeView;
         pthread_spin_destroy(&m_spinlock);
     }
 
@@ -213,7 +256,7 @@ public:
         pthread_spin_unlock(&m_spinlock);
     }
 
-    shared_ptr<vectorview<T> >& getWriteView()
+    vectorview<T>*&  getWriteView()
     {
         return m_writeView;
     }
@@ -221,8 +264,25 @@ public:
     void commit() //Set readView to writeView and create new a writeView from readViewCopy.
     {
         pthread_spin_lock(&m_spinlock);
-        m_readView = m_writeView;
-        m_writeView.reset(new vectorview<T>(*m_readView));
+        // if the readview and writeview is pointing the same vectorview(initail state) we only need to new a vecterview for writeview
+        if(m_readView.get() != m_writeView)
+        {
+            // if the vecterview of readview and writeview point to the same array, we just need change the size.
+            if(m_readView->getArray() == m_writeView->getArray())
+                m_readView->setSize(m_writeView->size());
+            else{// otherwise we need to reset the readview and new a new vectorview for the writeview
+                m_readView.reset(m_writeView);
+                //change the viewType to be readview
+                m_readView->setViewType(false);
+                m_writeView = new vectorview<T>(*m_readView);
+            }
+        }
+        else
+        {
+            // change the viewType to be readview
+            m_readView->setViewType(false);
+            m_writeView = new vectorview<T>(*m_readView);
+        }
         pthread_spin_unlock(&m_spinlock);
     }
 };

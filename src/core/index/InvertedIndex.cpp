@@ -43,7 +43,7 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
 	// sort this inverted list only if the flag is true.
 	// if the flag is false, we only need to commit.
 	if (needToSortEachInvertedList) {
-		shared_ptr<vectorview<unsigned> > &writeView = this->invList->getWriteView();
+		vectorview<unsigned>* &writeView = this->invList->getWriteView();
 
 		vector<InvertedListElement> elem(writeView->size());
 		for(unsigned i = 0; i< writeView->size(); i++)
@@ -68,7 +68,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 	this->invList->getReadView(readView);
 	unsigned readViewListSize = readView->size();
 
-	shared_ptr<vectorview<unsigned> > &writeView = this->invList->getWriteView();
+	vectorview<unsigned>* &writeView = this->invList->getWriteView();
 
 	unsigned writeViewListSize = writeView->size();
 	vector<InvertedListElement> elem(writeView->size());
@@ -163,7 +163,7 @@ void InvertedIndex::incrementHitCount(unsigned invertedIndexDirectoryIndex)
     }
     else
     {
-        shared_ptr<vectorview<InvertedListContainerPtr> > writeView = this->invertedIndexVector->getWriteView();
+        vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
         if (invertedIndexDirectoryIndex == writeView->size())
         {
             writeView->push_back(new InvertedListContainer(1));
@@ -181,7 +181,7 @@ float InvertedIndex::getIdf(const unsigned totalNumberOfDocuments, const unsigne
     }
     else
     {
-        shared_ptr<vectorview<InvertedListContainerPtr> > writeView = this->invertedIndexVector->getWriteView();
+        vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
         
         ASSERT(keywordId < writeView->size());
         
@@ -206,7 +206,7 @@ void InvertedIndex::initialiseInvertedIndexCommit()
     //delete this->invertedIndexVector;
     this->invertedIndexVector = new cowvector<InvertedListContainerPtr>(this->invertedListSizeDirectory.size());
     this->keywordIds = new cowvector<unsigned> (this->invertedListSizeDirectory.size());
-    shared_ptr<vectorview<InvertedListContainerPtr> > &writeView = this->invertedIndexVector->getWriteView();
+    vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     for (vector<unsigned>::iterator vectorIterator = this->invertedListSizeDirectory.begin();
             vectorIterator != this->invertedListSizeDirectory.end();
             vectorIterator++)
@@ -255,7 +255,7 @@ void InvertedIndex::commit( ForwardList *forwardList,
             float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, tf, idf, sumOfFieldBoost);
 
             //assign keywordId for the invertedListId
-            shared_ptr<vectorview<unsigned> > &writeView = this->keywordIds->getWriteView();
+            vectorview<unsigned>* &writeView = this->keywordIds->getWriteView();
             writeView->at(invertedListId) = keywordId;
             this->addInvertedListElement(invertedListId, forwardListOffset);
             forwardList->setKeywordRecordStaticScore(counter, score);
@@ -265,9 +265,9 @@ void InvertedIndex::commit( ForwardList *forwardList,
 
 void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 {
-    shared_ptr<vectorview<InvertedListContainerPtr> > &writeView = this->invertedIndexVector->getWriteView();
+    vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     unsigned sizeOfList = writeView->size();
-    shared_ptr<vectorview<unsigned> > &keywordIdsWriteView = this->keywordIds->getWriteView();
+    vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
 
     for (unsigned iter = 0; iter < sizeOfList; ++iter)
     {
@@ -284,9 +284,9 @@ void InvertedIndex::merge()
 {
     this->invertedIndexVector->commit();
     this->keywordIds->commit();
-    shared_ptr<vectorview<InvertedListContainerPtr> > &writeView = this->invertedIndexVector->getWriteView();
+    vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     // get keywordIds writeView
-    shared_ptr<vectorview<unsigned> > &keywordIdsWriteView = this->keywordIds->getWriteView();
+    vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
 
     for ( set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin(); iter != this->invertedListSetToMerge.end(); ++iter)
     {
@@ -321,7 +321,7 @@ void InvertedIndex::addRecord(ForwardList* forwardList,
             float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
             float recordLength = forwardList->getNumberOfKeywords();
 
-            shared_ptr<vectorview<unsigned> > &writeView = this->keywordIds->getWriteView();
+            vectorview<unsigned>* &writeView = this->keywordIds->getWriteView();
 
             writeView->at(invertedListId) = keywordId;
             this->addInvertedListElement(invertedListId, forwardListOffset);
@@ -338,7 +338,7 @@ void InvertedIndex::addRecord(ForwardList* forwardList,
 
 void InvertedIndex::addInvertedListElement(unsigned keywordId, unsigned recordId)
 {
-    shared_ptr<vectorview<InvertedListContainerPtr> > writeView = this->invertedIndexVector->getWriteView();
+    vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
 
     ASSERT( keywordId < writeView->size());
 
