@@ -53,16 +53,16 @@ public:
 
     vectorview(vectorview<T>& vv)
     {
-        this->setSize(vv.size());
         m_array = vv.m_array;
+        this->setSize(vv.size());
         this->setWriteView();
         this->setNeedToFreeOldArray(true);
     }
 
     vectorview(size_t capacity)
     {
-        this->setSize(0);
         m_array =new array<T>(capacity);
+        this->setSize(0);
         this->setWriteView();
         this->setNeedToFreeOldArray(true);
     }
@@ -173,6 +173,10 @@ public:
 
 private:
     array<T>* m_array;
+    // We use the 31^th bit to represent whether it's a write view (bit = 1) or a read view (bit = 0).
+    // We use the 30^th bit to represent the boolean flag "needToFreeOldArray" indicating whether we need to
+    // free the old array when we need to reallocate the array.
+    // We use the remaining 30 bits to represent the size of the array, i.e., number of valid elements in the array (not the capacity).
     size_t m_sizeAndFlags;
 
     friend class boost::serialization::access;
@@ -227,6 +231,8 @@ private:
     template<class Archive>
     void load(Archive & ar, const unsigned int version)
     {
+        if(m_readView.get() != m_writeView)
+            delete m_writeView;
         ar >> this->m_readView;
         m_writeView = m_readView.get();
     }
