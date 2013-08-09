@@ -100,7 +100,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         // Cursor points to the next element on InvertedList
         this->cursorVector.push_back(invertedListCounter);
         // keep the inverted list readviews in invertedListVector such that we can safely access them
-        this->invertedListVector.push_back(invertedListReadView);
+        this->invertedListReadViewVector.push_back(invertedListReadView);
     }
 }
 
@@ -133,7 +133,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
         cursorVector.reserve(iter.size());
-        invertedListVector.reserve(iter.size());
+        invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
@@ -145,7 +145,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
         cursorVector.reserve(iter.size());
-        invertedListVector.reserve(iter.size());
+        invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
@@ -169,7 +169,7 @@ TermVirtualList::~TermVirtualList()
     }
     this->itemsHeap.clear();
     this->cursorVector.clear();
-    this->invertedListVector.clear();
+    this->invertedListReadViewVector.clear();
     this->term = NULL;
     this->invertedIndex = NULL;
     
@@ -268,8 +268,8 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         
         unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
-        this->invertedListVector.clear();
-        const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListVector[currentHeapMax->cursorVectorPosition];
+        this->invertedListReadViewVector.clear();
+        const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
             
         bool foundValidHit = 0;
@@ -365,7 +365,7 @@ unsigned TermVirtualList::getVirtualListTotalLength() {
 	unsigned totalLen = 0;
 	for (unsigned i=0; i<itemsHeap.size(); i++)
 	{
-	    totalLen += this->invertedListVector[itemsHeap[i]->cursorVectorPosition]->size();
+	    totalLen += this->invertedListReadViewVector[itemsHeap[i]->cursorVectorPosition]->size();
 	}
 	return totalLen;
 }
