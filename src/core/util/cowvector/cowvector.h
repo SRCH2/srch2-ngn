@@ -22,6 +22,7 @@
 
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/vector.hpp>
+#include <cstring>
 #include "ts_shared_ptr.h"
 
 using boost::shared_ptr;
@@ -278,16 +279,17 @@ public:
         // if the readview and writeview is pointing the same vectorview(initail state) we only need to new a vecterview for writeview
         if(m_readView.get() != m_writeView)
         {
-            // if the vecterview of readview and writeview point to the same array, we just need change the size.
-            if(m_readView->getArray() == m_writeView->getArray())
-                m_readView->setSize(m_writeView->size());
-            else{// otherwise we need to reset the readview and new a new vectorview for the writeview
-                m_readView.reset(m_writeView);
-                //change the viewType to be readview
-                m_readView->setReadView();
-                m_writeView = new vectorview<T>(*m_readView);
-                m_writeView->setNeedToFreeOldArray(false);
+            // if the vecterview of readview and writeview point to the same array, we just force copy it
+            if(m_readView->getArray() == m_writeView->getArray()){
+                m_writeView->forceCreateCopy();
             }
+            // reset the readview and new a new vectorview for the writeview
+            m_readView.reset(m_writeView);
+            //change the viewType to be readview
+            m_readView->setReadView();
+            m_writeView = new vectorview<T>(*m_readView);
+            m_writeView->setNeedToFreeOldArray(false);
+
         }
         else
         {
