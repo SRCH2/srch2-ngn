@@ -8,6 +8,15 @@
 namespace srch2 {
 namespace util {
 
+string getDir(string file)
+{
+    int found = file.rfind("/");
+    if(found != -1)
+        return file.substr(0, found);
+    else
+        return "";
+}
+
 bool checkDirExistence(const char *dirName)
 {
 	return access(dirName, F_OK) == 0;

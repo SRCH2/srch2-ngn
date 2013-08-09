@@ -34,6 +34,7 @@
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include "util/FileOps.h"
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -425,7 +426,12 @@ int main(int argc, char** argv)
     serverConf->loadConfigFile();
 	
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
-    
+    string logDir = getDir(serverConf->getHTTPServerAccessLogFile());
+    if(!logDir.empty() && !checkDirExistence(logDir.c_str())){
+        if(createDir(logDir.c_str()) == -1){
+            exit(1);
+        }
+    }
     FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
     if(logFile == NULL){
     	Logger::setOutputFile(stdout);
