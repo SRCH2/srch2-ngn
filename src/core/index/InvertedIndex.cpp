@@ -81,9 +81,12 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
 
-	std::sort( elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
+	std::sort(elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
 
 	std::inplace_merge (elem.begin(), elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex));
+
+	if(writeView->getArray() == readView->getArray())
+	    writeView->forceCreateCopy();
 
 	for(unsigned i = 0; i< writeView->size(); i++)
 	{
