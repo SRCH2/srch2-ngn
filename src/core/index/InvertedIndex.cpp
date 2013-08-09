@@ -85,6 +85,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 
 	std::inplace_merge (elem.begin(), elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex));
 
+	// If the read view and write view are sharing the same array, we have to separate the write view from the read view.
 	if(writeView->getArray() == readView->getArray())
 	    writeView->forceCreateCopy();
 
