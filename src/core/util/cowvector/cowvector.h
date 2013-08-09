@@ -285,20 +285,12 @@ public:
             }
             // reset the readview and new a new vectorview for the writeview
             m_readView.reset(m_writeView);
-            //change the viewType to be readview
-            m_readView->setReadView();
-            m_writeView = new vectorview<T>(*m_readView);
-            m_writeView->setNeedToFreeOldArray(false);
-
         }
-        else
-        {
-            // change the viewType to be readview
-            m_readView->setReadView();
-            m_writeView = new vectorview<T>(*m_readView);
-            m_writeView->setNeedToFreeOldArray(false);
-        }
+        // change the viewType to be readview
+        m_readView->setReadView();
         pthread_spin_unlock(&m_spinlock);
+        m_writeView = new vectorview<T>(*m_readView);
+        m_writeView->setNeedToFreeOldArray(false);
     }
 };
 
