@@ -10,11 +10,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include "util/encoding.h"
 
-#define OTHER_TYPE 0
-#define DELIMITER_TYPE 1  //the character whose unicode is <128 but is not latin and is a delimiter, like (  > + etc..
-#define LATIN_TYPE 2
-#define BOPOMOFO_TYPE 3 // zhuyin is refereed to http://www.ssec.wisc.edu/~tomw/java/unicode.html.
-
 namespace srch2
 {
 namespace instantsearch
@@ -24,6 +19,16 @@ namespace instantsearch
 class CharSet
 {
 public:
+    enum CharacterType{
+        OTHER_TYPE,
+        DELIMITER_TYPE, //the character whose unicode is <128 
+                        //but is not latin and is a delimiter, 
+                        //like (  > + etc..
+        LATIN_TYPE,     
+        BOPOMOFO_TYPE,  //zhuyin:http://www.ssec.wisc.edu/~tomw/java/unicode.html
+        HANZI_TYPE
+    };
+
 	static void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters);
 	static const std::string & getRecordAllowedSpecialCharacters();
 	static unsigned getCharacterType(CharType c);

@@ -7,11 +7,7 @@
 #ifndef __CORE_ANALYZER__STANDARDTOKENIZER_H__
 #define __CORE_ANALYZER__STANDARDTOKENIZER_H__
 
-#include <vector>
-#include <iostream>
 #include "Tokenizer.h"
-
-using std::vector;
 
 namespace srch2 {
 namespace instantsearch {

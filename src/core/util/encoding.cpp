@@ -37,6 +37,12 @@ void charTypeVectorToUtf8String(const vector<CharType> &charTypeVector, string &
 	utf8::utf32to8(charTypeVector.begin(), charTypeVector.end(), back_inserter(utf8String));
 }
 
+void charTypeVectorToUtf8String(const vector<CharType> &charTypeVector, int begin, int end, string &utf8String){
+    utf8String.clear();
+    utf8::utf32to8(charTypeVector.begin()+begin, charTypeVector.begin()+end, 
+            back_inserter(utf8String));
+}
+
 vector<CharType> getCharTypeVector(const string &utf8String)
 {
 	vector<CharType> charTypeVector;

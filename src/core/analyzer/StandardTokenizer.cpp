@@ -22,8 +22,8 @@ bool StandardTokenizer::incrementToken() {
         ///check whether the scanning is over.
         if ((tokenStreamContainer->offset)
                 >= (tokenStreamContainer->completeCharVector).size()) {
-            return (!(tokenStreamContainer->currentToken).empty()) ?
-                    true : false;
+            return (tokenStreamContainer->currentToken).empty() ?
+                    false : true;
         }
         CharType currentChar =
                 (tokenStreamContainer->completeCharVector)[tokenStreamContainer->offset];
@@ -40,13 +40,13 @@ bool StandardTokenizer::incrementToken() {
         unsigned currentCharacterType = CharSet::getCharacterType(currentChar);
 
         switch (currentCharacterType) {
-        case DELIMITER_TYPE:
+        case CharSet::DELIMITER_TYPE:
             if (!(tokenStreamContainer->currentToken).empty()) {
                 return true;
             }
             break;
-        case LATIN_TYPE:
-        case BOPOMOFO_TYPE:
+        case CharSet::LATIN_TYPE:
+        case CharSet::BOPOMOFO_TYPE:
             //check if the types of previous character and  current character are the same
             if (previousCharacterType == currentCharacterType) {
                 (tokenStreamContainer->currentToken).push_back(currentChar);

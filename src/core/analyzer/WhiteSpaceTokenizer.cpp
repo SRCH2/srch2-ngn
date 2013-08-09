@@ -22,7 +22,7 @@ bool WhiteSpaceTokenizer::incrementToken() {
                     (tokenStreamContainer->completeCharVector)[tokenStreamContainer->offset];
             (tokenStreamContainer->offset)++;
             switch (CharSet::getCharacterType(c)) {
-            case DELIMITER_TYPE:
+            case CharSet::DELIMITER_TYPE:
                 if (!(tokenStreamContainer->currentToken).empty()) {
                     return true;
                 } else {

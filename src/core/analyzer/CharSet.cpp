@@ -33,7 +33,16 @@ unsigned CharSet::getCharacterType(CharType c)
 		return DELIMITER_TYPE;
 	else if(c >= 12549 && c <= 12588)
 		return BOPOMOFO_TYPE;
-	else
+	else if((c >= 0x0021 && c <= 0x00BB) || (c >= 0x2010 && c <= 0x2642) // Some more punctuations
+        || (c >= 0x3001 && c <= 0x301E) || (c >= 0xFE30 && c <= 0xFF63))
+        return DELIMITER_TYPE;
+    // Full-Width range
+    else if((c >= 0xFF21 && c <= 0xFF3A) || (c >= 0xFF41 && c <= 0xFF5A)    // FULLWIDTH_LETTER
+            ||(c >= 0xFF10 && c <= 0xFF19))                                 // FULLWIDTH_DIGIT
+        return LATIN_TYPE;
+    else if (c >= 0x4E00 && c <= 0x9FA5)  //The common Chinese character
+        return HANZI_TYPE;
+    else
 		return OTHER_TYPE;
 }
 

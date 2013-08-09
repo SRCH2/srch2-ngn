@@ -33,6 +33,7 @@ tmp/**/*
 *.idx
 *.orig
 build/
+debug/
 local.properties
 .classpath
 .settings/
@@ -54,3 +55,8 @@ thirdparty/event/include/
 thirdparty/event/lib/
 thirdparty/event/libevent-2.0.18-stable/
 thirdparty/json/jsoncpp-src-0.5.0/
+
+# Some ctags/cscope files
+tags
+cscope.out
+.ycm*

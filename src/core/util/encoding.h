@@ -27,6 +27,8 @@ const string DEFAULT_DELIMITER_STRING(1, (char)DEFAULT_DELIMITER);
 void utf8StringToCharTypeVector(const string &utf8String, vector<CharType> &charTypeVector);
 void charTypeVectorToUtf8String(const vector<CharType> &charTypeVector, string &utf8Sring);
 
+void charTypeVectorToUtf8String(const vector<CharType> &charTypeVector, int begin, int end, string &utf8String);
+
 const unsigned getUtf8StringCharacterNumber(const string utf8String);
 
 //for easy use in test

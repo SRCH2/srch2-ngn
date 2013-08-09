@@ -21,20 +21,21 @@
 
 #include <vector>
 #include <string>
-#include "util/Assert.h"
-#include "analyzer/StandardAnalyzer.h"
+#include <cstring>
 #include <stdlib.h>
+#include <iostream>
+#include <functional>
+#include <map>
+
+#include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
+#include "analyzer/ChineseAnalyzer.h"
 
 #include "index/InvertedIndex.h"
 #include "operation/IndexerInternal.h"
 #include "operation/IndexSearcherInternal.h"
-#include <iostream>
-#include <functional>
-#include <map>
-#include <cstring>
+#include "util/Assert.h"
 #include "util/cowvector/compression/cowvector_S16.h"
-#include <assert.h>
 
 using namespace std;
 using namespace srch2::instantsearch;
@@ -89,6 +90,37 @@ void testStandardAnalyzer()
 	}
 	delete tokenStream;
 	delete standardAnalyzer;
+}
+
+void testChineseAnalyzer(const string &dataDir){
+    string dictPath = dataDir + "/srch2_dict_ch.core";
+    string src="We are美丽 Chineseㄓㄠ我是一个中国人。，李晨";
+	AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath);
+	TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
+	chineseAnalyzer->loadData(src);
+	vector<string> vectorString;
+	vectorString.push_back("We");
+	vectorString.push_back("are");
+	vectorString.push_back("美丽");
+	vectorString.push_back("Chinese");
+	vectorString.push_back("ㄓㄠ");
+
+	vectorString.push_back("我是一个");
+	vectorString.push_back("中国人");
+	vectorString.push_back("李晨");
+	int i=0;
+	while(tokenStream->processToken())
+	{
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, src);
+        cout << src << endl;
+		ASSERT(vectorString[i] == src);
+		i++;
+	}
+    ASSERT(i==vectorString.size());
+	delete tokenStream;
+    delete chineseAnalyzer;
 }
 
 void testLowerCase() {
@@ -855,6 +887,9 @@ int main() {
 
 	testStandardAnalyzer();
 	cout << "StandardAnalyzer test passed" << endl;
+
+    testChineseAnalyzer(dataDir);
+	cout << "ChineseAnalyzer test passed" << endl;
 
 	testLowerCase();
 	cout << "LowerCaseFilter test passed" << endl;

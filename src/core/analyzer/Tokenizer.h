@@ -18,6 +18,7 @@ class Tokenizer: public TokenStream {
 public:
     Tokenizer() {
     }
+protected:
     virtual bool incrementToken() = 0;
     virtual ~Tokenizer() {
     }
