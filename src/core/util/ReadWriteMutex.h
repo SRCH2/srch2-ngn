@@ -54,7 +54,7 @@ public:
       
       //sem_init(&m_semaphore, 0, max_readers);
       //pthread_spin_init(&m_spinlock, 0);
-      gen_random_name(semaphoreName, SEMAPHORE_NAME_LENGTH);
+      gen_random_name(semaphoreName);
       sem_unlink(semaphoreName);
       m_semaphore = sem_open(semaphoreName, O_CREAT,0,max_readers);
       if (m_semaphore == SEM_FAILED) {
@@ -130,13 +130,13 @@ private:
 	//pthread_spinlock_t m_spinlock;
 	pthread_mutex_t mutex;
 
-	void gen_random_name(char *s, const int len) {
+	void gen_random_name(char *s) {
 	    static const char alphanum[] =
 	        "0123456789"
 	        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	        "abcdefghijklmnopqrstuvwxyz";
 
-	    for (int i = 0; i < len; ++i) {
+	    for (int i = 0; i < SEMAPHORE_NAME_LENGTH; ++i) {
 	        s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
 	    }
 	    // add the timestamp
