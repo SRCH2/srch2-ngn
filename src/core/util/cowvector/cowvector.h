@@ -76,32 +76,35 @@ public:
 
     bool getNeedToFreeOldArray()
     {
-        return needToFreeOldArray;
+        return m_sizeAndFlags & 1 << 30;
     }
 
     void setNeedToFreeOldArray(bool flag)
     {
-        needToFreeOldArray = flag;
+        if(flag)
+            m_sizeAndFlags |= 1 << 30;
+        else
+            m_sizeAndFlags &= ~(1 << 30);
     }
 
     void setWriteView()
     {
-        viewType = true;
+        m_sizeAndFlags |= 1 << 31;
     }
 
     void setReadView()
     {
-        viewType = false;
+        m_sizeAndFlags &= ~(1 << 31);
     }
 
     bool isReadView()
     {
-        return viewType == false;
+        return !isWriteView();
     }
 
     bool isWriteView()
     {
-        return viewType == true;
+        return m_sizeAndFlags & (1 << 31);
     }
 
     void push_back(const T& inElement) {
@@ -162,17 +165,15 @@ public:
     	this->setSize(0);
     }
 
-    size_t size() const { return m_size; }
+    size_t size() const { return m_sizeAndFlags & 0x3FFFFFFF; }
 
     array<T>* getArray() const {return m_array;}
 
-    void setSize(size_t size){m_size = size;}
+    void setSize(size_t size){m_sizeAndFlags &= 0xC0000000; m_sizeAndFlags |= (size & 0x3FFFFFFF);}
 
 private:
     array<T>* m_array;
-    size_t m_size;
-    bool needToFreeOldArray;
-    bool viewType;
+    size_t m_sizeAndFlags;
 
     friend class boost::serialization::access;
 
