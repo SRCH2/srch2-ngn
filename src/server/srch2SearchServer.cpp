@@ -426,7 +426,8 @@ int main(int argc, char** argv)
     serverConf->loadConfigFile();
 	
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
-    string logDir = getDir(serverConf->getHTTPServerAccessLogFile());
+    string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
+    // If the path does't exist, try to create it.
     if(!logDir.empty() && !checkDirExistence(logDir.c_str())){
         if(createDir(logDir.c_str()) == -1){
             exit(1);

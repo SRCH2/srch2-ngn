@@ -8,11 +8,12 @@
 namespace srch2 {
 namespace util {
 
-string getDir(string file)
+// Find the longest path of a file
+string getFilePath(string fullPathFileName)
 {
-    int found = file.rfind("/");
+    int found = fullPathFileName.rfind("/");
     if(found != -1)
-        return file.substr(0, found);
+        return fullPathFileName.substr(0, found);
     else
         return "";
 }

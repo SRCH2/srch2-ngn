@@ -1,11 +1,11 @@
-#ifndef __INSTANTSEARCH__UTIL_FILEOPS_H__
-#define __INSTANTSEARCH__UTIL_FILEOPS_H__
+#ifndef __INSTANTSEARCH_UTIL_FILEOPS_H__
+#define __INSTANTSEARCH_UTIL_FILEOPS_H__
 #include <string>
 using std::string;
 namespace srch2 {
 namespace util {
 
-string getDir(string file);
+string getFilePath(string fullPathFileName);
 bool checkDirExistence(const char *dirName);
 int createDir(const char *pathName);
 
