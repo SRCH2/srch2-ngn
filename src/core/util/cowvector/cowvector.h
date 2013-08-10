@@ -276,21 +276,26 @@ public:
     void commit() //Set readView to writeView and create new a writeView from readViewCopy.
     {
         pthread_spin_lock(&m_spinlock);
-        // if the readview and writeview is pointing the same vectorview(initail state) we only need to new a vecterview for writeview
+        // Before the first commit, the readview and the writeview are the same vectorview.
+        // In this case, after commit(), we have a new vectorview as the writeview, and they still
+        // share the same array. There is no need to copy the array.
+        // After the first commit, the two views are different.
+        // In later commits, if they share the same array, we need to copy a new array from the old array.
         if(m_readView.get() != m_writeView)
         {
             // if the vecterview of readview and writeview point to the same array, we just force copy it
             if(m_readView->getArray() == m_writeView->getArray()){
                 m_writeView->forceCreateCopy();
             }
-            // reset the readview and new a new vectorview for the writeview
+            // reset the readview and let it point to the writeview
             m_readView.reset(m_writeView);
         }
         // change the viewType to be readview
         m_readView->setReadView();
-        pthread_spin_unlock(&m_spinlock);
+
         m_writeView = new vectorview<T>(*m_readView);
         m_writeView->setNeedToFreeOldArray(false);
+        pthread_spin_unlock(&m_spinlock);
     }
 };
 

@@ -82,6 +82,10 @@ void* writer(void* arg) {
         write->push_back(i);
     sleep(1);
     cowv.commit();
+    for(int i = 0; i < 1000; i++)
+        write->push_back(i);
+    sleep(1);
+    cowv.commit();
     return NULL;
 }
 
@@ -103,12 +107,19 @@ void* reader(void* arg) {
     for (int i = 0; i< read->size(); i++) {
         ASSERT(i == read->at(i));
     }
+    cowv.getReadView(read);
+    sleep(1);
+    // see the change after commit
+    cout << read->at(3) << endl;
+    ASSERT(read->at(3) == 100);
+    cowv.getReadView(read);
+    sleep(1);
+    cout << read->size() << endl;
+    ASSERT(read->size() == 100);
     sleep(1);
     cowv.getReadView(read);
-    // see the change after commit
-    ASSERT(read->at(3) == 100);
-    sleep(1);
-    ASSERT(read->size() == 100);
+    cout << read->size() << endl;
+    ASSERT(read->size() == 1100);
     return NULL;
 }
 
@@ -118,7 +129,7 @@ void* reader2(void* arg) {
     cowv.getReadView(read);
     sleep(1);
     //do not change before commit
-    cout << read->size() << endl;
+    //cout << read->size() << endl;
     for (int i = 0; i< read->size(); i++) {
         ASSERT(i == read->at(i));
     }
