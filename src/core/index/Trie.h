@@ -407,8 +407,9 @@ public:
     static const unsigned TRIE_MAX_DEPTH = 127;
 
 private:
-    ts_shared_ptr<TrieRootNodeAndFreeList > root_readview;
+    boost::shared_ptr<TrieRootNodeAndFreeList> root_readview;
     TrieNode *root_writeview;
+    mutable pthread_spinlock_t m_spinlock;
 
     unsigned numberOfTerminalNodes;
 
@@ -462,7 +463,7 @@ public:
 
     void deleteTrieNode(TrieNode* &trieNode);
 
-    void getTrieRootNode_ReadView(ts_shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const;
+    void getTrieRootNode_ReadView(boost::shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const;
 
     TrieNode* getTrieRootNode_WriteView() const;
 

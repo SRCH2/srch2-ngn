@@ -101,7 +101,7 @@ void test1()
     trie1->commit();
     trie1->print_Trie();
 
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr1;
     trie1->getTrieRootNode_ReadView(rootSharedPtr1);
     TrieNode *root1 = rootSharedPtr1->root;
@@ -268,7 +268,7 @@ void test1()
 
 void printTest2(Trie *trie1, string input)
 {
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr1;
     trie1->getTrieRootNode_ReadView(rootSharedPtr1);
     TrieNode *root1 = rootSharedPtr1->root;
@@ -687,7 +687,7 @@ void test5()
 
     vector<Prefix> ancestorPrefixes;
 
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr1;
     trie1->getTrieRootNode_ReadView(rootSharedPtr1);
     TrieNode *root1 = rootSharedPtr1->root;

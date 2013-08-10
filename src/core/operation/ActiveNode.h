@@ -65,7 +65,7 @@ class PrefixActiveNodeSet
 {
 public:
     typedef std::vector<const TrieNode* > TrieNodeSet;
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 
     BusyBit *busyBit;
 
