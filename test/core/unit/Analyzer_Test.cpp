@@ -99,10 +99,10 @@ void testChineseAnalyzer(const string &dataDir){
 	TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
 	chineseAnalyzer->loadData(src);
 	vector<string> vectorString;
-	vectorString.push_back("We");
+	vectorString.push_back("we");
 	vectorString.push_back("are");
 	vectorString.push_back("美丽");
-	vectorString.push_back("Chinese");
+	vectorString.push_back("chinese");
 	vectorString.push_back("ㄓㄠ");
 
 	vectorString.push_back("我是一个");

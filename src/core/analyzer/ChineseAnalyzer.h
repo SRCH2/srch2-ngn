@@ -23,7 +23,12 @@ namespace instantsearch{
 
 class ChineseAnalyzer: public AnalyzerInternal{
 public:
-    ChineseAnalyzer(const std::string &dictFile); 
+    ChineseAnalyzer(const std::string &dictFile,
+            const std::string &recordAllowedSpecialCharacters = "",
+            const std::string &stopWordFilePath = "",
+            const std::string &synonymFilePath ="",
+            const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN
+            ); 
     TokenStream *createOperatorFlow();
 private:
     const std::string &mDictPath;
