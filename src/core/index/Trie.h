@@ -433,8 +433,6 @@ private:
     void save(Archive & ar, const unsigned int version) const
     {
         ar << numberOfTerminalNodes;
-        ar << commited;
-        ar << oldIdToNewIdMapVector;
         ar << root_readview;
     }
 
@@ -442,11 +440,9 @@ private:
     void load(Archive & ar, const unsigned int version)
     {
         ar >> numberOfTerminalNodes;
-        ar >> commited;
-        ar >> oldIdToNewIdMapVector;
+        commited = true;
         ar >> root_readview;
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
-        //root_writeview = root_readview;
     }
 
     template<class Archive>
