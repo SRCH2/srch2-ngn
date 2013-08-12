@@ -1283,9 +1283,8 @@ void Trie::merge()
 
 void Trie::commit()
 {
-	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
-	this->root_writeview = new TrieNode(this->root_readview->root);
-
+    this->root_readview->root = root_writeview;
+    this->root_writeview = new TrieNode(this->root_readview->root);
 	if (commited)
 		return;
 
