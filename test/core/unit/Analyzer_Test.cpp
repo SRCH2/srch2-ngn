@@ -94,7 +94,7 @@ void testStandardAnalyzer()
 
 void testChineseAnalyzer(const string &dataDir){
     string dictPath = dataDir + "/srch2_dict_ch.core";
-    string src="We are美丽 Chineseㄓㄠ我是一个中国人。，李晨";
+    string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从4月10号起，“一票制”";
 	AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath);
 	TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
 	chineseAnalyzer->loadData(src);
@@ -107,7 +107,17 @@ void testChineseAnalyzer(const string &dataDir){
 
 	vectorString.push_back("我是一个");
 	vectorString.push_back("中国人");
-	vectorString.push_back("李晨");
+	vectorString.push_back("上海");
+	vectorString.push_back("自来水");
+	vectorString.push_back("来自");
+	vectorString.push_back("海上");
+	vectorString.push_back("从");
+	vectorString.push_back("4");
+	vectorString.push_back("月");
+	vectorString.push_back("10");
+	vectorString.push_back("号");
+	vectorString.push_back("起");
+	vectorString.push_back("一票制");
 	int i=0;
 	while(tokenStream->processToken())
 	{
