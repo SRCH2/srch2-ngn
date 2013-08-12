@@ -57,6 +57,12 @@ QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
         headers(headers) {
     this->container = container;
+    this->isParsedError = false;
+    this->isLpFieldFilterBooleanOperatorAssigned = false;
+    this->lpKeywordFuzzyLevel = -1.0;
+    this->lpKeywordBoostLevel = -1;
+    this->lpKeywordPrefixComplete = srch2::instantsearch::NOT_SPECIFIED; // stores the fallback termType for keywords
+    this->container->isTermBooleanOperatorSet = false;
 }
 
 // parses the URL to a query object
@@ -110,7 +116,7 @@ bool QueryParser::parse() {
     } else {
         this->topKParameterParser();
     }
-    return !this->container->isParsedError; // return true for success, false for parse error
+    return !this->isParsedError; // return true for success, false for parse error
 }
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs
@@ -132,22 +138,39 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
         // check if mainQueryStr is valid.
         boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
-        if (this->verifyMainQuery(mainQueryStr)) {
-            // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
-            // for reveiwer: we can pass a duplicate of the mainQueryString too. I don't see a point why, so passing the mainQueryStr itself. Any thoughts?
-            this->localParameterParser(&mainQueryStr);
+        // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
+        // for reveiwer: we can pass a duplicate of the mainQueryString too. I don't see a point why, so passing the mainQueryStr itself. Any thoughts?
+        if (this->localParameterParser(mainQueryStr)) {
             // the mainQueryStr now doesn't have the lopcalparameter part.
             // 3. call the keywordParser().
-            this->keywordParser(mainQueryStr);
-        } else {
-            // invalid query return
-            Logger::info(" Parsing error:: main query is invalid.");
-            // raise an error message, set the error flag.
-            // TODO: read the msg string from a separate file.
-            this->container->messages.push_back(
-                    make_pair(MessageError,
-                            " Parsing error:: main query is invalid"));
-            this->container->isParsedError = true;
+            bool parseNextTerm = true;
+            while (parseNextTerm) {
+                if (this->keywordParser(mainQueryStr)) {
+                    string boolOperator = "";
+                    bool isParsed = parseTermBoolOperator(mainQueryStr,
+                            boolOperator);
+                    if (isParsed) {
+                        string msgStr = "boolean operator is " + boolOperator;
+                        Logger::debug(msgStr.c_str());
+                        parseNextTerm = true;
+                        Logger::debug("LOOPING AGAIN");
+                        // fill up boolean operator
+                    } else {
+                        // no boolean operator found.
+                        // if the input string length is >0 throw error.
+                        parseNextTerm = false;
+                        if (mainQueryStr.length() > 0) {
+                            // raise error message
+                            Logger::info(
+                                    " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                            this->container->messages.push_back(
+                                    make_pair(MessageError,
+                                            "Parse error, expecting boolean operator while parsing terms, not found."));
+                            this->isParsedError = true;
+                        }
+                    }
+                }
+            }
         }
     } else {
         // no main query parameter present.
@@ -155,55 +178,6 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
     }
 }
 
-bool QueryParser::verifyMainQuery(const string &input) {
-    /*
-     * verifyies the syntax of the main query string.
-     */
-    //TODO: change the field and keyword regex string for differet types.
-    /*
-     * text: should be inside quotes ""
-     * float: no quotes
-     * int: no quotes
-     * date: see parserUtility.h for date formats.
-     */
-    Logger::info("varifying the main query.");
-    // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
-    const string lpRegexString =
-            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
-    std::string fieldRegexString =
-            "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)\\s*|\\*\\s*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
-    const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
-    const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
-    const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
-    std::string keywordRegexString =
-            "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)";
-    ; // verifies the syntax of keyword
-    const string keywordWithModsRegexString = keywordRegexString
-            + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
-    std::string termModRegexString = "(" + keywordWithModsRegexString + "|"
-            + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
-
-    std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
-            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString
-            + ")*\\s*"; // verifies the systax of complete query string.
-    // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
-
-    boost::regex queryRegex(queryRegexString);
-    // the above regex block needs to be compiled once only
-    /*
-     *  explaination of above regex:
-     *  if localparameter is present then, query string should START with localparameter.
-     *  ^(" + lpRegexString + "){0,1}  =>  here {0,1} makes sure localparameter is present at most once.
-     *  query can have a keyword or a field:keyword pair.
-     *  field should not start with a '.' (dot). '.' and '+' have special meaning in the field names.
-     *  field1.field2:keyword would mean that engine will result the record only if  'keyword' is present in both field1 and field2
-     *  field1+field2:keyword would mean that engine will result the record if  'keyword' is present in field1 or field2
-     *  Note: we can have only '+' or '.' not both. e.g. field1.field2+field3:keyword is invalid syntax
-     *  field can have alphnumerical characters
-     */
-    Logger::info("verifying main query done.");
-    return boost::regex_match(input, queryRegex);
-}
 
 void QueryParser::isFuzzyParser() {
     /*
@@ -348,7 +322,7 @@ void QueryParser::lengthBoostParser() {
             this->container->messages.push_back(
                     make_pair(MessageError,
                             "lengthBoost should be a valid float number"));
-            this->container->isParsedError = true;
+            this->isParsedError = true;
         }
 
     }
@@ -376,9 +350,10 @@ void QueryParser::prefixMatchPenaltyParser() {
         } else {
             //raise error
             this->container->messages.push_back(
-                    make_pair(MessageError, string(prefixMatchPenaltyParamName) +
-                            " should be a valid float number"));
-            this->container->isParsedError = true;
+                    make_pair(MessageError,
+                            string(prefixMatchPenaltyParamName)
+                                    + " should be a valid float number"));
+            this->isParsedError = true;
         }
 
     }
@@ -497,7 +472,7 @@ void QueryParser::startOffsetParameterParser() {
             this->container->messages.push_back(
                     make_pair(MessageError,
                             "start parameter should be a positive integer"));
-            this->container->isParsedError = true;
+            this->isParsedError = true;
         }
     }
     Logger::debug("returning from startOffsetParameterParser function");
@@ -528,7 +503,7 @@ void QueryParser::numberOfResultsParser() {
             this->container->messages.push_back(
                     make_pair(MessageError,
                             "rows parameter should be a positive integer"));
-            this->container->isParsedError = true;
+            this->isParsedError = true;
         }
 
     }
@@ -560,7 +535,7 @@ void QueryParser::timeAllowedParameterParser() {
             this->container->messages.push_back(
                     make_pair(MessageError,
                             "timeAllowed parameter should be a positive integer"));
-            this->container->isParsedError = true;
+            this->isParsedError = true;
         }
 
     }
@@ -687,7 +662,7 @@ void QueryParser::filterQueryParameterParser() {
             this->container->messages.push_back(
                     make_pair(MessageError,
                             "Parsing error, filter query doesn't match the correct syntax"));
-            this->container->isParsedError = true;
+            this->isParsedError = true;
         }
 
     }
@@ -839,7 +814,7 @@ string QueryParser::orderByParser() {
     return order;
 }
 
-void QueryParser::localParameterParser(string *input) {
+bool QueryParser::localParameterParser(string &input) {
     /*
      * this function parses the local parameters section of all parts
      * input:
@@ -847,137 +822,119 @@ void QueryParser::localParameterParser(string *input) {
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
-    //TODO: break this funcion into smaller functions
-    Logger::debug("parsing the localparameters in the input string %s",
-            (*input).c_str());
-// check if input string might have a local parameter info
-    std::string localParametersString; // string to contain the localparameter string only
-    std::string lpRegexString =
-            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*\\}"; // TODO update from the verifyMainquery
-    boost::regex localParameterRegex(lpRegexString); // TODO: compile this regex when the engine starts. that would be more efficient.
-    boost::smatch clpMatches;
-    if (boost::regex_search(*input, clpMatches, localParameterRegex)) {
-// mathc found input has localParameters
+    Logger::debug(
+            "inside localParameterParser parsing the localparameters in the input string %s",
+            input.c_str());
+    if (input.at(0) == '{') {
         Logger::debug("localparamter string found, extracting it.");
-        localParametersString = clpMatches[0].str(); // get the locaparamter part
-        Logger::debug("localparamter string is %s",
-                localParametersString.c_str());
-        // remove the localparameter string part form the input.
-        Logger::debug("removing localparameter substring from input");
-        *input = boost::regex_replace(*input, localParameterRegex, ""); // input is modified. lp info is being removed.
-        Logger::debug(
-                "removed localparameter substring from input, input is nodified to %s",
-                (*input).c_str());
-// now get the pairs from the local parameter string
-        string lpPairsRegexString = "\\w+\\s*=\\s*\\w+"; // regex to get field = val pairs from {field1=val1 field2 = val2}
-        boost::regex lPPairRegex(lpPairsRegexString); //TODO: compile this regex when the engine starts.
-        boost::sregex_token_iterator pairItr(localParametersString.begin(),
-                localParametersString.end(), lPPairRegex, 0); // get the iterator for the matches
-        boost::sregex_token_iterator end;
-// iterate on matched pairs
-// parse the key value pairs and populate the container
-        Logger::debug(
-                "search for all the field=value pairs in localparameter string %s",
-                localParametersString.c_str());
-        for (; pairItr != end; ++pairItr) {
-            string pair = *pairItr;
-            Logger::debug("pair found %s", pair.c_str());
-            // split by "=" (localParamDelimiter) and fill the container
-            char *pairDup = strdup(pair.c_str()); // strtok takes char* and not const char* so creating duplicate of input.
-            char *pairToken = strtok(pairDup, lpKeyValDelimiter);
-            vector<string> pairKeyVal;
-            Logger::debug("tokenizing pair using delimiter");
-            while (pairToken) { // should give two tokesns only
-                // this first token is field name and second is its value
-                // get the local parameter field
-                string sToken = string(pairToken);
-                Logger::debug("triming the token %s", sToken.c_str());
-                boost::algorithm::trim(sToken);
-                Logger::debug("token trimed %s", sToken.c_str());
-                pairKeyVal.push_back(sToken);
-                pairToken = strtok(NULL, lpKeyValDelimiter);
-            }
-            if (0 == pairKeyVal[0].compare(QueryParser::lpQueryBooleanOperatorParamName)) { // default Boolean operator to be used for the fields in the query terms
-                string val = pairKeyVal[1];
-                if (boost::iequals("OR", val)) {
-                    this->container->lpFieldFilterBooleanOperator =
-                            srch2::instantsearch::OR;
-                } else if (boost::iequals("AND", val)) {
-                    this->container->lpFieldFilterBooleanOperator =
-                            srch2::instantsearch::AND;
+        input = input.substr(1);
+        string lpField = "";
+        while (parseLpKey(input, lpField)) {
+            if (parseLpDelimeter(input)) {
+                string lpValue = "";
+                if (parseLpValue(input, lpValue)) {
+                    this->setLpKeyValinContainer(lpField, lpValue);
                 } else {
-                    // generate MessageWarning and use AND
                     this->container->messages.push_back(
-                            make_pair(MessageWarning,
-                                    "Invalud boolean operator specified " + val
-                                            + ", ignoring it and using AND."));
-                    this->container->lpFieldFilterBooleanOperator =
-                            srch2::instantsearch::AND;
+                            make_pair(MessageError,
+                                    "Parse error, invalid local parameter string. Found malformed value for localParameter key "
+                                            + lpField));
+                    this->isParsedError = true;
+                    return false;
                 }
-                this->container->isLpFieldFilterBooleanOperatorAssigned = true;
-            } else if (0
-                    == pairKeyVal[0].compare(lpKeywordFuzzyLevelParamName)) { // i tried using vecotr.at(index) showed me compile errors.
-                string val = pairKeyVal[1];
-                if (isFloat(val)) {
-                    float f = atof(val.c_str()); //TODO: add the validation
-                    this->container->lpKeywordFuzzyLevel = f;
-                } else {
-                    //warning
-                    this->container->messages.push_back(
-                            make_pair(MessageWarning,
-                                    string(lpKeywordFuzzyLevelParamName)
-                                            + " should be a valid float number"));
-                }
-            } else if (0
-                    == pairKeyVal[0].compare(
-                            lpKeywordPrefixCompleteParamName)) { //TODO: look into this again, why do we need this parameter?
-                string val = pairKeyVal[1];
-                if (boost::iequals("PREFIX", val)) {
-                    this->container->lpKeywordPrefixComplete =
-                            srch2::instantsearch::TERM_TYPE_PREFIX;
-                } else if (boost::iequals("COMPLETE", val)) {
-                    this->container->lpKeywordPrefixComplete =
-                            srch2::instantsearch::TERM_TYPE_COMPLETE;
-                } else {
-                    // generate MessageWarning and use prefix
-                    this->container->messages.push_back(
-                            make_pair(MessageWarning,
-                                    "Invalid choice " + val
-                                            + ",we support prefix and complete search on keyword only. ignoring it and using the default value from config file."));
-                    this->container->lpKeywordPrefixComplete =
-                            srch2::instantsearch::NOT_SPECIFIED;
-                }
-            } else if (0 == pairKeyVal[0].compare(lpFieldFilterParamName)) {
-                string val = pairKeyVal[1];
-                // val might be a comma separated string of fields.  field1,field2..
-                // tokenize it on ',' and set the vector in container.
-                char *fieldStr = strdup(val.c_str()); // the strtok function takes char* and not const char* so create dulpicate of val as char*.
-                char * fieldToken = strtok(fieldStr, lpFieldFilterDelimiter);
-                while (fieldToken) {
-                    string sToken = string(fieldToken);
-                    boost::algorithm::trim(sToken); // trim the token
-                    this->container->lpFieldFilter.push_back(sToken); // set field in container
-                    fieldToken = strtok(NULL, lpFieldFilterDelimiter); // get the next filed. (the syntax is weird, but thats how it works.)
-                }
-                delete fieldStr; // free the fieldStr, duplicate of val.
             } else {
-                // this localparameter is not supported. raise a MessageWarning msg.
                 this->container->messages.push_back(
-                        make_pair(MessageWarning,
-                                "Invalid local parameter " + pairKeyVal[0]
-                                        + ", ignoring it."));
+                        make_pair(MessageError,
+                                "Parse error, invalid local parameter string. Expecting '=', after localParameter key "
+                                        + lpField));
+                this->isParsedError = true;
+                return false;
             }
-            delete pairDup; // free the result, duplicate of input.
         }
-        Logger::debug("returning from localParameterParser");
+        boost::algorithm::trim(input);
+        if (input.at(0) == '}') {
+            cout << "localParametersString: " << input << endl;
+            input = input.substr(1);
+            boost::algorithm::trim(input);
+        } else {
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "Parse error, invalid local parameter string. closing } not found"));
+            this->isParsedError = true;
+            return false;
+        }
     } else {
-// does not contain any localParameter info.
+        // no lp present.
         Logger::debug(
                 "no localparameter info to parse in the input string. returning");
     }
+    Logger::debug("returning from localParameterParser");
+    return true;
 }
 
-void QueryParser::keywordParser(const string &input) {
+void QueryParser::setLpKeyValinContainer(const string &lpKey,
+        const string &lpVal) {
+    if (0 == lpKey.compare(QueryParser::lpQueryBooleanOperatorParamName)) { // default Boolean operator to be used for the fields in the query terms
+        if (boost::iequals("OR", lpVal)) {
+            this->lpFieldFilterBooleanOperator = srch2::instantsearch::OR;
+        } else if (boost::iequals("AND", lpVal)) {
+            this->lpFieldFilterBooleanOperator = srch2::instantsearch::AND;
+        } else {
+            // generate MessageWarning and use AND
+            this->container->messages.push_back(
+                    make_pair(MessageWarning,
+                            "Invalud boolean operator specified " + lpVal
+                                    + ", ignoring it and using AND."));
+            this->lpFieldFilterBooleanOperator = srch2::instantsearch::AND;
+        }
+        this->isLpFieldFilterBooleanOperatorAssigned = true;
+    } else if (0 == lpKey.compare(lpKeywordFuzzyLevelParamName)) { // i tried using vecotr.at(index) showed me compile errors.
+        if (isFloat(lpVal)) {
+            float f = atof(lpVal.c_str()); //TODO: add the validation
+            this->lpKeywordFuzzyLevel = f;
+        } else {
+            //warning
+            this->container->messages.push_back(
+                    make_pair(MessageWarning,
+                            string(lpKeywordFuzzyLevelParamName)
+                                    + " should be a valid float number"));
+        }
+    } else if (0 == lpKey.compare(lpKeywordPrefixCompleteParamName)) { //TODO: look into this again, why do we need this parameter?
+        this->setInSummaryIfNotSet(QueryPrefixCompleteFlag);
+        if (boost::iequals("PREFIX", lpVal)) {
+            this->lpKeywordPrefixComplete =
+                    srch2::instantsearch::TERM_TYPE_PREFIX;
+        } else if (boost::iequals("COMPLETE", lpVal)) {
+            this->lpKeywordPrefixComplete =
+                    srch2::instantsearch::TERM_TYPE_COMPLETE;
+        } else {
+            // generate MessageWarning and use prefix
+            this->container->messages.push_back(
+                    make_pair(MessageWarning,
+                            "Invalid choice " + lpVal
+                                    + ",we support prefix and complete search on keyword only. ignoring it and using the default value from config file."));
+            this->lpKeywordPrefixComplete = srch2::instantsearch::NOT_SPECIFIED;
+        }
+    } else if (0 == lpKey.compare(lpFieldFilterParamName)) {
+        // val might be a comma separated string of fields.  field1,field2..
+        // tokenize it on ',' and set the vector in container.
+        char *fieldStr = strdup(lpVal.c_str()); // the strtok function takes char* and not const char* so create dulpicate of val as char*.
+        char * fieldToken = strtok(fieldStr, lpFieldFilterDelimiter);
+        while (fieldToken) {
+            string sToken = string(fieldToken);
+            boost::algorithm::trim(sToken); // trim the token
+            this->lpFieldFilter.push_back(sToken); // set field in container
+            fieldToken = strtok(NULL, lpFieldFilterDelimiter); // get the next filed. (the syntax is weird, but thats how it works.)
+        }
+        delete fieldStr; // free the fieldStr, duplicate of val.
+    } else {
+        // this localparameter is not supported. raise a MessageWarning msg.
+        this->container->messages.push_back(
+                make_pair(MessageWarning,
+                        "Invalid local parameter " + lpKey + ", ignoring it."));
+    }
+}
+bool QueryParser::keywordParser(string &input) {
     /*
      * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
      * example: field:keyword^3 AND keyword2 AND keyword* AND keyword*^3 AND keyword^2~.5
@@ -985,51 +942,89 @@ void QueryParser::keywordParser(const string &input) {
      */
     Logger::info("inside keyword parser.");
     Logger::debug("input received is %s", input.c_str());
-    string operatorRegexString = "\\s+(AND|&&|OR)\\s+";
-    boost::regex re(operatorRegexString); //TODO: move this regex compilation from here. It should happen when the engine starts
-    boost::sregex_iterator termItr(input.begin(), input.end(), re);
-    boost::sregex_iterator termEndItr;
-    vector<string> terms;
-    vector<string> termOperators;
-    size_t start = 0;
-    for (; termItr != termEndItr; ++termItr) {
-        size_t len = (*termItr).position() - start;
-        string candidate = input.substr(start, len);
-        terms.push_back(candidate);
-        start = (*termItr).position() + (*termItr).length();
-        termOperators.push_back((*termItr).str());
+    /*
+     *
+     */
+    if (input.at(0) == '\"') {
+        // we do not support phrase search as of now
+        return false;
     }
-    terms.push_back(input.substr(start)); // push back the last token
-    // set the termOperators in container
-    if (!termOperators.empty()) {
-        this->populateTermBooleanOperator(termOperators.at(0)); // we only support one type of operator : AND
+    string field = "";
+    bool isParsed = this->parseField(input, field);
+    if (!isParsed) {
+        // TODO: use lpdefault fields
+        this->populateFieldFilterUsingLp();
+    } else {
+        // populate the field
+        this->populateFieldFilterUsingQueryFields(field);
     }
-    // parse the terms
-    this->parseTerms(terms);
-    // check if keywordFuzzyLevel was set by parseTerms
-    // true? set the isFuzzyFlag.
-    // else , empty the keywordFuzzyLevel vector
+    string keywordStr = "";
+    isParsed = parseKeyword(input, keywordStr);
+    if (isParsed) {
+        // keyword obtained, get modifiers
+        // populate the rawKeyword
+        this->populateRawKeywords(keywordStr);
+        // separate for each . *, ^ and ~
+    } else {
+        // check if they keyword is just *
+        string asteric = "";
+        isParsed = parseKeyWordForAsteric(input, asteric);
+        if (isParsed) {
+            this->populateRawKeywords(asteric);
+        } else {
+            // raise error, invalid query, keyword expected, not found
+            Logger::info("PARSE ERROR, returning from  keywordParser.");
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "Parse error, expecting keyword, not found "));
+            this->isParsedError = true;
+            return false;
+        }
+    }
+    string prefixMod = "";
+    isParsed = parsePrefixModifier(input, prefixMod);
+    if (isParsed) {
+        this->setInSummaryIfNotSet(QueryPrefixCompleteFlag);
+        // '*' is present
+        Logger::debug("prefix modifier used in query");
+        this->container->keywordPrefixComplete.push_back(
+                srch2::instantsearch::TERM_TYPE_PREFIX); // use the lp variable value
+    } else {
+        // use the fallback specified in localparameters.
+        this->container->keywordPrefixComplete.push_back(
+                this->lpKeywordPrefixComplete);
+    }
+    string boostMod = "";
+    isParsed = parseBoostModifier(input, boostMod);
+    this->populateBoostInfo(isParsed, boostMod);
+    string fuzzyMod = "";
+    isParsed = parseFuzzyModifier(input, fuzzyMod);
+    this->populateFuzzyInfo(isParsed, fuzzyMod);
+// check if keywordFuzzyLevel was set by parseTerms
+// true? set the isFuzzyFlag.
+// else , empty the keywordFuzzyLevel vector
     if (this->container->hasParameterInSummary(KeywordFuzzyLevel)) {
         this->setInSummaryIfNotSet(IsFuzzyFlag);
         this->container->isFuzzy = true;
     } else {
         this->container->keywordFuzzyLevel.clear();
     }
-    // check if KeywordBoostLevel was set
+// check if KeywordBoostLevel was set
     if (!this->container->hasParameterInSummary(KeywordBoostLevel)) {
         this->container->keywordBoostLevel.clear(); // clear the boost level vector.
     }
-    // check if QueryPrefixCompleteFlag was set
+// check if QueryPrefixCompleteFlag was set
     if (!this->container->hasParameterInSummary(QueryPrefixCompleteFlag)) {
         this->container->keywordPrefixComplete.clear();
     }
-    // cehck if FieldFilter was set
+// cehck if FieldFilter was set
     if (!this->container->hasParameterInSummary(FieldFilter)) {
         // clear filedFilter vector and filedFilterOps vector
         this->container->fieldFilter.clear();
         this->container->fieldFilterOps.clear();
     }
     Logger::info("returning from  keywordParser.");
+    return true;
 }
 
 void QueryParser::populateTermBooleanOperator(const string &termOperator) {
@@ -1063,7 +1058,7 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
     /*
      * populates teh termFQBooleanOperators in container.
      */
-    // TODO: check for && and || also
+// TODO: check for && and || also
     Logger::debug("inside populateFilterQueryTermBooleanOperators.");
     if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
         this->container->termFQBooleanOperator = srch2::instantsearch::OR;
@@ -1082,121 +1077,6 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
     Logger::debug("returning from populateFilterQueryTermBooleanOperators.");
 }
 
-void QueryParser::parseTerms(const vector<string>&terms) { //TODO: change it to const vector<string &terms>
-    /*
-     * receives a vector of terms, field:keyword.
-     * for each term it calls the parseTerm to parse the term.
-     */
-    Logger::debug("inside parseTerms function");
-    string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
-    boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString); // TODO: regex to compile at engine start
-    for (std::vector<string>::const_iterator termItr = terms.begin();
-            termItr != terms.end(); ++termItr) {
-        this->parseTerm(*termItr, fieldDelimeterRegex); // parse each term
-    }
-    Logger::debug("returning from  parseTerms function");
-}
-
-void QueryParser::parseTerm(const string &term, boost::regex &fieldDelimeterRegex) { //TODO: const string
-    /*
-     * example: field:keyword^3~.8
-     * if ":" is present, we have field information, create a vector and populate the fieldFilter vector in container
-     * else: check if lpFieldFilter in container has fields. if yes, create a vector of these fields and populate the vector
-     * else: create an empty vector and poplate the fieldFilter vector in container.
-     * in parallel populate the rawQueryKeywords vector in container.
-     * this will need to populate boost and similarity boost vectors too. also add "NOT_DEFINED" in
-     * prefixcomplete enum and populate the keywordPrefixComplete vector.
-     * NOTE: populating fileds will also need to look for . and + in them and populate the fieldFilterOps vector.
-     */
-    Logger::debug("inside parseTerm funtion, parsing term: %s", term.c_str());
-    string candidateKeyword;
-    boost::smatch matches;
-    boost::regex_search(term, matches, fieldDelimeterRegex);
-    if (matches[0].matched) {
-        // it has field. create a vector and populate container->fieldFilter.
-        string fieldStr = term.substr(0, matches.position()); // extract the field
-        this->populateFieldFilterUsingQueryFields(fieldStr);
-        candidateKeyword = term.substr(matches.position() + matches.length()); // extract the keyword
-    } else {
-        // its a keyword, no field specified. look for the fields in localparameter
-        this->populateFieldFilterUsingLp();
-        candidateKeyword = term;
-    }
-    this->parseKeyword(candidateKeyword);
-    Logger::debug("returning from  parseTerm function");
-}
-
-void QueryParser::parseKeyword(const string &input) {
-    /*
-     * parses the keywords
-     * example: keyword*^3~.7
-     * fills up rawkeywords, keyPrefixComp, boost, simBoost.
-     */
-// check if '^' is present
-    if (input.find('^') != string::npos) {
-        // '^ is present'
-        this->setInSummaryIfNotSet(KeywordBoostLevel);
-        Logger::debug("boost modifier used in query");
-        boost::smatch matches;
-        this->checkForBoostNums(input, matches); // check if boost value is present
-        if (matches[0].matched) {
-            // get the boost value;
-            Logger::debug("boost value is specified, extracting it.");
-            boost::smatch numMatches;
-            this->extractNumbers(matches[0].str(), numMatches);
-            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
-            Logger::debug("boost value is %d", boostNum);
-            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
-        } else {
-            // there is no value specified
-            Logger::debug(
-                    "boost value is not specified, using the lp value or -1");
-            this->container->keywordBoostLevel.push_back(
-                    this->container->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
-        }
-    } else {
-        Logger::debug("boost value is not specified, using the lp value or -1");
-        this->container->keywordBoostLevel.push_back(
-                this->container->lpKeywordBoostLevel); // selts the localParameter specified value
-    }
-    if (input.find('~') != string::npos) {
-        // '~' is present
-        this->setInSummaryIfNotSet(KeywordFuzzyLevel);
-        Logger::debug("fuzzy modifier used in query");
-        boost::smatch matches;
-        this->checkForFuzzyNums(input, matches); // check if boost value is present
-        if (matches[0].matched) {
-            // get the fuzzy value;
-            Logger::debug("fuzzy value is specified extracting it");
-            boost::smatch numMatches;
-            this->extractNumbers(matches[0].str(), numMatches);
-            float fuzzyNum = atof(("." + numMatches[0].str()).c_str()); // convert to float
-            Logger::debug("fuzzy value is %f", fuzzyNum);
-            this->setFuzzyLevelInContainer(fuzzyNum);
-        } else {
-            // there is no value specified
-            Logger::debug(
-                    "fuzzy value is not specified, using the lp value or -1.0");
-            this->setFuzzyLevelInContainer(
-                    this->container->lpKeywordFuzzyLevel); // selts the localParameter specified value
-        }
-    } else {
-        Logger::debug("fuzzy value is not specified, use 0");
-        this->setFuzzyLevelInContainer(0.0f);
-    }
-    if (input.length() > 1 && input.find('*') != string::npos) {
-        this->setInSummaryIfNotSet(QueryPrefixCompleteFlag);
-        // '*' is present
-        Logger::debug("prefix modifier used in query");
-        this->container->keywordPrefixComplete.push_back(
-                srch2::instantsearch::TERM_TYPE_PREFIX);
-    } else {
-        // use the fallback specified in localparameters.
-        this->container->keywordPrefixComplete.push_back(
-                this->container->lpKeywordPrefixComplete);
-    }
-    QueryParser::populateRawKeywords(input);
-}
 void QueryParser::populateRawKeywords(const string &input) {
     /*
      * populates the raw keywords, that is the keyword without modifiers.
@@ -1204,24 +1084,9 @@ void QueryParser::populateRawKeywords(const string &input) {
      * example: keyword^3 has keyword as a rawkeyword. this function populates the RawKeywords vector in container.
      */
     Logger::debug("indide populateRawKeywords, parsing for raw keywords");
-    string regexString = "\\w+";
-    boost::smatch matches;
-    boost::regex re(regexString);
-    boost::regex_search(input, matches, re);
-    if (matches[0].matched) {
-        this->setInSummaryIfNotSet(RawQueryKeywords);
-        Logger::debug("raw keyword found: %s", matches[0].str().c_str());
-        this->container->rawQueryKeywords.push_back(matches[0].str());
-    } else if (0 == input.compare("*")) { //TODO check this while testing
-        this->setInSummaryIfNotSet(RawQueryKeywords);
-        Logger::debug("raw keyword found: *");
-        this->container->rawQueryKeywords.push_back("*");
-    } else {
-        //no keyword specifed. // i think code will never reach here. need to ask
-        ASSERT(false);
-        this->container->rawQueryKeywords.push_back("");
-        Logger::debug("No keyword specified");
-    }
+    this->setInSummaryIfNotSet(RawQueryKeywords);
+    Logger::debug("raw keyword found: %s", input.c_str());
+    this->container->rawQueryKeywords.push_back(input);
     Logger::debug("returning from populateRawKeywords");
 }
 
@@ -1268,14 +1133,14 @@ void QueryParser::populateFieldFilterUsingLp() {
      */
     Logger::debug("inside populateFieldFilterUsingLp");
 // check if lpFieldFilter is set in container
-    if (!this->container->lpFieldFilter.empty()) {
+    if (!this->lpFieldFilter.empty()) {
         // lpFieldFilter is set. use this to create a vector
         this->setInSummaryIfNotSet(FieldFilter);
-        this->container->fieldFilter.push_back(this->container->lpFieldFilter);
-        if (this->container->isLpFieldFilterBooleanOperatorAssigned) {
+        this->container->fieldFilter.push_back(this->lpFieldFilter);
+        if (this->isLpFieldFilterBooleanOperatorAssigned) {
             // LpFieldFilterBooleanOperator is assigned. fill
             this->container->fieldFilterOps.push_back(
-                    this->container->lpFieldFilterBooleanOperator);
+                    this->lpFieldFilterBooleanOperator);
         } else {
             this->container->fieldFilterOps.push_back(
                     srch2::instantsearch::OP_NOT_SPECIFIED);
@@ -1328,8 +1193,8 @@ void QueryParser::populateFieldFilterUsingQueryFields(const string &input) {
     size_t start = 0;
     for (; fieldItr != fieldEndItr; ++fieldItr) {
         size_t len = (*fieldItr).position() - start;
-        string candidate = input.substr(start, len);
-        fields.push_back(candidate);
+        string field = input.substr(start, len);
+        fields.push_back(field);
         start = (*fieldItr).position() + (*fieldItr).length();
     }
     fields.push_back(input.substr(start)); // push back the last field in the string.
@@ -1450,7 +1315,7 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "lblat should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
         this->container->geoParameterContainer->leftBottomLongitude = atof(
@@ -1459,7 +1324,7 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "lblong should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
         this->container->geoParameterContainer->rightTopLatitude = atof(
@@ -1468,7 +1333,7 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "rtlat should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
         this->container->geoParameterContainer->rightTopLongitude = atof(
@@ -1477,7 +1342,7 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "rtlong should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
 
     Logger::debug("returning from extrasetGeoContainerProperties");
@@ -1500,7 +1365,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError, "clat should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     if (isFloat(centerLongStr)) {
         this->container->geoParameterContainer->leftBottomLongitude = atof(
@@ -1509,7 +1374,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "clong should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     if (isFloat(radiusParamStr)) {
         this->container->geoParameterContainer->rightTopLatitude = atof(
@@ -1518,7 +1383,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "radius should be a valid float number"));
-        this->container->isParsedError = true;
+        this->isParsedError = true;
     }
     Logger::debug("returning from setGeoContainerProperties");
 }
@@ -1557,6 +1422,137 @@ void QueryParser::setFuzzyLevelInContainer(const float f) {
         this->container->keywordFuzzyLevel.push_back(f);
     }
     Logger::debug("returning from setFuzzyLevelInContainer");
+}
+bool QueryParser::parseLpKey(string &input, string &field) {
+    string regexString = "\\s*[\\w_]+";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, field);
+}
+bool QueryParser::parseLpDelimeter(string &input) {
+    string regexString = "\\s*=\\s*";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    string delimeter = "";
+    return this->doParse(input, re, delimeter);
+}
+bool QueryParser::parseLpValue(string &input, string &value) {
+    string regexString = "[\\w_]+(,[\\w_])*";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, value);
+}
+
+bool QueryParser::doParse(string &input, const boost::regex &re,
+        string &output) {
+    boost::smatch matches;
+    boost::regex_search(input, matches, re);
+    if (matches[0].matched) {
+        if (0 == matches.position()) {
+            output = input.substr(matches.position(), matches.length());
+            boost::algorithm::trim(output);
+            input = input.substr(matches.position() + matches.length());
+            boost::algorithm::trim(input);
+            string logMsg = "remove " + output + ", input modified to: "
+                    + input;
+            Logger::debug(logMsg.c_str());
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool QueryParser::parseTermBoolOperator(string &input, string &output) {
+    string regexString = "(AND|&&)";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    bool isParsed = this->doParse(input, re, output);
+    if(!this->container->isTermBooleanOperatorSet){
+        this->populateTermBooleanOperator(output);
+        this->container->isTermBooleanOperatorSet=true;
+    }
+    return isParsed;
+}
+bool QueryParser::parseField(string &input, string &field) {
+    string regexString = "([\\w_]+((\\.|\\+)[\\w_]*)*|\\*)\\s*:";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, field);
+}
+bool QueryParser::parseKeyword(string &input, string &output) {
+    string strRegexString = "[^\\*\\^\\~\\s]+";
+    boost::regex re(strRegexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, output);
+}
+
+bool QueryParser::parseKeyWordForAsteric(string &input, string &output) {
+    string regexString = "\\*\\s*";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, output);
+}
+bool QueryParser::parsePrefixModifier(string &input, string &output) {
+    string regexString = "\\*";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, output);
+}
+bool QueryParser::parseBoostModifier(string &input, string &output) {
+    string regexString = "\\*";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, output);
+}
+void QueryParser::populateBoostInfo(bool isParsed, string &input) {
+    this->setInSummaryIfNotSet(KeywordBoostLevel);
+    if (isParsed) {
+        Logger::debug("boost modifier used in query");
+        boost::smatch matches;
+        this->checkForBoostNums(input, matches); // check if boost value is present
+        if (matches[0].matched) {
+            // get the boost value;
+            Logger::debug("boost value is specified, extracting it.");
+            boost::smatch numMatches;
+            this->extractNumbers(matches[0].str(), numMatches);
+            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
+            Logger::debug("boost value is %d", boostNum);
+            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
+        } else {
+            // there is no value specified
+            Logger::debug(
+                    "boost value is not specified, using the lp value or -1");
+            this->container->keywordBoostLevel.push_back(
+                    this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
+        }
+    } else {
+        Logger::debug("boost value is not specified, using the lp value or -1");
+        this->container->keywordBoostLevel.push_back(this->lpKeywordBoostLevel); // selts the localParameter specified value
+    }
+}
+bool QueryParser::parseFuzzyModifier(string &input, string &output) {
+    string regexString = "~(\\.\\d){0,1}";
+    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    return this->doParse(input, re, output);
+}
+void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
+    this->setInSummaryIfNotSet(KeywordFuzzyLevel);
+    if (isParsed) {
+        Logger::debug("fuzzy modifier used in query");
+        boost::smatch matches;
+        this->checkForFuzzyNums(input, matches); // check if boost value is present
+        if (matches[0].matched) {
+            // get the fuzzy value;
+            Logger::debug("fuzzy value is specified extracting it");
+            boost::smatch numMatches;
+            this->extractNumbers(matches[0].str(), numMatches);
+            float fuzzyNum = atof(("." + numMatches[0].str()).c_str()); // convert to float
+            Logger::debug("fuzzy value is %f", fuzzyNum);
+            this->setFuzzyLevelInContainer(fuzzyNum);
+        } else {
+            // there is no value specified
+            Logger::debug(
+                    "fuzzy value is not specified, using the lp value or -1.0");
+            this->setFuzzyLevelInContainer(this->lpKeywordFuzzyLevel); // selts the localParameter specified value
+        }
+    } else {
+        Logger::debug("fuzzy value is not specified, use 0");
+        this->setFuzzyLevelInContainer(0.0f);
+    }
 }
 
 }

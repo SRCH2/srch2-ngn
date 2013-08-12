@@ -71,6 +71,16 @@ public:
      */
 
     bool parse();
+    // add members related to local parameters
+    //lpFieldFilterBooleanOperator is the boolean operator between the lpFieldFiter fields.
+    bool isLpFieldFilterBooleanOperatorAssigned; // whether lpFieldFilterBooleanOperator is assigned or not.
+    BooleanOperation lpFieldFilterBooleanOperator; // TODO: when we want to add NOT or OR this part should change
+    std::vector<std::string> lpFieldFilter; // fallback fields to search a keyword in
+    float lpKeywordFuzzyLevel; // variable to store the fallback fuzzyLevel specified in Local Parameters
+    int lpKeywordBoostLevel; // stores the fallback boostLevel specified in Local Parameters .. TODO: change the type
+    srch2::instantsearch::TermType lpKeywordPrefixComplete; // stores the fallback termType for keywords
+    // localparamter related variables end
+    bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
 
 private:
 
@@ -223,14 +233,14 @@ private:
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
-    void localParameterParser(string* input);
+    bool localParameterParser(string &input);
 
     /*
      * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
      * example: field:keyword^3 AND keyword2 AND keyword* AND keyword*^3 AND keyword^2~.5
      * output: fills up the container
      */
-    void keywordParser(const string &input);
+    bool keywordParser(string &input);
 
     /*
      * this function parsers only the parameters which are specific to Top-K
@@ -252,26 +262,6 @@ private:
      */
     void geoParser();
     /*
-     * verifyies the syntax of the main query string.
-     */
-    bool verifyMainQuery(const string &input);
-    /*
-     * receives a vector of terms, field:keyword.
-     * for each term it calls the parseTerm to parse the term.
-     */
-    void parseTerms(const vector<string>& terms);
-    /*
-     * example: field:keyword^3~.8
-     * if ":" is present, we have field information, create a vector and populate the fieldFilter vector in container
-     * else: check if lpFieldFilter in container has fields. if yes, create a vector of these fields and populate the vector
-     * else: create an empty vector and poplate the fieldFilter vector in container.
-     * in parallel populate the rawQueryKeywords vector in container.
-     * this will need to populate boost and similarity boost vectors too. also add "NOT_DEFINED" in
-     * prefixcomplete enum and populate the keywordPrefixComplete vector.
-     * NOTE: populating fileds will also need to look for . and + in them and populate the fieldFilterOps vector.
-     */
-    void parseTerm(const string &term, boost::regex &fieldDelimeterRegex);
-    /*
      * populates the fieldFilter using localparamters.
      * example: q=keyword , has no fieldFilter specified. it will look into the lpFieldFilters for the
      * fallback and use that to populate the fieldFilter for this keyword
@@ -284,12 +274,6 @@ private:
      * populate the fieldFilterOps with given boolean operator
      */
     void populateFieldFilterUsingQueryFields(const string &input);
-    /*
-     * parses the keywords
-     * example: keyword*^3~.7
-     * fills up rawkeywords, keyPrefixComp, boost, simBoost.
-     */
-    void parseKeyword(const string &input);
     /*
      * checks if boost value is present in the input
      * example: keyword^4 has boost value 4. keyword^ has no boost value
@@ -381,6 +365,76 @@ private:
      * populates teh termFQBooleanOperators in container.
      */
     void populateFilterQueryTermBooleanOperator(const string &termOperator);
+    /*
+     * parses the localparameter value from input string. It changes input string and populates the value
+     * example. for input: abc field = xyz} ,the paramter value will contain abc and the input will be changed to field = xyz}
+     */
+    bool parseLpValue(string &input, string &value);
+
+    /*
+     *parses the localparameter delemiter from input string. It changes input string.
+     */
+    bool parseLpDelimeter(string &input);
+    /*
+     * parses the localparameter key from input string. It changes input string and populates the field
+     * example. for input: "field = xyz field2 = abc}" ,the paramter field will contain field and the input will be changed to "= xyz field2 =abc}"
+     */
+    bool parseLpKey(string &input, string &field);
+    /*
+     * sets the lp key and lp value in the container.
+     */
+    void setLpKeyValinContainer(const string &lpKey, const string &lpVal);
+    /*
+     * parses using the given regex
+     */
+    bool doParse(string &input, const boost::regex &re, string &output);
+    /*
+     * parses the boolean operator, the string must begin with it
+     * example: AND field:keyword.
+     * output will be AND
+     */
+    bool parseTermBoolOperator(string &input, string &output);
+    /*
+     * parses the field
+     * example: field:keyword
+     * outpur will be field
+     *
+     */
+    bool parseField(string &input, string &field);
+    /**
+     * parses the keyword string
+     * example: keyword*^~
+     * output will be keyword
+     */
+    bool parseKeyword(string &input, string &output);
+    /*
+     * parses the * keyword
+     */
+    bool parseKeyWordForAsteric(string &input, string &output);
+    /*
+     * parses the prefix modifier
+     * example *^4
+     * output will have *
+     */
+    bool parsePrefixModifier(string &input, string &output);
+    /*
+     * parses the boost modifier
+     * eample: ^4~.8
+     * output will have ^4
+     */
+    bool parseBoostModifier(string &input, string &output);
+    /*
+     * populate boost info
+     */
+    void populateBoostInfo(bool isParsed, string &input);
+    /*
+     * populate fuzzyinfo
+     */
+    void populateFuzzyInfo(bool isParsed, string &input);
+    /*
+     * parses the fuzzy modifier
+     */
+    bool parseFuzzyModifier(string &input, string &output);
 };
 
 }
