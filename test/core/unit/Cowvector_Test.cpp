@@ -17,11 +17,13 @@ void* reader3(void* arg);
 
 cowvector<int> cowv;
 
-// test type of vectorview
-// main logic: it first push_back 10 elements [0,9] in the writeview and commit it.
-// then it will check the writeview type it should be true(writeview), and readview type, it should be false(readview).
-// And it will test needToFreeOldArray, it should be false
-// it will further push_back 10 elements [0,9] and test needToFreeOldArray, it should be true.
+// Main logic of this test case: it first uses push_back()
+// to add 10 elements (0, 1, ..., 90 to the writeview and commits.
+// Then it checks the vector view type, which should be a writeview.
+// And it tests the needToFreeOldArray flag, it should be false.
+// It will again call push_back() to add 10 elements (0, 1, ..., 9)
+// and test the needToFreeOldArray flag. The flag should be true,
+// since we have reallocated the memory of the array due to the more pushback calls.
 void test1()
 {
     vectorview<int>* &write = cowv.getWriteView();
@@ -45,10 +47,10 @@ void test1()
 // single reader and single writer
 // main logic: it will first push_back 10 elements [0,9] and commit
 // then it will start two threads. One for reader, one for writer.
-// the writer will first forceCreateCopy and do a modification, at the same time the reader will read it.
-// the reader will not see the change until the writer commits the change(it change the 3 element to be 100).
-// the writer will then push_back 90 elements. After it do the commit, the reader will detect it(it will find there are 100 elements in the vecterview).
-// the writer will then push_back 1000 elements. After it do the commit, the reader will detect it(it will find 1100 elements in the vecterview).
+// the writer will first forceCreateCopy and do a modification by changing the element 3 to 100, at the same time the reader will read it.
+// the reader will not see the change until the writer commits the change.
+// the writer will then push_back 90 elements. After it does the commit, the reader will detect it(it will find there are 100 elements in the vecterview).
+// the writer will then push_back 1000 elements. After it does the commit, the reader will detect it(it will find 1100 elements in the vecterview).
 void test2() {
     pthread_t  t1,t2 ;
     vectorview<int>* &write = cowv.getWriteView();
@@ -127,9 +129,9 @@ void* reader(void* arg) {
 
 
 // multi reader and single writer
-// main logic: we will first push_back 10 elemnts [0,9] and commit it. After that we will start 11 threads.
-// 10 of the threads is reader, and one is a writer.
-// the reader will not see the change before the writer commit it(it change the 3 element to be 100).
+// main logic: we will first push_back 10 elements [0,9] and commit it. After that we will start 11 threads.
+// 10 of the threads are readers, and one is a writer.
+// the readers will not see the change made by the writer (element 3 -> 100) before the writer commits it.
 void test3() {
     pthread_t  t1,t2[10];
     vectorview<int>* &write = cowv.getWriteView();
@@ -183,7 +185,7 @@ void* writer2(void* arg) {
 }
 
 // multi reader and single writer for larger data
-// main logic: the logic is the same with test 2, we test the 1 writer and 10 reader for larger data size(all the size is multiple 1000).
+// The main logic is the same as test 2. We have 1 writer and 10 readers for a larger data size (1000 times larger).
 void test4() {
     pthread_t  t1,t2[10];
     vectorview<int>* &write = cowv.getWriteView();
