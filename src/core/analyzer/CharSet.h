@@ -4,8 +4,8 @@
  *  Created on: 2013-5-19
  */
 
-#ifndef __CORE_ANALYZER__CHARSET_H__
-#define __CORE_ANALYZER__CHARSET_H__
+#ifndef __CORE_ANALYZER_CHARSET_H__
+#define __CORE_ANALYZER_CHARSET_H__
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include "util/encoding.h"
@@ -21,12 +21,19 @@ class CharSet
 public:
     enum CharacterType{
         OTHER_TYPE,
-        DELIMITER_TYPE, //the character whose unicode is <128 
-                        //but is not latin and is a delimiter, 
-                        //like (  > + etc..
-        LATIN_TYPE,     
-        BOPOMOFO_TYPE,  //zhuyin:http://www.ssec.wisc.edu/~tomw/java/unicode.html
-        HANZI_TYPE
+        DELIMITER_TYPE, // In general a character whose unicode is < 128, but not a latin character, 
+                        //  then it is a delimiter, such as "( > + ..
+                        // In Chinese, there is more delimiters(like ，。！). 
+                        //  It will also returned as delimiter
+                        
+        LATIN_TYPE,     // In general all the English alphabet and digit is LATIN_TYPE,
+                        // In Chinese, there are FullWidth English alphabet and digit which are also
+                        //  treated as LATIN_TYPE, such as ＡＺ１３
+                        
+        BOPOMOFO_TYPE,  // Used for the Bopomofo Zhuyin system in Taiwan, 
+                        //  http://www.ssec.wisc.edu/~tomw/java/unicode.html"
+                        
+        HANZI_TYPE      // Chinese Hanzi character
     };
 
 	static void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters);

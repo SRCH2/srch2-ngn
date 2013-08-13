@@ -1,19 +1,6 @@
-/*
- * =====================================================================================
- *
- *       Filename:  ChineseAnalyzer.h
- *
- *    Description:  
- *
- *        Version:  1.0
- *        Created:  08/06/2013 06:20:45 PM
- *       Revision:  none
- *       Compiler:  gcc
- *
- * =====================================================================================
- */
-#ifndef __CORE_ANALYZER__CHINESEANALYZER_H__
-#define __CORE_ANALYZER__CHINESEANALYZER_H__
+//$Id$
+#ifndef __CORE_ANALYZER_CHINESEANALYZER_H__
+#define __CORE_ANALYZER_CHINESEANALYZER_H__
 
 #include "AnalyzerInternal.h"
 #include "TokenStream.h"
@@ -23,15 +10,16 @@ namespace instantsearch{
 
 class ChineseAnalyzer: public AnalyzerInternal{
 public:
+    // We do not need the English stemmer for the Chinese analyzer
     ChineseAnalyzer(const std::string &dictFile,
             const std::string &recordAllowedSpecialCharacters = "",
             const std::string &stopWordFilePath = "",
-            const std::string &synonymFilePath ="",
+            const std::string &synonymFilePath = "",
             const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN
             ); 
     TokenStream *createOperatorFlow();
 private:
-    const std::string &mDictPath;
+    const std::string &mDictFilePath;
 };
 
 }

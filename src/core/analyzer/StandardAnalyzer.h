@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__STANDARDANALYZER_H__
-#define __CORE_ANALYZER__STANDARDANALYZER_H__
+#ifndef __CORE_ANALYZER_STANDARDANALYZER_H__
+#define __CORE_ANALYZER_STANDARDANALYZER_H__
 
 #include <vector>
 #include <instantsearch/Analyzer.h>

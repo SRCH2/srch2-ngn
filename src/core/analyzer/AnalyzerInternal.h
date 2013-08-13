@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __CORE_ANALYZER__ANALYZER_INTERNAL_H__
-#define __CORE_ANALYZER__ANALYZER_INTERNAL_H__
+#ifndef __CORE_ANALYZER_ANALYZER_INTERNAL_H__
+#define __CORE_ANALYZER_ANALYZER_INTERNAL_H__
 
 #include <vector>
 #include <map>

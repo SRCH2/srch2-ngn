@@ -1,23 +1,7 @@
-/*
- * =====================================================================================
- *
- *       Filename:  Dictionary.h
- *
- *    Description:  The dictionary structure used by ChineseTokenizer
- *
- *        Version:  1.0
- *        Created:  08/09/2013 01:57:06 PM
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  Jianfeng (), jianfengjia@srch2.com
- *   Organization:  SRCH2.com
- *
- * =====================================================================================
- */
+//$Id$
 
-#ifndef __CORE_ANALYZER__DICTIONARY_H__
-#define __CORE_ANALYZER__DICTIONARY_H__
+#ifndef __CORE_ANALYZER_DICTIONARY_H__
+#define __CORE_ANALYZER_DICTIONARY_H__
 
 #include <map>
 #include <vector>
@@ -31,13 +15,12 @@ namespace instantsearch{
 
 class Dictionary{
 public:
-    static const short INVALID_FREQ = -1;
+    static const short INVALID_WORD_FREQ = -1;
 
     Dictionary();
-    Dictionary(const string &dictPath);
 
-    int loadDict(const string &dictPath);
-    bool saveDict(const string &dictPath);
+    int loadDict(const std::string &dictFilePath);
+    bool saveDict(const std::string &dictFilePath);
 
     short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length);
     short getFreq(const std::string &str);
@@ -48,17 +31,17 @@ public:
         return mMaxWordLength;
     }
 private:
-    typedef std::map<std::string, short> HashMap;
+    typedef std::map<std::string, short> WordFrequencyMap;
 
     int mMaxWordLength;
-    HashMap mHashMap;
+    WordFrequencyMap mWordFrequencyMap;
 protected:
 	friend class boost::serialization::access;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & mMaxWordLength;
-		ar & mHashMap;
+		ar & mWordFrequencyMap;
 	}
 };
 

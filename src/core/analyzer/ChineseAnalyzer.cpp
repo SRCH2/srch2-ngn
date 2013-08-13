@@ -1,20 +1,4 @@
-/*
- * =====================================================================================
- *
- *       Filename:  ChineseAnalyzer.cpp
- *
- *    Description:  
- *
- *        Version:  1.0
- *        Created:  08/10/2013 11:20:50 PM
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  Jianfeng (), jianfengjia@srch2.com
- *   Organization:  SRCH2.com
- *
- * =====================================================================================
- */
+//$Id$
 
 #include "ChineseAnalyzer.h"
 #include "ChineseTokenizer.h"
@@ -25,33 +9,32 @@
 namespace srch2{
 namespace instantsearch{
 
-ChineseAnalyzer::ChineseAnalyzer(const std::string &dictFile,
-            const std::string &recordAllowedSpecialCharacters ,
+ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile, const std::string &recordAllowedSpecialCharacters ,
             const std::string &stopWordFilePath ,
             const std::string &synonymFilePath ,
             const SynonymKeepOriginFlag &synonymKeepOriginFlag 
             )
     :AnalyzerInternal(DISABLE_STEMMER_NORMALIZER,
             recordAllowedSpecialCharacters,
-            "", // Chinese do not have stemmer problem
+            "", // The Chinese language does not need stemming as English
             stopWordFilePath,
             synonymFilePath,
-            synonymKeepOriginFlag), mDictPath(dictFile)
+            synonymKeepOriginFlag), mDictFilePath(chineseDictionaryFile)
 {}
   
 TokenStream* ChineseAnalyzer::createOperatorFlow(){
-    TokenStream *tokenStream = new ChineseTokenizer(mDictPath);
+    TokenStream *tokenStream = new ChineseTokenizer(mDictFilePath);
     tokenStream = new LowerCaseFilter(tokenStream);
 
-	if (this->stopWordFilePath.compare("") != 0) {
+    if (this->stopWordFilePath.compare("") != 0) {
         // The file os error should be solved by exception
-		tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
-	}
+        tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
+    }
 
-	if (this->synonymFilePath.compare("") != 0) {
+    if (this->synonymFilePath.compare("") != 0) {
         // The file os error should be solved by exception
-		tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
-	}
+        tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
+    }
 
     this->tokenStreamContainer = tokenStream->tokenStreamContainer;
     return tokenStream;

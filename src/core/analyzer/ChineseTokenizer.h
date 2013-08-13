@@ -1,23 +1,7 @@
-/*
- * =====================================================================================
- *
- *       Filename:  ChineseTokenizer.h
- *
- *    Description:
- *
- *        Version:  1.0
- *        Created:  08/06/2013 06:29:20 PM
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  YOUR NAME (),
- *   Organization:
- *
- * =====================================================================================
- */
+//$Id$
 
-#ifndef __CORE_ANALYZER__CHINESETOKENIZER_H__
-#define __CORE_ANALYZER__CHINESETOKENIZER_H__
+#ifndef __CORE_ANALYZER_CHINESETOKENIZER_H__
+#define __CORE_ANALYZER_CHINESETOKENIZER_H__
 
 #include <string>
 #include <utility>
@@ -33,22 +17,24 @@ namespace instantsearch
 class ChineseTokenizer: public Tokenizer
 {
 public:
-    ChineseTokenizer(const std::string &dict);
+    ChineseTokenizer(const std::string &dictFilePath);
     bool processToken();
     virtual ~ChineseTokenizer() {};
 protected:
     bool incrementToken();
 
-    void feedCurrentToken(std::pair<short, short> range);
-    bool standardIncrement(unsigned previousType, unsigned currentType, const CharType &currentChar);
-    int tokenize(const std::vector<CharType> &sentence, int istart, int istop);
 private:
-    typedef std::pair<short, short> TokenSpan;
+    void feedCurrentToken(const std::pair<short, short> &range);
+    void tokenize(const std::vector<CharType> &sentence, int istart, int istop);
+    bool chineseIncrement(int iChineseStart);
+    bool nonChineseIncrement(unsigned currentType, CharType currentChar);
+
+    typedef std::pair<short, short> TokenSpan;  //The [begin,end) position span of 
+                                                //ChineseToken inside the original vector 
     typedef std::vector<TokenSpan>  TokenBuffer;
 
-    Dictionary  mDict;
-    TokenBuffer mBuffer;
-    vector<CharType>  *pCurrentToken;
+    Dictionary  mChineseDict;
+    TokenBuffer mCurrentChineseTokens;
 };
 
 }
