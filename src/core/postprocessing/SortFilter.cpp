@@ -17,11 +17,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-
-
 #include <vector>
 #include <algorithm>
-
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/SortFilter.h"
@@ -31,80 +28,104 @@
 #include "index/ForwardIndex.h"
 #include "instantsearch/Score.h"
 
-namespace srch2
-{
-namespace instantsearch
-{
+using namespace std;
 
+namespace srch2 {
+namespace instantsearch {
 
-
-
-class ResultNonSearchableAttributeComparator{
+class ResultNonSearchableAttributeComparator {
 private:
-	ForwardIndex* forwardIndex;
-	Schema * schema;
-	const Query * query;
-	SortFilter * filter;
+    ForwardIndex* forwardIndex;
+    Schema * schema;
+    const Query * query;
+    SortFilter * filter;
 
-	// based on the expression given in query, a value is assigned to each result and then
-	// results are sorted based on these values.
-	void getResultScoreForPostProcessingSort(const QueryResult * & result,Score * score) const{
-		// TODO: this must change to get score based on a expression from query
-
-
-		// getting attributeID from schema
-		unsigned attributeId = schema->getNonSearchableAttributeId(filter->attributeName);
-
-		// attribute type
-		FilterType attributeType = schema->getTypeOfNonSearchableAttribute(attributeId);
-
-		bool isValid = false;
-		const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
-		ASSERT(isValid);
-		const VariableLengthAttributeContainer * nonSearchableAttributes = list->getNonSearchableAttributeContainer();
-
-		nonSearchableAttributes->getAttribute(attributeId,schema, score);
-
-
-	}
 public:
-	ResultNonSearchableAttributeComparator(SortFilter * filter , ForwardIndex* forwardIndex , Schema * schema,const Query * query) {
-		this->filter = filter;
-		this->forwardIndex = forwardIndex;
-		this->schema = schema;
-		this->query = query;
-	}
 
-	// this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
-	bool operator() (const QueryResult * lhs, const QueryResult * rhs) const
-	{
-		Score lhsScore,rhsScore;
-		getResultScoreForPostProcessingSort(lhs , &lhsScore);
-		getResultScoreForPostProcessingSort(rhs , &rhsScore);
-		return (filter->order==srch2::instantsearch::Ascending)?
-				lhsScore < rhsScore :
-				!(lhsScore < rhsScore);
-	}
+    ResultNonSearchableAttributeComparator(SortFilter * filter,
+            ForwardIndex* forwardIndex, Schema * schema, const Query * query) {
+        this->filter = filter;
+        this->forwardIndex = forwardIndex;
+        this->schema = schema;
+        this->query = query;
+    }
+
+    // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
+    bool operator()(const QueryResult * lhs, const QueryResult * rhs) const {
+
+        // do the comparison
+        if (filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
+                rhs->valuesOfParticipatingNonSearchableAttributes) >= 0) {
+            return true;
+        } else {
+            return false;
+        }
+
+    }
 };
 
-SortFilter::~SortFilter(){
-
+SortFilter::~SortFilter() {
+    delete evaluator; // this object is allocated in plan Generator
 }
+
 // TODO : we don't need query in new design
 void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
-		QueryResults * input, QueryResults * output){
+        QueryResults * input, QueryResults * output) {
 
-	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-	Schema * schema = indexSearcherInternal->getSchema();
-	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+    ASSERT(evaluator != NULL);
+    if(evaluator == NULL) return;
 
-	// first copy all input results to output
-	input->impl->copyForPostProcessing(output->impl);
+    IndexSearcherInternal * indexSearcherInternal =
+            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+    Schema * schema = indexSearcherInternal->getSchema();
+    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
-	// now sort the results based on the comparator
-	std::sort(output->impl->sortedFinalResults.begin(), output->impl->sortedFinalResults.end() ,
-			ResultNonSearchableAttributeComparator(this,forwardIndex,schema,query));
+    // first copy all input results to output
+    output->copyForPostProcessing(input);
 
+    // extract all the information from forward index
+    // 1. find the participating attributes
+    /*
+     * Example : for example if the query contains "name,age,bdate ASC" , the participating attributes are
+     *           name, age and bdate.
+     */
+    const vector<string> * attributes =
+            evaluator->getParticipatingAttributes();
+    vector<unsigned> attributeIds;
+    for (vector<string>::const_iterator attributeName = attributes->begin();
+            attributeName != attributes->end(); ++attributeName) {
+        unsigned id = schema->getNonSearchableAttributeId(*attributeName);
+        attributeIds.push_back(id);
+    }
+    // 2. extract the data from forward index.
+    for(std::vector<QueryResult *>::iterator queryResultIterator = output->impl->sortedFinalResults.begin() ;
+            queryResultIterator != output->impl->sortedFinalResults.end() ; ++queryResultIterator){
+        QueryResult * queryResult = *queryResultIterator;
+        bool isValid = false;
+        const ForwardList * list = forwardIndex->getForwardList(
+                queryResult->internalRecordId, isValid);
+        ASSERT(isValid);
+        const VariableLengthAttributeContainer * nonSearchableAttributeContainer =
+                list->getNonSearchableAttributeContainer();
+        // now get the values from the container
+        vector<Score> scores;
+        nonSearchableAttributeContainer->getBatchOfAttributes(attributeIds, schema,
+                &scores);
+        // save the values in QueryResult objects
+        for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
+                attributesIterator != attributes->end() ; ++attributesIterator){
+            queryResult->valuesOfParticipatingNonSearchableAttributes[*attributesIterator] =
+                    scores.at(std::distance(attributes->begin() , attributesIterator));
+        }
+
+
+    }
+
+    // 3. now sort the results based on the comparator
+    std::sort(output->impl->sortedFinalResults.begin(),
+            output->impl->sortedFinalResults.end(),
+            ResultNonSearchableAttributeComparator(this, forwardIndex, schema,
+                    query));
 
 }
 

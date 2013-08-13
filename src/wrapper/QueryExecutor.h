@@ -24,6 +24,7 @@
 
 #include "QueryPlan.h"
 #include "instantsearch/QueryResults.h"
+#include "Srch2Server.h"
 
 using srch2::instantsearch::QueryResults;
 using srch2::instantsearch::QueryResultFactory;
@@ -38,14 +39,21 @@ class QueryExecutor
 
 public:
 
-	QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory  );
+	QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server );
 
 	void execute(QueryResults * finalResults);
+	void executeTopK(QueryResults * finalResults);
+	void executeGetAllResults(QueryResults * finalResults);
+	void executeGeo(QueryResults * finalResults);
+
+	void executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output);
 
 
 private:
 	QueryPlan & queryPlan;
 	QueryResultFactory * queryResultFactory;
+	Srch2Server * server;
+	IndexSearcher * indexSearcher;
 };
 
 }

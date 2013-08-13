@@ -19,11 +19,12 @@
  */
 
 
-#ifndef _WRAPPER_QUERYPLEANGENERATOR_H_
-#define _WRAPPER_QUERYPLEANGENERATOR_H_
+#ifndef _WRAPPER_QUERYPLEAN_H_
+#define _WRAPPER_QUERYPLEAN_H_
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "ParsedParameterContainer.h"
+#include "util/Assert.h"
 
 using srch2::instantsearch::ResultsPostProcessorPlan;
 using srch2::instantsearch::Query;
@@ -38,11 +39,11 @@ class QueryPlan
 public:
 
 
-	QueryPlan(const ParsedParameterContainer & paramsContainer){
-		this->paramsContainer = paramsContainer;
-		exactQuery = NULL;
-		fuzzyQuery = NULL;
-	}
+    QueryPlan(){
+        exactQuery = NULL;
+        fuzzyQuery = NULL;
+        postProcessingPlan = NULL;
+    }
 	~QueryPlan(){
 		if(exactQuery != NULL) delete exactQuery;
 
@@ -51,43 +52,94 @@ public:
 		if(postProcessingPlan != NULL) delete postProcessingPlan;
 
 	}
-	Query* getExactQuery() const {
+	Query* getExactQuery() {
 		return exactQuery;
 	}
 
 	void setExactQuery(Query* exactQuery) { // TODO : change the header
 		// it gets enough information from the arguments and allocates the query objects
-		this->exactQuery = exactQuery;
+        if(this->exactQuery == NULL){
+            this->exactQuery = exactQuery;
+        }
 	}
 
-	Query* getFuzzyQuery() const {
+	Query* getFuzzyQuery() {
 		return fuzzyQuery;
 	}
 
 	void setFuzzyQuery(Query* fuzzyQuery) { // TODO : change the header
 
 		// it gets enough information from the arguments and allocates the query objects
-		this->fuzzyQuery = fuzzyQuery;
+	    if(this->fuzzyQuery == NULL){
+            this->fuzzyQuery = fuzzyQuery;
+	    }
 	}
 
 
-	/*
-	 * 1. creates exact and fuzzy queries
-	 * 2. Generates the post processing plan
-	 */
-	void generatePlan(){
+	ResultsPostProcessorPlan* getPostProcessingPlan() const {
+		return postProcessingPlan;
+	}
 
-		// create query objects
-		createExactAndFuzzyQueries();
-		// generate post processing plan
-		createPostProcessingPlan();
+	void setPostProcessingPlan(ResultsPostProcessorPlan* postProcessingPlan) {
+		this->postProcessingPlan = postProcessingPlan;
+	}
+
+	bool isFuzzy() const {
+		return shouldRunFuzzyQuery;
+	}
+
+	void setFuzzy(bool isFuzzy) {
+		this->shouldRunFuzzyQuery = isFuzzy;
+	}
+
+	int getOffset() const {
+		return offset;
+	}
+
+	void setOffset(int offset) {
+		this->offset = offset;
+	}
+
+	int getResultsToRetrieve() const {
+		return resultsToRetrieve;
+	}
+
+	void setResultsToRetrieve(int resultsToRetrieve) {
+		this->resultsToRetrieve = resultsToRetrieve;
+	}
+
+	ParameterName getSearchType() const {
+		return searchType;
 	}
 
 
+	// this function translates searchType enum flags to correspondent unsigned values
+	unsigned getSearchTypeCode() const {
+		// TODO : there must be some functions in Config file that give us these codes.
+		switch (getSearchType()) {
+			case srch2http::TopKSearchType:
+				return 0;
+				break;
+			case srch2http::GetAllResultsSearchType:
+				return 1;
+				break;
+			case srch2http::GeoSearchType:
+				return 2;
+				break;
+			default:
+
+				break;
+		}
+		return 0;
+	}
+
+	void setSearchType(ParameterName searchType) {
+		this->searchType = searchType;
+	}
 
 
 private:
-	const ParsedParameterContainer & paramsContainer;
+
 	Query *exactQuery;
 	Query *fuzzyQuery;
 
@@ -96,23 +148,13 @@ private:
 
 	/// Plan related information
 
-
-	///
-
-	// creates a post processing plan based on information from Query
-	void createPostProcessingPlan(){
-
-		// NOTE: FacetedSearchFilter should be always the last filter.
-		// this function goes through the summary and uses the members of parsedInfo to fill out the query objects and
-		// also create and set the plan
-	}
-
-	void createExactAndFuzzyQueries(){
-
-	}
+	ParameterName searchType;
+	int offset;
+	int resultsToRetrieve;
+	bool shouldRunFuzzyQuery;
 
 };
 }
 }
 
-#endif // _WRAPPER_QUERYPLEANGENERATOR_H_
+#endif // _WRAPPER_QUERYPLEAN_H_

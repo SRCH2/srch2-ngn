@@ -119,7 +119,6 @@ private:
 
     Cache *cacheManager;
 
-
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
 
     int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults);

@@ -49,15 +49,13 @@ struct Query::Impl
     std::string nonSearchableAttributeName ;
     std::string nonSearchableAttributeValue ;
 
-    PostProcessingFilterFlag postProcessingFilterCode;
-    AttributeCriterionOperation postProcessingFilterOperationCode;
 
     ResultsPostProcessorPlan *  plan;
 
     Impl()
     {
         sortableAttributeId = 0;
-        order = srch2::instantsearch::Descending;
+        order = srch2::instantsearch::SortOrderDescending;
         lengthBoost = 0.5;
         prefixMatchPenalty = 0.90;
 
@@ -163,13 +161,13 @@ Query::Query(QueryType type):impl(new Impl)
 
     switch ( impl->type )
     {
-        case srch2::instantsearch::TopKQuery:
+        case srch2::instantsearch::SearchTypeTopKQuery:
             impl->ranker = new DefaultTopKRanker();
             break;
-        case srch2::instantsearch::GetAllResultsQuery:
+        case srch2::instantsearch::SearchTypeGetAllResultsQuery:
             impl->ranker = new GetAllResultsRanker();
             break;
-        case srch2::instantsearch::MapQuery:
+        case srch2::instantsearch::SearchTypeMapQuery:
             impl->ranker = new SpatialRanker();
             break;
         default:
@@ -233,19 +231,6 @@ std::string Query::getNonSearchableAttributeValue() const{
 	return this->impl->nonSearchableAttributeValue;
 }
 
-
-void Query::setPostProcessingFilter(PostProcessingFilterFlag code){
-	this->impl->postProcessingFilterCode = code;
-}
-PostProcessingFilterFlag Query::getPostProcessingFilter() const{
-	return this->impl->postProcessingFilterCode;
-}
-void Query::setPostProcessingFilterOperation(AttributeCriterionOperation code){
-	this->impl->postProcessingFilterOperationCode = code;
-}
-AttributeCriterionOperation Query::getPostProcessingFilterOperation() const{
-	return this->impl->postProcessingFilterOperationCode;
-}
 
 
 void Query::setPostProcessingPlan(ResultsPostProcessorPlan * plan){

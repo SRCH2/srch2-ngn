@@ -17,12 +17,7 @@
  * Copyright © 2013 SRCH2 Inc. All rights reserved
  */
 
-
-
-
-
 #include "VariableLengthAttributeContainer.h"
-
 
 #include <string>
 #include <sstream>
@@ -30,503 +25,427 @@
 
 #include "Assert.h"
 
+namespace srch2 {
+namespace instantsearch {
 
-namespace srch2
-{
-namespace instantsearch
-{
-
-VariableLengthAttributeContainer::VariableLengthAttributeContainer(){
-	data = NULL;
-	dataSize = 0;
+VariableLengthAttributeContainer::VariableLengthAttributeContainer() {
+    data = NULL;
+    dataSize = 0;
 }
 
-void VariableLengthAttributeContainer::init(const Schema * schema){
-	unsigned totalLength = 0;
+// fills the container with the values
+void VariableLengthAttributeContainer::fill(const Schema * schema,
+        const vector<string> & nonSearchableAttributeValues) {
+    // to make sure this class is not updates anywhere in the system
+    if (data != NULL) {
+        ASSERT(false);
+    }
 
-		for(int i=0;i<schema->getNumberOfNonSearchableAttributes();++i){ // iterate on attributes in schema
-			// find the type of ith attribute
-			FilterType type = getAttributeType(i,schema);
-			//
-			switch (type) {
-				case UNSIGNED:
-					totalLength += sizeof(unsigned);
-					break;
-				case FLOAT:
-					totalLength += sizeof(float);
-					break;
-				case TEXT:
-					totalLength += (sizeof(unsigned) + 0 ); // at this point we only allocate memory for storing the size of string
-					break;
-				case TIME:
-					totalLength += sizeof(long);
-					break;
-				default:
-					ASSERT(false);
-					break;
-			}
-		}
-		//
-		data = new unsigned char[totalLength];
-		for(int i=0;i<totalLength ; i++){
-			data[i] = 0 ;
-		}
-		dataSize = totalLength;
+    // first allocate the Byte array
+    allocate(schema, nonSearchableAttributeValues);
+
+    // iterate on nonsearchableAttributes and make a Byte vector
+    unsigned startOffset = 0;
+    for (int nSAIndex = 0;
+            nSAIndex < schema->getNumberOfNonSearchableAttributes();
+            nSAIndex++) {
+        // find the type of ith attribute
+        FilterType type = getAttributeType(nSAIndex, schema);
+        unsigned usedSizeForThisAttribute = 0;
+        convertStringToByteArray(type,
+                nonSearchableAttributeValues.at(nSAIndex), this->data,
+                startOffset, usedSizeForThisAttribute);
+        startOffset += usedSizeForThisAttribute;
+    }
+
 }
 
 
-VariableLengthAttributeContainer::~VariableLengthAttributeContainer(){
-	; // TODO
+VariableLengthAttributeContainer::~VariableLengthAttributeContainer() {
+    if (data != NULL){
+        delete data;
+        data = NULL;
+    }
 }
 
-void VariableLengthAttributeContainer::setAttribute(unsigned iter , const Schema * schema , std::string value){
-
-	if(data == NULL) init(schema);
-	FilterType attributeType = getAttributeType(iter,schema);
-	setAttribute(iter, schema, convertStringToCharVector(attributeType, value));
-
+// deallocates the data and clears the container. After calling this function it can be filled again.
+void VariableLengthAttributeContainer::clear(){
+    if(data != NULL) {
+        delete data;
+        data = NULL;
+    }
+    dataSize = 0;
 }
 
-std::string VariableLengthAttributeContainer::getAttribute(unsigned iter, const Schema * schema ) const{
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	return convertCharVectorToString(getAttributeType(iter, schema) , charVectorValue);
-}
+std::string VariableLengthAttributeContainer::getAttribute(
+        unsigned nonSearchableAttributeIndex, const Schema * schema) const {
 
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            return convertByteArrayToString(type ,startOffset );
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
+    return "";
+}
 // gets the attribute value wrapped in a Score object
-void VariableLengthAttributeContainer::getAttribute(unsigned iter, const Schema * schema , Score * score) const{
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	convertCharVectorToScore(getAttributeType(iter, schema) , charVectorValue , score);
+void VariableLengthAttributeContainer::getAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema, Score * score) const {
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            convertByteArrayToScore(type ,startOffset , score );
+            return;
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
 }
-
 
 // TODO TODO TODO this function is not tested
 // gets values of attributes in iters in Score objects. iters must be ascending.
-void VariableLengthAttributeContainer::getBatchOfAttributes(std::vector<unsigned> iters , const Schema * schema , std::vector<Score> * scores) const{
+void VariableLengthAttributeContainer::getBatchOfAttributes(
+        const std::vector<unsigned> & nonSearchableAttributeIndexesArg, const Schema * schema,
+        std::vector<Score> * scoresArg) const {
 
-	std::vector<std::vector<unsigned char> > charVectorValues;
-	getBatchOfAttributes(iters, schema, charVectorValues);
-	int i=0;
-	for(std::vector<std::vector<unsigned char> >::iterator attrIter = charVectorValues.begin();
-			attrIter != charVectorValues.end(); ++attrIter){
+    std::vector<Score> scores;
+    std::vector<unsigned> nonSearchableAttributeIndexes = nonSearchableAttributeIndexesArg;
 
-		Score score;
-		convertCharVectorToScore(getAttributeType(iters.at(i), schema) , *attrIter , &score);
+    // first make sure input IDs are sorted.
+    std::sort(nonSearchableAttributeIndexes.begin() , nonSearchableAttributeIndexes.end());
+    // now extract the scores
+    unsigned startOffset = 0;
+    for(int nonSearchableAttributeIndex=0; nonSearchableAttributeIndex < schema->getNumberOfNonSearchableAttributes() ; nonSearchableAttributeIndex++){
+        FilterType type = getAttributeType(nonSearchableAttributeIndex , schema);
+        if(find(nonSearchableAttributeIndexes.begin()
+                ,nonSearchableAttributeIndexes.end() , nonSearchableAttributeIndex) != nonSearchableAttributeIndexes.end()){ // index is among requested indexes
+            Score attributeValue;
+            convertByteArrayToScore(type , startOffset , &attributeValue);
+            scores.push_back(attributeValue);
+            // also must move the startOffset forward
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
 
-		scores->push_back(score);
-
-		//
-		++i;
-	}
+    // return the scores in the requested orders.
+    for(std::vector<unsigned>::const_iterator originalID = nonSearchableAttributeIndexesArg.begin() ;
+            originalID != nonSearchableAttributeIndexesArg.end() ; ++originalID){
+        unsigned indexOfOriginalIDInNewVector =
+                std::distance(
+                        nonSearchableAttributeIndexes.begin(),
+                        std::find(nonSearchableAttributeIndexes.begin() , nonSearchableAttributeIndexes.end() , *originalID ));
+        scoresArg->push_back(scores.at(indexOfOriginalIDInNewVector));
+    }
 }
 
-unsigned VariableLengthAttributeContainer::getUnsignedAttribute(unsigned iter , const Schema * schema) const{
-	FilterType attributeType = getAttributeType(iter,schema);
-	ASSERT(attributeType == UNSIGNED);
-	if(attributeType != UNSIGNED) return 0;
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	return convertCharVectorToUnsigned(charVectorValue, charVectorValue.begin(), charVectorValue.end());
+unsigned VariableLengthAttributeContainer::getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema) const {
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            ASSERT(type == ATTRIBUTE_TYPE_UNSIGNED);
+            if(type != ATTRIBUTE_TYPE_UNSIGNED) return 0; // zero is returned in case the type is not unsigned
+            return convertByteArrayToUnsigned(startOffset);
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
+    return 0;
 
 }
-float VariableLengthAttributeContainer::getFloatAttribute(unsigned iter , const Schema * schema) const{
-	FilterType attributeType = getAttributeType(iter,schema);
-	ASSERT(attributeType == FLOAT);
-	if(attributeType != FLOAT) return 0;
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	return convertCharVectorToFloat(charVectorValue, charVectorValue.begin(), charVectorValue.end());
+float VariableLengthAttributeContainer::getFloatAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema) const {
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            ASSERT(type == ATTRIBUTE_TYPE_FLOAT);
+            return convertByteArrayToFloat(startOffset);
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
+    return 0;
 }
-double VariableLengthAttributeContainer::getDoubleAttribute(unsigned iter, const Schema * schema) const{
-	return (double)getFloatAttribute(iter, schema);
+double VariableLengthAttributeContainer::getDoubleAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema) const {
+    return (double) getFloatAttribute(nonSearchableAttributeIndex, schema);
 }
-std::string VariableLengthAttributeContainer::getTextAttribute(unsigned iter , const Schema * schema) const{
+std::string VariableLengthAttributeContainer::getTextAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema) const {
 
-	FilterType attributeType = getAttributeType(iter,schema);
-	ASSERT(attributeType == TEXT);
-	if(attributeType != TEXT) return 0;
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	return convertCharVectorToString(attributeType , charVectorValue);
-
-}
-long VariableLengthAttributeContainer::getTimeAttribute(unsigned iter , const Schema * schema) const{
-
-	FilterType attributeType = getAttributeType(iter,schema);
-	ASSERT(attributeType == TIME);
-	if(attributeType != TIME) return 0;
-	std::vector<unsigned char> charVectorValue;
-	getAttribute(iter, schema, charVectorValue);
-	return convertCharVectorToLong(charVectorValue, charVectorValue.begin(), charVectorValue.end());
-
-}
-
-
-
-
-
-
-void VariableLengthAttributeContainer::setAttribute(unsigned iter, const Schema * schema, std::vector<unsigned char> attributeValue){
-	ASSERT(data != NULL);
-
-	std::vector<unsigned char> newData;
-	unsigned startIndex = 0;
-	// this flag is set to true if the following for changes the total length of data
-	// We need to know this to see if we need to delete/reallocate the char array
-	bool totalLengthChanged = false;
-
-	for (unsigned i=0;i<schema->getNumberOfNonSearchableAttributes();++i){ // iterate on attributes from schema
-				// find the type of ith attribute
-				FilterType type = getAttributeType(i,schema);
-
-				if(i == iter){ // updating this attribute's value
-					unsigned oldStartIndex= startIndex;
-					processNextAttribute(type, data, startIndex, true, attributeValue, newData, startIndex);
-					if ((startIndex - oldStartIndex) != attributeValue.size()){
-						if (type == TEXT){
-							if ((startIndex - oldStartIndex) !=  (attributeValue.size()+sizeof(unsigned)) ){ // length changes
-								totalLengthChanged = true;
-							}
-						}else{ // length changes
-							totalLengthChanged = true;
-						}
-					}
-				}else{
-					processNextAttribute(type, data, startIndex, false, attributeValue, newData, startIndex);
-				}
-	}
-	// now the newData vector contains new data, it should be converted to array.
-	if(totalLengthChanged){
-		delete data;
-		data = new unsigned char[newData.size()];
-		dataSize = newData.size();
-	}
-
-	unsigned i =0;
-	for (std::vector<unsigned char>::iterator newDataIter = newData.begin(); newDataIter != newData.end(); ++newDataIter){
-		data[i] = *newDataIter;
-		i++;
-	}
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            ASSERT(type == ATTRIBUTE_TYPE_TEXT);
+            if(type != ATTRIBUTE_TYPE_TEXT) return "";
+            return convertByteArrayToString(type, startOffset);
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
+    return "";
 
 }
+long VariableLengthAttributeContainer::getTimeAttribute(const unsigned nonSearchableAttributeIndex,
+        const Schema * schema) const {
 
-
-
-
-FilterType VariableLengthAttributeContainer::getAttributeType(unsigned iter, const Schema * schema) const{
-	ASSERT(iter < schema->getNumberOfNonSearchableAttributes());
-//	FilterType types[10];
-//	types[0]= TEXT;
-//	types[1]= UNSIGNED;
-//	types[2]= TIME;
-//	types[3] = TEXT;
-//	types[4] = FLOAT;
-//	types[5] = UNSIGNED;
-//	types[6] = TEXT;
-//	types[7] = TEXT;
-//	types[8] = UNSIGNED;
-//	types[9] = UNSIGNED;
-//
-//	return types[iter];
-
-	return schema->getTypeOfNonSearchableAttribute(iter);
-}
-
-
-void VariableLengthAttributeContainer::getAttribute(unsigned iter, const Schema * schema, std::vector<unsigned char>& attributeValue) const{
-	ASSERT(data != NULL);
-
-	unsigned startIndex = 0;
-
-	for (unsigned i=0;i<schema->getNumberOfNonSearchableAttributes();++i){ // iterate on attributes from schema
-				// find the type of ith attribute
-				FilterType type = getAttributeType(i,schema);
-
-				if(i == iter){ // get the value of this attribute
-					std::vector<unsigned char> temp;
-					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
-					std::vector<unsigned char>::iterator valueIter = temp.begin();
-					if(type == TEXT){
-						for(unsigned c = 0 ; c < sizeof(unsigned) ; c++){
-							valueIter ++;
-						}
-					}
-					attributeValue.insert(attributeValue.end(), valueIter, temp.end());
-					break;
-				}else{ // move over this attribute
-					std::vector<unsigned char> temp;
-					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
-				}
-	}
+    unsigned startOffset = 0;
+    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+        FilterType type = getAttributeType(i , schema);
+        if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+            ASSERT(type == ATTRIBUTE_TYPE_TIME);
+            return convertByteArrayToLong( startOffset);
+        }else{ // skip this attribute
+            unsigned numberOfBytesToSkip = 0;
+            getSizeOfNonSearchableAttributeValueInData(type , startOffset , numberOfBytesToSkip);
+            startOffset += numberOfBytesToSkip;
+        }
+    }
+    ASSERT(false);
+    return 0;
 
 }
 
-void VariableLengthAttributeContainer::getBatchOfAttributes(std::vector<unsigned> iters,
-		const Schema * schema, std::vector<std::vector<unsigned char> >& attributeValues) const{
-	ASSERT(data != NULL);
+void VariableLengthAttributeContainer::allocate(const Schema * schema,
+        const vector<string> & nonSearchableAttributeValues) {
+    unsigned totalLength = 0;
 
-	unsigned attributeItersIndex = 0;
-	if(iters.size() == 0){
-		return; // no attribute to read
-	}
-
-	unsigned startIndex = 0;
-
-	for (unsigned i=0;i<schema->getNumberOfNonSearchableAttributes();++i){ // iterate on attributes from schema
-				// find the type of ith attribute
-				FilterType type = getAttributeType(i,schema);
-
-				if(i == iters.at(attributeItersIndex)){ // get the value of this attribute
-					std::vector<unsigned char> temp;
-					std::vector<unsigned char> attributeValue;
-					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
-					std::vector<unsigned char>::iterator valueIter = temp.begin();
-					if(type == TEXT){
-						for(unsigned c = 0 ; c < sizeof(unsigned) ; c++){
-							valueIter ++;
-						}
-					}
-					attributeValue.insert(attributeValue.end(), valueIter, temp.end());
-					attributeValues.push_back(attributeValue);
-					attributeItersIndex ++ ;
-					if(attributeItersIndex == iters.size()){
-						break;
-					}
-				}else{ // move over this attribute
-					std::vector<unsigned char> temp;
-					std::vector<unsigned char> attributeValue;
-					processNextAttribute(type, data, startIndex, false, attributeValue, temp, startIndex);
-				}
-	}
-
+    for (int i = 0; i < schema->getNumberOfNonSearchableAttributes(); ++i) { // iterate on attributes in schema
+        // find the type of ith attribute
+        FilterType type = getAttributeType(i, schema);
+        //
+        switch (type) {
+        case ATTRIBUTE_TYPE_UNSIGNED:
+            totalLength += sizeof(unsigned);
+            break;
+        case ATTRIBUTE_TYPE_FLOAT:
+            totalLength += sizeof(float);
+            break;
+        case ATTRIBUTE_TYPE_TEXT:
+            totalLength += (sizeof(unsigned)
+                    + nonSearchableAttributeValues.at(i).size());
+            break;
+        case ATTRIBUTE_TYPE_TIME:
+            totalLength += sizeof(long);
+            break;
+        }
+    }
+    //
+    data = new Byte[totalLength];
+    dataSize = totalLength;
 }
 
 
-// TODO: OPTIMIZATION : we can add a flag to the header of this function which tells it to just move the cursor and
-// not do the copy.
-void VariableLengthAttributeContainer::processNextAttribute(FilterType attributeType, const unsigned char * currentData, unsigned startIndex, bool updateFlag,
-		std::vector<unsigned char> newAttributeValue, std::vector<unsigned char>& newData , unsigned& newStartIndex ) const{
-
-	if(updateFlag){ // updating this attribute with a new value
-		if(attributeType == TEXT){ // if it is text first add the length
-			std::vector<unsigned char> valueLengthVector = convertUnsignedToCharVector(newAttributeValue.size());
-			newData.insert(newData.end(), valueLengthVector.begin(), valueLengthVector.end());
-		}
-		// now add the value to the new vector
-		newData.insert(newData.end(), newAttributeValue.begin(), newAttributeValue.end());
-	}
-
-	// no matter it is update or not we should move the index forward
-	// but if it's not update we should copy the old data into the new vector
-	unsigned valueLength = 0;
-	std::vector<unsigned char> currentDataVector;
-	switch (attributeType) {
-		case UNSIGNED:
-			valueLength = sizeof(unsigned);
-			break;
-		case FLOAT:
-			valueLength = sizeof(float);
-			break;
-		case TIME:
-			valueLength = sizeof(long);
-			break;
-		case TEXT:
-			for(unsigned i=startIndex ; i < startIndex+sizeof(unsigned) ; i++){
-				currentDataVector.push_back(currentData[i]);
-			}
-			unsigned textSize = convertCharVectorToUnsigned(currentDataVector, currentDataVector.begin(), currentDataVector.end());
-			valueLength = sizeof(unsigned) + textSize; // |value_length|text_value|
-			break;
-	}
-
-	if(!updateFlag){
-		for(int i=startIndex;i<startIndex+valueLength; ++i){
-			newData.push_back(currentData[i]);
-		}
-	}
-	newStartIndex = startIndex+valueLength;
-
-
+FilterType VariableLengthAttributeContainer::getAttributeType(unsigned iter,
+        const Schema * schema) const {
+    ASSERT(iter < schema->getNumberOfNonSearchableAttributes());
+    return schema->getTypeOfNonSearchableAttribute(iter);
 }
 
 
 
-std::vector<unsigned char> VariableLengthAttributeContainer::convertUnsignedToCharVector(unsigned input) const{
-
-	unsigned char * p = reinterpret_cast<unsigned char *>(&input);
-	std::vector<unsigned char> result;
-	for(int i=0 ; i < sizeof(unsigned);i++){
-		result.push_back(p[i]);
-	}
-	return result;
-}
-unsigned VariableLengthAttributeContainer::convertCharVectorToUnsigned(
-		std::vector<unsigned char> input ,std::vector<unsigned char>::iterator start, std::vector<unsigned char>::iterator end) const{
-
-	unsigned char * temp = new unsigned char[sizeof(unsigned)];
-	unsigned i=0;
-	for(std::vector<unsigned char>::iterator iter = start; iter != end; ++iter){
-		temp[i] = *iter;
-		i++;
-	}
-	unsigned * resultP = (unsigned *) temp;
-	unsigned result = *resultP;
-	delete temp;
-	return result;
+void VariableLengthAttributeContainer::getSizeOfNonSearchableAttributeValueInData(
+        FilterType type, unsigned startOffset, unsigned & size) const {
+    unsigned sizeOfString = 0;
+    switch (type) {
+    case ATTRIBUTE_TYPE_UNSIGNED:
+        size = sizeof(unsigned);
+        break;
+    case ATTRIBUTE_TYPE_FLOAT:
+        size = sizeof(float);
+        break;
+    case ATTRIBUTE_TYPE_TEXT:
+        sizeOfString = convertByteArrayToUnsigned(startOffset);
+        size = sizeOfString + sizeof(unsigned);
+        break;
+    case ATTRIBUTE_TYPE_TIME:
+        size = sizeof(long);
+        break;
+    }
 }
 
+void VariableLengthAttributeContainer::convertUnsignedToByteArray(
+        unsigned input, Byte * output, unsigned startOffset) const {
+
+    Byte * p = reinterpret_cast<Byte *>(&input);
+    for (int i = 0; i < sizeof(unsigned); i++) {
+        output[startOffset + i] = p[i];
+    }
+}
+unsigned VariableLengthAttributeContainer::convertByteArrayToUnsigned(
+        unsigned startOffset) const {
+
+    Byte * bytePointer = this->data + startOffset;
+    unsigned * unsignedPointer = (unsigned *) bytePointer;
+    return *unsignedPointer;
+}
 
 // Converting float and char vector together.
-std::vector<unsigned char> VariableLengthAttributeContainer::convertFloatToCharVector(float input) const{
+void VariableLengthAttributeContainer::convertFloatToByteArray(float input,
+        Byte * output, unsigned startOffset) const {
 
-	std::vector<unsigned char> result;
-	unsigned char const * p = reinterpret_cast<unsigned char const *>(&input);
-	for(int i=0 ;i < sizeof(float);i++){
-		result.push_back(p[i]);
-	}
-	return result;
+    Byte const * p = reinterpret_cast<Byte const *>(&input);
+    for (int i = 0; i < sizeof(float); i++) {
+        output[startOffset + i] = p[i];
+    }
 }
-float VariableLengthAttributeContainer::convertCharVectorToFloat(std::vector<unsigned char> input , std::vector<unsigned char>::iterator start, std::vector<unsigned char>::iterator end) const{
-
-	unsigned char * temp = new unsigned char[sizeof(float)];
-	unsigned i=0;
-	for(std::vector<unsigned char>::iterator iter = start; iter != end; ++iter){
-		temp[i] = *iter;
-		i++;
-	}
-	float * resultP = (float *) temp;
-	float result = *resultP;
-	delete temp;
-	return result;
+float VariableLengthAttributeContainer::convertByteArrayToFloat(
+        unsigned startOffset) const {
+    Byte * bytePointer = this->data + startOffset;
+    float * floatPointer = (float *) bytePointer;
+    return *floatPointer;
 }
 
 // Converting long and char vector together.
-std::vector<unsigned char> VariableLengthAttributeContainer::convertLongToCharVector(long input) const{
-	std::vector<unsigned char> result;
-	unsigned char const * p = reinterpret_cast<unsigned char const *>(&input);
-	for(int i=0 ;i < sizeof(long);i++){
-		result.push_back(p[i]);
-	}
-	return result;
+void VariableLengthAttributeContainer::convertLongToByteArray(long input,
+        Byte * output, unsigned startOffset) const {
+    Byte const * p = reinterpret_cast<Byte const *>(&input);
+    for (int i = 0; i < sizeof(long); i++) {
+        output[startOffset + i] = p[i];
+    }
 }
-long VariableLengthAttributeContainer::convertCharVectorToLong(std::vector<unsigned char> input , std::vector<unsigned char>::iterator start, std::vector<unsigned char>::iterator end) const{
-	unsigned char * temp = new unsigned char[sizeof(long)];
-	unsigned i=0;
-	for(std::vector<unsigned char>::iterator iter = start; iter != end; ++iter){
-		temp[i] = *iter;
-		i++;
-	}
-	long * resultP = (long *) temp;
-	long result = *resultP;
-	delete temp;
-	return result;
+long VariableLengthAttributeContainer::convertByteArrayToLong(
+        unsigned startOffset) const {
+    Byte * bytePointer = this->data + startOffset;
+    long * longPointer = (long *) bytePointer;
+    return *longPointer;
 }
 
+void VariableLengthAttributeContainer::convertStringToByteArray(FilterType type,
+        std::string value, Byte * output, unsigned startOffset,
+        unsigned & size) const {
 
+    unsigned intValue = 0;
+    float floatValue = 0;
+    long longValue = 0;
+    int i=0;
+    switch (type) {
+    case ATTRIBUTE_TYPE_UNSIGNED:
+        intValue = atoi(value.c_str());
+        convertUnsignedToByteArray(intValue, output, startOffset);
+        size = sizeof(unsigned);
+        break;
+    case ATTRIBUTE_TYPE_FLOAT:
+        floatValue = atof(value.c_str());
+        convertFloatToByteArray(floatValue, output, startOffset);
+        size = sizeof(float);
+        break;
+    case ATTRIBUTE_TYPE_TEXT:
+        convertUnsignedToByteArray(value.size(), output, startOffset);
+        startOffset += sizeof(unsigned);
 
-
-std::vector<unsigned char> VariableLengthAttributeContainer::convertStringToCharVector(FilterType type, std::string value) const{
-
-	std::vector<unsigned char> result;
-	unsigned intValue = 0;
-	float floatValue = 0;
-	long longValue = 0;
-	switch (type) {
-		case UNSIGNED:
-			intValue = atoi(value.c_str());
-			result = convertUnsignedToCharVector(intValue);
-			break;
-		case FLOAT:
-			floatValue = atof(value.c_str());
-			result = convertFloatToCharVector(floatValue);
-			break;
-		case TEXT:
-			for(std::string::iterator it = value.begin(); it != value.end(); ++it) {
-			    result.push_back(*it);
-			}
-			break;
-		case TIME:
-			longValue = atol(value.c_str());
-			result = convertLongToCharVector(longValue);
-			break;
-		default:
-			ASSERT(false);
-			break;
-	}
-
-	return result;
+        // NOTE : since string iterator iterates on bytes, this implementation is consistent with
+        // multi-language because it only copies the bytes of the string to the byte array ...
+        for (std::string::iterator it = value.begin(); it != value.end();
+                ++it) {
+            output[startOffset + i] = *it;
+            //
+            i++;
+        }
+        size = sizeof(unsigned) + value.size();
+        break;
+    case ATTRIBUTE_TYPE_TIME:
+        longValue = atol(value.c_str());
+        convertLongToByteArray(longValue, output, startOffset);
+        size = sizeof(long);
+        break;
+    }
 
 }
 
-std::string VariableLengthAttributeContainer::convertCharVectorToString(FilterType type, std::vector<unsigned char> value) const{
-	std::string result = "";
-	unsigned intValue = 0;
-	float floatValue = 0;
-	long longValue = 0;
-	std::stringstream ss;
-	switch (type) {
-		case UNSIGNED:
-			intValue = convertCharVectorToUnsigned(value, value.begin(),value.end());
-			ss << intValue;
-			result = ss.str();
-			break;
-		case FLOAT:
-			floatValue = convertCharVectorToFloat(value, value.begin(), value.end());
-			ss << floatValue;
-			result = ss.str();
-			break;
-		case TEXT:
-			ss << "";
-			for(std::vector<unsigned char>::iterator it = value.begin(); it != value.end(); ++it) {
-			    ss << (char)*it; // TODO: is it safe to cast it to char
-			}
-			result = ss.str();
-			break;
-		case TIME:
-			longValue = convertCharVectorToLong(value, value.begin(), value.end());
-			ss << longValue;
-			result = ss.str();
-			break;
-		default:
-			ASSERT(false);
-			break;
-	}
+std::string VariableLengthAttributeContainer::convertByteArrayToString(
+        FilterType type, unsigned startOffset) const {
+    std::string result = "";
+    unsigned intValue = 0;
+    float floatValue = 0;
+    long longValue = 0;
+    unsigned sizeOfString = 0;
+    std::stringstream ss;
+    switch (type) {
+    case ATTRIBUTE_TYPE_UNSIGNED:
+        intValue = convertByteArrayToUnsigned(startOffset);
+        ss << intValue;
+        result = ss.str();
+        break;
+    case ATTRIBUTE_TYPE_FLOAT:
+        floatValue = convertByteArrayToFloat(startOffset);
+        ss << floatValue;
+        result = ss.str();
+        break;
+    case ATTRIBUTE_TYPE_TEXT:
+        sizeOfString = convertByteArrayToUnsigned(startOffset);
+        startOffset += sizeof(unsigned);
+        for (int i = 0; i < sizeOfString; i++) {
+            result.push_back(this->data[startOffset + i]);
+        }
+        break;
+    case ATTRIBUTE_TYPE_TIME:
+        longValue = convertByteArrayToLong(startOffset);
+        ss << longValue;
+        result = ss.str();
+        break;
+    }
 
-	return result;
+    return result;
 }
 
-
-void VariableLengthAttributeContainer::convertCharVectorToScore(FilterType type, std::vector<unsigned char> value , Score * result) const{
-	unsigned intValue = 0;
-	float floatValue = 0;
-	long longValue = 0;
-	std::stringstream ss;
-	switch (type) {
-		case UNSIGNED:
-			intValue = convertCharVectorToUnsigned(value, value.begin(),value.end());
-			result->setScore(intValue);
-			break;
-		case FLOAT:
-			floatValue = convertCharVectorToFloat(value, value.begin(), value.end());
-			result->setScore(floatValue);
-			break;
-		case TEXT:
-			ss << "";
-			for(std::vector<unsigned char>::iterator it = value.begin(); it != value.end(); ++it) {
-			    ss << (char)*it; // TODO: is it safe to cast it to char
-			}
-			result->setScore(ss.str());
-
-			break;
-		case TIME:
-			longValue = convertCharVectorToLong(value, value.begin(), value.end());
-			result->setScore(longValue);
-			break;
-		default:
-			ASSERT(false);
-			break;
-	}
+void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
+        unsigned startOffset, Score * result) const {
+    unsigned intValue = 0;
+    float floatValue = 0;
+    long longValue = 0;
+    unsigned sizeOfString = 0;
+    string stringValue = "";
+    switch (type) {
+    case ATTRIBUTE_TYPE_UNSIGNED:
+        intValue = convertByteArrayToUnsigned(startOffset);
+        result->setScore(intValue);
+        break;
+    case ATTRIBUTE_TYPE_FLOAT:
+        floatValue = convertByteArrayToFloat(startOffset);
+        result->setScore(floatValue);
+        break;
+    case ATTRIBUTE_TYPE_TEXT:
+        sizeOfString = convertByteArrayToUnsigned(startOffset);
+        startOffset += sizeof(unsigned);
+        for (int i = 0; i < sizeOfString; i++) {
+            stringValue.push_back(this->data[startOffset + i]);
+        }
+        result->setScore(stringValue);
+        break;
+    case ATTRIBUTE_TYPE_TIME:
+        longValue = convertByteArrayToLong(startOffset);
+        result->setScore(longValue);
+        break;
+    }
 
 }
 

@@ -26,14 +26,19 @@
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
 #include <instantsearch/Score.h>
+
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
+#include "util/Logger.h"
 
 #include <vector>
 #include <queue>
 #include <string>
 #include <set>
+#include <map>
 
+
+using srch2::util::Logger;
 
 namespace srch2
 {
@@ -42,6 +47,7 @@ namespace instantsearch
 
 class IndexSearcherInternal;
 class QueryResultFactoryInternal;
+class FacetedSearchFilter;
 
 
 class QueryResult {
@@ -54,26 +60,14 @@ public:
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
 
+    std::map<std::string,Score> valuesOfParticipatingNonSearchableAttributes;
+
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     Score getResultScore() const
     {
     	return _score;
     }
-    // this operator should be consistent with two others in TermVirtualList.h and InvertedIndex.h
-//    bool operator<(const QueryResult*& queryResult) const
-//    {
-//        float leftRecordScore, rightRecordScore;
-//        unsigned leftRecordId  = internalRecordId;
-//        unsigned rightRecordId = queryResult->internalRecordId;
-//		Score _leftRecordScore = this->_score;
-//		Score _rightRecordScore = queryResult->_score;
-//		std::cout << "Score " << _leftRecordScore.toString() << " vs. " << _rightRecordScore.toString() << std::endl;
-//		return DefaultTopKRanker::compareRecordsGreaterThan(_leftRecordScore,  leftRecordId,
-//		                                    _rightRecordScore, rightRecordId);//TODO: this one should be returned.
-//
-//
-//    }
 
 
     friend class QueryResultFactoryInternal;
@@ -122,7 +116,7 @@ public:
 		return newResult;
 	}
 	~QueryResultFactoryInternal(){
-		std::cout << "Query results are being destroyed in factory destructor." << std::endl;
+	    Logger::debug("Query results are being destroyed in factory destructor." );
 		for(std::vector<QueryResult *>::iterator iter = queryResultPointers.begin();
 					iter != queryResultPointers.end() ; ++iter){
 			delete *iter;
@@ -138,7 +132,7 @@ class QueryResultsInternal
 {
 public:
 	friend class QueryResults;
-	friend class ResultsPostProcessor;
+    friend class ResultsPostProcessor;
 	QueryResultsInternal();
 	void init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
 
@@ -159,7 +153,6 @@ public:
     
     void fillVisitedList(std::set<unsigned> &visitedList); // fill visitedList with the recordIds in sortedFinalResults
     void finalizeResults(const ForwardIndex *forwardIndex);
-
     const Query* getQuery() const {
         return this->query;
     }
@@ -172,17 +165,22 @@ public:
     bool checkCacheHit(IndexSearcherInternal *indexSearcherInternal, Query *query);
     
     
-    void copyForPostProcessing(QueryResultsInternal * destination) const {
-    	destination->sortedFinalResults = this->sortedFinalResults;
-    	destination->facetResults = this->facetResults;
-    }
-
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
-	std::map<std::string , std::vector<float> > facetResults;
+    /*
+     * Example:
+     * If the facet is created on two fields : Model and Price, that Model is categorical and Price is range
+     * and price.range.start = 10, price.range.gap = 5 , price.range.end = 20 then this structure
+     * which keeps the final results will contain :
+     * Model =>
+     *          <IBM,10>,<DELL,23>,<SONY,12>,<APPLE,25>
+ *     Price =>
+ *              <less than 10,14>,<10,80>,<15,24>,<20,30>
+     */
+	std::map<std::string , std::vector<std::pair<std::string, float> > > facetResults;
     Stat *stat;
     
  private:

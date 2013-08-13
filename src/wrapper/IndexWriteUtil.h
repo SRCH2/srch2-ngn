@@ -5,7 +5,7 @@
 
 #include "json/json.h"
 #include "JSONRecordParser.h"
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 #include "evhttp.h"
 
@@ -16,7 +16,7 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
     	JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
@@ -54,7 +54,7 @@ struct IndexWriteUtil
     }
 
     //TODO: NO way to tell if delete failed on srch2 index
-    static void _deleteCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const Json::Value &root, const uint64_t offset, std::stringstream &log_str)
+    static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, const uint64_t offset, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -87,7 +87,7 @@ struct IndexWriteUtil
     	//std::cout << "DELETE request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const evkeyvalq &headers, const uint64_t offset, std::stringstream &log_str)
+    static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const uint64_t offset, std::stringstream &log_str)
 	{
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -125,7 +125,7 @@ struct IndexWriteUtil
 		}
 	}
 
-    static void _updateCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _updateCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
     {
         /// step 1, delete old record
 
@@ -160,7 +160,7 @@ struct IndexWriteUtil
 			//delete the record from the index
 			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId))
 			{
-				case OP_FAIL:
+				case srch2::instantsearch::OP_FAIL:
 				{
                     // record to update doesn't exit, will insert it
                     break;
@@ -215,7 +215,7 @@ struct IndexWriteUtil
 
         switch ( ret )
         {
-            case OP_FAIL:
+            case srch2::instantsearch::OP_FAIL:
             {
                 log_str << "\"resume\":\"no record with given primary key\"}";
                 break;
@@ -233,10 +233,10 @@ struct IndexWriteUtil
 	    log_str << "{\"save\":\"success\"}";
     }
 
-    static void _commitCommand(Indexer *indexer, const Srch2ServerConf *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
+    static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
-    	if ( indexer->commit() == OP_SUCCESS)
+    	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     	{
 	  
 	  // CHENLI: do not save indexes to disk since we can always rebuild them from

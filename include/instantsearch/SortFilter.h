@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 
@@ -37,7 +37,14 @@ namespace instantsearch
 {
 
 
-
+class SortEvaluator
+{
+public:
+	virtual int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const = 0 ;
+	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
+	virtual ~SortEvaluator(){};
+	SortOrder order;
+};
 
 class SortFilter : public ResultsPostProcessorFilter
 {
@@ -49,9 +56,7 @@ public:
 	~SortFilter();
 
 
-	// TODO : temperorrily we keep two simple variables to be filled up at query builder
-	std::string attributeName;
-	SortOrder order;
+	SortEvaluator * evaluator;
 };
 
 }

@@ -31,7 +31,7 @@ void smallTest(string INDEX_DIR)
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	// Create an analyzer
-	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(DISABLE_STEMMER_NORMALIZER, "", "", "", SYNONYM_DONOT_KEEP_ORIGIN);
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
@@ -144,7 +144,7 @@ void bigTest(string INDEX_DIR)
 	schema->setSearchableAttribute("phone"); // searchable text
 
 	// create an analyzer
-	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::NO_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(DISABLE_STEMMER_NORMALIZER, "", "", "", SYNONYM_DONOT_KEEP_ORIGIN);
 
 	// create an index writer
 	unsigned mergeEveryNSeconds = 3;	

@@ -40,7 +40,7 @@ class ResultsPostProcessorFilter
 {
 public:
 	virtual void doFilter(IndexSearcher *indexSearcher, const Query * query,
-			 QueryResults * input , QueryResults * output) = 0; // TODO : shouldn't pass forward index here
+			 QueryResults * input , QueryResults * output) = 0;
 
 	virtual ~ResultsPostProcessorFilter() {};
 
@@ -48,6 +48,8 @@ public:
 
 class ResultsPostProcessorPlanInternal;
 
+
+// TODO : add an iterator class inside plan
 class ResultsPostProcessorPlan
 {
 public:
@@ -58,7 +60,7 @@ public:
 	void clearPlan();
 	void beginIteration();
 	ResultsPostProcessorFilter * nextFilter();
-	bool hasMoreFilters();
+	bool hasMoreFilters() const;
 	void closeIteration();
 private:
 	ResultsPostProcessorPlanInternal * impl;

@@ -21,6 +21,7 @@
 #define __RECORD_H__
 
 #include <instantsearch/platform.h>
+#include <instantsearch/Constants.h>
 
 #include <string>
 
@@ -30,11 +31,7 @@ namespace instantsearch
 {
 class Schema;
 
-typedef enum {
-    LU_PRESENT_IN_READVIEW_AND_WRITEVIEW,
-    LU_TO_BE_INSERTED,
-    LU_ABSENT_OR_TO_BE_DELETED
-} INDEXLOOKUP_RETVAL;
+
 
 /**
  * This class defines a data record passed to the Indexer. The Schema

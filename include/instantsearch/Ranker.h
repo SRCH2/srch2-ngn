@@ -20,6 +20,7 @@
 #ifndef __RANKER_H__
 #define __RANKER_H__
 
+#include <instantsearch/Constants.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Score.h>
@@ -76,7 +77,7 @@ namespace srch2
     };
     
     typedef Ranker DefaultTopKRanker;
-    
+
     class GetAllResultsRanker : public Ranker
     {
     public:

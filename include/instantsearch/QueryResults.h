@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <instantsearch/platform.h>
 
@@ -41,6 +42,7 @@ class QueryResultFactoryInternal;
 class QueryResultFactory{
 public:
 	QueryResultFactory();
+    ~QueryResultFactory();
     QueryResultFactoryInternal * impl;
 };
 
@@ -156,6 +158,12 @@ public:
      */
     double getPhysicalDistance(const unsigned position) const ;
 
+    const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
+
+    void copyForPostProcessing(QueryResults * sourceQueryResults) const ;
+
+    void clear();
+
     //TODO: These three functions for internal debugging. remove from the header
     void printStats() const ;
 
@@ -167,6 +175,8 @@ public:
      * Destructor of the QueryResults object.
      */
     ~QueryResults();
+
+
 
 
 

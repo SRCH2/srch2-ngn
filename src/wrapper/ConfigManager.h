@@ -1,9 +1,10 @@
-//$Id: Srch2ServerConf.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
+//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
+#include "WrapperConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -20,19 +21,8 @@ namespace po = boost::program_options;
 namespace srch2 {
 namespace httpwrapper {
 
-typedef enum {
-	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
-} WriteApiType;
 
-typedef enum {
-	INDEXCREATE = 0, INDEXLOAD = 1
-} IndexCreateOrLoad;
-
-typedef enum {
-	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
-} DataSourceType;
-
-class Srch2ServerConf {
+class ConfigManager {
 private:
 
 	// Argument file options
@@ -76,6 +66,15 @@ private:
 	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
 
 
+
+	// facet
+	bool facetEnabled;
+	vector<int> facetTypes; // 0 : simple , 1 : range
+	vector<string> facetAttributes;
+	vector<string> facetStarts;
+	vector<string> facetEnds;
+	vector<string> facetGaps;
+
 	//vector<unsigned> attributesBoosts;
 
 	// This is the directory that will be set during installation.
@@ -116,8 +115,8 @@ private:
     string configFile;
 
 public:
-	Srch2ServerConf(std::string& configfile);
-	virtual ~Srch2ServerConf();
+    ConfigManager(std::string& configfile);
+	virtual ~ConfigManager();
 
 	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
 	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
@@ -200,7 +199,26 @@ public:
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
-    void loadConfigFile() ;
+
+	vector<string> getAttributesToReturn() const {
+		return attributesToReturn;
+	}
+
+	void setAttributesToReturn(vector<string> attributesToReturn) {
+		this->attributesToReturn = attributesToReturn;
+	}
+
+
+	bool isFacetEnabled() const;
+
+	const vector<string> * getFacetAttributes() const ;
+	const vector<int> * getFacetTypes() const;
+	const vector<string> * getFacetStarts() const ;
+	const vector<string> * getFacetEnds() const ;
+
+	const vector<string> * getFacetGaps() const ;
+
+        void loadConfigFile() ;
 };
 
 }

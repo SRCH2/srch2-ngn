@@ -24,8 +24,14 @@
 
 #include "ParsedParameterContainer.h"
 #include "instantsearch/Analyzer.h"
+#include "instantsearch/Schema.h"
+#include "analyzer/StandardAnalyzer.h"
+#include "analyzer/SimpleAnalyzer.h"
+#include "ConfigManager.h"
 
 using srch2::instantsearch::Analyzer;
+using srch2::instantsearch::Schema;
+
 
 namespace srch2{
 
@@ -35,13 +41,21 @@ namespace httpwrapper{
 class QueryRewriter
 {
 public:
-	QueryRewriter(const Analyzer & analyzer ,ParsedParameterContainer * paramContainer){
+	QueryRewriter(const ConfigManager *indexDataContainerConf,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
 
-	}
+	void rewrite();
 
-	void rewrite(){
-		// go through the summary and call the analyzer on the query if needed.
-	}
+private:
+	const Schema & schema;
+	const Analyzer & analyzer ;
+	ParsedParameterContainer * paramContainer;
+	const ConfigManager *indexDataContainerConf;
+
+	void prepareKeywordInfo();
+	void applyAnalyzer();
+	// this function creates the bit sequence needed for field filter based on the filter names
+	void prepareFieldFilters();
+	void prepareFacetFilterInfo();
 };
 
 }

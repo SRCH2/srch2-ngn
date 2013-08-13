@@ -243,7 +243,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 
 float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -275,18 +275,21 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     return resVal;
 }
 
-bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed, srch2::instantsearch::TermType termType)
+int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
-    for (unsigned i = 0; i < queryKeywords.size(); ++i)
-    {
+    srch2is::TermType termType = TERM_TYPE_COMPLETE;
+    for (unsigned i = 0; i < queryKeywords.size(); ++i){
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         Term *term = NULL;
+        if(i == (queryKeywords.size()-1)){
+            termType = TERM_TYPE_PREFIX;
+        }
         if (ed>0)
             term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
         else
@@ -304,18 +307,18 @@ bool pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearc
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
-    printGeoResults(queryResults);
+    //printGeoResults(queryResults);
     //cout << "num of res: " << queryResults->getNumberOfResults() << endl;
 
-    bool returnvalue =  queryResults->getNumberOfResults()>0;
+    int returnValue =  queryResults->getNumberOfResults();
     delete queryResults;
     delete query;
-    return returnvalue;
+    return returnValue;
 }
 
 unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);

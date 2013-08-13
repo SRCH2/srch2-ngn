@@ -26,6 +26,7 @@
 #include "instantsearch/Score.h"
 #include "query/QueryResultsInternal.h"
 #include "string"
+#include <vector>
 using namespace std;
 
 
@@ -40,29 +41,50 @@ class NonSearchableAttributeExpressionFilterInternal
 
 
 public:
+
+	NonSearchableAttributeExpressionFilterInternal(NonSearchableAttributeExpressionFilter * filter){
+		this->filter = filter;
+	}
+
 	// evaluates expression object coming from query using result data to see
 	// if it passes the query criterion.
 	bool doesPassCriterion(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result){
-		string attributeName = "";
-		Score attributeValue = result->_score;
 
-		// getting attributeID from schema
-		unsigned attributeId = schema->getNonSearchableAttributeId(attributeName);
 
-		// attribute type
-		FilterType attributeType = schema->getTypeOfNonSearchableAttribute(attributeId);
+		// fetch the names and ids of non searchable attributes from schema
+		vector<string> attributes;
+		vector<unsigned> attributeIds;
+		for(map<string,unsigned>::const_iterator attr = schema->getNonSearchableAttributes()->begin();
+				attr != schema->getNonSearchableAttributes()->end() ; ++attr ){
+			attributes.push_back(attr->first);
+			attributeIds.push_back(attr->second);
+		}
 
+		// now fetch the values of different attributes from forward index
+		vector<Score> scores;
 		bool isValid = false;
 		const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
 		ASSERT(isValid);
-		const VariableLengthAttributeContainer * nonSearchableAttributes = list->getNonSearchableAttributeContainer();
+		const VariableLengthAttributeContainer * container = list->getNonSearchableAttributeContainer();
+		container->getBatchOfAttributes(attributeIds,schema,&scores);
 
-		Score attributeData;
-		nonSearchableAttributes->getAttribute(attributeId,schema, &attributeData);
+		// now call the evaluator to see it this record passes the criteria or not
+		map<string, Score> valuesForEvaluation;
 
-		return (attributeData < attributeValue);
+		// prepare the evaluator input
+		unsigned s =0;
+		for(vector<string>::iterator attr = attributes.begin() ; attr != attributes.end() ; ++attr ){
+			valuesForEvaluation[*attr] = scores.at(s);
+			s++;
+		}
+
+		return filter->evaluator->evaluate(valuesForEvaluation);
 
 	}
+
+private:
+	NonSearchableAttributeExpressionFilter * filter ;
+
 };
 
 

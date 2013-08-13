@@ -32,12 +32,14 @@
 #include "instantsearch/Schema.h"
 #include "instantsearch/Score.h"
 #include "instantsearch/IndexSearcher.h"
-#include "util/Assert.h"
+#include <instantsearch/Constants.h>
+
 
 namespace srch2
 {
 namespace instantsearch
 {
+
 
 class FacetedSearchFilterInternal;
 
@@ -45,21 +47,28 @@ class FacetedSearchFilter : public ResultsPostProcessorFilter
 {
 
 public:
+
+	FacetedSearchFilter();
 	// TODO : we don't need query in new design
 	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
 
-	// temporary public for test purposes
-	// map of attribute name to : "vector of attribute values for categorization"
-	// map<string, vector<Score>>
-	std::map<std::string , std::vector<Score> > lowerBoundsOfCategories;
-	// map of attribute name to : "type of aggregation for each category"
-	// map<string, FacetedSearchAggregationType>
-	std::map<std::string, srch2::instantsearch::FacetedSearchAggregationType> facetedSearchAggregationTypes;
+
+	void initialize(std::vector<FacetType> facetTypes,
+			std::vector<std::string> fields,
+			std::vector<std::string> rangeStarts,
+			std::vector<std::string> rangeEnds,
+			std::vector<std::string> rangeGaps);
+
 private:
 
 	FacetedSearchFilterInternal * impl;
+
+
+
+
+
 
 
 

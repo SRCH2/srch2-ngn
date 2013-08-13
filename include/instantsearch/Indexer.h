@@ -25,6 +25,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Record.h>
+#include <instantsearch/Constants.h>
 
 #include <string>
 #include <stdint.h>
@@ -79,11 +80,7 @@ public:
 };
 
 
-typedef enum {
-    OP_FAIL,
-    OP_SUCCESS,
-    OP_KEYWORDID_SPACE_PROBLEM
-} INDEXWRITE_RETVAL;
+
 
 class Indexer
 {

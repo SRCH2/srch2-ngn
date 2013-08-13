@@ -1,6 +1,5 @@
 // $Id$ 07/11/13 Jamshid
 
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -18,55 +17,53 @@
  * Copyright © 2013 SRCH2 Inc. All rights reserved
  */
 
-
 #ifndef _WRAPPER_QUERYVALIDATOR_H_
 #define _WRAPPER_QUERYVALIDATOR_H_
 
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
+#include "ConfigManager.h"
 
-namespace srch2{
+namespace srch2 {
 
-namespace httpwrapper{
+namespace httpwrapper {
 
 using srch2::instantsearch::Schema;
 
-class QueryValidator
-{
+class QueryValidator {
 
 public:
 
-	QueryValidator(const Schema & schema ,ParsedParameterContainer * paramContainer){
-		this->paramContainer = paramContainer;
-		this->schema = schema;
-	}
+    QueryValidator(const Schema & schema,
+            const ConfigManager &indexDataContainerConf,
+            ParsedParameterContainer * paramContainer);
 
-
-	// this function goes through the sumary and based on that validates the query.
-	bool validate(){
-
-
-		/*
-		 * things that validator needs to validate :
-		 * 1. existence of fields
-		 * 2. is a field sortable or not
-		 * 3. is a field searchable or not
-		 * 4. the value of "numberOfResultsLimit"
-		 * 5. is a facet field nonSearchable
-		 *
-		 */
-	}
+    // this function goes through the summary and based on that validates the query.
+    bool validate();
 
 private:
-	ParsedParameterContainer * paramContainer;
-	const Schema & schema;
+    ParsedParameterContainer * paramContainer;
+    const Schema & schema;
+    const ConfigManager &indexDataContainerConf;
 
+    /*
+     * This function goes over the field names in Filter List and
+     * checks to make sure all of them are in the list of searchable attributes. existence
+     */
+    bool validateExistenceOfAttributesInFieldList();
 
+    bool validateExistenceOfAttributesInSortFiler();
+
+    bool validateExistenceOfAttributesInFacetFiler();
+
+//    // this function validates the value stored in "value" based on the type which is passed to it by "type"
+//    // for example, if the string is "123rt" and the type is UNSIGNED it returns false
+//    bool validateValueWithType(srch2::instantsearch::FilterType type,
+//            string & value);
 
 };
 
 }
 }
-
 
 #endif // _WRAPPER_QUERYVALIDATOR_H_

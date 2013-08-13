@@ -161,7 +161,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         // for each prefix of the first keyword
         for(unsigned j = 1; j <= queryKeywords[0].size(); j++)
         {
-            Query *query = new Query(MapQuery);
+            Query *query = new Query(SearchTypeMapQuery);
 
             // gernerate a term for the prefix, add it to the query
             string prefix = queryKeywords[0].substr(0, j);
@@ -567,7 +567,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -624,7 +624,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
