@@ -82,7 +82,10 @@ ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expec
 
 ForwardIndex::~ForwardIndex()
 {
-    this->forwardListDirectory->commit();
+    if(this->isCommitted())
+        this->forwardListDirectory->merge();
+    else
+        this->forwardListDirectory->commit();
     for (unsigned forwardIndexIter = 0; forwardIndexIter < this->getTotalNumberOfForwardLists_WriteView(); 
      ++forwardIndexIter) {
         ForwardList *forwardList = this->getForwardList_ForCommit(forwardIndexIter);
@@ -252,6 +255,18 @@ float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* sc
 void ForwardIndex::merge()
 {
     if ( this->mergeRequired_WriteView )
+    {
+        // make sure the read view is pointing to the write view
+        this->forwardListDirectory->merge();
+
+        // writeView->forceCreateCopy();
+        this->mergeRequired_WriteView = false;
+    }
+}
+
+void ForwardIndex::commit()
+{
+    if ( !this->isCommitted())
     {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->commit();

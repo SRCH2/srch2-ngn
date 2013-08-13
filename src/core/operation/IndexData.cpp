@@ -144,7 +144,6 @@ IndexData::IndexData(const string& directoryName)
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     this->forwardIndex->setSchema(this->schemaInternal);
-    this->forwardIndex->merge();// to force create a separate view for writes.
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
     {
@@ -435,7 +434,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
                 struct timespec tstart;
                 clock_gettime(CLOCK_REALTIME, &tstart);
 */
-        this->forwardIndex->merge();
+        this->forwardIndex->commit();
 
 /*
             struct timespec tend;

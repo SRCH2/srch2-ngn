@@ -93,7 +93,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 	{
 		writeView->at(i) = elem[i].recordId;
 	}
-	this->invList->commit();
+	this->invList->merge();
 }
 
 
@@ -109,8 +109,15 @@ InvertedIndex::InvertedIndex(ForwardIndex *forwardIndex)
 InvertedIndex::~InvertedIndex()
 {
     if (this->invertedIndexVector != NULL) {
-        this->invertedIndexVector->commit();
-        this->keywordIds->commit();
+        if(this->commited_WriteView){
+            this->invertedIndexVector->merge();
+            this->keywordIds->merge();
+        }
+        else
+        {
+            this->invertedIndexVector->commit();
+            this->keywordIds->commit();
+        }
         for (unsigned invertedIndexIter = 0; invertedIndexIter < this->getTotalNumberOfInvertedLists_ReadView(); ++invertedIndexIter)
         {
             delete this->invertedIndexVector->getWriteView()->getElement(invertedIndexIter);
@@ -219,7 +226,7 @@ void InvertedIndex::initialiseInvertedIndexCommit()
         invListContainerPtr = new InvertedListContainer(*vectorIterator);
         writeView->push_back(invListContainerPtr);
     }
-    this->invertedIndexVector->commit();
+    //this->invertedIndexVector->commit();
 }
 /* COMMIT LOGIC
  * 1. Get all the records from the forwardIndex
@@ -286,8 +293,8 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 
 void InvertedIndex::merge()
 {
-    this->invertedIndexVector->commit();
-    this->keywordIds->commit();
+    this->invertedIndexVector->merge();
+    this->keywordIds->merge();
     vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     // get keywordIds writeView
     vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();

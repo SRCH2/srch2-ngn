@@ -45,24 +45,24 @@ void test1()
 }
 
 // single reader and single writer
-// main logic: it will first push_back 10 elements [0,9] and commit
+// main logic: it will first push_back 10 elements [0,9] and merge
 // then it will start two threads. One for reader, one for writer.
 // the writer will first forceCreateCopy and do a modification by changing the element 3 to 100, at the same time the reader will read it.
-// the reader will not see the change until the writer commits the change.
-// the writer will then push_back 90 elements. After it does the commit, the reader will detect it(it will find there are 100 elements in the vecterview).
-// the writer will then push_back 1000 elements. After it does the commit, the reader will detect it(it will find 1100 elements in the vecterview).
+// the reader will not see the change until the writer merges the change.
+// the writer will then push_back 90 elements. After it does the merge, the reader will detect it(it will find there are 100 elements in the vecterview).
+// the writer will then push_back 1000 elements. After it does the merge, the reader will detect it(it will find 1100 elements in the vecterview).
 void test2() {
     pthread_t  t1,t2 ;
     vectorview<int>* &write = cowv.getWriteView();
 
     write->clear();
-    cowv.commit();
+    cowv.merge();
     write = cowv.getWriteView();
 
     for (int i= 0; i< 10; i++) {
         write->push_back(i);
     }
-    cowv.commit();
+    cowv.merge();
 
     int create1 = pthread_create( &t1, NULL, writer, NULL);
     if (create1 != 0) cout << "error" << endl;
@@ -80,19 +80,19 @@ void* writer(void* arg) {
     // do change
     write->at(3) = 100;
     sleep(2);
-    // commit the change
-    cowv.commit();
+    // merge the change
+    cowv.merge();
     sleep(2);
-    // push_back 90 elements with wirteview and commit
+    // push_back 90 elements with wirteview and merge
     write = cowv.getWriteView();
     for(int i = 0; i < 90; i++)
         write->push_back(i);
-    cowv.commit();
+    cowv.merge();
     sleep(2);
-    // push_back 1000 elements with wirteview and commit
+    // push_back 1000 elements with wirteview and merge
     for(int i = 0; i < 1000; i++)
         write->push_back(i);
-    cowv.commit();
+    cowv.merge();
     return NULL;
 }
 
@@ -105,12 +105,12 @@ void* reader(void* arg) {
         ASSERT(i == read->at(i));
     }
     sleep(2);
-    //do not change before commit
+    //do not change before merge
     for (int i = 0; i< read->size(); i++) {
         ASSERT(i == read->at(i));
     }
     sleep(2);
-    // see the change after commit
+    // see the change after merge
     cowv.getReadView(read);
     cout << read->at(3) << endl;
     ASSERT(read->at(3) == 100);
@@ -129,22 +129,22 @@ void* reader(void* arg) {
 
 
 // multi reader and single writer
-// main logic: we will first push_back 10 elements [0,9] and commit it. After that we will start 11 threads.
+// main logic: we will first push_back 10 elements [0,9] and merge it. After that we will start 11 threads.
 // 10 of the threads are readers, and one is a writer.
-// the readers will not see the change made by the writer (element 3 -> 100) before the writer commits it.
+// the readers will not see the change made by the writer (element 3 -> 100) before the writer merges it.
 void test3() {
     pthread_t  t1,t2[10];
     vectorview<int>* &write = cowv.getWriteView();
 
     write->clear();
-    cowv.commit();
+    cowv.merge();
 
     write = cowv.getWriteView();
 
     for (int i= 0; i< 10; i++) {
         write->push_back(i);
     }
-    cowv.commit();
+    cowv.merge();
     cout << write->size()<<endl;
 
 
@@ -167,7 +167,7 @@ void* reader2(void* arg) {
     shared_ptr<vectorview<int> > read;
     cowv.getReadView(read);
     sleep(1);
-    //do not change before commit
+    //do not change before merge
     //cout << read->size() << endl;
     for (int i = 0; i< read->size(); i++) {
         ASSERT(i == read->at(i));
@@ -180,7 +180,7 @@ void* writer2(void* arg) {
     vectorview<int>* &write = cowv.getWriteView();
     write->push_back(100);
     sleep(1);
-    cowv.commit();
+    cowv.merge();
     return NULL;
 }
 
@@ -191,14 +191,14 @@ void test4() {
     vectorview<int>* &write = cowv.getWriteView();
 
     write->clear();
-    cowv.commit();
+    cowv.merge();
 
     write = cowv.getWriteView();
 
     for (int i= 0; i< 10000; i++) {
         write->push_back(i);
     }
-    cowv.commit();
+    cowv.merge();
     cout << write->size()<<endl;
 
 
@@ -227,19 +227,19 @@ void* writer3(void* arg) {
     write->at(1000) = 100;
     write->at(9999) = 100;
     sleep(2);
-    // commit the change
-    cowv.commit();
+    // merge the change
+    cowv.merge();
     sleep(2);
-    // push_back 90 elements with wirteview and commit
+    // push_back 90 elements with wirteview and merge
     write = cowv.getWriteView();
     for(int i = 0; i < 90000; i++)
         write->push_back(i);
-    cowv.commit();
+    cowv.merge();
     sleep(2);
-    // push_back 1000 elements with wirteview and commit
+    // push_back 1000 elements with wirteview and merge
     for(int i = 0; i < 1000000; i++)
         write->push_back(i);
-    cowv.commit();
+    cowv.merge();
     return NULL;
 }
 
@@ -252,12 +252,12 @@ void* reader3(void* arg) {
         ASSERT(i == read->at(i));
     }
     sleep(2);
-    //do not change before commit
+    //do not change before merge
     for (int i = 0; i< read->size(); i++) {
         ASSERT(i == read->at(i));
     }
     sleep(2);
-    // see the change after commit
+    // see the change after merge
     cowv.getReadView(read);
     cout << read->at(3) << endl;
     ASSERT(read->at(3) == 100);

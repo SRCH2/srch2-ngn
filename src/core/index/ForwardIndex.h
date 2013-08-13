@@ -472,6 +472,7 @@ public:
      *              3. Increment hitcount
      * 4. Sort each ForwardList based on newKeywordIds
      */
+    void commit();
     void merge();
     //void commit(ForwardList *forwardList, const vector<unsigned> *oldIdToNewIdMap, vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit );
     void commit(ForwardList *forwardList, const map<unsigned, unsigned> &oldIdToNewIdMapper, vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit );

@@ -235,7 +235,8 @@ private:
         if(m_readView.get() != m_writeView)
             delete m_writeView;
         ar >> this->m_readView;
-        m_writeView = m_readView.get();
+        m_writeView = new vectorview<T>(*m_readView);
+        m_writeView->setNeedToFreeOldArray(false);
     }
 
     template<class Archive>
@@ -273,29 +274,36 @@ public:
         return m_writeView;
     }
 
-    void commit() //Set readView to writeView and create new a writeView from readViewCopy.
+    void commit()
+    {
+        // change the viewType to be readview
+        m_readView->setReadView();
+        m_writeView = new vectorview<T>(*m_readView);
+        m_writeView->setNeedToFreeOldArray(false);
+    }
+
+    void merge()
     {
         pthread_spin_lock(&m_spinlock);
-        // Before the first commit, the readview and the writeview are the same vectorview.
-        // In this case, after commit(), we have a new vectorview as the writeview, and they still
-        // share the same array. There is no need to copy the array.
-        // After the first commit, the two views are different.
-        // In later commits, if they share the same array, we need to copy a new array from the old array.
-        if(m_readView.get() != m_writeView)
-        {
-            // if the vecterview of readview and writeview point to the same array, we just force copy it
+        // After the commit, the two views are different.
+        // if they share the same array, we need to copy a new array from the old array.
+        if(m_readView.get() != m_writeView){
             if(m_readView->getArray() == m_writeView->getArray()){
                 m_writeView->forceCreateCopy();
             }
             // reset the readview and let it point to the writeview
             m_readView.reset(m_writeView);
         }
+
         // change the viewType to be readview
         m_readView->setReadView();
+        // We can safely release the lock now, since the only chance the read view can be modified is during merge().
+        // But merge() can only happen when another writer comes in, and we assume at any time only one writer can come in.
+        // So this case cannot happen.
+        pthread_spin_unlock(&m_spinlock);
 
         m_writeView = new vectorview<T>(*m_readView);
         m_writeView->setNeedToFreeOldArray(false);
-        pthread_spin_unlock(&m_spinlock);
     }
 };
 

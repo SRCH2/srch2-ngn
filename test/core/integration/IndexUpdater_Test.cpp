@@ -878,7 +878,7 @@ void test11()
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
     // This commit fails. As there are no records in the index.
-    ASSERT(index->commit() == 0);
+    //ASSERT(index->commit() == 0);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -893,7 +893,7 @@ void test11()
     record->setRecordBoost(90);
     index->addRecord(record, 0);
 
-    ASSERT(index->commit() == 1);
+    //ASSERT(index->commit() == 1);
 
     record->clear();
     record->setPrimaryKey(1003);
