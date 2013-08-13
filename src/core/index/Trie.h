@@ -432,6 +432,8 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
+        // We do NOT need to serialize the "committed" flag since the trie should have committed.
+        // We do NOT need to serialize the "oldIdToNewIdMapVector" since it's only used before the commit.
         ar << numberOfTerminalNodes;
         ar << root_readview;
     }
@@ -440,6 +442,8 @@ private:
     void load(Archive & ar, const unsigned int version)
     {
         ar >> numberOfTerminalNodes;
+        // We do NOT need to read the "committed" flag from the disk since the trie should have committed and the flag should true.
+        // We do NOT need to read the "oldIdToNewIdMapVector" from the disk since it's only used before the commit and is no longer needed.
         commited = true;
         ar >> root_readview;
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
