@@ -1283,11 +1283,9 @@ void Trie::merge()
 
 void Trie::commit()
 {
+    ASSERT(commited == false);
     this->root_readview->root = root_writeview;
     this->root_writeview = new TrieNode(this->root_readview->root);
-	if (commited)
-		return;
-
 	/**
 	  * 1. Traverse the Trie using depth first.
 	  * 2. Set new IDs, update InvertedList offsets.
