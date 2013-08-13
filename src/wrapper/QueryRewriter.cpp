@@ -129,20 +129,30 @@ void QueryRewriter::applyAnalyzer() {
     // now erase the data of erased keywords
     std::vector<std::string> rawQueryKeywords;
     std::vector<float> keywordFuzzyLevel;
-    std::vector<unsigned> keywordBoostLevel;
+    std::vector<int> keywordBoostLevel;
     std::vector<srch2is::TermType> keywordPrefixComplete;
     std::vector<std::vector<std::string> > fieldFilter;
     std::vector<srch2is::BooleanOperation> fieldFilterOps;
+    std::vector<unsigned> fieldFilterNumbers;
     // first keep the rest of keywords so that indexes stay valid (cannot remove and iterate in the same time)
     for (int i = 0; i < paramContainer->rawQueryKeywords.size(); i++) {
         if (std::find(keywordIndexesToErase.begin(), keywordIndexesToErase.end(), i)
                 == keywordIndexesToErase.end()) { // don't erase
             rawQueryKeywords.push_back(paramContainer->rawQueryKeywords.at(i));
-            keywordFuzzyLevel.push_back(paramContainer->keywordFuzzyLevel.at(i));
-            keywordBoostLevel.push_back(paramContainer->keywordBoostLevel.at(i));
-            keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
-            fieldFilter.push_back(paramContainer->fieldFilter.at(i));
-            fieldFilterOps.push_back(paramContainer->fieldFilterOps.at(i));
+            if(paramContainer->hasParameterInQuery(KeywordBoostLevel)){
+                keywordBoostLevel.push_back(paramContainer->keywordBoostLevel.at(i));
+            }
+            if(paramContainer->hasParameterInQuery(KeywordFuzzyLevel)){
+                keywordFuzzyLevel.push_back(paramContainer->keywordFuzzyLevel.at(i));
+            }
+            if(paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)){
+                keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
+            }
+            if(paramContainer->hasParameterInQuery(FieldFilter)){
+                fieldFilter.push_back(paramContainer->fieldFilter.at(i));
+                fieldFilterOps.push_back(paramContainer->fieldFilterOps.at(i));
+            }
+            fieldFilterNumbers.push_back(paramContainer->fieldFilterNumbers.at(i));
         }
     }
     // then copy back
@@ -152,6 +162,7 @@ void QueryRewriter::applyAnalyzer() {
     paramContainer->keywordPrefixComplete = keywordPrefixComplete;
     paramContainer->fieldFilter = fieldFilter;
     paramContainer->fieldFilterOps = fieldFilterOps;
+    paramContainer->fieldFilterNumbers = fieldFilterNumbers;
 
     // TODO : validation case : what if all keywords are stop words and not the vectors are empty ?
 
@@ -160,40 +171,60 @@ void QueryRewriter::applyAnalyzer() {
 // this function creates the bit sequence needed for field filter based on the filter names
 void QueryRewriter::prepareFieldFilters() {
 
-    unsigned keywordIndex = 0;
-    for (std::vector<std::vector<std::string> >::iterator fields =
-            paramContainer->fieldFilter.begin();
-            fields != paramContainer->fieldFilter.end(); ++fields) {
-        srch2is::BooleanOperation op = paramContainer->fieldFilterOps.at(keywordIndex);
 
-        unsigned filter = 0;
-        if (fields->size() == 0) {
-            filter = 0x7fffffff;  // it can appear in all fields
-            // TODO : get it from configuration file
-        } else {
-            bool shouldApplyAnd = true;
-            for (std::vector<std::string>::iterator field = fields->begin();
-                    field != fields->end(); ++field) {
-
-                if (field->compare("*")) { // all fields
-                    filter = 0x7fffffff;
-                    shouldApplyAnd = false;
-                    break;
-                }
-                unsigned id = schema.getSearchableAttributeId(*field);
-                unsigned bit = 1;
-                bit <<= id;
-                filter |= bit;
-            }
-            if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
-                filter |= 0x80000000;
-            }
-        }
-        paramContainer->fieldFilterNumbers.at(keywordIndex) = filter;
-
-        //
-        keywordIndex++;
+    if(!indexDataContainerConf->getSupportAttributeBasedSearch()){
+        // these two vectors will not be used in future. We clear them just for safety.
+        paramContainer->fieldFilter.clear();
+        paramContainer->fieldFilterOps.clear();
+        // no filters at all
+        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 1);
+        return;
     }
+    if(paramContainer->hasParameterInQuery(FieldFilter) ){
+        // some filters are provided in query so these two vectors are the same size as keywords vector
+        unsigned keywordIndex = 0;
+
+        for (std::vector<std::vector<std::string> >::iterator fields =
+                paramContainer->fieldFilter.begin();
+                fields != paramContainer->fieldFilter.end(); ++fields) {
+            srch2is::BooleanOperation op = paramContainer->fieldFilterOps.at(keywordIndex);
+
+            unsigned filter = 0;
+            if (fields->size() == 0) {
+                filter = 0x7fffffff;  // it can appear in all fields
+                // TODO : get it from configuration file
+            } else {
+                bool shouldApplyAnd = true;
+                for (std::vector<std::string>::iterator field = fields->begin();
+                        field != fields->end(); ++field) {
+
+                    if (field->compare("*") == 0) { // all fields
+                        filter = 0x7fffffff;
+                        shouldApplyAnd = false;
+                        break;
+                    }
+                    unsigned id = schema.getSearchableAttributeId(*field);
+                    unsigned bit = 1;
+                    bit <<= id;
+                    filter |= bit;
+                }
+                if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
+                    filter |= 0x80000000;
+                }
+            }
+            paramContainer->fieldFilterNumbers.push_back(filter);
+
+            //
+            keywordIndex++;
+        }
+    }else{
+        // these two vectors will not be used in future. We clear them just for safety.
+        paramContainer->fieldFilter.clear();
+        paramContainer->fieldFilterOps.clear();
+        // no filters at all
+        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 0x7fffffff);
+    }
+
 }
 
 // rewrite facet query:

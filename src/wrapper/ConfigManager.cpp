@@ -500,8 +500,7 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
      ("attribute-facet-gap", po::value<string>(), "The start value of range attributes.")
      */
 
-    if (vm.count("facet-enable") && (vm["facet-enable"].as<string>().compare(
-            ignoreOption) != 0)){
+    if (vm.count("facet-enable")){
         facetEnabled = vm["facet-enable"].as<int>();
     } else {
         facetEnabled = false;

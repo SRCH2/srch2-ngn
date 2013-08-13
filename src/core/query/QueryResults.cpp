@@ -37,7 +37,9 @@ namespace instantsearch
 QueryResultFactory::QueryResultFactory(){
 	impl = new QueryResultFactoryInternal();
 }
-
+QueryResultFactory::~QueryResultFactory(){
+    delete impl;
+}
 
 QueryResults::QueryResults(){
 	impl = new QueryResultsInternal();

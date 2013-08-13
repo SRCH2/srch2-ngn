@@ -607,6 +607,13 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);
+    bool isSyntaxValid = qp.parse();
+    if (!isSyntaxValid) {
+         // if the query is not valid print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                paramContainer.getMessageString(), headers);
+        return;
+    }
 
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
@@ -618,6 +625,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
          // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
+        return;
     }
 
     //3. rewrite the query and apply analyzer and other stuff ...

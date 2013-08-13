@@ -72,10 +72,8 @@ bool QueryValidator::validate() {
 
     // validation case: If search type is Geo, some latitude longitude must be provided.
     if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-        if (!(paramContainer->geoParameterContainer->hasParameterInQuery(
-                GeoTypeRectangular)) // no rectangular values
-                && !(paramContainer->geoParameterContainer->hasParameterInQuery(
-                        GeoTypeCircular))) { // no circular values
+        if (!(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular) // no rectangular values
+                || paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeCircular))) { // no circular values
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
                             "No latitude longitude provided for geo search."));
@@ -89,7 +87,7 @@ bool QueryValidator::validate() {
         if (indexDataContainerConf.getIndexType() != 0) { // zero means normal index type
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
-                            "Geo index type is not compatible wit this query."));
+                            "Geo index type is not compatible with this query."));
             return false;
         }
     }
@@ -388,21 +386,21 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
 }
 
-bool QueryValidator::validateValueWithType(srch2is::FilterType type,
-        string  & value) {
-    switch (type) {
-    case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-        return isInteger(value);
-    case srch2is::ATTRIBUTE_TYPE_FLOAT:
-        return isFloat(value);
-    case srch2is::ATTRIBUTE_TYPE_TEXT:
-        return true; // TEXT does not have any criteria ?????
-    case srch2is::ATTRIBUTE_TYPE_TIME:
-        return isTime(value);
-    }
-    // flow never reaches here
-    return false;
-}
+//bool QueryValidator::validateValueWithType(srch2is::FilterType type,
+//        string  & value) {
+//    switch (type) {
+//    case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+//        return isInteger(value);
+//    case srch2is::ATTRIBUTE_TYPE_FLOAT:
+//        return isFloat(value);
+//    case srch2is::ATTRIBUTE_TYPE_TEXT:
+//        return true; // TEXT does not have any criteria ?????
+//    case srch2is::ATTRIBUTE_TYPE_TIME:
+//        return isTime(value);
+//    }
+//    // flow never reaches here
+//    return false;
+//}
 
 }
 }

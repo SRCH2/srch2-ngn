@@ -27,6 +27,7 @@
 #include <instantsearch/Score.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include "instantsearch/Schema.h"
 #include "WrapperConstants.h"
 #include "exprtk.hpp"
 #include "boost/regex.hpp"
@@ -43,6 +44,7 @@ using srch2::instantsearch::FilterType;
 using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
 using srch2::instantsearch::BooleanOperation;
 using srch2::instantsearch::AttributeCriterionOperation;
+using srch2::instantsearch::Schema;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -51,6 +53,8 @@ class QueryExpression {
 public:
 
     virtual bool parse() = 0;
+
+    virtual bool validate(const Schema & schema) = 0;
 
     virtual bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues)= 0;
@@ -67,7 +71,7 @@ class SolrRangeQueryExpression: public QueryExpression {
 public:
     SolrRangeQueryExpression(const std::string expressionString) {
         this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
-
+        negative = false;
     }
 
     bool parse() {
@@ -102,28 +106,52 @@ public:
         }
     }
 
+    bool validate(const Schema & schema){
+        //1. Check to make sure attributeName is a non-searchable attribute
+        int attributeId = schema.getNonSearchableAttributeId(attributeName);
+        if(attributeId < 0) return false;
+        //2. Check to make sure lower and upper values are consistent with the type
+        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(attributeId);
+        if(attributeValueLower.compare("*") != 0){
+            if(! validateValueWithType(attributeType , attributeValueLower)){
+                return false;
+            }
+        }
+
+        if(attributeValueUpper.compare("*") != 0){
+            if(! validateValueWithType(attributeType , attributeValueUpper)){
+                return false;
+            }
+        }
+    }
+
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
-//		bool result ;
-//		// first find the value coming from the record
-//		Score value = nonSearchableAttributeValues[this->attributeName];
-//
-//
-//		switch (whichPartHasStar) {
-//			case 0:
-//
-//				break;
-//			case 0:
-//
-//				break;
-//			case 0:
-//
-//				break;
-//			case 0:
-//
-//				break;
-//		}
-//		return result;
+		// first find the value coming from the record
+		Score value = nonSearchableAttributeValues[this->attributeName];
+		bool lowerBoundCheck = false;
+		if(attributeValueLower.compare("*") == 0){
+		    lowerBoundCheck = true;
+		}else{
+		    Score lowerBound;
+		    lowerBound.setScore(value.getType() , attributeValueLower);
+		    lowerBoundCheck = (lowerBound <= value);
+		}
+
+		bool upperBoundCheck = false;
+		if(attributeValueUpper.compare("*") == 0){
+		    upperBoundCheck = true;
+		}else{
+		    Score upperBound;
+		    upperBound.setScore(value.getType() , attributeValueUpper);
+		    upperBoundCheck = (value <= upperBound);
+		}
+
+		bool result = lowerBoundCheck && upperBoundCheck;
+		if(negative){
+		    result = !result;
+		}
+		return result;
     }
 
     ~SolrRangeQueryExpression() {
@@ -198,16 +226,39 @@ public:
         }
     }
 
+    bool validate(const Schema & schema){
+        //1. Check to make sure attributeName is a non-searchable attribute
+        int attributeId = schema.getNonSearchableAttributeId(attributeName);
+        if(attributeId < 0) return false;
+
+        //2. Check the value to be consistent with type
+        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(attributeId);
+        if(attributeValue.compare("*") != 0){
+            if(! validateValueWithType(attributeType , attributeValue)){
+                return false;
+            }
+        }
+    }
+
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
-        bool result;
+
+        if(attributeValue.compare("*") == 0){
+            attributeValue = "";
+            negative = ! negative;
+        }
         // first find the value coming from the record
         Score value = nonSearchableAttributeValues[this->attributeName];
-        //result = value == this->attributeValue;
-        if (this->negative) {
+
+        Score valueToCheck;
+        valueToCheck.setScore(value.getType() , attributeValue);
+
+        bool result = (value == valueToCheck);
+        if(!negative){ // no '-' in the beginning of the field
+            return result;
+        }else{
             return !result;
         }
-        return result;
     }
 
     ~SolrAssignmentQueryExpression() {
@@ -253,18 +304,32 @@ public:
         }
     }
 
-    bool getBooleanValue(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
+    bool validate(const Schema & schema){
+        // insert non-searchable attribute names to the symbol table and let
+        // exprtk library do the validation
 
-        return getBooleanValueNumericalMode(nonSearchableAttributeValues);
+        const std::map<std::string , unsigned> * nonSearchableAttributes = schema.getNonSearchableAttributes();
 
+        for(std::map<std::string , unsigned>::const_iterator nonSearchableAttribute = nonSearchableAttributes->begin();
+                nonSearchableAttribute != nonSearchableAttributes->end() ; ++nonSearchableAttribute){
+            if(schema.getTypeOfNonSearchableAttribute(nonSearchableAttribute->second) == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED ||
+                    schema.getTypeOfNonSearchableAttribute(nonSearchableAttribute->second) == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT ){
+                symbolVariables.insert(std::make_pair(nonSearchableAttribute->first , 0)); // zero is just a place holder, so that a variable is allocated in the vector
+                symbolTable.add_variable(nonSearchableAttribute->first , symbolVariables[nonSearchableAttribute->first] , false);
+            }
+        }
+
+        // now reister the symbol table in the library
+        expression.register_symbol_table(symbolTable);
+
+        // now parse the string
+        exprtk::parser<float> expressionParser;
+        return expressionParser.compile(parsedExpression , expression);
     }
 
-    Score getScoreValue(
+    bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
-
-        return getScoreValueNumericalMode(nonSearchableAttributeValues);
-
+        return getBooleanValueNumericalMode(nonSearchableAttributeValues);
     }
 
     ~ComplexQueryExpression() {
@@ -275,27 +340,9 @@ private:
     string expressionString;
     string parsedExpression;
     exprtk::expression<float> expression;
-    std::map<std::string, float> symbolVariables;
+    exprtk::symbol_table<float> symbolTable;
+    std::map<string, float> symbolVariables;
 
-    bool parseNumerical() {
-        // initialize things related to numerical part
-
-        /*exprtk::symbol_table<float> symbol_table;
-
-         for(unsigned i =0;i<nonSearchableAttributeNames.size();i++){
-         if(nonSearchableAttributeTypes[i] != srch2::instantsearch::TEXT){
-         symbolVariables[nonSearchableAttributeNames[i]] = 0;
-         symbol_table.add_variable(nonSearchableAttributeNames[i],symbolVariables[nonSearchableAttributeNames[i]]);
-         }
-         }
-         symbol_table.add_constants();
-
-         this->expression.register_symbol_table(symbol_table);
-
-         exprtk::parser<float> parser;*/
-        //parser.compile(this->expressionString,this->expression);
-        return false;
-    }
 
     bool getBooleanValueNumericalMode(
             std::map<std::string, Score> nonSearchableAttributeValues) {
@@ -307,16 +354,6 @@ private:
         }
         return true;
 
-    }
-
-    Score getScoreValueNumericalMode(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
-        float result = getValueNumericalMode(nonSearchableAttributeValues);
-
-        Score resultScore;
-        resultScore.setScore(result);
-
-        return resultScore;
     }
 
     float getValueNumericalMode(

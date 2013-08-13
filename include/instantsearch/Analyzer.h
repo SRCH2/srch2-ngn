@@ -79,6 +79,8 @@ public:
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 
+	std::string applyFilters(std::string input);
+
 	void tokenizeQuery(const std::string &queryString,
 			std::vector<std::string> &queryKeywords) const;
 

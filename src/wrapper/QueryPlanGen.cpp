@@ -239,13 +239,13 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     }
 
-    vector<unsigned> keywordBoostLevel;
+    vector<int> keywordBoostLevel;
 
     if (paramsContainer.hasParameterInQuery(KeywordBoostLevel)) {
         keywordBoostLevel = paramsContainer.keywordBoostLevel;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
-            keywordFuzzyLevel.push_back(
+            keywordBoostLevel.push_back(
                     indexDataContainerConf->getQueryTermBoost());
         }
     }
@@ -266,7 +266,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
     vector<unsigned> fieldFilter;
 
-    if (paramsContainer.hasParameterInQuery(FieldFilter)) {
+    if (!paramsContainer.fieldFilterNumbers.empty()) {
         fieldFilter = paramsContainer.fieldFilterNumbers;
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
@@ -298,7 +298,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
                     // configurable we should change this place.
             fuzzyTerm->addAttributeToFilterTermHits(fieldFilter[i]);
 
-            plan->getExactQuery()->add(fuzzyTerm);
+            plan->getFuzzyQuery()->add(fuzzyTerm);
         }
     }
 

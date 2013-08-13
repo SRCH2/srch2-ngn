@@ -156,53 +156,54 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
 }
 
 bool QueryParser::verifyMainQuery(const string &input) {
-    /*
-     * verifyies the syntax of the main query string.
-     */
-    //TODO: change the field and keyword regex string for differet types.
-    /*
-     * text: should be inside quotes ""
-     * float: no quotes
-     * int: no quotes
-     * date: see parserUtility.h for date formats.
-     */
-    Logger::info("varifying the main query.");
-    // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
-    const string lpRegexString =
-            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
-    std::string fieldRegexString =
-            "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)\\s*|\\*\\s*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
-    const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
-    const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
-    const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
-    std::string keywordRegexString =
-            "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)";
-    ; // verifies the syntax of keyword
-    const string keywordWithModsRegexString = keywordRegexString
-            + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
-    std::string termModRegexString = "(" + keywordWithModsRegexString + "|"
-            + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
-
-    std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
-            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString
-            + ")*\\s*"; // verifies the systax of complete query string.
-    // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
-
-    boost::regex queryRegex(queryRegexString);
-    // the above regex block needs to be compiled once only
-    /*
-     *  explaination of above regex:
-     *  if localparameter is present then, query string should START with localparameter.
-     *  ^(" + lpRegexString + "){0,1}  =>  here {0,1} makes sure localparameter is present at most once.
-     *  query can have a keyword or a field:keyword pair.
-     *  field should not start with a '.' (dot). '.' and '+' have special meaning in the field names.
-     *  field1.field2:keyword would mean that engine will result the record only if  'keyword' is present in both field1 and field2
-     *  field1+field2:keyword would mean that engine will result the record if  'keyword' is present in field1 or field2
-     *  Note: we can have only '+' or '.' not both. e.g. field1.field2+field3:keyword is invalid syntax
-     *  field can have alphnumerical characters
-     */
-    Logger::info("verifying main query done.");
-    return boost::regex_match(input, queryRegex);
+//    /*
+//     * verifyies the syntax of the main query string.
+//     */
+//    //TODO: change the field and keyword regex string for differet types.
+//    /*
+//     * text: should be inside quotes ""
+//     * float: no quotes
+//     * int: no quotes
+//     * date: see parserUtility.h for date formats.
+//     */
+//    Logger::info("varifying the main query.");
+//    // TODO: move this regex block outside this class. We dont want this regex to be compiled everytime a query comes.
+//    const string lpRegexString =
+//            "\\{(\\w+\\s*=\\s*\\w+){1}(\\s+\\w+\\s*=\\s*\\w+)*[\\}]";
+//    std::string fieldRegexString =
+//            "(\\w+((\\.{0,1}\\w+)+|(\\+{0,1}\\w+)+)\\s*|\\*\\s*)"; // verifies the syntax of field.   e.g. checks the systax of "field" in field:keyword
+//    const string boostModRegexString = "\\^{0,1}\\d*"; // verifies the boost syntax. e.g. ^3 or ^
+//    const string fuzzyModRegexString = "~{0,1}(\\.\\d){0,1}"; // verifies the fuzzyness syntax. e.g. ~4 or ~
+//    const string modRegexString = boostModRegexString + fuzzyModRegexString; // combining both boost and fuzzy. user should specify them in this order only. e.g. ^3~.4.
+//    std::string keywordRegexString =
+//            "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)";
+//    ; // verifies the syntax of keyword
+//    const string keywordWithModsRegexString = keywordRegexString
+//            + modRegexString; // keyword + mod  (keyword^4~.3 or keyword^~.3 or keyword^2~ etc.)
+//    std::string termModRegexString = "(" + keywordWithModsRegexString + "|"
+//            + fieldRegexString + ":" + keywordWithModsRegexString + ")"; // verifies the syntax of full "file:keyword"
+//
+//    std::string queryRegexString = "^(" + lpRegexString + "){0,1}\\s*"
+//            + termModRegexString + "(\\s+(AND|&&)\\s+" + termModRegexString
+//            + ")*\\s*"; // verifies the systax of complete query string.
+//    // e.g. "{localparameter1 = default2 qf = asd} field:keyword^~.4 AND field:keyword^ && filed:keyword^4  && aa11.4.ff:aa AND asda && aa11+4+ff:aa1.11.11  && filed:keyword^4~  && filed:keyword^~"); //various combination
+//
+//    boost::regex queryRegex(queryRegexString);
+//    // the above regex block needs to be compiled once only
+//    /*
+//     *  explaination of above regex:
+//     *  if localparameter is present then, query string should START with localparameter.
+//     *  ^(" + lpRegexString + "){0,1}  =>  here {0,1} makes sure localparameter is present at most once.
+//     *  query can have a keyword or a field:keyword pair.
+//     *  field should not start with a '.' (dot). '.' and '+' have special meaning in the field names.
+//     *  field1.field2:keyword would mean that engine will result the record only if  'keyword' is present in both field1 and field2
+//     *  field1+field2:keyword would mean that engine will result the record if  'keyword' is present in field1 or field2
+//     *  Note: we can have only '+' or '.' not both. e.g. field1.field2+field3:keyword is invalid syntax
+//     *  field can have alphnumerical characters
+//     */
+//    Logger::info("verifying main query done.");
+//    return boost::regex_match(input, queryRegex);
+    return true;
 }
 
 void QueryParser::isFuzzyParser() {
@@ -872,6 +873,7 @@ void QueryParser::localParameterParser(string *input) {
                 float f = atof(val.c_str()); //TODO: add the validation
                 this->container->lpKeywordFuzzyLevel = f;
             } else if (lpKeywordPrefixCompleteParamName == pairKeyVal[0]) { //TODO: look into this again, why do we need this parameter?
+                this->setInQueryParametersIfNotSet(srch2::httpwrapper::QueryPrefixCompleteFlag);
                 string val = pairKeyVal[1];
                 boost::to_upper(val);
                 if ("PREFIX" == val) {
@@ -944,6 +946,7 @@ void QueryParser::keywordParser(const string &input) {
     terms.push_back(input.substr(start)); // push back the last token
     // set the termOperators in container
     if (!termOperators.empty()) {
+        boost::algorithm::trim(termOperators.at(0));
         this->populateTermBooleanOperator(termOperators.at(0)); // we only support one type of operator : AND
     }
     // parse the terms
@@ -1348,9 +1351,9 @@ void QueryParser::extractSearchType() {
         if (centerLatTemp && centerLongTemp && radiusParamTemp) {
             // its a circular geo search
             this->container->parametersInQuery.push_back(GeoSearchType);
-            this->container->parametersInQuery.push_back(GeoTypeCircular);
             this->container->geoParameterContainer =
                     new GeoParameterContainer();
+            this->container->geoParameterContainer->parametersInQuery.push_back(GeoTypeCircular);
             //set GeoParameterContainer properties.
             this->setGeoContainerProperties(centerLatTemp, centerLongTemp,
                     radiusParamTemp);
@@ -1405,11 +1408,11 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     string centerLongStr = evhttp_uridecode(centerLong, 0, &st2);
     string radiusParamStr = evhttp_uridecode(radiusParam, 0, &st3);
 // convert the rowsStr to integer.
-    this->container->geoParameterContainer->leftBottomLatitude = atof(
+    this->container->geoParameterContainer->centerLatitude = atof(
             centerLatStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->leftBottomLongitude = atof(
+    this->container->geoParameterContainer->centerLongitude = atof(
             centerLongStr.c_str()); // convert the string to char* and pass it to atoi
-    this->container->geoParameterContainer->rightTopLatitude = atof(
+    this->container->geoParameterContainer->radius = atof(
             radiusParamStr.c_str()); // convert the string to char* and pass it to atoi
     Logger::debug("returning from setGeoContainerProperties");
 }

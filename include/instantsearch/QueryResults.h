@@ -42,6 +42,7 @@ class QueryResultFactoryInternal;
 class QueryResultFactory{
 public:
 	QueryResultFactory();
+    ~QueryResultFactory();
     QueryResultFactoryInternal * impl;
 };
 

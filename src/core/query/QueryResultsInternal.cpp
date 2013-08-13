@@ -42,11 +42,13 @@ class TermVirtualList;
 /////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
 
 QueryResultsInternal::QueryResultsInternal() {
-
+    Logger::info("Query Results internal created.");
+    this->virtualListVector = NULL;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
         const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+    Logger::info("Query Results internal initialized.");
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
@@ -98,10 +100,12 @@ bool QueryResultsInternal::checkCacheHit(
 
 QueryResultsInternal::~QueryResultsInternal() {
     // TODO: if we use caching, we can leave them in the cache
-    for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
-        delete virtualListVector->at(i);
+    if(virtualListVector != NULL){
+        for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
+            delete virtualListVector->at(i);
+        }
+        delete virtualListVector;
     }
-    delete virtualListVector;
 
     sortedFinalResults.clear();
     while (!nextKResultsHeap.empty()) {

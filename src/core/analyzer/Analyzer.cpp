@@ -83,7 +83,7 @@ const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
 }
 
 std::string Analyzer::applyFilters(std::string input){
-    this->analyzerInternal->applyFilters(input);
+    return this->analyzerInternal->applyFilters(input);
 }
 
 void Analyzer::tokenizeQuery(const std::string &queryString,

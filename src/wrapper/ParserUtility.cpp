@@ -164,5 +164,21 @@ void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key
     }
 }
 
+bool validateValueWithType(srch2::instantsearch::FilterType type,
+        string  & value) {
+    switch (type) {
+    case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+        return isInteger(value);
+    case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+        return isFloat(value);
+    case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+        return true; // TEXT does not have any criteria ?????
+    case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+        return isTime(value);
+    }
+    // flow never reaches here
+    return false;
+}
+
 }
 }

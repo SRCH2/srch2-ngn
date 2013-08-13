@@ -184,7 +184,7 @@ public:
     BooleanOperation lpFieldFilterBooleanOperator; // TODO: when we want to add NOT or OR this part should change
     std::vector<std::string> lpFieldFilter; // fallback fields to search a keyword in
     float lpKeywordFuzzyLevel ; // variable to store the fallback fuzzyLevel specified in Local Parameters
-    unsigned lpKeywordBoostLevel ; // stores the fallback boostLevel specified in Local Parameters .. TODO: change the type
+    int lpKeywordBoostLevel ; // stores the fallback boostLevel specified in Local Parameters .. TODO: change the type
     srch2::instantsearch::TermType lpKeywordPrefixComplete ; // stores the fallback termType for keywords
     // localparamter related variables end
 
@@ -196,7 +196,7 @@ public:
     // the following six vectors must be parallel
     std::vector<std::string> rawQueryKeywords; // stores the keywords in the query
     std::vector<float> keywordFuzzyLevel; // stores the fuzzy level of each keyword in the query
-    std::vector<unsigned> keywordBoostLevel; // stores the boost level of each keyword in the query
+    std::vector<int> keywordBoostLevel; // stores the boost level of each keyword in the query
     std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
     std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
     std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.

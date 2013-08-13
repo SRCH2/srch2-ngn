@@ -11,6 +11,7 @@
 #include <evhttp.h>
 #include <event2/http.h>
 #include <sys/queue.h>
+#include "WrapperConstants.h"
 
 
 using boost::posix_time::time_input_facet;
@@ -66,7 +67,10 @@ std::string convertTimeFormatToLong(std::string & timeString);
 std::string convertLongToTimeFormat(std::string & timeLong);
 
 void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
-        vector<string> &values);
+ vector<string> &values);
+
+bool validateValueWithType(srch2::instantsearch::FilterType type,
+        string  & value) ;
 }
 }
 
