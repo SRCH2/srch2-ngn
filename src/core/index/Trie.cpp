@@ -321,6 +321,8 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 
 Trie::Trie()
 {
+    // We create a root (for the write view) by copying the trie root of the read view.
+    // Initially both root views have an empty trie with a "$" sign at the root.
 	this->root_readview.reset( new TrieRootNodeAndFreeList() );
 	this->root_writeview = new TrieNode(this->root_readview.get()->root);
 	this->numberOfTerminalNodes = 0;
@@ -1277,14 +1279,20 @@ void Trie::merge()
 {
     pthread_spin_lock(&m_spinlock);
 	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
-	this->root_writeview = new TrieNode(this->root_readview.get()->root);
+	// We can safely release the lock now, since the only chance the read view can be modified is during merge().
+	// But merge() can only happen when another writer comes in, and we assume at any time only one writer can come in.
+	// So this case cannot happen.
 	pthread_spin_unlock(&m_spinlock);
+	this->root_writeview = new TrieNode(this->root_readview.get()->root);
 }
 
 void Trie::commit()
 {
     ASSERT(commited == false);
+    // we remove the old readview's root first
+    delete this->root_readview->root;
     this->root_readview->root = root_writeview;
+    // We create a new write view's root by copying the root of the read review
     this->root_writeview = new TrieNode(this->root_readview->root);
 	/**
 	  * 1. Traverse the Trie using depth first.
