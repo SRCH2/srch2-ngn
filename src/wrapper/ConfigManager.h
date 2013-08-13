@@ -15,7 +15,7 @@
 
 using namespace std;
 using namespace srch2::util;
-namespace po = boost::program_options;
+//namespace po = boost::program_options;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -35,93 +35,162 @@ typedef enum {
 class ConfigManager {
 private:
 
-	// Argument file options
+	// <config>
 	string licenseKeyFile;
-	string trieBootstrapDictFile;
-	uint32_t documentLimit;
-	uint64_t memoryLimit;
 	string httpServerListeningHostname;
 	string httpServerListeningPort;
+	string srch2Home;
+	string indexPath;
+	string filePath;
+
+
+	// <confgi><indexConfig>
+	bool recordBoostFieldFlag;
+	string recordBoostField;
+	unsigned queryTermBoost;
+	IndexCreateOrLoad indexCreateOrLoad;
+
+
+	// <config><query><rankingAlgorithm>
+	string scoringExpressionString;
+
+
+	// <config><query>
+	float queryTermSimilarityBoost;
+	float queryTermLengthBoost;
+	float prefixMatchPenalty;
+	vector<string> sortableAttributes;
+	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
+	vector<string> sortableAttributesDefaultValue;
+	unsigned cacheSizeInBytes;
+	int resultsToRetrieve;
+	int numberOfThreads;
+	int searchType;
+	bool exactFuzzy;
+	bool queryTermType;
+
+
+	// <config><query><queryResponseWriter>
+	int searchResponseJsonFormat;
+	int searchResponseFormat;
+	vector<string> attributesToReturn;
+
+
+	// <config><query>
+	DataSourceType dataSourceType;
+	WriteApiType writeApiType;
+
+
+	// <config><updatehandler>
+	uint64_t memoryLimit;
+	uint32_t documentLimit;
+
+
+	// <config><updatehandler><mergePolicy>
+	unsigned mergeEveryNSeconds;
+	unsigned mergeEveryMWrites;
+
+	// <config><updatehandler><updateLog>
+	Logger::LogLevel loglevel;
+    string httpServerAccessLogFile;
+    string httpServerErrorLogFile;
+
+
+
+    // <schema><fields>
+	string fieldLatitude;
+	string fieldLongitude;
+	int indexType;
+
+	// <schema>
+	string primaryKey;
+
+
+
+	// <schema><types><fieldType><analyzer><filter>
+	bool stemmerFlag;
+	std::string stemmerFile;
+	std::string synonymFilterFilePath;
+	bool synonymKeepOrigFlag;
+	std::string stopFilterFilePath;
+
+
+
+
+
+
+
+	string trieBootstrapDictFile;
 	string kafkaBrokerHostName;
 	uint16_t kafkaBrokerPort;
 	string kafkaConsumerTopicName; //Customer name
 	uint32_t kafkaConsumerPartitionId;
 	uint32_t pingKafkaBrokerEveryNSeconds;
 	uint32_t writeReadBufferInBytes;
-	unsigned cacheSizeInBytes;
-	unsigned mergeEveryNSeconds;
-	unsigned mergeEveryMWrites;
 
-	int indexType;
-	string attributeLatitude;
-	string attributeLongitude;
 	float defaultSpatialQueryBoundingBox;
 
-	string primaryKey;
-	int searchResponseFormat;
-	vector<string> attributesToReturn;
-	int numberOfThreads;
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
 	// < keyword, < offset, boost > >
 	map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
-	vector<string> sortableAttributes;
-	string attributeRecordBoost;
 
-	string scoringExpressionString;
-	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-	vector<string> sortableAttributesDefaultValue;
 
 	//vector<unsigned> attributesBoosts;
 
-	// This is the directory that will be set during installation.
-	std::string installDir;
-
 	std::string allowedRecordTokenizerCharacters;
-	int searchType;
 	int isPrimSearchable;
-	bool exactFuzzy;
-	bool queryTermType;
-	unsigned queryTermBoost;
-	float queryTermSimilarityBoost;
-	float queryTermLengthBoost;
-	float prefixMatchPenalty;
 	bool supportAttributeBasedSearch;
-	bool stemmerFlag;
-	std::string stemmerFile;
-	std::string synonymFilterFilePath;
-	bool synonymKeepOrigFlag;
-	std::string stopFilterFilePath;
-	DataSourceType dataSourceType;
-	IndexCreateOrLoad indexCreateOrLoad;
-	WriteApiType writeApiType;
-
-
-	int resultsToRetrieve;
 	int attributeToSort;
 	int ordering;
-	int searchResponseJsonFormat;
-	bool recordBoostAttributeSet;
-
-	string indexPath;
-	string filePath;
-	string httpServerAccessLogFile;
-	Logger::LogLevel loglevel;
-	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
     string configFile;
+
+
+    void splitString(string str, const string& delimiter, vector<string>& result);
+    void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
+
+    bool isOnlyDigits(string& str);
+    //Validate Functions
+    bool isValidFieldType(string& fieldType);
+    bool isValidBool(string& fieldType);
+    bool isValidBoostFields(map <string, unsigned>& boosts);
+    bool isValidQueryTermBoost(string& quertTermBoost);
+    bool isValidIndexCreateOrLoad(string& indexCreateLoad);
+    bool isValidRecordScoreExpession(string& recordScoreExpression);
+    bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
+    bool isValidPrefixMatch(string& prefixmatch);
+    bool isValidSortField(vector<string>& sortField);
+    bool isValidSortFieldType(vector<string>& sortFieldType);
+    bool isValidSortFieldDefaultValue(vector<string>& sortFieldDefaultValue);
+    bool isValidCacheSize(string& cacheSize);
+    bool isValidRows(string& rows);
+    bool isValidMaxSearchThreads(string& maxSearchThreads);
+    bool isValidFieldBasedSearch(string& fieldBasedSearch);
+
+    bool isValidQueryTermMatchType(string& queryTermMatchType);
+    bool isValidQueryTermType(string& queryTermType);
+    bool isValidResponseFormat(string& responseFormat);
+    bool isValidResponseContentType(string responseContentType);
+    bool isValidMaxDoc(string& maxDoc);
+    bool isValidMaxMemory(string& maxMemory);
+    bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
+    bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
+    bool isValidLogLevel(string& logLevel);
+
 
 public:
     ConfigManager(std::string& configfile);
 	virtual ~ConfigManager();
 
-	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,
-			std::stringstream &parseError);
-	void _setDefaultSearchableAttributeBoosts(
-			const vector<string> &searchableAttributesVector);
-	void parse(const boost::program_options::variables_map &vm,
-			bool &configSuccess, std::stringstream &parseError);
+//	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,			std::stringstream &parseError);
+	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
+//	void parse(const boost::program_options::variables_map &vm,
+//			bool &configSuccess, std::stringstream &parseError);
+
+	void parse(pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError);
 
 	const std::string& getCustomerName() const;
 	uint32_t getDocumentLimit() const;
@@ -153,7 +222,7 @@ public:
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
 	string getStopFilePath() const; // StopFilter File Path
 	string getStemmerFile() const; // stemmer file
-	string getInstallDir() const; // install Directory
+	string getSrch2Home() const; // Srch2 Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;

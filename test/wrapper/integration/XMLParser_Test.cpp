@@ -19,7 +19,6 @@ void test1(char* xmlFile) {
         ASSERT(false);
         return;
     }
-
     pugi::xml_node searchEngines = doc.child("xml");
 
    for (pugi::xml_node searchEngine = searchEngines.first_child(); searchEngine;
