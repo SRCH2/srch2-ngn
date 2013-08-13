@@ -42,6 +42,10 @@ public:
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     FilterQueryEvaluator * evaluator;
+    void setMessageContainer(std::vector<ParameterName> *summary){
+        this->summary = summary;
+    }
+    std::vector<ParameterName> *summary;
 };
 
 class SortQueryContainer {
@@ -253,6 +257,7 @@ public:
     //TODO:no need of this vector, change it to bool.
     BooleanOperation termFQBooleanOperator; // boolean operator between different filterQuery terms. fq=field:[10 TO 20] AND field2:keyword
     // parsed error?
+    bool isFqBooleanOperatorSet;
     //TODO: move it close to the messages.
 
 };

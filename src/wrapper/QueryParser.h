@@ -211,7 +211,7 @@ private:
      * example: fq=Field1:[10 TO 100] AND field2:[* TO 100] AND field3:keyword
      *
      */
-    void filterQueryParameterParser();
+    bool filterQueryParameterParser();
 
     /*
      * example:  facet=true&facet.field=filedName&facet.field=fieldName2&facet.range=fieldName3&f.fieldName3.range.start=10&f.fieldName3.range.end=100&f.fieldName3.range.gap=10
@@ -358,10 +358,6 @@ private:
      */
     void populateParallelRangeVectors(FacetQueryContainer &fqc, string &field);
     /*
-     * verifies the syntax of filter query srting.
-     */
-    bool verifyFqSyntax(const string &fq);
-    /*
      * populates teh termFQBooleanOperators in container.
      */
     void populateFilterQueryTermBooleanOperator(const string &termOperator);
@@ -384,10 +380,6 @@ private:
      * sets the lp key and lp value in the container.
      */
     void setLpKeyValinContainer(const string &lpKey, const string &lpVal);
-    /*
-     * parses using the given regex
-     */
-    bool doParse(string &input, const boost::regex &re, string &output);
     /*
      * parses the boolean operator, the string must begin with it
      * example: AND field:keyword.
@@ -435,6 +427,18 @@ private:
      * parses the fuzzy modifier
      */
     bool parseFuzzyModifier(string &input, string &output);
+    /*
+     * parses the FqField
+     */
+    bool parseFqField(string &input, string &field);
+    /*
+     * parses fq boolean operator
+     */
+    bool parseFqBoolOperator(string &input, string &output);
+    /*
+     * checs if cmplx string is present. removes it too.
+     */
+    bool parseComplx(string &input, string &output);
 };
 
 }

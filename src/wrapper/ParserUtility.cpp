@@ -5,6 +5,7 @@
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+
 using boost::posix_time::time_input_facet;
 using std::locale;
 
@@ -127,6 +128,26 @@ void custom_evhttp_find_headers(const struct evkeyvalq *headers,
         }
     }
 }
-
+bool doParse(string &input, const boost::regex &re,
+        string &output) {
+    boost::smatch matches;
+    boost::regex_search(input, matches, re);
+    if (matches[0].matched) {
+        if (0 == matches.position()) {
+            output = input.substr(matches.position(), matches.length());
+            boost::algorithm::trim(output);
+            input = input.substr(matches.position() + matches.length());
+            boost::algorithm::trim(input);
+            string logMsg = "remove " + output + ", input modified to: "
+                    + input;
+            Logger::debug(logMsg.c_str());
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
 }
 }

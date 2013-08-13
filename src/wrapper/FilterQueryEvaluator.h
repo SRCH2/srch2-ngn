@@ -31,6 +31,7 @@
 #include "exprtk.hpp"
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>
+#include "RegexConstants.h"
 //#include "Assert.h"
 
 #ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
@@ -46,11 +47,13 @@ using srch2::instantsearch::AttributeCriterionOperation;
 
 namespace srch2 {
 namespace httpwrapper {
-
+static const string FILTERQUERY_TERM_COMPLEX = "COMPLEX";
+static const string FILTERQUERY_TERM_RANGE = "RANGE";
+static const string FILTERQUERY_TERM_ASSIGNMENT = "ASSIGNMENT";
 class QueryExpression {
 public:
 
-    virtual bool parse() = 0;
+    virtual bool parse(string &expressionString) = 0;
 
     virtual bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues)= 0;
@@ -58,48 +61,52 @@ public:
     virtual ~QueryExpression() {
     }
     ;
+    void setMessageContainer(std::vector<std::pair<MessageType, string> > *messages) {
+        this->messages = messages;
+    }
+    std::vector<std::pair<MessageType, string> >* getMessageContainer() {
+        return this->messages;
+    }
 
-    std::string expressionString;
 private:
+    std::vector<std::pair<MessageType, string> > *messages;
 
 };
 class SolrRangeQueryExpression: public QueryExpression {
 public:
-    SolrRangeQueryExpression(const std::string expressionString) {
-        this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
-
+    SolrRangeQueryExpression(const std::string field) {
+        this->attributeName = field;
+        this->negative = false;
     }
 
-    bool parse() {
-        string keyword;
-        boost::smatch matches;
-        string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
-        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
-        boost::regex_search(this->expressionString, matches,fieldDelimeterRegex);
-        if (matches[0].matched) {
-            // it has field. create a vector and populate container->fieldFilter.
-            string fieldName = this->expressionString.substr(0,
-                    matches.position()); // extract the field
-            boost::algorithm::trim(fieldName);
-            if (fieldName.at(0) == '-') {
-                this->negative = true;
-                fieldName = fieldName.substr(1);
-            } else {
-                this->negative = false;
-            }
-            this->attributeName = fieldName;
-            keyword = this->expressionString.substr(
-                    matches.position() + matches.length()); // extract the keyword
-            boost::algorithm::trim(keyword);
-            // remove '[' and ']'
-            keyword = keyword.substr(1, keyword.length() - 2);
-            // get the lower and uppper values.
-            return this->setLowerAndUpperValues(keyword);
+    bool parse(string &expressionString) {
+        // it has field. create a vector and populate container->fieldFilter.
+        boost::algorithm::trim(attributeName);
+        if (this->attributeName.at(0) == '-') {
+            this->negative = true;
+            this->attributeName = this->attributeName.substr(1);
         } else {
-            //execution should never come here.
-            //ASSERT(false);
+            this->negative = false;
+        }
+        string keyword = "";
+        bool isParsed = parseFqRangeKeyword(expressionString, keyword); // extract the keyword
+        if (!isParsed) {
+            // there is parsing error
+            std::vector<std::pair<MessageType, string> > *messages;
+            this->getMessageContainer()->push_back(
+                    make_pair(MessageError,
+                            "Invalid syntax to specify range in filterquery."));
             return false;
         }
+        // remove trailing ']'
+        keyword = keyword.substr(0, keyword.length() - 1);
+        boost::algorithm::trim(keyword);
+        // get the lower and uppper values.
+        return this->setLowerAndUpperValues(keyword);
+    }
+    bool parseFqRangeKeyword(string &input, string &output) {
+        boost::regex re(FQ_RANGE_QUERY_KEYWORD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        return doParse(input, re, output);
     }
 
     bool getBooleanValue(
@@ -124,6 +131,7 @@ public:
 //				break;
 //		}
 //		return result;
+        return true;
     }
 
     ~SolrRangeQueryExpression() {
@@ -134,7 +142,6 @@ private:
     std::string attributeName;
     string attributeValueLower;
     string attributeValueUpper;
-    unsigned whichPartHasStar; // 0: non, 1:left, 2:right, 3 both
     bool negative;
     bool setLowerAndUpperValues(string &keyword) {
         boost::smatch matches;
@@ -150,10 +157,12 @@ private:
                     matches.position() + matches.length()); // extract the keyword
             boost::algorithm::trim(upperVal);
             // remove '[' and ']'
-            this->attributeValueUpper = lowerVal;
+            this->attributeValueUpper = upperVal;
             return true;
         } else {
-            //ASSERT(false);
+            this->getMessageContainer()->push_back(
+                    make_pair(MessageError,
+                            "Invalid syntax to specify range in filterquery."));
             return false;
         }
     }
@@ -161,43 +170,35 @@ private:
 
 class SolrAssignmentQueryExpression: public QueryExpression {
 public:
-    SolrAssignmentQueryExpression(const std::string expressionString) {
-        this->expressionString = expressionString; // attr:value or attr:[value TO *] or -attr:value or ..
+    SolrAssignmentQueryExpression(const std::string field) {
         this->negative = false;
         this->operation = srch2::instantsearch::EQUALS;
+        this->attributeName = field;
     }
 
-    bool parse() {
+    bool parse(string &expressionString) {
         string keyword;
-        boost::smatch matches;
-        string fieldKeywordDelimeterRegexString = "\\s*:\\s*";
-        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
-        boost::regex_search(this->expressionString, matches,
-                fieldDelimeterRegex);
-        if (matches[0].matched) {
-            // it has field. create a vector and populate container->fieldFilter.
-            string fieldName = this->expressionString.substr(0,
-                    matches.position()); // extract the field
-            boost::algorithm::trim(fieldName);
-            if (fieldName.at(0) == '-') {
-                this->negative = true;
-                fieldName = fieldName.substr(1);
-            } else {
-                this->negative = false;
-            }
-            this->attributeName = fieldName;
-            keyword = this->expressionString.substr(
-                    matches.position() + matches.length()); // extract the keyword
-            boost::algorithm::trim(keyword);
-            this->attributeValue = keyword;
-            return true;
+        // it has field. create a vector and populate container->fieldFilter.
+        if (this->attributeName.at(0) == '-') {
+            this->negative = true;
+            this->attributeName = this->attributeName.substr(1);
         } else {
-            //execution should never come here.
-            //ASSERT(false);
+            this->negative = false;
+        }
+        bool isParsed = this->parseFqKeyword(expressionString, keyword);
+        if(!isParsed){
+            // error
+            this->getMessageContainer()->push_back(make_pair(MessageError,"Invalid filter query assignment keyword."));
             return false;
         }
+        boost::algorithm::trim(keyword);
+        this->attributeValue = keyword;
+        return true;
     }
-
+    bool parseFqKeyword(string &input, string &output) {
+        boost::regex re(FQ_ASSIGNMENT_KEYWORD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        return doParse(input, re, output);
+    }
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
         bool result;
@@ -226,33 +227,26 @@ private:
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
 class ComplexQueryExpression: public QueryExpression {
 public:
-    ComplexQueryExpression(const std::string expressionString) {
-        this->expressionString = expressionString; // CMPLX(some math expression)
+    ComplexQueryExpression() {
     }
-
-    bool parse() {
-        boost::algorithm::trim(this->expressionString);
-        // extract the expression, remove the 'CMPLX(' and ')' part
-        boost::smatch matches;
-        string fieldKeywordDelimeterRegexString = "\\s*CMPLX\\(\\s*";
-        boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
-        boost::regex_search(this->expressionString, matches,
-                fieldDelimeterRegex);
-        string expressionString;
-        if (matches[0].matched) {
-            expressionString = this->expressionString.substr(
-                    matches.position() + matches.length());
-            // remove the last ')'
-            expressionString = expressionString.substr(0, expressionString.length() - 1);
-            boost::algorithm::trim(expressionString);
-            this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
-            return true;
-        } else {
-            //ASSERT(false);
+    bool parse(string &expressionString) {
+        this->parsedExpression = "";
+        bool isParsed = this->parseComplxExpression(expressionString, this->parsedExpression);
+        if(!isParsed){
+            this->getMessageContainer()->push_back(make_pair(MessageError,"Invalid expression query."));
             return false;
         }
+        // remove '$'
+        expressionString = expressionString.substr(1);
+        boost::algorithm::trim(expressionString);
+        // extract the expression, remove the 'CMPLX(' and ')' part
+        this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
+        return true;
     }
-
+    bool parseComplxExpression(string &input, string &output) {
+        boost::regex re(FQ_COMPLEX_EXPRESSION_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        return doParse(input, re, output);
+    }
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
 
@@ -272,7 +266,6 @@ public:
     ;
 
 private:
-    string expressionString;
     string parsedExpression;
     exprtk::expression<float> expression;
     std::map<std::string, float> symbolVariables;
@@ -338,9 +331,13 @@ class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
 public:
 
     FilterQueryEvaluator() {
+        this->operation = srch2::instantsearch::AND;
     }
     void setOperation(BooleanOperation op) {
         this->operation = op;
+    }
+    void setMessageContainer(std::vector<std::pair<MessageType, string> > *messages) {
+        this->messages = messages;
     }
 
     bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) {
@@ -371,53 +368,42 @@ public:
         return false; // TODO : should change to ASSERT(false); because it should never reach here
     }
 
-    bool addCriterion(std::string criteriaString) {
-        string filedRegexString = "\\s*\\w+(\\.{0,1}\\w+)+\\s*"; //TODO: alpha numeric or underscores, minus support also
-        string keywordRegexString =
-                "\\s*(\\.{0,1}\\w+(\\.{0,1}\\w+)+\\.{0,1}\\*{0,1}|\\*)"; // any value that is in double quotes, remove the double quote before setting it in the members
-        string validNumRegexString = "\\s*(\\d+|\\*)\\s+TO\\s+(\\d+|\\*)\\s*"; // TODO: add the string support too.
-        string validDateRegexString =
-                "\\s*(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s+TO\\s+(\\d{4}\\/\\d{2}\\/\\d{2}|\\*)\\s*"; // yyyy/mm/dd
-        std::string rangeCriterionRegexString = filedRegexString + ":\\s*\\[("
-                + validDateRegexString + "|" + validNumRegexString + ")\\]\\s*";
-        boost::regex rangeCriterionRegex(rangeCriterionRegexString);
-        std::string assignmentCriterionRegexString = filedRegexString + ":"
-                + keywordRegexString;
-        boost::regex assignmentCriterionRegex(assignmentCriterionRegexString);
-        if (boost::regex_match(criteriaString, rangeCriterionRegex)) {
-            SolrRangeQueryExpression * sqe = new SolrRangeQueryExpression(criteriaString);
-            bool isParsable = sqe->parse();
+    bool addCriterion(std::string &criteriaString, const string &type,
+            const string &field) {
+        if (boost::iequals(FILTERQUERY_TERM_RANGE, type)) {
+            SolrRangeQueryExpression * sre = new SolrRangeQueryExpression(
+                    field);
+            sre->setMessageContainer(this->messages);
+            bool isParsable = sre->parse(criteriaString);
             if (!isParsable) {
                 return false; // TODO: get the message
             } else {
-                criteria.push_back(sqe);
+                criteria.push_back(sre);
                 return true;
             }
-        } else if (boost::regex_match(criteriaString,assignmentCriterionRegex)) {
-            SolrAssignmentQueryExpression * sqe = new SolrAssignmentQueryExpression(criteriaString);
-            bool isParsable = sqe->parse();
+        } else if (boost::iequals(FILTERQUERY_TERM_ASSIGNMENT, type)) {
+            SolrAssignmentQueryExpression * sqe =
+                    new SolrAssignmentQueryExpression(field);
+            sqe->setMessageContainer(this->messages);
+            bool isParsable = sqe->parse(criteriaString);
             if (!isParsable) {
                 return false;
             } else {
                 criteria.push_back(sqe);
                 return true;
             }
-        } else {
-            string complexExpressionRegexString = "\\s*CMPLX\\(.*\\)\\s*"; // need to be careful here. assumption is the fq regex has taken care of the right syntax
-            boost::regex cmplxCriterionRegex(complexExpressionRegexString);
-            if (boost::regex_match(criteriaString, cmplxCriterionRegex)) {
-                ComplexQueryExpression * cqe = new ComplexQueryExpression(criteriaString);
-                bool isParsable = cqe->parse();
-                if (!isParsable) {
-                    return false;
-                } else {
-                    criteria.push_back(cqe);
-                    return true;
-                }
+        } else if (boost::iequals(FILTERQUERY_TERM_COMPLEX, type)) {
+            ComplexQueryExpression * cqe = new ComplexQueryExpression();
+            cqe->setMessageContainer(this->messages);
+            bool isParsable = cqe->parse(criteriaString);
+            if (!isParsable) {
+                return false;
             } else {
-                return false; // TODO invalid filter syntax.
+                criteria.push_back(cqe);
+                return true;
             }
         }
+        return false;
     }
 
     ~FilterQueryEvaluator() {
@@ -429,8 +415,10 @@ public:
 private:
     std::vector<QueryExpression *> criteria;
     BooleanOperation operation;
+    std::vector<std::pair<MessageType, string> >* messages; // stores the messages related to warnings and errors.
 
-};
+}
+;
 
 }
 }

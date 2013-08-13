@@ -6,6 +6,7 @@
 #include "boost/regex.hpp"
 #include "util/Logger.h"
 #include "util/Assert.h"
+#include "RegexConstants.h"
 using namespace std;
 using srch2::util::Logger;
 using namespace srch2::instantsearch;
@@ -63,6 +64,7 @@ QueryParser::QueryParser(const evkeyvalq &headers,
     this->lpKeywordBoostLevel = -1;
     this->lpKeywordPrefixComplete = srch2::instantsearch::NOT_SPECIFIED; // stores the fallback termType for keywords
     this->container->isTermBooleanOperatorSet = false;
+    this->container->isFqBooleanOperatorSet = false;
 }
 
 // parses the URL to a query object
@@ -162,10 +164,10 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                         if (mainQueryStr.length() > 0) {
                             // raise error message
                             Logger::info(
-                                    " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                                    " Parse error, expecting boolean operator while parsing terms.");
                             this->container->messages.push_back(
                                     make_pair(MessageError,
-                                            "Parse error, expecting boolean operator while parsing terms, not found."));
+                                            "Parse error, expecting boolean operator while parsing terms."));
                             this->isParsedError = true;
                         }
                     }
@@ -177,7 +179,6 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         Logger::debug(" parameter q not present.");
     }
 }
-
 
 void QueryParser::isFuzzyParser() {
     /*
@@ -598,7 +599,7 @@ void QueryParser::responseWriteTypeParameterParser() {
     Logger::debug("returning from responseWriteTypeParameterParser function");
 }
 
-void QueryParser::filterQueryParameterParser() {
+bool QueryParser::filterQueryParameterParser() {
     /*
      * it looks to see if there is any post processing filter
      * if there is then it fills up the container accordingly
@@ -613,72 +614,94 @@ void QueryParser::filterQueryParameterParser() {
         Logger::debug("filterQueryParameter found.");
         size_t st;
         string fq = evhttp_uridecode(fqTmp, 0, &st);
-        // see if fq matches a valid regex.
-        // if yes, move further, else raise error msg
         // tokenise on the basis of boolean operator
         // set the boolean operation in fqv.
         // for each token call the fqv.addCriterion method.
-        if (this->verifyFqSyntax(fq)) {
-            FilterQueryContainer* filterQueryContainer =
-                    new FilterQueryContainer();
-            FilterQueryEvaluator* fqe = new FilterQueryEvaluator();
-            filterQueryContainer->evaluator = fqe;
-            this->container->filterQueryContainer = filterQueryContainer;
-            this->container->summary.push_back(FilterQueryEvaluatorFlag);
-            // tokenise on the basis of boolean operator
-            string operatorRegexString = "\\s+(AND|&&|OR)\\s+"; //TODO: OR and ||
-            //TODO: check exprtk library to see what boolean operator string they use.
-            boost::regex re(operatorRegexString); //TODO: move this regex compilation from here. It should happen when the engine starts
-            boost::sregex_iterator filterTermItr(fq.begin(), fq.end(), re);
-            boost::sregex_iterator filterTermEndItr;
-            vector<string> filterTerms;
-            vector<string> filterTermOperators;
-            size_t termStartPosition = 0;
-            for (; filterTermItr != filterTermEndItr; ++filterTermItr) {
-                size_t termLength = (*filterTermItr).position()
-                        - termStartPosition;
-                string filterTerm = fq.substr(termStartPosition, termLength);
-                filterTerms.push_back(filterTerm);
-                termStartPosition = (*filterTermItr).position()
-                        + (*filterTermItr).length();
-                filterTermOperators.push_back((*filterTermItr).str());
+        FilterQueryContainer* filterQueryContainer = new FilterQueryContainer();
+        FilterQueryEvaluator* fqe = new FilterQueryEvaluator();
+        filterQueryContainer->evaluator = fqe;
+        this->container->filterQueryContainer = filterQueryContainer;
+        fqe->setMessageContainer(&(this->container->messages));
+        this->container->summary.push_back(FilterQueryEvaluatorFlag);
+        boost::algorithm::trim(fq);
+        Logger::debug("parsing fq %s", fq.c_str());
+        bool parseNextTerm = true;
+        while (parseNextTerm) {
+            string fqField;
+            bool isParsed = parseFqField(fq, fqField);
+            if (!isParsed) {
+                // it is not a assignment not a range
+                // see if it's a complx query
+                string complxStr = "";
+                isParsed = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
+                if (!isParsed) {
+                    parseNextTerm = false;
+                    Logger::info(" Parsing error:: not a valid filter query");
+                    this->container->messages.push_back(
+                            make_pair(MessageError,
+                                    "Parse error, not a valid filter query term."));
+                    this->isParsedError = true;
+                    return false;
+                } else {
+                    Logger::debug(
+                            " 'CMPLX$' found, possible complex expression query");
+                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_COMPLEX, "NO_FIELD"); // NO_FIELD, is a dummy parameter, that will not be used.
+                    if(!isParsed){
+                        this->isParsedError=true;
+                        return false;
+                    }
+                    boost::algorithm::trim(fq);
+                }
+            } else {
+                // remove the ':'
+                fqField = fqField.substr(0, fqField.length() - 1);
+                // check if it's a range query or asignment.
+                if ('[' == fq.at(0)) {
+                    Logger::debug(" '[' found, possible range query");
+                    string keyword = "";
+                    fq = fq.substr(1);
+                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_RANGE, fqField); // it parses fq for range query parameters
+                    if (!isParsed) {
+                        this->isParsedError=true;
+                        return false;
+                    }
+                } else {
+                    Logger::debug(" '[' not found, possible assignment query");
+                    string keyword = "";
+                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_ASSIGNMENT, fqField); // it parses fq for range query parameters
+                    if (!isParsed) {
+                        this->isParsedError=true;
+                        return false;
+                    }
+                }
             }
-            filterTerms.push_back(fq.substr(termStartPosition)); // push back the last token
-            // set the termOperators in container
-            if (!filterTermOperators.empty()) {
-                this->populateFilterQueryTermBooleanOperator(
-                        filterTermOperators.at(0)); // TODO: validation to check, all the boolean operators are either AND(&&) or OR(||)
-            }
-            // get the first boolean operator and set that in evaluator. It's decided that we will only support one of AND,OR.
+            string boolOperator = "";
+            isParsed = this->parseFqBoolOperator(fq, boolOperator);
             fqe->setOperation(this->container->termFQBooleanOperator);
-            // parse the terms
-            for (vector<string>::iterator it = filterTerms.begin();
-                    it != filterTerms.end(); ++it) {
-                string term = *it;
-                fqe->addCriterion(term); // TODO: // pass a pointer to a vector<pairs> to this function. check if it's false  set error msg and set isParsedError to true
+            if (isParsed) {
+                string msgStr = "boolean operator is " + boolOperator;
+                Logger::debug(msgStr.c_str());
+                parseNextTerm = true;
+                Logger::debug("LOOPING AGAIN");
+            } else {
+                // no boolean operator found.
+                // if the fq string length is >0 throw error.
+                parseNextTerm = false;
+                if (fq.length() > 0) {
+                    // raise error message
+                    Logger::info(
+                            " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                    this->container->messages.push_back(
+                            make_pair(MessageError,
+                                    "Parse error, expecting boolean operator while parsing filter query terms."));
+                    this->isParsedError = true;
+                    return false;
+                }
             }
-        } else {
-            // raise error saying fq doesn't match the correct syntax
-            this->container->messages.push_back(
-                    make_pair(MessageError,
-                            "Parsing error, filter query doesn't match the correct syntax"));
-            this->isParsedError = true;
         }
-
     }
     Logger::debug("returning from filterQueryParameterParser function");
-}
-
-bool QueryParser::verifyFqSyntax(const string &fq) {
-    /*
-     * verifies the syntax of filter query srting.
-     */
-    Logger::debug("inside verifyFqSyntax function");
-    Logger::debug("returning from verifyFqSyntax function");
-    // stub to add verification logic here, currently it returns true,
-    //as we are verifying different parts separately
-    //TODO: remove this function if it's not needed.
-    return true; // not implementing it
+    return true;
 }
 
 void QueryParser::facetParser() {
@@ -956,6 +979,8 @@ bool QueryParser::keywordParser(string &input) {
         this->populateFieldFilterUsingLp();
     } else {
         // populate the field
+        // remove the trailing :
+        field = field.substr(0, field.length() - 1);
         this->populateFieldFilterUsingQueryFields(field);
     }
     string keywordStr = "";
@@ -1097,8 +1122,7 @@ void QueryParser::checkForBoostNums(const string &input,
      * example: keyword^4 has boost value 4. keyword^ has no boost value
      */
     Logger::debug("inside checkForBoostNums");
-    string boostRegexString = "\\^\\d+";
-    boost::regex boostRegex(boostRegexString); // TODO: for all these functions compile the regex when the engine starts.
+    boost::regex boostRegex(BOOST_REGEX_STRING); // TODO: for all these functions compile the regex when the engine starts.
     boost::regex_search(input, matches, boostRegex);
     Logger::debug("returning from checkForBoostNums");
 }
@@ -1109,8 +1133,7 @@ void QueryParser::checkForFuzzyNums(const string &input,
      * example: keyword~.8 has fuzzylevel as .8. keyword~ has no fuzzylevel specified.
      */
     Logger::debug("inside checkForFuzzyNums");
-    string regexString = "\\~\\.\\d+";
-    boost::regex re(regexString);
+    boost::regex re(CHECK_FUZZY_NUMBER_REGEX_STRING);
     boost::regex_search(input, matches, re);
     Logger::debug("returning from checkForFuzzyNums");
 }
@@ -1120,8 +1143,7 @@ void QueryParser::extractNumbers(const string &input, boost::smatch& matches) {
      * example:  it will extract '8' from '~.8'.
      */
     Logger::debug("inside extractNumbers");
-    string regexString = "\\d+";
-    boost::regex re(regexString);
+    boost::regex re(NUMBERS_REGEX_STRING);
     boost::regex_search(input, matches, re);
     Logger::debug("returning from extractNumbers");
 }
@@ -1162,14 +1184,12 @@ void QueryParser::populateFieldFilterUsingQueryFields(const string &input) {
      */
     Logger::debug("inside populateFieldFilterUsingQueryFields");
     this->setInSummaryIfNotSet(FieldFilter);
-    const string fieldAndBoolOpDelimeterRegexString = "\\.";
-    const string fieldOrBoolOpDelimeterRegexString = "\\+";
     string fieldBoolOpDelimeterRegexString;
     if (input.find('.') != string::npos) {
-        fieldBoolOpDelimeterRegexString = fieldAndBoolOpDelimeterRegexString;
+        fieldBoolOpDelimeterRegexString = FIELD_AND_BOOL_OP_DELIMETER_REGEX_STRING;
         this->container->fieldFilterOps.push_back(srch2::instantsearch::AND);
     } else if (input.find('+') != string::npos) {
-        fieldBoolOpDelimeterRegexString = fieldOrBoolOpDelimeterRegexString;
+        fieldBoolOpDelimeterRegexString = FIELD_OR_BOOL_OP_DELIMETER_REGEX_STRING;
         this->container->fieldFilterOps.push_back(srch2::instantsearch::OR);
     } else {
         // no boolean operators here.
@@ -1424,79 +1444,57 @@ void QueryParser::setFuzzyLevelInContainer(const float f) {
     Logger::debug("returning from setFuzzyLevelInContainer");
 }
 bool QueryParser::parseLpKey(string &input, string &field) {
-    string regexString = "\\s*[\\w_]+";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, field);
+    boost::regex re(LP_KEY_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, field);
 }
 bool QueryParser::parseLpDelimeter(string &input) {
-    string regexString = "\\s*=\\s*";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
+    boost::regex re(LP_KEY_VAL_DELIMETER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     string delimeter = "";
-    return this->doParse(input, re, delimeter);
+    return doParse(input, re, delimeter);
 }
 bool QueryParser::parseLpValue(string &input, string &value) {
-    string regexString = "[\\w_]+(,[\\w_])*";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, value);
-}
-
-bool QueryParser::doParse(string &input, const boost::regex &re,
-        string &output) {
-    boost::smatch matches;
-    boost::regex_search(input, matches, re);
-    if (matches[0].matched) {
-        if (0 == matches.position()) {
-            output = input.substr(matches.position(), matches.length());
-            boost::algorithm::trim(output);
-            input = input.substr(matches.position() + matches.length());
-            boost::algorithm::trim(input);
-            string logMsg = "remove " + output + ", input modified to: "
-                    + input;
-            Logger::debug(logMsg.c_str());
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
+    boost::regex re(LP_VALUE_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, value);
 }
 
 bool QueryParser::parseTermBoolOperator(string &input, string &output) {
-    string regexString = "(AND|&&)";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    bool isParsed = this->doParse(input, re, output);
-    if(!this->container->isTermBooleanOperatorSet){
+    boost::regex re(TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    bool isParsed = doParse(input, re, output);
+    if (!this->container->isTermBooleanOperatorSet) {
         this->populateTermBooleanOperator(output);
-        this->container->isTermBooleanOperatorSet=true;
+        this->container->isTermBooleanOperatorSet = true;
+    }
+    return isParsed;
+}
+bool QueryParser::parseFqBoolOperator(string &input, string &output) {
+    boost::regex re(FQ_TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    bool isParsed = doParse(input, re, output);
+    if (!this->container->isFqBooleanOperatorSet) {
+        this->populateFilterQueryTermBooleanOperator(output);
+        this->container->isFqBooleanOperatorSet = true;
     }
     return isParsed;
 }
 bool QueryParser::parseField(string &input, string &field) {
-    string regexString = "([\\w_]+((\\.|\\+)[\\w_]*)*|\\*)\\s*:";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, field);
+    boost::regex re(MAIN_QUERY_TERM_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, field);
 }
 bool QueryParser::parseKeyword(string &input, string &output) {
-    string strRegexString = "[^\\*\\^\\~\\s]+";
-    boost::regex re(strRegexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, output);
+    boost::regex re(MAIN_QUERY_KEYWORD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
 }
 
 bool QueryParser::parseKeyWordForAsteric(string &input, string &output) {
-    string regexString = "\\*\\s*";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, output);
+    boost::regex re(MAIN_QUERY_ASTERIC_KEYWORD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
 }
 bool QueryParser::parsePrefixModifier(string &input, string &output) {
-    string regexString = "\\*";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, output);
+    boost::regex re(PREFIX_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
 }
 bool QueryParser::parseBoostModifier(string &input, string &output) {
-    string regexString = "\\*";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, output);
+    boost::regex re(BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
 }
 void QueryParser::populateBoostInfo(bool isParsed, string &input) {
     this->setInSummaryIfNotSet(KeywordBoostLevel);
@@ -1525,9 +1523,8 @@ void QueryParser::populateBoostInfo(bool isParsed, string &input) {
     }
 }
 bool QueryParser::parseFuzzyModifier(string &input, string &output) {
-    string regexString = "~(\\.\\d){0,1}";
-    boost::regex re(regexString); //TODO: compile this regex when the engine starts.
-    return this->doParse(input, re, output);
+    boost::regex re(FUZZE_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
 }
 void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     this->setInSummaryIfNotSet(KeywordFuzzyLevel);
@@ -1554,6 +1551,13 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         this->setFuzzyLevelInContainer(0.0f);
     }
 }
-
+bool QueryParser::parseFqField(string &input, string &field) {
+    boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, field);
+}
+bool QueryParser::parseComplx(string &input, string &output) {
+    boost::regex re(COMPLEX_TERM_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
+}
 }
 }
