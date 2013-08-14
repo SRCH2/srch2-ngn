@@ -23,6 +23,7 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/vector.hpp>
 #include <cstring>
+#include "util/Assert.h"
 #include "ts_shared_ptr.h"
 
 using boost::shared_ptr;
@@ -264,6 +265,9 @@ public:
 
     void getReadView(shared_ptr<vectorview<T> >& view) const
     {
+        // We need the lock it to prevent the following two operations from happening at the same time.
+        // One reader is doing reader = readview, which is reading the readview.
+        // At the same time, we can call merge(), in which we can have "readview=writeview", which is modifying the read view.
         pthread_spin_lock(&m_spinlock);
         view = m_readView;
         pthread_spin_unlock(&m_spinlock);
@@ -287,13 +291,12 @@ public:
         pthread_spin_lock(&m_spinlock);
         // After the commit, the two views are different.
         // if they share the same array, we need to copy a new array from the old array.
-        if(m_readView.get() != m_writeView){
-            if(m_readView->getArray() == m_writeView->getArray()){
-                m_writeView->forceCreateCopy();
-            }
-            // reset the readview and let it point to the writeview
-            m_readView.reset(m_writeView);
+        ASSERT(m_readView.get() != m_writeView);
+        if(m_readView->getArray() == m_writeView->getArray()){
+            m_writeView->forceCreateCopy();
         }
+        // reset the readview and let it point to the writeview
+        m_readView.reset(m_writeView);
 
         // change the viewType to be readview
         m_readView->setReadView();

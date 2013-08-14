@@ -82,6 +82,10 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
 
 	std::sort(elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
+	if(readViewListSize == writeViewListSize){
+	    this->invList->commit();
+	    return;
+	}
 
 	std::inplace_merge (elem.begin(), elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex));
 
@@ -93,6 +97,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 	{
 		writeView->at(i) = elem[i].recordId;
 	}
+
 	this->invList->merge();
 }
 
@@ -112,9 +117,7 @@ InvertedIndex::~InvertedIndex()
         if(this->commited_WriteView){
             this->invertedIndexVector->merge();
             this->keywordIds->merge();
-        }
-        else
-        {
+        }else{
             this->invertedIndexVector->commit();
             this->keywordIds->commit();
         }
@@ -226,7 +229,6 @@ void InvertedIndex::initialiseInvertedIndexCommit()
         invListContainerPtr = new InvertedListContainer(*vectorIterator);
         writeView->push_back(invListContainerPtr);
     }
-    //this->invertedIndexVector->commit();
 }
 /* COMMIT LOGIC
  * 1. Get all the records from the forwardIndex

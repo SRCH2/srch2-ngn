@@ -251,6 +251,18 @@ float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* sc
     return scoreItem;
 }
 
+void ForwardIndex::commit()
+{
+    if ( !this->isCommitted())
+    {
+        // make sure the read view is pointing to the write view
+        this->forwardListDirectory->commit();
+
+        // writeView->forceCreateCopy();
+        this->mergeRequired_WriteView = false;
+    }
+}
+
 // WriteView
 void ForwardIndex::merge()
 {
@@ -258,18 +270,6 @@ void ForwardIndex::merge()
     {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->merge();
-
-        // writeView->forceCreateCopy();
-        this->mergeRequired_WriteView = false;
-    }
-}
-
-void ForwardIndex::commit()
-{
-    if ( !this->isCommitted())
-    {
-        // make sure the read view is pointing to the write view
-        this->forwardListDirectory->commit();
 
         // writeView->forceCreateCopy();
         this->mergeRequired_WriteView = false;

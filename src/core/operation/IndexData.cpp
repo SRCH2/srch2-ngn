@@ -434,6 +434,11 @@ INDEXWRITE_RETVAL IndexData::_commit()
                 struct timespec tstart;
                 clock_gettime(CLOCK_REALTIME, &tstart);
 */
+        const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
+
+        //Check for case, where in commit() is called without any records added to the index.
+        if (totalNumberofDocuments == 0)
+            return OP_FAIL;//Failed
         this->forwardIndex->commit();
 
 /*
@@ -444,11 +449,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         }
 */
 
-        const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
-        //Check for case, where in commit() is called without any records added to the index.
-        if (totalNumberofDocuments == 0)
-            return OP_FAIL;//Failed
 
 /*
         {
