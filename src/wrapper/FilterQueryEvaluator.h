@@ -78,7 +78,6 @@ public:
         this->attributeName = field;
         this->negative = false;
         this->messages = messages;
-        //messages);
     }
 
     bool parse(string &expressionString) {
