@@ -70,7 +70,7 @@ def prepareQuery(queryKeywords):
         else:
             query=query+fieldFilter+keyword+'%20AND%20'
 
-    print 'Query : ' + query
+    #print 'Query : ' + query
     ##################################
     return query
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]    
     queriesAndResultsPath = sys.argv[2]  
   
-    testTermType(queriesAndResultsPath, '/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/term_type/conf.ini', binary_path)
+    testTermType(queriesAndResultsPath, './term_type/conf.ini', binary_path)
     print '--------Term type test  for attribute_based_search--------------'  
-    testTermType(queriesAndResultsPath, '/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/term_type/conf_for_attribute_based_search.ini', binary_path)
+    testTermType(queriesAndResultsPath, './term_type/conf_for_attribute_based_search.ini', binary_path)
 

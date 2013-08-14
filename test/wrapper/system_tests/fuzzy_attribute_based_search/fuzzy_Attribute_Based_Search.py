@@ -58,7 +58,7 @@ def prepareQuery(queryKeywords):
         keyword = queryTermParts[0]
         # now add them to the query
         if i == (len(queryKeywords)-1):
-            query=query+fieldFilter+keyword+'~'+'*' # last keyword prefix
+            query=query+fieldFilter+keyword+'*'+'~' # last keyword prefix
         else:
             query=query+fieldFilter+keyword+'~'+'%20AND%20'
     ################# fuzzy parameter
@@ -72,7 +72,7 @@ def prepareQuery(queryKeywords):
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/fuzzy_attribute_based_search/conf.ini &'
+    binary=binary+' --config-file=./fuzzy_attribute_based_search/conf.ini &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()

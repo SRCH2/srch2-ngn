@@ -1500,10 +1500,10 @@ bool QueryParser::parseBoostModifier(string &input, string &output) {
     return doParse(input, re, output);
 }
 void QueryParser::populateBoostInfo(bool isParsed, string &input) {
-    this->setInQueryParametersIfNotSet(KeywordBoostLevel);
     if (isParsed) {
         Logger::debug("boost modifier used in query");
         boost::smatch matches;
+        this->setInQueryParametersIfNotSet(KeywordBoostLevel);
         this->checkForBoostNums(input, matches); // check if boost value is present
         if (matches[0].matched) {
             // get the boost value;
@@ -1530,9 +1530,9 @@ bool QueryParser::parseFuzzyModifier(string &input, string &output) {
     return doParse(input, re, output);
 }
 void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
-    this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
     if (isParsed) {
         Logger::debug("fuzzy modifier used in query");
+        this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
         boost::smatch matches;
         this->checkForFuzzyNums(input, matches); // check if boost value is present
         if (matches[0].matched) {

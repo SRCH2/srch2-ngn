@@ -65,7 +65,7 @@ def prepareQuery(queryKeywords):
     ################# fuzzy parameter
     query = query + '&fuzzy=false'
 
-    print 'Query : ' + query
+    #print 'Query : ' + query
     ##################################
     return query
 
@@ -73,7 +73,7 @@ def prepareQuery(queryKeywords):
 def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/exact_attribute_based_search/conf.ini &'
+    binary= binary+' --config-file=./exact_attribute_based_search/conf.ini &'
     os.popen(binary)
 
     #make sure that start the engine up

@@ -68,7 +68,7 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
     query = query + '&radius=' + ct_radius
     query = query + '&clat=' + ct_lat
     query = query + '&clong=' + ct_long
-    print 'Query : ' + query
+    #print 'Query : ' + query
     ##################################
     return query
 
@@ -77,7 +77,7 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
 def testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/exact_attribute_based_search_geo/conf.ini &'
+    binary=binary+' --config-file=./exact_attribute_based_search_geo/conf.ini &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()
