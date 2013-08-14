@@ -830,8 +830,9 @@ void Trie::load(Trie &trie, const std::string &trieFullPathFileName) {
     ifs.close();
 }
 
-void Trie::save(const Trie &trie, const std::string &trieFullPathFileName) {
-
+void Trie::save(Trie &trie, const std::string &trieFullPathFileName) {
+    if(trie.merge_required)
+        trie.merge();
     std::ofstream ofs(trieFullPathFileName.c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
     oa << trie;

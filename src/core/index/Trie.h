@@ -519,7 +519,7 @@ public:
 
     static void load(Trie &trie, const std::string &trieFullPathFileName);
 
-    static void save(const Trie &trie, const std::string &trieFullPathFileName);
+    static void save(Trie &trie, const std::string &trieFullPathFileName);
 
     int getNumberOfBytes() const;
 
