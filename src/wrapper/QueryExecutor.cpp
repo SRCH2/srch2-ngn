@@ -23,255 +23,285 @@
 #include "query/QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
 
-namespace srch2{
-namespace httpwrapper{
+namespace srch2 {
+namespace httpwrapper {
 
-
-QueryExecutor::QueryExecutor(QueryPlan & queryPlan ,
-		QueryResultFactory * resultsFactory  ,
-		Srch2Server *server) : queryPlan(queryPlan){
-	this->queryResultFactory = resultsFactory;
-	this->server = server;
+QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
+        QueryResultFactory * resultsFactory, Srch2Server *server) :
+        queryPlan(queryPlan) {
+    this->queryResultFactory = resultsFactory;
+    this->server = server;
 }
 
-void QueryExecutor::execute(QueryResults * finalResults){
+void QueryExecutor::execute(QueryResults * finalResults) {
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
     this->indexSearcher = srch2is::IndexSearcher::create(server->indexer);
     //do the search
-    switch(queryPlan.getSearchType())
-    {
-    case TopKSearchType://TopK
-    {
-
-    	executeTopK(finalResults);
-    }
-    break;
-
-    case GetAllResultsSearchType://GetAllResults
-    {
-    	executeGetAllResults(finalResults);
-    }
-    break;
-
-    case GeoSearchType://MapQuery
-    {
-    	executeGeo(finalResults);
-    }
-    break;
+    switch (queryPlan.getSearchType()) {
+    case TopKSearchType: //TopK
+        executeTopK(finalResults);
+        break;
+    case GetAllResultsSearchType: //GetAllResults
+        executeGetAllResults(finalResults);
+        break;
+    case GeoSearchType: //MapQuery
+        executeGeo(finalResults);
+        break;
     default:
-    	// TODO some debug operation like ASSERT(false) : becauee flow should never reach here
-    	break;
+        // TODO some debug operation like ASSERT(false) : becauee flow should never reach here
+        break;
     };
 
     // Free objects
-
     delete indexSearcher;
 
-
 }
 
-
-void QueryExecutor::executeTopK(QueryResults * finalResults){
+void QueryExecutor::executeTopK(QueryResults * finalResults) {
 
     int idsExactFound = 0;
 
+    srch2is::QueryResults *exactQueryResults = new QueryResults(
+            this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+    idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(),
+            exactQueryResults, 0,
+            this->queryPlan.getOffset()
+                    + this->queryPlan.getResultsToRetrieve());
 
+    //fill visitedList
+    std::set<std::string> exactVisitedList;
+    for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
+        exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
+    }
 
-	srch2is::QueryResults *exactQueryResults =  new QueryResults(this->queryResultFactory,indexSearcher,this->queryPlan.getExactQuery());
-	idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(), exactQueryResults, 0, this->queryPlan.getOffset() + this->queryPlan.getResultsToRetrieve());
+    int idsFuzzyFound = 0;
 
-	//fill visitedList
-	std::set<std::string> exactVisitedList;
-	for(unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i)
-	{
-		exactVisitedList.insert(exactQueryResults->getRecordId(i));// << queryResults->getRecordId(i);
-	}
+    if (this->queryPlan.isFuzzy()
+            && (idsExactFound
+                    < (int) (this->queryPlan.getResultsToRetrieve()
+                            + this->queryPlan.getOffset()))) {
+        QueryResults *fuzzyQueryResults = new QueryResults(
+                this->queryResultFactory, indexSearcher,
+                this->queryPlan.getFuzzyQuery());
+        idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
+                fuzzyQueryResults, 0,
+                this->queryPlan.getOffset()
+                        + this->queryPlan.getResultsToRetrieve());
+        // create final queryResults to print.
 
-	int idsFuzzyFound = 0;
+        QueryResultsInternal *exactQueryResultsInternal =
+                exactQueryResults->impl;
+        QueryResultsInternal *fuzzyQueryResultsInternal =
+                fuzzyQueryResults->impl;
 
-	if ( this->queryPlan.isIsFuzzy() && (idsExactFound < (int)(this->queryPlan.getResultsToRetrieve() + this->queryPlan.getOffset())))
-	{
-		QueryResults *fuzzyQueryResults = new QueryResults(this->queryResultFactory,indexSearcher, this->queryPlan.getFuzzyQuery());
-		idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(), fuzzyQueryResults, 0, this->queryPlan.getOffset() + this->queryPlan.getResultsToRetrieve());
-		// create final queryResults to print.
+        unsigned fuzzyQueryResultsIter = 0;
 
-		QueryResultsInternal *exact_qs = exactQueryResults->impl;
-		QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
+        while (exactQueryResultsInternal->sortedFinalResults.size()
+                < (unsigned) (this->queryPlan.getOffset()
+                        + this->queryPlan.getResultsToRetrieve())
+                && fuzzyQueryResultsIter
+                        < fuzzyQueryResults->getNumberOfResults()) {
+            std::string recordId = fuzzyQueryResults->getRecordId(
+                    fuzzyQueryResultsIter);
+            if (!exactVisitedList.count(recordId)) // recordid not there
+                    {
+                exactQueryResultsInternal->sortedFinalResults.push_back(
+                        fuzzyQueryResultsInternal->sortedFinalResults[fuzzyQueryResultsIter]);
+            }
+            fuzzyQueryResultsIter++;
+        }
+        delete fuzzyQueryResults;
+    }
 
-		unsigned fuzzyQueryResultsIter = 0;
-
-		while (exact_qs->sortedFinalResults.size() < (unsigned)(this->queryPlan.getOffset() + this->queryPlan.getResultsToRetrieve())
-				&& fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
-		{
-			std::string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
-			if ( ! exactVisitedList.count(recordId) )// recordid not there
-					{
-				exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
-					}
-			fuzzyQueryResultsIter++;
-		}
-		delete fuzzyQueryResults;
-	}
-
-
-	// execute post processing
-
-    finalResults->init(this->queryResultFactory,indexSearcher, this->queryPlan.getExactQuery());
-    executePostProcessingPlan(this->queryPlan.getExactQuery(), exactQueryResults, finalResults);
-
+    // execute post processing
+    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+    // this post processing plan will be applied on exactQueryResults object and
+    // the final results will be copied into finalResults
+    executePostProcessingPlan(this->queryPlan.getExactQuery(),
+            exactQueryResults, finalResults);
 
     delete exactQueryResults;
 }
 
-void QueryExecutor::executeGetAllResults(QueryResults * finalResults){
+void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
 
     int idsExactFound = 0;
 
-	srch2is::QueryResults *queryResults = NULL;
-	unsigned idsFound = 0;
+    srch2is::QueryResults *queryResults = NULL;
+    unsigned idsFound = 0;
 
-	if ( ! this->queryPlan.isIsFuzzy() )
-	{
-		queryResults = new srch2is::QueryResults(this->queryResultFactory,indexSearcher, this->queryPlan.getExactQuery());
-		idsFound = indexSearcher->search(this->queryPlan.getExactQuery(), queryResults, 0);
-	}
-	else
-	{
-		queryResults = new srch2is::QueryResults(this->queryResultFactory,indexSearcher, this->queryPlan.getFuzzyQuery());
-		idsFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(), queryResults, 0);
-	}
+    if (!this->queryPlan.isFuzzy()) {
+        queryResults = new srch2is::QueryResults(this->queryResultFactory,
+                indexSearcher, this->queryPlan.getExactQuery());
+        idsFound = indexSearcher->search(this->queryPlan.getExactQuery(),
+                queryResults, 0);
+    } else {
+        queryResults = new srch2is::QueryResults(this->queryResultFactory,
+                indexSearcher, this->queryPlan.getFuzzyQuery());
+        idsFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
+                queryResults, 0);
+    }
 
-	// execute post processing
+    // execute post processing
+    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            (this->queryPlan.isFuzzy()) ?
+                    this->queryPlan.getFuzzyQuery() :
+                    this->queryPlan.getExactQuery());
+    // this post processing plan will be applied on exactQueryResults object and
+    // the final results will be copied into finalResults
+    executePostProcessingPlan(
+            (this->queryPlan.isFuzzy()) ?
+                    this->queryPlan.getFuzzyQuery() :
+                    this->queryPlan.getExactQuery(), queryResults,
+            finalResults);
 
-	finalResults->init(this->queryResultFactory,indexSearcher,
-    					(this->queryPlan.isIsFuzzy())?this->queryPlan.getFuzzyQuery():this->queryPlan.getExactQuery());
-	executePostProcessingPlan((this->queryPlan.isIsFuzzy())?this->queryPlan.getFuzzyQuery():this->queryPlan.getExactQuery(),
-			queryResults,finalResults);
-
-
-	delete queryResults;
-
+    delete queryResults;
 
 }
 
-void QueryExecutor::executeGeo(QueryResults * finalResults){
+void QueryExecutor::executeGeo(QueryResults * finalResults) {
 
     int idsExactFound = 0;
-	// for the range query without keywords.
-	srch2is::QueryResults *exactQueryResults = new QueryResults(this->queryResultFactory,indexSearcher, this->queryPlan.getExactQuery());
-	if(this->queryPlan.getExactQuery()->getQueryTerms()->empty())//check if query type is a range query without keywords
-	{
-		vector<double> values;
-		this->queryPlan.getExactQuery()->getRange(values);//get  query range: use the number of values to decide if it is rectangle range or circle range
-		//range query with a circle
-		if (values.size()==3)
-		{
-			Point p;
-			p.x = values[0];
-			p.y = values[1];
-			Circle *circleRange = new Circle(p, values[2]);
-			indexSearcher->search(*circleRange, exactQueryResults);
-			delete circleRange;
-		}
-		else
-		{
-			pair<pair<double, double>, pair<double, double> > rect;
-			rect.first.first = values[0];
-			rect.first.second = values[1];
-			rect.second.first = values[2];
-			rect.second.second = values[3];
-			Rectangle *rectangleRange = new Rectangle(rect);
-			indexSearcher->search(*rectangleRange, exactQueryResults);
-			delete rectangleRange;
-		}
-	}
-	else// keywords and geo search
-	{
-		//cout << "reached map query" << endl;
-		//srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
-		indexSearcher->search(this->queryPlan.getExactQuery(), exactQueryResults);
-		idsExactFound = exactQueryResults->getNumberOfResults();
+    // for the range query without keywords.
+    srch2is::QueryResults *exactQueryResults = new QueryResults(
+            this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+    if (this->queryPlan.getExactQuery()->getQueryTerms()->empty()) //check if query type is a range query without keywords
+    {
+        vector<double> values;
+        this->queryPlan.getExactQuery()->getRange(values); //get  query range: use the number of values to decide if it is rectangle range or circle range
+        //range query with a circle
+        if (values.size() == 3) {
+            Point p;
+            p.x = values[0];
+            p.y = values[1];
+            Circle *circleRange = new Circle(p, values[2]);
+            indexSearcher->search(*circleRange, exactQueryResults);
+            delete circleRange;
+        } else {
+            pair<pair<double, double>, pair<double, double> > rect;
+            rect.first.first = values[0];
+            rect.first.second = values[1];
+            rect.second.first = values[2];
+            rect.second.second = values[3];
+            Rectangle *rectangleRange = new Rectangle(rect);
+            indexSearcher->search(*rectangleRange, exactQueryResults);
+            delete rectangleRange;
+        }
+    } else // keywords and geo search
+    {
+        //cout << "reached map query" << endl;
+        //srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
+        indexSearcher->search(this->queryPlan.getExactQuery(),
+                exactQueryResults);
+        idsExactFound = exactQueryResults->getNumberOfResults();
 
-		//fill visitedList
-		std::set<std::string> exactVisitedList;
-		for(unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i)
-		{
-			exactVisitedList.insert(exactQueryResults->getRecordId(i));// << queryResults->getRecordId(i);
-		}
+        //fill visitedList
+        std::set<std::string> exactVisitedList;
+        for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
+            exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
+        }
 
-		int idsFuzzyFound = 0;
+        int idsFuzzyFound = 0;
 
-		if ( this->queryPlan.isIsFuzzy() && idsExactFound < (int)( this->queryPlan.getOffset() + this->queryPlan.getResultsToRetrieve()))
-		{
-			QueryResults *fuzzyQueryResults = new QueryResults(this->queryResultFactory,indexSearcher, this->queryPlan.getFuzzyQuery());
-			indexSearcher->search(this->queryPlan.getFuzzyQuery(), fuzzyQueryResults);
-			idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
+        if (this->queryPlan.isFuzzy()
+                && idsExactFound
+                        < (int) (this->queryPlan.getOffset()
+                                + this->queryPlan.getResultsToRetrieve())) {
+            QueryResults *fuzzyQueryResults = new QueryResults(
+                    this->queryResultFactory, indexSearcher,
+                    this->queryPlan.getFuzzyQuery());
+            indexSearcher->search(this->queryPlan.getFuzzyQuery(),
+                    fuzzyQueryResults);
+            idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
 
-			// create final queryResults to print.
-			QueryResultsInternal *exact_qs = exactQueryResults->impl;
-			QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
+            // create final queryResults to print.
+            QueryResultsInternal *exact_qs = exactQueryResults->impl;
+            QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
 
-			unsigned fuzzyQueryResultsIter = 0;
+            unsigned fuzzyQueryResultsIter = 0;
 
-			while (exact_qs->sortedFinalResults.size() < (unsigned)(this->queryPlan.getOffset() + this->queryPlan.getResultsToRetrieve())
-					&& fuzzyQueryResultsIter < fuzzyQueryResults->getNumberOfResults())
-			{
-				std::string recordId = fuzzyQueryResults->getRecordId(fuzzyQueryResultsIter);
-				if ( ! exactVisitedList.count(recordId) )// recordid not there
-				{
-					exact_qs->sortedFinalResults.push_back(fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
-				}
-				fuzzyQueryResultsIter++;
-			}
-			delete fuzzyQueryResults;
-		}
-	}
+            while (exact_qs->sortedFinalResults.size()
+                    < (unsigned) (this->queryPlan.getOffset()
+                            + this->queryPlan.getResultsToRetrieve())
+                    && fuzzyQueryResultsIter
+                            < fuzzyQueryResults->getNumberOfResults()) {
+                std::string recordId = fuzzyQueryResults->getRecordId(
+                        fuzzyQueryResultsIter);
+                if (!exactVisitedList.count(recordId)) // recordid not there
+                        {
+                    exact_qs->sortedFinalResults.push_back(
+                            fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
+                }
+                fuzzyQueryResultsIter++;
+            }
+            delete fuzzyQueryResults;
+        }
+    }
 
-
-	// execute post processing
-    finalResults->init(this->queryResultFactory,indexSearcher, this->queryPlan.getExactQuery());
-    executePostProcessingPlan(this->queryPlan.getExactQuery(), exactQueryResults, finalResults);
-
+    // execute post processing
+    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+    // this post processing plan will be applied on exactQueryResults object and
+    // the final results will be copied into finalResults
+    executePostProcessingPlan(this->queryPlan.getExactQuery(),
+            exactQueryResults, finalResults);
 
     delete exactQueryResults;
 
 }
 
-void QueryExecutor::executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output){
-		IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal * >(indexSearcher);
-		ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
-		Schema * schema = indexSearcherInternal->getSchema();
+void QueryExecutor::executePostProcessingPlan(Query * query,
+        QueryResults * inputQueryResults, QueryResults * outputQueryResults) {
+    IndexSearcherInternal * indexSearcherInternal =
+            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+    Schema * schema = indexSearcherInternal->getSchema();
 
-
-		// run a plan by iterating on filters and running
-		ResultsPostProcessorPlan * plan = this->queryPlan.getPostProcessingPlan();
-    plan->beginIteration();
+    // run a plan by iterating on filters and running
+    ResultsPostProcessorPlan * postProcessingPlan =
+            this->queryPlan.getPostProcessingPlan();
 
     // short circuit in case the plan doesn't have any filters in it.
     // if no plan is set in Query or there is no filter in it,
     // then there is no post processing so just mirror the results
-    if (plan == NULL || !plan->hasMoreFilters()) {
-        input->copyForPostProcessing(output);
+    if (postProcessingPlan == NULL) {
+        outputQueryResults->copyForPostProcessing(inputQueryResults);
+        return;
+    }
+
+    postProcessingPlan->beginIteration();
+    if (!postProcessingPlan->hasMoreFilters()) {
+        outputQueryResults->copyForPostProcessing(inputQueryResults);
+        postProcessingPlan->closeIteration();
         return;
     }
 
     // iterating on filters and applying them on list of results
-    while (plan->hasMoreFilters()) {
-        ResultsPostProcessorFilter * filter = plan->nextFilter();
-
+    for (ResultsPostProcessorFilter * filter = postProcessingPlan->nextFilter();
+            postProcessingPlan->hasMoreFilters();
+            filter = postProcessingPlan->nextFilter()) {
         // clear the output to be ready to accept the result of the filter
-        output->clear();
+        outputQueryResults->clear();
         // apply the filter on the input and put the results in output
-        filter->doFilter(indexSearcher, query, input, output);
+        filter->doFilter(indexSearcher, query, inputQueryResults,
+                outputQueryResults);
         // if there is going to be other filters, chain the output to the input
-        if (plan->hasMoreFilters()) {
-            output->copyForPostProcessing(input);
+        if (postProcessingPlan->hasMoreFilters()) {
+            inputQueryResults->copyForPostProcessing(outputQueryResults);
         }
-
     }
-    plan->closeIteration();
+    postProcessingPlan->closeIteration();
 
 }
 

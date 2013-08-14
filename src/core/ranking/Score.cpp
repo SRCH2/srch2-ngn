@@ -23,7 +23,7 @@
 #include <instantsearch/Score.h>
 #include <sstream>
 #include <cstdlib>
-#include <util/Assert.h>
+#include "util/Assert.h"
 #include <limits>
 
 
@@ -35,79 +35,67 @@ namespace srch2
 
 
 	bool Score::operator==(const Score& score) const{
-		ASSERT(type == score.type);
-    	switch (type) {
-			case UNSIGNED:
+		ASSERT(valueType == score.valueType);
+    	switch (valueType) {
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				return intScore == score.intScore;
-				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				return floatScore == score.floatScore;
-				break;
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				return stringScore == score.stringScore;
-				break;
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
 				return timeScore == score.timeScore;
-				break;
-			default:
-				break;
 		}
     	return false;
 	}
 	bool Score::operator!=(const Score& score) const{
-		ASSERT(type == score.type);
+		ASSERT(valueType == score.valueType);
 		return !(*this == score);
 	}
 
 	bool Score::operator<(const Score& score) const{
-		ASSERT(type == score.type);
-    	switch (type) {
-			case UNSIGNED:
+		ASSERT(valueType == score.valueType);
+    	switch (valueType) {
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				return intScore < score.intScore;
-				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				return floatScore < score.floatScore;
-				break;
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				return stringScore < score.stringScore;
-				break;
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
 				return timeScore < score.timeScore;
-				break;
-			default:
-				break;
 		}
     	return false;
 	}
 
 	bool Score::operator<=(const Score& score) const {
-		ASSERT(type == score.type);
+		ASSERT(valueType == score.valueType);
 		return (*this < score) || (*this == score);
 	}
 
 	bool Score::operator>(const Score& score) const{
-		ASSERT(type == score.type);
+		ASSERT(valueType == score.valueType);
 		return !(*this <= score);
 	}
 
 	bool Score::operator>=(const Score& score) const{
-		ASSERT(type == score.type);
+		ASSERT(valueType == score.valueType);
 		return !(*this < score);
 	}
 	Score Score::operator+(const Score& a){
-		ASSERT(a.type == this->type);
+		ASSERT(a.valueType == this->valueType);
     	Score result;
-    	switch (this->type) {
-			case UNSIGNED:
+    	switch (this->valueType) {
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				result.setScore(a.getIntScore() + this->getIntScore());
 				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				result.setScore(a.getFloatScore() + this->getFloatScore());
 				break;
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				result.setScore(a.getTextScore() + this->getTextScore());
 				break;
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
 				result.setScore(a.getTimeScore() + this->getTimeScore());
 				break;
 		}
@@ -118,61 +106,60 @@ namespace srch2
 
 
 
-	void Score::setScore(unsigned intS){
-		type = UNSIGNED;
-		intScore = intS;
+	void Score::setScore(unsigned intScore){
+		valueType = ATTRIBUTE_TYPE_UNSIGNED;
+		this->intScore = intScore;
 	}
-	void Score::setScore(float floatS){
-		type = FLOAT;
-		floatScore = floatS;
+	void Score::setScore(float floatScore){
+		valueType = ATTRIBUTE_TYPE_FLOAT;
+		this->floatScore = floatScore;
 	}
-	void Score::setScore(double doubleS){
-		setScore((float)doubleS);
+	void Score::setScore(double doubleScore){
+		setScore((float)doubleScore);
 	}
-	void Score::setScore(string stringS){
-		type = TEXT;
-		stringScore = stringS;
+	void Score::setScore(string stringScore){
+		valueType = ATTRIBUTE_TYPE_TEXT;
+		this->stringScore = stringScore;
 	}
-	void Score::setScore(long timeS){
-		type = TIME;
-		timeScore = timeS;
+	void Score::setScore(long timeScore){
+		valueType = ATTRIBUTE_TYPE_TIME;
+		this->timeScore = timeScore;
 	}
 
 	void Score::setScore(const Score& score){
-    	type = score.type;
-    	switch (type) {
-			case UNSIGNED:
+    	valueType = score.valueType;
+    	switch (valueType) {
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				intScore = score.intScore;
 				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				floatScore = score.floatScore;
 				break;
-
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				stringScore = score.stringScore;
 				break;
-
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
 				timeScore = score.timeScore;
-				break;
-			default:
 				break;
 		}
 	}
 
 	void Score::setScore(FilterType type , string value){
-		this->type = type;
+	    // TODO : do some validation to make sure engine does not crash.
+	    //        NOTE: The input to this function is supposed to be validated once...
+		this->valueType = type;
 		switch (type) {
-			case UNSIGNED:
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				this->setScore((unsigned)atoi(value.c_str()));
 				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				this->setScore(atof(value.c_str()));
 				break;
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				this->setScore(value);
 				break;
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
+
 				this->setScore(atol(value.c_str()));
 				break;
 		}
@@ -195,17 +182,17 @@ namespace srch2
 	}
 	Score Score::minimumValue(){
 		Score result ;
-		switch (type) {
-				case UNSIGNED:
+		switch (valueType) {
+				case ATTRIBUTE_TYPE_UNSIGNED:
 					result.setScore((unsigned)std::numeric_limits<unsigned>::min());
 					break;
-				case FLOAT:
+				case ATTRIBUTE_TYPE_FLOAT:
 					result.setScore((float)std::numeric_limits<float>::min());
 					break;
-				case TEXT:
+				case ATTRIBUTE_TYPE_TEXT:
 					result.setScore("NO_MINIMUM_FOR_TEXT");
 					break;
-				case TIME:
+				case ATTRIBUTE_TYPE_TIME:
 					result.setScore((long)std::numeric_limits<long>::min());
 					break;
 			}
@@ -215,18 +202,18 @@ namespace srch2
 
 	float Score::castToFloat(){
 		float result ;
-		switch (type) {
-				case UNSIGNED:
+		switch (valueType) {
+				case ATTRIBUTE_TYPE_UNSIGNED:
 					result = (float) getIntScore();
 					break;
-				case FLOAT:
+				case ATTRIBUTE_TYPE_FLOAT:
 					result = getFloatScore();
 					break;
-				case TEXT:
+				case ATTRIBUTE_TYPE_TEXT:
 					result = -1;
 					ASSERT(false);
 					break;
-				case TIME:
+				case ATTRIBUTE_TYPE_TIME:
 					result = (float) getTimeScore();
 					break;
 			}
@@ -241,17 +228,18 @@ namespace srch2
 	string Score::toString()  const{
 		std::stringstream ss;
 
-    	switch (type) {
-			case UNSIGNED:
+    	switch (valueType) {
+			case ATTRIBUTE_TYPE_UNSIGNED:
 				ss << intScore ;
 				break;
-			case FLOAT:
+			case ATTRIBUTE_TYPE_FLOAT:
 				ss << floatScore;
 				break;
-			case TEXT:
+			case ATTRIBUTE_TYPE_TEXT:
 				ss << stringScore ;
 				break;
-			case TIME:
+			case ATTRIBUTE_TYPE_TIME:
+
 				ss << timeScore ;
 				break;
 			default:

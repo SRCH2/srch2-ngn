@@ -45,7 +45,7 @@ std::string WStringToString(const std::wstring& s)
 
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
-                        const Srch2ServerConf *indexDataContainerConf,
+                        const ConfigManager *indexDataContainerConf,
                         std::stringstream &error)
 {
     if (not (root.type() == Json::objectValue))
@@ -138,7 +138,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
         // if type is date/time check the syntax
-        if( attributeIter->second.first == srch2is::TIME){
+        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
         	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
         	if(attributeStringValue==""){
@@ -150,8 +150,14 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 {
                     record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
-                	// set the default value
-                	record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                    if(attributeIter->second.second.second){
+                        // ERROR
+                        error << "\nRequifred non-searchable attribute is null.";
+                        return false;// Raise Error
+                    }else{
+                        // set the default value
+                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                    }
                 }
         	}
         }else{
@@ -219,7 +225,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Srch2ServerConf *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const ConfigManager *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -247,7 +253,7 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Sr
     return true;
 }
 
-srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerConf *indexDataContainerConf)
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager *indexDataContainerConf)
 {
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -299,7 +305,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     {
 
         schema->setNonSearchableAttribute(nonSearchableAttributeIter->first, nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first, nonSearchableAttributeIter->second.second.second);
+        		nonSearchableAttributeIter->second.second.first);
     }
 
 
@@ -309,7 +315,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const Srch2ServerCon
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const Srch2ServerConf *indexDataContainerConf)
+void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
@@ -401,8 +407,8 @@ void convertValueToString(Json::Value value, string &stringValue){
   // get the string from a json value based on a key value.  Check the type first before
   // calling "asString()" to deal with the case where the input data was not formatted
   // properly.
-// if the type is int or double we convert it to string
-// Written by CHENLI
+  // if the type is int or double we convert it to string
+  // parameter configName is used to be included in error/warning messages to make them meaningful ...
 void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		const std::string &key,
 		std::string &stringValue,
@@ -437,22 +443,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 
 	// now check to see if it has proper date/time format
 
-    for(size_t i=0; i<localeFormats; ++i)
-    {
-        std::istringstream ss(temp);
-        ss.imbue(localeInputs[i]);
-        boost::posix_time::ptime this_time;
-        ss >> this_time;
-
-        if(this_time != boost::posix_time::not_a_date_time){
-        	time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
-        	long valueLong = value;
-        	stringValue = convertToStr(valueLong);
-        	return;
-        }
-
-    }
-    stringValue = "";
+	stringValue = convertTimeFormatToLong(temp);
     return;
 
 }

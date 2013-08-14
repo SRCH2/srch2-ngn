@@ -42,6 +42,7 @@ class QueryResultFactoryInternal;
 class QueryResultFactory{
 public:
 	QueryResultFactory();
+    ~QueryResultFactory();
     QueryResultFactoryInternal * impl;
 };
 
@@ -159,7 +160,7 @@ public:
 
     const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
 
-    void copyForPostProcessing(QueryResults * destination) const ;
+    void copyForPostProcessing(QueryResults * sourceQueryResults) const ;
 
     void clear();
 

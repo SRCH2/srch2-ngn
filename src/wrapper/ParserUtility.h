@@ -12,7 +12,7 @@
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>
 #include "util/Logger.h"
-
+#include "WrapperConstants.h"
 using boost::posix_time::time_input_facet;
 using std::locale;
 
@@ -20,6 +20,10 @@ using namespace std;
 using srch2::util::Logger;
 namespace srch2 {
 namespace httpwrapper {
+
+/*
+ * TODO : put these functions in a class and make them static
+ */
 
 // trim from start
 std::string &ltrim(std::string &s);
@@ -57,6 +61,15 @@ void custom_evhttp_find_headers(const struct evkeyvalq *headers,
  * parses using the given regex
  */
 bool doParse(string &input, const boost::regex &re, string &output);
+
+std::string convertTimeFormatToLong(std::string & timeString);
+std::string convertLongToTimeFormat(std::string & timeLong);
+
+void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+        const char *key, vector<string> &values);
+
+bool validateValueWithType(srch2::instantsearch::FilterType type,
+        string & value);
 }
 }
 

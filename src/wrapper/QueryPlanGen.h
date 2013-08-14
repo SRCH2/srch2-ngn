@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 using namespace std;
 
 
@@ -49,18 +49,18 @@ class QueryPlanGen
 {
 public:
 
-	QueryPlanGen(const ParsedParameterContainer & paramsContainer , const Srch2ServerConf *indexDataContainerConf );
+	QueryPlanGen(const ParsedParameterContainer & paramsContainer , const ConfigManager *indexDataContainerConf );
 
 
 	/*
 	 * 1. creates exact and fuzzy queries
 	 * 2. Generates the post processing plan
 	 */
-	QueryPlan generatePlan();
+	void generatePlan(QueryPlan * queryPlan);
 
 private:
 	const ParsedParameterContainer & paramsContainer;
-	const Srch2ServerConf *indexDataContainerConf ;
+	const ConfigManager *indexDataContainerConf ;
 
 	// creates a post processing plan based on information from Query
 	void createPostProcessingPlan(QueryPlan * plan);

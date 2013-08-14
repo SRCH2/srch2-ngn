@@ -1,4 +1,4 @@
-// $Id: StemmerFilter.cpp 3074 2012-12-06 22:26:36Z oliverax $
+// $Id: StemmerFilter.cpp 3074 2012-12-06 22:26:36Z iman $
 
 /*
  *
@@ -38,13 +38,13 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch {
 // TODO: width limit 80 chars
-StemmerFilter::StemmerFilter(TokenOperator* tokenOperator, const string &stemmerFilePath) :
-		TokenFilter(tokenOperator) {
+StemmerFilter::StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath) :
+		TokenFilter(tokenStream) {
 	// Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
 	const std::string stemmerFiltePath = stemmerFilePath;
 
 	// copies the shared_ptr: sharedToken
-	this->sharedToken = tokenOperator->sharedToken;
+	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 	// construct the dictionary
 	this->createWordMap(stemmerFiltePath);
 }
@@ -100,24 +100,24 @@ std::string StemmerFilter::stemToken(const std::string &token) const {
 }
 
 // incrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
-bool StemmerFilter::incrementToken() {
-	if (this->tokenOperator->incrementToken()) {
+bool StemmerFilter::processToken() {
+	if (this->tokenStream->processToken()) {
 		// It checks that if all characters are English or not.
-		for (int i = 0; i < sharedToken->currentToken.size(); i++) {
+		for (int i = 0; i < tokenStreamContainer->currentToken.size(); i++) {
 			// For each token, it goes on all characters and checks if each of the characters is between A-z or not.
-			if (!((sharedToken->currentToken[i] >= (CharType) 'A')
-					&& (sharedToken->currentToken[i] <= (CharType) 'z'))) {
+			if (!((tokenStreamContainer->currentToken[i] >= (CharType) 'A')
+					&& (tokenStreamContainer->currentToken[i] <= (CharType) 'z'))) {
 				return true;
 			}
 		}
 		// TODO: remove "charTypeVectorToUtf8String()"
 		std::string stemmedToken = "";
 		// converts the charType to string
-		charTypeVectorToUtf8String(sharedToken->currentToken, stemmedToken);
+		charTypeVectorToUtf8String(tokenStreamContainer->currentToken, stemmedToken);
 		// calls the stemToken to stem
 		stemmedToken = stemToken(stemmedToken);
 		// converts the string to charType
-		utf8StringToCharTypeVector(stemmedToken, sharedToken->currentToken);
+		utf8StringToCharTypeVector(stemmedToken, tokenStreamContainer->currentToken);
 		return true;
 	} else {
 		return false;

@@ -91,26 +91,26 @@ void ForwardIndex::resetDeleteFlag(unsigned internalRecordId) {
     writeView->at(internalRecordId).second = true;
 }
 
-void printForwardList(unsigned id, const ForwardList *fl,
-        const Schema * schema) {
+
+void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema)
+{
+
     Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
-    Logger::debug("RecordBoost: %.3f, Size: %d", fl->getRecordBoost(),
-            fl->getNumberOfKeywords());
-    Logger::debug("sortableAttributeList:");
-    std::cout << "nonSearchableAttributeList: ";
+    Logger::debug("RecordBoost: %.3f, Size: %d" , fl->getRecordBoost(), fl->getNumberOfKeywords());
+    Logger::debug("nonsearchableAttributeList:");
 
-    for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes();
-            idx++) {
-        Logger::debug("[%.5f]",
-                fl->getNonSearchableAttributeValue(idx, schema).c_str());
-    }
-    //keyword Id list
-    Logger::debug("keywordIdList: ");
+	for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes(); idx ++) {
+		Logger::debug("[%.5f]", fl->getNonSearchableAttributeValue(idx , schema).c_str());
+	}
+	//keyword Id list
+	Logger::debug("keywordIdList: ");
 
-    //keyword Id list
-    for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
-        Logger::debug("[%d]", fl->getKeywordId(idx));
-    }
+
+
+	//keyword Id list
+	for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
+	        Logger::debug("[%d]", fl->getKeywordId(idx));
+	}
 
     // keyword score list
     Logger::debug("keywordRecordStaticScore:");
@@ -179,9 +179,11 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
             isStemmed);
 }
 
-const ForwardList *ForwardIndex::getForwardList(unsigned recordId,
-        bool &valid) const {
-    if (recordId > this->getTotalNumberOfForwardLists_ReadView()) {
+const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
+{
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
+    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
+    {
         valid = false;
         return NULL;
     }
@@ -225,29 +227,19 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
     Score score;
 
     switch (filterType) {
-    case srch2::instantsearch::UNSIGNED:
-        score.setScore(
-                nonSearchableAttributeValues.getUnsignedAttribute(
-                        schemaNonSearchableAttributeId, schemaInternal));
-        break;
-    case srch2::instantsearch::FLOAT:
-        score.setScore(
-                nonSearchableAttributeValues.getFloatAttribute(
-                        schemaNonSearchableAttributeId, schemaInternal));
-        break;
-    case srch2::instantsearch::TEXT:
-        score.setScore(
-                nonSearchableAttributeValues.getTextAttribute(
-                        schemaNonSearchableAttributeId, schemaInternal));
-        break;
-    case srch2::instantsearch::TIME:
-        score.setScore((unsigned) 1000000); // TODO , time and long should be converted, when ? where ? here ?
-        //score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
-        break;
-    default:
-        ASSERT(false);
-        break;
-    }
+		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+	}
 
     return score;
 
@@ -294,15 +286,17 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setNumberOfKeywords(keywordIdList.size());
 
     //Adding Non searchable Attribute list
+    vector<string> nonSearchableAttributeValues;
     for (unsigned iter = 0;
             iter < this->schemaInternal->getNumberOfNonSearchableAttributes();
             ++iter) {
 
         const string * nonSearchableAttributeValueString = record
                 ->getNonSearchableAttributeValue(iter);
-        forwardList->setNonSearchableAttributeValue(iter, this->schemaInternal,
-                *nonSearchableAttributeValueString);
+        nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
+    forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
+
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {

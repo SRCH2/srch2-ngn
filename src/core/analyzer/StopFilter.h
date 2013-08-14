@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "TokenOperator.h"
+#include "TokenStream.h"
 #include "TokenFilter.h"
 
 using namespace std;
@@ -26,12 +26,12 @@ public:
 	 * Constructor of stop words.
 	 * Set sharedToken and create the dictionary list
 	 */
-	StopFilter(TokenOperator *tokenOperator, std::string &stopFilterFilePath);
+	StopFilter(TokenStream *tokenStream, std::string &stopFilterFilePath);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
 	 * */
-	bool incrementToken();
+	bool processToken();
 
 	virtual ~StopFilter();
 

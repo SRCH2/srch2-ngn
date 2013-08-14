@@ -26,8 +26,8 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
     schema->setSearchableAttribute("category", 1);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2::instantsearch::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -107,7 +107,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
 
     Term *term = NULL;
@@ -142,7 +142,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
 {
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
     query->setRange(lb_lat,lb_lng,rt_lat,rt_lng);
     Rectangle *rectangleRange = new Rectangle();
     rectangleRange->min.x = lb_lat;
@@ -167,7 +167,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 {
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-	Query *query = new Query(srch2::instantsearch::MapQuery);
+	Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 	query->setRange(lb_lat,lb_lng,radius);
 	Point pnt;
 	pnt.x=lb_lat;

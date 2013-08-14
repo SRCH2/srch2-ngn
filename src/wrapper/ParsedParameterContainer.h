@@ -48,7 +48,13 @@ public:
     std::vector<ParameterName> *summary;
 };
 
-class SortQueryContainer {
+
+/*
+ * TODO : Extend this design to have multiple sort orders
+ * for multiple sort fields ...
+ */
+class SortQueryContainer
+{
 
 public:
     SortQueryContainer() {
@@ -74,79 +80,76 @@ public:
 
 class TopKParameterContainer {
 public:
-    // while we are parsing we populate this vector by the names of those members
-    // which are set. It's a summary of the query parameters.
-    std::vector<ParameterName> summary;
+	// while we are parsing we populate this vector by the names of those members
+	// which are set. It's a summary of the query parameters.
+	std::vector<ParameterName> parametersInQuery;
 
     // no parameters known as of now
 
-    //
-    bool doesHaveParameterInSummary(ParameterName param) {
-        return (std::find(summary.begin(), summary.end(), param)
-                != summary.end());
-    }
+	//
+	bool hasParameterInQuery(ParameterName param){
+		return
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
+	}
 };
 
 class GetAllResultsParameterContainer {
 public:
-    GetAllResultsParameterContainer() {
-        facetQueryContainer = NULL;
-        sortQueryContainer = NULL;
-    }
-    ~GetAllResultsParameterContainer() {
-        if (facetQueryContainer != NULL)
-            delete facetQueryContainer;
-        if (sortQueryContainer != NULL)
-            delete sortQueryContainer;
-    }
+	GetAllResultsParameterContainer(){
+		facetQueryContainer = NULL;
+		sortQueryContainer = NULL;
+	}
+	~GetAllResultsParameterContainer(){
+		if(facetQueryContainer != NULL) delete facetQueryContainer;
+		if(sortQueryContainer != NULL) delete sortQueryContainer;
+	}
 
-    // while we are parsing we populate this vector by the names of those members
-    // which are set. It's a summary of the query parameters.
-    std::vector<ParameterName> summary;
+	// while we are parsing we populate this vector by the names of those members
+	// which are set. It's a summary of the query parameters.
+	std::vector<ParameterName> parametersInQuery;
 
-    // facet parser parameters
-    FacetQueryContainer * facetQueryContainer;
-    // sort parser parameters
-    SortQueryContainer * sortQueryContainer;
 
-    bool hasParameterInSummary(ParameterName param) {
-        return (std::find(summary.begin(), summary.end(), param)
-                != summary.end());
-    }
+	// facet parser parameters
+	FacetQueryContainer * facetQueryContainer;
+	// sort parser parameters
+	SortQueryContainer * sortQueryContainer;
+
+	bool hasParameterInQuery(ParameterName param){
+		return
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
+	}
 
 };
 
 class GeoParameterContainer {
 public:
-    GeoParameterContainer() {
-        facetQueryContainer = NULL;
-        sortQueryContainer = NULL;
-    }
-    ~GeoParameterContainer() {
-        if (facetQueryContainer != NULL)
-            delete facetQueryContainer;
-        if (sortQueryContainer != NULL)
-            delete sortQueryContainer;
-    }
-    // while we are parsing we populate this vector by the names of those members
-    // which are set. It's a summary of the query parameters.
-    std::vector<ParameterName> summary;
+	GeoParameterContainer(){
+		facetQueryContainer = NULL;
+		sortQueryContainer = NULL;
+	}
+	~GeoParameterContainer(){
+		if(facetQueryContainer != NULL) delete facetQueryContainer;
+		if(sortQueryContainer != NULL) delete sortQueryContainer;
+	}
+	// while we are parsing we populate this vector by the names of those members
+	// which are set. It's a summary of the query parameters.
+	std::vector<ParameterName> parametersInQuery;
 
-    // this object is created in planGenerator but freed when the filter is being destroyed.
-    // facet parser parameters
-    FacetQueryContainer * facetQueryContainer;
-    // sort parser parameters
-    SortQueryContainer * sortQueryContainer;
 
-    // geo related parameters
-    float leftBottomLatitude, leftBottomLongitude, rightTopLatitude,
-            rightTopLongitude;
-    float centerLatitude, centerLongitude, radius;
+	// this object is created in planGenerator but freed when the filter is being destroyed.
+	// facet parser parameters
+	FacetQueryContainer * facetQueryContainer;
+	// sort parser parameters
+	SortQueryContainer * sortQueryContainer;
 
-    bool hasParameterInSummary(ParameterName param) {
-        return (std::find(summary.begin(), summary.end(), param)
-                != summary.end());
-    }
+	// geo related parameters
+	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
+	float centerLatitude,centerLongitude,radius;
+
+	bool hasParameterInQuery(ParameterName param){
+		return
+				(std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
+	}
 };
 
 class ParsedParameterContainer {
@@ -171,9 +174,7 @@ public:
     }
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
-    std::vector<ParameterName> summary;
-
-
+    std::vector<ParameterName> parametersInQuery;
 
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's fuzzylevel as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
@@ -244,9 +245,9 @@ public:
     /*
      * function to check whether the param is set in the summary vector or not.
      */
-    bool hasParameterInSummary(ParameterName param) const {
-        return (std::find(summary.begin(), summary.end(), param)
-                != summary.end());
+    bool hasParameterInQuery(ParameterName param) const {
+        return (std::find(parametersInQuery.begin(), parametersInQuery.end(), param)
+                != parametersInQuery.end());
     }
 
     // term operator vector

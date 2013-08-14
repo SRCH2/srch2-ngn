@@ -35,22 +35,22 @@ void testSimpleAnalyzer()
 {
 	string src="We are美丽 Chinese";
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 	simpleAnlyzer->loadData(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are美丽");
 	vectorString.push_back("chinese");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 //StandardAnalyzer organizes a tokenizer treating characters >= 256 as a single token and   a "ToLowerCase" filter
@@ -58,7 +58,7 @@ void testStandardAnalyzer()
 {
 	string src="We are美丽 Chineseㄓㄠ";
 	AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
-	TokenOperator * tokenOperator = standardAnalyzer->createOperatorFlow();
+	TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
 	standardAnalyzer->loadData(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
@@ -68,15 +68,15 @@ void testStandardAnalyzer()
 	vectorString.push_back("chinese");
 	vectorString.push_back("ㄓㄠ");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete standardAnalyzer;
 }
 

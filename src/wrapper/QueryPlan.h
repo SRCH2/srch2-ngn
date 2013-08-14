@@ -24,6 +24,7 @@
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "ParsedParameterContainer.h"
+#include "util/Assert.h"
 
 using srch2::instantsearch::ResultsPostProcessorPlan;
 using srch2::instantsearch::Query;
@@ -38,6 +39,11 @@ class QueryPlan
 public:
 
 
+    QueryPlan(){
+        exactQuery = NULL;
+        fuzzyQuery = NULL;
+        postProcessingPlan = NULL;
+    }
 	~QueryPlan(){
 		if(exactQuery != NULL) delete exactQuery;
 
@@ -52,7 +58,9 @@ public:
 
 	void setExactQuery(Query* exactQuery) { // TODO : change the header
 		// it gets enough information from the arguments and allocates the query objects
-		this->exactQuery = exactQuery;
+        if(this->exactQuery == NULL){
+            this->exactQuery = exactQuery;
+        }
 	}
 
 	Query* getFuzzyQuery() {
@@ -62,7 +70,9 @@ public:
 	void setFuzzyQuery(Query* fuzzyQuery) { // TODO : change the header
 
 		// it gets enough information from the arguments and allocates the query objects
-		this->fuzzyQuery = fuzzyQuery;
+	    if(this->fuzzyQuery == NULL){
+            this->fuzzyQuery = fuzzyQuery;
+	    }
 	}
 
 
@@ -74,12 +84,12 @@ public:
 		this->postProcessingPlan = postProcessingPlan;
 	}
 
-	bool isIsFuzzy() const {
-		return isFuzzy;
+	bool isFuzzy() const {
+		return shouldRunFuzzyQuery;
 	}
 
-	void setIsFuzzy(bool isFuzzy) {
-		this->isFuzzy = isFuzzy;
+	void setFuzzy(bool isFuzzy) {
+		this->shouldRunFuzzyQuery = isFuzzy;
 	}
 
 	int getOffset() const {
@@ -141,16 +151,7 @@ private:
 	ParameterName searchType;
 	int offset;
 	int resultsToRetrieve;
-	bool isFuzzy;
-
-	///
-
-
-
-
-
-
-
+	bool shouldRunFuzzyQuery;
 
 };
 }

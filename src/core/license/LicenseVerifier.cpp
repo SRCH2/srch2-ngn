@@ -184,7 +184,9 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 	std::ifstream infile;
 	if (filenameWithPath.compare("") == 0)
 	{
-		return testWithEnvironmentVariable();
+		//return testWithEnvironmentVariable();
+        Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
+        exit(-1);     
 	}
 	else
 	{
@@ -198,7 +200,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		catch (exception& e)
 		{
             Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
-			abort();
+			exit(-1);
 		}
 
 		if (infile.good())
@@ -209,7 +211,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		else
 		{
             Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
-			abort();
+			exit(-1);
 		}
 
 		infile.close();
@@ -217,7 +219,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		if (! test(line))
 		{
             Logger::error("License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com");
-			abort();
+			exit(-1);
 		}
 		return true;
 	}
@@ -238,7 +240,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	catch (exception& e)
 	{
         Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
-		abort();
+		exit(-1);  // should be changed to throw an ExitException
 	}
 
 	if (infile.good())
@@ -248,7 +250,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	else
 	{
         Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
-		abort();
+		exit(-1);
 	}
 
 	infile.close();
@@ -256,7 +258,7 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	if (! test(line))
 	{
         Logger::error("License key file invalid. Please provide a valid license key file. Feel free to contact contact@srch2.com");
-		abort();
+		exit(-1);
 	}
 
 	return true;

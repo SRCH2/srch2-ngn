@@ -36,14 +36,19 @@ class Query;
 class IndexSearcherInternal;
 class TermVirtualList;
 
+
+
+
 /////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
 
 QueryResultsInternal::QueryResultsInternal() {
-
+    Logger::info("Query Results internal created.");
+    this->virtualListVector = NULL;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
         const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+    Logger::info("Query Results internal initialized.");
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
@@ -95,10 +100,12 @@ bool QueryResultsInternal::checkCacheHit(
 
 QueryResultsInternal::~QueryResultsInternal() {
     // TODO: if we use caching, we can leave them in the cache
-    for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
-        delete virtualListVector->at(i);
+    if(virtualListVector != NULL){
+        for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
+            delete virtualListVector->at(i);
+        }
+        delete virtualListVector;
     }
-    delete virtualListVector;
 
     sortedFinalResults.clear();
     while (!nextKResultsHeap.empty()) {
@@ -113,7 +120,7 @@ void QueryResultsInternal::setNextK(const unsigned k) {
 }
 
 void QueryResultsInternal::insertResult(QueryResult * queryResult) {
-    if (this->query->getQueryType() == srch2::instantsearch::TopKQuery) {
+    if (this->query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {
         ASSERT(this->nextKResultsHeap.size() <= this->nextK);
         if (this->nextKResultsHeap.size() < this->nextK) {
             this->nextKResultsHeap.push(queryResult);
@@ -136,7 +143,7 @@ bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords) {
         return false;
     }
     Score tempScore = this->nextKResultsHeap.top()->getResultScore();
-    ASSERT(tempScore.getType() == srch2::instantsearch::FLOAT);
+    ASSERT(tempScore.getType() == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT);
     temp1 = tempScore.getFloatScore();
     temp2 = maxScoreForUnvisitedRecords;
     if ((this->nextKResultsHeap.size() == this->nextK) && (temp1 >= temp2))
@@ -144,6 +151,11 @@ bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords) {
 
     return false;
 }
+
+
+
+
+
 
 void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
     vector<QueryResult *>::const_iterator begin =
@@ -159,7 +171,7 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
     bool descending = (this->query->getSortableAttributeIdSortOrder()
-            == srch2::instantsearch::Descending);
+            == srch2::instantsearch::SortOrderDescending);
 
     int numberOfSortedResults = this->sortedFinalResults.size();
 

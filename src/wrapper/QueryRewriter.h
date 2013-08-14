@@ -27,7 +27,7 @@
 #include "instantsearch/Schema.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 using srch2::instantsearch::Analyzer;
 using srch2::instantsearch::Schema;
@@ -41,7 +41,7 @@ namespace httpwrapper{
 class QueryRewriter
 {
 public:
-	QueryRewriter(const Srch2ServerConf *indexDataContainerConf,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
+	QueryRewriter(const ConfigManager *indexDataContainerConf,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
 
 	void rewrite();
 
@@ -49,7 +49,7 @@ private:
 	const Schema & schema;
 	const Analyzer & analyzer ;
 	ParsedParameterContainer * paramContainer;
-	const Srch2ServerConf *indexDataContainerConf;
+	const ConfigManager *indexDataContainerConf;
 
 	void prepareKeywordInfo();
 	void applyAnalyzer();

@@ -8,7 +8,7 @@
 #define __CORE_ANALYZER__SIMPLEANALYZER_H__
 
 #include "AnalyzerInternal.h"
-#include "TokenOperator.h"
+#include "TokenStream.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -33,15 +33,15 @@ public:
 							synonymFilePath,
 							synonymKeepOriginFlag) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
+		this->tokenStream = createOperatorFlow();
 	}
 
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
+		this->tokenStream = createOperatorFlow();
 	}
-	TokenOperator *createOperatorFlow();
+	TokenStream *createOperatorFlow();
 	virtual ~SimpleAnalyzer();
 };
 }

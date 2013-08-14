@@ -26,6 +26,7 @@
 
 
 #include <instantsearch/ResultsPostProcessor.h>
+#include "util/Assert.h"
 
 
 using namespace std;
@@ -39,13 +40,17 @@ namespace instantsearch
 class ResultsPostProcessorPlanInternal
 {
 public:
-	vector<ResultsPostProcessorFilter *> plan;
-	vector<ResultsPostProcessorFilter *>::iterator iter;
+	vector<ResultsPostProcessorFilter *> filterVector;
+	vector<ResultsPostProcessorFilter *>::iterator filterIterator;
 
 	~ResultsPostProcessorPlanInternal(){
-		for(vector<ResultsPostProcessorFilter *>::iterator filter = plan.begin();
-								filter != plan.end(); ++filter){
-			delete *filter;
+		for(vector<ResultsPostProcessorFilter *>::iterator filter = filterVector.begin();
+								filter != filterVector.end(); ++filter){
+		    if (*filter != NULL){
+                delete *filter;
+		    }else{
+		        ASSERT(false);
+		    }
 		}
 	}
 };

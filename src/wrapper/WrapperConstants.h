@@ -72,15 +72,18 @@ typedef enum {
 /// Configuration related constants
 
 typedef enum {
-    KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
+	KAFKAWRITEAPI ,
+	HTTPWRITEAPI
 } WriteApiType;
 
 typedef enum {
-    INDEXCREATE = 0, INDEXLOAD = 1
+	INDEXCREATE ,
+	INDEXLOAD
 } IndexCreateOrLoad;
 
 typedef enum {
-    FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
+	FILEBOOTSTRAP_FALSE ,
+	FILEBOOTSTRAP_TRUE
 } DataSourceType;
 
 

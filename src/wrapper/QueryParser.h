@@ -28,7 +28,7 @@
 #include <evhttp.h>
 #include <event2/http.h>
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 #include "instantsearch/Analyzer.h"
 #include "instantsearch/Schema.h"
 #include "ParsedParameterContainer.h"
@@ -316,7 +316,7 @@ private:
     /*
      * checks is a paramter is set in the container's summary. if not, it sets it.
      */
-    void setInSummaryIfNotSet(ParameterName param);
+    void setInQueryParametersIfNotSet(ParameterName param);
     /*
      * sets the fuzzylevel in the container->keywordFuzzyLevel variable.
      * check if isFuzzyFlag is set

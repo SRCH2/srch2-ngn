@@ -21,7 +21,7 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/map.hpp>
 
-#include "TokenOperator.h"
+#include "TokenStream.h"
 #include "TokenFilter.h"
 
 using std::string;
@@ -41,7 +41,7 @@ public:
 	 * Constructor of the Stemmer Filter.
 	 * It is the second constructor of the StemmerFilter. This calls a function (creatHeadWordsMap()) to construct the dictionary.
 	 * */
-	StemmerFilter(TokenOperator* tokenOperator, const string &stemmerFilePath);
+	StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath);
 
 	/*
 	 * searchHeadWords() search if the given string is present in the HeadWordsDictionary \
@@ -56,7 +56,7 @@ public:
 	/*
 	 * incrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
 	 * */
-	bool incrementToken();
+	bool processToken();
 
 	virtual ~StemmerFilter();
 

@@ -22,7 +22,7 @@
 
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 namespace srch2 {
 
@@ -35,27 +35,31 @@ class QueryValidator {
 public:
 
     QueryValidator(const Schema & schema,
-            const Srch2ServerConf *indexDataContainerConf,
+            const ConfigManager &indexDataContainerConf,
             ParsedParameterContainer * paramContainer);
 
-    // this function goes through the sumary and based on that validates the query.
+    // this function goes through the summary and based on that validates the query.
     bool validate();
 
 private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
-    const Srch2ServerConf *indexDataContainerConf;
+    const ConfigManager &indexDataContainerConf;
 
-    bool validateExistanceOfAttributesInFieldList();
+    /*
+     * This function goes over the field names in Filter List and
+     * checks to make sure all of them are in the list of searchable attributes. existence
+     */
+    bool validateExistenceOfAttributesInFieldList();
 
-    bool validateExistanceOfAttributesInSortFiler();
+    bool validateExistenceOfAttributesInSortFiler();
 
-    bool validateExistanceOfAttributesInFacetFiler();
+    bool validateExistenceOfAttributesInFacetFiler();
 
-    // this function validates the value stored in "value" based on the type which is passed to it by "type"
-    // for example, if the string is "123rt" and the type is UNSIGNED it returns false
-    bool validateValueWithType(srch2::instantsearch::FilterType type,
-            string value);
+//    // this function validates the value stored in "value" based on the type which is passed to it by "type"
+//    // for example, if the string is "123rt" and the type is UNSIGNED it returns false
+//    bool validateValueWithType(srch2::instantsearch::FilterType type,
+//            string & value);
 
 };
 

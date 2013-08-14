@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 
-#include "TokenOperator.h"
+#include "TokenStream.h"
 #include "TokenFilter.h"
 #include "instantsearch/Analyzer.h"
 
@@ -50,7 +50,7 @@ public:
 	 * Constructor of synonym filter.
 	 * Sets sharedToken.
 	 */
-	SynonymFilter(TokenOperator *tokenOperator,
+	SynonymFilter(TokenStream *tokenStream,
 			const string &synonymFilterFilePath,
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag);
 
@@ -58,7 +58,7 @@ public:
 	 * IncrementToken() is a virtual function of class TokenOperator.
 	 * Here we have to implement it. It goes on all tokens.
 	 * */
-	bool incrementToken();
+	bool processToken();
 
 	virtual ~SynonymFilter();
 
@@ -111,7 +111,7 @@ private:
 	 * returns the row of the map which has input as its key
 	 * returns NULL if there is no such a key
 	 */
-	pair<SynonymTokenType, std::string> &getValuePairOf(const std::string &key);
+	pair<SynonymTokenType, std::string> getValuePairOf(const std::string &key);
 
 
 	/*

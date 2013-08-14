@@ -1,4 +1,4 @@
-//$Id: Srch2ServerConf.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
+//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
@@ -22,7 +22,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class Srch2ServerConf {
+class ConfigManager {
 private:
 
 	// Argument file options
@@ -112,11 +112,11 @@ private:
 	Logger::LogLevel loglevel;
 	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
+    string configFile;
 
 public:
-	Srch2ServerConf(int argc, char** argv, bool &configSuccess,
-			std::stringstream &parseError);
-	virtual ~Srch2ServerConf();
+    ConfigManager(std::string& configfile);
+	virtual ~ConfigManager();
 
 	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
 	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
@@ -218,6 +218,7 @@ public:
 
 	const vector<string> * getFacetGaps() const ;
 
+        void loadConfigFile() ;
 };
 
 }

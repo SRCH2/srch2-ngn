@@ -52,6 +52,7 @@ local.properties
 
 # my files
 runme-to-init-env.sh
+gitAdd
 thirdparty/event/bin/
 thirdparty/event/include/
 thirdparty/event/lib/

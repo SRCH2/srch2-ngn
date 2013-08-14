@@ -30,35 +30,31 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
     this->impl->prepareFacetInputs(indexSearcher);
 
     // also copy all input results to output to save previous filter works
-    input->copyForPostProcessing(output);
+    output->copyForPostProcessing(input);
 
     // initialize results of each attribute
-    for (std::map<std::string, std::vector<Score> >::iterator iter =
-            impl->lowerBoundsOfCategories.begin();
-            iter != impl->lowerBoundsOfCategories.end(); ++iter) {
+    for (std::map<std::string, std::vector<Score> >::iterator facetAttributeIterator =
+            impl->lowerBoundsOfIntervals.begin();
+            facetAttributeIterator != impl->lowerBoundsOfIntervals.end(); ++facetAttributeIterator) {
 
         // inserts the same number of zero scores as the number of lowerbounds
         // in the vector (each one as the initial value of a category)
         // NOTE: if it's a Simple facet field no category will be initialized
         std::vector<std::pair<std::string, float> > zeroCounts;
-        for (vector<Score>::iterator lb = iter->second.begin();
-                lb != iter->second.end(); ++lb) {
+        for (vector<Score>::iterator lb = facetAttributeIterator->second.begin();
+                lb != facetAttributeIterator->second.end(); ++lb) {
             zeroCounts.push_back(make_pair(lb->toString(), 0));
         }
-        output->impl->facetResults[iter->first] = zeroCounts;
+        output->impl->facetResults[facetAttributeIterator->first] = zeroCounts;
     }
 
-    // translate list of attribute names to list of attribue IDs
+    // translate list of attribute names to list of attribute IDs
     std::vector<unsigned> attributeIds;
     for (std::map<std::string, std::vector<Score> >::iterator iter =
-            impl->lowerBoundsOfCategories.begin();
-            iter != impl->lowerBoundsOfCategories.end(); ++iter) {
-
-        attributeIds.push_back(
-                schema->getNonSearchableAttributeId(iter->first));
+            impl->lowerBoundsOfIntervals.begin();
+            iter != impl->lowerBoundsOfIntervals.end(); ++iter) {
+        attributeIds.push_back(schema->getNonSearchableAttributeId(iter->first));
     }
-    // map might keep things unsorted, or user might enter them unsorted. attributeIds must be ascending:
-    std::sort(attributeIds.begin(), attributeIds.end());
 
     // move on the results once and do all facet calculations.
     for (std::vector<QueryResult *>::iterator resultIter =
@@ -83,42 +79,30 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
                 &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
-        for (std::map<std::string, std::vector<pair<string, float> > >::iterator attrIter =
-                output->impl->facetResults.begin();
-                attrIter != output->impl->facetResults.end(); ++attrIter) {
-
-            //				std::cout << "Attribute : " << attrIter->first ;
-            unsigned attributeId = schema->getNonSearchableAttributeId(
-                    attrIter->first);
-            //				std::cout << " ,attributeId = " << attributeId;
-            // attributeDataValues is parallel with attributeIds and not necessarily parallel with the map
-            // so this attributeId must be found in one list and used in the other list.
-            unsigned indexOfThisAttributeInAtributeIds = std::find(
-                    attributeIds.begin(), attributeIds.end(), attributeId)
-                    - attributeIds.begin();
-            //				std::cout << " ,indexInVector = " << indexOfThisAttributeInAtributeIds ;
+        for(std::map<std::string, std::vector<Score> >::iterator facetField =
+                impl->lowerBoundsOfIntervals.begin();
+                facetField != impl->lowerBoundsOfIntervals.end(); ++facetField) {
             Score & attributeValue = attributeDataValues.at(
-                    indexOfThisAttributeInAtributeIds);
-            //				std::cout << " ,value = " << attributeValue.toString() << std::endl;
+                                   std::distance(impl->lowerBoundsOfIntervals.begin(),
+                                           facetField));
             // choose the type of aggregation for this attribute
             // increments the correct facet by one
-            impl->facetByCountAggregation(attributeValue,
-                    impl->lowerBoundsOfCategories[attrIter->first],
-                    &(attrIter->second));
+            impl->doAggregation(attributeValue,
+                    facetField->second,
+                    &(output->impl->facetResults[facetField->first]));
 
         }
 
     }
-
 }
 
-void FacetedSearchFilter::initialize(std::vector<FacetType> types,
+void FacetedSearchFilter::initialize(std::vector<FacetType> facetTypes,
         std::vector<std::string> fields, std::vector<std::string> rangeStarts,
         std::vector<std::string> rangeEnds,
         std::vector<std::string> rangeGaps) {
 
     this->impl->fields = fields;
-    this->impl->types = types;
+    this->impl->facetTypes = facetTypes;
     this->impl->rangeStarts = rangeStarts;
     this->impl->rangeEnds = rangeEnds;
     this->impl->rangeGaps = rangeGaps;

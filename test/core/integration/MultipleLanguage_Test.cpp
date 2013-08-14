@@ -38,7 +38,7 @@ void addSimpleChineseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -427,7 +427,7 @@ void addSimpleZhuyinRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -823,7 +823,7 @@ void addJapaneseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -1129,7 +1129,7 @@ void addFrenchRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -1399,7 +1399,7 @@ void addTranditionalChineseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -1546,7 +1546,7 @@ void addBulgarianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -1679,7 +1679,7 @@ void addPinyinChineseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -1843,7 +1843,7 @@ void addZhuyinChineseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2014,7 +2014,7 @@ void addCroatianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2162,7 +2162,7 @@ void addCzechRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2312,7 +2312,7 @@ void addDanishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2460,7 +2460,7 @@ void addDutchRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2607,7 +2607,7 @@ void addEstonianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2739,7 +2739,7 @@ void addFinnishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -2887,7 +2887,7 @@ void addGermanRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3035,7 +3035,7 @@ void addGreekRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3176,7 +3176,7 @@ void addHungarianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3324,7 +3324,7 @@ void addIndonesiaRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3456,7 +3456,7 @@ void addItalianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3600,7 +3600,7 @@ void addKoreanRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3742,7 +3742,7 @@ void addLatvianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -3871,7 +3871,7 @@ void addLithuanianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4001,7 +4001,7 @@ void addNorwegianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4130,7 +4130,7 @@ void addPolishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
@@ -4256,7 +4256,7 @@ void addPortugueseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4402,7 +4402,7 @@ void addRomanianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4531,7 +4531,7 @@ void addRussianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4662,7 +4662,7 @@ void addSerbianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4789,7 +4789,7 @@ void addSlovakRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -4920,7 +4920,7 @@ void addSlovenianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5049,7 +5049,7 @@ void addSpanishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5194,7 +5194,7 @@ void addSwedishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5324,7 +5324,7 @@ void addThaiRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5454,7 +5454,7 @@ void addTurkishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5583,7 +5583,7 @@ void addUkrainianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5711,7 +5711,7 @@ void addVietnameseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5841,7 +5841,7 @@ void addFarsiRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -5954,7 +5954,7 @@ void addArabicRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6221,7 +6221,7 @@ void addHebrewRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6343,7 +6343,7 @@ void addKazakhRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6444,7 +6444,7 @@ void addBurmeseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6544,7 +6544,7 @@ void addPortugueseBrazilRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6644,7 +6644,7 @@ void addSpanishLatinRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(
+	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
 			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
@@ -6741,14 +6741,14 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
 	schema->setSearchableAttribute("article_sentence", 7); // searchable text
 
-	schema->setNonSearchableAttribute("price" , UNSIGNED , "0" , true);
-	schema->setNonSearchableAttribute("class" , TEXT , "الف" , true);
+	schema->setNonSearchableAttribute("price" , ATTRIBUTE_TYPE_UNSIGNED , "0" );
+	schema->setNonSearchableAttribute("class" , ATTRIBUTE_TYPE_TEXT , "الف" );
 
 
 	Record *record = new Record(schema);
-	Analyzer *analyzer = Analyzer::create(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(
+            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;

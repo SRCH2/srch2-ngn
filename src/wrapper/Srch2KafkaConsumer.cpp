@@ -13,7 +13,7 @@ namespace httpwrapper {
 
 namespace srch2http = srch2::httpwrapper;
 
-IndexMetaData *Srch2KafkaConsumer::createIndexMetaData(const Srch2ServerConf *indexDataContainerConf)
+IndexMetaData *Srch2KafkaConsumer::createIndexMetaData(const ConfigManager *indexDataContainerConf)
 {
 	//Create a cache
 	srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataContainerConf->getCacheSizeInBytes(), 200000);
@@ -64,7 +64,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			std::string  synonymFilterFilePath = indexDataContainerConf->getSynonymFilePath();
 
 			// Create an analyzer
-			srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemmerFlag,
+			srch2is::Analyzer *analyzer = new Analyzer(stemmerFlag,
 					stemmerFilterFilePath,
 					stopFilterFilePath,
 					synonymFilterFilePath,

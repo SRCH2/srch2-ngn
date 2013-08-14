@@ -32,35 +32,37 @@ namespace instantsearch {
 
 /// Analyzer related constants
 typedef enum {
-	// there is no numbering for this enum. By default the numbers start from 0
-	DISABLE_STEMMER_NORMALIZER, // Disables stemming
-	ENABLE_STEMMER_NORMALIZER, // Enables stemming
-	ONLY_NORMALIZER
+    // there is no numbering for this enum. By default the numbers start from 0
+    DISABLE_STEMMER_NORMALIZER, // Disables stemming
+    ENABLE_STEMMER_NORMALIZER, // Enables stemming
+    ONLY_NORMALIZER
 } StemmerNormalizerFlagType;
 
 typedef enum {
-	DICTIONARY_PORTER_STEMMER
+    DICTIONARY_PORTER_STEMMER
 // We can add other kinds of stemmer here, like MIRROR_STEMMER
 
 } StemmerType; // TODO: I should remove the '_' from the name, (it is temporary)
 
 typedef enum {
-	SYNONYM_KEEP_ORIGIN, // Disables stemming
-	SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
+    SYNONYM_KEEP_ORIGIN, // Disables stemming
+    SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
 } SynonymKeepOriginFlag;
 
 
 typedef enum {
-	STANDARD_ANALYZER,    // StandardAnalyzer
-	SIMPLE_ANALYZER       // SimpleAnalyzer
+    STANDARD_ANALYZER,    // StandardAnalyzer
+    SIMPLE_ANALYZER       // SimpleAnalyzer
 } AnalyzerType;
+
 
 
 /// Faceted search filter
 
 typedef enum{
-	Simple,
-	Range
+	FacetTypeCategorical,
+	FacetTypeRange,
+	FacetTypeNonSpecified
 } FacetType;
 
 typedef enum
@@ -78,12 +80,12 @@ typedef enum {
 } INDEXWRITE_RETVAL;
 
 /// Query constants
-
+// TODO : change getAllResults in the code to FindAllResults
 typedef enum
 {
-    TopKQuery ,
-    GetAllResultsQuery ,
-    MapQuery
+    SearchTypeTopKQuery ,
+    SearchTypeGetAllResultsQuery ,
+    SearchTypeMapQuery
 } QueryType;
 
 typedef enum
@@ -100,14 +102,14 @@ typedef enum
 
 typedef enum
 {
-    Ascending ,
-    Descending,
-    ORDER_NOT_SPECIFIED
+    SortOrderAscending ,
+    SortOrderDescending,
+    SortOrderNotSpecified
 } SortOrder;
 
 typedef enum{
-	AND,
-	OR,
+	BooleanOperatorAND,
+	BooleanOperatorOR,
 	OP_NOT_SPECIFIED
 } BooleanOperation;
 
@@ -127,17 +129,18 @@ typedef enum {
 
 typedef enum
 {
-    DefaultIndex = 0,
-    LocationIndex = 1
+    DefaultIndex,
+    LocationIndex
 } IndexType;
 
 // change the names, they are too general
 typedef enum
 {
-    UNSIGNED = 0,
-    FLOAT = 1,
-    TEXT = 2,
-    TIME = 3
+    ATTRIBUTE_TYPE_UNSIGNED,
+    ATTRIBUTE_TYPE_FLOAT ,
+    ATTRIBUTE_TYPE_TEXT ,
+    ATTRIBUTE_TYPE_TIME // Time is kept as a long integer in the core.
+         // The meaning of this long integer is the number of seconds past from January 1st, 1970
 } FilterType;
 
 /*typedef enum
@@ -149,9 +152,9 @@ typedef enum
 
 typedef enum
 {
-    FULLPOSITIONINDEX = 0, // the index of keyword in the record
-    FIELDBITINDEX = 1,// keeps the attribute in which a keyword appears in
-    NOPOSITIONINDEX = 2 // For stemmer to work, positionIndex must be enabled.
+    FULLPOSITIONINDEX , // the index of keyword in the record
+    FIELDBITINDEX ,// keeps the attribute in which a keyword appears in
+    NOPOSITIONINDEX // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
 /// Term constants
@@ -160,8 +163,8 @@ typedef enum
 {
     TERM_TYPE_PREFIX ,
     TERM_TYPE_COMPLETE ,
-    NOT_SPECIFIED
-} TermType;  // TOASK: when do we use NOT_SPECIFIED?
+    TERM_TYPE_NOT_SPECIFIED
+} TermType;
 
 ///
 

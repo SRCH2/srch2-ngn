@@ -23,7 +23,7 @@
 #include "thirdparty/kafka/consumer/consumer.hpp"
 #include "thirdparty/kafka/producer/producer.hpp"
 //#include "JSONRecordParser.h"
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -39,7 +39,7 @@ class Srch2KafkaConsumer
 {
 public:
 
-	Srch2KafkaConsumer(const Srch2ServerConf *indexDataContainerConf)
+	Srch2KafkaConsumer(const ConfigManager *indexDataContainerConf)
 	{
 		this->indexDataContainerConf = indexDataContainerConf;
 
@@ -120,7 +120,7 @@ public:
 		//pthread_exit(NULL);
 	}
 
-	static IndexMetaData *createIndexMetaData(const Srch2ServerConf *indexDataContainerConf);
+	static IndexMetaData *createIndexMetaData(const ConfigManager *indexDataContainerConf);
 
 private:
 	kafkaconnect::consumer *srch2Consumer;
@@ -131,7 +131,7 @@ private:
     std::auto_ptr<boost::asio::io_service::work> work_producer;
 
 	Indexer *indexer;
-	const Srch2ServerConf *indexDataContainerConf;
+	const ConfigManager *indexDataContainerConf;
 
 	std::string kafkaBrokerHostName;
     uint16_t kafkaBrokerPort;
