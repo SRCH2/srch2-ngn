@@ -5,10 +5,10 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 port = '8081'
 
 def pingServer():
-    info = 'curl -s "http://localhost:' + port + '/search?q=p&ct_lat=61.18&ct_lng=-149.1&radius=0.5" | grep -q results '
+    info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
     while os.system(info) !=0:
           time.sleep(1)
-          info = 'curl -s "http://localhost:' + port + '/search?q=p&ct_lat=61.18&ct_lng=-149.1&radius=0.5" | grep -q results '
+          info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
 
 #the function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -41,10 +41,43 @@ def checkResult(query, responseJson,resultValue):
     if isPass == 1:
         print  query+' test pass'
 
+#prepare the query based on the valid syntax
+def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
+    query = ''
+    #################  prepare main query part
+    query = query + 'q='
+    # local parameters
+    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
+    # keywords section
+    for i in range(0, len(queryKeywords)):
+        # first extract the filters
+        queryTermParts = queryKeywords[i].split(':')
+        fieldFilter = ''
+        if len(queryTermParts) == 2:
+            fieldFilter = queryTermParts[1] + '%3A'
+        keyword = queryTermParts[0]
+        # now add them to the query
+        if i == (len(queryKeywords)-1):
+            query=query+fieldFilter+keyword+'~'+'*' # last keyword prefix
+        else:
+            query=query+fieldFilter+keyword+'~'+'%20AND%20'
+
+    ################# fuzzy parameter
+    query = query + '&fuzzy=false'
+    ################# GEO parameters
+    query = query + '&radius=' + ct_radius
+    query = query + '&clat=' + ct_lat
+    query = query + '&clong=' + ct_long
+    print 'Query : ' + query
+    ##################################
+    return query
+
+
+
 def testFuzzyAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./fuzzy_attribute_based_search_geo/conf.ini &'
+    binary=binary+' --config-file=/home/jamshid/workspace-srch2/repos_2/srch2-ngn-jamshid/test/wrapper/system_tests/exact_attribute_based_search_geo/conf.ini &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()
@@ -60,13 +93,8 @@ def testFuzzyAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
         queryGeo = queryValue[1].split('+')
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?q='
-        for i in range(0, len(queryKeyword)):
-            if i == (len(queryKeyword)-1):
-                query=query+queryKeyword[i]
-            else:
-                query=query+queryKeyword[i]+'+'
-        query=query+'&fuzzy=1&ct_lat='+str(queryGeo[1])+'&ct_lng='+str(queryGeo[0])+'&radius='+ str(radius)
+        query='http://localhost:' + port + '/search?'
+        query = query + prepareQuery(queryKeyword,queryGeo[1],queryGeo[0],str(radius))
         #print query
         
         # do the query

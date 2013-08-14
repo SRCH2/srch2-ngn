@@ -209,6 +209,14 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
         // container and its validator must be freed here
         delete sortQueryContainer->evaluator;
         delete sortQueryContainer;
+        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
+            paramContainer->getAllResultsParameterContainer->sortQueryContainer = NULL;
+
+        }
+
+        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
+            paramContainer->geoParameterContainer->sortQueryContainer = NULL;
+        }
     }
 
     return true;
@@ -323,9 +331,10 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         //
         facetParallelVectorsIndex++;
     }
-    if (facetParallelVectorsIndexesToErase.size()
-            == facetQueryContainer->fields.size()) { // all facet fields are removed, so there is no facet query anymore
-            // facet must be removed from summary
+    if (facetQueryContainer->fields.size() != 0 &&
+            facetParallelVectorsIndexesToErase.size() == facetQueryContainer->fields.size()) {
+        // all facet fields are removed, so there is no facet query anymore
+        // facet must be removed from summary
         if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
 
             paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
@@ -345,7 +354,14 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         }
         // facet container should be freed here
         delete facetQueryContainer;
-        facetQueryContainer = NULL;
+        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
+            paramContainer->getAllResultsParameterContainer->facetQueryContainer = NULL;
+
+        }
+
+        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
+            paramContainer->geoParameterContainer->facetQueryContainer = NULL;
+        }
         return true;
     }
 

@@ -282,7 +282,15 @@ void QueryRewriter::prepareFacetFilterInfo() {
 
         // free facet container
         delete facetQueryContainer;
-        facetQueryContainer = NULL;
+
+        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
+            paramContainer->getAllResultsParameterContainer->facetQueryContainer = NULL;
+
+        }
+
+        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
+            paramContainer->geoParameterContainer->facetQueryContainer = NULL;
+        }
 
         return;
     }

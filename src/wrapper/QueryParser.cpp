@@ -1365,9 +1365,11 @@ void QueryParser::extractSearchType() {
             if (sortTemp || facetTemp) {
                 // it's a getAllResesult search
                 this->container->parametersInQuery.push_back(GetAllResultsSearchType);
+                this->container->getAllResultsParameterContainer = new GetAllResultsParameterContainer();
             } else {
                 // it's a Top-K search
                 this->container->parametersInQuery.push_back(TopKSearchType);
+                this->container->topKParameterContainer = new TopKParameterContainer();
             }
         }
     }
