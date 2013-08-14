@@ -221,7 +221,6 @@ public:
         // the readview and writeview of each InvertedList and the InvertedIndexVector are not separated.
         // so we need to call finalCommit() to separate them.
         // We do not need to sort each inverted list since it's already sorted.  So we pass a "false" flag.
-        invertedIndex.finalCommit(false);
      };
 
     static void save(const InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
@@ -285,11 +284,24 @@ private:
 
     friend class boost::serialization::access;
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
+    void save(Archive & ar, const unsigned int version) const
     {
         ar & invertedIndexVector;
         ar & keywordIds;
-        ar & commited_WriteView;
+    }
+
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version)
+    {
+        ar & invertedIndexVector;
+        ar & keywordIds;
+        commited_WriteView = true;
+    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int file_version)
+    {
+        boost::serialization::split_member(ar, *this, file_version);
     }
 };
 
