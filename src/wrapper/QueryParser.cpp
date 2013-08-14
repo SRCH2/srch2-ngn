@@ -978,6 +978,11 @@ bool QueryParser::keywordParser(string &input) {
      */
     if (input.at(0) == '\"') {
         // we do not support phrase search as of now
+        Logger::info("PARSE ERROR, unexpected character \" found at the begining of the keyword.");
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "Parse error, unexpected character \" found at the begining of the keyword."));
+        this->isParsedError = true;
         return false;
     }
     string field = "";
@@ -1377,7 +1382,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     string radiusParamStr = evhttp_uridecode(radiusParam, 0, &st3);
 // convert the rowsStr to integer.
     if (isFloat(centerLatStr)) {
-        this->container->geoParameterContainer->leftBottomLatitude = atof(
+        this->container->geoParameterContainer->centerLatitude = atof(
                 centerLatStr.c_str()); // convert the string to char* and pass it to atof
     } else {
         this->container->messages.push_back(
@@ -1385,7 +1390,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->isParsedError = true;
     }
     if (isFloat(centerLongStr)) {
-        this->container->geoParameterContainer->leftBottomLongitude = atof(
+        this->container->geoParameterContainer->centerLongitude = atof(
                 centerLongStr.c_str()); // convert the string to char* and pass it to atof
     } else {
         this->container->messages.push_back(
@@ -1394,7 +1399,7 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->isParsedError = true;
     }
     if (isFloat(radiusParamStr)) {
-        this->container->geoParameterContainer->rightTopLatitude = atof(
+        this->container->geoParameterContainer->radius = atof(
                 radiusParamStr.c_str()); // convert the string to char* and pass it to atof
     } else {
         this->container->messages.push_back(
