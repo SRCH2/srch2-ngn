@@ -288,9 +288,8 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
     }
 
     // iterating on filters and applying them on list of results
-    for (ResultsPostProcessorFilter * filter = postProcessingPlan->nextFilter();
-            postProcessingPlan->hasMoreFilters();
-            filter = postProcessingPlan->nextFilter()) {
+    ResultsPostProcessorFilter * filter = postProcessingPlan->nextFilter();
+    while(true){
         // clear the output to be ready to accept the result of the filter
         outputQueryResults->clear();
         // apply the filter on the input and put the results in output
@@ -299,6 +298,12 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
         // if there is going to be other filters, chain the output to the input
         if (postProcessingPlan->hasMoreFilters()) {
             inputQueryResults->copyForPostProcessing(outputQueryResults);
+        }
+        //
+        if(postProcessingPlan->hasMoreFilters()){
+            filter = postProcessingPlan->nextFilter();
+        }else{
+            break;
         }
     }
     postProcessingPlan->closeIteration();
