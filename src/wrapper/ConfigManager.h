@@ -2,7 +2,7 @@
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
-
+#include "util/xmlParser/pugixml.hpp"
 #include <instantsearch/Schema.h>
 #include <string>
 #include <vector>
@@ -15,6 +15,7 @@
 
 using namespace std;
 using namespace srch2::util;
+using namespace pugi;
 //namespace po = boost::program_options;
 
 namespace srch2 {

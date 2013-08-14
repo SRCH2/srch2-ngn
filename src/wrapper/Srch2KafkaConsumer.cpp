@@ -57,7 +57,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			}
 
 			// append the stemmer file to the install direcrtory
-			std::string stemmerFilterFilePath = indexDataContainerConf->getInstallDir() + indexDataContainerConf->getStemmerFile();
+			std::string stemmerFilterFilePath = indexDataContainerConf->getSrch2Home() + indexDataContainerConf->getStemmerFile();
 			// gets the path of stopFilter
 			std::string stopFilterFilePath = indexDataContainerConf->getStopFilePath();
 			// gets the path of stopFilter

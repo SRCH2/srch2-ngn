@@ -146,7 +146,7 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.ini-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test)
 
-ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test")
+ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test_xml")
 
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
 SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/XmlParserTest.xml")

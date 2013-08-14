@@ -146,23 +146,28 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
 
 bool test(int argc, char** argv)
 {
-	//read configuration file
-    po::options_description description("Description");
-    po::variables_map vm_command_line_args;
+//	//read configuration file
+//    po::options_description description("Description");
+//    po::variables_map vm_command_line_args;
+//
+//    description.add_options()
+//    ("help", "produce a help message")
+//    ("config-file", po::value<string>(), "config file");
+//
+//    try{
+//        po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
+//        po::notify(vm_command_line_args);
+//    }catch(exception &ex) {
+//        cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
+//    }
+//
+//    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
 
-    description.add_options()
-    ("help", "produce a help message")
-    ("config-file", po::value<string>(), "config file");
+//    string srch2_config_file(getenv("config-file"));
+//    cout << "#########################" << endl;
+//    cout << srch2_config_file << endl;
 
-    try{
-        po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
-        po::notify(vm_command_line_args);
-    }catch(exception &ex) {
-        cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
-    }
-
-    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
-
+    string srch2_config_file = "/home/iman/srch2/repos/srch2-ngn/build/test/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test_xml";
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
 	// check the license file

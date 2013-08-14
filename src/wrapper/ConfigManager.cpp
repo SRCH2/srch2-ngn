@@ -2,7 +2,7 @@
 
 #include "ConfigManager.h"
 
-#include "wrapper/util/xmlParser/pugixml.hpp"
+#include "util/xmlParser/pugixml.hpp"
 #include <string>
 #include <vector>
 #include <iostream>
@@ -32,8 +32,8 @@ void ConfigManager::loadConfigFile() {
     if (!configDoc.load_file(this->configFile.c_str())) {
         //TODO: TO_ASK: do we need cout or not?
         cout << "file " << this->configFile << " parsed with errors." << endl;
-        Logger::debug("%s parsed with errors.\n", this->configFile);
-        ASSERT(false);
+        Logger::debug("%s parsed with errors.\n", this->configFile.c_str());
+//        ASSERT(false);
         return;
     }
 
