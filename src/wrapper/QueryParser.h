@@ -439,6 +439,10 @@ private:
      * checs if cmplx string is present. removes it too.
      */
     bool parseComplx(string &input, string &output);
+    /*
+     * clears the keyword related parallel vectors if required
+     */
+    void clearMainQueryParallelVectorsIfNeeded();
 };
 
 }

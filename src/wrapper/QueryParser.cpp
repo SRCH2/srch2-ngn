@@ -62,7 +62,8 @@ QueryParser::QueryParser(const evkeyvalq &headers,
     this->isLpFieldFilterBooleanOperatorAssigned = false;
     this->lpKeywordFuzzyLevel = -1.0;
     this->lpKeywordBoostLevel = -1;
-    this->lpKeywordPrefixComplete = srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
+    this->lpKeywordPrefixComplete =
+            srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
 }
@@ -112,8 +113,7 @@ bool QueryParser::parse() {
     this->extractSearchType(); // add a query parameter searchType, not a mendatory parameter
     if (this->container->hasParameterInQuery(GeoSearchType)) {
         this->geoParser();
-    } else if (this->container->hasParameterInQuery(
-            GetAllResultsSearchType)) {
+    } else if (this->container->hasParameterInQuery(GetAllResultsSearchType)) {
         this->getAllResultsParser();
     } else {
         this->topKParameterParser();
@@ -173,6 +173,10 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                     }
                 }
             }
+            // check if keywordFuzzyLevel was set by parseTerms
+            // true? set the isFuzzyFlag.
+            // else , empty the keywordFuzzyLevel vector
+            this->clearMainQueryParallelVectorsIfNeeded();
         }
     } else {
         // no main query parameter present.
@@ -191,7 +195,8 @@ void QueryParser::isFuzzyParser() {
         Logger::debug("fuzzy parameter found");
         size_t st;
         string fuzzy = evhttp_uridecode(fuzzyTemp, 0, &st);
-        this->container->parametersInQuery.push_back(srch2::httpwrapper::IsFuzzyFlag);
+        this->container->parametersInQuery.push_back(
+                srch2::httpwrapper::IsFuzzyFlag);
         if (boost::iequals("true", fuzzy)) {
             this->container->isFuzzy = true;
             Logger::debug("fuzzy parameter set in container to true");
@@ -641,9 +646,10 @@ bool QueryParser::filterQueryParameterParser() {
                 } else {
                     Logger::debug(
                             " 'CMPLX$' found, possible complex expression query");
-                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_COMPLEX, "NO_FIELD"); // NO_FIELD, is a dummy parameter, that will not be used.
-                    if(!isParsed){
-                        this->isParsedError=true;
+                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_COMPLEX,
+                            "NO_FIELD"); // NO_FIELD, is a dummy parameter, that will not be used.
+                    if (!isParsed) {
+                        this->isParsedError = true;
                         return false;
                     }
                     boost::algorithm::trim(fq);
@@ -656,17 +662,19 @@ bool QueryParser::filterQueryParameterParser() {
                     Logger::debug(" '[' found, possible range query");
                     string keyword = "";
                     fq = fq.substr(1);
-                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_RANGE, fqField); // it parses fq for range query parameters
+                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_RANGE,
+                            fqField); // it parses fq for range query parameters
                     if (!isParsed) {
-                        this->isParsedError=true;
+                        this->isParsedError = true;
                         return false;
                     }
                 } else {
                     Logger::debug(" '[' not found, possible assignment query");
                     string keyword = "";
-                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_ASSIGNMENT, fqField); // it parses fq for range query parameters
+                    isParsed = fqe->addCriterion(fq,
+                            FILTERQUERY_TERM_ASSIGNMENT, fqField); // it parses fq for range query parameters
                     if (!isParsed) {
-                        this->isParsedError=true;
+                        this->isParsedError = true;
                         return false;
                     }
                 }
@@ -722,14 +730,14 @@ void QueryParser::facetParser() {
             populateFacetFieldsRange(*fqc);
             //// set the parametersInQuery
             if (this->container->hasParameterInQuery(GeoSearchType)) {
-                this->container->geoParameterContainer->parametersInQuery.push_back(
-                        FacetQueryHandler);
+                this->container->geoParameterContainer->parametersInQuery
+                        .push_back(FacetQueryHandler);
                 this->container->geoParameterContainer->facetQueryContainer =
                         fqc;
             } else if (this->container->hasParameterInQuery(
                     GetAllResultsSearchType)) {
-                this->container->getAllResultsParameterContainer->parametersInQuery
-                        .push_back(FacetQueryHandler);
+                this->container->getAllResultsParameterContainer
+                        ->parametersInQuery.push_back(FacetQueryHandler);
                 this->container->getAllResultsParameterContainer
                         ->facetQueryContainer = fqc;
             }
@@ -798,14 +806,14 @@ void QueryParser::sortParser() {
             }
             // set the parametersInQuery
             if (this->container->hasParameterInQuery(GeoSearchType)) {
-                this->container->geoParameterContainer->parametersInQuery.push_back(
-                        SortQueryHandler);
+                this->container->geoParameterContainer->parametersInQuery
+                        .push_back(SortQueryHandler);
                 this->container->geoParameterContainer->sortQueryContainer =
                         sortQueryContainer;
             } else if (this->container->hasParameterInQuery(
                     GetAllResultsSearchType)) {
-                this->container->getAllResultsParameterContainer->parametersInQuery
-                        .push_back(SortQueryHandler);
+                this->container->getAllResultsParameterContainer
+                        ->parametersInQuery.push_back(SortQueryHandler);
                 this->container->getAllResultsParameterContainer
                         ->sortQueryContainer = sortQueryContainer;
             }
@@ -878,7 +886,7 @@ bool QueryParser::localParameterParser(string &input) {
         } else {
             this->container->messages.push_back(
                     make_pair(MessageError,
-                            "Parse error, invalid local parameter string. closing } not found"));
+                            "Parse error, invalid local parameter string. closing '}' not found"));
             this->isParsedError = true;
             return false;
         }
@@ -895,16 +903,19 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
         const string &lpVal) {
     if (0 == lpKey.compare(QueryParser::lpQueryBooleanOperatorParamName)) { // default Boolean operator to be used for the fields in the query terms
         if (boost::iequals("OR", lpVal)) {
-            this->lpFieldFilterBooleanOperator = srch2::instantsearch::BooleanOperatorOR;
+            this->lpFieldFilterBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorOR;
         } else if (boost::iequals("AND", lpVal)) {
-            this->lpFieldFilterBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+            this->lpFieldFilterBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorAND;
         } else {
             // generate MessageWarning and use AND
             this->container->messages.push_back(
                     make_pair(MessageWarning,
                             "Invalud boolean operator specified " + lpVal
                                     + ", ignoring it and using AND."));
-            this->lpFieldFilterBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+            this->lpFieldFilterBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorAND;
         }
         this->isLpFieldFilterBooleanOperatorAssigned = true;
     } else if (0 == lpKey.compare(lpKeywordFuzzyLevelParamName)) { // i tried using vecotr.at(index) showed me compile errors.
@@ -916,7 +927,7 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
             this->container->messages.push_back(
                     make_pair(MessageWarning,
                             string(lpKeywordFuzzyLevelParamName)
-                                    + " should be a valid float number"));
+                                    + " should be a valid float number. Ignoring it."));
         }
     } else if (0 == lpKey.compare(lpKeywordPrefixCompleteParamName)) { //TODO: look into this again, why do we need this parameter?
         this->setInQueryParametersIfNotSet(QueryPrefixCompleteFlag);
@@ -932,7 +943,8 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
                     make_pair(MessageWarning,
                             "Invalid choice " + lpVal
                                     + ",we support prefix and complete search on keyword only. ignoring it and using the default value from config file."));
-            this->lpKeywordPrefixComplete = srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED;
+            this->lpKeywordPrefixComplete =
+                    srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED;
         }
     } else if (0 == lpKey.compare(lpFieldFilterParamName)) {
         // val might be a comma separated string of fields.  field1,field2..
@@ -1021,29 +1033,6 @@ bool QueryParser::keywordParser(string &input) {
     string fuzzyMod = "";
     isParsed = parseFuzzyModifier(input, fuzzyMod);
     this->populateFuzzyInfo(isParsed, fuzzyMod);
-// check if keywordFuzzyLevel was set by parseTerms
-// true? set the isFuzzyFlag.
-// else , empty the keywordFuzzyLevel vector
-    if (this->container->hasParameterInQuery(KeywordFuzzyLevel)) {
-        this->setInQueryParametersIfNotSet(IsFuzzyFlag);
-        this->container->isFuzzy = true;
-    } else {
-        this->container->keywordFuzzyLevel.clear();
-    }
-// check if KeywordBoostLevel was set
-    if (!this->container->hasParameterInQuery(KeywordBoostLevel)) {
-        this->container->keywordBoostLevel.clear(); // clear the boost level vector.
-    }
-// check if QueryPrefixCompleteFlag was set
-    if (!this->container->hasParameterInQuery(QueryPrefixCompleteFlag)) {
-        this->container->keywordPrefixComplete.clear();
-    }
-// cehck if FieldFilter was set
-    if (!this->container->hasParameterInQuery(FieldFilter)) {
-        // clear filedFilter vector and filedFilterOps vector
-        this->container->fieldFilter.clear();
-        this->container->fieldFilterOps.clear();
-    }
     Logger::info("returning from  keywordParser.");
     return true;
 }
@@ -1059,10 +1048,12 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
         this->container->messages.push_back(
                 make_pair(MessageWarning,
                         "We do not supprt OR  specified, ignoring it and using 'AND'."));
-        this->container->termBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->container->termBooleanOperator =
+                srch2::instantsearch::BooleanOperatorAND;
     } else if (boost::iequals("AND", termOperator)
             || termOperator.compare("&&") == 0) {
-        this->container->termBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->container->termBooleanOperator =
+                srch2::instantsearch::BooleanOperatorAND;
     } else {
         // generate MessageWarning and use AND
         this->container->messages.push_back(
@@ -1070,7 +1061,8 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
                         "Invalid boolean operator specified as term boolean operator "
                                 + termOperator
                                 + ", ignoring it and using 'AND'."));
-        this->container->termBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->container->termBooleanOperator =
+                srch2::instantsearch::BooleanOperatorAND;
     }
     Logger::debug("returning from populateTermBooleanOperator.");
 }
@@ -1082,10 +1074,12 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
 // TODO: check for && and || also
     Logger::debug("inside populateFilterQueryTermBooleanOperators.");
     if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
-        this->container->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorOR;
+        this->container->termFQBooleanOperator =
+                srch2::instantsearch::BooleanOperatorOR;
     } else if (boost::iequals("AND", termOperator)
             || termOperator.compare("&&") == 0) {
-        this->container->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->container->termFQBooleanOperator =
+                srch2::instantsearch::BooleanOperatorAND;
     } else {
         // generate MessageWarning and use AND
         this->container->messages.push_back(
@@ -1093,7 +1087,8 @@ void QueryParser::populateFilterQueryTermBooleanOperator(
                         "Invalid boolean operator specified as term boolean operator "
                                 + termOperator
                                 + ", ignoring it and using 'AND'."));
-        this->container->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->container->termFQBooleanOperator =
+                srch2::instantsearch::BooleanOperatorAND;
     }
     Logger::debug("returning from populateFilterQueryTermBooleanOperators.");
 }
@@ -1182,11 +1177,15 @@ void QueryParser::populateFieldFilterUsingQueryFields(const string &input) {
     this->setInQueryParametersIfNotSet(FieldFilter);
     string fieldBoolOpDelimeterRegexString;
     if (input.find('.') != string::npos) {
-        fieldBoolOpDelimeterRegexString = FIELD_AND_BOOL_OP_DELIMETER_REGEX_STRING;
-        this->container->fieldFilterOps.push_back(srch2::instantsearch::BooleanOperatorAND);
+        fieldBoolOpDelimeterRegexString =
+                FIELD_AND_BOOL_OP_DELIMETER_REGEX_STRING;
+        this->container->fieldFilterOps.push_back(
+                srch2::instantsearch::BooleanOperatorAND);
     } else if (input.find('+') != string::npos) {
-        fieldBoolOpDelimeterRegexString = FIELD_OR_BOOL_OP_DELIMETER_REGEX_STRING;
-        this->container->fieldFilterOps.push_back(srch2::instantsearch::BooleanOperatorOR);
+        fieldBoolOpDelimeterRegexString =
+                FIELD_OR_BOOL_OP_DELIMETER_REGEX_STRING;
+        this->container->fieldFilterOps.push_back(
+                srch2::instantsearch::BooleanOperatorOR);
     } else {
         // no boolean operators here.
         // create a vector and add it to the container.
@@ -1291,7 +1290,8 @@ void QueryParser::extractSearchType() {
             this->container->parametersInQuery.push_back(GeoSearchType);
             this->container->geoParameterContainer =
                     new GeoParameterContainer();
-            this->container->geoParameterContainer->parametersInQuery.push_back(GeoTypeCircular);
+            this->container->geoParameterContainer->parametersInQuery.push_back(
+                    GeoTypeCircular);
             //set GeoParameterContainer properties.
             this->setGeoContainerProperties(centerLatTemp, centerLongTemp,
                     radiusParamTemp);
@@ -1302,7 +1302,8 @@ void QueryParser::extractSearchType() {
                     QueryParser::facetParamName);
             if (sortTemp || facetTemp) {
                 // it's a getAllResesult search
-                this->container->parametersInQuery.push_back(GetAllResultsSearchType);
+                this->container->parametersInQuery.push_back(
+                        GetAllResultsSearchType);
             } else {
                 // it's a Top-K search
                 this->container->parametersInQuery.push_back(TopKSearchType);
@@ -1555,5 +1556,34 @@ bool QueryParser::parseComplx(string &input, string &output) {
     boost::regex re(COMPLEX_TERM_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
+void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
+    Logger::debug("inside clearMainQueryParallelVectorsIfNeeded().");
+    if (this->container->hasParameterInQuery(KeywordFuzzyLevel)) {
+        this->setInQueryParametersIfNotSet(IsFuzzyFlag);
+        this->container->isFuzzy = true;
+    } else {
+        this->container->keywordFuzzyLevel.clear();
+        Logger::debug("keywordFuzzyLevel paralel vector cleared.");
+    }
+    // check if KeywordBoostLevel was set
+    if (!this->container->hasParameterInQuery(KeywordBoostLevel)) {
+        this->container->keywordBoostLevel.clear(); // clear the boost level vector.
+        Logger::debug("keywordBoostLevel paralel vector cleared.");
+    }
+    // check if QueryPrefixCompleteFlag was set
+    if (!this->container->hasParameterInQuery(QueryPrefixCompleteFlag)) {
+        this->container->keywordPrefixComplete.clear();
+        Logger::debug("keywordPrefixComplete paralel vector cleared.");
+    }
+    // cehck if FieldFilter was set
+    if (!this->container->hasParameterInQuery(FieldFilter)) {
+        // clear filedFilter vector and filedFilterOps vector
+        this->container->fieldFilter.clear();
+        this->container->fieldFilterOps.clear();
+        Logger::debug("fieldFilter and fieldFilterOps paralel vector cleared.");
+    }
+    Logger::debug("returning from clearMainQueryParallelVectorsIfNeeded().");
+}
+
 }
 }
