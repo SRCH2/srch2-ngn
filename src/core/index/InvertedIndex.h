@@ -223,8 +223,10 @@ public:
         // We do not need to sort each inverted list since it's already sorted.  So we pass a "false" flag.
      };
 
-    static void save(const InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
+    static void save(InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
     {
+        if(invertedIndex.mergeRequired())
+            invertedIndex.merge();
         ofstream ofs(invertedIndexFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);
         oa << invertedIndex;
