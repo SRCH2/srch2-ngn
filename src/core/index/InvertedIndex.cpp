@@ -82,7 +82,9 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
 
 	std::sort(elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
-	if(readViewListSize == writeViewListSize){
+	// if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
+	// In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
+	if(readView.get() == writeView){
 	    this->invList->commit();
 	    return;
 	}

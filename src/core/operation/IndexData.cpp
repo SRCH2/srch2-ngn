@@ -429,46 +429,14 @@ INDEXWRITE_RETVAL IndexData::_commit()
          * 1. There is no InvertedIndex.
          * 2. Need to go to the QuadTree to build filters.
          */
-
-        /*{
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
-        //Check for case, where in commit() is called without any records added to the index.
+        // Check for the case where no records were added to the index when commit() is called.
         if (totalNumberofDocuments == 0)
             return OP_FAIL;//Failed
         this->forwardIndex->commit();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
-
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         this->trie->commit();
-
         //this->trie->print_Trie();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex commit" << endl;
-        }
-*/
-
         const vector<unsigned> *oldIdToNewIdMapVector = this->trie->getOldIdToNewIdMapVector();
 
         map<unsigned, unsigned> oldIdToNewIdMapper;
@@ -477,10 +445,6 @@ INDEXWRITE_RETVAL IndexData::_commit()
 
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
-
-        // Measuring the time to change the keyword ids in the forward index
-        // struct timespec tstart;
-        // clock_gettime(CLOCK_REALTIME, &tstart);
 
         for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
         {
@@ -491,48 +455,9 @@ INDEXWRITE_RETVAL IndexData::_commit()
             if(!isLocational)
                 this->invertedIndex->commit(forwardList, this->rankerExpression,
                         forwardIndexIter, totalNumberofDocuments, this->schemaInternal, newKeywordIdKeywordOffsetTriple);
-
-            /*
-            if (forwardIndexIter%1000 == 0)
-            {
-              std::cout << "\rPass 2: Indexing  - " << forwardIndexIter;
-            }
-            if (forwardIndexIter%99999 == 0)
-            {
-                std::cout << "\r";
-                }*/
         }
-
-        // struct timespec tend;
-        // clock_gettime(CLOCK_REALTIME, &tend);
-        // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + 
-        //   (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
-        // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
-
-/*
-        {
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         this->forwardIndex->finalCommit();
-
 //        this->forwardIndex->print_size();
-/*
-
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         if (isLocational)
         {
             //time_t begin,end;
@@ -547,32 +472,8 @@ INDEXWRITE_RETVAL IndexData::_commit()
             this->invertedIndex->finalCommit();
         }
 
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "IL commit" << endl;
-        }
-*/
-
-/*
-
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
-
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex clean" << endl;
-        }
-*/
 
         //this->trie->print_Trie();
         this->commited = true;

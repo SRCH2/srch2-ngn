@@ -353,7 +353,7 @@ private:
 
     // Set to true when the commit function is called. Set to false, when the addRecord function is called.
     bool commited_WriteView;
-    bool mergeRequired_WriteView;
+    bool mergeRequired;
 
     // Initialised in constructor and used in calculation of offset in filterAttributesVector. This is lighter than serialising the schema itself.
     const SchemaInternal *schemaInternal;
@@ -446,7 +446,7 @@ public:
 
     static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {
-        if(forwardIndex.mergeRequired_WriteView)
+        if(forwardIndex.mergeRequired)
             forwardIndex.merge();
         std::ofstream ofs(forwardIndexFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);

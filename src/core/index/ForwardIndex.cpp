@@ -69,7 +69,7 @@ ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal)
     this->forwardListDirectory = new cowvector< ForwardListPtr>();
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expectedNumberOfDocumentsToInitialize)
@@ -77,7 +77,7 @@ ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expec
     this->forwardListDirectory = new cowvector<ForwardListPtr>(expectedNumberOfDocumentsToInitialize);
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 ForwardIndex::~ForwardIndex()
@@ -259,20 +259,20 @@ void ForwardIndex::commit()
         this->forwardListDirectory->commit();
 
         // writeView->forceCreateCopy();
-        this->mergeRequired_WriteView = false;
+        this->mergeRequired = false;
     }
 }
 
 // WriteView
 void ForwardIndex::merge()
 {
-    if ( this->mergeRequired_WriteView )
+    if ( this->mergeRequired )
     {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->merge();
 
         // writeView->forceCreateCopy();
-        this->mergeRequired_WriteView = false;
+        this->mergeRequired = false;
     }
 }
 
@@ -351,7 +351,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
     managedForwardListPtr.second = true;
     this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 // TODO check if this is still useful
@@ -859,7 +859,7 @@ bool ForwardIndex::deleteRecordGetInternalId_WriteView(const std::string &extern
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
         this->externalToInternalRecordIdMap_WriteView.erase(externalRecordId);
-        this->mergeRequired_WriteView = true; // tell the merge thread to merge
+        this->mergeRequired = true; // tell the merge thread to merge
     }
     
     return found;
@@ -874,7 +874,7 @@ bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId, 
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
         this->externalToInternalRecordIdMap_WriteView[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
-        this->mergeRequired_WriteView = true; // tell the merge thread to merge
+        this->mergeRequired = true; // tell the merge thread to merge
     }
     
     return !found;
