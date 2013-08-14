@@ -11,27 +11,22 @@
 #include "util/Assert.h"
 #include "util/Logger.h"
 //#include <boost/program_options.hpp>
-//#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
-using namespace pugi;
-// it is related to the pgixml.hpp which is a xml parser.
-//namespace po = boost::program_options;
+using namespace pugi; // it is related to the pgixml.hpp which is a xml parser.
 
 namespace srch2 {
 namespace httpwrapper {
 
-const char * ignoreOption = "IGNORE";
-
 ConfigManager::ConfigManager(string& configFile) {
-    //TODO: check if the file exists
     this->configFile = configFile;
 }
 
 void ConfigManager::loadConfigFile() {
     cout << "Reading config file: " << this->configFile << endl;
-
     xml_document configDoc;
     // Checks if the xml file is parsed correctly or not.
     if (!configDoc.load_file(this->configFile.c_str())) {
@@ -41,236 +36,6 @@ void ConfigManager::loadConfigFile() {
         ASSERT(false);
         return;
     }
-
-//    po::options_description config("Config");
-//    config.add_options()
-//    /*
-//     * Config: beginning
-//     */
-////  ("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
-//    ("listeningHostname", po::value<string>(), "hostname (ip) to listen") // REQUIRED
-//
-////  ("listening-port", po::value<string>(), "port to listen") // REQUIRED
-//    ("listeningPort", po::value<string>(), "port to listen") // REQUIRED
-//
-//    //TODO: write other functions for this too.
-////  ("install-directory", po::value<string>(), "Install Directory")
-//    ("srch2Home", po::value<string>(), "SRCH2 home directory") // REQUIRED
-//
-////  ("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
-//    ("dataDir", po::value<string>(), "Path to the index directory") // DEPRECATED
-//
-////  ("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
-//    ("dataFile", po::value<string>(), "Path to the data file") // REQUIRED if data-source-type is 0s
-//
-////  ("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
-//    ("licenseFile", po::value<string>(), "SRCH2 license key file") // REQUIRED
-//
-//    /*
-//     * indexConfig: beginning
-//     */
-//
-////  ("attribute-boosts", po::value<string>(), "Attributes Boosts")
-//    ("fieldBoost", po::value<string>(), "Attributes' Boosts")
-//
-////  ("attribute-record-boost", po::value<string>(), "record-boost")
-//    ("recordBoostField", po::value<string>(), "record-boost")
-//
-////  ("default-query-term-boost", po::value<int>(), "Default query term boost")
-//    ("defaultQueryTermBoost", po::value<int>(), "Default query term boost")
-//
-////  ("index-load-or-create",  po::value<bool>(), "index-load-or-create")
-//    ("indexLoadCreate", po::value<bool>(),
-//            "load current index OR create new index")
-//    /*
-//     * indexConfig: End
-//     */
-//
-//    /*
-//     * query: Beginning
-//     */
-////  ("record-score-expression", po::value<string>(), "record-score-expression")
-//    ("recordScoreExpression", po::value<string>(), "record score expression")
-//
-////  ("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
-//    ("queryTermSimilarityBoost", po::value<float>(),
-//            "Default query term similarity boost")
-//
-////  ("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
-//    ("queryTermLengthBoost", po::value<float>(),
-//            "Default query term length boost")
-//
-////  ("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
-//    ("prefixMatchPenalty", po::value<float>(), "Penalty for prefix matching")
-//
-////  ("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortField", po::value<string>(), "Attributes/fields in data for sorting")
-//
-////  ("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortFieldType", po::value<string>(),
-//            "Attributes/fields in data for sorting")
-//
-////  ("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortFieldDefaultValue", po::value<string>(),
-//            "Attributes/fields in data for sorting")
-//
-////    ("default-order", po::value<int>(), "sort order")
-//    ("sortOrder", po::value<int>(), "sort order")
-//
-//
-////  ("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-//    ("cacheSize", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-//
-////  ("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
-//    ("rows", po::value<int>(), "number of results to retrieve")
-//
-////  ("number-of-threads", po::value<int>(), "number-of-threads")
-//    ("maxSearchThreads", po::value<int>(), "number of threads")
-//
-////  ("support-attribute-based-search", po::value<int>(), "If support attribute based search")
-//    ("fieldBasedSearch", po::value<int>(), "If support attribute based search")
-//
-////  ("default-searcher-type", po::value<int>(), "Searcher-type")
-//    ("searcherType", po::value<int>(), "Searcher-type")
-//
-////  ("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
-//    ("queryTermMatchType", po::value<int>(), "Exact term or fuzzy term")
-//
-////  ("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
-//    ("queryTermType", po::value<int>(), "Query has complete terms or fuzzy terms")
-//
-//    /*
-//     * queryResponseWriter: Beginning
-//     */
-//
-////  ("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
-//    ("responseFormat", po::value<int>(), "search response JSON format")
-//
-////  ("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
-////  ("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
-//    ("responseContent", po::value<string>(), "Response contents and attributes to return in response")
-//
-//    /*
-//     * queryResponseWriter: End
-//     */
-//
-////  ("data-source-type",  po::value<bool>(), "Data source type")
-//    ("dataSourceType", po::value<bool>(), "Data source type")
-//
-////  ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-//    ("writeApiType", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-//
-//    /*
-//     * query: End
-//     */
-//    /*
-//     * updatehandler: Beginning
-//     */
-////  ("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
-//    ("maxDocs", po::value<uint32_t>(), "document limit") // REQUIRED
-//
-////  ("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
-//    ("maxMemory", po::value<uint64_t>(), "memory limit") //REQUIRED
-//
-//    /*
-//     * mergePolicy: Beginning
-//     */
-////  ("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
-//    ("mergeEveryNSeconds", po::value<unsigned>(), "merge every N seconds") // REQUIRED
-//
-////  ("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
-//    ("mergeEveryMWrites", po::value<unsigned>(), "merge every M writes") // REQUIRED
-//
-//    /*
-//     * mergePolicy: End
-//     */
-//
-//    /*
-//     * updateLog: beginning
-//     */
-//
-////    ("log-level", po::value<int>(), "srch2 log level")
-//    ("logLevel", po::value<int>(), "srch2 log level")
-//
-////  ("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
-//    ("accessLogFile", po::value<string>(),
-//            "HTTP indexDataContainer access log file") // DEPRECATED
-//
-////  ("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
-//    ("errorLogFile", po::value<string>(),
-//            "HTTP indexDataContainer error log file") // DEPRECATED
-//    /*
-//     * updateLog: End
-//     */
-//
-//    /*
-//     * Config: End
-//     */
-//
-//
-//     /*
-//     * Schema: Beginning
-//     */
-//
-//     /*
-//      * fields: Beginning
-//      */
-////    ("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-//    ("field", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-//
-////  TODO: it should be removed from config file. (based on location type we can decide if we want to index geo or not).
-////  ("index-type",  po::value<int>(), "index-type") // REQUIRED
-//
-//     /*
-//      * fields: End
-//      */
-//
-////  ("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
-////  ("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
-//    ("uniqueKey", po::value<string>(), "Primary key of data source") // REQUIRED
-//
-//    /*
-//     * types: Beginning
-//     */
-//
-////    ("attribute-latitude", po::value<string>(), "record-attribute-latitude")
-////    ("attribute-longitude", po::value<string>(), "record-attribute-longitude")
-//    ("fieldType", po::value<string>(), "field types that are defined.")
-//
-////    ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
-////    ("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
-////    ("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
-////    ("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
-////    ("stemmer-file", po::value<string>(), "Stemmer File")
-//    ("filter", po::value<string>(), "field types that are defined.")
-//
-//    /*
-//     * types: End
-//     */
-//
-//     /*
-//     * Schema: End
-//     */
-//        ;
-//    kafka related should be removed.
-//    TODO: should remove related setter/getters
-//        ("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
-//        ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
-//        ("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
-//        ("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
-//        ("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
-//        ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
-//    TODO: Should be removed. They are not used.
-//    TODO: should remove related setter/getters
-//        ("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
-//        ("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
-//        ("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
-//        ("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
-//        ("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
-//    fstream fs(configFile.c_str(), fstream::in);
-//    po::variables_map vm_config_file;
-//    po::store(po::parse_config_file(fs, config), vm_config_file);
-//    po::notify(vm_config_file);
 
     bool configSuccess = true;
     std::stringstream parseError;
@@ -373,7 +138,6 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     if (hasLatitude ^ hasLongitude) {
         parseError << "One of the latitude or longitude is not set.\n";
         configSuccess = false;
-        // XXX: should we return?
         return;
     }
     // if hasLongitude and hasLatitude are set, the index type is going to be 1
@@ -397,7 +161,6 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
         return;
     }
 
-    // TODO: isPrimSearchable ????
     // we can remove it. Because we have all the attributes as searchable or not.
     this->isPrimSearchable = 0;
     for (int ind = 0; ind < searchableFieldsVector.size(); ind++) {
@@ -577,12 +340,11 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     // should be consistent with the id in the schema
     unsigned idIter = 0;
     map<string, pair<unsigned, unsigned> >::iterator searchableAttributeIter = searchableAttributesTriple.begin();
-    for ( ; searchableAttributeIter != searchableAttributesTriple.end();
-                         searchableAttributeIter++)
-    {
+    for ( ; searchableAttributeIter != searchableAttributesTriple.end(); searchableAttributeIter++) {
         searchableAttributeIter->second.first = idIter;
         idIter++;
     }
+
 
 
 
@@ -1057,35 +819,6 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
      * query: END
      */
 
-//    bool attrBoostParsed = false;
-//    if (vm.count("fieldBoost")  && (vm["fieldBoost"].as<string>().compare(ignoreOption) != 0))
-//    {
-//        vector<string> values;
-//        boost::split(values, vm["fieldBoost"].as<string>(), boost::is_any_of(","));
-//        if (values.size() == searchableAttributesVector.size())
-//        {
-//            for(unsigned iter=0; iter<values.size(); iter++)
-//            {
-//                searchableAttributesTriple[searchableAttributesVector[iter]] = pair<unsigned, unsigned>(0, (unsigned)atoi(values[iter].c_str()));
-//            }
-//            attrBoostParsed = true;
-//        }
-//        else
-//        {
-//            parseError << "OPTIONAL: Number of attributes and attributeBoosts do not match.\n";
-//        }
-//    }
-//    else
-//    {
-//        parseError << "OPTIONAL: Attributes Boosts is not set.\n";
-//    }
-//
-//
-//    if (!attrBoostParsed)
-//    {
-//        this->_setDefaultSearchableAttributeBoosts(searchableAttributesVector);
-//        parseError << "All Attributes Boosts are set to 1.\n";
-//    }
 //
 //    if (vm.count("trie-bootstrap-dict-file")) {
 //        trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
@@ -1103,13 +836,6 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 //    } else {
 //        allowedRecordTokenizerCharacters = string("");
 //        //parseError << "allowed-record-special-characters is not set.\n";
-//    }
-//
-//    if (supportAttributeBasedSearch && searchableAttributesTriple.size() > 31) {
-//        parseError
-//                << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-//        configSuccess = false;
-//        return;
 //    }
 //
 //    if (vm.count("default-attribute-to-sort")) {
@@ -1130,6 +856,13 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 //            && this->writeReadBufferInBytes < 65536000)) {
 //        this->writeReadBufferInBytes = 4194304;
 //    }
+
+
+    if (this->supportAttributeBasedSearch && this->searchableAttributesTriple.size() > 31) {
+        parseError << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
+        configSuccess = false;
+        return;
+    }
 
 }
 
@@ -1644,3 +1377,248 @@ bool ConfigManager::isValidLogLevel(string& logLevel) {
 
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// FROM PREVIOUS
+
+
+//    po::options_description config("Config");
+//    config.add_options()
+//    /*
+//     * Config: beginning
+//     */
+////  ("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
+//    ("listeningHostname", po::value<string>(), "hostname (ip) to listen") // REQUIRED
+//
+////  ("listening-port", po::value<string>(), "port to listen") // REQUIRED
+//    ("listeningPort", po::value<string>(), "port to listen") // REQUIRED
+//
+//    //TODO: write other functions for this too.
+////  ("install-directory", po::value<string>(), "Install Directory")
+//    ("srch2Home", po::value<string>(), "SRCH2 home directory") // REQUIRED
+//
+////  ("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
+//    ("dataDir", po::value<string>(), "Path to the index directory") // DEPRECATED
+//
+////  ("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
+//    ("dataFile", po::value<string>(), "Path to the data file") // REQUIRED if data-source-type is 0s
+//
+////  ("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
+//    ("licenseFile", po::value<string>(), "SRCH2 license key file") // REQUIRED
+//
+//    /*
+//     * indexConfig: beginning
+//     */
+//
+////  ("attribute-boosts", po::value<string>(), "Attributes Boosts")
+//    ("fieldBoost", po::value<string>(), "Attributes' Boosts")
+//
+////  ("attribute-record-boost", po::value<string>(), "record-boost")
+//    ("recordBoostField", po::value<string>(), "record-boost")
+//
+////  ("default-query-term-boost", po::value<int>(), "Default query term boost")
+//    ("defaultQueryTermBoost", po::value<int>(), "Default query term boost")
+//
+////  ("index-load-or-create",  po::value<bool>(), "index-load-or-create")
+//    ("indexLoadCreate", po::value<bool>(),
+//            "load current index OR create new index")
+//    /*
+//     * indexConfig: End
+//     */
+//
+//    /*
+//     * query: Beginning
+//     */
+////  ("record-score-expression", po::value<string>(), "record-score-expression")
+//    ("recordScoreExpression", po::value<string>(), "record score expression")
+//
+////  ("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
+//    ("queryTermSimilarityBoost", po::value<float>(),
+//            "Default query term similarity boost")
+//
+////  ("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
+//    ("queryTermLengthBoost", po::value<float>(),
+//            "Default query term length boost")
+//
+////  ("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
+//    ("prefixMatchPenalty", po::value<float>(), "Penalty for prefix matching")
+//
+////  ("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
+//    ("sortField", po::value<string>(), "Attributes/fields in data for sorting")
+//
+////  ("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
+//    ("sortFieldType", po::value<string>(),
+//            "Attributes/fields in data for sorting")
+//
+////  ("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
+//    ("sortFieldDefaultValue", po::value<string>(),
+//            "Attributes/fields in data for sorting")
+//
+////    ("default-order", po::value<int>(), "sort order")
+//    ("sortOrder", po::value<int>(), "sort order")
+//
+//
+////  ("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
+//    ("cacheSize", po::value<unsigned>(), "cache size in bytes") // REQUIRED
+//
+////  ("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
+//    ("rows", po::value<int>(), "number of results to retrieve")
+//
+////  ("number-of-threads", po::value<int>(), "number-of-threads")
+//    ("maxSearchThreads", po::value<int>(), "number of threads")
+//
+////  ("support-attribute-based-search", po::value<int>(), "If support attribute based search")
+//    ("fieldBasedSearch", po::value<int>(), "If support attribute based search")
+//
+////  ("default-searcher-type", po::value<int>(), "Searcher-type")
+//    ("searcherType", po::value<int>(), "Searcher-type")
+//
+////  ("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
+//    ("queryTermMatchType", po::value<int>(), "Exact term or fuzzy term")
+//
+////  ("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
+//    ("queryTermType", po::value<int>(), "Query has complete terms or fuzzy terms")
+//
+//    /*
+//     * queryResponseWriter: Beginning
+//     */
+//
+////  ("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
+//    ("responseFormat", po::value<int>(), "search response JSON format")
+//
+////  ("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
+////  ("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
+//    ("responseContent", po::value<string>(), "Response contents and attributes to return in response")
+//
+//    /*
+//     * queryResponseWriter: End
+//     */
+//
+////  ("data-source-type",  po::value<bool>(), "Data source type")
+//    ("dataSourceType", po::value<bool>(), "Data source type")
+//
+////  ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
+//    ("writeApiType", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
+//
+//    /*
+//     * query: End
+//     */
+//    /*
+//     * updatehandler: Beginning
+//     */
+////  ("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
+//    ("maxDocs", po::value<uint32_t>(), "document limit") // REQUIRED
+//
+////  ("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
+//    ("maxMemory", po::value<uint64_t>(), "memory limit") //REQUIRED
+//
+//    /*
+//     * mergePolicy: Beginning
+//     */
+////  ("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
+//    ("mergeEveryNSeconds", po::value<unsigned>(), "merge every N seconds") // REQUIRED
+//
+////  ("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
+//    ("mergeEveryMWrites", po::value<unsigned>(), "merge every M writes") // REQUIRED
+//
+//    /*
+//     * mergePolicy: End
+//     */
+//
+//    /*
+//     * updateLog: beginning
+//     */
+//
+////    ("log-level", po::value<int>(), "srch2 log level")
+//    ("logLevel", po::value<int>(), "srch2 log level")
+//
+////  ("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
+//    ("accessLogFile", po::value<string>(),
+//            "HTTP indexDataContainer access log file") // DEPRECATED
+//
+////  ("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
+//    ("errorLogFile", po::value<string>(),
+//            "HTTP indexDataContainer error log file") // DEPRECATED
+//    /*
+//     * updateLog: End
+//     */
+//
+//    /*
+//     * Config: End
+//     */
+//
+//
+//     /*
+//     * Schema: Beginning
+//     */
+//
+//     /*
+//      * fields: Beginning
+//      */
+////    ("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
+//    ("field", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
+//
+////  TODO: it should be removed from config file. (based on location type we can decide if we want to index geo or not).
+////  ("index-type",  po::value<int>(), "index-type") // REQUIRED
+//
+//     /*
+//      * fields: End
+//      */
+//
+////  ("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
+////  ("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
+//    ("uniqueKey", po::value<string>(), "Primary key of data source") // REQUIRED
+//
+//    /*
+//     * types: Beginning
+//     */
+//
+////    ("attribute-latitude", po::value<string>(), "record-attribute-latitude")
+////    ("attribute-longitude", po::value<string>(), "record-attribute-longitude")
+//    ("fieldType", po::value<string>(), "field types that are defined.")
+//
+////    ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
+////    ("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
+////    ("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
+////    ("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
+////    ("stemmer-file", po::value<string>(), "Stemmer File")
+//    ("filter", po::value<string>(), "field types that are defined.")
+//
+//    /*
+//     * types: End
+//     */
+//
+//     /*
+//     * Schema: End
+//     */
+//        ;
+//    kafka related should be removed.
+//    TODO: should remove related setter/getters
+//        ("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
+//        ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
+//        ("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
+//        ("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
+//        ("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
+//        ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
+//    TODO: Should be removed. They are not used.
+//    TODO: should remove related setter/getters
+//        ("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
+//        ("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
+//        ("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
+//        ("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
+//        ("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
+//    fstream fs(configFile.c_str(), fstream::in);
+//    po::variables_map vm_config_file;
+//    po::store(po::parse_config_file(fs, config), vm_config_file);
+//    po::notify(vm_config_file);
