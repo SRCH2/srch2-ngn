@@ -36,6 +36,9 @@ TokenStream* ChineseAnalyzer::createOperatorFlow(){
         tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
     }
 
+    //TODO: The "tokenStream" already includes the "tokenStreamContainer", 
+    //      and we still assign it to "this->tokenStreamContainer". 
+    //      This code needs to be improved to get rid of this redundancy
     this->tokenStreamContainer = tokenStream->tokenStreamContainer;
     return tokenStream;
 }
