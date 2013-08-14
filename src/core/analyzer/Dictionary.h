@@ -27,7 +27,7 @@ public:
 
     bool insert(const std::string &str, short freq);
     
-    int getMaxLength()const{
+    int getMaxWordLength()const{
         return mMaxWordLength;
     }
 private:

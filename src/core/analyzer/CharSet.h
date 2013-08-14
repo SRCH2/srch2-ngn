@@ -23,15 +23,15 @@ public:
         OTHER_TYPE,
         DELIMITER_TYPE, // In general a character whose unicode is < 128, but not a latin character, 
                         //  then it is a delimiter, such as "( > + ..
-                        // In Chinese, there is more delimiters(like ，。！). 
-                        //  It will also returned as delimiter
+                        // In Chinese, there are more delimiters such as " ，", "。", and "！". 
+                        //  They are also treated as a delimiter.
                         
-        LATIN_TYPE,     // In general all the English alphabet and digit is LATIN_TYPE,
+        LATIN_TYPE,     // In general all the English alphabet and digits are LATIN_TYPE,
                         // In Chinese, there are FullWidth English alphabet and digit which are also
                         //  treated as LATIN_TYPE, such as ＡＺ１３
                         
         BOPOMOFO_TYPE,  // Used for the Bopomofo Zhuyin system in Taiwan, 
-                        //  http://www.ssec.wisc.edu/~tomw/java/unicode.html"
+                        //  http://www.ssec.wisc.edu/~tomw/java/unicode.html
                         
         HANZI_TYPE      // Chinese Hanzi character
     };

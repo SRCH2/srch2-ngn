@@ -27,12 +27,12 @@ TokenStream* ChineseAnalyzer::createOperatorFlow(){
     tokenStream = new LowerCaseFilter(tokenStream);
 
     if (this->stopWordFilePath.compare("") != 0) {
-        // The file os error should be solved by exception
+        //TODO: The file os error should be solved by exception
         tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
     }
 
     if (this->synonymFilePath.compare("") != 0) {
-        // The file os error should be solved by exception
+        //TODO: The file os error should be solved by exception
         tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
     }
 

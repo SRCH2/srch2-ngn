@@ -27,10 +27,11 @@ private:
     void feedCurrentToken(const std::pair<short, short> &range);
     void tokenize(const std::vector<CharType> &sentence, int istart, int istop);
     bool chineseIncrement(int iChineseStart);
+    int  identifyEndOfChineseSequence();
     bool nonChineseIncrement(unsigned currentType, CharType currentChar);
 
-    typedef std::pair<short, short> TokenSpan;  //The [begin,end) position span of 
-                                                //ChineseToken inside the original vector 
+    typedef std::pair<short, short> TokenSpan;  //The [begin,end) position interval of 
+                                                // a ChineseToken in the original vector 
     typedef std::vector<TokenSpan>  TokenBuffer;
 
     Dictionary  mChineseDict;
