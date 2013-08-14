@@ -49,12 +49,12 @@ using srch2::instantsearch::Schema;
 
 namespace srch2 {
 namespace httpwrapper {
-static const string FILTERQUERY_TERM_COMPLEX = "COMPLEX";
-static const string FILTERQUERY_TERM_RANGE = "RANGE";
-static const string FILTERQUERY_TERM_ASSIGNMENT = "ASSIGNMENT";
+typedef enum {
+    Complex, Range, Assignment
+} FqKeywordType;
 class QueryExpression {
 public:
-
+    std::vector<std::pair<MessageType, string> > *messages;
     virtual bool parse(string &expressionString) = 0;
 
     virtual bool validate(const Schema & schema) = 0;
@@ -65,22 +65,20 @@ public:
     virtual ~QueryExpression() {
     }
     ;
-    void setMessageContainer(std::vector<std::pair<MessageType, string> > *messages) {
-        this->messages = messages;
-    }
     std::vector<std::pair<MessageType, string> >* getMessageContainer() {
         return this->messages;
     }
 
 private:
-    std::vector<std::pair<MessageType, string> > *messages;
-
 };
 class SolrRangeQueryExpression: public QueryExpression {
 public:
-    SolrRangeQueryExpression(const std::string field) {
+    SolrRangeQueryExpression(std::string field,
+            std::vector<std::pair<MessageType, string> > *messages) {
         this->attributeName = field;
         this->negative = false;
+        this->messages = messages;
+        //messages);
     }
 
     bool parse(string &expressionString) {
@@ -113,20 +111,22 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema){
+    bool validate(const Schema & schema) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getNonSearchableAttributeId(attributeName);
-        if(attributeId < 0) return false;
+        if (attributeId < 0)
+            return false;
         //2. Check to make sure lower and upper values are consistent with the type
-        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(attributeId);
-        if(attributeValueLower.compare("*") != 0){
-            if(! validateValueWithType(attributeType , attributeValueLower)){
+        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(
+                attributeId);
+        if (attributeValueLower.compare("*") != 0) {
+            if (!validateValueWithType(attributeType, attributeValueLower)) {
                 return false;
             }
         }
 
-        if(attributeValueUpper.compare("*") != 0){
-            if(! validateValueWithType(attributeType , attributeValueUpper)){
+        if (attributeValueUpper.compare("*") != 0) {
+            if (!validateValueWithType(attributeType, attributeValueUpper)) {
                 return false;
             }
         }
@@ -134,31 +134,31 @@ public:
 
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
-		// first find the value coming from the record
-		Score value = nonSearchableAttributeValues[this->attributeName];
-		bool lowerBoundCheck = false;
-		if(attributeValueLower.compare("*") == 0){
-		    lowerBoundCheck = true;
-		}else{
-		    Score lowerBound;
-		    lowerBound.setScore(value.getType() , attributeValueLower);
-		    lowerBoundCheck = (lowerBound <= value);
-		}
+        // first find the value coming from the record
+        Score value = nonSearchableAttributeValues[this->attributeName];
+        bool lowerBoundCheck = false;
+        if (attributeValueLower.compare("*") == 0) {
+            lowerBoundCheck = true;
+        } else {
+            Score lowerBound;
+            lowerBound.setScore(value.getType(), attributeValueLower);
+            lowerBoundCheck = (lowerBound <= value);
+        }
 
-		bool upperBoundCheck = false;
-		if(attributeValueUpper.compare("*") == 0){
-		    upperBoundCheck = true;
-		}else{
-		    Score upperBound;
-		    upperBound.setScore(value.getType() , attributeValueUpper);
-		    upperBoundCheck = (value <= upperBound);
-		}
+        bool upperBoundCheck = false;
+        if (attributeValueUpper.compare("*") == 0) {
+            upperBoundCheck = true;
+        } else {
+            Score upperBound;
+            upperBound.setScore(value.getType(), attributeValueUpper);
+            upperBoundCheck = (value <= upperBound);
+        }
 
-		bool result = lowerBoundCheck && upperBoundCheck;
-		if(negative){
-		    result = !result;
-		}
-		return result;
+        bool result = lowerBoundCheck && upperBoundCheck;
+        if (negative) {
+            result = !result;
+        }
+        return result;
     }
 
     ~SolrRangeQueryExpression() {
@@ -197,10 +197,12 @@ private:
 
 class SolrAssignmentQueryExpression: public QueryExpression {
 public:
-    SolrAssignmentQueryExpression(const std::string field) {
+    SolrAssignmentQueryExpression(std::string field,
+            std::vector<std::pair<MessageType, string> > *messages) {
         this->negative = false;
         this->operation = srch2::instantsearch::EQUALS;
         this->attributeName = field;
+        this->messages = messages;
     }
 
     bool parse(string &expressionString) {
@@ -213,9 +215,11 @@ public:
             this->negative = false;
         }
         bool isParsed = this->parseFqKeyword(expressionString, keyword);
-        if(!isParsed){
+        if (!isParsed) {
             // error
-            this->getMessageContainer()->push_back(make_pair(MessageError,"Invalid filter query assignment keyword."));
+            this->getMessageContainer()->push_back(
+                    make_pair(MessageError,
+                            "Invalid filter query assignment keyword."));
             return false;
         }
         boost::algorithm::trim(keyword);
@@ -227,15 +231,17 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema){
+    bool validate(const Schema & schema) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getNonSearchableAttributeId(attributeName);
-        if(attributeId < 0) return false;
+        if (attributeId < 0)
+            return false;
 
         //2. Check the value to be consistent with type
-        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(attributeId);
-        if(attributeValue.compare("*") != 0){
-            if(! validateValueWithType(attributeType , attributeValue)){
+        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(
+                attributeId);
+        if (attributeValue.compare("*") != 0) {
+            if (!validateValueWithType(attributeType, attributeValue)) {
                 return false;
             }
         }
@@ -244,20 +250,20 @@ public:
     bool getBooleanValue(
             std::map<std::string, Score> nonSearchableAttributeValues) {
 
-        if(attributeValue.compare("*") == 0){
+        if (attributeValue.compare("*") == 0) {
             attributeValue = "";
-            negative = ! negative;
+            negative = !negative;
         }
         // first find the value coming from the record
         Score value = nonSearchableAttributeValues[this->attributeName];
 
         Score valueToCheck;
-        valueToCheck.setScore(value.getType() , attributeValue);
+        valueToCheck.setScore(value.getType(), attributeValue);
 
         bool result = (value == valueToCheck);
-        if(!negative){ // no '-' in the beginning of the field
+        if (!negative) { // no '-' in the beginning of the field
             return result;
-        }else{
+        } else {
             return !result;
         }
     }
@@ -278,19 +284,23 @@ private:
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
 class ComplexQueryExpression: public QueryExpression {
 public:
-    ComplexQueryExpression() {
+    ComplexQueryExpression(
+            std::vector<std::pair<MessageType, string> > *messages) {
+        this->messages = messages;
     }
     bool parse(string &expressionString) {
         this->parsedExpression = "";
-        bool isParsed = this->parseComplxExpression(expressionString, this->parsedExpression);
-        if(!isParsed){
-            this->getMessageContainer()->push_back(make_pair(MessageError,"Invalid expression query."));
+        bool isParsed = this->parseComplxExpression(expressionString,
+                this->parsedExpression);
+        if (!isParsed) {
+            this->getMessageContainer()->push_back(
+                    make_pair(MessageError, "Invalid expression query."));
             return false;
         }
-        // remove '$'
+        // remove leading '$'
         expressionString = expressionString.substr(1);
         boost::algorithm::trim(expressionString);
-        // extract the expression, remove the 'CMPLX(' and ')' part
+        // extract the expression, remove the 'CMPLX$' and ')' part
         this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
         return true;
     }
@@ -299,18 +309,27 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema){
+    bool validate(const Schema & schema) {
         // insert non-searchable attribute names to the symbol table and let
         // exprtk library do the validation
 
-        const std::map<std::string , unsigned> * nonSearchableAttributes = schema.getNonSearchableAttributes();
+        const std::map<std::string, unsigned> * nonSearchableAttributes = schema
+                .getNonSearchableAttributes();
 
-        for(std::map<std::string , unsigned>::const_iterator nonSearchableAttribute = nonSearchableAttributes->begin();
-                nonSearchableAttribute != nonSearchableAttributes->end() ; ++nonSearchableAttribute){
-            if(schema.getTypeOfNonSearchableAttribute(nonSearchableAttribute->second) == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED ||
-                    schema.getTypeOfNonSearchableAttribute(nonSearchableAttribute->second) == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT ){
-                symbolVariables.insert(std::make_pair(nonSearchableAttribute->first , 0)); // zero is just a place holder, so that a variable is allocated in the vector
-                symbolTable.add_variable(nonSearchableAttribute->first , symbolVariables[nonSearchableAttribute->first] , false);
+        for (std::map<std::string, unsigned>::const_iterator nonSearchableAttribute =
+                nonSearchableAttributes->begin();
+                nonSearchableAttribute != nonSearchableAttributes->end();
+                ++nonSearchableAttribute) {
+            if (schema.getTypeOfNonSearchableAttribute(
+                    nonSearchableAttribute->second)
+                    == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED
+                    || schema.getTypeOfNonSearchableAttribute(
+                            nonSearchableAttribute->second)
+                            == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT) {
+                symbolVariables.insert(
+                        std::make_pair(nonSearchableAttribute->first, 0)); // zero is just a place holder, so that a variable is allocated in the vector
+                symbolTable.add_variable(nonSearchableAttribute->first,
+                        symbolVariables[nonSearchableAttribute->first], false);
             }
         }
 
@@ -319,7 +338,7 @@ public:
 
         // now parse the string
         exprtk::parser<double> expressionParser;
-        return expressionParser.compile(parsedExpression , expression);
+        return expressionParser.compile(parsedExpression, expression);
     }
 
     bool getBooleanValue(
@@ -336,7 +355,6 @@ private:
     exprtk::expression<double> expression;
     exprtk::symbol_table<double> symbolTable;
     std::map<string, double> symbolVariables;
-
 
     bool getBooleanValueNumericalMode(
             std::map<std::string, Score> nonSearchableAttributeValues) {
@@ -368,16 +386,16 @@ private:
 class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
 public:
 
-    FilterQueryEvaluator() {
+    FilterQueryEvaluator(std::vector<std::pair<MessageType, string> > *messages,
+            BooleanOperation *termFQBooleanOperator) {
         this->operation = srch2::instantsearch::BooleanOperatorAND;
+        this->isFqBoolOperatorSet = false;
+        this->messages = messages;
+        this->termFQBooleanOperator = termFQBooleanOperator;
     }
     void setOperation(BooleanOperation op) {
         this->operation = op;
     }
-    void setMessageContainer(std::vector<std::pair<MessageType, string> > *messages) {
-        this->messages = messages;
-    }
-
     bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) {
         switch (operation) {
         case srch2::instantsearch::BooleanOperatorAND:
@@ -387,7 +405,6 @@ public:
                 if (!qe->getBooleanValue(nonSearchableAttributeValues)) {
                     return false;
                 }
-
             }
             return true;
         case srch2::instantsearch::BooleanOperatorOR:
@@ -406,44 +423,82 @@ public:
         return false; // TODO : should change to ASSERT(false); because it should never reach here
     }
 
-    bool addCriterion(std::string &criteriaString, const string &type,
-            const string &field) {
-        if (boost::iequals(FILTERQUERY_TERM_RANGE, type)) {
-            SolrRangeQueryExpression * sre = new SolrRangeQueryExpression(
-                    field);
-            sre->setMessageContainer(this->messages);
-            bool isParsable = sre->parse(criteriaString);
-            if (!isParsable) {
-                return false; // TODO: get the message
+    bool parseAndAddCriterion(string &fq) {
+        bool parseNextTerm = true;
+        while (parseNextTerm) {
+            string fqField;
+            bool isParsed = this->parseFqField(fq, fqField);
+            if (!isParsed) {
+                // it is not a assignment not a range
+                // see if it's a complx query
+                string complxStr = "";
+                isParsed = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
+                if (!isParsed) {
+                    parseNextTerm = false;
+                    Logger::info(" Parsing error:: not a valid filter query");
+                    this->messages->push_back(
+                            make_pair(MessageError,
+                                    "Parse error, not a valid filter query term."));
+                    return false;
+                } else {
+                    Logger::debug(
+                            " 'CMPLX$' found, possible complex expression query");
+                    string dummyField = "NO_FIELD";
+                    isParsed = this->addCriterion(fq, Complex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
+                    if (!isParsed) {
+                        return false;
+                    }
+                    boost::algorithm::trim(fq);
+                }
             } else {
-                criteria.push_back(sre);
-                return true;
+                // remove the ':'
+                fqField = fqField.substr(0, fqField.length() - 1);
+                // check if it's a range query or asignment.
+                if ('[' == fq.at(0)) {
+                    Logger::debug(" '[' found, possible range query");
+                    string keyword = "";
+                    fq = fq.substr(1);
+                    isParsed = this->addCriterion(fq, Range, fqField); // it parses fq for range query parameters
+                    if (!isParsed) {
+                        //this->isParsedError = true;
+                        return false;
+                    }
+                } else {
+                    Logger::debug(" '[' not found, possible assignment query");
+                    string keyword = "";
+                    isParsed = this->addCriterion(fq, Assignment, fqField); // it parses fq for range query parameters
+                    if (!isParsed) {
+                        //this->isParsedError = true; //TODO:
+                        return false;
+                    }
+                }
             }
-        } else if (boost::iequals(FILTERQUERY_TERM_ASSIGNMENT, type)) {
-            SolrAssignmentQueryExpression * sqe =
-                    new SolrAssignmentQueryExpression(field);
-            sqe->setMessageContainer(this->messages);
-            bool isParsable = sqe->parse(criteriaString);
-            if (!isParsable) {
-                return false;
+            string boolOperator = "";
+            isParsed = this->parseFqBoolOperator(fq, boolOperator);
+            this->setOperation(*this->termFQBooleanOperator); // todo:
+            if (isParsed) {
+                string msgStr = "boolean operator is " + boolOperator;
+                Logger::debug(msgStr.c_str());
+                parseNextTerm = true;
+                Logger::debug("LOOPING AGAIN");
             } else {
-                criteria.push_back(sqe);
-                return true;
-            }
-        } else if (boost::iequals(FILTERQUERY_TERM_COMPLEX, type)) {
-            ComplexQueryExpression * cqe = new ComplexQueryExpression();
-            cqe->setMessageContainer(this->messages);
-            bool isParsable = cqe->parse(criteriaString);
-            if (!isParsable) {
-                return false;
-            } else {
-                criteria.push_back(cqe);
-                return true;
+                // no boolean operator found.
+                // if the fq string length is >0 throw error.
+                parseNextTerm = false;
+                if (fq.length() > 0) {
+                    // raise error message
+                    Logger::info(
+                            " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                    this->messages->push_back(
+                            make_pair(MessageError,
+                                    "Parse error, expecting boolean operator while parsing filter query terms."));
+                    //this->isParsedError = true; // TODO:
+                    return false;
+                }
             }
         }
-        return false;
+        return true;
     }
-
     ~FilterQueryEvaluator() {
         for (std::vector<QueryExpression *>::iterator criterion =
                 criteria.begin(); criterion != criteria.end(); ++criterion) {
@@ -453,8 +508,95 @@ public:
 private:
     std::vector<QueryExpression *> criteria;
     BooleanOperation operation;
-    std::vector<std::pair<MessageType, string> >* messages; // stores the messages related to warnings and errors.
+    bool isFqBoolOperatorSet;
+    std::vector<std::pair<MessageType, string> > *messages;
+    BooleanOperation *termFQBooleanOperator;
+    bool parseFqField(string &input, string &field) {
+        boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        return doParse(input, re, field);
+    }
+    bool parseComplx(string &input, string &output) {
+        boost::regex re(COMPLEX_TERM_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        return doParse(input, re, output);
+    }
+    bool parseFqBoolOperator(string &input, string &output) {
+        boost::regex re(FQ_TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        bool isParsed = doParse(input, re, output);
+        if (!this->isFqBoolOperatorSet) {
+            this->populateFilterQueryTermBooleanOperator(output);
+            this->isFqBoolOperatorSet = true;
+        }
+        return isParsed;
+    }
+    void populateFilterQueryTermBooleanOperator(const string &termOperator) {
+        /*
+         * populates teh termFQBooleanOperators in container.
+         */
+        // TODO: check for && and || also
+        Logger::debug("inside populateFilterQueryTermBooleanOperators.");
+        if (boost::iequals("OR", termOperator)
+                || termOperator.compare("||") == 0) {
+            *this->termFQBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorOR;
+        } else if (boost::iequals("AND", termOperator)
+                || termOperator.compare("&&") == 0) {
+            *this->termFQBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorAND;
+        } else {
+            // generate MessageWarning and use AND
+            this->messages->push_back(
+                    make_pair(MessageWarning,
+                            "Invalid boolean operator specified as term boolean operator "
+                                    + termOperator
+                                    + ", ignoring it and using 'AND'."));
+            *this->termFQBooleanOperator =
+                    srch2::instantsearch::BooleanOperatorAND;
+        }
+        Logger::debug(
+                "returning from populateFilterQueryTermBooleanOperators.");
+    }
+    bool addCriterion(std::string &criteriaString, FqKeywordType type,
+            string &field) {
+        bool isParsable = false;
+        switch (type) {
+        case Range: {
+            SolrRangeQueryExpression * sre = new SolrRangeQueryExpression(field,
+                    this->messages);
+            isParsable = sre->parse(criteriaString);
+            if (!isParsable) {
+                return false; // TODO: get the message
+            } else {
+                criteria.push_back(sre);
+                return true;
+            }
+        }
+        case Assignment: {
+            SolrAssignmentQueryExpression * sqe =
+                    new SolrAssignmentQueryExpression(field, this->messages);
+            isParsable = sqe->parse(criteriaString);
+            if (!isParsable) {
+                return false;
+            } else {
+                criteria.push_back(sqe);
+                return true;
+            }
+        }
+        case Complex: {
+            ComplexQueryExpression * cqe = new ComplexQueryExpression(
+                    this->messages);
+            isParsable = cqe->parse(criteriaString);
+            if (!isParsable) {
+                return false;
+            } else {
+                criteria.push_back(cqe);
+                return true;
+            }
+        }
+        default:
+            return false;
 
+        }
+    }
 }
 ;
 
