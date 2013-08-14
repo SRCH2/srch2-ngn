@@ -113,7 +113,7 @@ void SynonymFilter::createMap(const std::string &synonymFilePath) {
 }
 
 
-pair<SynonymTokenType, std::string> & SynonymFilter::getValuePairOf(const std::string &key) {
+pair<SynonymTokenType, std::string> SynonymFilter::getValuePairOf(const std::string &key) {
 	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(key);
 	pair<SynonymTokenType, std::string> valuePair;
 	if (pos != this->synonymMap.end()) {

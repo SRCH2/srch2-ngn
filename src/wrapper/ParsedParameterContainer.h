@@ -42,6 +42,10 @@ public:
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     FilterQueryEvaluator * evaluator;
+    void setMessageContainer(std::vector<ParameterName> *summary){
+        this->summary = summary;
+    }
+    std::vector<ParameterName> *summary;
 };
 
 
@@ -156,12 +160,6 @@ public:
         topKParameterContainer = NULL;
         getAllResultsParameterContainer = NULL;
         geoParameterContainer = NULL;
-        this->isParsedError=false;
-        this->isLpFieldFilterBooleanOperatorAssigned=false;
-        lpKeywordFuzzyLevel = -1.0;
-        lpKeywordBoostLevel = -1;
-        lpKeywordPrefixComplete =
-                    srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED;
     }
 
     ~ParsedParameterContainer() {
@@ -177,16 +175,6 @@ public:
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
     std::vector<ParameterName> parametersInQuery;
-
-    // add members related to local parameters
-    //lpFieldFilterBooleanOperator is the boolean operator between the lpFieldFiter fields.
-    bool isLpFieldFilterBooleanOperatorAssigned ; // whether lpFieldFilterBooleanOperator is assigned or not.
-    BooleanOperation lpFieldFilterBooleanOperator; // TODO: when we want to add NOT or OR this part should change
-    std::vector<std::string> lpFieldFilter; // fallback fields to search a keyword in
-    float lpKeywordFuzzyLevel ; // variable to store the fallback fuzzyLevel specified in Local Parameters
-    int lpKeywordBoostLevel ; // stores the fallback boostLevel specified in Local Parameters .. TODO: change the type
-    srch2::instantsearch::TermType lpKeywordPrefixComplete ; // stores the fallback termType for keywords
-    // localparamter related variables end
 
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's fuzzylevel as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
@@ -265,12 +253,14 @@ public:
     // term operator vector
     // TODO:no need of this vector, change it to bool.
     BooleanOperation termBooleanOperator; // boolean operator between different query terms. e.g. field1:keyword1 AND field2:keyword2. AND is a termBoolean Operator
+    bool isTermBooleanOperatorSet;
     // FilterQuery term operator vector
     //TODO:no need of this vector, change it to bool.
     BooleanOperation termFQBooleanOperator; // boolean operator between different filterQuery terms. fq=field:[10 TO 20] AND field2:keyword
     // parsed error?
+    bool isFqBooleanOperatorSet;
     //TODO: move it close to the messages.
-    bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
+
 };
 
 }

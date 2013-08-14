@@ -111,7 +111,7 @@ private:
 	 * returns the row of the map which has input as its key
 	 * returns NULL if there is no such a key
 	 */
-	pair<SynonymTokenType, std::string> &getValuePairOf(const std::string &key);
+	pair<SynonymTokenType, std::string> getValuePairOf(const std::string &key);
 
 
 	/*

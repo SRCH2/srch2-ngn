@@ -42,7 +42,7 @@
 #include <list>
 #include <map>
 #include <stack>
-
+using namespace std;
 namespace exprtk
 {
    namespace details
