@@ -33,13 +33,11 @@ public:
 							synonymFilePath,
 							synonymKeepOriginFlag) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 	TokenStream *createOperatorFlow();
 	virtual ~SimpleAnalyzer();

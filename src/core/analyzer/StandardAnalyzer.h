@@ -37,13 +37,11 @@ public:
 						synonymFilePath,
 						synonymKeepOriginFlag) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 
 	StandardAnalyzer(const StandardAnalyzer &standardAnalyzer) :
 			AnalyzerInternal(standardAnalyzer) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 	TokenStream *createOperatorFlow();
 	virtual ~StandardAnalyzer();

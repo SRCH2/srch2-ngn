@@ -20,7 +20,14 @@ ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile, const
             stopWordFilePath,
             synonymFilePath,
             synonymKeepOriginFlag), mDictFilePath(chineseDictionaryFile)
-{}
+{
+    this->analyzerType = CHINESE_ANALYZER;
+}
+
+ChineseAnalyzer::ChineseAnalyzer(const ChineseAnalyzer &analyzer)
+    : AnalyzerInternal(analyzer), mDictFilePath(analyzer.mDictFilePath){
+    this->analyzerType = CHINESE_ANALYZER;
+}
   
 TokenStream* ChineseAnalyzer::createOperatorFlow(){
     TokenStream *tokenStream = new ChineseTokenizer(mDictFilePath);

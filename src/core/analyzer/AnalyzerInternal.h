@@ -41,6 +41,9 @@ public:
 
 	void loadData(const std::string &s) const;
 
+    void setTokenStream(TokenStream* stream){
+        this->tokenStream = stream;
+    }
 
 	virtual TokenStream * createOperatorFlow() = 0;
 

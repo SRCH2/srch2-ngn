@@ -17,6 +17,8 @@ public:
             const std::string &synonymFilePath = "",
             const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN
             ); 
+    ChineseAnalyzer(const ChineseAnalyzer &analyzer);
+
     TokenStream *createOperatorFlow();
 private:
     const std::string &mDictFilePath;

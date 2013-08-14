@@ -104,7 +104,7 @@ bool ChineseTokenizer::chineseIncrement(int iChineseStart){
 bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType currentChar){
     vector<CharType> * const pCurrentToken = &(tokenStreamContainer->currentToken);
     unsigned previousType = CharSet::DELIMITER_TYPE;
-    do{
+    while (true){
         switch(currentType){
             case CharSet::DELIMITER_TYPE:
                 ASSERT(!pCurrentToken->empty());
@@ -127,12 +127,14 @@ bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType curren
                 }
                 return true;
         }   
-
+        if(isEnd()){
+            break;
+        }
         currentChar = getCurrentChar();
         previousType = currentType;
         currentType = CharSet::getCharacterType(currentChar);
         ++(tokenStreamContainer->offset);
-    } while (!isEnd());
+    }
 
     return !pCurrentToken->empty();
 }

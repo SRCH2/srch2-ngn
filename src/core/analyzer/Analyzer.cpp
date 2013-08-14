@@ -20,6 +20,7 @@
 #include "AnalyzerInternal.h"
 #include "StandardAnalyzer.h"
 #include "SimpleAnalyzer.h"
+#include "ChineseAnalyzer.h"
 #include <instantsearch/Analyzer.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
@@ -37,40 +38,47 @@ Analyzer::Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
         const std::string &stemmerFilePath, const std::string &stopWordFilePath,
         const std::string &synonymFilePath,
         const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-        const std::string &delimiters, const AnalyzerType &analyzerType) {
+        const std::string &delimiters, 
+        const AnalyzerType &analyzerType, 
+        const std::string &chineseDictFilePath
+        ) {
     switch (analyzerType) {
     case SIMPLE_ANALYZER:
         this->analyzerInternal = new SimpleAnalyzer(stemmerFlag,
                 stemmerFilePath, stopWordFilePath, synonymFilePath,
                 synonymKeepOriginFlag, delimiters);
         break;
+    case CHINESE_ANALYZER:
+        this->analyzerInternal = new ChineseAnalyzer(chineseDictFilePath,
+                delimiters, stopWordFilePath, synonymFilePath,
+                synonymKeepOriginFlag);
+        break;
+    case STANDARD_ANALYZER:
     default:
         this->analyzerInternal = new StandardAnalyzer(stemmerFlag,
                 stemmerFilePath, stopWordFilePath, synonymFilePath,
                 synonymKeepOriginFlag, delimiters);
         break;
     }
+    analyzerInternal->setTokenStream( analyzerInternal->createOperatorFlow());
 }
 
 Analyzer::Analyzer(Analyzer& analyzerObject) {
     switch (analyzerObject.analyzerInternal->getAnalyzerType()) {
     case SIMPLE_ANALYZER:
-        this->analyzerInternal = new SimpleAnalyzer(analyzerObject.analyzerInternal->getStemmerFlag(),
-                analyzerObject.analyzerInternal->getStemmerFilePath(),
-                analyzerObject.analyzerInternal->getStopWordFilePath(),
-                analyzerObject.analyzerInternal->getSynonymFilePath(),
-                analyzerObject.analyzerInternal->getSynonymKeepOriginFlag(),
-                analyzerObject.analyzerInternal->getRecordAllowedSpecialCharacters());
+        this->analyzerInternal = new SimpleAnalyzer(
+                static_cast<const SimpleAnalyzer&>(*(analyzerObject.analyzerInternal)));
+        break;
+    case CHINESE_ANALYZER:
+        this->analyzerInternal = new ChineseAnalyzer(
+                static_cast<const ChineseAnalyzer&>(*(analyzerObject.analyzerInternal)));
         break;
     default:
-        this->analyzerInternal = new StandardAnalyzer(analyzerObject.analyzerInternal->getStemmerFlag(),
-                analyzerObject.analyzerInternal->getStemmerFilePath(),
-                analyzerObject.analyzerInternal->getStopWordFilePath(),
-                analyzerObject.analyzerInternal->getSynonymFilePath(),
-                analyzerObject.analyzerInternal->getSynonymKeepOriginFlag(),
-                analyzerObject.analyzerInternal->getRecordAllowedSpecialCharacters());
+        this->analyzerInternal = new StandardAnalyzer(
+                static_cast<const StandardAnalyzer&>(*(analyzerObject.analyzerInternal)));
         break;
     }
+    analyzerInternal->setTokenStream( analyzerInternal->createOperatorFlow());
 }
 
 void Analyzer::setRecordAllowedSpecialCharacters(
