@@ -95,9 +95,10 @@ if __name__ == "__main__":
         else:
             topk_B = str(sys.argv[3])
             topk_A = str(sys.argv[4])
-            base_url = base + "/search?fuzzy=1&type=0&start=0&q="+query
-            url_A = base_url + "&limit="+topk_A
-            url_B = base_url + "&limit="+topk_B
+            base_url = base + "/search?fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query
+            url_A = base_url + "&rows="+topk_A
+            print 'URL A : ' + url_A
+            url_B = base_url + "&rows="+topk_B
             jsonTop10 = urllib2.urlopen(url_A).read()
             jsonTop20 = urllib2.urlopen(url_B).read()
             if ( verify(jsonTop10, topk_A,  jsonTop20, topk_B) ):

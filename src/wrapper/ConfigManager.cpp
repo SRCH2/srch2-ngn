@@ -386,12 +386,12 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     }
 
 
-    if (vm.count("non-searchable-attribute")
-            && (vm["non-searchable-attribute"].as<string>().compare(
+    if (vm.count("non-searchable-attributes")
+            && (vm["non-searchable-attributes"].as<string>().compare(
                     ignoreOption) != 0)) {
         vector<string> attributeNames;
         boost::split(attributeNames,
-                vm["non-searchable-attribute"].as<string>(),
+                vm["non-searchable-attributes"].as<string>(),
                 boost::is_any_of(","));
 
         vector<bool> attributeIsRequired;
@@ -507,6 +507,23 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     }
 
     if (facetEnabled) {
+
+        if (vm.count("facet-attributes")&& (vm["facet-attributes"].as<string>().compare(
+                ignoreOption) != 0)) {
+            boost::split(facetAttributes, vm["facet-attributes"].as<string>(),
+                    boost::is_any_of(","));
+            for(vector<string>::iterator facetAttribute = facetAttributes.begin() ;
+                    facetAttribute != facetAttributes.end() ; ++facetAttribute){
+                if(nonSearchableAttributesInfo.find(*facetAttribute) == nonSearchableAttributesInfo.end()){
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
+                }
+            }
+        } else {
+            parseError << "Not enough information for facet. Facet disabled.\n";
+            facetEnabled = false;
+        }
+
         // now all the other options are required.
         if (vm.count("facet-attribute-type")&& (vm["facet-attribute-type"].as<string>().compare(
                 ignoreOption) != 0)) {
@@ -519,25 +536,27 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 int typeInteger = atoi(type->c_str());
                 if (typeInteger != 0 && typeInteger != 1) {
                     typeInteger = 0; // zero means Categorical, 1 means Range
+                    parseError << "Facet types should be either 0 or 1. Facet disabled.\n";
                 }
                 facetTypes.push_back(typeInteger);
+            }
+            if(facetTypes.size() != facetAttributes.size()){
+                parseError << "facet-attribute-type should contain the same number of values as facet-attributes. Facet disabled.\n";
+                facetEnabled = false;
             }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
         }
-        if (vm.count("facet-attributes")&& (vm["facet-attributes"].as<string>().compare(
-                ignoreOption) != 0)) {
-            boost::split(facetAttributes, vm["facet-attributes"].as<string>(),
-                    boost::is_any_of(","));
-        } else {
-            parseError << "Not enough information for facet. Facet disabled.\n";
-            facetEnabled = false;
-        }
+
         if (vm.count("facet-attribute-start")&& (vm["facet-attribute-start"].as<string>().compare(
                 ignoreOption) != 0)) {
             boost::split(facetStarts, vm["facet-attribute-start"].as<string>(),
                     boost::is_any_of(","));
+            if(facetStarts.size() != facetAttributes.size()){
+                parseError << "facet-attribute-start should contain the same number of values as facet-attributes. Facet disabled.\n";
+                facetEnabled = false;
+            }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
@@ -546,6 +565,10 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetEnds, vm["facet-attribute-end"].as<string>(),
                     boost::is_any_of(","));
+            if(facetEnds.size() != facetAttributes.size()){
+                parseError << "facet-attribute-end should contain the same number of values as facet-attributes. Facet disabled.\n";
+                facetEnabled = false;
+            }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
@@ -554,9 +577,45 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetGaps, vm["facet-attribute-gap"].as<string>(),
                     boost::is_any_of(","));
+            if(facetGaps.size() != facetAttributes.size()){
+                parseError << "facet-attribute-gap should contain the same number of values as facet-attributes. Facet disabled.\n";
+                facetEnabled = false;
+            }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
+        }
+        if(facetEnabled){
+            for(vector<int>::iterator facetType = facetTypes.begin() ;
+                    facetType != facetTypes.end() ; ++facetType){
+                if(*facetType == 0){ // Categorical
+                    if(facetStarts.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
+                        parseError << "Facet start value should be \"\" for Categorical facets. Value changed.\n";
+                        facetStarts.at(std::distance(facetTypes.begin() , facetType)) = "";
+                    }
+                    if(facetEnds.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
+                        parseError << "Facet end value should be \"\" for Categorical facets. Value changed.\n";
+                        facetEnds.at(std::distance(facetTypes.begin() , facetType)) = "";
+                    }
+                    if(facetGaps.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
+                        parseError << "Facet gap value should be \"\" for Categorical facets. Value changed.\n";
+                        facetGaps.at(std::distance(facetTypes.begin() , facetType)) = "";
+                    }
+                }else{
+                    if(facetStarts.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
+                        parseError << "Facet start value should be \"\" for Categorical facets. Facet disabled.\n";
+                        facetEnabled = false;
+                    }
+                    if(facetEnds.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
+                        parseError << "Facet end value should be \"\" for Categorical facets. Facet disabled.\n";
+                        facetEnabled = false;
+                    }
+                    if(facetGaps.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
+                        parseError << "Facet gap value should be \"\" for Categorical facets. Facet disabled.\n";
+                        facetEnabled = false;
+                    }
+                }
+            }
         }
 
     }

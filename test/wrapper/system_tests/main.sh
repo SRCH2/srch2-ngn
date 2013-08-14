@@ -94,12 +94,12 @@ if [ $? -gt 0 ]; then
 fi
 
 echo '----do tests_used_for_statemedia--------------'
-./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
+#./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
 
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
+#if [ $? -gt 0 ]; then
+#    echo " --- error ---"
+#    exit -1
+#fi
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
     rm -rf data

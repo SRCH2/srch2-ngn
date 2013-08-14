@@ -41,6 +41,34 @@ def checkResult(query, responseJson,resultValue):
     if isPass == 1:
         print  query+' test pass'
 
+#prepare the query based on the valid syntax
+def prepareQuery(queryKeywords):
+    query = ''
+    #################  prepare main query part
+    query = query + 'q='
+    # local parameters
+    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
+    # keywords section
+    for i in range(0, len(queryKeywords)):
+        # first extract the filters
+        queryTermParts = queryKeywords[i].split(':')
+        fieldFilter = ''
+        if len(queryTermParts) == 2:
+            fieldFilter = queryTermParts[1] + '%3A'
+        keyword = queryTermParts[0]
+        # now add them to the query
+        if i == (len(queryKeywords)-1):
+            query=query+fieldFilter+keyword+'*'+'~' # last keyword prefix
+        else:
+            query=query+fieldFilter+keyword+'~'+'%20AND%20'
+    ################# fuzzy parameter
+    query = query + '&fuzzy=true'
+
+#    print 'Query : ' + query
+    ##################################
+    return query
+
+
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
@@ -57,13 +85,9 @@ def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?q='
-        for i in range(0, len(queryValue)):
-            if i == (len(queryValue)-1):
-                query=query+queryValue[i]
-            else:
-                query=query+queryValue[i]+'+'
-        query=query+'&fuzzy=1'
+        query='http://localhost:' + port + '/search?'
+        query = query + prepareQuery(queryValue)
+
         #print query
         
         # do the query
