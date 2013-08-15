@@ -50,7 +50,7 @@ using srch2::instantsearch::Schema;
 namespace srch2 {
 namespace httpwrapper {
 typedef enum {
-    Complex, Range, Assignment
+    FqKeywordTypeComplex, FqKeywordTypeRange, FqKeywordTypeAssignment
 } FqKeywordType;
 class QueryExpression {
 public:
@@ -300,7 +300,6 @@ public:
         expressionString = expressionString.substr(1);
         boost::algorithm::trim(expressionString);
         // extract the expression, remove the 'CMPLX$' and ')' part
-        this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
         return true;
     }
     bool parseComplxExpression(string &input, string &output) {
@@ -443,7 +442,7 @@ public:
                     Logger::debug(
                             " 'CMPLX$' found, possible complex expression query");
                     string dummyField = "NO_FIELD";
-                    isParsed = this->addCriterion(fq, Complex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
+                    isParsed = this->addCriterion(fq, FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
                     if (!isParsed) {
                         return false;
                     }
@@ -474,8 +473,8 @@ public:
             }
             string boolOperator = "";
             isParsed = this->parseFqBoolOperator(fq, boolOperator);
-            this->setOperation(*this->termFQBooleanOperator); // todo:
             if (isParsed) {
+                this->setOperation(*this->termFQBooleanOperator);
                 string msgStr = "boolean operator is " + boolOperator;
                 Logger::debug(msgStr.c_str());
                 parseNextTerm = true;
@@ -521,7 +520,7 @@ private:
     bool parseFqBoolOperator(string &input, string &output) {
         boost::regex re(FQ_TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
         bool isParsed = doParse(input, re, output);
-        if (!this->isFqBoolOperatorSet) {
+        if (!this->isFqBoolOperatorSet && isParsed) {
             this->populateFilterQueryTermBooleanOperator(output);
             this->isFqBoolOperatorSet = true;
         }
@@ -558,7 +557,7 @@ private:
             string &field) {
         bool isParsable = false;
         switch (type) {
-        case Range: {
+        case FqKeywordTypeRange: {
             SolrRangeQueryExpression * sre = new SolrRangeQueryExpression(field,
                     this->messages);
             isParsable = sre->parse(criteriaString);
@@ -569,7 +568,7 @@ private:
                 return true;
             }
         }
-        case Assignment: {
+        case FqKeywordTypeAssignment: {
             SolrAssignmentQueryExpression * sqe =
                     new SolrAssignmentQueryExpression(field, this->messages);
             isParsable = sqe->parse(criteriaString);
@@ -580,7 +579,7 @@ private:
                 return true;
             }
         }
-        case Complex: {
+        case FqKeywordTypeComplex: {
             ComplexQueryExpression * cqe = new ComplexQueryExpression(
                     this->messages);
             isParsable = cqe->parse(criteriaString);
