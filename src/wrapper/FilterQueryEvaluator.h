@@ -130,6 +130,7 @@ public:
                 return false;
             }
         }
+        return true;
     }
 
     bool getBooleanValue(
@@ -239,6 +240,7 @@ public:
                 return false;
             }
         }
+        return true;
     }
 
     bool getBooleanValue(
@@ -291,7 +293,6 @@ public:
         expressionString = expressionString.substr(1);
         boost::algorithm::trim(expressionString);
         // extract the expression, remove the 'CMPLX(' and ')' part
-        this->parsedExpression = expressionString; //TODO: do exprtk parsing, based on that return true/false
         return true;
     }
     bool parseComplxExpression(string &input, string &output) {
@@ -404,6 +405,16 @@ public:
             break;
         }
         return false; // TODO : should change to ASSERT(false); because it should never reach here
+    }
+
+    bool validate(const Schema & schema){
+        for(std::vector<QueryExpression *>::iterator criterion = criteria.begin() ;
+                criterion != criteria.end() ; ++criterion){
+            if(! (*criterion)->validate(schema)){
+                return false;
+            }
+        }
+        return true;
     }
 
     bool addCriterion(std::string &criteriaString, const string &type,

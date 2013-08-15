@@ -40,6 +40,9 @@ public:
 	int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const{
 
 		for(std::vector<std::string>::const_iterator attributeIndex = field.begin() ; attributeIndex != field.end() ; ++attributeIndex){
+		    if(left.find(*attributeIndex) == left.end() ||  right.find(*attributeIndex) == right.end() ){
+		        ;
+		    }
 		    int comparisonResultOnThisAttribute = compareOneAttribute(left.at(*attributeIndex) , right.at(*attributeIndex));
 			if( comparisonResultOnThisAttribute != 0){ // if left and right are equal on this attribute go to the next
 				return comparisonResultOnThisAttribute;
@@ -57,7 +60,6 @@ public:
 	}
 
 	std::vector<std::string> field;
-	srch2::instantsearch::SortOrder order;
 
 private:
 

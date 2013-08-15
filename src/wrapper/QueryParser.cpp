@@ -292,7 +292,7 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
         fqc.rangeEnds.push_back("");
     }
     stringstream gapKey;
-    gapKey << "f." << field << ".facet.range.end";
+    gapKey << "f." << field << ".facet.range.gap";
     string gapKeyStr = gapKey.str();
     const char* rangeGapTemp = evhttp_find_header(&headers, gapKeyStr.c_str());
     if (rangeGapTemp) {
@@ -880,7 +880,6 @@ bool QueryParser::localParameterParser(string &input) {
         }
         boost::algorithm::trim(input);
         if (input.at(0) == '}') {
-            cout << "localParametersString: " << input << endl;
             input = input.substr(1);
             boost::algorithm::trim(input);
         } else {

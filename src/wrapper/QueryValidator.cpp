@@ -102,7 +102,7 @@ bool QueryValidator::validate() {
         }
     }
 
-    // validate filter query
+    // validate filter list
     if (!validateExistenceOfAttributesInFieldList()) {
         return false;
     }
@@ -114,6 +114,11 @@ bool QueryValidator::validate() {
 
     // validate facet filter
     if (!validateExistenceOfAttributesInFacetFiler()) {
+        return false;
+    }
+
+    // validate filter query
+    if(! validateFilterQuery()){
         return false;
     }
 
@@ -400,6 +405,14 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
     return true;
 
+}
+
+bool QueryValidator::validateFilterQuery(){
+    if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
+        FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
+        return filterQueryContainer->evaluator->validate(schema);
+    }
+    return true;
 }
 
 //bool QueryValidator::validateValueWithType(srch2is::FilterType type,

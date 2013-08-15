@@ -55,7 +55,7 @@ public:
 
         // do the comparison
         if (filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
-                rhs->valuesOfParticipatingNonSearchableAttributes) >= 0) {
+                rhs->valuesOfParticipatingNonSearchableAttributes) > 0) {
             return true;
         } else {
             return false;
