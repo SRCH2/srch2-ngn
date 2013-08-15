@@ -100,6 +100,8 @@ private:
     static const char* const sortParamName; //solr  (syntax is not like solr)
     static const char* const sortFiledsDelimiter; // solr
     static const char* const orderParamName; //srch2
+    static const char* const orderDescending; //srch2
+    static const char* const orderAscending; //srch2
     static const char* const keywordQueryParamName; //solr
     static const char* const lengthBoostParamName; //srch2
     static const char* const prefixMatchPenaltyParamName; //srch2
@@ -122,7 +124,14 @@ private:
     static const char* const centerLatParamName; //srch2
     static const char* const centerLongParamName; //srch2
     static const char* const radiusParamName; //srch2
+    //facetParms
     static const char* const facetParamName; //solr
+    static const char* const facetRangeGap;
+    static const char* const facetRangeEnd;
+    static const char* const facetRangeStart;
+    static const string getFacetRangeKey(const string &facetField, const string &facetRangeProperty){
+        return "f.%s.facet.%s",facetField.c_str(),facetRangeProperty.c_str();
+    }
     /*
      * example: q={param=key param2=key2}field1=keyword1 AND field2=keyword2* AND field3=keyword3*^2~.8
      * 1. Parse the string and find
@@ -427,14 +436,6 @@ private:
      * parses the fuzzy modifier
      */
     bool parseFuzzyModifier(string &input, string &output);
-    /*
-     * parses the FqField
-     */
-    bool parseFqField(string &input, string &field);
-    /*
-     * parses fq boolean operator
-     */
-    bool parseFqBoolOperator(string &input, string &output);
     /*
      * checs if cmplx string is present. removes it too.
      */

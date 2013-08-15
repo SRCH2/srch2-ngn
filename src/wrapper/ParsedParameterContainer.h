@@ -42,10 +42,10 @@ public:
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     FilterQueryEvaluator * evaluator;
-    void setMessageContainer(std::vector<ParameterName> *summary){
-        this->summary = summary;
+    void setMessageContainer(std::vector<ParameterName> *parametersInQuery){
+        this->parametersInQuery = parametersInQuery;
     }
-    std::vector<ParameterName> *summary;
+    std::vector<ParameterName> *parametersInQuery;
 };
 
 

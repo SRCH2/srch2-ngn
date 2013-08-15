@@ -85,6 +85,14 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do filter query test--------------'
+python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 
 echo '----do geo test--------------'
 python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt

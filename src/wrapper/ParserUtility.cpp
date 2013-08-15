@@ -173,9 +173,10 @@ bool doParse(string &input, const boost::regex &re,
             boost::algorithm::trim(output);
             input = input.substr(matches.position() + matches.length());
             boost::algorithm::trim(input);
-            string logMsg = "remove " + output + ", input modified to: "
-                    + input;
-            Logger::debug(logMsg.c_str());
+           // string logMsg = "remove " + output + ", input modified to: "
+            //        + input;
+            Logger::debug("Remove %s,input modified to: %s",output.c_str(),input.c_str());
+            //Logger::debug(logMsg.c_str());
             return true;
         } else {
             return false;

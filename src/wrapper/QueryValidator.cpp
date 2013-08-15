@@ -18,7 +18,6 @@
  */
 
 #include "QueryValidator.h"
-
 #include "ParserUtility.h"
 #include <algorithm>
 #include <string>
@@ -410,7 +409,21 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        return filterQueryContainer->evaluator->validate(schema);
+        if (! filterQueryContainer->evaluator->validate(schema)){
+            paramContainer->parametersInQuery.erase(
+                    remove(
+                            paramContainer->parametersInQuery.begin(),
+                            paramContainer->parametersInQuery.end(),
+                            FilterQueryEvaluatorFlag),
+                            paramContainer->parametersInQuery.end());
+            delete filterQueryContainer->evaluator;
+            delete filterQueryContainer;
+            paramContainer->filterQueryContainer = NULL;
+
+            paramContainer->messages.push_back(
+                    std::make_pair(MessageWarning,
+                            "Filter query is not valid. No filter will be applied on the results."));
+        }
     }
     return true;
 }
