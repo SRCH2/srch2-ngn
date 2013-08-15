@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__TOKENFILTER_H__
-#define __CORE_ANALYZER__TOKENFILTER_H__
+#ifndef __CORE_ANALYZER_TOKENFILTER_H__
+#define __CORE_ANALYZER_TOKENFILTER_H__
 
 #include "TokenStream.h"
 namespace srch2 {

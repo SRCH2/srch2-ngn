@@ -43,7 +43,7 @@ typedef Trie Trie_Internal;
 
 bool approximateFloatEqual(float x, float y)
 {
-	return abs(x-y) < 0.01;
+    return abs(x-y) < 0.01;
 }
 
 int main(int argc, char *argv[])
@@ -56,65 +56,66 @@ int main(int argc, char *argv[])
     }
 
     ///Create Schema
-	srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
-	schema->setPrimaryKey("article_id"); // integer, not searchable
-	schema->setSearchableAttribute("article_authors", 1); // searchable text
-	schema->setSearchableAttribute("article_title", 4); // searchable text
+    srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
+    schema->setPrimaryKey("article_id"); // integer, not searchable
+    schema->setSearchableAttribute("article_authors", 1); // searchable text
+    schema->setSearchableAttribute("article_title", 4); // searchable text
 
-	// Create a record of 3 attributes
-	Record *record = new Record(schema);
-	record->setPrimaryKey(1000);
-	record->setSearchableAttributeValue("article_authors", "Tom Jerry");
-	record->setSearchableAttributeValue("article_title", "Tom Cat");
-	record->setRecordBoost(20);
+    // Create a record of 3 attributes
+    Record *record = new Record(schema);
+    record->setPrimaryKey(1000);
+    record->setSearchableAttributeValue("article_authors", "Tom Jerry");
+    record->setSearchableAttributeValue("article_title", "Tom Cat");
+    record->setRecordBoost(20);
 
-	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
-	map<string, TokenAttributeHits > tokenAttributeHitsMap;
+    /// Create an Analyzer
+    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    analyzer->setTokenStream(analyzer->createOperatorFlow());
+    map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
-	///Tokenize the Record. TokenAttributeHitsMap
-	analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
+    ///Tokenize the Record. TokenAttributeHitsMap
+    analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
-	///Initialise Index Structures
-	Trie_Internal *trie = new Trie_Internal();
-	ForwardIndex *forwardIndex = new ForwardIndex(schema);
+    ///Initialise Index Structures
+    Trie_Internal *trie = new Trie_Internal();
+    ForwardIndex *forwardIndex = new ForwardIndex(schema);
 
-	unsigned internalRecordId;
-	forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId);
-	ASSERT( forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId) == true);
+    unsigned internalRecordId;
+    forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId);
+    ASSERT( forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId) == true);
 
-	///Insert into Trie
-	unsigned invertedIndexOffset = 0;
-	for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();
-			mapIterator != tokenAttributeHitsMap.end();
-			++mapIterator)
-	{
-		/// add words to trie
-		//std::cout << "word:" << mapIterator->first << std::endl;
-		trie->addKeyword(mapIterator->first, invertedIndexOffset);
-	}
-	trie->commit();
+    ///Insert into Trie
+    unsigned invertedIndexOffset = 0;
+    for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();
+            mapIterator != tokenAttributeHitsMap.end();
+            ++mapIterator)
+    {
+        /// add words to trie
+        //std::cout << "word:" << mapIterator->first << std::endl;
+        trie->addKeyword(mapIterator->first, invertedIndexOffset);
+    }
+    trie->commit();
 
-	KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
+    KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
-	typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
-	TrieRootNodeSharedPtr rootSharedPtr;
-	trie->getTrieRootNode_ReadView(rootSharedPtr);
-	TrieNode *root = rootSharedPtr->root;
+    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    TrieRootNodeSharedPtr rootSharedPtr;
+    trie->getTrieRootNode_ReadView(rootSharedPtr);
+    TrieNode *root = rootSharedPtr->root;
 
-	unsigned catId = trie->getTrieNodeFromUtf8String(root, "cat")->getId();
-	unsigned jerryId = trie->getTrieNodeFromUtf8String(root, "jerry")->getId();
-	unsigned tomId = trie->getTrieNodeFromUtf8String(root, "tom")->getId();
+    unsigned catId = trie->getTrieNodeFromUtf8String(root, "cat")->getId();
+    unsigned jerryId = trie->getTrieNodeFromUtf8String(root, "jerry")->getId();
+    unsigned tomId = trie->getTrieNodeFromUtf8String(root, "tom")->getId();
 
-	keywordIdList.push_back( make_pair(catId, make_pair("cat", invertedIndexOffset) ) );
-	keywordIdList.push_back( make_pair(jerryId, make_pair("jerry", invertedIndexOffset) ) );
-	keywordIdList.push_back( make_pair(tomId, make_pair("tom", invertedIndexOffset) ) );
+    keywordIdList.push_back( make_pair(catId, make_pair("cat", invertedIndexOffset) ) );
+    keywordIdList.push_back( make_pair(jerryId, make_pair("jerry", invertedIndexOffset) ) );
+    keywordIdList.push_back( make_pair(tomId, make_pair("tom", invertedIndexOffset) ) );
 
-	/// Sort keywordList
-	std::sort(keywordIdList.begin(), keywordIdList.end() );
+    /// Sort keywordList
+    std::sort(keywordIdList.begin(), keywordIdList.end() );
 
-	/// add record and keywordIdList to forwardIndex
-	forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
+    /// add record and keywordIdList to forwardIndex
+    forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
     bool dummy = false;
     float boost1 = forwardIndex->getForwardList(0, dummy)->getKeywordRecordStaticScore(0);

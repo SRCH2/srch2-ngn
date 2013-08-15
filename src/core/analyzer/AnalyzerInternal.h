@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __CORE_ANALYZER__ANALYZER_INTERNAL_H__
-#define __CORE_ANALYZER__ANALYZER_INTERNAL_H__
+#ifndef __CORE_ANALYZER_ANALYZER_INTERNAL_H__
+#define __CORE_ANALYZER_ANALYZER_INTERNAL_H__
 
 #include <vector>
 #include <map>
@@ -39,8 +39,9 @@ public:
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
 
-	void loadData(const std::string &s) const;
-
+    void setTokenStream(TokenStream* stream){
+        this->tokenStream = stream;
+    }
 
 	virtual TokenStream * createOperatorFlow() = 0;
 
@@ -88,12 +89,12 @@ public:
 	void load(boost::archive::binary_iarchive &ia) {
 		ia >> *this;
 		Logger::debug("#### AnalyzerInternal Variables:   \n");
-		Logger::debug("Stemmer Flag:                  %s\n", this->stemmerFlag);
+		Logger::debug("Stemmer Flag:                  %d\n", this->stemmerFlag);
 		Logger::debug("Stemmer File Path :            %s\n", this->stemmerFilePath.c_str());
 		Logger::debug("Stop Word File Path:           %s\n", this->stopWordFilePath.c_str());
 		Logger::debug("Synonym File Path is:          %s\n", this->synonymFilePath.c_str());
-		Logger::debug("Synonym Keep Origin Flag is:   %s\n", this->synonymKeepOriginFlag);
-		Logger::debug("Analyzer Type:                 %s\n\n\n", this->analyzerType);
+		Logger::debug("Synonym Keep Origin Flag is:   %d\n", this->synonymKeepOriginFlag);
+		Logger::debug("Analyzer Type:                 %d\n\n\n", this->analyzerType);
 	    return;
 	};
 
@@ -136,8 +137,6 @@ public:
     const SynonymKeepOriginFlag& getSynonymKeepOriginFlag() const;
 
 protected:
-	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
-
 	TokenStream* tokenStream;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerFlag; // This flag shows that we want to stem or not.
