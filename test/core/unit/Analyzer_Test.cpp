@@ -48,7 +48,7 @@ void testSimpleAnalyzer()
     string src="We are美丽 Chinese";
     AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     vector<string> vectorString;
     vectorString.push_back("we");
     vectorString.push_back("are美丽");
@@ -71,7 +71,7 @@ void testStandardAnalyzer()
     string src="We are美丽 Chineseㄓㄠ";
     AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
     TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     vector<string> vectorString;
     vectorString.push_back("we");
     vectorString.push_back("are");
@@ -99,7 +99,7 @@ void testChineseAnalyzer(const string &dataDir){
     src += "END";
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath);
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     vector<string> vectorString;
     vectorString.push_back("we");
     vectorString.push_back("are");
@@ -165,7 +165,7 @@ void testLowerCase() {
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     string src = "Here IS A Set OF some inStructIOns fOR WHo has the bOOks";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     vector<string> originalWords;
     originalWords.push_back("Here");
@@ -228,7 +228,7 @@ void testStemmerFilter(string dataDir) {
     // TEST 1 (no stemming)
     // input string
     string src = "People show that they are good";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     vector<string> originalWords;
     originalWords.push_back("People");
@@ -260,7 +260,7 @@ void testStemmerFilter(string dataDir) {
     cout << endl << endl << "TEST 2: Stem English Words" << endl;
     // TEST 2 (stem English words)
     src = "Our instructions package shoWs the results";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     originalWords.clear();
     originalWords.push_back("Our");
@@ -292,7 +292,7 @@ void testStemmerFilter(string dataDir) {
     cout << endl << endl << "TEST 3: Stem English & Non-English Words" << endl;
     // TEST 3 (stem non-English words)
     src = "meanings meanings2 of Befall and pencils丽 سلام following";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     originalWords.clear();
     originalWords.push_back("meanings");
@@ -347,7 +347,7 @@ void testStopFilter(string dataDir) {
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     string src = "Here IS A Set OF some instructions for who has the books";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     vector<string> originalWords;
     originalWords.push_back("Here");
@@ -396,7 +396,7 @@ void testStopFilter(string dataDir) {
     tokenStream = chineseAnalyzer->createOperatorFlow();
 
     src = "Here IS A Set我的不过滤，这个的要过滤 是";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     vectorString.clear();
     vectorString.push_back("here");
     vectorString.push_back("is");
@@ -445,7 +445,7 @@ void testSynonymFilter(string dataDir) {
     // input string
 
     string src = "bill is in new york";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
 
     cout << "## Test 1:  " << src << endl;
@@ -478,7 +478,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new wal new wal mart new york new new york city";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 2:  " << src << endl;
     vectorString.clear();
@@ -519,7 +519,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 3:  " << src << endl;
     vectorString.clear();
@@ -563,7 +563,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b c d e f g a b c d e f t a b c d e f";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 4:  " << src << endl;
     vectorString.clear();
@@ -613,7 +613,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
 
     cout << "## Test 5:  " << src << endl;
@@ -678,7 +678,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "bill";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
 
     cout << "## Test 6:  " << src << endl;
@@ -708,7 +708,7 @@ void testSynonymFilter(string dataDir) {
     // TEST 7
     // input string
     src = "bill is in new york";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 7:  " << src << endl;
     vectorString.clear();
@@ -737,7 +737,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_DONOT_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new wal new wal mart new york new new york city";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 8:  " << src << endl;
     vectorString.clear();
@@ -768,7 +768,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_DONOT_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     // to print out the results
     cout << "## Test 9:  " << src << endl;
     vectorString.clear();
@@ -802,7 +802,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_DONOT_KEEP_ORIGIN);
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b c d e f g a b c d e f t a b c d e f";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     cout << "## Test 10:  " << src << endl;
 
     vectorString.clear();
@@ -839,7 +839,7 @@ void testSynonymFilter(string dataDir) {
             SYNONYM_DONOT_KEEP_ORIGIN);
     tokenStream = chineseAnalyzer->createOperatorFlow();
     src = "ok~dd 美丽还是美";
-    tokenStream->loadData(src);
+    tokenStream->fillInCharacters(src);
     cout << "## Test 11:  " << src << endl;
 
     vectorString.clear();

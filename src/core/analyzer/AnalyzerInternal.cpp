@@ -93,10 +93,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 
 }
 
-void AnalyzerInternal::loadData(const string &s) const {
-    this->tokenStream->loadData(s);
-}
-
 /**
  * Function to tokenize a given record.
  * @param[in] record
@@ -124,7 +120,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
                 attributeIterator);
         if (attributeValue != NULL) {
             tokens.clear();
-            loadData(*attributeValue);
+            this->tokenStream->fillInCharacters(*attributeValue);
             string currentToken = "";
             while (tokenStream->processToken()) //process the token one by one
             {
@@ -160,7 +156,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
         vector<string> &queryKeywords) const {
     queryKeywords.clear();
-    loadData(queryString);
+    this->tokenStream->fillInCharacters(queryString);
     string currentToken = "";
     while (tokenStream->processToken()) //process the token one by one
     {

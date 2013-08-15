@@ -24,14 +24,14 @@ public:
     }
     virtual bool processToken() = 0;
 
-    void loadData(const std::vector<CharType> &charVector){
-        tokenStreamContainer->loadData(charVector);
+    void fillInCharacters(const std::vector<CharType> &charVector){
+        tokenStreamContainer->fillInCharacters(charVector);
     }
 
-    void loadData(const std::string &str){
+    void fillInCharacters(const std::string &str){
         std::vector<CharType> charVector;
         utf8StringToCharTypeVector(str, charVector); 
-        tokenStreamContainer->loadData(charVector);
+        tokenStreamContainer->fillInCharacters(charVector);
     }
 
     std::vector<CharType> & getProcessedToken() {

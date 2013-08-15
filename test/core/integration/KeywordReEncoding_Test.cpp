@@ -339,7 +339,7 @@ void testAnalyzer1()
 	string src="We are美丽 Chinese";
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
 	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
-	tokenStream->loadData(src);
+	tokenStream->fillInCharacters(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are美丽");
@@ -362,7 +362,7 @@ void testAnalyzer2()
 	string src="We are美丽 Chineseㄓㄠ";
 	AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
 	TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
-	tokenStream->loadData(src);
+	tokenStream->fillInCharacters(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are");

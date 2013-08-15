@@ -39,8 +39,6 @@ public:
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
 
-	void loadData(const std::string &s) const;
-
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;
     }

@@ -18,7 +18,7 @@ namespace instantsearch
 
 class TokenStreamContainer {
 public:
-    void loadData(const std::vector<CharType> &charVector){
+    void fillInCharacters(const std::vector<CharType> &charVector){
         currentToken.clear();
         completeCharVector = charVector;
         offset = 0;
