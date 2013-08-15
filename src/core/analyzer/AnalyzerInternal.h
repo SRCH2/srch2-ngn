@@ -91,12 +91,12 @@ public:
 	void load(boost::archive::binary_iarchive &ia) {
 		ia >> *this;
 		Logger::debug("#### AnalyzerInternal Variables:   \n");
-		Logger::debug("Stemmer Flag:                  %s\n", this->stemmerFlag);
+		Logger::debug("Stemmer Flag:                  %d\n", this->stemmerFlag);
 		Logger::debug("Stemmer File Path :            %s\n", this->stemmerFilePath.c_str());
 		Logger::debug("Stop Word File Path:           %s\n", this->stopWordFilePath.c_str());
 		Logger::debug("Synonym File Path is:          %s\n", this->synonymFilePath.c_str());
-		Logger::debug("Synonym Keep Origin Flag is:   %s\n", this->synonymKeepOriginFlag);
-		Logger::debug("Analyzer Type:                 %s\n\n\n", this->analyzerType);
+		Logger::debug("Synonym Keep Origin Flag is:   %d\n", this->synonymKeepOriginFlag);
+		Logger::debug("Analyzer Type:                 %d\n\n\n", this->analyzerType);
 	    return;
 	};
 

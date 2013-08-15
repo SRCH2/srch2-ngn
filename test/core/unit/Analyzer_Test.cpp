@@ -94,8 +94,8 @@ void testStandardAnalyzer()
 
 void testChineseAnalyzer(const string &dataDir){
     string dictPath = dataDir + "/srch2_dict_ch.core";
-    string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从4月10号起，“一票制” 朱镕基";
-    src +="在民国时期，插画在中国曾经盛极一时。帮助人们窥探20世纪中国的社会万象以及各种危机和矛盾。";
+    string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从４月１０号起，“一票制” 朱镕基";
+    src +="!，。》@##%     在民国时期，插画Picture在中国曾经盛极一时。";
     src += "END";
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath);
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
@@ -115,9 +115,9 @@ void testChineseAnalyzer(const string &dataDir){
     vectorString.push_back("来自");
     vectorString.push_back("海上");
     vectorString.push_back("从");
-    vectorString.push_back("4");
+    vectorString.push_back("４");
     vectorString.push_back("月");
-    vectorString.push_back("10");
+    vectorString.push_back("１０");
     vectorString.push_back("号");
     vectorString.push_back("起");
     vectorString.push_back("一票制");
@@ -127,27 +127,14 @@ void testChineseAnalyzer(const string &dataDir){
     vectorString.push_back("在");
     vectorString.push_back("民国");
     vectorString.push_back("时期");
-    vectorString.push_back("插花");
+    vectorString.push_back("插画");
+    vectorString.push_back("picture");
     vectorString.push_back("在");
     vectorString.push_back("中国");
     vectorString.push_back("曾经");
     vectorString.push_back("盛");
     vectorString.push_back("极");
     vectorString.push_back("一时");
-    vectorString.push_back("帮助");
-    vectorString.push_back("人们");
-    vectorString.push_back("窥探");
-    vectorString.push_back("20");
-    vectorString.push_back("世纪");
-    vectorString.push_back("中国");
-    vectorString.push_back("的");
-    vectorString.push_back("社会");
-    vectorString.push_back("万象");
-    vectorString.push_back("以及");
-    vectorString.push_back("各种");
-    vectorString.push_back("危机");
-    vectorString.push_back("和");
-    vectorString.push_back("矛盾");
     vectorString.push_back("end");
 
     int i=0;
@@ -157,7 +144,7 @@ void testChineseAnalyzer(const string &dataDir){
         charVector = tokenStream->getProcessedToken();
         charTypeVectorToUtf8String(charVector, src);
         cout << src << endl;
-        //ASSERT(vectorString[i] == src);
+        ASSERT(vectorString[i] == src);
         i++;
     }
     ASSERT(i==vectorString.size());
@@ -399,6 +386,41 @@ void testStopFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete simpleAnlyzer;
+
+    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(
+            dataDir + "/srch2_dict_ch.core", 
+            "", // special characters
+            dataDir + "/stopWordsFile.txt",
+            ""
+            );
+    tokenStream = chineseAnalyzer->createOperatorFlow();
+
+    src = "Here IS A Set我的不过滤，这个的要过滤 是";
+    chineseAnalyzer->loadData(src);
+    vectorString.clear();
+    vectorString.push_back("here");
+    vectorString.push_back("is");
+    vectorString.push_back("set");
+    vectorString.push_back("我的");
+    vectorString.push_back("不");
+    vectorString.push_back("过滤");
+    vectorString.push_back("这个");
+    vectorString.push_back("要");
+    vectorString.push_back("过滤");
+    i = 0;
+    while (tokenStream->processToken()) {
+        vector<CharType> charVector;
+        charVector = tokenStream->getProcessedToken();
+        charTypeVectorToUtf8String(charVector, src);
+        ASSERT(vectorString[i] == src);
+        i++;
+    }
+    ASSERT(i == vectorString.size());
+
+    // deleting the objects
+    delete tokenStream;
+    delete chineseAnalyzer;
+
 }
 
 void testSynonymFilter(string dataDir) {
@@ -806,6 +828,41 @@ void testSynonymFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete simpleAnlyzer;
+
+    // TEST 11 : Test ChineseAnayzer
+    Logger::info("current dir:%s", dataDir.c_str());
+    AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer(
+            dataDir + "/srch2_dict_ch.core", 
+            "", // special characters
+            dataDir + "/stopWordsFile.txt",
+            dataDir + "/synonymFile.txt",
+            SYNONYM_DONOT_KEEP_ORIGIN);
+    tokenStream = chineseAnalyzer->createOperatorFlow();
+    src = "ok~dd 美丽还是美";
+    chineseAnalyzer->loadData(src);
+    cout << "## Test 11:  " << src << endl;
+
+    vectorString.clear();
+    vectorString.push_back("ok");
+    vectorString.push_back("dd");
+    vectorString.push_back("漂亮");
+    vectorString.push_back("还是");
+    vectorString.push_back("丽");
+
+    i = 0;
+    while (tokenStream->processToken()) {
+        vector<CharType> charVector;
+        charVector = tokenStream->getProcessedToken();
+        charTypeVectorToUtf8String(charVector, src);
+        cout << src << endl;
+        ASSERT(vectorString[i] == src);
+        i++;
+    }
+    ASSERT(i==vectorString.size());
+
+    // deleting the objects
+    delete tokenStream;
+    delete chineseAnalyzer;
 }
 
 void testAnalyzerSerilization(string dataDir) {
@@ -921,6 +978,7 @@ int main() {
         ASSERT (getenv("dataDir") != NULL );
         return 0;
     }
+    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
 
     string dataDir(getenv("dataDir"));
 

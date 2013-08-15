@@ -5,6 +5,7 @@
 #include "LowerCaseFilter.h"
 #include "StopFilter.h"
 #include "SynonymFilter.h"
+#include "util/Logger.h"
 
 namespace srch2{
 namespace instantsearch{

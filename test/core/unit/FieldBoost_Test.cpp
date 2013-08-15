@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 
 	/// Create an Analyzer
 	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    analyzer->setTokenStream(analyzer->createOperatorFlow());
 	map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
 	///Tokenize the Record. TokenAttributeHitsMap

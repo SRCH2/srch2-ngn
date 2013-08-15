@@ -4,6 +4,7 @@
 #include <utility>  // std::pair
 #include "CharSet.h"
 #include "util/Assert.h"
+#include "util/Logger.h"
 
 using namespace std;
 

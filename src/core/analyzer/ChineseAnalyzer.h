@@ -21,7 +21,7 @@ public:
 
     TokenStream *createOperatorFlow();
 private:
-    const std::string &mDictFilePath;
+    const std::string mDictFilePath;
 };
 
 }
