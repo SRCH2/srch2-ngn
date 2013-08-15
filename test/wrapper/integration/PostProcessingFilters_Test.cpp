@@ -402,8 +402,8 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
 
     // query = "pionn", sort: class
     resultSet02.push_back(1003);
-    resultSet02.push_back(1006);
     resultSet02.push_back(1005);
+    resultSet02.push_back(1006);
     resultSet02.push_back(1007);
 
     // query = "pionn", sort: class,citation

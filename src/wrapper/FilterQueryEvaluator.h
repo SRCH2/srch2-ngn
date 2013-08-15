@@ -129,6 +129,7 @@ public:
                 return false;
             }
         }
+        return true;
     }
 
     bool getBooleanValue(
@@ -244,6 +245,7 @@ public:
                 return false;
             }
         }
+        return true;
     }
 
     bool getBooleanValue(
@@ -299,7 +301,7 @@ public:
         // remove leading '$'
         expressionString = expressionString.substr(1);
         boost::algorithm::trim(expressionString);
-        // extract the expression, remove the 'CMPLX$' and ')' part
+        // extract the expression, remove the 'CMPLX(' and ')' part
         return true;
     }
     bool parseComplxExpression(string &input, string &output) {
@@ -421,6 +423,15 @@ public:
         return false; // TODO : should change to ASSERT(false); because it should never reach here
     }
 
+    bool validate(const Schema & schema){
+        for(std::vector<QueryExpression *>::iterator criterion = criteria.begin();
+                criterion != criteria.end() ; ++criterion){
+            if(! (*criterion)->validate(schema)){
+                return false;
+            }
+        }
+        return true;
+    }
     bool parseAndAddCriterion(string &fq) {
         bool parseNextTerm = true;
         while (parseNextTerm) {
@@ -451,12 +462,13 @@ public:
             } else {
                 // remove the ':'
                 fqField = fqField.substr(0, fqField.length() - 1);
+                boost::algorithm::trim(fqField);
                 // check if it's a range query or asignment.
                 if ('[' == fq.at(0)) {
                     Logger::debug(" '[' found, possible range query");
                     string keyword = "";
                     fq = fq.substr(1);
-                    isParsed = this->addCriterion(fq, Range, fqField); // it parses fq for range query parameters
+                    isParsed = this->addCriterion(fq, FqKeywordTypeRange, fqField); // it parses fq for range query parameters
                     if (!isParsed) {
                         //this->isParsedError = true;
                         return false;
@@ -464,7 +476,7 @@ public:
                 } else {
                     Logger::debug(" '[' not found, possible assignment query");
                     string keyword = "";
-                    isParsed = this->addCriterion(fq, Assignment, fqField); // it parses fq for range query parameters
+                    isParsed = this->addCriterion(fq, FqKeywordTypeAssignment, fqField); // it parses fq for range query parameters
                     if (!isParsed) {
                         //this->isParsedError = true; //TODO:
                         return false;
@@ -544,7 +556,7 @@ private:
             // generate MessageWarning and use AND
             this->messages->push_back(
                     make_pair(MessageWarning,
-                            "Invalid boolean operator specified as term boolean operator "
+                            "Invalid boolean operator specified as fq term boolean operator "
                                     + termOperator
                                     + ", ignoring it and using 'AND'."));
             *this->termFQBooleanOperator =

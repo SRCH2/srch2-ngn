@@ -56,6 +56,8 @@ private:
 
     bool validateExistenceOfAttributesInFacetFiler();
 
+    bool validateFilterQuery();
+
 //    // this function validates the value stored in "value" based on the type which is passed to it by "type"
 //    // for example, if the string is "123rt" and the type is UNSIGNED it returns false
 //    bool validateValueWithType(srch2::instantsearch::FilterType type,
