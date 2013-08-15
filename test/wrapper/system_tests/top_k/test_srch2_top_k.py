@@ -111,7 +111,13 @@ if __name__ == "__main__":
         print "python test_srch2_top_k.py ${query} ${topk_A} ${topk_B}"
 
         #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
-    
+    print "======================================="
+    try:
+        s = commands.getoutput('ps aux | grep srch2-search-server')
+        stat = s.split()
+        os.kill(int(stat[1]), signal.SIGUSR1)
+    except: 
+        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+        a = s.split()
+        cmd = "kill -9 {0}".format(a[-1])
+        os.system(cmd) 
