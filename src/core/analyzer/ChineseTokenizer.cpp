@@ -67,7 +67,7 @@ bool ChineseTokenizer::incrementToken(){
 }
 
 /**
- * Identifies the stop of a sequence of Chinese characters.
+ * Identifies the end of consecutive Chinese characters in a sequence of characters
  * @return: the end position of the sequence,
  *          Note: the last position is at "end-1".
  */
