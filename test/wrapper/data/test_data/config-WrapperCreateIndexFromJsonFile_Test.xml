@@ -1,0 +1,507 @@
+<config>
+    <!-- SRCH2 Home directory -->
+    <srch2Home>./</srch2Home> <!-- Required -->
+    
+
+
+    <!-- srch2
+        # License Key file. Make sure to set the path to the srch2 license key
+        # file provided with the package change
+        # REQUIRED
+        license-file=${CMAKE_SOURCE_DIR}/test/Developer_License/srch2_license_key.txt
+    -->
+    <licenseFile>${srch2home}/srch2_license_key.txt</licenseFile>
+    
+    <!-- srch2
+        # ports to listen. Make sure these are open. To access over internet, these 
+        # ports must be open for outside traffic.
+        # REQUIRED
+        old: listening-hostname=127.0.0.1
+        old: listening-port=8081
+    --><!--
+        Is there a way to change the port (8983) of solr 'example'? [Solr using an 'example' schema, and some sample data.]
+    
+        that will depend on your servlet container.  (jetty, resin, tomcat, etc...) 
+        If you are running jetty from the example, you can change the port by   
+        adding -Djetty.port=1234 to the command line.  The port is configured   
+        in example/etc/jetty.xml 
+
+        the relevant line is: 
+       <Set name="port"><SystemProperty name="jetty.port" default="8983"/></Set>  --> 
+    <listeningHostname>127.0.0.1</listeningHostname> <!-- Required -->
+    <listeningPort>8081</listeningPort> <!-- Required -->
+
+
+    
+    
+    <!--  SOLR
+        # Deprecated. Changed to /home/findr/custmrID/index/ for standardizing 
+        srch2: index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
+    -->
+    <dataDir>${srch2home}/</dataDir>
+    
+    
+    <!-- srch2
+        # The file path for file import. File must be line json file.
+        # REQUIRED, if data-source-type is set to 0.
+        data-file-path=${CMAKE_SOURCE_DIR}/test/wrapper/data/sample-data.json
+        
+        NOTE: you need to write a program to post the docs
+    -->
+    <dataFile>${srch2home}/sample-data.json</dataFile>
+        
+    
+    
+
+        
+    <indexConfig>
+        <!--
+            # Boost values for searchable attributes.  A boost value is in the
+            # range [1,100].  If the value is outside the range, it will be set to
+            # 100.  Specify the boost values as comma separated entries. For
+            # example, the boosts for four searchable attributes can be specified
+            # as 10,35,55,15.
+            #
+            # OPTIONAL.  
+            attribute-boosts=2,1
+        -->
+        <fieldBoost>relevance^10 name^7</fieldBoost>
+        
+        <!-- Srch2: I could not find it for solr. TODO: need to find it in SOLR.
+            # Attribute used as the boost value of a record
+            # Need to be float type in the json objects in the data file
+            attribute-record-boost=IGNORE
+            
+            SORL:
+            bq:
+            A raw query string (in the SolrQuerySyntax) that will be included with the user's query to influence the score.
+            If this is a BooleanQuery with a default boost (1.0f) then the individual clauses will be added directly to the main query. Otherwise, the query will be included as is.
+                    // TODO: more research. SOLR supports it.
+
+        -->
+        <recordBoostField></recordBoostField>
+        
+        
+        <!-- srch2          
+            # Default query term boost
+            # OPTIONAL. Defaults to 1
+            #default-query-term-boost=1
+        -->
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+        
+    
+        <!--srch2 -->
+        <!-- TODO: we should compatible it with solr finally. keep it ro remove it.
+            - if the index is there, automatically load it.
+            
+            -- SOLR by default load the indexes.
+        -->
+        <!-- index-dir load or create 
+            # 0 - Create the index-dir from scratch
+            # 1 - Load from index-dir directly, skip creating an index initially.
+            # OPTIONAL. Default:0
+        -->
+        <indexLoadCreate>0</indexLoadCreate>
+        
+    </indexConfig>
+ 
+ 
+ 
+ 
+    <query>
+        <!-- SOLR
+            <library>rankingalgorithm</library>
+            
+                <rankingalgorithm>
+                    <algorithm>simple</algorithm>
+                </rankingalgorithm>
+            link:  http://solr-ra.tgels.com/papers/Solr_with_RankingAlgorithm_1.2.pdf
+            
+            SRCH2:          
+            #record-score-expression=doc_boost+(1/(doc_length+1))
+            record-score-expression=idf_score*doc_boost
+        -->
+        <rankingalgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingalgorithm>
+
+
+        <!--srch2           
+            # Default query term similarity boost
+            # OPTIONAL. Defaults to 0.5
+            #default-query-term-similarity-boost=0.9
+        -->
+        <queryTermSimilarityBoost></queryTermSimilarityBoost>
+        
+        <!--srch2           
+            # Default query term similarity boost
+            # OPTIONAL. Defaults to 0.5
+            #default-query-term-length-boost=0.5
+        -->
+        <queryTermLengthBoost></queryTermLengthBoost>
+        
+        
+        <!-- srch2:
+            # Penalty for a prefix match.  This value is used to multiply the
+            # score of record for a term.
+            # default value = 0.95
+            prefix-match-penalty=0.95 
+        -->
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                
+
+
+
+
+
+        <!-- srch2:
+                // TODO: add a default order for each sortable field
+            # Attributes that can be used to sort the results.
+            # OPTIONAL
+            # e.g. attributes-sort=id,relevance
+            attributes-sort=IGNORE
+            
+            NOTE: we don't need the attribute-sort-default-value any more. Users need to provide the default value in schema.xml.
+            # Default values of the attributes used to sort the results.
+            # REQUIRED if attributes-sort is set.
+            # e.g. attributes-sort-default-value=0,0.5
+            attributes-sort-default-value=IGNORE
+            
+            NOTE: we don't need the attribute-sort-type any more. The type of the attributes are set in the schema.xml.
+            # Data type of attributes used to sort results:
+            # The attribute values can be int, float or string in the JSON record.
+            # Here it specifies what type the engine will parse the attribute values to.
+            #  0: if unsigned;
+            #  1: if float.
+            # REQUIRED if attributes-sort is set.
+            # e.g. attributes-sort-type=0,1
+            attributes-sort-type=IGNORE
+        -->     
+        <sortField>id</sortField>
+        <sortFieldType>0</sortFieldType> <!-- should be removed later -->
+        <sortFieldDefaultValue>1</sortFieldDefaultValue> <!-- should be removed later-->
+            
+            
+        
+        <!-- SOLR
+            # Cache size in bytes, must be 6,553,600 < x < 65,536,000
+            # Cache size can be set from a minimum of 50MB to a maximum of 500MB.
+            # OPTIONAL. Defaults to 50MB = 6553600 bytes.
+            #cache-size=1073741824
+        -->
+        <cacheSize>6553601</cacheSize>
+        
+        
+        <!-- SOLR:
+            Number of results to retrieve
+            # OPTIONAL. Defaults to 10.
+            old: default-results-to-retrieve=10 
+        -->
+        <rows>10</rows>
+        
+        
+        <!-- srch2
+            # number of searcher threads to be run by the server. Recommended, set it 
+            # to at most the number of processor cores.
+            # OPTIONAL. Defaults to 2.
+            # number-of-threads=2
+            
+            SOLR: Solr is a neat webapp. It doesn't spins threads (almost). It's spin in
+            servlet container threads. You need to configure tomcat/jetty.
+        -->
+        <maxSearchThreads>2</maxSearchThreads>
+        
+        
+        
+        
+        <!-- srch2
+            # Flag to indicate whether the attribute-based search is supported.
+            # 0 - NO
+            # 1 - YES
+            # Note that to support attribute-based search, the number of searchable attributes cannot be bigger than 31.
+            support-attribute-based-search=0
+        -->
+        <fieldBasedSearch>0</fieldBasedSearch>
+        
+        
+        
+    
+        <!-- srch2: SOLR always finds all the results and ranks them
+            in the query result
+            # 0 if topk,
+            # 1 if advanced
+            # OPTIONAL. Defaults to 0
+            old: default-searcher-type=0
+        -->
+        <searcherType>0</searcherType>
+
+
+
+        
+        <!-- srch2: Solr doesn't have it in config file, uses ~ in query to do a fuzzy search 
+            type of matching for query terms
+            # 0 - exact match
+            # 1 - fuzzy match
+            # OPTIONAL. Defaults to 0
+            old: default-query-term-match-type=0
+        -->
+        <queryTermMatchType>0</queryTermMatchType>
+        
+                    
+            
+        <!-- srch2:  Solr doesn't have it in config file, uses * in query to do a prefix match search 
+            type for query terms.
+            # 0 - prefix term
+            # 1 - complete term, 
+            # OPTIONAL. Defaults to 0
+            old: default-query-term-type
+        -->
+        <queryTermType>0</queryTermType>
+        
+
+    
+        
+            
+        <!-- srch2: could not find the same thing in solr.
+            - Can we merge it to 
+        -->
+        <queryResponseWriter>
+            <!--
+                # JSON=0 or JSONP=1. 
+                # OPTIONAL. Defaults to 0
+            -->
+            <responseFormat>0</responseFormat>
+            
+            <!--
+                - Merge the two following:
+                1- 
+                # Format of each json search response.
+                #  0: format "rid,edit_dist,matching_prefix,in_memory_record";
+                #  1: format "rid,edit_dist,matching_prefix". In this case, the engine will not store records in memory.
+                #  2: format "rid,edit_dist,matching_prefix,attributes_to_return".
+                # OPTIONAL. Its default value is 0.
+                search-response-format=0
+                    
+                2- 
+                # REQUIRED if search-response-format=2
+                # These are attributes returned to the user.
+                # Set it to IGNORE if no attributes is wanted.
+                attributes-to-return=lat,lng    
+
+            
+            -->
+            <responseContent type="0" ></responseContent>
+            
+        </queryResponseWriter>
+        
+        
+        
+        
+        <!-- 
+        // Remove (Read the source code)
+        
+        #################### Do NOT change the following parameter ###########################
+        # 1 - File BootStrap True - Import data from json file at file path "file-path".
+        # 0 - File bootstrap False
+        # OPTIONAL. Its default value is 1
+        data-source-type=1
+        -->
+        <dataSourceType>1</dataSourceType>
+        
+        <!--
+        // Remove (Read the source code)
+        #################### Do NOT change the following parameter ###########################
+        # OPTIONAL. Defaults to 0
+        write-api-type=0
+        -->
+        <writeApiType></writeApiType>
+    </query>
+ 
+ 
+ 
+ 
+    <updatehandler>
+        <!-- SOLR TODO: SHOULD BE REMOVED. This is not in the conf.ini v.3 anymore. 
+                  - was not it the code.!!!!
+         --> 
+        <maxDocs>10000</maxDocs>
+
+        <!-- srch2: 
+            memory-limit=100000 
+        --> 
+        <maxMemory>100000</maxMemory>
+        
+        
+            
+            
+
+        <!-- SOLR:
+            SOLR Example:
+            <mergePolicy class="org.apache.lucene.index.TieredMergePolicy">
+                <int name="maxMergeAtOnce">10</int>
+                <int name="segmentsPerTier">10</int>
+            </mergePolicy>
+            
+            srch2:
+            ######################### For real-time updates ########################
+            # The number of seconds after which newly inserted/deleted records
+            # are merged into the indexes.  Its minimum value is 10 (seconds).
+            merge-every-n-seconds=15
+
+            # The number of write operations after which newly inserted and deleted records
+            # are "merged" into the indexes.
+            merge-every-m-writes=100
+        -->
+        <mergePolicy>
+          <mergeEveryNSeconds>15</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
+        </mergePolicy>
+        
+        
+        <!-- SOLR
+            SOLR: <config><updateHandler>#</updateHandler></config>  
+                <updateLog>
+                    <str name="dir">${solr.ulog.dir:}</str>
+                </updateLog>
+        
+        1-
+            Path to error log file
+            # Deprecated. Changed to /home/findr/custmrID/log/srch2-error.log for standardizing  
+            old: error-log-file=/path/to/log/
+        
+        2-
+            Path to access log file
+            # Deprecated. Changed to /home/findr/custmrID/log/srch2-access.log for standardizing # bookkeepin
+            # access-log-file=/path/to/log/
+            
+        3-
+            # Log level
+            # 0 SILENT
+            # 1 ERROR
+            # 2 WARN
+            # 3 INFO
+            # OPTIONAL. Default value is 3 INFO
+            log-level=3
+        -->
+
+        <updateLog>
+            <logLevel>3</logLevel>
+            <errorLogFile>${srch2home}/srch2_Error_log</errorLogFile> //It is not used.
+            <accessLogFile>${srch2home}/srch2_log</accessLogFile>
+        </updateLog>
+    
+    </updatehandler>
+
+</config>
+
+
+<schema name="SRCH2" version="3">
+ 
+ <fields>
+
+   <!-- SOLR
+    # Attributes we want to search on in addition to the primary key.
+    # Specify them as comma separated entries, e.g., title,name,address,affiliation.
+    # REQUIRED
+    old: attributes-search=name,category
+    
+    - Currently we are not spporting "stored", "default" and "required". In future we can add these attributes to each field.
+    - Currently the only default type that we support is "text", "location_longtitude" and "location_latitude". 
+        Later in future we can support other types such as "int", "float" and etc
+   -->
+   <field name="id" type="text" indexed="false" /> 
+   <field name="relevance" type="text" indexed="true" />
+   <field name="name" type="text" indexed="true" />
+
+   
+   
+   <!-- SOLR
+        - spatial search
+        To do spatial search, you need to set the types of the fields that you want them as lantitude and longtitude as "location_latitude" and "location_longitude" accordingly.
+        For example:
+        
+        <field name="lat" type="location_latitude" indexed="true" />
+        <field name="lng" type="location_longtitude" indexed="true" />
+        
+        <!--
+        srch2:  => CAN BE REMOVED (if there are fields having location type, the index should be geo, otherwise will be text type index.)
+            # Index type.
+            #  0: Text Index
+            #  1: Geo+Text Index
+            # REQUIRED
+            index-type=0
+            #index-type=1 # Use this line instead of the previous line for geo search
+        
+            #attribute-latitude=lat # Use these 2 lines instead of the previous 2 for geo search
+            #attribute-longitude=lng
+   -->
+ </fields>
+
+
+ <!-- SOLR
+    # Primary key attribute of the data
+    # REQUIRED
+    primary-key=id
+
+    # Flag to indicate whether the primary key is searchable.
+    # 0 - NO
+    # 1 - YES
+    # OPTIONAL. Default value is 0
+    is-primary-key-searchable=0  => REMOVED
+ -->
+ <uniqueKey>id</uniqueKey>
+    
+ 
+  <types>
+    <!--  
+        # REQUIRED if index-type=1
+        # Need to be float type in the json objects in the data file
+        old: attribute-latitude=IGNORE
+        old: attribute-longitude=IGNORE
+    -->
+    <fieldType name="location_latitude" type="float" />
+    <fieldType name="location_longitude" type="float" />
+
+    <fieldType name="text_en">
+        <analyzer> <!-- solr has type for "Analyzer" such as "index", "query" -->
+            <!--
+                # Enable/Disabling the stemmer
+                # The vali values are:
+                # 0: To disable the stemmer
+                # 1: To enable the stemmer
+                default-stemmer-flag=0
+                # stemmer dictionary file
+                stemmer-file=StemmerHeadwords.txt
+                
+                // TODO: control of using dictionary
+            -->
+            <filter name="PorterStemFilter" dictionary="./srch2_data/StemmerHeadwords.txt" />
+            
+            <!--
+                # Enable/Disabling the StopWord Filter
+                # The vali values are:
+                # IGNORE: To disable the StopWord Filter
+                # path-to-the-stop-words-file: To enable the StopWord Filter
+                stop-filter-file-path=IGNORE
+            -->
+            <filter name="StopFilter" words="./srch2_data/lang/stopwords_en.txt" />
+            
+            <!-- 
+                # Enable/Disabling the Synonym Filter
+                # The vali values are:
+                # IGNORE: To disable the Synonym Filter
+                # path-to-the-synonym-file: To enable the Synonym Filter
+                synonym-filter-file-path=IGNORE
+
+                # Replace the synonym with original words or keep the orginal words too
+                # The vali values are:
+                # 0: Do not keep the original words
+                # 1: Keep the original words
+                default-synonym-keep-origin-flag=1
+                // check if we need to put it in lang
+            -->
+            <filter name="SynonymFilter" synonyms="./srch2_data/synonyms.txt"  expand="true"/>      
+        </analyzer>
+    </fieldType>
+ </types>
+</schema>

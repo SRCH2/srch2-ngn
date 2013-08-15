@@ -10,9 +10,9 @@
 #include <assert.h>
 #include "util/Assert.h"
 #include "util/Logger.h"
-//#include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <sys/stat.h>
+
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -33,7 +33,6 @@ void ConfigManager::loadConfigFile() {
         //TODO: TO_ASK: do we need cout or not?
         cout << "file " << this->configFile << " parsed with errors." << endl;
         Logger::debug("%s parsed with errors.\n", this->configFile.c_str());
-//        ASSERT(false);
         return;
     }
 
@@ -49,9 +48,21 @@ void ConfigManager::loadConfigFile() {
     }
 }
 
-void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
-        std::stringstream &parseError) {
+void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError) {
     string tempUse = ""; // This is just for temporary use.
+
+
+    // srch2Home is a required field
+    xml_node configAttribute = configDoc.child("config").child("srch2Home");
+    if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
+        this->srch2Home = string(configAttribute.text().get());
+    } else {
+        parseError << "srch2Home is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+
     /*
      * schema: beginning
      */
@@ -63,7 +74,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     vector<string> searchableFieldsVector;
     vector<string> searchableFieldTypesVector;
     vector<bool> searchableFieldIndexsVector;
-    xml_node configAttribute = configDoc.child("schema").child("fields");
+    configAttribute = configDoc.child("schema").child("fields");
     if (configAttribute) {
         for (xml_node field = configAttribute.first_child(); field; field =
                 field.next_sibling()) {
@@ -72,8 +83,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                 if (string(field.attribute("name").value()).compare("") != 0
                         && string(field.attribute("type").value()).compare("")
                                 != 0
-                        && string(field.attribute("indexed").value()).compare(
-                                "") != 0) {
+                        && string(field.attribute("indexed").value()).compare("") != 0) {
 
                     searchableFieldsVector.push_back(
                             string(field.attribute("name").value()));
@@ -101,14 +111,12 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                     }
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
-                    if (string(field.attribute("type").value()).compare(
-                            "location_latitude") == 0) {
+                    if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
                         hasLatitude = true;
                         this->fieldLatitude = string(
                                 field.attribute("name").value());
                     }
-                    if (string(field.attribute("type").value()).compare(
-                            "location_longitude") == 0) {
+                    if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
                         hasLongitude = true;
                         this->fieldLongitude = string(
                                 field.attribute("name").value());
@@ -190,39 +198,32 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                         if (string(field.name()).compare("filter") == 0) {
                             if (string(field.attribute("name").value()).compare(
                                     "PorterStemFilter") == 0) { // STEMMER FILTER
-                                if (string(
-                                        field.attribute("dictionary").value()).compare(
-                                        "") != 0) { // the dictionary for porter stemmer is set.
+                                if (string(field.attribute("dictionary").value()).compare("") != 0) { // the dictionary for porter stemmer is set.
                                     this->stemmerFlag = true;
-                                    this->stemmerFile =
-                                            string(
-                                                    field.attribute(
-                                                            "dictionary").value());
+                                    this->stemmerFile = string(field.attribute("dictionary").value());
+                                    if (!(this->isPathFileValid(this->stemmerFile))) {
+                                        this->stemmerFile = this->srch2Home + this->stemmerFile;
+                                    }
                                 }
-                            } else if (string(field.attribute("name").value()).compare(
-                                    "StopFilter") == 0) { // STOP FILTER
-                                if (string(field.attribute("words").value()).compare(
-                                        "") != 0) { // the words file for stop filter is set.
-                                    this->stopFilterFilePath = string(
-                                            field.attribute("words").value());
+                            } else if (string(field.attribute("name").value()).compare("StopFilter") == 0) { // STOP FILTER
+                                if (string(field.attribute("words").value()).compare("") != 0) { // the words file for stop filter is set.
+                                    this->stopFilterFilePath = string(field.attribute("words").value());
+                                    if (!(this->isPathFileValid(this->stopFilterFilePath))) {
+                                        this->stopFilterFilePath = this->srch2Home + this->stopFilterFilePath;
+                                    }
                                 }
-                            } else if (string(field.attribute("name").value()).compare(
-                                    "SynonymFilter") == 0) {
-                                if (string(field.attribute("synonyms").value()).compare(
-                                        "") != 0) { // the dictionary file for synonyms is set
-                                    this->synonymFilterFilePath =
-                                            string(
-                                                    field.attribute("synonyms").value());
+                            } else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
+                                if (string(field.attribute("synonyms").value()).compare("") != 0) { // the dictionary file for synonyms is set
+                                    this->synonymFilterFilePath = string(field.attribute("synonyms").value());
+                                    if (!(this->isPathFileValid(this->synonymFilterFilePath))) {
+                                        this->synonymFilterFilePath = this->srch2Home + this->synonymFilterFilePath;
+                                    }
                                     // checks the validity of boolean provided for 'expand'
-                                    tempUse = string(
-                                            field.attribute("expand").value());
+                                    tempUse = string(field.attribute("expand").value());
                                     if (this->isValidBool(tempUse)) {
-                                        this->synonymKeepOrigFlag =
-                                                field.attribute("expand").as_bool();
+                                        this->synonymKeepOrigFlag = field.attribute("expand").as_bool();
                                     } else {
-                                        parseError
-                                                << "Config File Error: can not convert from '"
-                                                << tempUse << "' to boolean\n";
+                                        parseError << "Config File Error: can not convert from '" << tempUse << "' to boolean\n";
                                         configSuccess = false;
                                         return;
                                     }
@@ -247,6 +248,9 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     configAttribute = configDoc.child("config").child("licenseFile");
     if (configAttribute && configAttribute.text()) { // checks if config/licenseFile exists and have any text value or not
         this->licenseKeyFile = string(configAttribute.text().get());
+        if(!(this->isPathFileValid(this->licenseKeyFile))) {
+            this->licenseKeyFile = this->srch2Home + this->licenseKeyFile;
+        }
     } else {
         parseError << "License key is not set.\n";
         configSuccess = false;
@@ -256,8 +260,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     // listeningHostname is a required field
     configAttribute = configDoc.child("config").child("listeningHostname");
     if (configAttribute && configAttribute.text()) { // checks if config/listeningHostname exists and have any text value or not
-        this->httpServerListeningHostname = string(
-                configAttribute.text().get());
+        this->httpServerListeningHostname = string(configAttribute.text().get());
     } else {
         parseError << "listeningHostname is not set.\n";
         configSuccess = false;
@@ -274,23 +277,15 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
         return;
     }
 
-    // srch2Home is a required field
-    configAttribute = configDoc.child("config").child("srch2Home");
-    if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
-        this->srch2Home = string(configAttribute.text().get());
-    } else {
-        parseError << "srch2Home is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
     // dataDir is a required field
     configAttribute = configDoc.child("config").child("dataDir");
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
         this->indexPath = string(configAttribute.text().get());
+        if(!(this->isPathFileValid(this->indexPath))) {
+           this->indexPath = this->srch2Home + this->indexPath;
+        }
     } else {
-        parseError
-                << "Path of index file is not set. You should set it as <dataDir>path/to/index/file</dataDir> in the config file.\n";
+        parseError << "Path of index file is not set. You should set it as <dataDir>path/to/index/file</dataDir> in the config file.\n";
         configSuccess = false;
         return;
     }
@@ -299,17 +294,18 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     configAttribute = configDoc.child("config").child("dataFile");
     if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
         this->filePath = string(configAttribute.text().get());
+        if(!(this->isPathFileValid(this->filePath))) {
+           this->filePath = this->srch2Home + this->filePath;
+        }
     } else {
-        parseError
-                << "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+        parseError << "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
         configSuccess = false;
         //TODO:  dataSourceType = FILEBOOTSTRAP_FALSE;
         return;
     }
 
     //fieldBoost
-    configAttribute = configDoc.child("config").child("indexConfig").child(
-            "fieldBoost");
+    configAttribute = configDoc.child("config").child("indexConfig").child("fieldBoost");
     map<string, unsigned> boostsMap;
     // spliting the field boost input and put them in boostsMap
     if (configAttribute && configAttribute.text()) {
@@ -324,16 +320,13 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                     make_pair(searchableFieldsVector[i], make_pair(0, 1)));
         } else {
             this->searchableAttributesTriple.insert(
-                    make_pair(searchableFieldsVector[i],
-                            make_pair(0,
-                                    boostsMap[searchableFieldsVector[i]])));
+                    make_pair(searchableFieldsVector[i], make_pair(0, boostsMap[searchableFieldsVector[i]])));
         }
     }
     // checks the validity of the values in boostsMap
     if (!this->isValidBoostFields(boostsMap)) {
         configSuccess = false;
-        parseError
-                << "Fields that are provided in the boostField do not match with the defined fields.";
+        parseError << "Fields that are provided in the boostField do not match with the defined fields.";
         return;
     }
     // give each searchable attribute an id based on the order in the triple
@@ -350,8 +343,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // recordBoostField is an optional field
     this->recordBoostFieldFlag = false;
-    configAttribute = configDoc.child("config").child("indexConfig").child(
-            "recordBoostField");
+    configAttribute = configDoc.child("config").child("indexConfig").child("recordBoostField");
     if (configAttribute && configAttribute.text()) {
         this->recordBoostFieldFlag = true;
         this->recordBoostField = string(configAttribute.text().get());
@@ -359,24 +351,21 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // queryTermBoost is an optional field
     this->queryTermBoost = 1; // By default it is 1
-    configAttribute = configDoc.child("config").child("indexConfig").child(
-            "defaultQueryTermBoost");
+    configAttribute = configDoc.child("config").child("indexConfig").child("defaultQueryTermBoost");
     if (configAttribute && configAttribute.text()) {
         string qtb = configAttribute.text().get();
         if (this->isValidQueryTermBoost(qtb)) {
             this->queryTermBoost = configAttribute.text().as_uint();
         } else {
             configSuccess = false;
-            parseError
-                    << "The value provided for queryTermBoost is not a (non-negative)number.";
+            parseError << "The value provided for queryTermBoost is not a (non-negative)number.";
             return;
         }
     }
 
     // indexCreateOrLoad is an optional field
     this->indexCreateOrLoad = INDEXCREATE; // By default it is INDEXCREATE
-    configAttribute = configDoc.child("config").child("indexConfig").child(
-            "indexLoadCreate");
+    configAttribute = configDoc.child("config").child("indexConfig").child("indexLoadCreate");
     if (configAttribute && configAttribute.text()) {
         string ioc = configAttribute.text().get();
         if (this->isValidIndexCreateOrLoad(ioc)) {
@@ -385,16 +374,14 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                             INDEXCREATE : INDEXLOAD;
         } else {
             configSuccess = false;
-            parseError
-                    << "The value provided for indexCreateOrLoad is not a valid. It should be 0 or 1.";
+            parseError << "The value provided for indexCreateOrLoad is not a valid. It should be 0 or 1.";
             return;
         }
     }
 
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
-    configAttribute = configDoc.child("config").child("query").child(
-            "rankingAlgorithm").child("recordScoreExpression");
+    configAttribute = configDoc.child("config").child("query").child("rankingAlgorithm").child("recordScoreExpression");
     if (configAttribute && configAttribute.text()) {
         string exp = configAttribute.text().get();
         boost::algorithm::trim(exp);
@@ -402,16 +389,14 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
             this->scoringExpressionString = exp;
         } else {
             configSuccess = false;
-            parseError
-                    << "The expression provided for recordScoreExpression is not a valid.";
+            parseError << "The expression provided for recordScoreExpression is not a valid.";
             return;
         }
     }
 
     // indexCreateOrLoad is an optional field
     this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryTermSimilarityBoost");
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidQueryTermSimilarityBoost(qtsb)) {
@@ -426,8 +411,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // queryTermLengthBoost is an optional field
     this->queryTermLengthBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryTermLengthBoost");
+    configAttribute = configDoc.child("config").child("query").child("queryTermLengthBoost");
     if (configAttribute && configAttribute.text()) {
         string qtlb = configAttribute.text().get();
         if (this->isValidQueryTermLengthBoost(qtlb)) {
@@ -442,8 +426,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // prefixMatchPenalty is an optional field.
     this->prefixMatchPenalty = 0.95; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child(
-            "prefixMatchPenalty");
+    configAttribute = configDoc.child("config").child("query").child("prefixMatchPenalty");
     if (configAttribute && configAttribute.text()) {
         string pm = configAttribute.text().get();
 
@@ -457,14 +440,12 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     }
 
     // sortField is an optional field
-    //XXX TODO: the types should be removed.
+    //TODO: the types should be removed.
     configAttribute = configDoc.child("config").child("query").child(
             "sortField");
     if (configAttribute && configAttribute.text()) {
-        xml_node configAttributesortType = configDoc.child("config").child(
-                "query").child("sortFieldType");
-        xml_node configAttributesortDefaultValue =
-                configDoc.child("config").child("query").child(
+        xml_node configAttributesortType = configDoc.child("config").child("query").child("sortFieldType");
+        xml_node configAttributesortDefaultValue = configDoc.child("config").child("query").child(
                         "sortFieldDefaultValue");
         // If sort field is provided, sort type and sort default values should be provided too
         if (configAttributesortType && configAttributesortType.text()
@@ -475,11 +456,8 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
             vector<srch2is::FilterType> fieldTypes;
             vector<string> fieldDefaultValues;
 
-            this->splitString(string(configAttribute.text().get()), ",",
-                    fieldNames);
-            this->splitString(
-                    string(configAttributesortDefaultValue.text().get()), ",",
-                    fieldDefaultValues);
+            this->splitString(string(configAttribute.text().get()), ",", fieldNames);
+            this->splitString(string(configAttributesortDefaultValue.text().get()), ",", fieldDefaultValues);
             {
                 vector<string> fieldTypesTemp;
                 this->splitString(string(configAttributesortType.text().get()),
@@ -494,8 +472,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                         }
                     }
                 } else {
-                    parseError
-                            << "provided field-sort-types are not set correctly.\n";
+                    parseError << "provided field-sort-types are not set correctly.\n";
                     configSuccess = false;
                     return;
                 }
@@ -509,16 +486,13 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
                             fieldDefaultValues[iter]);
                 }
             } else {
-                parseError
-                        << "field-sort related options were not set correctly.\n"
+                parseError << "field-sort related options were not set correctly.\n"
                         << " the number of field names and field types and field default values don't match\n";
                 configSuccess = false;
                 return;
             }
-
         } else {
-            parseError
-                    << "Attributes-sort related options were not set correctly.\n";
+            parseError << "Attributes-sort related options were not set correctly.\n";
             configSuccess = false;
             return;
         }
@@ -527,10 +501,8 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // validating the values
     if (!(this->isValidSortField(this->sortableAttributes)
-            && this->isValidSortFieldDefaultValue(
-                    this->sortableAttributesDefaultValue))) {
-        parseError
-                << "Attributes-sort related options were not set correctly.\n";
+            && this->isValidSortFieldDefaultValue(this->sortableAttributesDefaultValue))) {
+        parseError << "Attributes-sort related options were not set correctly.\n";
         configSuccess = false;
         return;
     }
@@ -538,13 +510,11 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     // cacheSize is an optional field
     unsigned defaultCacheSize = 50 * 1048576; // 50MB
     this->cacheSizeInBytes = defaultCacheSize; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child(
-            "cacheSize");
+    configAttribute = configDoc.child("config").child("query").child("cacheSize");
     if (configAttribute && configAttribute.text()) {
         string cs = configAttribute.text().get();
         if (this->isValidCacheSize(cs)) {
-            this->cacheSizeInBytes = configAttribute.text().as_uint(
-                    defaultCacheSize);
+            this->cacheSizeInBytes = configAttribute.text().as_uint(defaultCacheSize);
         } else {
             parseError << "cache size provided is not set correctly.\n";
             configSuccess = false;
@@ -568,8 +538,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // maxSearchThreads is an optional field
     this->numberOfThreads = 1; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child(
-            "maxSearchThreads");
+    configAttribute = configDoc.child("config").child("query").child("maxSearchThreads");
     if (configAttribute && configAttribute.text()) {
         string mst = configAttribute.text().get();
         if (isValidMaxSearchThreads(mst)) {
@@ -583,13 +552,11 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // fieldBasedSearch is an optional field
     this->supportAttributeBasedSearch = false; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child(
-            "fieldBasedSearch");
+    configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
     if (configAttribute && configAttribute.text()) {
         string fbs = configAttribute.text().get();
         if (this->isValidFieldBasedSearch(fbs)) {
-            this->supportAttributeBasedSearch =
-                    configAttribute.text().as_bool();
+            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
         } else {
             parseError << "supportAttributeBasedSearch is not set correctly.\n";
             configSuccess = false;
@@ -597,22 +564,15 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
         }
     }
 
-    // searcherType
-    // TODO: I should put it back.
-    ///////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////
     // queryTermMatchType is an optional field
     this->exactFuzzy = false; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryTermMatchType");
+    configAttribute = configDoc.child("config").child("query").child("queryTermMatchType");
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidQueryTermMatchType(qtmt)) {
             this->exactFuzzy = configAttribute.text().as_bool();
         } else {
-            parseError
-                    << "The queryTermMatchType that is provided is not valid";
+            parseError << "The queryTermMatchType that is provided is not valid";
             configSuccess = false;
             return;
         }
@@ -620,8 +580,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // queryTermType is an optional field
     this->queryTermType = false;
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryTermType");
+    configAttribute = configDoc.child("config").child("query").child("queryTermType");
     if (configAttribute && configAttribute.text()) {
         string qt = configAttribute.text().get();
         if (this->isValidQueryTermType(qt)) {
@@ -635,8 +594,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // responseFormat is an optional field
     this->searchResponseJsonFormat = 0; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryResponseWriter").child("responseFormat");
+    configAttribute = configDoc.child("config").child("query").child("queryResponseWriter").child("responseFormat");
     if (configAttribute && configAttribute.text()) {
         string rf = configAttribute.text().get();
         if (this->isValidResponseFormat(rf)) {
@@ -650,13 +608,11 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     // responseContent is an optional field
     this->searchResponseFormat = 0; // by default it is 0
-    configAttribute = configDoc.child("config").child("query").child(
-            "queryResponseWriter").child("responseContent");
+    configAttribute = configDoc.child("config").child("query").child("queryResponseWriter").child("responseContent");
     if (configAttribute) {
         string type = configAttribute.attribute("type").value();
         if (this->isValidResponseContentType(type)) {
-            this->searchResponseJsonFormat =
-                    configAttribute.attribute("type").as_int();
+            this->searchResponseJsonFormat = configAttribute.attribute("type").as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
@@ -665,11 +621,9 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
         if (this->searchResponseJsonFormat == 2) {
             if (configAttribute.text()) {
-                this->splitString(string(configAttribute.text().get()), ",",
-                        this->attributesToReturn);
+                this->splitString(string(configAttribute.text().get()), ",", this->attributesToReturn);
             } else {
-                parseError
-                        << "For specified response content type, return fields should be provided.";
+                parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
                 return;
             }
@@ -686,7 +640,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 //        // if the value of dataSourceType is TRUE, the JSON data file should be provided.
 //        // TODO: should we check it here again? because we want to remove this.
 //    }
-    this->dataSourceType = FILEBOOTSTRAP_TRUE;
+    this->dataSourceType = FILEBOOTSTRAP_TRUE; // Should it be as default
 
 //    // TODO: it should be removed.
 //    configAttribute = configDoc.child("config").child("query").child("writeApiType");
@@ -708,8 +662,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 //    }
     this->writeApiType = HTTPWRITEAPI;
 
-    configAttribute = configDoc.child("config").child("updatehandler").child(
-            "maxDocs");
+    configAttribute = configDoc.child("config").child("updatehandler").child("maxDocs");
     bool mdflag = false;
     if (configAttribute && configAttribute.text()) {
         string md = configAttribute.text().get();
@@ -726,8 +679,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 
     this->memoryLimit = 100000;
     bool mmflag = false;
-    configAttribute = configDoc.child("config").child("updatehandler").child(
-            "maxMemory");
+    configAttribute = configDoc.child("config").child("updatehandler").child("maxMemory");
     if (configAttribute && configAttribute.text()) {
         string mm = configAttribute.text().get();
         if (this->isValidMaxMemory(mm)) {
@@ -742,8 +694,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     }
 
     // mergeEveryNSeconds
-    configAttribute = configDoc.child("config").child("updatehandler").child(
-            "mergePolicy").child("mergeEveryNSeconds");
+    configAttribute = configDoc.child("config").child("updatehandler").child("mergePolicy").child("mergeEveryNSeconds");
     bool mensflag = false;
     if (configAttribute && configAttribute.text()) {
         string mens = configAttribute.text().get();
@@ -759,8 +710,7 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     }
 
     // mergeEveryMWrites
-    configAttribute = configDoc.child("config").child("updatehandler").child(
-            "mergePolicy").child("mergeEveryMWrites");
+    configAttribute = configDoc.child("config").child("updatehandler").child("mergePolicy").child("mergeEveryMWrites");
     bool memwflag = false;
     if (configAttribute && configAttribute.text()) {
         string memw = configAttribute.text().get();
@@ -799,6 +749,9 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     if (configAttribute && configAttribute.text()) {
         // TODO: What is the defualt value for it?!
         this->httpServerAccessLogFile = string(configAttribute.text().get());
+        if(!(this->isPathFileValid(this->httpServerAccessLogFile))) {
+            this->httpServerAccessLogFile = this->srch2Home + this->httpServerAccessLogFile;
+        }
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
@@ -809,6 +762,10 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("errorLogFile");
     if (configAttribute && configAttribute.text()) {
         this->httpServerErrorLogFile = string(configAttribute.text().get());
+        struct stat stResult;
+        if(!(this->isPathFileValid(this->httpServerErrorLogFile))) {
+            this->httpServerErrorLogFile = this->srch2Home + this->httpServerErrorLogFile;
+        }
     } else {
         parseError << "httpServerErrorLogFile is not set.\n";
         configSuccess = false;
@@ -818,6 +775,19 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
     /*
      * query: END
      */
+
+
+    if (this->supportAttributeBasedSearch && this->searchableAttributesTriple.size() > 31) {
+        parseError << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
+        configSuccess = false;
+        return;
+    }
+
+
+    this->allowedRecordTokenizerCharacters = "";
+    this->ordering = 0;
+    this->trieBootstrapDictFile = "";
+    this->attributeToSort = 0;
 
 //
 //    if (vm.count("trie-bootstrap-dict-file")) {
@@ -856,13 +826,6 @@ void ConfigManager::parse(pugi::xml_document& configDoc, bool &configSuccess,
 //            && this->writeReadBufferInBytes < 65536000)) {
 //        this->writeReadBufferInBytes = 4194304;
 //    }
-
-
-    if (this->supportAttributeBasedSearch && this->searchableAttributesTriple.size() > 31) {
-        parseError << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-        configSuccess = false;
-        return;
-    }
 
 }
 
@@ -1129,6 +1092,7 @@ unsigned ConfigManager::getCacheSizeInBytes() const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////// Validate & Helper functions
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // splitString gets a string as its input and a dlimiter. It slplits the string based on the delimiter and pushes back the values to the result
@@ -1143,8 +1107,7 @@ void ConfigManager::splitString(string str, const string& delimiter,
     result.push_back(str);
 }
 
-void ConfigManager::splitBoostFieldValues(string boostString,
-        map<string, unsigned>& boosts) {
+void ConfigManager::splitBoostFieldValues(string boostString, map<string, unsigned>& boosts) {
     vector<string> boostTokens;
     this->splitString(boostString, " ", boostTokens);
     for (int i = 0; i < boostTokens.size(); i++) {
@@ -1166,6 +1129,22 @@ bool ConfigManager::isOnlyDigits(string& str) {
         ++it;
     }
     return !str.empty() && it == str.end();
+}
+
+bool ConfigManager::isFloat(string str){
+    std::size_t found = str.find(".");
+    if (found != std::string::npos) {
+        str.erase(found, 1);
+        if (str.find(".") != string::npos){
+            return false;
+        }
+    }
+    return this->isOnlyDigits(str);
+}
+
+bool ConfigManager::isPathFileValid(string& filePath){
+    struct stat stResult;
+    return (stat(filePath.c_str(), &stResult) == 0);
 }
 
 bool ConfigManager::isValidFieldType(string& fieldType) {
@@ -1203,8 +1182,7 @@ bool ConfigManager::isValidBoostFields(map<string, unsigned>& boostFields) {
 }
 
 bool ConfigManager::isValidQueryTermBoost(string& queryTermBoost) {
-    return this->isOnlyDigits(queryTermBoost);
-    //TODO: float?
+    return this->isFloat(queryTermBoost);
 }
 
 bool ConfigManager::isValidIndexCreateOrLoad(string& indexCreateLoad) {
@@ -1220,34 +1198,30 @@ bool ConfigManager::isValidRecordScoreExpession(string& recordScoreExpression) {
     return true;
 }
 
-bool ConfigManager::isValidQueryTermSimilarityBoost(
-        string& queryTermSimilarityBoost) {
-    return this->isOnlyDigits(queryTermSimilarityBoost);
-    //TODO: float?
+bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost) {
+    return this->isFloat(queryTermSimilarityBoost);
 }
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
-    if (this->isOnlyDigits(queryTermLengthBoost)) {
+    if (this->isFloat(queryTermLengthBoost)) {
         float val = ::atof(queryTermLengthBoost.c_str());
-        // TODO: >1 or >=1
         if (val >= 0 && val <= 1) {
             return true;
         }
+    } else {
+        return false;
     }
-    return false;
-    //TODO: float?
+    return true;
 }
 
 bool ConfigManager::isValidPrefixMatch(string& prefixmatch) {
-    if (this->isOnlyDigits(prefixmatch)) {
+    if (this->isFloat(prefixmatch)) {
         float val = ::atof(prefixmatch.c_str());
-        // TODO: >1 or >=1
         if (val >= 0 && val <= 1) {
             return true;
         }
     }
     return false;
-    //TODO: float
 }
 
 bool ConfigManager::isValidSortField(vector<string>& sortField) {
@@ -1282,8 +1256,8 @@ bool ConfigManager::isValidSortFieldDefaultValue(
 }
 
 bool ConfigManager::isValidCacheSize(string& cacheSize) {
-    unsigned minCacheSize = 50 * 1048576;     // 50MB
-    unsigned maxCacheSize = 500 * 1048576;    // 500MB
+    unsigned minCacheSize = 6553600;     // 50MB  6,553,600< x < 65,536,000
+    unsigned maxCacheSize = 65536000;    // 500MB
     if (this->isOnlyDigits(cacheSize)) {
         int cs = atoi(cacheSize.c_str());
         if (cs >= minCacheSize && cs <= maxCacheSize) {
@@ -1375,250 +1349,10 @@ bool ConfigManager::isValidLogLevel(string& logLevel) {
     return false;
 }
 
+// JUST FOR Wrapper TEST
+void ConfigManager::setFilePath(const string& dataFile){
+    this->filePath = dataFile;
+}
+
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// FROM PREVIOUS
-
-
-//    po::options_description config("Config");
-//    config.add_options()
-//    /*
-//     * Config: beginning
-//     */
-////  ("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
-//    ("listeningHostname", po::value<string>(), "hostname (ip) to listen") // REQUIRED
-//
-////  ("listening-port", po::value<string>(), "port to listen") // REQUIRED
-//    ("listeningPort", po::value<string>(), "port to listen") // REQUIRED
-//
-//    //TODO: write other functions for this too.
-////  ("install-directory", po::value<string>(), "Install Directory")
-//    ("srch2Home", po::value<string>(), "SRCH2 home directory") // REQUIRED
-//
-////  ("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
-//    ("dataDir", po::value<string>(), "Path to the index directory") // DEPRECATED
-//
-////  ("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
-//    ("dataFile", po::value<string>(), "Path to the data file") // REQUIRED if data-source-type is 0s
-//
-////  ("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
-//    ("licenseFile", po::value<string>(), "SRCH2 license key file") // REQUIRED
-//
-//    /*
-//     * indexConfig: beginning
-//     */
-//
-////  ("attribute-boosts", po::value<string>(), "Attributes Boosts")
-//    ("fieldBoost", po::value<string>(), "Attributes' Boosts")
-//
-////  ("attribute-record-boost", po::value<string>(), "record-boost")
-//    ("recordBoostField", po::value<string>(), "record-boost")
-//
-////  ("default-query-term-boost", po::value<int>(), "Default query term boost")
-//    ("defaultQueryTermBoost", po::value<int>(), "Default query term boost")
-//
-////  ("index-load-or-create",  po::value<bool>(), "index-load-or-create")
-//    ("indexLoadCreate", po::value<bool>(),
-//            "load current index OR create new index")
-//    /*
-//     * indexConfig: End
-//     */
-//
-//    /*
-//     * query: Beginning
-//     */
-////  ("record-score-expression", po::value<string>(), "record-score-expression")
-//    ("recordScoreExpression", po::value<string>(), "record score expression")
-//
-////  ("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
-//    ("queryTermSimilarityBoost", po::value<float>(),
-//            "Default query term similarity boost")
-//
-////  ("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
-//    ("queryTermLengthBoost", po::value<float>(),
-//            "Default query term length boost")
-//
-////  ("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
-//    ("prefixMatchPenalty", po::value<float>(), "Penalty for prefix matching")
-//
-////  ("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortField", po::value<string>(), "Attributes/fields in data for sorting")
-//
-////  ("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortFieldType", po::value<string>(),
-//            "Attributes/fields in data for sorting")
-//
-////  ("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
-//    ("sortFieldDefaultValue", po::value<string>(),
-//            "Attributes/fields in data for sorting")
-//
-////    ("default-order", po::value<int>(), "sort order")
-//    ("sortOrder", po::value<int>(), "sort order")
-//
-//
-////  ("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-//    ("cacheSize", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-//
-////  ("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
-//    ("rows", po::value<int>(), "number of results to retrieve")
-//
-////  ("number-of-threads", po::value<int>(), "number-of-threads")
-//    ("maxSearchThreads", po::value<int>(), "number of threads")
-//
-////  ("support-attribute-based-search", po::value<int>(), "If support attribute based search")
-//    ("fieldBasedSearch", po::value<int>(), "If support attribute based search")
-//
-////  ("default-searcher-type", po::value<int>(), "Searcher-type")
-//    ("searcherType", po::value<int>(), "Searcher-type")
-//
-////  ("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
-//    ("queryTermMatchType", po::value<int>(), "Exact term or fuzzy term")
-//
-////  ("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
-//    ("queryTermType", po::value<int>(), "Query has complete terms or fuzzy terms")
-//
-//    /*
-//     * queryResponseWriter: Beginning
-//     */
-//
-////  ("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
-//    ("responseFormat", po::value<int>(), "search response JSON format")
-//
-////  ("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
-////  ("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
-//    ("responseContent", po::value<string>(), "Response contents and attributes to return in response")
-//
-//    /*
-//     * queryResponseWriter: End
-//     */
-//
-////  ("data-source-type",  po::value<bool>(), "Data source type")
-//    ("dataSourceType", po::value<bool>(), "Data source type")
-//
-////  ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-//    ("writeApiType", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-//
-//    /*
-//     * query: End
-//     */
-//    /*
-//     * updatehandler: Beginning
-//     */
-////  ("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
-//    ("maxDocs", po::value<uint32_t>(), "document limit") // REQUIRED
-//
-////  ("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
-//    ("maxMemory", po::value<uint64_t>(), "memory limit") //REQUIRED
-//
-//    /*
-//     * mergePolicy: Beginning
-//     */
-////  ("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
-//    ("mergeEveryNSeconds", po::value<unsigned>(), "merge every N seconds") // REQUIRED
-//
-////  ("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
-//    ("mergeEveryMWrites", po::value<unsigned>(), "merge every M writes") // REQUIRED
-//
-//    /*
-//     * mergePolicy: End
-//     */
-//
-//    /*
-//     * updateLog: beginning
-//     */
-//
-////    ("log-level", po::value<int>(), "srch2 log level")
-//    ("logLevel", po::value<int>(), "srch2 log level")
-//
-////  ("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
-//    ("accessLogFile", po::value<string>(),
-//            "HTTP indexDataContainer access log file") // DEPRECATED
-//
-////  ("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
-//    ("errorLogFile", po::value<string>(),
-//            "HTTP indexDataContainer error log file") // DEPRECATED
-//    /*
-//     * updateLog: End
-//     */
-//
-//    /*
-//     * Config: End
-//     */
-//
-//
-//     /*
-//     * Schema: Beginning
-//     */
-//
-//     /*
-//      * fields: Beginning
-//      */
-////    ("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-//    ("field", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-//
-////  TODO: it should be removed from config file. (based on location type we can decide if we want to index geo or not).
-////  ("index-type",  po::value<int>(), "index-type") // REQUIRED
-//
-//     /*
-//      * fields: End
-//      */
-//
-////  ("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
-////  ("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
-//    ("uniqueKey", po::value<string>(), "Primary key of data source") // REQUIRED
-//
-//    /*
-//     * types: Beginning
-//     */
-//
-////    ("attribute-latitude", po::value<string>(), "record-attribute-latitude")
-////    ("attribute-longitude", po::value<string>(), "record-attribute-longitude")
-//    ("fieldType", po::value<string>(), "field types that are defined.")
-//
-////    ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
-////    ("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
-////    ("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
-////    ("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
-////    ("stemmer-file", po::value<string>(), "Stemmer File")
-//    ("filter", po::value<string>(), "field types that are defined.")
-//
-//    /*
-//     * types: End
-//     */
-//
-//     /*
-//     * Schema: End
-//     */
-//        ;
-//    kafka related should be removed.
-//    TODO: should remove related setter/getters
-//        ("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
-//        ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
-//        ("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
-//        ("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
-//        ("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
-//        ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
-//    TODO: Should be removed. They are not used.
-//    TODO: should remove related setter/getters
-//        ("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
-//        ("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
-//        ("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
-//        ("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
-//        ("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
-//    fstream fs(configFile.c_str(), fstream::in);
-//    po::variables_map vm_config_file;
-//    po::store(po::parse_config_file(fs, config), vm_config_file);
-//    po::notify(vm_config_file);

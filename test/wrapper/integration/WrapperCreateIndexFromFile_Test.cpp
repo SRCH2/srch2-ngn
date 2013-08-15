@@ -144,7 +144,97 @@ bool ping(const Analyzer *analyzer, IndexSearcher *indexSearcher, string querySt
 	return returnvalue;
 }*/
 
-bool test(int argc, char** argv)
+void test1(int argc, char** argv) {
+    string srch2_config_file(getenv("configFile"));
+    cout << "Config File: " << srch2_config_file << endl;
+
+//    srch2_config_file = "/home/iman/srch2/repos/srch2-ngn/test/wrapper/conf.ini-WrapperCreateIndexFromJsonFile_Test.xml";
+   srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
+   serverConf->loadConfigFile();
+
+   std::stringstream message;
+
+//   message << "DocumentLimit: " << string(serverConf->getDocumentLimit()).c_str();
+//   message << "MemoryLimit: " << string(serverConf->getMemoryLimit()).c_str();
+//
+//   message << "getIndexPath: " << string(serverConf->getIndexPath()).c_str();
+//   message << "getFilePath: " << string(serverConf->getFilePath()).c_str();
+//   message << "getPrimaryKey: " << string(serverConf->getPrimaryKey()).c_str();
+//   message << "getSearchType: " << string(serverConf->getSearchType()).c_str();
+//   message << "getIsPrimSearchable: " << string(serverConf->getIsPrimSearchable()).c_str();
+//   message << "getIsFuzzyTermsQuery: " << string(serverConf->getIsFuzzyTermsQuery()).c_str();
+//   message << "getQueryTermType: " << string(serverConf->getQueryTermType()).c_str();
+//   message << "getStemmerFlag: " << string(serverConf->getStemmerFlag()).c_str();
+//
+//
+//   message << "getSynonymFilePath: " << string(serverConf->getSynonymFilePath()).c_str();
+//   message << "getSynonymKeepOrigFlag: " << string(serverConf->getSynonymKeepOrigFlag()).c_str();
+//   message << "getStopFilePath: " << string(serverConf->getStopFilePath()).c_str();
+//   message << "getStemmerFile: " << string(serverConf->getStemmerFile()).c_str();
+//   message << "getSrch2Home: " << string(serverConf->getSrch2Home()).c_str();
+//   message << "getQueryTermBoost: " << string(serverConf->getQueryTermBoost()).c_str();
+//   message << "getQueryTermSimilarityBoost: " << string(serverConf->getQueryTermSimilarityBoost()).c_str();
+//
+//   message << "getQueryTermLengthBoost: " << string(serverConf->getQueryTermLengthBoost()).c_str();
+//   message << "getPrefixMatchPenalty: " << string(serverConf->getPrefixMatchPenalty()).c_str();
+//   message << "getSupportAttributeBasedSearch: " << string(serverConf->getSupportAttributeBasedSearch()).c_str();
+//   message << "getDefaultResultsToRetrieve: " << string(serverConf->getDefaultResultsToRetrieve()).c_str();
+//   message << "getAttributeToSort: " << string(serverConf->getAttributeToSort()).c_str();
+//   message << "getOrdering: " << string(serverConf->getOrdering()).c_str();
+//   message << "getQueryTermSimilarityBoost: " << string(serverConf->getQueryTermSimilarityBoost()).c_str();
+//   message << "getRecordAllowedSpecialCharacters: " << string(serverConf->getRecordAllowedSpecialCharacters()).c_str();
+//
+//
+//   message << "getCacheSizeInBytes: " << string(serverConf->getCacheSizeInBytes()).c_str();
+//   message << "getDataSourceType: " << string(serverConf->getDataSourceType()).c_str();
+//   message << "getIndexCreateOrLoad: " << string(serverConf->getIndexCreateOrLoad()).c_str();
+//   message << "getWriteApiType: " << string(serverConf->getWriteApiType()).c_str();
+//   message << "getSearchResponseFormat: " << string(serverConf->getSearchResponseFormat()).c_str();
+//   message << "getAttributeStringForMySQLQuery: " << string(serverConf->getAttributeStringForMySQLQuery()).c_str();
+//
+//
+//
+//   message << "getLicenseKeyFileName: " << string(serverConf->getLicenseKeyFileName()).c_str();
+//   message << "getTrieBootstrapDictFileName: " << string(serverConf->getTrieBootstrapDictFileName()).c_str();
+//   message << "getHTTPServerAccessLogFile: " << string(serverConf->getHTTPServerAccessLogFile()).c_str();
+//   message << "getHTTPServerLogLevel: " << string(serverConf->getHTTPServerLogLevel()).c_str();
+//   message << "getHTTPServerErrorLogFile: " << string(serverConf->getHTTPServerErrorLogFile()).c_str();
+//
+//   message << "getHTTPServerDocumentRoot: " << string(serverConf->getHTTPServerDocumentRoot()).c_str();
+//   message << "getHTTPServerListeningHostname: " << string(serverConf->getHTTPServerListeningHostname()).c_str();
+//   message << "getHTTPServerListeningPort: " << string(serverConf->getHTTPServerListeningPort()).c_str();
+//   message << "isRecordBoostAttributeSet: " << string(serverConf->isRecordBoostAttributeSet()).c_str();
+//   message << "getIndexType: " << string(serverConf->getIndexType()).c_str();
+//   message << "getIndexType: " << string(serverConf->getIndexType()).c_str();
+//
+//   message << "getAttributeLatitude: " << string(serverConf->getAttributeLatitude()).c_str();
+//   message << "getDefaultSpatialQueryBoundingBox: " << string(serverConf->getDefaultSpatialQueryBoundingBox()).c_str();
+//   message << "getSearchResponseJSONFormat: " << string(serverConf->getSearchResponseJSONFormat()).c_str();
+//   message << "getNumberOfThreads: " << string(serverConf->getNumberOfThreads()).c_str();
+//   message << "getMergeEveryNSeconds: " << string(serverConf->getMergeEveryNSeconds()).c_str();
+//   message << "getMergeEveryMWrites: " << string(serverConf->getMergeEveryMWrites()).c_str();
+//
+//   message << "getScoringExpressionString: " << string(serverConf->getScoringExpressionString()).c_str();
+//   message << "getAttributeRecordBoostName: " << string(serverConf->getAttributeRecordBoostName()).c_str();
+//   message << "getMergeEveryMWrites: " << string(serverConf->getMergeEveryMWrites()).c_str();
+//   message << "getMergeEveryMWrites: " << string(serverConf->getMergeEveryMWrites()).c_str();
+
+//      const map<string, pair<unsigned, unsigned> > * getSearchableAttributes() const;
+//      const vector<string> * getAttributesToReturnName() const;
+//
+//      const vector<string> * getSortableAttributesName() const;
+//      const vector<srch2::instantsearch::FilterType> * getSortableAttributesType() const;
+//      const vector<string> * getSortableAttributesDefaultValue() const;
+
+   cout << message.str() << endl;
+
+//      const std::string& getAttributeLatitude() const;
+//      const std::string& getAttributeLongitude() const;
+
+}
+
+
+bool test2(int argc, char** argv)
 {
 //	//read configuration file
 //    po::options_description description("Description");
@@ -163,23 +253,45 @@ bool test(int argc, char** argv)
 //
 //    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
 
-//    string srch2_config_file(getenv("config-file"));
-//    cout << "#########################" << endl;
-//    cout << srch2_config_file << endl;
+    string srch2_config_file(getenv("configFile"));
+    unsigned found = srch2_config_file.find_last_of("/\\");
+    string srch2home = srch2_config_file.substr(0,found);
 
-    string srch2_config_file = "/home/iman/srch2/repos/srch2-ngn/build/test/wrapper/integration/conf.ini-WrapperCreateIndexFromJsonFile_Test_xml";
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
-	// check the license file
-	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 
-	FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
+    string srch2homeSymbol = "${srch2home}";
+    string licenseKeyFile = serverConf->getLicenseKeyFileName();
+    if(licenseKeyFile.find(srch2homeSymbol) != string::npos){
+        licenseKeyFile.replace(0,licenseKeyFile.find(srch2homeSymbol) + srch2homeSymbol.length(),srch2home);
+    }
+    cout << "-  srch2home: " << srch2home << endl;
+    cout << "-  Lincense File: " << licenseKeyFile << endl;
+
+
+	string accessLogFile = serverConf->getHTTPServerAccessLogFile();
+	if(accessLogFile.find(srch2homeSymbol) != string::npos){
+	    accessLogFile.replace(0,accessLogFile.find(srch2homeSymbol) + srch2homeSymbol.length(),srch2home);
+    }
+    cout << "-  Log File: " << accessLogFile << endl;
+
+    string dataFile = serverConf->getFilePath();
+    if(dataFile.find(srch2homeSymbol) != string::npos){
+        dataFile.replace(0,dataFile.find(srch2homeSymbol) + srch2homeSymbol.length(),srch2home);
+    }
+    cout << "-  Data File: " << dataFile << endl;
+    serverConf->setFilePath(dataFile);
+
+	// check the license file
+	LicenseVerifier::testFile(licenseKeyFile);
+
+	FILE *logFile = fopen(accessLogFile.c_str(), "a");
 	if(logFile == NULL){
 		Logger::setOutputFile(stdout);
 		Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
-	}
-	else
-		Logger::setOutputFile(logFile);
+    } else {
+        Logger::setOutputFile(logFile);
+    }
 	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
 	// create IndexMetaData
@@ -212,6 +324,7 @@ bool test(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-	test(argc, argv);
+    test1(argc, argv);
+	test2(argc, argv);
 	return 0;
 }

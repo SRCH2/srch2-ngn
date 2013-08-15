@@ -1,0 +1,11 @@
+2013-08-14 17:06:56 ERROR	DataSource file not found at: ./sample-data.json
+2013-08-14 17:19:11 ERROR	DataSource file not found at: ./${srch2home}/sample-data.json
+2013-08-14 17:23:08 INFO	Indexed 100 records.
+2013-08-14 17:23:08 INFO	Saving Index.....
+2013-08-14 17:23:08 INFO	Index saved.
+2013-08-14 17:23:58 INFO	Indexed 1000 records.
+2013-08-14 17:23:58 INFO	Saving Index.....
+2013-08-14 17:23:58 INFO	Index saved.
+2013-08-14 17:30:31 INFO	Indexed 1000 records.
+2013-08-14 17:30:31 INFO	Saving Index.....
+2013-08-14 17:30:31 INFO	Index saved.

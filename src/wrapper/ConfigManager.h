@@ -16,7 +16,6 @@
 using namespace std;
 using namespace srch2::util;
 using namespace pugi;
-//namespace po = boost::program_options;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -86,7 +85,6 @@ private:
 	uint64_t memoryLimit;
 	uint32_t documentLimit;
 
-
 	// <config><updatehandler><mergePolicy>
 	unsigned mergeEveryNSeconds;
 	unsigned mergeEveryMWrites;
@@ -96,8 +94,6 @@ private:
     string httpServerAccessLogFile;
     string httpServerErrorLogFile;
 
-
-
     // <schema><fields>
 	string fieldLatitude;
 	string fieldLongitude;
@@ -106,20 +102,12 @@ private:
 	// <schema>
 	string primaryKey;
 
-
-
 	// <schema><types><fieldType><analyzer><filter>
 	bool stemmerFlag;
 	std::string stemmerFile;
 	std::string synonymFilterFilePath;
 	bool synonymKeepOrigFlag;
 	std::string stopFilterFilePath;
-
-
-
-
-
-
 
 	string trieBootstrapDictFile;
 	string kafkaBrokerHostName;
@@ -137,7 +125,6 @@ private:
 	// < keyword, < offset, boost > >
 	map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
 
-
 	//vector<unsigned> attributesBoosts;
 
 	std::string allowedRecordTokenizerCharacters;
@@ -153,6 +140,8 @@ private:
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
 
     bool isOnlyDigits(string& str);
+    bool isFloat(string str);
+    bool isPathFileValid(string& filePath);
     //Validate Functions
     bool isValidFieldType(string& fieldType);
     bool isValidBool(string& fieldType);
@@ -193,7 +182,7 @@ public:
 
 	void parse(pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError);
 
-	const std::string& getCustomerName() const;
+	const std::string& getCustomerName() const; //XXX: REMOVE?
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
 
@@ -271,6 +260,10 @@ public:
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
     void loadConfigFile() ;
+
+    // THIS FUNCTION IS JUST FOR WRAPPER TEST
+    void setFilePath(const string& dataFile);
+
 };
 
 }
