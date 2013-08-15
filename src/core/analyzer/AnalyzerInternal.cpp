@@ -69,7 +69,6 @@ AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
     this->recordAllowedSpecialCharacters =
             analyzerInternal.recordAllowedSpecialCharacters;
     prepareRegexExpression();
-    tokenStreamContainer.reset(new TokenStreamContainer);
     this->stemmerFlag = analyzerInternal.stemmerFlag;
     this->stemmerFilePath = analyzerInternal.stemmerFilePath;
     this->stopWordFilePath = analyzerInternal.stopWordFilePath;
@@ -86,7 +85,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
     prepareRegexExpression();
-    tokenStreamContainer.reset(new TokenStreamContainer);
     this->stemmerFlag = stemmerFlag;
     this->stemmerFilePath = stemmerFilePath;
     this->stopWordFilePath = stopWordFilePath;
@@ -96,11 +94,7 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 }
 
 void AnalyzerInternal::loadData(const string &s) const {
-    std::vector<CharType> charVector;
-    utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-    this->tokenStreamContainer->currentToken.clear();
-    this->tokenStreamContainer->completeCharVector = charVector;
-    this->tokenStreamContainer->offset = 0;
+    this->tokenStream->loadData(s);
 }
 
 /**

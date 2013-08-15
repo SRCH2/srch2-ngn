@@ -51,7 +51,6 @@ TokenStream * SimpleAnalyzer::createOperatorFlow() {
 		}
 	}
 
-	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 	return tokenStream;
 }
 SimpleAnalyzer::~SimpleAnalyzer() {

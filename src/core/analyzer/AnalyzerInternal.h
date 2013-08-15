@@ -139,8 +139,6 @@ public:
     const SynonymKeepOriginFlag& getSynonymKeepOriginFlag() const;
 
 protected:
-	boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
-
 	TokenStream* tokenStream;
 	AnalyzerType analyzerType;
 	StemmerNormalizerFlagType stemmerFlag; // This flag shows that we want to stem or not.

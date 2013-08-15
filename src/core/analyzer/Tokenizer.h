@@ -16,7 +16,7 @@ namespace instantsearch {
  */
 class Tokenizer: public TokenStream {
 public:
-    Tokenizer() {
+    Tokenizer():TokenStream(){
     }
 protected:
     virtual bool incrementToken() = 0;

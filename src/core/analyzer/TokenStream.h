@@ -20,8 +20,19 @@ class TokenStream {
 public:
     boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
     TokenStream() {
+        tokenStreamContainer.reset(new TokenStreamContainer());
     }
     virtual bool processToken() = 0;
+
+    void loadData(const std::vector<CharType> &charVector){
+        tokenStreamContainer->loadData(charVector);
+    }
+
+    void loadData(const std::string &str){
+        std::vector<CharType> charVector;
+        utf8StringToCharTypeVector(str, charVector); 
+        tokenStreamContainer->loadData(charVector);
+    }
 
     std::vector<CharType> & getProcessedToken() {
         return tokenStreamContainer->currentToken;

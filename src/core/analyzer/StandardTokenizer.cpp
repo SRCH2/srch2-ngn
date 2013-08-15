@@ -10,9 +10,9 @@
 
 namespace srch2 {
 namespace instantsearch {
-StandardTokenizer::StandardTokenizer() {
-    tokenStreamContainer.reset(new TokenStreamContainer());
-}
+StandardTokenizer::StandardTokenizer()
+    :Tokenizer()
+{}
 
 bool StandardTokenizer::incrementToken() {
     (tokenStreamContainer->currentToken).clear();

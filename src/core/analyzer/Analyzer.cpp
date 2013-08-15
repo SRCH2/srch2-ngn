@@ -73,6 +73,7 @@ Analyzer::Analyzer(Analyzer& analyzerObject) {
         this->analyzerInternal = new ChineseAnalyzer(
                 static_cast<const ChineseAnalyzer&>(*(analyzerObject.analyzerInternal)));
         break;
+    case STANDARD_ANALYZER:
     default:
         this->analyzerInternal = new StandardAnalyzer(
                 static_cast<const StandardAnalyzer&>(*(analyzerObject.analyzerInternal)));

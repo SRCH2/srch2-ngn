@@ -9,9 +9,9 @@
 
 namespace srch2 {
 namespace instantsearch {
-WhiteSpaceTokenizer::WhiteSpaceTokenizer() {
-    tokenStreamContainer.reset(new TokenStreamContainer());
-}
+WhiteSpaceTokenizer::WhiteSpaceTokenizer()
+    :Tokenizer()
+{}
 
 bool WhiteSpaceTokenizer::incrementToken() {
     (tokenStreamContainer->currentToken).clear();

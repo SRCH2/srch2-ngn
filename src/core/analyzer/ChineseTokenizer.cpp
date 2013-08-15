@@ -17,13 +17,12 @@ namespace srch2{
 namespace instantsearch{
 
 ChineseTokenizer::ChineseTokenizer(const string &chineseDictFilePath)
-    :mChineseDict(), mCurrentChineseTokens(){
+    :Tokenizer(),mChineseDict(), mCurrentChineseTokens(){
     int ret = mChineseDict.loadDict(chineseDictFilePath);
     if (ret < 0){
         //TODO throw exception in future
     }
     mCurrentChineseTokens.reserve(32);  // Assuming most Chinese sentences have less than 32 tokens. It will grow automatically if larger.
-    tokenStreamContainer.reset(new TokenStreamContainer());
 }
 
 bool ChineseTokenizer::processToken(){
