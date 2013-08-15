@@ -26,6 +26,8 @@ const char* const QueryParser::responseWriteTypeParamName = "wt"; //solr
 const char* const QueryParser::sortParamName = "sort"; //solr  (syntax is not like solr)
 const char* const QueryParser::sortFiledsDelimiter = ","; // solr
 const char* const QueryParser::orderParamName = "orderby"; //srch2
+const char* const QueryParser::orderDescending = "desc"; //srch2
+const char* const QueryParser::orderAscending = "asc"; //srch2
 const char* const QueryParser::keywordQueryParamName = "q"; //solr
 const char* const QueryParser::lengthBoostParamName = "lengthBoost"; //srch2
 const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
@@ -53,6 +55,9 @@ const char* const QueryParser::centerLatParamName = "clat"; //srch2
 const char* const QueryParser::centerLongParamName = "clong"; //srch2
 const char* const QueryParser::radiusParamName = "radius"; //srch2
 const char* const QueryParser::facetParamName = "facet"; //solr
+const char* const QueryParser::facetRangeGap = "gap";
+const char* const QueryParser::facetRangeEnd = "end";
+const char* const QueryParser::facetRangeStart = "start";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
@@ -262,9 +267,8 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
      * populates the parallel vectors related to the facet parser.
      */
     Logger::debug("inside populateParallelRangeVectors function");
-    stringstream startKey;
-    startKey << "f." << field << ".facet.range.start"; // TODO use normal string concat
-    string startKeyStr = startKey.str();
+    const string startKeyStr = QueryParser::getFacetRangeKey(field,
+            facetRangeStart);
     const char* rangeStartTemp = evhttp_find_header(&headers,
             startKeyStr.c_str());
     if (rangeStartTemp) {
@@ -277,9 +281,7 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
                 "rangeStart parameter not found,pushing empty string to rageStarts member of fqc");
         fqc.rangeStarts.push_back("");
     }
-    stringstream endKey;
-    endKey << "f." << field << ".facet.range.end";
-    string endKeyStr = endKey.str();
+    string endKeyStr = QueryParser::getFacetRangeKey(field, facetRangeEnd);
     const char* rangeEndTemp = evhttp_find_header(&headers, endKeyStr.c_str());
     if (rangeEndTemp) {
         Logger::debug("rangeStart parameter found, parsing it");
@@ -291,9 +293,7 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
                 "rangeEnds parameter not found,pushing empty string to rageEnds member of fqc");
         fqc.rangeEnds.push_back("");
     }
-    stringstream gapKey;
-    gapKey << "f." << field << ".facet.range.end";
-    string gapKeyStr = gapKey.str();
+    string gapKeyStr = QueryParser::getFacetRangeKey(field, facetRangeGap);
     const char* rangeGapTemp = evhttp_find_header(&headers, gapKeyStr.c_str());
     if (rangeGapTemp) {
         Logger::debug("rangeGap parameter found, parsing it");
@@ -619,89 +619,17 @@ bool QueryParser::filterQueryParameterParser() {
         // set the boolean operation in fqv.
         // for each token call the fqv.addCriterion method.
         FilterQueryContainer* filterQueryContainer = new FilterQueryContainer();
-        FilterQueryEvaluator* fqe = new FilterQueryEvaluator();
+        FilterQueryEvaluator* fqe = new FilterQueryEvaluator(
+                &this->container->messages,
+                &this->container->termFQBooleanOperator);
         filterQueryContainer->evaluator = fqe;
         this->container->filterQueryContainer = filterQueryContainer;
-        fqe->setMessageContainer(&(this->container->messages));
         this->container->parametersInQuery.push_back(FilterQueryEvaluatorFlag);
         boost::algorithm::trim(fq);
         Logger::debug("parsing fq %s", fq.c_str());
-        bool parseNextTerm = true;
-        while (parseNextTerm) {
-            string fqField;
-            bool isParsed = parseFqField(fq, fqField);
-            if (!isParsed) {
-                // it is not a assignment not a range
-                // see if it's a complx query
-                string complxStr = "";
-                isParsed = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
-                if (!isParsed) {
-                    parseNextTerm = false;
-                    Logger::info(" Parsing error:: not a valid filter query");
-                    this->container->messages.push_back(
-                            make_pair(MessageError,
-                                    "Parse error, not a valid filter query term."));
-                    this->isParsedError = true;
-                    return false;
-                } else {
-                    Logger::debug(
-                            " 'CMPLX$' found, possible complex expression query");
-                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_COMPLEX,
-                            "NO_FIELD"); // NO_FIELD, is a dummy parameter, that will not be used.
-                    if (!isParsed) {
-                        this->isParsedError = true;
-                        return false;
-                    }
-                    boost::algorithm::trim(fq);
-                }
-            } else {
-                // remove the ':'
-                fqField = fqField.substr(0, fqField.length() - 1);
-                // check if it's a range query or asignment.
-                if ('[' == fq.at(0)) {
-                    Logger::debug(" '[' found, possible range query");
-                    string keyword = "";
-                    fq = fq.substr(1);
-                    isParsed = fqe->addCriterion(fq, FILTERQUERY_TERM_RANGE,
-                            fqField); // it parses fq for range query parameters
-                    if (!isParsed) {
-                        this->isParsedError = true;
-                        return false;
-                    }
-                } else {
-                    Logger::debug(" '[' not found, possible assignment query");
-                    string keyword = "";
-                    isParsed = fqe->addCriterion(fq,
-                            FILTERQUERY_TERM_ASSIGNMENT, fqField); // it parses fq for range query parameters
-                    if (!isParsed) {
-                        this->isParsedError = true;
-                        return false;
-                    }
-                }
-            }
-            string boolOperator = "";
-            isParsed = this->parseFqBoolOperator(fq, boolOperator);
-            fqe->setOperation(this->container->termFQBooleanOperator);
-            if (isParsed) {
-                string msgStr = "boolean operator is " + boolOperator;
-                Logger::debug(msgStr.c_str());
-                parseNextTerm = true;
-                Logger::debug("LOOPING AGAIN");
-            } else {
-                // no boolean operator found.
-                // if the fq string length is >0 throw error.
-                parseNextTerm = false;
-                if (fq.length() > 0) {
-                    // raise error message
-                    Logger::info(
-                            " Parsing error:: expecting boolean operator while parsing terms, not found.");
-                    this->container->messages.push_back(
-                            make_pair(MessageError,
-                                    "Parse error, expecting boolean operator while parsing filter query terms."));
-                    this->isParsedError = true;
-                    return false;
-                }
-            }
+        if (!fqe->parseAndAddCriterion(fq)) {
+            this->isParsedError = true;
+            return false;
         }
     }
     Logger::debug("returning from filterQueryParameterParser function");
@@ -790,10 +718,10 @@ void QueryParser::sortParser() {
             if (order.compare("") == 0) {
                 sortQueryContainer->evaluator->order =
                         srch2::instantsearch::SortOrderNotSpecified;
-            } else if (boost::iequals("asc", order)) {
+            } else if (boost::iequals(orderAscending, order)) {
                 sortQueryContainer->evaluator->order =
                         srch2::instantsearch::SortOrderAscending;
-            } else if (boost::iequals("desc", order)) {
+            } else if (boost::iequals(orderDescending, order)) {
                 sortQueryContainer->evaluator->order =
                         srch2::instantsearch::SortOrderDescending;
             } else {
@@ -978,7 +906,8 @@ bool QueryParser::keywordParser(string &input) {
      */
     if (input.at(0) == '\"') {
         // we do not support phrase search as of now
-        Logger::info("PARSE ERROR, unexpected character \" found at the begining of the keyword.");
+        Logger::info(
+                "PARSE ERROR, unexpected character \" found at the begining of the keyword.");
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "Parse error, unexpected character \" found at the begining of the keyword."));
@@ -1070,32 +999,6 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
                 srch2::instantsearch::BooleanOperatorAND;
     }
     Logger::debug("returning from populateTermBooleanOperator.");
-}
-void QueryParser::populateFilterQueryTermBooleanOperator(
-        const string &termOperator) {
-    /*
-     * populates teh termFQBooleanOperators in container.
-     */
-// TODO: check for && and || also
-    Logger::debug("inside populateFilterQueryTermBooleanOperators.");
-    if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
-        this->container->termFQBooleanOperator =
-                srch2::instantsearch::BooleanOperatorOR;
-    } else if (boost::iequals("AND", termOperator)
-            || termOperator.compare("&&") == 0) {
-        this->container->termFQBooleanOperator =
-                srch2::instantsearch::BooleanOperatorAND;
-    } else {
-        // generate MessageWarning and use AND
-        this->container->messages.push_back(
-                make_pair(MessageWarning,
-                        "Invalid boolean operator specified as term boolean operator "
-                                + termOperator
-                                + ", ignoring it and using 'AND'."));
-        this->container->termFQBooleanOperator =
-                srch2::instantsearch::BooleanOperatorAND;
-    }
-    Logger::debug("returning from populateFilterQueryTermBooleanOperators.");
 }
 
 void QueryParser::populateRawKeywords(const string &input) {
@@ -1307,12 +1210,15 @@ void QueryParser::extractSearchType() {
                     QueryParser::facetParamName);
             if (sortTemp || facetTemp) {
                 // it's a getAllResesult search
-                this->container->parametersInQuery.push_back(GetAllResultsSearchType);
-                this->container->getAllResultsParameterContainer = new GetAllResultsParameterContainer();
+                this->container->parametersInQuery.push_back(
+                        GetAllResultsSearchType);
+                this->container->getAllResultsParameterContainer =
+                        new GetAllResultsParameterContainer();
             } else {
                 // it's a Top-K search
                 this->container->parametersInQuery.push_back(TopKSearchType);
-                this->container->topKParameterContainer = new TopKParameterContainer();
+                this->container->topKParameterContainer =
+                        new TopKParameterContainer();
             }
         }
     }
@@ -1469,15 +1375,7 @@ bool QueryParser::parseTermBoolOperator(string &input, string &output) {
     }
     return isParsed;
 }
-bool QueryParser::parseFqBoolOperator(string &input, string &output) {
-    boost::regex re(FQ_TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
-    bool isParsed = doParse(input, re, output);
-    if (!this->container->isFqBooleanOperatorSet) {
-        this->populateFilterQueryTermBooleanOperator(output);
-        this->container->isFqBooleanOperatorSet = true;
-    }
-    return isParsed;
-}
+
 bool QueryParser::parseField(string &input, string &field) {
     boost::regex re(MAIN_QUERY_TERM_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, field);
@@ -1554,14 +1452,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         this->setFuzzyLevelInContainer(0.0f);
     }
 }
-bool QueryParser::parseFqField(string &input, string &field) {
-    boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
-    return doParse(input, re, field);
-}
-bool QueryParser::parseComplx(string &input, string &output) {
-    boost::regex re(COMPLEX_TERM_REGEX_STRING); //TODO: compile this regex when the engine starts.
-    return doParse(input, re, output);
-}
+
 void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
     Logger::debug("inside clearMainQueryParallelVectorsIfNeeded().");
     if (this->container->hasParameterInQuery(KeywordFuzzyLevel)) {
