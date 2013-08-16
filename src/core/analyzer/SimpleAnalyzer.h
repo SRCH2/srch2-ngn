@@ -4,8 +4,8 @@
  *  Created on: 2013-5-18
  */
 //This class will tokenize the words according to whitespace character .
-#ifndef __CORE_ANALYZER__SIMPLEANALYZER_H__
-#define __CORE_ANALYZER__SIMPLEANALYZER_H__
+#ifndef __CORE_ANALYZER_SIMPLEANALYZER_H__
+#define __CORE_ANALYZER_SIMPLEANALYZER_H__
 
 #include "AnalyzerInternal.h"
 #include "TokenStream.h"
@@ -33,13 +33,11 @@ public:
 							synonymFilePath,
 							synonymKeepOriginFlag) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenStream = createOperatorFlow();
 	}
 	TokenStream *createOperatorFlow();
 	virtual ~SimpleAnalyzer();

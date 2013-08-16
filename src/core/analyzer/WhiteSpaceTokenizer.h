@@ -4,8 +4,8 @@
  *  Created on: 2013-5-18
  */
 //This class will token the words according to whitespace character.
-#ifndef __CORE_ANALYZER__WHITESPACETOKENIZER_H__
-#define __CORE_ANALYZER__WHITESPACETOKENIZER_H__
+#ifndef __CORE_ANALYZER_WHITESPACETOKENIZER_H__
+#define __CORE_ANALYZER_WHITESPACETOKENIZER_H__
 
 #include "Tokenizer.h"
 namespace srch2 {

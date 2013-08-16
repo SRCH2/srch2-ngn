@@ -23,6 +23,9 @@ LIST(APPEND UNIT_TESTS Trie_Test)
 #ADD_EXECUTABLE(ForwardIndex_Test ForwardIndex_Test.cpp)
 #TARGET_LINK_LIBRARIES(ForwardIndex_Test ${UNIT_TEST_LIBS})
 	
+ADD_EXECUTABLE(DictionaryBuilder DictionaryBuilder.cpp)
+TARGET_LINK_LIBRARIES(DictionaryBuilder ${UNIT_TEST_LIBS})
+
 ADD_EXECUTABLE(FieldBoost_Test FieldBoost_Test.cpp)
 TARGET_LINK_LIBRARIES(FieldBoost_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS FieldBoost_Test)

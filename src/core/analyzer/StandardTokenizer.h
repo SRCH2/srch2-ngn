@@ -4,14 +4,10 @@
  *  Created on: 2013-5-17
  */
 //This class will token the words according to whitespace character and character which is >=256 .
-#ifndef __CORE_ANALYZER__STANDARDTOKENIZER_H__
-#define __CORE_ANALYZER__STANDARDTOKENIZER_H__
+#ifndef __CORE_ANALYZER_STANDARDTOKENIZER_H__
+#define __CORE_ANALYZER_STANDARDTOKENIZER_H__
 
-#include <vector>
-#include <iostream>
 #include "Tokenizer.h"
-
-using std::vector;
 
 namespace srch2 {
 namespace instantsearch {

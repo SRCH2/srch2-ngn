@@ -69,7 +69,6 @@ AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
     this->recordAllowedSpecialCharacters =
             analyzerInternal.recordAllowedSpecialCharacters;
     prepareRegexExpression();
-    tokenStreamContainer.reset(new TokenStreamContainer);
     this->stemmerFlag = analyzerInternal.stemmerFlag;
     this->stemmerFilePath = analyzerInternal.stemmerFilePath;
     this->stopWordFilePath = analyzerInternal.stopWordFilePath;
@@ -86,21 +85,12 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
     prepareRegexExpression();
-    tokenStreamContainer.reset(new TokenStreamContainer);
     this->stemmerFlag = stemmerFlag;
     this->stemmerFilePath = stemmerFilePath;
     this->stopWordFilePath = stopWordFilePath;
     this->synonymFilePath = synonymFilePath;
     this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 
-}
-
-void AnalyzerInternal::loadData(const string &s) const {
-    std::vector<CharType> charVector;
-    utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-    this->tokenStreamContainer->currentToken.clear();
-    this->tokenStreamContainer->completeCharVector = charVector;
-    this->tokenStreamContainer->offset = 0;
 }
 
 /**
@@ -130,7 +120,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
                 attributeIterator);
         if (attributeValue != NULL) {
             tokens.clear();
-            loadData(*attributeValue);
+            this->tokenStream->fillInCharacters(*attributeValue);
             string currentToken = "";
             while (tokenStream->processToken()) //process the token one by one
             {
@@ -166,7 +156,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
         vector<string> &queryKeywords) const {
     queryKeywords.clear();
-    loadData(queryString);
+    this->tokenStream->fillInCharacters(queryString);
     string currentToken = "";
     while (tokenStream->processToken()) //process the token one by one
     {

@@ -5,8 +5,8 @@
  */
 //This class is used to transform the English letters to lower case
 
-#ifndef __CORE_ANALYZER__LOWERCASEFILTER_H__
-#define __CORE_ANALYZER__LOWERCASEFILTER_H__
+#ifndef __CORE_ANALYZER_LOWERCASEFILTER_H__
+#define __CORE_ANALYZER_LOWERCASEFILTER_H__
 
 #include "TokenStream.h"
 #include "TokenFilter.h"

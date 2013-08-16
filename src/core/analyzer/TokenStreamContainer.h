@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__TOKENSTREAMCONTAINER_H__
-#define __CORE_ANALYZER__TOKENSTREAMCONTAINER_H__
+#ifndef __CORE_ANALYZER_TOKENSTREAMCONTAINER_H__
+#define __CORE_ANALYZER_TOKENSTREAMCONTAINER_H__
 
 #include <vector>
 #include "util/encoding.h"
@@ -18,6 +18,11 @@ namespace instantsearch
 
 class TokenStreamContainer {
 public:
+    void fillInCharacters(const std::vector<CharType> &charVector){
+        currentToken.clear();
+        completeCharVector = charVector;
+        offset = 0;
+    }
 	/*
 	 * For example:  process "We went to school"
 	 * 		completeCharVector = "We went to school"
