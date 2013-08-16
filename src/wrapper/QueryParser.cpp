@@ -808,7 +808,6 @@ bool QueryParser::localParameterParser(string &input) {
         }
         boost::algorithm::trim(input);
         if (input.at(0) == '}') {
-            cout << "localParametersString: " << input << endl;
             input = input.substr(1);
             boost::algorithm::trim(input);
         } else {
@@ -1369,7 +1368,7 @@ bool QueryParser::parseLpValue(string &input, string &value) {
 bool QueryParser::parseTermBoolOperator(string &input, string &output) {
     boost::regex re(TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
     bool isParsed = doParse(input, re, output);
-    if (!this->container->isTermBooleanOperatorSet) {
+    if (!this->container->isTermBooleanOperatorSet && isParsed) {
         this->populateTermBooleanOperator(output);
         this->container->isTermBooleanOperatorSet = true;
     }

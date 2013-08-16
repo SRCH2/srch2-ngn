@@ -1,0 +1,2 @@
+curl "http://localhost:8081/search?q=%7BdefaultPrefixComplete=COMPLETE%7DGoods%20AND%20Garden*&fq=model%3ABMW%20OR%20likes%3A%5B44%20TO%20*%5D%20OR%20CMPLX%24price%3E88%20and%20price%3C96%24"
+

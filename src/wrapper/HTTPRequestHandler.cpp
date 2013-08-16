@@ -21,7 +21,7 @@
 #include "QueryPlanGen.h"
 #include "QueryPlan.h"
 #include "QueryExecutor.h"
-
+#include "ParserUtility.h"
 #include <event2/http.h>
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -243,9 +243,14 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
                     attr->second.begin(); category != attr->second.end();
                     ++category) {
-                root["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.begin())]["category_name"] =
-                        category->first;
+                if(category == attr->second.begin() && isFloat(category->first)){
+                    root["facets"][attributeCounter]["facet_info"][(category
+                            - attr->second.begin())]["category_name"] = "lessThanStart";
+                }else{
+                    root["facets"][attributeCounter]["facet_info"][(category
+                            - attr->second.begin())]["category_name"] =
+                            category->first;
+                }
                 root["facets"][attributeCounter]["facet_info"][(category
                         - attr->second.begin())]["category_value"] =
                         category->second;
@@ -633,6 +638,12 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             *(server->indexer->getSchema()), *(server->indexer->getAnalyzer()),
             &paramContainer);
     qr.rewrite();
+
+    if(paramContainer.getMessageString().compare("") != 0){ // must be changed to warning level of logger
+        Logger::console("Query : %s", req->uri);
+        Logger::console("Messages : \n%s", paramContainer.getMessageString().c_str());
+    }
+
 
     //4. generate the queries and the plan
     QueryPlanGen qpg(paramContainer, indexDataContainerConf);

@@ -69,6 +69,31 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do facted search test--------------'
+python ./faceted_search/faceted_search.py $SRCH2_ENGINE_DIR ./faceted_search/queriesAndResults.txt ./faceted_search/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+echo '----do sort filter test--------------'
+python ./sort_filter/sort_filter.py $SRCH2_ENGINE_DIR ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+echo '----do filter query test--------------'
+python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+
 echo '----do geo test--------------'
 python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt
 

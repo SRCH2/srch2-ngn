@@ -18,7 +18,6 @@
  */
 
 #include "QueryValidator.h"
-
 #include "ParserUtility.h"
 #include <algorithm>
 #include <string>
@@ -102,7 +101,7 @@ bool QueryValidator::validate() {
         }
     }
 
-    // validate filter query
+    // validate filter list
     if (!validateExistenceOfAttributesInFieldList()) {
         return false;
     }
@@ -114,6 +113,11 @@ bool QueryValidator::validate() {
 
     // validate facet filter
     if (!validateExistenceOfAttributesInFacetFiler()) {
+        return false;
+    }
+
+    // validate filter query
+    if(! validateFilterQuery()){
         return false;
     }
 
@@ -400,6 +404,28 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
     return true;
 
+}
+
+bool QueryValidator::validateFilterQuery(){
+    if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
+        FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
+        if (! filterQueryContainer->evaluator->validate(schema)){
+            paramContainer->parametersInQuery.erase(
+                    remove(
+                            paramContainer->parametersInQuery.begin(),
+                            paramContainer->parametersInQuery.end(),
+                            FilterQueryEvaluatorFlag),
+                            paramContainer->parametersInQuery.end());
+            delete filterQueryContainer->evaluator;
+            delete filterQueryContainer;
+            paramContainer->filterQueryContainer = NULL;
+
+            paramContainer->messages.push_back(
+                    std::make_pair(MessageWarning,
+                            "Filter query is not valid. No filter will be applied on the results."));
+        }
+    }
+    return true;
 }
 
 //bool QueryValidator::validateValueWithType(srch2is::FilterType type,
