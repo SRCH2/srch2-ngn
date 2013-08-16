@@ -856,6 +856,17 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
                             string(lpKeywordFuzzyLevelParamName)
                                     + " should be a valid float number. Ignoring it."));
         }
+    } else if (0 == lpKey.compare(lpKeywordBoostLevelParamName)) { // i tried using vecotr.at(index) showed me compile errors.
+        if (isUnsigned(lpVal)) {
+            int boostLevel = atof(lpVal.c_str()); //TODO: add the validation
+            this->lpKeywordBoostLevel = boostLevel;
+        } else {
+            //warning
+            this->container->messages.push_back(
+                    make_pair(MessageWarning,
+                            string(lpKeywordBoostLevelParamName)
+                                    + " should be a valid non negetive integer. Ignoring it."));
+        }
     } else if (0 == lpKey.compare(lpKeywordPrefixCompleteParamName)) { //TODO: look into this again, why do we need this parameter?
         this->setInQueryParametersIfNotSet(QueryPrefixCompleteFlag);
         if (boost::iequals("PREFIX", lpVal)) {
