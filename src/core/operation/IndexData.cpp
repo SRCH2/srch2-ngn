@@ -144,7 +144,6 @@ IndexData::IndexData(const string& directoryName)
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     this->forwardIndex->setSchema(this->schemaInternal);
-    this->forwardIndex->merge();// to force create a separate view for writes.
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
     {
@@ -430,45 +429,14 @@ INDEXWRITE_RETVAL IndexData::_commit()
          * 1. There is no InvertedIndex.
          * 2. Need to go to the QuadTree to build filters.
          */
-
-        /*{
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-        this->forwardIndex->merge();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
-        //Check for case, where in commit() is called without any records added to the index.
+        // Check for the case where no records were added to the index when commit() is called.
         if (totalNumberofDocuments == 0)
             return OP_FAIL;//Failed
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
+        this->forwardIndex->commit();
         this->trie->commit();
-
         //this->trie->print_Trie();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex commit" << endl;
-        }
-*/
-
         const vector<unsigned> *oldIdToNewIdMapVector = this->trie->getOldIdToNewIdMapVector();
 
         map<unsigned, unsigned> oldIdToNewIdMapper;
@@ -477,10 +445,6 @@ INDEXWRITE_RETVAL IndexData::_commit()
 
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
-
-        // Measuring the time to change the keyword ids in the forward index
-        // struct timespec tstart;
-        // clock_gettime(CLOCK_REALTIME, &tstart);
 
         for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
         {
@@ -491,48 +455,9 @@ INDEXWRITE_RETVAL IndexData::_commit()
             if(!isLocational)
                 this->invertedIndex->commit(forwardList, this->rankerExpression,
                         forwardIndexIter, totalNumberofDocuments, this->schemaInternal, newKeywordIdKeywordOffsetTriple);
-
-            /*
-            if (forwardIndexIter%1000 == 0)
-            {
-              std::cout << "\rPass 2: Indexing  - " << forwardIndexIter;
-            }
-            if (forwardIndexIter%99999 == 0)
-            {
-                std::cout << "\r";
-                }*/
         }
-
-        // struct timespec tend;
-        // clock_gettime(CLOCK_REALTIME, &tend);
-        // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + 
-        //   (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
-        // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
-
-/*
-        {
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         this->forwardIndex->finalCommit();
-
 //        this->forwardIndex->print_size();
-/*
-
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         if (isLocational)
         {
             //time_t begin,end;
@@ -547,32 +472,8 @@ INDEXWRITE_RETVAL IndexData::_commit()
             this->invertedIndex->finalCommit();
         }
 
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "IL commit" << endl;
-        }
-*/
-
-/*
-
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
-
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex clean" << endl;
-        }
-*/
 
         //this->trie->print_Trie();
         this->commited = true;
@@ -688,8 +589,7 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
                                                const map<unsigned, unsigned> &keywordIdMapper,
                                                map<unsigned, unsigned> &processedRecordIds)
 {
-	ts_shared_ptr<vectorview<unsigned> > keywordIDsWriteView;
-	this->invertedIndex->getKeywordIds()->getWriteView(keywordIDsWriteView);
+	vectorview<unsigned>* &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
     for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
             iter != trieNodeIdMapper.end(); ++ iter)
     {
@@ -701,13 +601,15 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
         map<unsigned, unsigned>::const_iterator keywordIdMapperIter = keywordIdMapper.find(invertedListId);
         keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
         // Jamshid : since it happens after the commit of other index structures it uses read view
-        unsigned invertedListSize = this->invertedIndex->getInvertedListSize_ReadView(invertedListId);
+        shared_ptr<vectorview<unsigned> > readview;
+        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+        unsigned invertedListSize = readview->size();
         // go through each record id on the inverted list
         InvertedListElement invertedListElement;
         for (unsigned i = 0; i < invertedListSize; i ++) {
             /*if (invertedListElement == NULL)
                 continue;*/
-            unsigned recordId =  this->invertedIndex->getInvertedListElementByDirectory(invertedListId, i);
+            unsigned recordId = readview->getElement(i);
 
             // re-map it only it is not done before
             if (processedRecordIds.find (recordId) == processedRecordIds.end()) {

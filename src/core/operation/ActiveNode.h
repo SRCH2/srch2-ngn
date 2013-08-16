@@ -295,6 +295,13 @@ public:
         return true;
     }
 
+    size_t size(){
+        size_t size = 0;
+        for(unsigned i = 0; i< this->edUpperBound; i++)
+            size += trieNodeSetVector->at(i).size();
+        return size;
+    }
+
     void getItem(const TrieNode *&trieNode, unsigned &distance) {
         if (isDone()) {
             trieNode = NULL;
@@ -396,6 +403,10 @@ public:
         if (cursor >= resultVector.size())
             return true;
         return false;
+    }
+
+    size_t size() const{
+        return resultVector.size();
     }
 
     void getItem(const TrieNode *&prefixNode, const TrieNode *&leafNode, unsigned &distance) {

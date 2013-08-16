@@ -353,7 +353,7 @@ private:
 
     // Set to true when the commit function is called. Set to false, when the addRecord function is called.
     bool commited_WriteView;
-    bool mergeRequired_WriteView;
+    bool mergeRequired;
 
     // Initialised in constructor and used in calculation of offset in filterAttributesVector. This is lighter than serialising the schema itself.
     const SchemaInternal *schemaInternal;
@@ -444,8 +444,10 @@ public:
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     };
 
-    static void save(const ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
+    static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {
+        if(forwardIndex.mergeRequired)
+            forwardIndex.merge();
         std::ofstream ofs(forwardIndexFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);
         oa << forwardIndex;
@@ -472,6 +474,7 @@ public:
      *              3. Increment hitcount
      * 4. Sort each ForwardList based on newKeywordIds
      */
+    void commit();
     void merge();
     //void commit(ForwardList *forwardList, const vector<unsigned> *oldIdToNewIdMap, vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit );
     void commit(ForwardList *forwardList, const map<unsigned, unsigned> &oldIdToNewIdMapper, vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit );
