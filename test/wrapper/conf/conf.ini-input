@@ -38,15 +38,52 @@ is-primary-key-searchable=0
 # REQUIRED
 attributes-search=title
 
-# Attributes that can be used to sort the results
-# OPTIONAL
-attributes-sort=IGNORE
+# default values for searchable attributes which are defined in attributes-search
+# OPTIONAL : default is "" for each value
+attributes-search-default=IGNORE
 
-# The types of attributes that can be used to sort the result, 0 if unsigned, 
-# 1 if float
+# Is each searchable attribute required
+# OPTIONAL : default : false
+attributes-search-required=IGNORE
+
+# Attributes that can be used for post processing filters and facets
 # OPTIONAL
-attributes-sort-type=IGNORE
-attributes-sort-default-value=IGNORE
+non-searchable-attributes=IGNORE
+
+# Types of the non-searchable attribute. A type can be int, float, text or time.
+# If non-searchable-attributes is set this option is REQUIRED.
+non-searchable-attributes-types=IGNORE
+
+# Default values for non-searchable-attributes
+# If non-searchable-attributes is set this option is REQUIRED.
+non-searchable-attributes-default=IGNORE
+
+# Is each non-searchable-attribute required
+# OPTOINAL : default is false
+non-searchable-attributes-required=IGNORE
+
+######################### Faceted search ############################
+# is faceted search enabled
+# OPTIONAL : default is false
+facet-enable=0
+
+# Attributes which are used to create facets. This attributes must also be declared in non-searchable-attributes
+# if facet-enable is true REQUIRED
+facet-attributes=IGNORE
+
+# Facet type for each attribute. 0 for Categorical and 1 for Range facet.
+# if facet-enable is true REQUIRED
+facet-attribute-type=IGNORE
+
+# Start of range facets. Insert empty string for Categorical facets.
+# # if facet-enable is true REQUIRED
+facet-attribute-start=IGNORE
+
+# End of range facets. Insert empty string for Categorical facets.
+# # if facet-enable is true REQUIRED
+facet-attribute-end=IGNORE
+
+
 attribute-record-boost=relevance
 
 # REQUIRED If index-type=1
