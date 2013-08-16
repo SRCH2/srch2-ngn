@@ -321,6 +321,8 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 
 Trie::Trie()
 {
+    // We create a root (for the write view) by copying the trie root of the read view.
+    // Initially both root views have an empty trie with a "$" sign at the root.
 	this->root_readview.reset( new TrieRootNodeAndFreeList() );
 	this->root_writeview = new TrieNode(this->root_readview.get()->root);
 	this->numberOfTerminalNodes = 0;
@@ -329,6 +331,7 @@ Trie::Trie()
 	this->merge_required = 0;
 
 	this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1; // init the counter
+	pthread_spin_init(&m_spinlock, 0);
 }
 
 Trie::~Trie()
@@ -343,6 +346,7 @@ Trie::~Trie()
 		TrieNode* childNode = root->getChild(childIterator);
 		this->deleteTrieNode( childNode );
 	}
+	pthread_spin_destroy(&m_spinlock);
 }
 
 void Trie::deleteTrieNode(TrieNode* &trieNode)
@@ -361,9 +365,11 @@ void Trie::deleteTrieNode(TrieNode* &trieNode)
 	trieNode = NULL;
 }
 
-void Trie::getTrieRootNode_ReadView(ts_shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const
+void Trie::getTrieRootNode_ReadView(boost::shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const
 {
+    pthread_spin_lock(&m_spinlock);
 	trieRootNode_ReadView = this->root_readview;
+	pthread_spin_unlock(&m_spinlock);
 }
 
 TrieNode* Trie::getTrieRootNode_WriteView() const
@@ -658,7 +664,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
 	this->merge_required = true;
 
-	ts_shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 	this->getTrieRootNode_ReadView(trieRootNode_ReadView);
 
 	// ThreadSafe
@@ -824,8 +830,9 @@ void Trie::load(Trie &trie, const std::string &trieFullPathFileName) {
     ifs.close();
 }
 
-void Trie::save(const Trie &trie, const std::string &trieFullPathFileName) {
-
+void Trie::save(Trie &trie, const std::string &trieFullPathFileName) {
+    if(trie.merge_required)
+        trie.merge();
     std::ofstream ofs(trieFullPathFileName.c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
     oa << trie;
@@ -834,7 +841,7 @@ void Trie::save(const Trie &trie, const std::string &trieFullPathFileName) {
 
 int Trie::getNumberOfBytes() const
 {
-	ts_shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 	this->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	const TrieNode *root = trieRootNode_ReadView->root;
 	return root->getNumberOfBytes();
@@ -842,7 +849,7 @@ int Trie::getNumberOfBytes() const
 
 int Trie::getNumberOfNodes() const
 {
-	ts_shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+    boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 	this->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	const TrieNode *root = trieRootNode_ReadView->root;
 
@@ -851,7 +858,7 @@ int Trie::getNumberOfNodes() const
 
 int Trie::getfinalKeywordIdCounter() const
 {
-	ts_shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+    boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 	this->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	const TrieNode *root = trieRootNode_ReadView->root;
 
@@ -1271,18 +1278,23 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 
 void Trie::merge()
 {
+    pthread_spin_lock(&m_spinlock);
 	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
+	// We can safely release the lock now, since the only chance the read view can be modified is during merge().
+	// But merge() can only happen when another writer comes in, and we assume at any time only one writer can come in.
+	// So this case cannot happen.
+	pthread_spin_unlock(&m_spinlock);
 	this->root_writeview = new TrieNode(this->root_readview.get()->root);
 }
 
 void Trie::commit()
 {
-	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
-	this->root_writeview = new TrieNode(this->root_readview.get()->root);
-
-	if (commited)
-		return;
-
+    ASSERT(commited == false);
+    // we remove the old readview's root first
+    delete this->root_readview->root;
+    this->root_readview->root = root_writeview;
+    // We create a new write view's root by copying the root of the read review
+    this->root_writeview = new TrieNode(this->root_readview->root);
 	/**
 	  * 1. Traverse the Trie using depth first.
 	  * 2. Set new IDs, update InvertedList offsets.
@@ -1319,7 +1331,7 @@ void Trie::deleteOldIdToNewIdMapVector()
 void Trie::getAncestorPrefixes(const Prefix &prefix, std::vector<Prefix> &ancestorPrefixes) const
 {
 	// get root node
-	ts_shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
+    boost::shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
 	this->getTrieRootNode_ReadView(rootNode_readView);
 	const TrieNode* node = rootNode_readView->root;
 
@@ -1381,7 +1393,7 @@ bool Trie::isPrefixACompleteKeyword(const Prefix &prefix) const
 		return true; // it's a leaf node
 
 	// get root node
-	ts_shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
+	boost::shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
 	this->getTrieRootNode_ReadView(rootNode_readView);
 	const TrieNode* node = rootNode_readView->root;
 
@@ -1475,7 +1487,7 @@ void Trie::getKeywordMinMaxIdLength(unsigned keywordId, unsigned &minId, unsigne
 		unsigned &length) const
 {
 	// get root node
-	ts_shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
+    boost::shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
 	this->getTrieRootNode_ReadView(rootNode_readView);
 	const TrieNode* node = rootNode_readView->root;
 
@@ -1570,7 +1582,7 @@ void Trie::getPrefixString_NotThreadSafe(const TrieNode* trieNode, std::vector<C
 	else
 	{
 		// get root node
-		ts_shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
+	    boost::shared_ptr<TrieRootNodeAndFreeList > rootNode_readView;
 		this->getTrieRootNode_ReadView(rootNode_readView);
 		const TrieNode* nodeIter = rootNode_readView->root;
 		//const TrieNode* nodeIter = rootReadView;
@@ -1649,7 +1661,7 @@ void Trie::printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned
 
 void Trie::print_Trie() const
 {
-	typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+	typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 	TrieRootNodeSharedPtr rootSharedPtr;
 	this->getTrieRootNode_ReadView(rootSharedPtr);
 	TrieNode *root = rootSharedPtr->root;

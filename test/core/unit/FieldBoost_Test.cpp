@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr;
     trie->getTrieRootNode_ReadView(rootSharedPtr);
     TrieNode *root = rootSharedPtr->root;
