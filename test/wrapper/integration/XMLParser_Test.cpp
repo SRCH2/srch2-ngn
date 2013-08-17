@@ -1,4 +1,4 @@
-#include "wrapper/util/xmlParser/pugixml.hpp"
+#include "util/xmlParser/pugixml.hpp"
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -19,9 +19,9 @@ void test1(char* xmlFile) {
         ASSERT(false);
         return;
     }
-    pugi::xml_node searchEngines = doc.child("xml");
+    pugi::xml_node allSearchEngines = doc.child("xml");
 
-   for (pugi::xml_node searchEngine = searchEngines.first_child(); searchEngine;
+   for (pugi::xml_node searchEngine = allSearchEngines.first_child(); searchEngine;
            searchEngine = searchEngine.next_sibling()) {
        cout << "searchEngine: ";
 

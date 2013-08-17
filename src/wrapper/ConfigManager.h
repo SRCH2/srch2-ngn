@@ -141,9 +141,9 @@ private:
 
     bool isOnlyDigits(string& str);
     bool isFloat(string str);
-    bool isPathFileValid(string& filePath);
     //Validate Functions
     bool isValidFieldType(string& fieldType);
+    bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
     bool isValidBool(string& fieldType);
     bool isValidBoostFields(map <string, unsigned>& boosts);
     bool isValidQueryTermBoost(string& quertTermBoost);
@@ -169,10 +169,12 @@ private:
     bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
     bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
     bool isValidLogLevel(string& logLevel);
+    bool isValidIndexType(string& indexType);
+    bool isValidSearcherType(string& searcherType);
 
 
 public:
-    ConfigManager(std::string& configfile);
+    ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
 
 //	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,			std::stringstream &parseError);
@@ -180,7 +182,7 @@ public:
 //	void parse(const boost::program_options::variables_map &vm,
 //			bool &configSuccess, std::stringstream &parseError);
 
-	void parse(pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError);
+	void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 	const std::string& getCustomerName() const; //XXX: REMOVE?
 	uint32_t getDocumentLimit() const;
@@ -212,7 +214,7 @@ public:
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
 	string getStopFilePath() const; // StopFilter File Path
 	string getStemmerFile() const; // stemmer file
-	string getSrch2Home() const; // Srch2 Home Directory
+	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;
@@ -233,7 +235,7 @@ public:
 	WriteApiType getWriteApiType() const;
 
 	int getSearchResponseFormat() const;
-	const std::string& getAttributeStringForMySQLQuery() const;
+//	const std::string& getAttributeStringForMySQLQuery() const;
 	int getSearchResponseJSONFormat() const;
 
 	const std::string& getLicenseKeyFileName() const;
@@ -241,8 +243,6 @@ public:
 
 	const std::string& getHTTPServerAccessLogFile() const;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
-	const std::string& getHTTPServerErrorLogFile() const;
-	const std::string& getHTTPServerDocumentRoot() const;
 	const std::string& getHTTPServerListeningHostname() const;
 	const std::string& getHTTPServerListeningPort() const;
 
