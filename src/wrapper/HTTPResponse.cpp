@@ -211,6 +211,7 @@ void HTTPResponse::printResults( evhttp_request *req, const evkeyvalq &headers,
     root["offset"] = start;
     root["limit"] = end - start;
 
+    // We return the number of found results no matter what kind of query was received.
     root["results_found"] = retrievedResults;
 
     if (urlParserHelper.searchType==1)
