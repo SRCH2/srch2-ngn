@@ -55,8 +55,9 @@ typedef enum {
 
 
 typedef enum {
-	STANDARD_ANALYZER,    // StandardAnalyzer
-	SIMPLE_ANALYZER       // SimpleAnalyzer
+	STANDARD_ANALYZER,  // StandardAnalyzer
+	SIMPLE_ANALYZER,    // SimpleAnalyzer
+    CHINESE_ANALYZER    // ChineseAnalyzer
 } AnalyzerType;
 
 struct TokenAttributeHits {
@@ -97,7 +98,9 @@ public:
             const std::string &synonymFilePath,
             const SynonymKeepOriginFlag &synonymKeepOriginFlag,
             const std::string &delimiters,
-            const AnalyzerType &analyzerType = STANDARD_ANALYZER);
+            const AnalyzerType &analyzerType = STANDARD_ANALYZER,
+            const std::string &chineseDictFilePath = ""
+            );
 
 
 	void setRecordAllowedSpecialCharacters(const std::string &delimiters);

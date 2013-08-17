@@ -23,6 +23,9 @@ LIST(APPEND UNIT_TESTS Trie_Test)
 #ADD_EXECUTABLE(ForwardIndex_Test ForwardIndex_Test.cpp)
 #TARGET_LINK_LIBRARIES(ForwardIndex_Test ${UNIT_TEST_LIBS})
 	
+ADD_EXECUTABLE(DictionaryBuilder DictionaryBuilder.cpp)
+TARGET_LINK_LIBRARIES(DictionaryBuilder ${UNIT_TEST_LIBS})
+
 ADD_EXECUTABLE(FieldBoost_Test FieldBoost_Test.cpp)
 TARGET_LINK_LIBRARIES(FieldBoost_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS FieldBoost_Test)
@@ -42,6 +45,10 @@ LIST(APPEND UNIT_TESTS IndexerInternal_Test)
 ADD_EXECUTABLE(ActiveNode_Test ActiveNode_Test.cpp)
 TARGET_LINK_LIBRARIES(ActiveNode_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS ActiveNode_Test)
+
+ADD_EXECUTABLE(Cowvector_Test Cowvector_Test.cpp)
+TARGET_LINK_LIBRARIES(Cowvector_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS Cowvector_Test)
 
 ADD_EXECUTABLE(Analyzer_Test Analyzer_Test.cpp)
 TARGET_LINK_LIBRARIES(Analyzer_Test ${UNIT_TEST_LIBS})

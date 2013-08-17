@@ -5,8 +5,8 @@
  *      Author: iman
  */
 
-#ifndef __CORE_ANALYZER__STEMMERFILTER_H__
-#define __CORE_ANALYZER__STEMMERFILTER_H__
+#ifndef __CORE_ANALYZER_STEMMERFILTER_H__
+#define __CORE_ANALYZER_STEMMERFILTER_H__
 
 // TODO: jamshid fix the macros all over the code
 #define TRUE 1

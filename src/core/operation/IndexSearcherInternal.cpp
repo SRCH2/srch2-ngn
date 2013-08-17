@@ -226,7 +226,7 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
             ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
             //expansion.termPtr = queryTerms->at(i);
             vector<CharType> str;
-            ts_shared_ptr<TrieRootNodeAndFreeList > rv;
+            boost::shared_ptr<TrieRootNodeAndFreeList > rv;
             this->indexData->trie->getTrieRootNode_ReadView(rv);
             this->indexData->trie->getPrefixString(rv->root, trieNode, str);
             mapSearcherTerm.expansionStructureVector.push_back(expansion);

@@ -407,8 +407,9 @@ public:
     static const unsigned TRIE_MAX_DEPTH = 127;
 
 private:
-    ts_shared_ptr<TrieRootNodeAndFreeList > root_readview;
+    boost::shared_ptr<TrieRootNodeAndFreeList> root_readview;
     TrieNode *root_writeview;
+    mutable pthread_spinlock_t m_spinlock;
 
     unsigned numberOfTerminalNodes;
 
@@ -431,9 +432,9 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
+        // We do NOT need to serialize the "committed" flag since the trie should have committed.
+        // We do NOT need to serialize the "oldIdToNewIdMapVector" since it's only used before the commit.
         ar << numberOfTerminalNodes;
-        ar << commited;
-        ar << oldIdToNewIdMapVector;
         ar << root_readview;
     }
 
@@ -441,11 +442,11 @@ private:
     void load(Archive & ar, const unsigned int version)
     {
         ar >> numberOfTerminalNodes;
-        ar >> commited;
-        ar >> oldIdToNewIdMapVector;
+        // We do NOT need to read the "committed" flag from the disk since the trie should have committed and the flag should true.
+        // We do NOT need to read the "oldIdToNewIdMapVector" from the disk since it's only used before the commit and is no longer needed.
+        commited = true;
         ar >> root_readview;
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
-        //root_writeview = root_readview;
     }
 
     template<class Archive>
@@ -462,7 +463,7 @@ public:
 
     void deleteTrieNode(TrieNode* &trieNode);
 
-    void getTrieRootNode_ReadView(ts_shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const;
+    void getTrieRootNode_ReadView(boost::shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const;
 
     TrieNode* getTrieRootNode_WriteView() const;
 
@@ -518,7 +519,7 @@ public:
 
     static void load(Trie &trie, const std::string &trieFullPathFileName);
 
-    static void save(const Trie &trie, const std::string &trieFullPathFileName);
+    static void save(Trie &trie, const std::string &trieFullPathFileName);
 
     int getNumberOfBytes() const;
 
