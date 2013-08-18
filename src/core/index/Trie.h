@@ -45,6 +45,7 @@
 #include <cassert>
 #include <set>
 #include <cassert>
+#include <queue>
 
 #include "util/cowvector/ts_shared_ptr.h"
 #include "util/Assert.h"
@@ -54,6 +55,7 @@ using std::endl;
 using std::set;
 using std::vector;
 using std::map;
+using std::queue;
 using namespace boost::serialization;
 
 namespace srch2
@@ -410,6 +412,8 @@ private:
     boost::shared_ptr<TrieRootNodeAndFreeList> root_readview;
     TrieNode *root_writeview;
     mutable pthread_spinlock_t m_spinlock;
+
+    queue<boost::shared_ptr<TrieRootNodeAndFreeList> > oldReadViewQueue;
 
     unsigned numberOfTerminalNodes;
 

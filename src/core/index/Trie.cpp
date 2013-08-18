@@ -1278,12 +1278,17 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 
 void Trie::merge()
 {
+    this->oldReadViewQueue.push(this->root_readview);
     pthread_spin_lock(&m_spinlock);
 	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
 	// We can safely release the lock now, since the only chance the read view can be modified is during merge().
 	// But merge() can only happen when another writer comes in, and we assume at any time only one writer can come in.
 	// So this case cannot happen.
 	pthread_spin_unlock(&m_spinlock);
+	while(!this->oldReadViewQueue.empty() && this->oldReadViewQueue.front().unique())
+	{
+	    this->oldReadViewQueue.pop();
+	}
 	this->root_writeview = new TrieNode(this->root_readview.get()->root);
 }
 
