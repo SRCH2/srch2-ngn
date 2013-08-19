@@ -413,6 +413,8 @@ private:
     TrieNode *root_writeview;
     mutable pthread_spinlock_t m_spinlock;
 
+    // We keep the old read views in a queue. The goal is to make sure trie nodes in these views
+    // can be freed in the order the read views were added into the queue.
     queue<boost::shared_ptr<TrieRootNodeAndFreeList> > oldReadViewQueue;
 
     unsigned numberOfTerminalNodes;

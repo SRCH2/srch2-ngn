@@ -1278,6 +1278,15 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 
 void Trie::merge()
 {
+    // In each merge, we first put the current read view to the end of the queue,
+    // and reset the current read view. Then we go through the read views one by one
+    // in the order of their arrival. For each read view, we check its reference count.
+    // If the count is > 1, then it means there are readers that are still using it,
+    // so we do nothing and return. If the read view’s reference count is 1,
+    // then it means the current merge thread is the last thread using this read view,
+    // so we can delete it and move onto the next read view on the queue.
+    // We repeat the process until either we reach the end of the queue or we
+    // find a read view with a reference count > 1.
     this->oldReadViewQueue.push(this->root_readview);
     pthread_spin_lock(&m_spinlock);
 	this->root_readview.reset(new TrieRootNodeAndFreeList(this->root_writeview));
@@ -1285,8 +1294,7 @@ void Trie::merge()
 	// But merge() can only happen when another writer comes in, and we assume at any time only one writer can come in.
 	// So this case cannot happen.
 	pthread_spin_unlock(&m_spinlock);
-	while(!this->oldReadViewQueue.empty() && this->oldReadViewQueue.front().unique())
-	{
+	while(!this->oldReadViewQueue.empty() && this->oldReadViewQueue.front().unique()){
 	    this->oldReadViewQueue.pop();
 	}
 	this->root_writeview = new TrieNode(this->root_readview.get()->root);
