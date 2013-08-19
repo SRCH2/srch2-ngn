@@ -317,7 +317,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         }
         ++lineCounter;
     }
-    // clean the line by covering up the indexing first XXX records output
+    // empty the line by covering the "Indexing first XXX records" text with a space
     cout << "                                                       " << "\r";
     Logger::console("Indexed %d records.", lineCounter);
 
