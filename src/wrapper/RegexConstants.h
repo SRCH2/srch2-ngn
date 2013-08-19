@@ -14,7 +14,7 @@ namespace httpwrapper {
 // local parameter regex strings
 const string LP_KEY_REGEX_STRING = "\\s*[\\w_]+";
 const string LP_KEY_VAL_DELIMETER_REGEX_STRING = "\\s*=\\s*";
-const string LP_VALUE_REGEX_STRING = "[\\w_]+(,[\\w_])*";
+const string LP_VALUE_REGEX_STRING = "[\\w_]+(,[\\w_]+)*";
 // keyword regex strings
 const string BOOST_REGEX_STRING = "\\^\\d+";
 const string CHECK_FUZZY_NUMBER_REGEX_STRING = "\\~\\.\\d+";
