@@ -181,8 +181,14 @@ Indexer* createIndex(string indexDir, bool isGeo) {
 	schema->setPrimaryKey("primaryKey");
 	schema->setSearchableAttribute("description", 2);
 
-	AnalyzerInternal *analyzer = new StandardAnalyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, 
+            "", // stemmerFilePath 
+            "", // stopWordFilePath
+            "", // synonymFilePath
+            srch2::instantsearch::SYNONYM_KEEP_ORIGIN,
+            ""  // extra delimiters
+            );
 
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
@@ -240,13 +246,12 @@ Indexer* loadIndex(const string& strIndexPath) {
 }
 
 QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
-		const string& queryString, unsigned ed,
-		srch2::instantsearch::TermType termType) {
+		const string& queryString, unsigned ed) {
 	Logger::console("srch2::sdk::query:%s", queryString.c_str());
     timespec begin;
     setStartTime(&begin);
 	Query *query = new Query(srch2::instantsearch::TopKQuery);
-	parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed, termType);
+	parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed);
 	int resultCount = 10;
 
 	QueryResults *queryResults = QueryResults::create(indexSearcher, query);

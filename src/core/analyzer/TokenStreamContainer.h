@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__SHAREDTOKEN_H__
-#define __CORE_ANALYZER__SHAREDTOKEN_H__
+#ifndef __CORE_ANALYZER_TOKENSTREAMCONTAINER_H__
+#define __CORE_ANALYZER_TOKENSTREAMCONTAINER_H__
 
 #include <vector>
 #include "util/encoding.h"
@@ -16,8 +16,13 @@ namespace srch2
 namespace instantsearch
 {
 
-class SharedToken {
+class TokenStreamContainer {
 public:
+    void fillInCharacters(const std::vector<CharType> &charVector){
+        currentToken.clear();
+        completeCharVector = charVector;
+        offset = 0;
+    }
 	/*
 	 * For example:  process "We went to school"
 	 * 		completeCharVector = "We went to school"
@@ -29,4 +34,4 @@ public:
 	int offset;									//the offset of current position to process
 };
 }}
-#endif /* __CORE_ANALYZER__SHAREDTOKEN_H__ */
+#endif /* __CORE_ANALYZER__TOKENSTREAMCONTAINER_H__ */

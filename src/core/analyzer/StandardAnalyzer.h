@@ -4,13 +4,13 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__STANDARDANALYZER_H__
-#define __CORE_ANALYZER__STANDARDANALYZER_H__
+#ifndef __CORE_ANALYZER_STANDARDANALYZER_H__
+#define __CORE_ANALYZER_STANDARDANALYZER_H__
 
 #include <vector>
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerInternal.h"
-#include "TokenOperator.h"
+#include "TokenStream.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -37,15 +37,13 @@ public:
 						synonymFilePath,
 						synonymKeepOriginFlag) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
 	}
 
 	StandardAnalyzer(const StandardAnalyzer &standardAnalyzer) :
 			AnalyzerInternal(standardAnalyzer) {
 		this->analyzerType = STANDARD_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
 	}
-	TokenOperator *createOperatorFlow();
+	TokenStream *createOperatorFlow();
 	virtual ~StandardAnalyzer();
 };
 

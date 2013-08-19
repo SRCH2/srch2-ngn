@@ -40,7 +40,7 @@ void buildSimpleIndex(string INDEX_DIR)
 	//srch2is::StemmerType stemType = DEFAULTSTEMMER;
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::Analyzer::create(stemType,"");
+	srch2is::Analyzer *analyzer = srch2is::new Analyzer(stemType,"");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	

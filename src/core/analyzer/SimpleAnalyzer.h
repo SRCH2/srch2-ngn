@@ -4,11 +4,11 @@
  *  Created on: 2013-5-18
  */
 //This class will tokenize the words according to whitespace character .
-#ifndef __CORE_ANALYZER__SIMPLEANALYZER_H__
-#define __CORE_ANALYZER__SIMPLEANALYZER_H__
+#ifndef __CORE_ANALYZER_SIMPLEANALYZER_H__
+#define __CORE_ANALYZER_SIMPLEANALYZER_H__
 
 #include "AnalyzerInternal.h"
-#include "TokenOperator.h"
+#include "TokenStream.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -33,15 +33,13 @@ public:
 							synonymFilePath,
 							synonymKeepOriginFlag) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
 	}
 
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {
 		this->analyzerType = SIMPLE_ANALYZER;
-		this->tokenOperator = createOperatorFlow();
 	}
-	TokenOperator *createOperatorFlow();
+	TokenStream *createOperatorFlow();
 	virtual ~SimpleAnalyzer();
 };
 }

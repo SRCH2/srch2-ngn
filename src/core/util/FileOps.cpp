@@ -8,9 +8,19 @@
 namespace srch2 {
 namespace util {
 
+// Find the longest path of a file
+string getFilePath(string fullPathFileName)
+{
+    int found = fullPathFileName.rfind("/");
+    if(found != -1)
+        return fullPathFileName.substr(0, found);
+    else
+        return "";
+}
+
 bool checkDirExistence(const char *dirName)
 {
-	return access(dirName, NULL) == 0;
+	return access(dirName, F_OK) == 0;
 }
 
 int createDir(const char *pathName)

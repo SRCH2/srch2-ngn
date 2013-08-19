@@ -71,7 +71,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
@@ -338,22 +338,22 @@ void testAnalyzer1()
 {
 	string src="We are美丽 Chinese";
 	AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
-	TokenOperator * tokenOperator = simpleAnlyzer->createOperatorFlow();
-	simpleAnlyzer->loadData(src);
+	TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
+	tokenStream->fillInCharacters(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are美丽");
 	vectorString.push_back("chinese");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete simpleAnlyzer;
 }
 //StandardAnalyzer organizes a tokenizer treating characters >= 256 as a single token and   a "ToLowerCase" filter
@@ -361,8 +361,8 @@ void testAnalyzer2()
 {
 	string src="We are美丽 Chineseㄓㄠ";
 	AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
-	TokenOperator * tokenOperator = standardAnalyzer->createOperatorFlow();
-	standardAnalyzer->loadData(src);
+	TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
+	tokenStream->fillInCharacters(src);
 	vector<string> vectorString;
 	vectorString.push_back("we");
 	vectorString.push_back("are");
@@ -371,15 +371,15 @@ void testAnalyzer2()
 	vectorString.push_back("chinese");
 	vectorString.push_back("ㄓㄠ");
 	int i=0;
-	while(tokenOperator->incrementToken())
+	while(tokenStream->processToken())
 	{
 		vector<CharType> charVector;
-		tokenOperator->getCurrentToken(charVector);
+		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, src);
 		ASSERT(vectorString[i] == src);
 		i++;
 	}
-	delete tokenOperator;
+	delete tokenStream;
 	delete standardAnalyzer;
 }
 int main(int argc, char *argv[])

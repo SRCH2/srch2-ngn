@@ -46,7 +46,7 @@ void testIndexData()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     /// Create Analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create IndexData
@@ -87,7 +87,7 @@ void testIndexData()
     /// test Trie
     Trie_Internal *trie = indexData->trie;
 
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr;
     trie->getTrieRootNode_ReadView(rootSharedPtr);
     TrieNode *root = rootSharedPtr->root;
@@ -178,7 +178,7 @@ void test1()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     
     unsigned mergeEveryNSeconds = 3;
@@ -236,7 +236,7 @@ void addRecords()
     schema->setSearchableAttribute("article_title", 7); // searchable text
     
     Record *record = new Record(schema);
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;

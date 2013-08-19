@@ -178,7 +178,7 @@ JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
 	QueryResults* queryResults = query(analyzer, indexSearcher, queryString,
-			editDistance, srch2::instantsearch::TERM_TYPE_PREFIX);
+			editDistance);
 
 	string result = printQueryResult(queryResults, indexer);
 	jstring jstr = env->NewStringUTF(result.c_str());
@@ -206,7 +206,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	const Analyzer *analyzer = indexer->getAnalyzer();
 
 	QueryResults* queryResults = query(analyzer, indexSearcher, queryString,
-			editDistance, srch2::instantsearch::TERM_TYPE_PREFIX);
+			editDistance);
 
 	// Find java ArrayList
 	jclass clsArrayList = env->FindClass("java/util/ArrayList");

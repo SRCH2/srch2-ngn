@@ -77,8 +77,7 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
 // 3. parse a query to fuzzy and prefix keywords
 void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1);
 
-void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed, srch2::instantsearch::TermType termType);
-
+void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed);
 void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0);
 
 /// Added for stemmer
@@ -137,11 +136,9 @@ bool pingExactComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
 ;
 // fuzzy query by default
-float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
-;
+float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString);
 
-bool pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed, srch2::instantsearch::TermType termType)
-;
+int pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, const string &queryString, unsigned ed);
 
 void pingDummyStressTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits = 10)
 ;

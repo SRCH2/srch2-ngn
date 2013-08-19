@@ -30,7 +30,7 @@ void addSimpleRecords()
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(DISABLE_STEMMER_NORMALIZER, "", "", "", SYNONYM_DONOT_KEEP_ORIGIN);
 	// create an indexer
 	unsigned mergeEveryNSeconds = 3;	
 	unsigned mergeEveryMWrites = 5;

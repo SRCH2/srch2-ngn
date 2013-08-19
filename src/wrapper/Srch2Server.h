@@ -11,7 +11,7 @@
 #include <instantsearch/IndexSearcher.h>
 #include <instantsearch/QueryResults.h>
 
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 #include "Srch2KafkaConsumer.h"
 
 #include <pthread.h>
@@ -33,7 +33,7 @@ class Srch2Server
 {
 public:
 	Indexer *indexer;
-	const Srch2ServerConf *indexDataContainerConf;
+	const ConfigManager *indexDataContainerConf;
 	Srch2KafkaConsumer *kafkaConsumer;
 
 	 /* Fields used only for stats */
@@ -55,7 +55,7 @@ public:
 		this->kafkaConsumer = NULL;
 	}
 
-	void init(const Srch2ServerConf *indexDataContainerConf)
+	void init(const ConfigManager *indexDataContainerConf)
 	{
 		this->indexDataContainerConf = indexDataContainerConf;
 		this->kafkaConsumer = new Srch2KafkaConsumer(this->indexDataContainerConf);

@@ -1,5 +1,5 @@
 
-// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -19,7 +19,6 @@
  */
 
 #include "IndexData.h"
-#include "analyzer/AnalyzerInternal.h"
 #include "record/SchemaInternal.h"
 #include "index/IndexUtil.h"
 #include "index/Trie.h"
@@ -32,6 +31,7 @@
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
 #include <instantsearch/Record.h>
+#include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
 
 #include <stdio.h>  /* defines FILENAME_MAX */
@@ -40,10 +40,7 @@
 #include <vector>
 #include <map>
 #include <memory>
-//#include <exception>
-#include <stdexcept>
-//#include <unordered_set> 
-//#include <unordered_map>
+#include <exception>
 
 using std::string;
 using std::vector;
@@ -53,10 +50,8 @@ using srch2::util::Logger;
 //using std::unordered_set;
 using namespace srch2::util;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
@@ -69,7 +64,7 @@ IndexData::IndexData(const string &directoryName,
 
     if(!checkDirExistence(directoryName.c_str())){
 		if(createDir(directoryName.c_str()) == -1){
-            throw std::runtime_error("Directory not exist");
+			exit(1);
 		}
 	}
 
@@ -78,15 +73,8 @@ IndexData::IndexData(const string &directoryName,
      * //TODO Need to serialise Analyzer for stopwords
      */
     // get the analyzer type to instantiate a new analyzer
-    AnalyzerType analyzerType = dynamic_cast<AnalyzerInternal *>(analyzer)->getAnalyzerType();
-    switch(analyzerType)
-	{
-		case SIMPLE_ANALYZER:
-			this->analyzerInternal = new SimpleAnalyzer( *(dynamic_cast<SimpleAnalyzer *>(analyzer)));
-			break;
-		default:
-			this->analyzerInternal = new StandardAnalyzer( *(dynamic_cast<StandardAnalyzer *>(analyzer)));
-	}
+    this->analyzer = new Analyzer(*analyzer);
+
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
     this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
@@ -115,29 +103,27 @@ IndexData::IndexData(const string& directoryName)
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-        Logger::error("Given index path %s does not exist", directoryName.c_str());
-        throw std::runtime_error("Index load exception");
+		if(createDir(directoryName.c_str()) == -1){
+			exit(1);
+		}
 	}
 
     std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-    if (!ifs.is_open()){
-        Logger::error("Given index path %s does not contains an index", directoryName.c_str());
-        throw std::runtime_error("Index load exception");
-    }
 	boost::archive::binary_iarchive ia(ifs);
 	AnalyzerType analyzerType;
 	ia >> analyzerType;
 
-    switch(analyzerType)
-	{
-		case SIMPLE_ANALYZER:
-			this->analyzerInternal = new SimpleAnalyzer;
-			break;
-		default:
-			this->analyzerInternal = new StandardAnalyzer;
-	}
-    // cout << "directoryName = " << directoryName << endl;
-    AnalyzerInternal::load(*(this->analyzerInternal), ia);
+	this->analyzer = new Analyzer(
+	                    DISABLE_STEMMER_NORMALIZER,
+                        "",
+                        "",
+                        "",
+                        SYNONYM_DONOT_KEEP_ORIGIN,
+                        "",
+                        analyzerType);
+
+    this->analyzer->load(ia);
+
     ifs.close();
     //this->analyzerInternal->setIndexDirectory(directoryName);
 
@@ -158,7 +144,6 @@ IndexData::IndexData(const string& directoryName)
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     this->forwardIndex->setSchema(this->schemaInternal);
-    this->forwardIndex->merge();// to force create a separate view for writes.
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
     {
@@ -200,7 +185,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
         this->mergeRequired = true;
         /// analyze the record (tokenize it, remove stop words)
         map<string, TokenAttributeHits > tokenAttributeHitsMap;
-        this->analyzerInternal->tokenizeRecord(record, tokenAttributeHitsMap);
+        this->analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
         KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
@@ -336,7 +321,8 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
             {
                 std::vector<std::string> keywords;
                 //char c = '.';
-                this->analyzerInternal->tokenizeQuery(line, keywords);
+//                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
+                this->analyzer->tokenizeQuery(line, keywords);
 
                 for (std::vector<std::string>::const_iterator kiter = keywords.begin();
                             kiter != keywords.end();
@@ -443,45 +429,14 @@ INDEXWRITE_RETVAL IndexData::_commit()
          * 1. There is no InvertedIndex.
          * 2. Need to go to the QuadTree to build filters.
          */
-
-        /*{
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-        this->forwardIndex->merge();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
-        //Check for case, where in commit() is called without any records added to the index.
+        // Check for the case where no records were added to the index when commit() is called.
         if (totalNumberofDocuments == 0)
             return OP_FAIL;//Failed
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
+        this->forwardIndex->commit();
         this->trie->commit();
-
         //this->trie->print_Trie();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex commit" << endl;
-        }
-*/
-
         const vector<unsigned> *oldIdToNewIdMapVector = this->trie->getOldIdToNewIdMapVector();
 
         map<unsigned, unsigned> oldIdToNewIdMapper;
@@ -490,10 +445,6 @@ INDEXWRITE_RETVAL IndexData::_commit()
 
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
-
-        // Measuring the time to change the keyword ids in the forward index
-        // struct timespec tstart;
-        // clock_gettime(CLOCK_REALTIME, &tstart);
 
         for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
         {
@@ -504,48 +455,9 @@ INDEXWRITE_RETVAL IndexData::_commit()
             if(!isLocational)
                 this->invertedIndex->commit(forwardList, this->rankerExpression,
                         forwardIndexIter, totalNumberofDocuments, this->schemaInternal, newKeywordIdKeywordOffsetTriple);
-
-            /*
-            if (forwardIndexIter%1000 == 0)
-            {
-              std::cout << "\rPass 2: Indexing  - " << forwardIndexIter;
-            }
-            if (forwardIndexIter%99999 == 0)
-            {
-                std::cout << "\r";
-                }*/
         }
-
-        // struct timespec tend;
-        // clock_gettime(CLOCK_REALTIME, &tend);
-        // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + 
-        //   (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
-        // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
-
-/*
-        {
-                struct timespec tstart;
-                clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         this->forwardIndex->finalCommit();
-
 //        this->forwardIndex->print_size();
-/*
-
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "FL commit" << endl;
-        }
-*/
-
-/*
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
         if (isLocational)
         {
             //time_t begin,end;
@@ -560,32 +472,8 @@ INDEXWRITE_RETVAL IndexData::_commit()
             this->invertedIndex->finalCommit();
         }
 
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "IL commit" << endl;
-        }
-*/
-
-/*
-
-        {
-            struct timespec tstart;
-            clock_gettime(CLOCK_REALTIME, &tstart);
-*/
-
-
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
-
-/*
-            struct timespec tend;
-            clock_gettime(CLOCK_REALTIME, &tend);
-            unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-            cout << time << "KYindex clean" << endl;
-        }
-*/
 
         //this->trie->print_Trie();
         this->commited = true;
@@ -701,8 +589,7 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
                                                const map<unsigned, unsigned> &keywordIdMapper,
                                                map<unsigned, unsigned> &processedRecordIds)
 {
-	ts_shared_ptr<vectorview<unsigned> > keywordIDsWriteView;
-	this->invertedIndex->getKeywordIds()->getWriteView(keywordIDsWriteView);
+	vectorview<unsigned>* &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
     for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
             iter != trieNodeIdMapper.end(); ++ iter)
     {
@@ -714,13 +601,15 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
         map<unsigned, unsigned>::const_iterator keywordIdMapperIter = keywordIdMapper.find(invertedListId);
         keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
         // Jamshid : since it happens after the commit of other index structures it uses read view
-        unsigned invertedListSize = this->invertedIndex->getInvertedListSize_ReadView(invertedListId);
+        shared_ptr<vectorview<unsigned> > readview;
+        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+        unsigned invertedListSize = readview->size();
         // go through each record id on the inverted list
         InvertedListElement invertedListElement;
         for (unsigned i = 0; i < invertedListSize; i ++) {
             /*if (invertedListElement == NULL)
                 continue;*/
-            unsigned recordId =  this->invertedIndex->getInvertedListElementByDirectory(invertedListId, i);
+            unsigned recordId = readview->getElement(i);
 
             // re-map it only it is not done before
             if (processedRecordIds.find (recordId) == processedRecordIds.end()) {
@@ -761,8 +650,8 @@ void IndexData::_save(const string &directoryName) const
         QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
     std::ofstream ofs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
-    oa << dynamic_cast<AnalyzerInternal *>(analyzerInternal)->getAnalyzerType();
-    AnalyzerInternal::save(*this->analyzerInternal, oa);
+    oa << this->analyzer->getAnalyzerType();
+    this->analyzer->save(oa);
     ofs.close();
     this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
 }
@@ -779,7 +668,7 @@ void IndexData::printNumberOfBytes() const
 
 const Analyzer* IndexData::getAnalyzer() const
 {
-    return dynamic_cast<const Analyzer *>(this->analyzerInternal);
+    return this->analyzer;
 }
 
 const Schema* IndexData::getSchema() const
@@ -789,7 +678,7 @@ const Schema* IndexData::getSchema() const
 
 IndexData::~IndexData()
 {
-    delete this->analyzerInternal;
+    delete this->analyzer;
     delete this->trie;
     delete this->forwardIndex;
 

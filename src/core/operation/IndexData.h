@@ -1,5 +1,5 @@
 
-// $Id: IndexData.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexData.h 3480 2013-06-19 08:00:34Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -95,7 +95,7 @@ namespace instantsearch
 class InvertedIndex;
 class QuadTree;
 //class ForwardIndex;
-class AnalyzerInternal;
+class Analyzer;
 class SchemaInternal;
 class ForwardList;
 typedef std::pair<ForwardList*, bool> ForwardListPtr;
@@ -109,13 +109,13 @@ typedef Trie Trie_Internal;
 
 struct IndexReadStateSharedPtr_Token
 {
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr trieRootNodeSharedPtr;
 
-    typedef ts_shared_ptr<vectorview<ForwardListPtr> > ForwardIndexReadView;
+    typedef boost::shared_ptr<vectorview<ForwardListPtr> > ForwardIndexReadView;
     ForwardIndexReadView forwardIndexReadViewSharedPtr;
 
-    typedef ts_shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
+    typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
 };
 
@@ -274,7 +274,7 @@ public:
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
-    AnalyzerInternal *analyzerInternal;
+    Analyzer *analyzer;
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;

@@ -43,6 +43,10 @@ ADD_EXECUTABLE(ActiveNode_Test ActiveNode_Test.cpp)
 TARGET_LINK_LIBRARIES(ActiveNode_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS ActiveNode_Test)
 
+ADD_EXECUTABLE(Cowvector_Test Cowvector_Test.cpp)
+TARGET_LINK_LIBRARIES(Cowvector_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS Cowvector_Test)
+
 ADD_EXECUTABLE(Analyzer_Test Analyzer_Test.cpp)
 TARGET_LINK_LIBRARIES(Analyzer_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS Analyzer_Test)

@@ -38,36 +38,34 @@ namespace instantsearch
 /*
 PAN:
  */
-typedef struct _PivotalActiveNode
-{
+typedef struct _PivotalActiveNode {
     unsigned transformationdistance;
     unsigned short differ; // |p_{x+1}-p_i|
     unsigned short editdistanceofPrefix;
-}PivotalActiveNode;
+} PivotalActiveNode;
 
 
 struct ResultNode {
     const TrieNode *node;
     int editDistance;
     int prefixLength;
-    ResultNode(TrieNode* in_node):node(in_node){}
+    ResultNode(TrieNode* in_node):node(in_node) {}
     ResultNode(const TrieNode* in_node, int in_editDistance, int in_prefixLength):node(in_node),
-            editDistance(in_editDistance),prefixLength(in_prefixLength){}
+            editDistance(in_editDistance),prefixLength(in_prefixLength) {}
 };
 
 // this comparison is based on preorder.
-struct trieNodeComparision{
-	bool operator() (const TrieNode* t1, const TrieNode* t2)
-	{
-		return t1->getMinId() < t2->getMinId() || (t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
-	}
+struct trieNodeComparision {
+    bool operator() (const TrieNode* t1, const TrieNode* t2) {
+        return t1->getMinId() < t2->getMinId() || (t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
+    }
 };
 
 class PrefixActiveNodeSet
 {
 public:
     typedef std::vector<const TrieNode* > TrieNodeSet;
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 
     BusyBit *busyBit;
 
@@ -108,8 +106,7 @@ public:
     };
 
     /// A set of active nodes for an empty string and an edit-distance threshold
-    PrefixActiveNodeSet(const TrieRootNodeSharedPtr &tsPtr, const unsigned editDistanceThreshold)
-    {
+    PrefixActiveNodeSet(const TrieRootNodeSharedPtr &tsPtr, const unsigned editDistanceThreshold) {
         std::vector<CharType> emptyString;
         init(emptyString, editDistanceThreshold, tsPtr);
 
@@ -128,8 +125,7 @@ public:
     };
 
     /// A set of active nodes for an empty string and an edit-distance threshold
-    PrefixActiveNodeSet(const Trie *trie, const unsigned editDistanceThreshold)
-    {
+    PrefixActiveNodeSet(const Trie *trie, const unsigned editDistanceThreshold) {
         trie->getTrieRootNode_ReadView(this->trieRootNodeSharedPtr);
         std::vector<CharType> emptyString;
         init(emptyString, editDistanceThreshold, this->trieRootNodeSharedPtr);
@@ -160,16 +156,15 @@ public:
 
         unsigned trieNodeSetVectorSize = 0;
 
-        for (std::vector<TrieNodeSet>::const_iterator vectorIter = trieNodeSetVector.begin(); vectorIter != trieNodeSetVector.end(); vectorIter++ )
-        {
+        for (std::vector<TrieNodeSet>::const_iterator vectorIter = trieNodeSetVector.begin(); vectorIter != trieNodeSetVector.end(); vectorIter++ ) {
             trieNodeSetVectorSize += (*vectorIter).capacity() * sizeof(*vectorIter);
         }
         trieNodeSetVectorSize += trieNodeSetVector.size() * sizeof(TrieNodeSet)
-                              + (this->trieNodeSetVector.capacity() - trieNodeSetVector.size()) * sizeof(void*);
+                                 + (this->trieNodeSetVector.capacity() - trieNodeSetVector.size()) * sizeof(void*);
 
         return this->prefix.size()
-                              + sizeof(this->editDistanceThreshold)
-                              + trieNodeSetVectorSize;
+               + sizeof(this->editDistanceThreshold)
+               + trieNodeSetVectorSize;
     }
 
     unsigned getNumberOfActiveNodes() {
@@ -210,11 +205,10 @@ public:
         this->flagResultsCached = flag;
     }
 
-    unsigned getEditdistanceofPrefix(const TrieNode *&trieNode)
-    {
-    	std::map<const TrieNode*, PivotalActiveNode >::iterator iter = PANMap.find(trieNode);
-    	ASSERT(iter != PANMap.end());
-    	return iter->second.editdistanceofPrefix;
+    unsigned getEditdistanceofPrefix(const TrieNode *&trieNode) {
+        std::map<const TrieNode*, PivotalActiveNode >::iterator iter = PANMap.find(trieNode);
+        ASSERT(iter != PANMap.end());
+        return iter->second.editdistanceofPrefix;
     }
 
     void printActiveNodes(const Trie* trie) const;// Deprecated due to removal of TrieNode->getParent() pointers.
@@ -226,7 +220,7 @@ private:
     /// compute the pivotal active nodes based on one of the active nodes of the previous prefix
     /// add the new pivotal active nodes to newActiveNodeSet
     void _addPANSetForOneNode(const TrieNode *trieNode, PivotalActiveNode pan,
-            const CharType additionalChar, PrefixActiveNodeSet *newActiveNodeSet);
+                              const CharType additionalChar, PrefixActiveNodeSet *newActiveNodeSet);
 
     //PAN:
     /// Add a new pivotal active node with an edit distance.
@@ -257,9 +251,9 @@ private:
         }*/
 
         for (std::map<const TrieNode*, PivotalActiveNode >::iterator mapIterator = PANMap.begin();
-			   mapIterator != PANMap.end(); mapIterator ++) {
-		   this->trieNodeSetVector[mapIterator->second.transformationdistance].push_back(mapIterator->first);
-	   }
+                mapIterator != PANMap.end(); mapIterator ++) {
+            this->trieNodeSetVector[mapIterator->second.transformationdistance].push_back(mapIterator->first);
+        }
 
         // set the flag
         this->trieNodeSetVectorComputed = true;
@@ -280,7 +274,7 @@ public:
 
         offsetCursor ++;
 
-        if (offsetCursor < trieNodeSetVector->at(editDistanceCursor).size()) 
+        if (offsetCursor < trieNodeSetVector->at(editDistanceCursor).size())
             return;
 
         // reached the tail of the current vector
@@ -301,12 +295,18 @@ public:
         return true;
     }
 
+    size_t size(){
+        size_t size = 0;
+        for(unsigned i = 0; i< this->edUpperBound; i++)
+            size += trieNodeSetVector->at(i).size();
+        return size;
+    }
+
     void getItem(const TrieNode *&trieNode, unsigned &distance) {
         if (isDone()) {
             trieNode = NULL;
             distance = 0;
-        }
-        else {
+        } else {
             trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
             distance = editDistanceCursor;
         }
@@ -316,14 +316,13 @@ public:
 
     // Get current active node. If we have finished the iteration, return NULL
     void getActiveNode(const TrieNode *&trieNode) {
-	   if (isDone()) {
-		   trieNode = NULL;
-	   }
-	   else {
-		   // Return the current active node, which is the offsetCursor-th member in the editDistanceCursor array
-		   trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
-	   }
-	}
+        if (isDone()) {
+            trieNode = NULL;
+        } else {
+            // Return the current active node, which is the offsetCursor-th member in the editDistanceCursor array
+            trieNode = trieNodeSetVector->at(editDistanceCursor).at(offsetCursor);
+        }
+    }
 
 private:
     typedef std::vector<const TrieNode* > TrieNodeSet;
@@ -357,15 +356,13 @@ private:
 
 // a structure to record information of each node
 
-struct LeafNodeSetIteratorItem
-{
+struct LeafNodeSetIteratorItem {
     const TrieNode *prefixNode;
     const TrieNode *leafNode;
     unsigned distance;
 
     // TODO: OPT. Return the length of the prefix instead of the prefixNode pointer?
-    LeafNodeSetIteratorItem(const TrieNode *prefixNode, const TrieNode *leafNode, unsigned distance)
-    {
+    LeafNodeSetIteratorItem(const TrieNode *prefixNode, const TrieNode *leafNode, unsigned distance) {
         this->prefixNode = prefixNode;
         this->leafNode = leafNode;
         this->distance = distance;
@@ -387,7 +384,7 @@ public:
     // Provide an iterator that can return the leaf nodes sorted by their
     // minimal edit distance
 
-    // Implementation: 1. Get the set of active nodes with an edit distance <= edUpperBound, sorted 
+    // Implementation: 1. Get the set of active nodes with an edit distance <= edUpperBound, sorted
     //                 based on their edit distance,
     //                 2. get their leaf nodes, and keep track of the visited nodes so that
     //                   each node is visited only once.
@@ -408,13 +405,16 @@ public:
         return false;
     }
 
+    size_t size() const{
+        return resultVector.size();
+    }
+
     void getItem(const TrieNode *&prefixNode, const TrieNode *&leafNode, unsigned &distance) {
         if (isDone()) {
             prefixNode = NULL;
             leafNode = NULL;
             distance = 0;
-        }
-        else {
+        } else {
             prefixNode = resultVector.at(cursor).prefixNode;
             leafNode = resultVector.at(cursor).leafNode;
             distance = resultVector.at(cursor).distance;
@@ -422,14 +422,12 @@ public:
     }
 
     // Deprecated due to removal of TrieNode->getParent() pointers.
-    void printLeafNodes(const Trie* trie) const
-    {
+    void printLeafNodes(const Trie* trie) const {
         typedef LeafNodeSetIteratorItem leafStar;
         typedef const TrieNode* trieStar;
         std::vector<leafStar>::const_iterator vecIter;
         Logger::debug("LeafNodes");
-        for ( vecIter = this->resultVector.begin(); vecIter!= this->resultVector.end(); vecIter++ )
-        {
+        for ( vecIter = this->resultVector.begin(); vecIter!= this->resultVector.end(); vecIter++ ) {
             leafStar temp = *vecIter;
             trieStar prefixNode = temp.leafNode;
             string prefix;
@@ -441,53 +439,59 @@ public:
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
 
-    	map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
-		const TrieNode *currentNode;
-		unsigned distance;
+        map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
+        const TrieNode *currentNode;
+        unsigned distance;
 
-		// assume the iterator returns the active nodes in an ascending order of their edit distance
-		ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
-		for (; !ani.isDone(); ani.next()){
-			ani.getItem(currentNode, distance);
-			activeNodes[currentNode] = distance; // active nodes that are not visited.
-		}
-		// Use a stack to avoid recursive function calls.
-		std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
-		// We are using an ordered map in which the active nodes are sorted in a pre-order. So this iterator returns the active nodes in an ascending order.
-		for(map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), previousActiveNode; nextActiveNode != activeNodes.end();){
-			previousActiveNode = nextActiveNode;
-			currentNode = previousActiveNode->first;
-			nextActiveNode++;
-			activeNodeStack.push(std::make_pair(previousActiveNode, currentNode));
-			// non-recursive traversal
-			while(!activeNodeStack.empty()){
-				// get and pop the top item
-				std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
-				previousActiveNode = stackTop.first;
-				currentNode = stackTop.second;
-				activeNodeStack.pop();
+        // assume the iterator returns the active nodes in an ascending order of their edit distance
+        ActiveNodeSetIterator ani(prefixActiveNodeSet, edUpperBound);
+        for (; !ani.isDone(); ani.next()) {
+            ani.getItem(currentNode, distance);
+            map<const TrieNode*, unsigned>::iterator nodeIter = activeNodes.find(currentNode);
+            //if the current node is already in activeNodes, we keep the smaller edit distance of this node and the one already in activeNodes
+            if (nodeIter != activeNodes.end())
+                nodeIter->second = std::min<unsigned>(nodeIter->second, distance);
+            else //else we will add it
+                activeNodes[currentNode] = distance; // active nodes that are not visited.
+        }
+        // Use a stack to avoid recursive function calls.
+        std::stack<std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> > activeNodeStack;
+        // We are using an ordered map in which the active nodes are sorted in a pre-order. So this iterator returns the active nodes in an ascending order.
+        for (map<const TrieNode*, unsigned>::iterator nextActiveNode = activeNodes.begin(), previousActiveNode; nextActiveNode != activeNodes.end();) {
+            previousActiveNode = nextActiveNode;
+            currentNode = previousActiveNode->first;
+            nextActiveNode++;
+            activeNodeStack.push(std::make_pair(previousActiveNode, currentNode));
+            // non-recursive traversal
+            while (!activeNodeStack.empty()) {
+                // get and pop the top item
+                std::pair<map<const TrieNode*, unsigned>::iterator, const TrieNode *> &stackTop = activeNodeStack.top();
+                previousActiveNode = stackTop.first;
+                currentNode = stackTop.second;
+                activeNodeStack.pop();
 
-				// check if this current trie node is the next active node in the set
-				if(nextActiveNode != activeNodes.end() && currentNode == nextActiveNode->first){
-					// If the next active node's ed is <= the ed of the previous active node, we will set change the previous node to the next node.
-					if(nextActiveNode->second <= previousActiveNode->second)
-						previousActiveNode = nextActiveNode;
-					nextActiveNode++;
-				}
-				if (currentNode->isTerminalNode())
-					resultVector.push_back(LeafNodeSetIteratorItem(previousActiveNode->first, currentNode, previousActiveNode->second));
+                // check if this current trie node is the next active node in the set
+                if (nextActiveNode != activeNodes.end() && currentNode == nextActiveNode->first) {
+                    // If the next active node's ed is <= the ed of the previous active node, we will set change the previous node to the next node.
+                    if (nextActiveNode->second <= previousActiveNode->second)
+                        previousActiveNode = nextActiveNode;
+                    nextActiveNode++;
+                }
+                if (currentNode->isTerminalNode())
+                    resultVector.push_back(LeafNodeSetIteratorItem(previousActiveNode->first, currentNode, previousActiveNode->second));
 
-				// push all the children from right to left to stack, so that after pop we can access them from left to right.
-				for (int childIterator = currentNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
-					activeNodeStack.push(std::make_pair(previousActiveNode, currentNode->getChild(childIterator)));
-			}
-		}
-		// init the cursor
-		cursor = 0;
+                // push all the children from right to left to stack, so that after pop we can access them from left to right.
+                for (int childIterator = currentNode->getChildrenCount()-1; childIterator >= 0; childIterator--)
+                    activeNodeStack.push(std::make_pair(previousActiveNode, currentNode->getChild(childIterator)));
+            }
+        }
+        // init the cursor
+        cursor = 0;
     }
 
 };
 
-}}
+}
+}
 
 #endif //__ACTIVENODE_H__

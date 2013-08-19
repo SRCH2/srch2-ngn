@@ -1,4 +1,4 @@
-//$Id: Analyzer.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Analyzer.h 3456 2013-07-29 02:11:13Z iman $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,9 +25,15 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+
+using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
+
+class AnalyzerInternal;
 
 typedef enum {
 	// there is no numbering for this enum. By default the numbers start from 0
@@ -49,9 +55,34 @@ typedef enum {
 
 
 typedef enum {
-	STANDARD_ANALYZER,    // StandardAnalyzer
-	SIMPLE_ANALYZER       // SimpleAnalyzer
+	STANDARD_ANALYZER,  // StandardAnalyzer
+	SIMPLE_ANALYZER,    // SimpleAnalyzer
+    CHINESE_ANALYZER    // ChineseAnalyzer
 } AnalyzerType;
+
+struct TokenAttributeHits {
+    /** Each entry has position information as follows:
+     *  Attribute -> First 8bits -> Attribute in which the token hit occurred
+     *  Hits -> Last 24 bits -> Position within the attribute where the token hit occurred.
+     *  The positions start from 1, this is because the positions in PositionIndex are ZERO terminated.
+     *
+     *  The maximum number of allowed Attributes is checked by the following assert
+     *  ASSERT( attribute <  0xff);
+     *
+     *  i.e. 255
+     *
+     *  The maximum number of the positionHit is checked by the following assert
+     *  ASSERT( position <  0xffffff);
+     *
+     * i.e. 4 294 967 295
+     *
+     */
+    vector<unsigned> attributeList;
+};
+
+
+class Record;
+
 
 /**
  * An Analyzer is used at query time to tokenize a queryString into
@@ -59,68 +90,53 @@ typedef enum {
  * being passed into the search engine. */
 class MYLIB_EXPORT Analyzer {
 public:
+    Analyzer(Analyzer& analyzerObject);
 
-	/**
-	 * Creates an Analyzer.
-	 */
-	/*static Analyzer *create();// Default is NO_STEMMER_NORMALIZER
-	 static Analyzer *create( StemmerNormalizerType stemNormType);*/
-	static Analyzer *create(const StemmerNormalizerFlagType &stemNormType,
-			const std::string &stemmerFilePath,
-			const std::string &stopWordFilePath,
-			const std::string &synonymFilePath,
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-			const std::string &delimiters,
-			const AnalyzerType &analyzerType = STANDARD_ANALYZER);
+    Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
+            const std::string &stemmerFilePath,
+            const std::string &stopWordFilePath,
+            const std::string &synonymFilePath,
+            const SynonymKeepOriginFlag &synonymKeepOriginFlag,
+            const std::string &delimiters,
+            const AnalyzerType &analyzerType = STANDARD_ANALYZER,
+            const std::string &chineseDictFilePath = ""
+            );
 
-	virtual void setRecordAllowedSpecialCharacters(
-			const std::string &delimiters) = 0;
-	virtual const std::string& getRecordAllowedSpecialCharacters() const = 0;
 
-	/**
-	 * @param[in] queryString - The query string .
-	 * @param[in, out] queryKeywords - A vector of query keywords, which is the result tokening queryString.
-	 * @param[in] splitterCharacter - A delimiter used in the tokenization, such as "+" or space " ".
-	 *
-	 * Three operations are applied to the input parameter queryString:
-	 * - All characters in queryString are converted to lowercase.
-	 * - The following characters
-	 *   "\r\n\t!%&*^@#,._-+=|/\\{}[]()?~`,<>;:\'\"
-	 *   are replaced from the queryString with delimiterCharacter.
-	 * - The queryString is tokenized using splitterCharacter as the
-	 *   tokenizing character.
-	 * Note that the input string queryString is a declared as const
-	 * and the above changes are not applied directly to the string.
-	 */
-	virtual void tokenizeQuery(const std::string &queryString,
-			std::vector<std::string> &queryKeywords) const = 0;
+	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
 
-	/*
-	 *   Example URL: http://localhost:8081/search?q=hospital:title,description+services:description
-	 *
-	 *   @param queryString: input query string = "hospital:title,description+services:description"
-	 *   @param queryKeywords : hospital and services
-	 *   @param splitterCharacter: '+'
-	 *   @param filterSplitterCharacter: ':'
-	 *   @param fieldsAndCharacter: ','
-	 *   @param fieldsOrCharacter: '.'
-	 *   @param searchableAttributesNameToId: map of searchable attributes from name to Id
-	 *   @param filter: vector of attribute hits
-	 *   Note that the searchableAttributesNameToId is used to map an attribute name to its Id, which will be used in Attribute-based search
-	 */
+	const std::string& getRecordAllowedSpecialCharacters() const ;
+
+	void tokenizeQuery(const std::string &queryString,
+			std::vector<std::string> &queryKeywords) const;
+
+	void tokenizeRecord(const Record *record,
+	        std::map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
+
+	const AnalyzerType& getAnalyzerType() const;
+
+    void load(boost::archive::binary_iarchive &ia);
+
+    void save(boost::archive::binary_oarchive &oa);
+
 	// TODO: Refactor the function and its arguments. Possibly move to wrapper
-	virtual void tokenizeQueryWithFilter(const std::string &queryString,
+	void tokenizeQueryWithFilter(const std::string &queryString,
 			std::vector<std::string> &queryKeywords,
-			const char &splitterCharacter, const char &filterSplitterCharacter,
-			const char &fieldsAndCharacter, const char &fieldsOrCharacter,
+			const char &splitterCharacter,
+			const char &filterSplitterCharacter,
+			const char &fieldsAndCharacter,
+			const char &fieldsOrCharacter,
 			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			std::vector<unsigned> &filter) const = 0;
+			std::vector<unsigned> &filter) const ;
+
 
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */
-	virtual ~Analyzer() {
-	};
+	~Analyzer();
+
+private:
+	AnalyzerInternal * analyzerInternal;
 
 };
 
@@ -128,3 +144,4 @@ public:
 }
 
 #endif //__INCLUDE_INSTANTSEARCH__ANALYZER_H__
+

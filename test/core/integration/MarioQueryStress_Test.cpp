@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	schema->setSearchableAttribute("category"); // searchable text
 
 	// create an analyzer
-	Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
 
 	// create an index writer
 	unsigned mergeEveryNSeconds = 3;	

@@ -1,4 +1,4 @@
-//$Id: Scalability_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: Scalability_Test.cpp 3529 2013-07-02 10:56:21Z jiaying $
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
@@ -15,7 +15,7 @@
 #include <vector>
 #include <cstdlib>
 
-#define MAX_QUERY_NUMBER 5000
+//#define MAX_QUERY_NUMBER 5000
 
 using namespace std;
 
@@ -23,20 +23,20 @@ namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
 // Read data from file, build the index, and save the index to disk
-void buildIndex(string data_file, string index_dir)
-{
+void buildIndex(string dataFile, string indexDir) {
     /// Set up the Schema
     Schema *schema = Schema::create(srch2is::DefaultIndex);
     schema->setPrimaryKey("primaryKey");
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -44,25 +44,20 @@ void buildIndex(string data_file, string index_dir)
     unsigned docsCounter = 0;
     string line;
 
-    ifstream data(data_file.c_str());
+    ifstream data(dataFile.c_str());
 
     /// Read records from file
     /// the file should have two fields, seperated by '^'
     /// the first field is the primary key, the second field is a searchable attribute
-    while(getline(data,line))
-    {
+    while (getline(data,line)) {
         unsigned cellCounter = 0;
         stringstream  lineStream(line);
         string cell;
 
-        while(getline(lineStream,cell,'^') && cellCounter < 2 )
-        {
-            if (cellCounter == 0)
-            {
+        while (getline(lineStream,cell,'^') && cellCounter < 2 ) {
+            if (cellCounter == 0) {
                 record->setPrimaryKey(cell.c_str());
-            }
-            else
-            {
+            } else {
                 record->setSearchableAttributeValue(0, cell);
             }
 
@@ -92,20 +87,20 @@ void buildIndex(string data_file, string index_dir)
 }
 
 // Read data from file, build the index, and save the index to disk
-void buildGeoIndex(string data_file, string index_dir)
-{
+void buildGeoIndex(string dataFile, string indexDir) {
     /// Set up the Schema
     Schema *schema = Schema::create(srch2is::LocationIndex);
     schema->setPrimaryKey("primaryKey");
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -113,34 +108,25 @@ void buildGeoIndex(string data_file, string index_dir)
     unsigned docsCounter = 0;
     string line;
 
-    ifstream data(data_file.c_str());
+    ifstream data(dataFile.c_str());
 
     /// Read records from file
     /// the file should have two fields, seperated by '^'
     /// the first field is the primary key, the second field is a searchable attribute
-    while(getline(data,line))
-    {
+    while (getline(data,line)) {
         unsigned cellCounter = 0;
         stringstream  lineStream(line);
         string cell;
         float lat=0.0, lng=0.0;
 
-        while(getline(lineStream,cell,'^') && cellCounter < 4 )
-        {
-            if (cellCounter == 0)
-            {
+        while (getline(lineStream,cell,'^') && cellCounter < 4 ) {
+            if (cellCounter == 0) {
                 record->setPrimaryKey(cell.c_str());
-            }
-            else if (cellCounter == 1)
-            {
+            } else if (cellCounter == 1) {
                 record->setSearchableAttributeValue(0, cell);
-            }
-            else if (cellCounter == 2)
-            {
+            } else if (cellCounter == 2) {
                 lng = atof(cell.c_str());
-            }
-            else if (cellCounter == 3)
-            {
+            } else if (cellCounter == 3) {
                 lat = atof(cell.c_str());
             }
 
@@ -172,24 +158,21 @@ void buildGeoIndex(string data_file, string index_dir)
 }
 
 // Warm up the index, so that the first query in the test won't be slow
-void warmUp(const Analyzer *analyzer, IndexSearcher *indexSearcher)
-{
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
+void warmUp(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
+    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
+    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
+    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
 }
 
 // Warm up the geo index, so that the first query in the test won't be slow
-void warmUpGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher)
-{
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1, TERM_TYPE_PREFIX);
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1, TERM_TYPE_PREFIX);
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1, TERM_TYPE_PREFIX);
+void warmUpGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
+    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
+    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
+    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
 }
 
 // Read queries from file and do the search
-void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed, srch2::instantsearch::TermType termType)
-{
+void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed, int verb) {
     string line;
 
     ifstream keywords(path.c_str());
@@ -197,8 +180,7 @@ void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
 
     unsigned counter = 0;
 
-    while(getline(keywords, line) && counter < MAX_QUERY_NUMBER)
-    {
+    while (getline(keywords, line)) {
         keywordVector.push_back(line);
         counter++;
     }
@@ -210,43 +192,53 @@ void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
 
     int empty = 0;
 
+    if (isExact) {//check if the query is exact query.
+        ed = 0;
+    }
+
     clock_gettime(CLOCK_REALTIME, &t1);
-    
-    for( vector<string>::iterator vectIter = keywordVector.begin(); vectIter!= keywordVector.end(); vectIter++ )
-    {
+
+    for (vector<string>::iterator vectIter = keywordVector.begin(); vectIter!= keywordVector.end(); vectIter++ ) {
         timespec t1_inner;
         timespec t2_inner;
 
-        cout << "Query: " << *vectIter << endl;
-        clock_gettime(CLOCK_REALTIME, &t1_inner);
+        if (verb >= 2) {
+            //cout << "Query: " << *vectIter << endl;
+            clock_gettime(CLOCK_REALTIME, &t1_inner);
+        }
 
-        bool hasRes = pingForScalabilityTest(analyzer, indexSearcher, *vectIter, ed, termType);
+        int resultNumber= 0;
 
-        clock_gettime(CLOCK_REALTIME, &t2_inner);
-        double time_span_inner = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
-        cout << "curren search done in " << time_span_inner << " milliseconds." << endl;
+        resultNumber = pingForScalabilityTest(analyzer, indexSearcher, *vectIter, ed);
 
-        if (!hasRes)
-        {
-            //cout << "Query " << *vectIter << " has no results" << endl;
+        if (verb >= 2) {
+            clock_gettime(CLOCK_REALTIME, &t2_inner);
+            double timeSpentOnOneQuery = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
+            //TODO: revert this part
+            cout << "current search:  "<<*vectIter << "------" << timeSpentOnOneQuery << " milliseconds." << " Find "<< resultNumber << " resutls."<< endl;
+            //cout << "current search:  "<<*vectIter << "------" << time_span_inner << " milliseconds." << endl;
+        }
+        if (!resultNumber) {
+            if (verb >= 1) {
+                //TODO: revert this part
+                //cout << "Query " << *vectIter << " has no results" << endl;
+            }
             empty++;
         }
     }
-
     clock_gettime(CLOCK_REALTIME, &t2);
 
     double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
 
     cout << "---- Default Index ---------------------------------------------------" << endl;
-    cout << "Type: " << type << endl;
     cout << "Searched " << keywordVector.size() << " queries in " << time_span << " milliseconds." << endl;
     cout << "Each query " << time_span / keywordVector.size() << " milliseconds." << endl;
     cout << empty << " queries have no result." << endl;
+    cout << "-------------------------------------------------------" << endl;
 }
 
 // Read geo queries from file and do the search
-void readGeoQueriesAndDoQueries(string path, string type, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed, srch2::instantsearch::TermType termType)
-{
+void readGeoQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed,int verb, float radius) {
     string line;
 
     ifstream queries(path.c_str());
@@ -254,8 +246,7 @@ void readGeoQueriesAndDoQueries(string path, string type, const Analyzer *analyz
 
     unsigned counter = 0;
 
-    while(getline(queries, line) && counter < MAX_QUERY_NUMBER)
-    {
+    while (getline(queries, line)) {
         queryVector.push_back(line);
         counter++;
     }
@@ -267,12 +258,13 @@ void readGeoQueriesAndDoQueries(string path, string type, const Analyzer *analyz
 
     int empty = 0;
 
-    float radius = 0.5;
+    if (isExact) { //check if the query is exact query.
+        ed = 0;
+    }
 
     clock_gettime(CLOCK_REALTIME, &t1);
-    
-    for( vector<string>::iterator vectIter = queryVector.begin(); vectIter!= queryVector.end(); vectIter++ )
-    {
+
+    for ( vector<string>::iterator vectIter = queryVector.begin(); vectIter!= queryVector.end(); vectIter++ ) {
         int split = vectIter->find_first_of("^");
 
         string geo_part = vectIter->substr(split+1);
@@ -283,67 +275,71 @@ void readGeoQueriesAndDoQueries(string path, string type, const Analyzer *analyz
         timespec t1_inner;
         timespec t2_inner;
 
-        cout << "Query: " << *vectIter << endl;
-        clock_gettime(CLOCK_REALTIME, &t1_inner);
+        if (verb >= 2) {
+            //cout << "Query: " << *vectIter << endl;
+            clock_gettime(CLOCK_REALTIME, &t1_inner);
+        }
 
-        bool hasRes = pingToCheckIfHasResults(analyzer, indexSearcher, vectIter->substr(0,split), lat-radius, lng-radius, lat+radius, lng+radius, ed, termType);
+        int resultsNumber=0;
 
-        clock_gettime(CLOCK_REALTIME, &t2_inner);
-        double time_span_inner = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
-        cout << "curren search done in " << time_span_inner << " milliseconds." << endl;
+        resultsNumber = pingToCheckIfHasResults(analyzer, indexSearcher, vectIter->substr(0,split), lat-radius, lng-radius, lat+radius, lng+radius, ed);
 
-        if (!hasRes)
-        {
-            //cout << "Query " << *vectIter << " has no results" << endl;
+        if (verb >=2) {
+            clock_gettime(CLOCK_REALTIME, &t2_inner);
+            double timeSpentOnOneQuery = (double)((t2_inner.tv_sec - t1_inner.tv_sec) * 1000) + ((double)(t2_inner.tv_nsec - t1_inner.tv_nsec)) / 1000000.0;
+            cout << "current search: "<<*vectIter << "------"<< timeSpentOnOneQuery << " milliseconds." << " Find "<< resultsNumber << " resutls."<< endl;
+        }
+
+        if (resultsNumber == 0) {
+            if (verb >= 1) {
+                cout << "Query " << *vectIter << " has no results" << endl;
+            }
             empty++;
         }
     }
-
     clock_gettime(CLOCK_REALTIME, &t2);
 
     double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
 
     cout << "---- Locational Index ---------------------------------------------------" << endl;
-    cout << "Type: " << type << endl;
     cout << "Searched " << queryVector.size() << " queries in " << time_span << " milliseconds." << endl;
     cout << "Each query " << time_span / queryVector.size() << " milliseconds." << endl;
     cout << empty << " queries have no result." << endl;
+    cout << "-------------------------------------------------------" << endl;
 }
 
-int main(int argc, char **argv)
-{
-    cout << "Test begins." << endl;
-    cout << "-------------------------------------------------------" << endl;
+/*
+ * testsearch: search query
+ * input:
+ *     index_dir: index and query's dir
+ *     isExact: exact or fuzzy query
+ *     ed: edit distance
+ *     verb: verb_level
+ *         0: for performance test, no detail output;
+ *         1: output queries without results
+ *         2: output all queries results
+ *     radius: radius for geo data, which will work only when isGeo=true
+ *     isGeo: if it's geo data
+ */
+void testSearch(const string& dataFile, const string& indexDir, const string& queryFile, bool isExact, int ed, int verb, float radius, bool isGeo) {
+    if (!isGeo) {
+        cout << "Read data from " << dataFile << endl;
+        cout << "Save index to " << indexDir << endl;
 
-    string index_dir = getenv("index_dir");
+        buildIndex(dataFile, indexDir);
+    } else {
+        string geoDataFile = indexDir + "/geo_data.txt";
 
-    bool isGeo = true;
-    srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
+        cout << "Read data from " << geoDataFile << endl;
+        cout << "Save index to " << indexDir << endl;
 
-    if (!isGeo)
-    {
-        string data_file = index_dir + "/data.txt";
-    
-        cout << "Read data from " << data_file << endl;
-        cout << "Save index to " << index_dir << endl;
-    
-        buildIndex(data_file, index_dir);
+        buildGeoIndex(geoDataFile, indexDir);
     }
-    else
-    {
-        string geo_data_file = index_dir + "/geo_data.txt";
-        
-        cout << "Read data from " << geo_data_file << endl;
-        cout << "Save index to " << index_dir << endl;
-
-        buildGeoIndex(geo_data_file, index_dir);
-    }
-
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
 
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, indexDir, "");
     Indexer *index = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
@@ -351,42 +347,43 @@ int main(int argc, char **argv)
 
     const Analyzer *analyzer = index->getAnalyzer();
 
-    if (!isGeo)
-    {
+    if (!isGeo) {
         warmUp(analyzer, indexSearcher);
-    
-        //string single_exact_keywords_file = index_dir + "/single_exact";
-        //string double_exact_keywords_file = index_dir + "/double_exact";
-        string single_fuzzy_keywords_file = index_dir + "/single_fuzzy";
-        string double_fuzzy_keywords_file = index_dir + "/double_fuzzy";
-
-        //cout << "Read single exact queries keywords from " << single_exact_keywords_file << endl;
-        //cout << "Read double exact queries keywords from " << double_exact_keywords_file << endl;
-        cout << "Read single fuzzy queries keywords from " << single_fuzzy_keywords_file << endl;
-        cout << "Read double fuzzy queries keywords from " << double_fuzzy_keywords_file << endl;
-    
-        //readQueriesAndDoQueries(double_exact_keywords_file, "double exact", analyzer, indexSearcher, 0, termType);
-        //readQueriesAndDoQueries(single_exact_keywords_file, "single exact", analyzer, indexSearcher, 0, termType);
-        readQueriesAndDoQueries(single_fuzzy_keywords_file, "single fuzzy", analyzer, indexSearcher, 1, termType);
-        readQueriesAndDoQueries(double_fuzzy_keywords_file, "double fuzzy", analyzer, indexSearcher, 1, termType);
-    }
-    else
-    {
+        readQueriesAndDoQueries(isExact, queryFile, analyzer, indexSearcher, ed, verb);
+    } else {
         warmUpGeo(analyzer, indexSearcher);
-    
-        string geo_single_fuzzy_keywords_file = index_dir + "/single_fuzzy_geo";
-        string geo_double_fuzzy_keywords_file = index_dir + "/double_fuzzy_geo";
-
-        cout << "Read single fuzzy geo queries keywords from " << geo_single_fuzzy_keywords_file << endl;
-        cout << "Read double fuzzy geo queries keywords from " << geo_double_fuzzy_keywords_file << endl;
-
-        readGeoQueriesAndDoQueries(geo_single_fuzzy_keywords_file, "single fuzzy geo", analyzer, indexSearcher, 1, termType);
-        readGeoQueriesAndDoQueries(geo_double_fuzzy_keywords_file, "double fuzzy geo", analyzer, indexSearcher, 1, termType);
+        readGeoQueriesAndDoQueries(isExact, queryFile, analyzer, indexSearcher, ed, verb, radius);
     }
 
     delete indexSearcher;
     delete index;
     delete indexMetaData;
+
+}
+int main(int argc, char **argv) {
+    cout << "Test begins." << endl;
+    cout << "-------------------------------------------------------" << endl;
+    string indexDir = getenv("index_dir");
+
+    if (argc < 5 || argc > 6) {
+        cout << "Error: parameters are not set properly."<<endl;
+        exit(1);
+    }
+    string datafile = argv[1];
+    string queryfile = argv[2];
+    int ed = atoi(argv[3]);//edit_distance
+    int verb = atoi(argv[4]);
+    float radius = 0.5;//for geo search
+    if (argc == 6)
+        radius = atof(argv[5]);
+
+    //do geo search
+    if (argc==6) {
+        testSearch(datafile, indexDir, queryfile, false, ed, verb, radius, true); //fuzzy geo
+    } else {
+        testSearch(datafile, indexDir, queryfile, false, ed, verb, radius, false);
+    }
+
 
     return 0;
 }

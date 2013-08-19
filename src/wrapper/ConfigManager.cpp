@@ -1,7 +1,6 @@
+//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-// $Id: Srch2ServerConf.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
-#include "Srch2ServerConf.h"
+#include "ConfigManager.h"
 
 #include <string>
 #include <vector>
@@ -14,125 +13,111 @@
 using namespace std;
 namespace po = boost::program_options;
 
-namespace srch2
-{
-namespace httpwrapper
-{
+namespace srch2 {
+namespace httpwrapper {
 
 const char * ignoreOption = "IGNORE";
 
-Srch2ServerConf::Srch2ServerConf(int argc,
-								char** argv,
-								bool &configSuccess,
-								std::stringstream &parseError) {
-	// Declare the supported options.
-	po::options_description config("Configuration");
-
-	config.add_options()
-				("help", "produce a help message")
-				("config-file", po::value<string>(), "config file") // If set, all the following options on command line are ignored.
-
-				//("customer-name", po::value<string>(), "customer name") // REQUIRED
-				("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
-				("index-type",  po::value<int>(), "index-type") // REQUIRED
-				("index-load-or-create",  po::value<bool>(), "index-load-or-create")
-				("data-source-type",  po::value<bool>(), "Data source type")
-
-				("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
-				("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
-				("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
-				("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
-				("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
-				("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
-				("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
-				("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
-				("number-of-threads", po::value<int>(), "number-of-threads")
-
-				("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
-				("listening-port", po::value<string>(), "port to listen") // REQUIRED
-				("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
-				("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
-				("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
-				("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
-				//("number-of-threads",  po::value<int>(), "number-of-threads")
-				("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
-
-				("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
-				("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
-				("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
-				("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
-				("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
-				("attribute-record-boost", po::value<string>(), "record-boost")
-				("attribute-latitude", po::value<string>(), "record-attribute-latitude")
-				("attribute-longitude", po::value<string>(), "record-attribute-longitude")
-				("record-score-expression", po::value<string>(), "record-score-expression")
-				("attribute-boosts", po::value<string>(), "Attributes Boosts")
-				("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
-				("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
-				("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
-
-				("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
-				("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
-				("default-searcher-type", po::value<int>(), "Searcher-type")
-				("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
-				("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
-				("default-query-term-boost", po::value<int>(), "Default query term boost")
-				("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
-				("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
-				("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
-				("support-attribute-based-search", po::value<int>(), "If support attribute based search")
-				("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
-				("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
-				("default-order", po::value<int>(), "sort order")
-				("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
-
-				//("listening-port", po::value<string>(), "HTTP indexDataContainer listening port")
-				//("document-root", po::value<string>(), "HTTP indexDataContainer document root to put html files")
-				("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
-				("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
-				("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
-				("log-level", po::value<int>(), "srch2 log level")
-				("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
-				("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
-				("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
-				("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
-				("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
-				("stemmer-file", po::value<string>(), "Stemmer File")
-				("install-directory", po::value<string>(), "Install Directory")
-				;
-
-	po::variables_map vm_command_line_args;
-	po::store(po::parse_command_line(argc, argv, config), vm_command_line_args);
-	po::notify(vm_command_line_args);
-
-	if (vm_command_line_args.count("help")) {
-		parseError << config;
-		configSuccess = false;
-		return;
-	} else {
-		if (vm_command_line_args.count("config-file")
-				&& (vm_command_line_args["config-file"].as<string>().compare(
-						ignoreOption) != 0)) {
-			std::cout << "Reading config file: "
-					<< vm_command_line_args["config-file"].as<string>()
-					<< std::endl;
-
-			string configFile =
-					vm_command_line_args["config-file"].as<string>();
-
-			fstream fs(configFile.c_str(), fstream::in);
-			po::variables_map vm_config_file;
-			po::store(po::parse_config_file(fs, config), vm_config_file);
-			po::notify(vm_config_file);
-			this->parse(vm_config_file, configSuccess, parseError);
-		} else {
-			this->parse(vm_command_line_args, configSuccess, parseError);
-		}
-	}
+ConfigManager::ConfigManager(std::string& configFile) {
+    this->configFile = configFile;
 }
 
-void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
+void ConfigManager::loadConfigFile(){
+    std::cout << "Reading config file: " << this->configFile 
+              << std::endl;
+
+    po::options_description config("Config");
+
+    config.add_options()
+        //("customer-name", po::value<string>(), "customer name") // REQUIRED
+        ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
+        ("index-type",  po::value<int>(), "index-type") // REQUIRED
+        ("index-load-or-create",  po::value<bool>(), "index-load-or-create")
+        ("data-source-type",  po::value<bool>(), "Data source type")
+
+        ("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
+        ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
+        ("kafka-broker-port", po::value<uint16_t>(), "Port of Kafka broker") // REQUIRED
+        ("kafka-consumer-partitionid", po::value<uint32_t>(), "Kafka consumer partitionid") // REQUIRED
+        ("kafka-consumer-read-buffer", po::value<uint32_t>(), "Kafka consumer socket read buffer") // REQUIRED
+        ("kafka-ping-broker-every-n-seconds", po::value<uint32_t>(), "Kafka consumer ping every n seconds") // REQUIRED
+        ("merge-every-n-seconds", po::value<unsigned>(), "merge-every-n-seconds") // REQUIRED
+        ("merge-every-m-writes", po::value<unsigned>(), "merge-every-m-writes") // REQUIRED
+        ("number-of-threads", po::value<int>(), "number-of-threads")
+
+        ("listening-hostname", po::value<string>(), "port to listen") // REQUIRED
+        ("listening-port", po::value<string>(), "port to listen") // REQUIRED
+        ("doc-limit", po::value<uint32_t>(), "document limit") // REQUIRED
+        ("memory-limit", po::value<uint64_t>(), "memory limit") //REQUIRED
+        ("license-file", po::value<string>(), "File name with path to the srch2 license key file") // REQUIRED
+        ("trie-bootstrap-dict-file", po::value<string>(), "bootstrap trie with initial keywords") // REQUIRED
+        //("number-of-threads",  po::value<int>(), "number-of-threads")
+        ("cache-size", po::value<unsigned>(), "cache size in bytes") // REQUIRED
+
+        ("primary-key", po::value<string>(), "Primary key of data source") // REQUIRED
+        ("is-primary-key-searchable", po::value<int>(), "If primary key searchable")
+        ("attributes-search", po::value<string>(), "Attributes/fields in data for searching") // REQUIRED
+        ("attributes-sort", po::value<string>(), "Attributes/fields in data for sorting")
+        ("attributes-sort-type", po::value<string>(), "Attributes/fields in data for sorting")
+        ("attributes-sort-default-value", po::value<string>(), "Attributes/fields in data for sorting")
+        ("attribute-record-boost", po::value<string>(), "record-boost")
+        ("attribute-latitude", po::value<string>(), "record-attribute-latitude")
+        ("attribute-longitude", po::value<string>(), "record-attribute-longitude")
+        ("record-score-expression", po::value<string>(), "record-score-expression")
+        ("attribute-boosts", po::value<string>(), "Attributes Boosts")
+        ("search-response-format", po::value<int>(), "The result formatting of json search response. 0 for rid,edit_dist,matching_prefix. 1 for rid,edit_dist,matching_prefix,mysql_record")
+        ("attributes-to-return", po::value<string>(), "Attributes to return in the search response")
+        ("search-response-JSON-format", po::value<int>(), "search-response-JSON-format")
+
+        ("query-tokenizer-character", po::value<char>(), "Query Tokenizer character")
+        ("allowed-record-special-characters", po::value<string>(), "Record Tokenizer characters")
+        ("default-searcher-type", po::value<int>(), "Searcher-type")
+        ("default-query-term-match-type", po::value<int>(), "Exact term or fuzzy term")
+        ("default-query-term-type", po::value<int>(), "Query has complete terms or fuzzy terms")
+        ("default-query-term-boost", po::value<int>(), "Default query term boost")
+        ("default-query-term-similarity-boost", po::value<float>(), "Default query term similarity boost")
+        ("default-query-term-length-boost", po::value<float>(), "Default query term length boost")
+        ("prefix-match-penalty", po::value<float>(), "Penalty for prefix matching")
+        ("support-attribute-based-search", po::value<int>(), "If support attribute based search")
+        ("default-results-to-retrieve", po::value<int>(), "number of results to retrieve")
+        ("default-attribute-to-sort", po::value<int>(), "attribute used to sort the results")
+        ("default-order", po::value<int>(), "sort order")
+        ("default-spatial-query-bounding-square-side-length", po::value<float>(), "Query has complete terms or fuzzy terms")
+
+        //("listening-port", po::value<string>(), "HTTP indexDataContainer listening port")
+        //("document-root", po::value<string>(), "HTTP indexDataContainer document root to put html files")
+        ("data-file-path", po::value<string>(), "Path to the file") // REQUIRED if data-source-type is 0s
+        ("index-dir-path", po::value<string>(), "Path to the index-dir") // DEPRECATED
+        ("access-log-file", po::value<string>(), "HTTP indexDataContainer access log file") // DEPRECATED
+        ("log-level", po::value<int>(), "srch2 log level")
+        ("error-log-file", po::value<string>(), "HTTP indexDataContainer error log file") // DEPRECATED
+        ("default-stemmer-flag", po::value<int>(), "Stemming or No Stemming")
+        ("stop-filter-file-path", po::value<string>(), "Stop Filter file path or IGNORE")
+        ("synonym-filter-file-path", po::value<string>(), "Synonym Filter file path or IGNORE")
+        ("default-synonym-keep-origin-flag", po::value<int>(), "Synonym keep origin word or not")
+        ("stemmer-file", po::value<string>(), "Stemmer File")
+        ("install-directory", po::value<string>(), "Install Directory")
+        ;
+
+
+    fstream fs(configFile.c_str(), fstream::in);
+    po::variables_map vm_config_file;
+    po::store(po::parse_config_file(fs, config), vm_config_file);
+    po::notify(vm_config_file);
+	
+    bool configSuccess = true;
+    std::stringstream parseError; 
+    this->parse(vm_config_file, configSuccess, parseError);
+    
+    if (!configSuccess)
+    {
+        cout << "Error while reading the config file" << endl;
+        cout << parseError.str() << endl;  // assumption: parseError is set properly
+        exit(-1);
+    }
+}
+
+void ConfigManager::kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
 	if (vm.count("kafka-consumer-topicname")
 			&& (vm["kafka-consumer-topicname"].as<string>().compare(
@@ -177,7 +162,7 @@ void Srch2ServerConf::kafkaOptionsParse(const po::variables_map &vm, bool &confi
 	}
 }
 
-void Srch2ServerConf::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector)
+void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector)
 {
     for(unsigned iter=0; iter < searchableAttributesVector.size(); iter++)
     {
@@ -185,7 +170,7 @@ void Srch2ServerConf::_setDefaultSearchableAttributeBoosts(const vector<string> 
     }
 }
 
-void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
+void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError)
 {
 	if (vm.count("license-file") && (vm["license-file"].as<string>().compare(ignoreOption) != 0)) {
 		licenseKeyFile = vm["license-file"].as<string>();
@@ -701,91 +686,91 @@ void Srch2ServerConf::parse(const po::variables_map &vm, bool &configSuccess, st
 	}
 }
 
-Srch2ServerConf::~Srch2ServerConf() {
+ConfigManager::~ConfigManager() {
 
 }
 
-const std::string& Srch2ServerConf::getCustomerName() const {
+const std::string& ConfigManager::getCustomerName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getDocumentLimit() const {
+uint32_t ConfigManager::getDocumentLimit() const {
 	return documentLimit;
 }
 
-uint64_t Srch2ServerConf::getMemoryLimit() const {
+uint64_t ConfigManager::getMemoryLimit() const {
 	return memoryLimit;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryNSeconds() const {
+uint32_t ConfigManager::getMergeEveryNSeconds() const {
 	return mergeEveryNSeconds;
 }
 
-uint32_t Srch2ServerConf::getMergeEveryMWrites() const {
+uint32_t ConfigManager::getMergeEveryMWrites() const {
 	return mergeEveryMWrites;
 }
 
-int Srch2ServerConf::getIndexType() const {
+int ConfigManager::getIndexType() const {
 	return indexType;
 }
 
-const string& Srch2ServerConf::getAttributeLatitude() const {
+const string& ConfigManager::getAttributeLatitude() const {
 	return attributeLatitude;
 }
 
-const string& Srch2ServerConf::getAttributeLongitude() const {
+const string& ConfigManager::getAttributeLongitude() const {
 	return attributeLongitude;
 }
 
-float Srch2ServerConf::getDefaultSpatialQueryBoundingBox() const {
+float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
 	return defaultSpatialQueryBoundingBox;
 }
 
-int Srch2ServerConf::getNumberOfThreads() const {
+int ConfigManager::getNumberOfThreads() const {
 	return numberOfThreads;
 }
 
-DataSourceType Srch2ServerConf::getDataSourceType() const {
+DataSourceType ConfigManager::getDataSourceType() const {
 	return dataSourceType;
 }
 
-IndexCreateOrLoad Srch2ServerConf::getIndexCreateOrLoad() const {
+IndexCreateOrLoad ConfigManager::getIndexCreateOrLoad() const {
 	return indexCreateOrLoad;
 }
 
-WriteApiType Srch2ServerConf::getWriteApiType() const {
+WriteApiType ConfigManager::getWriteApiType() const {
 	return writeApiType;
 }
 
-const string& Srch2ServerConf::getIndexPath() const {
+const string& ConfigManager::getIndexPath() const {
 	return indexPath;
 }
 
-const string& Srch2ServerConf::getFilePath() const {
+const string& ConfigManager::getFilePath() const {
 	return this->filePath;
 }
 
-const string& Srch2ServerConf::getPrimaryKey() const {
+const string& ConfigManager::getPrimaryKey() const {
 	return primaryKey;
 }
 
-const map<string, pair<unsigned, unsigned> > * Srch2ServerConf::getSearchableAttributes() const {
+const map<string, pair<unsigned, unsigned> > * ConfigManager::getSearchableAttributes() const {
 	return &searchableAttributesTriple;
 }
 
-const vector<string> * Srch2ServerConf::getAttributesToReturnName() const {
+const vector<string> * ConfigManager::getAttributesToReturnName() const {
 	return &attributesToReturn;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesName() const {
+const vector<string> * ConfigManager::getSortableAttributesName() const {
 	return &sortableAttributes;
 }
 
-const vector<srch2::instantsearch::FilterType> * Srch2ServerConf::getSortableAttributesType() const {
+const vector<srch2::instantsearch::FilterType> * ConfigManager::getSortableAttributesType() const {
 	return &sortableAttributesType;
 }
 
-const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() const {
+const vector<string> * ConfigManager::getSortableAttributesDefaultValue() const {
 	return &sortableAttributesDefaultValue;
 }
 
@@ -794,31 +779,31 @@ const vector<string> * Srch2ServerConf::getSortableAttributesDefaultValue() cons
  return &attributesBoosts;
  }*/
 
-string Srch2ServerConf::getInstallDir() const {
+string ConfigManager::getInstallDir() const {
 	return installDir;
 }
 
-bool Srch2ServerConf::getStemmerFlag() const {
+bool ConfigManager::getStemmerFlag() const {
 	return stemmerFlag;
 }
 
-string Srch2ServerConf::getStemmerFile() const {
+string ConfigManager::getStemmerFile() const {
 	return stemmerFile;
 }
 
-string Srch2ServerConf::getSynonymFilePath() const {
+string ConfigManager::getSynonymFilePath() const {
 	return synonymFilterFilePath;
 }
 
-bool Srch2ServerConf::getSynonymKeepOrigFlag() const {
+bool ConfigManager::getSynonymKeepOrigFlag() const {
 	return synonymKeepOrigFlag;
 }
 
-string Srch2ServerConf::getStopFilePath() const {
+string ConfigManager::getStopFilePath() const {
 	return stopFilterFilePath;
 }
 
-const string& Srch2ServerConf::getAttributeRecordBoostName() const {
+const string& ConfigManager::getAttributeRecordBoostName() const {
 	return attributeRecordBoost;
 }
 
@@ -827,132 +812,132 @@ const string& Srch2ServerConf::getAttributeRecordBoostName() const {
  return defaultAttributeRecordBoost;
  }*/
 
-const std::string& Srch2ServerConf::getScoringExpressionString() const {
+const std::string& ConfigManager::getScoringExpressionString() const {
 	return scoringExpressionString;
 }
 
-int Srch2ServerConf::getSearchResponseJSONFormat() const {
+int ConfigManager::getSearchResponseJSONFormat() const {
 	return searchResponseJsonFormat;
 }
 
-const string& Srch2ServerConf::getRecordAllowedSpecialCharacters() const {
+const string& ConfigManager::getRecordAllowedSpecialCharacters() const {
 	return allowedRecordTokenizerCharacters;
 }
 
-int Srch2ServerConf::getSearchType() const {
+int ConfigManager::getSearchType() const {
 	return searchType;
 }
 
-int Srch2ServerConf::getIsPrimSearchable() const {
+int ConfigManager::getIsPrimSearchable() const {
 	return isPrimSearchable;
 }
 
-bool Srch2ServerConf::getIsFuzzyTermsQuery() const {
+bool ConfigManager::getIsFuzzyTermsQuery() const {
 	return exactFuzzy;
 }
 
-bool Srch2ServerConf::getQueryTermType() const {
+bool ConfigManager::getQueryTermType() const {
 	return queryTermType;
 }
 
-unsigned Srch2ServerConf::getQueryTermBoost() const {
+unsigned ConfigManager::getQueryTermBoost() const {
 	return queryTermBoost;
 }
 
-float Srch2ServerConf::getQueryTermSimilarityBoost() const {
+float ConfigManager::getQueryTermSimilarityBoost() const {
 	return queryTermSimilarityBoost;
 }
 
-float Srch2ServerConf::getQueryTermLengthBoost() const {
+float ConfigManager::getQueryTermLengthBoost() const {
 	return queryTermLengthBoost;
 }
 
-float Srch2ServerConf::getPrefixMatchPenalty() const {
+float ConfigManager::getPrefixMatchPenalty() const {
 	return prefixMatchPenalty;
 }
 
-bool Srch2ServerConf::getSupportAttributeBasedSearch() const {
+bool ConfigManager::getSupportAttributeBasedSearch() const {
 	return supportAttributeBasedSearch;
 }
 
-int Srch2ServerConf::getSearchResponseFormat() const {
+int ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
 
-const string& Srch2ServerConf::getAttributeStringForMySQLQuery() const {
+const string& ConfigManager::getAttributeStringForMySQLQuery() const {
 	return attributeStringForMySQLQuery;
 }
 
-const string& Srch2ServerConf::getLicenseKeyFileName() const {
+const string& ConfigManager::getLicenseKeyFileName() const {
 	return licenseKeyFile;
 }
 
-const std::string& Srch2ServerConf::getTrieBootstrapDictFileName() const {
+const std::string& ConfigManager::getTrieBootstrapDictFileName() const {
 	return this->trieBootstrapDictFile;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningHostname() const {
+const string& ConfigManager::getHTTPServerListeningHostname() const {
 	return httpServerListeningHostname;
 }
 
-const string& Srch2ServerConf::getHTTPServerListeningPort() const {
+const string& ConfigManager::getHTTPServerListeningPort() const {
 	return httpServerListeningPort;
 }
 
-const string& Srch2ServerConf::getKafkaBrokerHostName() const {
+const string& ConfigManager::getKafkaBrokerHostName() const {
 	return kafkaBrokerHostName;
 }
 
-uint16_t Srch2ServerConf::getKafkaBrokerPort() const {
+uint16_t ConfigManager::getKafkaBrokerPort() const {
 	return kafkaBrokerPort;
 }
 
-const string& Srch2ServerConf::getKafkaConsumerTopicName() const {
+const string& ConfigManager::getKafkaConsumerTopicName() const {
 	return kafkaConsumerTopicName;
 }
 
-uint32_t Srch2ServerConf::getKafkaConsumerPartitionId() const {
+uint32_t ConfigManager::getKafkaConsumerPartitionId() const {
 	return kafkaConsumerPartitionId;
 }
 
-uint32_t Srch2ServerConf::getWriteReadBufferInBytes() const {
+uint32_t ConfigManager::getWriteReadBufferInBytes() const {
 	return writeReadBufferInBytes;
 }
 
-uint32_t Srch2ServerConf::getPingKafkaBrokerEveryNSeconds() const {
+uint32_t ConfigManager::getPingKafkaBrokerEveryNSeconds() const {
 	return pingKafkaBrokerEveryNSeconds;
 }
 
-int Srch2ServerConf::getDefaultResultsToRetrieve() const {
+int ConfigManager::getDefaultResultsToRetrieve() const {
 	return resultsToRetrieve;
 }
 
-int Srch2ServerConf::getAttributeToSort() const {
+int ConfigManager::getAttributeToSort() const {
 	return attributeToSort;
 }
 
-int Srch2ServerConf::getOrdering() const {
+int ConfigManager::getOrdering() const {
 	return ordering;
 }
 
-bool Srch2ServerConf::isRecordBoostAttributeSet() const {
+bool ConfigManager::isRecordBoostAttributeSet() const {
 	return recordBoostAttributeSet;
 }
 
-const string& Srch2ServerConf::getHTTPServerAccessLogFile() const {
+const string& ConfigManager::getHTTPServerAccessLogFile() const {
 	return httpServerAccessLogFile;
 }
 
-const Logger::LogLevel& Srch2ServerConf::getHTTPServerLogLevel() const
+const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const
 {
 	return loglevel;
 }
 
-const string& Srch2ServerConf::getHTTPServerErrorLogFile() const {
+const string& ConfigManager::getHTTPServerErrorLogFile() const {
 	return httpServerErrorLogFile;
 }
 
-unsigned Srch2ServerConf::getCacheSizeInBytes() const {
+unsigned ConfigManager::getCacheSizeInBytes() const {
 	return cacheSizeInBytes;
 }
 

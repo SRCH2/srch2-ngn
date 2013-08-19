@@ -9,37 +9,32 @@
 
 using namespace std;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
-LowerCaseFilter::LowerCaseFilter(TokenOperator* tokenOperator):TokenFilter(tokenOperator)
-{
-	this->sharedToken = tokenOperator->sharedToken;
+LowerCaseFilter::LowerCaseFilter(TokenStream* tokenStream) :
+        TokenFilter(tokenStream) {
+    this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
-void LowerCaseFilter::transformToLowerCase(vector<CharType> &token)
-{
-	for(int i = 0; i < token.size(); i++)
-	{
-		if(token[i] >= (CharType)'A' && token[i] <= (CharType)'Z')
-		{
-			token[i] = token[i]+32;
-		}
-	}
+void LowerCaseFilter::transformToLowerCase(vector<CharType> &token) {
+    for (int i = 0; i < token.size(); i++) {
+        if (token[i] >= (CharType) 'A' && token[i] <= (CharType) 'Z') {
+            token[i] = token[i] + 32;
+        }
+    }
 }
-bool LowerCaseFilter::incrementToken()
-{
-	if(this->tokenOperator->incrementToken())
-	{
-		transformToLowerCase(sharedToken->currentToken);
-		return true;
-	}
-	else
-		 return false;
+bool LowerCaseFilter::processToken() {
+    if (this->tokenStream->processToken()) {
+        transformToLowerCase(tokenStreamContainer->currentToken);
+        return true;
+    } else {
+        return false;
+
+    }
 }
 LowerCaseFilter::~LowerCaseFilter() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
-}}
+}
+}
 

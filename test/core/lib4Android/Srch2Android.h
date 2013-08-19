@@ -39,8 +39,7 @@ void commitIndex(Indexer* indexer);
 void addRecord(Indexer* index, string key, string value, bool keepInMemory);
 
 QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
-		const string& queryString, unsigned ed,
-		srch2::instantsearch::TermType termType);
+		const string& queryString, unsigned ed);
 
 Indexer* loadIndex(const string& strIndexPath);
 

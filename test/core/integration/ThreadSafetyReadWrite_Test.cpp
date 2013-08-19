@@ -62,7 +62,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = Analyzer::create(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
@@ -365,15 +365,7 @@ void test1()
     parm *p;
     int n, i;
 
-/*
-    if (argc != 2)
-    {
-        printf("Usage: %s n\n  where n is no. of thread\n", argv[0]);
-        exit(1);
-    }
-    n = atoi(argv[1]);
-*/
-    n = 100;
+    n = 15;
 
     addSimpleRecords();
 
@@ -428,7 +420,7 @@ void test2()
 
     int n, i;
 
-    n = 10;
+    n = 3;
 
     if ((n < 1) || (n > MAX_THREAD))
     {
@@ -444,15 +436,14 @@ void test2()
     indexer = Indexer::load(indexMetaData1);
     
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
-    threadWriters = (pthread_t *) malloc(n * sizeof(*threadReaders));
+    threadWriters = (pthread_t *) malloc(n * sizeof(*threadWriters));
 
     pthread_attr_init(&pthread_custom_attr);
 
-    p=(parm *)malloc(sizeof(parm)*n);
+    p = (parm *)malloc(sizeof(parm)*n);
 
     /* Start up thread */
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         p[i].id = i;
         p[i].nproc = n;
         pthread_create(&threadReaders[i], &pthread_custom_attr, reader, (void *)(p+i));
@@ -460,8 +451,7 @@ void test2()
     }
 
     // Synchronize the completion of each thread.
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         pthread_join(threadReaders[i], NULL);
         pthread_join(threadWriters[i], NULL);
     }

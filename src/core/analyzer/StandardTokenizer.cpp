@@ -6,76 +6,81 @@
 
 #include <iostream>
 #include "StandardTokenizer.h"
+#include "util/Assert.h"
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 StandardTokenizer::StandardTokenizer()
-{
-	sharedToken.reset(new SharedToken());
-}
+    :Tokenizer()
+{}
 
-bool StandardTokenizer::incrementToken()
-{
-	(sharedToken->currentToken).clear();
-	CharType previousChar = (CharType)' ';
+bool StandardTokenizer::incrementToken() {
+    (tokenStreamContainer->currentToken).clear();
+    CharType previousChar = (CharType) ' ';
     //originally, set the previous character is ' ';
-    while(true)
-    {
-    	///check whether the scanning is over.
-    	if((sharedToken->offset) >= (sharedToken->completeCharVector).size())
-    		return emitToken();
-    	CharType currentChar = (sharedToken->completeCharVector)[sharedToken->offset];
-        if((sharedToken->offset)-1 >= 0)//check whether the previous character exists.
-        {
-        	previousChar = (sharedToken->completeCharVector)[(sharedToken->offset)-1];
+    while (true) {
+        ///check whether the scanning is over.
+        if ((tokenStreamContainer->offset)
+                >= (tokenStreamContainer->completeCharVector).size()) {
+            return (tokenStreamContainer->currentToken).empty() ?
+                    false : true;
         }
-        (sharedToken->offset)++;
+        CharType currentChar =
+                (tokenStreamContainer->completeCharVector)[tokenStreamContainer->offset];
+        if ((tokenStreamContainer->offset) - 1 >= 0) //check whether the previous character exists.
+                {
+            previousChar =
+                    (tokenStreamContainer->completeCharVector)[(tokenStreamContainer->offset)
+                            - 1];
+        }
+        (tokenStreamContainer->offset)++;
         ///we need combine previous character and current character to decide a word
-    	unsigned previousCharacterType = CharSet::getCharacterType(previousChar);
-    	unsigned currentCharacterType = CharSet::getCharacterType(currentChar);
+        unsigned previousCharacterType = CharSet::getCharacterType(
+                previousChar);
+        unsigned currentCharacterType = CharSet::getCharacterType(currentChar);
 
-        switch(currentCharacterType)
-        {
-        case DELIMITER_TYPE:
-        	if(!(sharedToken->currentToken).empty())
-        	{
-        		return emitToken();
-        	}
+        switch (currentCharacterType) {
+        case CharSet::DELIMITER_TYPE:
+            if (!(tokenStreamContainer->currentToken).empty()) {
+                return true;
+            }
             break;
-        case LATIN_TYPE:
-        case BOPOMOFO_TYPE:
-        	//check if the types of previous character and  current character are the same
-        	if(previousCharacterType == currentCharacterType)
-        	{
-            	(sharedToken->currentToken).push_back(currentChar);
-        	}
-        	else
-        	{
-				if(!(sharedToken->currentToken).empty())//if the currentToken is not null, we need produce the token
-				{
-					(sharedToken->offset)--;
-					return emitToken();
-				}
-				else
-					(sharedToken->currentToken).push_back(currentChar);
-        	}
-			break;
-        default://other character type
-        	if(!(sharedToken->currentToken).empty())
-        	{
-        		(sharedToken->offset)--;
-        	}
-        	else
-        		(sharedToken->currentToken).push_back(currentChar);
-        	return emitToken();
+        case CharSet::LATIN_TYPE:
+        case CharSet::BOPOMOFO_TYPE:
+            //check if the types of previous character and  current character are the same
+            if (previousCharacterType == currentCharacterType) {
+                (tokenStreamContainer->currentToken).push_back(currentChar);
+            } else {
+                if (!(tokenStreamContainer->currentToken).empty()) //if the currentToken is not null, we need produce the token
+                {
+                    (tokenStreamContainer->offset)--;
+                    return (!(tokenStreamContainer->currentToken).empty()) ?
+                            true : false;
+                } else
+                    (tokenStreamContainer->currentToken).push_back(currentChar);
+            }
+            break;
+        default: //other character type
+            if (!(tokenStreamContainer->currentToken).empty()) {
+                (tokenStreamContainer->offset)--;
+            } else {
+                (tokenStreamContainer->currentToken).push_back(currentChar);
+            }
+            return (!(tokenStreamContainer->currentToken).empty()) ?
+                    true : false;
         }
     }
+    ASSERT(false);
+    return false;
+}
+
+bool StandardTokenizer::processToken() {
+    return this->incrementToken();
 }
 
 StandardTokenizer::~StandardTokenizer() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
-}}
+}
+}
 

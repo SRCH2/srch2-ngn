@@ -41,7 +41,7 @@ const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
-URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const Srch2ServerConf *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
+URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const ConfigManager *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)
 {
     this->exactQuery = NULL;
     this->fuzzyQuery = NULL;
@@ -193,14 +193,14 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 }
                 else{
                     analyzer->tokenizeQuery(keywordsParamName_cstar, queryKeywordVector);
-                    //check whether or not the last character is a whitespace (which is transformed from "+")
-                    //For example, for a query "q=trus+", we will take "trus" as a complete term.
-                    string query=string(keywordsParamName_cstar);
-
-                    if(query.substr(query.length()-1, 1) == " "){
-                    	queryKeywordVector.push_back(" ");
-                    }
                     filters.assign(queryKeywordVector.size(), 1);
+                }
+                //check whether or not the last character is a whitespace (which is transformed from "+")
+                //For example, for a query "q=trus+", we will take "trus" as a complete term.
+                string query=string(keywordsParamName_cstar);
+
+                if(!query.empty() && query.substr(query.length()-1, 1) == " "){
+                    queryKeywordVector.push_back(" ");
                 }
                 delete keywordsParamName_cstar;
             }

@@ -69,7 +69,7 @@ ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal)
     this->forwardListDirectory = new cowvector< ForwardListPtr>();
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expectedNumberOfDocumentsToInitialize)
@@ -77,12 +77,15 @@ ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expec
     this->forwardListDirectory = new cowvector<ForwardListPtr>(expectedNumberOfDocumentsToInitialize);
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 ForwardIndex::~ForwardIndex()
 {
-    this->forwardListDirectory->commit();
+    if(this->isCommitted())
+        this->forwardListDirectory->merge();
+    else
+        this->forwardListDirectory->commit();
     for (unsigned forwardIndexIter = 0; forwardIndexIter < this->getTotalNumberOfForwardLists_WriteView(); 
      ++forwardIndexIter) {
         ForwardList *forwardList = this->getForwardList_ForCommit(forwardIndexIter);
@@ -93,30 +96,24 @@ ForwardIndex::~ForwardIndex()
 
 unsigned ForwardIndex::getTotalNumberOfForwardLists_WriteView() const
 {
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    return writeView->size();
+    return this->forwardListDirectory->getWriteView()->size();
 }
     
 unsigned ForwardIndex::getTotalNumberOfForwardLists_ReadView() const
 {
-    ts_shared_ptr<vectorview<ForwardListPtr> > readView;
+    shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
     return readView->size();
 }
 
 void ForwardIndex::setDeleteFlag(unsigned internalRecordId)
 {
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    writeView->at(internalRecordId).second = false;
+    this->forwardListDirectory->getWriteView()->at(internalRecordId).second = false;
 }
 
 void ForwardIndex::resetDeleteFlag(unsigned internalRecordId)
 {
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    writeView->at(internalRecordId).second = true;
+    this->forwardListDirectory->getWriteView()->at(internalRecordId).second = true;
 }
 
 
@@ -202,13 +199,14 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const uns
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
 {
-    if (recordId > this->getTotalNumberOfForwardLists_ReadView())
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
+    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
     {
         valid = false;
         return NULL;
     }
 
-    ts_shared_ptr<vectorview<ForwardListPtr> > readView;
+    shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
     valid = readView->getElement(recordId).second;
     return  readView->getElement(recordId).first;
@@ -217,10 +215,7 @@ const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 {
     ASSERT (recordId < this->getTotalNumberOfForwardLists_WriteView());
-
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    return  writeView->at(recordId).first;
+    return  this->forwardListDirectory->getWriteView()->at(recordId).first;
 }
 
 //unsigned ForwardList::getForwardListElement(unsigned cursor) const
@@ -257,19 +252,28 @@ float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* sc
     return scoreItem;
 }
 
-// WriteView
-void ForwardIndex::merge()
+void ForwardIndex::commit()
 {
-    if ( this->mergeRequired_WriteView )
+    if ( !this->isCommitted())
     {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->commit();
 
-        // then create a new copy for the write view
-        ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-        this->forwardListDirectory->getWriteView(writeView);
         // writeView->forceCreateCopy();
-        this->mergeRequired_WriteView = false;
+        this->mergeRequired = false;
+    }
+}
+
+// WriteView
+void ForwardIndex::merge()
+{
+    if ( this->mergeRequired )
+    {
+        // make sure the read view is pointing to the write view
+        this->forwardListDirectory->merge();
+
+        // writeView->forceCreateCopy();
+        this->mergeRequired = false;
     }
 }
 
@@ -346,11 +350,9 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
     managedForwardListPtr.second = true;
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    writeView->push_back(managedForwardListPtr);
+    this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 
-    this->mergeRequired_WriteView = true;
+    this->mergeRequired = true;
 }
 
 // TODO check if this is still useful
@@ -359,9 +361,7 @@ void ForwardIndex::addDummyFirstRecord()// For Trie bootstrap
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = new ForwardList(0,0);
     managedForwardListPtr.second = false;
-    ts_shared_ptr<vectorview<ForwardListPtr> > writeView;
-    this->forwardListDirectory->getWriteView(writeView);
-    writeView->push_back(managedForwardListPtr);
+    this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 }
 
 // convert the keyword ids for a given record using the given id mapper
@@ -470,7 +470,7 @@ unsigned ForwardIndex::getNumberOfBytes() const
 {
     unsigned totalSize = 0;
 
-    ts_shared_ptr<vectorview<ForwardListPtr> > readView;
+    shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
 
     // add the size of forwardListDirectory                                                                                                                                                                     
@@ -491,7 +491,7 @@ void ForwardIndex::print_test()
 {
     Logger::debug("ForwardIndex:");
 
-    ts_shared_ptr<vectorview<ForwardListPtr> > readView;
+    shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
 
     Logger::debug("readView size: %d",readView->size());
@@ -860,7 +860,7 @@ bool ForwardIndex::deleteRecordGetInternalId_WriteView(const std::string &extern
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
         this->externalToInternalRecordIdMap_WriteView.erase(externalRecordId);
-        this->mergeRequired_WriteView = true; // tell the merge thread to merge
+        this->mergeRequired = true; // tell the merge thread to merge
     }
     
     return found;
@@ -875,7 +875,7 @@ bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId, 
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
         this->externalToInternalRecordIdMap_WriteView[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
-        this->mergeRequired_WriteView = true; // tell the merge thread to merge
+        this->mergeRequired = true; // tell the merge thread to merge
     }
     
     return !found;

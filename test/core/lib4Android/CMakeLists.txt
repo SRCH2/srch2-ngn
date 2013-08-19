@@ -12,4 +12,5 @@ SET(INTEGRATION_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${C
 
 ADD_LIBRARY(srch2sdk SHARED Srch2Android.cpp SearchSDK.cpp Scalability_Test.cpp ${IndexIntegration_Source} ${MapSearchTest_Source} )
 SET_TARGET_PROPERTIES(srch2sdk PROPERTIES COMPILE_FLAGS -fPIC)
+ADD_DEPENDENCIES(srch2sdk srch2_core)
 TARGET_LINK_LIBRARIES(srch2sdk ${INTEGRATION_TEST_LIBS} log )	

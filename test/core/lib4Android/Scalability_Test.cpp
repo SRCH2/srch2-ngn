@@ -25,8 +25,14 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 	schema->setSearchableAttribute("description", 2);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, 
+            "", // stemmerFilePath 
+            "", // stopWordFilePath
+            "", // synonymFilePath
+            srch2::instantsearch::SYNONYM_KEEP_ORIGIN,
+            ""  // extra delimiters
+            );
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
@@ -96,8 +102,14 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 	schema->setSearchableAttribute("description", 2);
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	Analyzer *analyzer = new Analyzer(
+			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, 
+            "", // stemmerFilePath 
+            "", // stopWordFilePath
+            "", // synonymFilePath
+            srch2::instantsearch::SYNONYM_KEEP_ORIGIN,
+            ""  // extra delimiters
+            );
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
@@ -166,25 +178,25 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 
 // Warm up the index, so that the first query in the test won't be slow
 void warmUp(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
-	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1, TERM_TYPE_PREFIX);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
+	pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
 }
 
 // Warm up the geo index, so that the first query in the test won't be slow
 void warmUpGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, TERM_TYPE_PREFIX);
+			60.0, -90.0, 1 );
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, TERM_TYPE_PREFIX);
+			60.0, -90.0, 1 );
 	pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0,
-			60.0, -90.0, 1, TERM_TYPE_PREFIX);
+			60.0, -90.0, 1 );
 }
 
 // Read queries from file and do the search
 void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
-		IndexSearcher *indexSearcher, unsigned ed,
-		srch2::instantsearch::TermType termType) {
+		IndexSearcher *indexSearcher, unsigned ed
+		) {
 	string line;
 
 	ifstream keywords(path.c_str());
@@ -215,11 +227,11 @@ void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
 //      clock_gettime(CLOCK_REALTIME, &t1_inner);
 
         QueryResults * queryresult = query(analyzer, indexSearcher,*vectIter,
-				ed, termType);
+				ed);
         bool hasRes = queryresult->getNumberOfResults()>0;
         delete queryresult;
 //		bool hasRes = pingForScalabilityTest(analyzer, indexSearcher, *vectIter,
-//				ed, termType);
+//				ed );
 //
 
 //      clock_gettime(CLOCK_REALTIME, &t2_inner);
@@ -249,8 +261,8 @@ void readQueriesAndDoQueries(string path, string type, const Analyzer *analyzer,
 
 // Read geo queries from file and do the search
 void readGeoQueriesAndDoQueries(string path, string type,
-		const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed,
-		srch2::instantsearch::TermType termType) {
+		const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed
+		) {
 	string line;
 
 	ifstream queries(path.c_str());
@@ -289,9 +301,9 @@ void readGeoQueriesAndDoQueries(string path, string type,
 //      Logger::console("Query: %s", (*vectIter).c_str());
 //      clock_gettime(CLOCK_REALTIME, &t1_inner);
 
-		bool hasRes = pingToCheckIfHasResults(analyzer, indexSearcher,
+		int countResults = pingToCheckIfHasResults(analyzer, indexSearcher,
 				vectIter->substr(0, split), lat - radius, lng - radius,
-				lat + radius, lng + radius, ed, termType);
+				lat + radius, lng + radius, ed);
 
 //      clock_gettime(CLOCK_REALTIME, &t2_inner);
 //      double time_span_inner = (double) ((t2_inner.tv_sec - t1_inner.tv_sec)
@@ -300,7 +312,7 @@ void readGeoQueriesAndDoQueries(string path, string type,
 //      Logger::console("curren search done in %.3f milliseconds",
 //              time_span_inner);
 
-		if (!hasRes) {
+		if (0 == countResults) {
 			//cout << "Query " << *vectIter << " has no results" << endl;
 			empty++;
 		}
@@ -335,8 +347,6 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 
 	string strIndexPath(nativeStringIndexPath);
 	string strTestFile(nativeStringDataFile);
-
-	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
 
 	if (!isGeo) {
 		string data_file = strTestFile + "/data.txt";
@@ -383,13 +393,13 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 		Logger::console("Read double fuzzy queries keywords from %s",
 				double_fuzzy_keywords_file.c_str());
 		readQueriesAndDoQueries(single_exact_keywords_file, "single exact",
-				analyzer, indexSearcher, 0, termType);
+				analyzer, indexSearcher, 0);
 		readQueriesAndDoQueries(double_exact_keywords_file, "double exact",
-				analyzer, indexSearcher, 0, termType);
+				analyzer, indexSearcher, 0);
 		readQueriesAndDoQueries(single_fuzzy_keywords_file, "single fuzzy",
-				analyzer, indexSearcher, editDistance, termType);
+				analyzer, indexSearcher, editDistance);
 		readQueriesAndDoQueries(double_fuzzy_keywords_file, "double fuzzy",
-				analyzer, indexSearcher, editDistance, termType);
+				analyzer, indexSearcher, editDistance );
 		Logger::console("query mem usage %d kb. ", getRAMUsageValue());
 	} else {
 		warmUpGeo(analyzer, indexSearcher);
@@ -413,14 +423,14 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
 				geo_double_fuzzy_keywords_file.c_str());
 
 		readGeoQueriesAndDoQueries(geo_single_exact_keywords_file,
-				"single exact geo", analyzer, indexSearcher, 0, termType);
+				"single exact geo", analyzer, indexSearcher, 0 );
 		readGeoQueriesAndDoQueries(geo_double_exact_keywords_file,
-				"double exact geo", analyzer, indexSearcher, 0, termType);
+				"double exact geo", analyzer, indexSearcher, 0 );
 
 		readGeoQueriesAndDoQueries(geo_single_fuzzy_keywords_file,
-				"single fuzzy geo", analyzer, indexSearcher, editDistance, termType);
+				"single fuzzy geo", analyzer, indexSearcher, editDistance );
 		readGeoQueriesAndDoQueries(geo_double_fuzzy_keywords_file,
-				"double fuzzy geo", analyzer, indexSearcher, editDistance, termType);
+				"double fuzzy geo", analyzer, indexSearcher, editDistance );
 		Logger::console("query mem usage %d kb. ", getRAMUsageValue());
 	}
 

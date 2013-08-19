@@ -1,4 +1,4 @@
-//$Id: Srch2ServerConf.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
@@ -21,18 +21,18 @@ namespace srch2 {
 namespace httpwrapper {
 
 typedef enum {
-	KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
+    KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
 } WriteApiType;
 
 typedef enum {
-	INDEXCREATE = 0, INDEXLOAD = 1
+    INDEXCREATE = 0, INDEXLOAD = 1
 } IndexCreateOrLoad;
 
 typedef enum {
-	FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
+    FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
 } DataSourceType;
 
-class Srch2ServerConf {
+class ConfigManager {
 private:
 
 	// Argument file options
@@ -110,11 +110,11 @@ private:
 	Logger::LogLevel loglevel;
 	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
+    string configFile;
 
 public:
-	Srch2ServerConf(int argc, char** argv, bool &configSuccess,
-			std::stringstream &parseError);
-	virtual ~Srch2ServerConf();
+    ConfigManager(std::string& configfile);
+	virtual ~ConfigManager();
 
 	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,
 			std::stringstream &parseError);
@@ -200,6 +200,7 @@ public:
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
+    void loadConfigFile() ;
 };
 
 }

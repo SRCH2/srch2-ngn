@@ -37,11 +37,11 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch {
 
-SynonymFilter::SynonymFilter(TokenOperator * tokenOperator,
+SynonymFilter::SynonymFilter(TokenStream * tokenStream,
 		const std::string &synonymFilterFilePath,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-		TokenFilter(tokenOperator), synonymDelimiter("=>") {
-	this->sharedToken = tokenOperator->sharedToken; // copies the shared_ptr: sharedToken
+		TokenFilter(tokenStream), synonymDelimiter("=>") {
+	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
 	this->createMap(synonymFilterFilePath); // construct the synoymMap
 	this->keepOriginFlag = synonymKeepOriginFlag;
 }
@@ -113,7 +113,7 @@ void SynonymFilter::createMap(const std::string &synonymFilePath) {
 }
 
 
-pair<SynonymTokenType, std::string> & SynonymFilter::getValuePairOf(const std::string &key) {
+pair<SynonymTokenType, std::string> SynonymFilter::getValuePairOf(const std::string &key) {
 	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(key);
 	pair<SynonymTokenType, std::string> valuePair;
 	if (pos != this->synonymMap.end()) {
@@ -166,15 +166,15 @@ void SynonymFilter::pushSynonymsOfExistingTokensInEmitBuffer() {
 
 void SynonymFilter::emitCurrentToken() {
 	// setting the currentToken to the first element of the vector
-	utf8StringToCharTypeVector(this->emitBuffer[0], sharedToken->currentToken);
+	utf8StringToCharTypeVector(this->emitBuffer[0], tokenStreamContainer->currentToken);
 	// removing the first element
 	this->emitBuffer.erase(this->emitBuffer.begin() + 0);
 }
 
-bool SynonymFilter::incrementToken() {
+bool SynonymFilter::processToken() {
 	while (true) {
 		// if increment returns false
-		if (!this->tokenOperator->incrementToken()) {
+		if (!this->tokenStream->processToken()) {
 			/*
 			* all the new incomming tokens come to the tokenBuffer.
 			* all the tokens that have to wait to get emit, are in the temporaryBuffer
@@ -190,7 +190,7 @@ bool SynonymFilter::incrementToken() {
 		} // end of increment=false
 		std::string currentToken = "";
 		// converts the charType to string
-		charTypeVectorToUtf8String(sharedToken->currentToken, currentToken);
+		charTypeVectorToUtf8String(tokenStreamContainer->currentToken, currentToken);
 		// gives the number of prefixes found in the key set the map for the current token
 
 		// if increment returns true
