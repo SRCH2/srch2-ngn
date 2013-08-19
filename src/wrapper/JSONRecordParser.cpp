@@ -313,14 +313,12 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         int reportFreq = 10000;
         if (lineCounter % reportFreq == 0)
         {
-          std::cout << "Indexing first " << lineCounter << " records";
-        }
-        if (lineCounter % (reportFreq - 1) == 0)
-        {
-          std::cout << "\r";
+          std::cout << "Indexing first " << lineCounter << " records" << "\r";
         }
         ++lineCounter;
     }
+    // clean the line by covering up the indexing first XXX records output
+    cout << "                                                       " << "\r";
     Logger::console("Indexed %d records.", lineCounter);
 
     in.close();
