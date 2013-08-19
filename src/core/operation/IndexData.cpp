@@ -63,9 +63,9 @@ IndexData::IndexData(const string &directoryName,
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
-		}
+        if (createDir(directoryName.c_str()) == -1){
+            throw std::runtime_error("Index Directory can not be created");
+        }
 	}
 
     /* Create a copy of analyzer as the user created analyzer can be dereferenced by the user any time.
@@ -103,12 +103,15 @@ IndexData::IndexData(const string& directoryName)
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
-		}
+        Logger::error("Given index path %s does not exist", directoryName.c_str());
+        throw std::runtime_error("Index load exception ");
 	}
 
     std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+    if (!ifs.is_open()){
+        Logger::error("Given index path %s does not contains an index", directoryName.c_str());
+        throw std::runtime_error("Index load exception");
+    }
 	boost::archive::binary_iarchive ia(ifs);
 	AnalyzerType analyzerType;
 	ia >> analyzerType;
