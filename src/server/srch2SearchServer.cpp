@@ -291,6 +291,15 @@ void cb_bmactivate(evhttp_request *req, void *arg)
 }
 
 
+void cb_bmshutdown(evhttp_request *req, void *arg)
+{
+
+    vector<struct event_base *> * bases = reinterpret_cast<vector<struct event_base *> *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPResponse::shutdownCommand(req, bases, &server);
+}
+
 /**
  * NotFound event handler.
  * @param req evhttp request object
@@ -493,6 +502,8 @@ int main(int argc, char** argv)
         evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
 
         evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+
+        evhttp_set_cb(http_server, "/shutdown", cb_bmshutdown, evbase);
     }
 
     /* 4). bind socket */
@@ -532,9 +543,10 @@ int main(int argc, char** argv)
 
     int fd = bindSocket(http_addr, http_port);
     pthread_t *threads = new pthread_t[MAX_THREADS];
-
+    vector<struct event_base *> evbases;
     for (int i = 0; i < MAX_THREADS; i++) {
         evbase = event_init();
+        evbases.push_back(evbase);
         if (NULL == evbase) {
             perror("event_base_new");
             return 1;
@@ -564,6 +576,8 @@ int main(int argc, char** argv)
             evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
 
             evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+
+            evhttp_set_cb(http_server, "/shutdown", cb_bmshutdown, &evbases);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -587,6 +601,8 @@ int main(int argc, char** argv)
 
     delete[] threads;
     fclose(logFile);
+    evhttp_free(http_server);
+    event_base_free(evbase);
 
     return EXIT_SUCCESS;
 }
