@@ -1,13 +1,14 @@
-#include "Srch2Android.h"
+#include "SRCH2SDK.h"
 #include "util/Logger.h"
+#include "util/Evaluate.h"
 
 using namespace srch2::sdk;
-using srch2::util::Logger;
+using namespace srch2::util;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLogLevel(JNIEnv* env,
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_setLogLevel(JNIEnv* env,
 		jobject javaThis, jint logLevel) {
 	Logger::setLogLevel((Logger::LogLevel) logLevel);
 }
@@ -18,12 +19,14 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLogLevel(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLoggerFile(
+JNIEXPORT jlong Java_com_srch2_android_lib_SRCH2Index_openLoggerFile(
 		JNIEnv* env, jobject javaThis, jstring logfile) {
 	const char *nativeStringLogFile = env->GetStringUTFChars(logfile, NULL);
 	FILE* fpLog = fopen(nativeStringLogFile, "a");
 	Logger::setOutputFile(fpLog);
 	env->ReleaseStringUTFChars(logfile, nativeStringLogFile);
+    long ptr = (long)fpLog;
+    return ptr;
 }
 #ifdef __cplusplus
 }
@@ -32,19 +35,26 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_setLoggerFile(
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndex(
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_closeLoggerFile(
+		JNIEnv* env, jobject javaThis, jlong ptr) {
+	FILE* fpLog = (FILE*) ptr;
+    fclose(fpLog);
+}
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+JNIEXPORT jlong Java_com_srch2_android_lib_SRCH2Index_createIndex(
 		JNIEnv* env, jobject javaThis, jstring indexDir, jboolean isGeo) {
-	Logger::console("createIndex");
 	const char *nativeStringIndexPath = env->GetStringUTFChars(indexDir, NULL);
 
 	string strIndexPath(nativeStringIndexPath);
-
-	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
-
-	Logger::console("Save index to %s", strIndexPath.c_str());
+	Logger::console("createIndex at %s", strIndexPath.c_str());
 
 	Indexer* indexer = createIndex(strIndexPath, isGeo);
-
 	env->ReleaseStringUTFChars(indexDir, nativeStringIndexPath);
 	long ptr = (long) indexer;
 	Logger::console("createIndex done");
@@ -57,7 +67,7 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndex(
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_addRecord(JNIEnv* env,
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_addRecord(JNIEnv* env,
 		jobject javaThis, jlong indexPtr, jstring key, jstring value,
 		jboolean keepInMemory) {
 
@@ -82,18 +92,15 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_addRecord(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndexByFile(
+JNIEXPORT jlong Java_com_srch2_android_lib_SRCH2Index_createIndexByFile(
 		JNIEnv* env, jobject javaThis, jstring testFile, jstring indexDir,
 		jint lineLimit, jboolean isGeo) {
-	Logger::console("createIndex");
 	const char *nativeStringDataFile = env->GetStringUTFChars(testFile, NULL);
 	const char *nativeStringIndexPath = env->GetStringUTFChars(indexDir, NULL);
 
 	string strIndexPath(nativeStringIndexPath);
 	string strTestFile(nativeStringDataFile);
-
-	srch2::instantsearch::TermType termType = TERM_TYPE_PREFIX;
-
+	Logger::console("createIndexByFile");
 	Logger::console("Read data from %s", strTestFile.c_str());
 	Logger::console("Save index to %s", strIndexPath.c_str());
 
@@ -102,7 +109,7 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndexByFile(
 	env->ReleaseStringUTFChars(testFile, nativeStringDataFile);
 	env->ReleaseStringUTFChars(indexDir, nativeStringIndexPath);
 	long ptr = (long) indexer;
-	Logger::console("createIndex done");
+	Logger::console("createIndexByFile done");
 	return ptr;
 }
 #ifdef __cplusplus
@@ -112,9 +119,8 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_createIndexByFile(
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_loadIndex(JNIEnv* env,
+JNIEXPORT jlong Java_com_srch2_android_lib_SRCH2Index_loadIndex(JNIEnv* env,
 		jobject javaThis, jstring indexDir) {
-	Logger::console("loadIndex");
 	const char *nativeStringIndexPath = env->GetStringUTFChars(indexDir, NULL);
 	string strIndexDir(nativeStringIndexPath);
 
@@ -138,7 +144,7 @@ JNIEXPORT jlong Java_com_srch2_mobile_ndksearch_Srch2Lib_loadIndex(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(JNIEnv* env,
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_saveIndex(JNIEnv* env,
 		jobject javaThis, jlong ptr) {
 	Logger::console("saveIndex");
 	Indexer* index = (Indexer*) ptr;
@@ -152,7 +158,7 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_saveIndex(JNIEnv* env,
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_commitIndex(JNIEnv* env,
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_commitIndex(JNIEnv* env,
 		jobject javaThis, jlong ptr) {
 	Logger::console("commitIndex");
 	Indexer* index = (Indexer*) ptr;
@@ -163,38 +169,12 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_commitIndex(JNIEnv* env,
 }
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-JNIEXPORT jstring Java_com_srch2_mobile_ndksearch_Srch2Lib_queryRaw(JNIEnv* env,
-		jobject javaThis, jlong indexPtr, jstring queryStr, jint editDistance,
-		jboolean isGeo) {
-
-	const char *nativeStringQuery = env->GetStringUTFChars(queryStr, NULL);
-	string queryString(nativeStringQuery);
-	Logger::console("query:%s", nativeStringQuery);
-	Indexer* indexer = (Indexer*) indexPtr;
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-	const Analyzer *analyzer = indexer->getAnalyzer();
-
-	QueryResults* queryResults = query(analyzer, indexSearcher, queryString,
-			editDistance);
-
-	string result = printQueryResult(queryResults, indexer);
-	jstring jstr = env->NewStringUTF(result.c_str());
-	env->ReleaseStringUTFChars(queryStr, nativeStringQuery);
-	return jstr;
-}
-#ifdef __cplusplus
-}
-#endif
-
 vector<string> matchedKeywords;
 vector<unsigned> editDistances;
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
+JNIEXPORT jobject Java_com_srch2_android_lib_SRCH2Index_query(JNIEnv* env,
 		jobject javaThis, jlong indexPtr, jstring queryStr, jint editDistance,
 		jboolean isGeo) {
 
@@ -219,8 +199,8 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 	int count = queryResults->getNumberOfResults();
 	jobject objArrayList = env->NewObject(clsArrayList, constructor, count);
 
-	// Find com.srch2.mobile.ndksearch.Hit
-	jclass clsHit = env->FindClass("com/srch2/mobile/ndksearch/Hit");
+	// Find com.srch2.android.lib.Hit
+	jclass clsHit = env->FindClass("com/srch2/android/lib/Hit");
 	Logger::debug("classHit: %d", clsHit);
 	//public Hit(float score, String record, String[] keywords, int[] eds)
 	jmethodID constructorHit = env->GetMethodID(clsHit, "<init>",
@@ -233,7 +213,7 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 		float score = queryResults->getResultScore(i);
 		string record = queryResults->getInMemoryRecordString(i);
 		queryResults->getMatchingKeywords(i, matchedKeywords);
-		queryResults->getEditDistances(i, (editDistances));
+		queryResults->getEditDistances(i, editDistances);
 
 		// create record string
 		jstring jstrRecord = env->NewStringUTF(record.c_str());
@@ -281,4 +261,15 @@ JNIEXPORT jobject Java_com_srch2_mobile_ndksearch_Srch2Lib_query(JNIEnv* env,
 }
 #endif
 
-//TODO: delete the index
+#ifdef __cplusplus
+extern "C" {
+#endif
+JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_destroyIndex(
+		JNIEnv* env, jobject javaThis, jlong ptr) {
+    Indexer * indexer = (Indexer*)ptr;
+    delete indexer;
+}
+#ifdef __cplusplus
+}
+#endif
+

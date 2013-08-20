@@ -1,4 +1,4 @@
-#include "Srch2Android.h"
+#include "SRCH2SDK.h"
 
 #include <cstdio>
 #include <fstream>
@@ -7,53 +7,18 @@
 
 #include "analyzer/StandardAnalyzer.h"
 #include "util/Logger.h"
+#include "util/Evaluate.h"
 
 #define CHECK_DELETE(ptr)	{if(ptr!=NULL){delete ptr; ptr=NULL;}};
 
+using namespace srch2::instantsearch;
+using namespace srch2::util;
 using namespace std;
-using srch2::util::Logger;
 
 namespace srch2 {
 namespace sdk {
-
-
-void setStartTime(timespec *startTime){
-    clock_gettime(CLOCK_REALTIME, startTime);
-}
-
-double getTimeSpan(timespec startTime){
-    timespec endTime;
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    return (double)((endTime.tv_sec - startTime.tv_sec) * 1000)
-        + (double)(endTime.tv_nsec - startTime.tv_nsec) / 1000000.0;
-}
-
-int parseLine(char* line) {
-	int i = strlen(line);
-	while (*line < '0' || *line > '9')
-		line++;
-	line[i - 3] = '\0';
-	i = atoi(line);
-	return i;
-}
-
-int getRAMUsageValue() { //Note: this value is in KB!
-	FILE* file = fopen("/proc/self/status", "r");
-	int result = -1;
-	if (file == NULL) {
-		Logger::error("File %s open failed", "/proc/self/status");
-		return result;
-	}
-	char line[128];
-	while (fgets(line, 128, file) != NULL) {
-		if (strncmp(line, "VmRSS:", 6) == 0) {
-			result = parseLine(line);
-			break;
-		}
-	}
-	fclose(file);
-	return result;
-}
+const int mergeEveryNSeconds = 3;
+const int mergeEveryMWrites  = 5;
 
 string printQueryResult(QueryResults* queryResults, Indexer* indexer) {
 	vector<unsigned> attributeBitmaps;
@@ -173,9 +138,9 @@ unsigned loadGeoData(const string &dataFile, int lineLimit, Indexer* indexer,
 Indexer* createIndex(string indexDir, bool isGeo) {
 	Schema *schema;
 	if (isGeo) {
-		schema = Schema::create(srch2is::LocationIndex);
+		schema = Schema::create(LocationIndex);
 	} else {
-		schema = Schema::create(srch2is::DefaultIndex);
+		schema = Schema::create(DefaultIndex);
 	}
 
 	schema->setPrimaryKey("primaryKey");
@@ -251,7 +216,7 @@ QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
     timespec begin;
     setStartTime(&begin);
 	Query *query = new Query(srch2::instantsearch::TopKQuery);
-	parseFuzzyQueryWithEdSet(analyzer, query, queryString, ed);
+	parseFuzzyQueryWithEdSet(analyzer, queryString, ed, query);
 	int resultCount = 10;
 
 	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
@@ -262,5 +227,79 @@ QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 	return queryResults;
 }
 
+void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, 
+        const string &queryString, int ed, Query *query){
+    vector<string> queryKeywords;
+    analyzer->tokenizeQuery(queryString,queryKeywords);
+    // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
+    TermType termType = TERM_TYPE_COMPLETE;
+    for (unsigned i = 0; i < queryKeywords.size(); ++i){
+        
+        Term *term;
+        if(i == (queryKeywords.size()-1)){
+            termType = TERM_TYPE_PREFIX;
+        }
+
+        if(ed==0){
+            term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+        } else {
+            term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+        }
+        term->addAttributeToFilterTermHits(-1);
+        query->setPrefixMatchPenalty(0.95);
+        query->add(term);
+    }
+}
+
+int pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
+        const string &queryString, unsigned ed){
+    Query *query = new Query(srch2::instantsearch::TopKQuery);
+    parseFuzzyQueryWithEdSet(analyzer, queryString, ed, query);
+    int resultCount = 10;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+    indexSearcher->search(query, queryResults, resultCount);
+    int returnValue =  queryResults->getNumberOfResults();
+    delete queryResults;
+    delete query;
+    return returnValue;
+}
+
+int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
+        string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed){
+    Query *query = new Query(srch2::instantsearch::MapQuery);
+
+    vector<string> queryKeywords;
+    analyzer->tokenizeQuery(queryString,queryKeywords);
+    // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
+    TermType termType = TERM_TYPE_COMPLETE;
+    for (unsigned i = 0; i < queryKeywords.size(); ++i){
+        Term *term = NULL;
+        if(i == (queryKeywords.size()-1)){
+            termType = TERM_TYPE_PREFIX;
+        }
+        if (ed>0)
+            term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+        else
+            term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+        term->addAttributeToFilterTermHits(-1);
+        query->setPrefixMatchPenalty(0.95);
+        query->add(term);
+    }
+
+    query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+    indexSearcher->search(query, queryResults);
+
+    int returnValue =  queryResults->getNumberOfResults();
+    delete queryResults;
+    delete query;
+    return returnValue;
+}
 }
 }

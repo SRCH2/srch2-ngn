@@ -1,5 +1,5 @@
-#ifndef __SRCH2_TEST_LIB4ANDROID_H__
-#define __SRCH2_TEST_LIB4ANDROID_H__
+#ifndef __CORE_JNI_SRCH2SDK_H__
+#define __CORE_JNI_SRCH2SDK_H__
 #include <jni.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/QueryResults.h>
@@ -7,43 +7,36 @@
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
-#include "../integration/IntegrationTestHelper.h"
-#include "../integration/MapSearchTestHelper.h"
 
 #include <sys/time.h>
-#include <stdio.h>
-#include <unistd.h>
 
-namespace srch2is = srch2::instantsearch;
-using namespace srch2is;
+using namespace srch2::instantsearch;
 
 namespace srch2 {
-namespace sdk {
-
-const unsigned mergeEveryNSeconds = 3;
-const unsigned mergeEveryMWrites = 5;
-
-void setStartTime(timespec* startTime);
-double getTimeSpan(timespec startTime);
-
-int parseLine(char* line);
-
-int getRAMUsageValue();
+namespace sdk{
 
 Indexer* createIndex(string indexDir, bool isGeo);
 Indexer* createIndex(string dataFile, string indexDir, int lineLimit,
 		bool isGeo);
 
 void commitIndex(Indexer* indexer);
+void saveIndex(Indexer *indexer);
+
+Indexer* loadIndex(const string& strIndexPath);
 
 void addRecord(Indexer* index, string key, string value, bool keepInMemory);
 
 QueryResults* query(const Analyzer* analyzer, IndexSearcher* indexSearcher,
 		const string& queryString, unsigned ed);
 
-Indexer* loadIndex(const string& strIndexPath);
+void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, 
+        const string &queryString, int ed, Query *query);
 
-void saveIndex(Indexer *indexer);
+int pingForScalabilityTest(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
+        const string &queryString, unsigned ed);
+ 
+int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
+        string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed);
 
 string printQueryResult(QueryResults* queryResults, Indexer* indexer);
 

@@ -1,26 +1,29 @@
-//$Id: Scalability_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id$
 
-#include "Srch2Android.h"
+#include "SRCH2SDK.h"
+
 #include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
-
 #include "util/Logger.h"
+#include "util/Evaluate.h"
 #include "analyzer/StandardAnalyzer.h"
 
-#define MAX_QUERY_NUMBER 5000
 
-namespace srch2is = srch2::instantsearch;
-using namespace srch2is;
+const int MAX_QUERY_NUMBER = 5000;
+const int DEFAULT_MERGE_NSECONDS = 3;
+const int DEFAULT_MERGE_PERWRITE = 5;
+
+using namespace srch2::instantsearch;
+using namespace srch2::util;
 using namespace srch2::sdk;
-using srch2::util::Logger;
 
 // Read data from file, build the index, and save the index to disk
 void buildIndex(string data_file, string index_dir, int lineLimit) {
 	/// Set up the Schema
-	Schema *schema = Schema::create(srch2is::DefaultIndex);
+	Schema *schema = Schema::create(DefaultIndex);
 	schema->setPrimaryKey("primaryKey");
 	schema->setSearchableAttribute("description", 2);
 
@@ -36,7 +39,7 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+			DEFAULT_MERGE_NSECONDS, DEFAULT_MERGE_PERWRITE, index_dir, "");
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	Record *record = new Record(schema);
@@ -97,7 +100,7 @@ void buildIndex(string data_file, string index_dir, int lineLimit) {
 // Read data from file, build the index, and save the index to disk
 void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 	/// Set up the Schema
-	Schema *schema = Schema::create(srch2is::LocationIndex);
+	Schema *schema = Schema::create(LocationIndex);
 	schema->setPrimaryKey("primaryKey");
 	schema->setSearchableAttribute("description", 2);
 
@@ -113,7 +116,7 @@ void buildGeoIndex(string data_file, string index_dir, int lineLimit) {
 
 	/// Create an index writer
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+			DEFAULT_MERGE_NSECONDS, DEFAULT_MERGE_PERWRITE, index_dir, "");
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	Record *record = new Record(schema);
@@ -367,7 +370,7 @@ JNIEXPORT void Java_com_srch2_mobile_ndksearch_Srch2Lib_scalabilityTest(
     timespec start;
     setStartTime(&start);
 	IndexMetaData *indexMetaData = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, strIndexPath, "");
+			DEFAULT_MERGE_NSECONDS, DEFAULT_MERGE_PERWRITE, strIndexPath, "");
 	Indexer *index = Indexer::load(indexMetaData);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
