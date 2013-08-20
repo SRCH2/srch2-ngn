@@ -12,17 +12,6 @@ ENDIF()
 # additional includes
 INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS})
 
-#IF(ANDROID)
-#    LINK_DIRECTORIES(
-#        /home/jianfeng/software/android-toolchain/user/lib/)
-#ELSE()
-#    LINK_DIRECTORIES(
-#        /usr/lib/
-#        /usr/lib/x86_64-linux-gnu/
-#        /usr/lib64/)
-#ENDIF()
-
-
 #CHENLI: generating a shared library if needed.
 IF (BUILD_STATIC)
   ADD_LIBRARY(srch2_core ${SRCH2_LIB_SRC} )

@@ -126,9 +126,15 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	SET(Boost_DEBUG OFF)
     ENDIF ()
 	
-	SET(sys_LIBRARY_DIRS "/home/jianfeng/software/android-toolchain/user/lib"
+    IF (ANDROID)
+    	SET(sys_LIBRARY_DIRS 
+            "${ANDROID_TOOLCHAIN_ROOT}/user/lib"
+		    )
+    ELSE()
+    	SET(sys_LIBRARY_DIRS 
                     "/usr/lib64/" 
-					)
+		    )
+    ENDIF()
 					
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS serialization program_options regex system thread REQUIRED )
@@ -154,8 +160,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
     IF (ANDROID)
     	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
-        LINK_DIRECTORIES(
-            /home/jianfeng/software/android-toolchain/user/lib/)
+        LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
     ELSE ()
          IF (BUILD64BIT)
         MESSAGE(STATUS "Buildling for 64 bit platform")
