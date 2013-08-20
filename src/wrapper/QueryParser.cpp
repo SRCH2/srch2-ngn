@@ -58,6 +58,8 @@ const char* const QueryParser::facetParamName = "facet"; //solr
 const char* const QueryParser::facetRangeGap = "gap";
 const char* const QueryParser::facetRangeEnd = "end";
 const char* const QueryParser::facetRangeStart = "start";
+//searchType
+const char* const QueryParser::searchType = "searchType";
 
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
@@ -71,6 +73,7 @@ QueryParser::QueryParser(const evkeyvalq &headers,
             srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
+    this->isSearchTypeSet = false;
 }
 
 // parses the URL to a query object
@@ -115,7 +118,7 @@ bool QueryParser::parse() {
     this->filterQueryParameterParser();
     this->lengthBoostParser();
     this->prefixMatchPenaltyParser();
-    this->extractSearchType(); // add a query parameter searchType, not a mendatory parameter
+    this->extractSearchType();
     if (this->container->hasParameterInQuery(GeoSearchType)) {
         this->geoParser();
     } else if (this->container->hasParameterInQuery(GetAllResultsSearchType)) {
@@ -1177,7 +1180,22 @@ void QueryParser::extractSearchType() {
      *  set the parametersInQuery.
      *
      */
-
+    // if serachType mentioned in queryParameter use that.
+    const string geoType = "geo";
+    const string getAllType = "getAll";
+    const string topKType = "topK";
+    Logger::debug("inside extractSearchType function");
+    const char * searchTypeTmp = evhttp_find_header(&headers,
+            QueryParser::searchType);
+    string searchType = "";
+    if (searchTypeTmp) { // if this parameter exists
+        Logger::debug("searchType found, parsing it");
+        this->isSearchTypeSet = true;
+        size_t st;
+        searchType = evhttp_uridecode(searchTypeTmp, 0, &st);
+    }
+    Logger::debug("returning from responseWriteTypeParameterParser function");
+    // else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
     Logger::debug("inside extractSearchType, checking for geo parameter");
     const char * leftBottomLatTemp = evhttp_find_header(&headers,
             QueryParser::leftBottomLatParamName);
@@ -1190,9 +1208,18 @@ void QueryParser::extractSearchType() {
     if (leftBottomLatTemp && leftBottomLongTemp && rightTopLatTemp
             && rightTopLongTemp) {
         // it's a reactangular geo search
+        if (this->isSearchTypeSet && !boost::iequals(geoType, searchType)) {
+            // raise warning
+            this->container->messages.push_back(
+                    make_pair(MessageWarning,
+                            "searchType parameter for this query should be set to geo, found "
+                                    + searchType
+                                    + " .Using geo as searchType"));
+        }
         this->container->parametersInQuery.push_back(GeoSearchType);
-        this->container->parametersInQuery.push_back(GeoTypeRectangular);
         this->container->geoParameterContainer = new GeoParameterContainer();
+        this->container->geoParameterContainer->parametersInQuery.push_back(
+                GeoTypeRectangular);
         //set GeoParameterContainer properties.
         this->setGeoContainerProperties(leftBottomLatTemp, leftBottomLongTemp,
                 rightTopLatTemp, rightTopLongTemp);
@@ -1205,6 +1232,14 @@ void QueryParser::extractSearchType() {
                 QueryParser::radiusParamName);
         if (centerLatTemp && centerLongTemp && radiusParamTemp) {
             // its a circular geo search
+            if (this->isSearchTypeSet && !boost::iequals(geoType, searchType)) {
+                // raise warning
+                this->container->messages.push_back(
+                        make_pair(MessageWarning,
+                                "searchType parameter for this query should be set to geo, found "
+                                        + searchType
+                                        + " .Using geo as searchType"));
+            }
             this->container->parametersInQuery.push_back(GeoSearchType);
             this->container->geoParameterContainer =
                     new GeoParameterContainer();
@@ -1220,15 +1255,69 @@ void QueryParser::extractSearchType() {
                     QueryParser::facetParamName);
             if (sortTemp || facetTemp) {
                 // it's a getAllResesult search
+                if (this->isSearchTypeSet
+                        && !boost::iequals(getAllType, searchType)) {
+                    // raise warning
+                    this->container->messages.push_back(
+                            make_pair(MessageWarning,
+                                    "searchType parameter for this query should be set to getAll, found "
+                                            + searchType
+                                            + " .Using getAll as searchType"));
+                }
                 this->container->parametersInQuery.push_back(
                         GetAllResultsSearchType);
                 this->container->getAllResultsParameterContainer =
                         new GetAllResultsParameterContainer();
             } else {
-                // it's a Top-K search
-                this->container->parametersInQuery.push_back(TopKSearchType);
-                this->container->topKParameterContainer =
-                        new TopKParameterContainer();
+                if (this->isSearchTypeSet) {
+                    if (boost::iequals(getAllType, searchType)) {
+                        // it's a getAll
+                        this->container->parametersInQuery.push_back(
+                                GetAllResultsSearchType);
+                        this->container->getAllResultsParameterContainer =
+                                new GetAllResultsParameterContainer();
+                    } else if (boost::iequals(topKType, searchType)) {
+                        // it's a Top-K search
+                        this->container->parametersInQuery.push_back(
+                                TopKSearchType);
+                        this->container->topKParameterContainer =
+                                new TopKParameterContainer();
+                    } else if (boost::iequals(geoType, searchType)) {
+                        Logger::info(
+                                "searchType provided in queryParamter is geo. Not all required geo paramters are provided. Evaluating falback options");
+                        if (!this->container->rawQueryKeywords.empty()) {
+                            // keywords are provided, we can fall back to topK
+                            this->container->messages.push_back(
+                                    make_pair(MessageWarning,
+                                            "not enough circular or rectangular geo parameters were found, falling back to topK search"));
+                            this->container->parametersInQuery.push_back(
+                                    TopKSearchType);
+                            this->container->topKParameterContainer =
+                                    new TopKParameterContainer();
+                        }
+
+                    } else {
+                        // searchType provided is not known, fall back to top-k
+                        this->container->messages.push_back(
+                                make_pair(MessageWarning,
+                                        "Unknown searchType " + searchType
+                                                + " provided, falling back to topK"));
+                        this->container->parametersInQuery.push_back(
+                                TopKSearchType);
+                        this->container->topKParameterContainer =
+                                new TopKParameterContainer();
+                    }
+                } else {
+                    // no searchType provided use topK
+                    this->container->messages.push_back(
+                            make_pair(MessageWarning,
+                                    "no searchType is provided, using topK"));
+                    this->container->parametersInQuery.push_back(
+                            TopKSearchType);
+                    this->container->topKParameterContainer =
+                            new TopKParameterContainer();
+                }
+
             }
         }
     }
