@@ -68,7 +68,8 @@ public:
 		const VariableLengthAttributeContainer * container = list->getNonSearchableAttributeContainer();
 		container->getBatchOfAttributes(attributeIds,schema,&scores);
 
-		// now call the evaluator to see it this record passes the criteria or not
+		// now call the evaluator to see if this record passes the criteria or not
+		// A criterion can be for example price:12 or price:[* TO 100]
 		map<string, Score> valuesForEvaluation;
 
 		// prepare the evaluator input

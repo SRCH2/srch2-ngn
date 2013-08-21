@@ -55,11 +55,11 @@ public:
 	~FacetedSearchFilter();
 
 
-	void initialize(std::vector<FacetType> facetTypes,
-			std::vector<std::string> fields,
-			std::vector<std::string> rangeStarts,
-			std::vector<std::string> rangeEnds,
-			std::vector<std::string> rangeGaps);
+	void initialize(std::vector<FacetType> & facetTypes,
+			std::vector<std::string> & fields,
+			std::vector<std::string> & rangeStarts,
+			std::vector<std::string> & rangeEnds,
+			std::vector<std::string> & rangeGaps);
 
 private:
 

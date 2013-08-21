@@ -37,7 +37,7 @@ class NonSearchableAttributeExpressionFilterInternal;
 class NonSearchableAttributeExpressionEvaluator
 {
 public:
-	virtual bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) = 0 ;
+	virtual bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) = 0 ;
 	virtual ~NonSearchableAttributeExpressionEvaluator(){};
 };
 

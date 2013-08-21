@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright ������ 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
 #include <iostream>
@@ -35,9 +35,8 @@
 #include "RegexConstants.h"
 //#include "Assert.h"
 
-#ifndef _WRAPPER_FILTERQUERYEVALUATOR_H_
-
-#define _WRAPPER_FILTERQUERYEVALUATOR_H_
+#ifndef __WRAPPER_FILTERQUERYEVALUATOR_H_
+#define __WRAPPER_FILTERQUERYEVALUATOR_H_
 
 using namespace std;
 using srch2::instantsearch::Score;
@@ -396,7 +395,7 @@ public:
     void setOperation(BooleanOperation op) {
         this->operation = op;
     }
-    bool evaluate(std::map<std::string, Score> nonSearchableAttributeValues) {
+    bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
         switch (operation) {
         case srch2::instantsearch::BooleanOperatorAND:
             for (std::vector<QueryExpression *>::iterator criterion = criteria

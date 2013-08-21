@@ -54,6 +54,7 @@ class SmokeTest():
         while os.system(info) != 0:
             time.sleep(1)
             info = 'curl -s {0}:{1}/search?q=Garden | grep -q results'.format(self.host, self.port)
+            self.debugToConsole(info)
         self.debugToConsole("pinging done returning")
 
     def fireQuery(self, query):
@@ -216,17 +217,18 @@ if __name__ == '__main__':
                 'server_port':8081,
                 'server_host': 'http://localhost',
                 'server_confg_file_path':'./conf.ini',
-                'debug' : False,
+                'debug' : True,
                 'server_binary_name':'srch2-search-server'
     }
     smoke = SmokeTest(config)
     try:
         #kill any existing instance of server
-        smoke.killServer();
+        #smoke.killServer();
         #start the server
         smoke.startServer();
         #ping the server
-        smoke.pingServer();
+        #smoke.pingServer();
+        time.sleep(3)
         decoration = 40
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
         #start testing

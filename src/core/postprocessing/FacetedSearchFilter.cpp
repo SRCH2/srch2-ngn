@@ -96,10 +96,10 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
     }
 }
 
-void FacetedSearchFilter::initialize(std::vector<FacetType> facetTypes,
-        std::vector<std::string> fields, std::vector<std::string> rangeStarts,
-        std::vector<std::string> rangeEnds,
-        std::vector<std::string> rangeGaps) {
+void FacetedSearchFilter::initialize(std::vector<FacetType> & facetTypes,
+        std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
+        std::vector<std::string> & rangeEnds,
+        std::vector<std::string> & rangeGaps) {
 
     this->impl->fields = fields;
     this->impl->facetTypes = facetTypes;
