@@ -148,10 +148,6 @@ void QueryRewriter::applyAnalyzer() {
             if(paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)){
                 keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
             }
-            if(paramContainer->hasParameterInQuery(FieldFilter)){
-                fieldFilter.push_back(paramContainer->fieldFilter.at(i));
-                fieldFilterOps.push_back(paramContainer->fieldFilterOps.at(i));
-            }
             fieldFilterNumbers.push_back(paramContainer->fieldFilterNumbers.at(i));
         }
     }
