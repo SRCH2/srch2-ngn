@@ -190,7 +190,6 @@ static void ajax_health_command(struct mg_connection *conn,
  */
 void cb_bmsearch(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -204,7 +203,6 @@ void cb_bmsearch(evhttp_request *req, void *arg)
  */
 void cb_bmlookup(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -218,15 +216,12 @@ void cb_bmlookup(evhttp_request *req, void *arg)
  */
 void cb_bminfo(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
     /*string meminfo;
     getMemoryInfo(meminfo);*/
-
     string versioninfo = getCurrentVersion();
-
     HTTPResponse::infoCommand(req, server, versioninfo);
 }
 
@@ -237,7 +232,6 @@ void cb_bminfo(evhttp_request *req, void *arg)
  */
 void cb_bmwrite_v0(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -246,7 +240,6 @@ void cb_bmwrite_v0(evhttp_request *req, void *arg)
 
 void cb_bmupdate(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -255,7 +248,6 @@ void cb_bmupdate(evhttp_request *req, void *arg)
 
 void cb_bmsave(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -269,7 +261,6 @@ void cb_bmsave(evhttp_request *req, void *arg)
  */
 void cb_bmwrite_v1(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -283,17 +274,14 @@ void cb_bmwrite_v1(evhttp_request *req, void *arg)
  */
 void cb_bmactivate(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
     HTTPResponse::activateCommand(req, server);
 }
 
-
 void cb_bmshutdown(evhttp_request *req, void *arg)
 {
-
     vector<struct event_base *> * bases = reinterpret_cast<vector<struct event_base *> *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
@@ -544,6 +532,7 @@ int main(int argc, char** argv)
     int fd = bindSocket(http_addr, http_port);
     pthread_t *threads = new pthread_t[MAX_THREADS];
     vector<struct event_base *> evbases;
+    vector<struct evhttp *> http_servers;
     for (int i = 0; i < MAX_THREADS; i++) {
         evbase = event_init();
         evbases.push_back(evbase);
@@ -553,6 +542,7 @@ int main(int argc, char** argv)
         }
 
         http_server = evhttp_new(evbase);
+        http_servers.push_back(http_server);
         //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
 
         if (NULL == http_server) {
@@ -601,8 +591,11 @@ int main(int argc, char** argv)
 
     delete[] threads;
     fclose(logFile);
-    evhttp_free(http_server);
-    event_base_free(evbase);
-
+    // free resource before exit
+    for(int i = 0; i < MAX_THREADS; i++)
+    {
+        evhttp_free(http_servers[i]);
+        event_base_free(evbases[i]);
+    }
     return EXIT_SUCCESS;
 }

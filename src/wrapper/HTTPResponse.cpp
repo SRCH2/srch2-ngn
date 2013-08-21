@@ -477,7 +477,7 @@ void HTTPResponse::saveCommand(evhttp_request *req, Srch2Server *server)
             std::stringstream log_str;
             IndexWriteUtil::_saveCommand(server->indexer, log_str);
 
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The index has been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
             Logger::info("%s", log_str.str().c_str());
             break;
         }
@@ -498,9 +498,11 @@ void HTTPResponse::shutdownCommand(evhttp_request *req, vector<struct event_base
         {
             std::stringstream log_str;
             IndexWriteUtil::_saveCommand(server->indexer, log_str);
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The index has been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
-            for(int i =0; i< bases->size(); i++)
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",  "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["+log_str.str()+"]}\n" );
+            //exit all the event_bases in the server threads
+            for(int i =0; i< bases->size(); i++){
                 event_base_loopexit(bases->at(i), NULL);
+            }
             Logger::info("%s", log_str.str().c_str());
             break;
         }

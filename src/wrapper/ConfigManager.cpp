@@ -32,6 +32,7 @@ void ConfigManager::loadConfigFile(){
         //("customer-name", po::value<string>(), "customer name") // REQUIRED
         ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
         ("index-type",  po::value<int>(), "index-type") // REQUIRED
+        ("index-load-or-create",  po::value<bool>(), "index-load-or-create")
         ("data-source-type",  po::value<bool>(), "Data source type")
 
         ("kafka-consumer-topicname", po::value<string>(), "Kafka consumer topic name") // REQUIRED
