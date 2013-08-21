@@ -98,7 +98,7 @@ string AnalyzerInternal::applyFilters(string input) {
 
     TokenStream * tokenStream = this->createOperatorFlow();
 
-    this->loadData(input);
+    this->tokenStream->fillInCharacters(input);
 
     string result = "";
     while (tokenStream->processToken()) {
@@ -112,13 +112,6 @@ string AnalyzerInternal::applyFilters(string input) {
     return result;
 }
 
-void AnalyzerInternal::loadData(const string &s) const {
-    std::vector<CharType> charVector;
-    utf8StringToCharTypeVector(s, charVector); //clean the string and convert the string to CharTypeVector
-    this->tokenStreamContainer->currentToken.clear();
-    this->tokenStreamContainer->completeCharVector = charVector;
-    this->tokenStreamContainer->offset = 0;
-}
 
 /**
  * Function to tokenize a given record.

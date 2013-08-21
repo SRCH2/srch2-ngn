@@ -44,7 +44,6 @@ public:
 
 	string applyFilters(string input) ;
 
-	void loadData(const std::string &s) const;
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;
