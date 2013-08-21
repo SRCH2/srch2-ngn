@@ -1,4 +1,28 @@
-#include "MapSearchTestHelper.h"
+
+#ifndef __MAPSEARCHTESTHELPER_H__
+#define __MAPSEARCHTESTHELPER_H__
+
+#include <instantsearch/Analyzer.h>
+#include <instantsearch/Indexer.h>
+#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/Query.h>
+#include <instantsearch/Term.h>
+#include <instantsearch/Schema.h>
+#include <instantsearch/Record.h>
+#include <instantsearch/QueryResults.h>
+
+#include <query/QueryResultsInternal.h>
+#include <operation/IndexSearcherInternal.h>
+
+#include <boost/algorithm/string.hpp>
+
+#include <iostream>
+#include <cstdlib>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <cstring>
+#include <vector>
 
 using namespace std;
 
@@ -185,7 +209,7 @@ void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
 
 }
 
-void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset)
+void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 {
 	cout << "Number of hits:" << queryResults->getNumberOfResults() << endl;
 	for (unsigned resultIter = offset;
@@ -228,8 +252,8 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        TermType type = TERM_TYPE_PREFIX;
-        Term *term = FuzzyTerm::create(queryKeywords[i], type, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].size()));
+        TermType termType = TERM_TYPE_PREFIX;
+        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].size()));
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -301,8 +325,8 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
-        TermType type = TERM_TYPE_PREFIX;
-        Term *term = ExactTerm::create(queryKeywords[i], type, 1, 0.5);
+        TermType termType = TERM_TYPE_PREFIX;
+        Term *term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -333,3 +357,4 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     return inTopK;
 }
 
+#endif /* __MAPSEARCHTESTHELPER_H__ */
