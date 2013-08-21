@@ -96,7 +96,7 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 
 string AnalyzerInternal::applyFilters(string input) {
 
-    TokenStream * tokenStream = this->createOperatorFlow();
+   // TokenStream * tokenStream = this->createOperatorFlow();
 
     this->tokenStream->fillInCharacters(input);
 

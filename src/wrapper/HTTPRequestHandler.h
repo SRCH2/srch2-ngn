@@ -54,6 +54,7 @@ class HTTPRequestHandler
 				const unsigned offset,
 				const unsigned nextK,
 				const unsigned retrievedResults,
+				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
 };

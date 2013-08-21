@@ -183,6 +183,8 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                             this->isParsedError = true;
                         }
                     }
+                }else{
+                    parseNextTerm = false;
                 }
             }
             // check if keywordFuzzyLevel was set by parseTerms
@@ -942,7 +944,15 @@ bool QueryParser::keywordParser(string &input) {
     /*
      *
      */
-    if (input.at(0) == '\"') { // check if the keyword starts with a quote
+    if(input.length() == 0){ // check if the keyword starts with a quote
+        Logger::info("PARSE ERROR, returning from  keywordParser.");
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "Parse error, expecting keyword, not found "));
+        this->isParsedError = true;
+        return false;
+    }
+    if (input.at(0) == '\"') {
         // we do not support phrase search as of now
         Logger::info(
                 "PARSE ERROR, unexpected character \" found at the begining of the keyword.");

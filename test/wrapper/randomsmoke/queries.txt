@@ -48,6 +48,9 @@ q=Services AND Personal* ^
 q=Services AND Personal* ~
 q={} Services
 q=Services AND Personal* ^ ~
+q={defaultBoostLevel=2}personal AND service&sort=true
+q={defaultBoostLevel=asd}Personal^
+q=Services&facet=true&facet.field=name
 @fail
 q={q=Personal^3 AND Services
 q={q=Personal^3 AND Services}
@@ -63,11 +66,8 @@ q=Services AND Personal~.8^4
 q=Services AND Personal^^4
 q=Services AND Personal^4~1
 q=Services AND Personal~~.7
-q=Services&facet=true&facet.field=name
 q={defaultBoostLevel=asd}
 q={defaultBoostLevel=1}
-q={defaultBoostLevel=asd}Personal^
 q={defaultBoostLevel=asd}personal AND
 q={defaultBoostLevel=2}personal AND
-q={defaultBoostLevel=2}personal AND service&sort=true
 lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&searchType=geo
