@@ -14,14 +14,14 @@ namespace httpwrapper {
 // local parameter regex strings
 const string LP_KEY_REGEX_STRING = "\\s*[\\w_]+";
 const string LP_KEY_VAL_DELIMETER_REGEX_STRING = "\\s*=\\s*";
-const string LP_VALUE_REGEX_STRING = "[\\w_]+(,[\\w_])*";
+const string LP_VALUE_REGEX_STRING = "[\\w_]+(,[\\w_]+)*";
 // keyword regex strings
 const string BOOST_REGEX_STRING = "\\^\\d+";
 const string CHECK_FUZZY_NUMBER_REGEX_STRING = "\\~\\.\\d+";
 const string NUMBERS_REGEX_STRING = "\\d+";
 const string FIELD_AND_BOOL_OP_DELIMETER_REGEX_STRING = "\\.";
 const string FIELD_OR_BOOL_OP_DELIMETER_REGEX_STRING = "\\+";
-const string TERM_BOOL_OP_REGEX_STRING = "(AND|&&)";
+const string TERM_BOOL_OP_REGEX_STRING = "(AND|&&|OR|\\|\\|)";
 const string MAIN_QUERY_TERM_FIELD_REGEX_STRING = "([\\w_]+((\\.|\\+)[\\w_]*)*|\\*)\\s*:";
 const string MAIN_QUERY_KEYWORD_REGEX_STRING = "[^\\*\\^\\~\\s]+";
 const string MAIN_QUERY_ASTERIC_KEYWORD_REGEX_STRING = "\\*\\s*";
