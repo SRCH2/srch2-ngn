@@ -130,18 +130,16 @@ private:
     static const char* const facetRangeGap;
     static const char* const facetRangeEnd;
     static const char* const facetRangeStart;
-    static const string getFacetRangeKey(const string &facetField, const string &facetRangeProperty){
-        return "f.%s.facet.%s",facetField.c_str(),facetRangeProperty.c_str();
+    static const string getFacetRangeKey(const string &facetField,
+            const string &facetRangeProperty) {
+        return "f.%s.facet.%s", facetField.c_str(), facetRangeProperty.c_str();
     }
     //searchType
     static const char* const searchType;
     /*
-     * example: q={param=key param2=key2}field1=keyword1 AND field2=keyword2* AND field3=keyword3*^2~.8
-     * 1. Parse the string and find
-     *      1.1 local parameters
-     *      1.2 keyword string
-     * 2. calls localParameterParser()
-     * 3. calls the keywordParser();
+     * example: q={defaultSearchFields=Author defaultFuzzyLevel=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
+     * 1. calls localParameterParser()
+     * 2. calls the keywordParser();
      */
     void mainQueryParser();
 
@@ -152,13 +150,13 @@ private:
 
     /*
      * parses the lengthBoost parameter and fills up the container
-     * example: lengthBoost=.9
+     * example: 'lengthBoost=.9'
      */
     void lengthBoostParser();
 
     /*
      * parses the pmp parameter and fills up the container
-     * example: pmp=.8
+     * example: 'pmp=.8'
      */
     void prefixMatchPenaltyParser();
 
@@ -173,14 +171,14 @@ private:
      * if there is a field list query parameter
      * then parse it and fill the container up
      *
-     * Example: fl=field1,field2,field3 or fl=*
+     * Example: 'fl=Author,Title,Name' or 'fl=*'
      */
     void fieldListParser();
 
     /*
      * if there is a start offset
      * fills the container up
-     * example: start=40
+     * example: 'start=40'
      */
     void startOffsetParameterParser();
 
@@ -188,7 +186,7 @@ private:
      * if there is a number of results
      * fills the container up
      *
-     * example: rows=20
+     * example: 'rows=20'
      */
     void numberOfResultsParser();
 
@@ -196,7 +194,7 @@ private:
      * it looks to see if we have a time limitation
      * if we have time limitation it fills up the container accordingly
      *
-     * example: timeAllowed=1000
+     * example: 'timeAllowed=1000'
      * unit is millisec.
      */
     void timeAllowedParameterParser();
@@ -205,14 +203,14 @@ private:
      * it looks to see if we have a omit header
      * if we have omit header it fills up the container accordingly.
      *
-     * example: omitHeader=True
+     * example: 'omitHeader=True'
      */
     void omitHeaderParameterParser();
 
     /*
      * it looks to see if we have a responce type
      * if we have reponce type it fills up the container accordingly.
-     * exmple: wt=JSON
+     * exmple: 'wt=JSON'
      */
     void responseWriteTypeParameterParser();
 
@@ -220,20 +218,20 @@ private:
      * it looks to see if there is any post processing filter
      * if there is then it fills up the container accordingly
      *
-     * example: fq=Field1:[10 TO 100] AND field2:[* TO 100] AND field3:keyword
+     * example: 'fq=price:[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm'
      *
      */
     bool filterQueryParameterParser();
 
     /*
-     * example:  facet=true&facet.field=filedName&facet.field=fieldName2&facet.range=fieldName3&f.fieldName3.range.start=10&f.fieldName3.range.end=100&f.fieldName3.range.gap=10
+     * example:  facet=true&facet.field=Author&facet.field=Title&facet.range=price&f.price.range.start=10&f.price.range.end=100&f.price.range.gap=10
      * parses the parameters facet=true/false , and it is true it parses the rest of
      * parameters which are related to faceted search.
      */
     void facetParser();
 
     /*
-     * example: sort=field1,field2,field3
+     * example: 'sort=Author,Title'
      * looks for the parameter sort which defines the post processing sort job
      */
     void sortParser();
@@ -241,7 +239,7 @@ private:
     /*
      * this function parses the local parameters section of all parts
      * input:
-     *      1. local parameters string : {key=val key2=val2}
+     *      1. local parameters string : '{defaultSearchFields=Author defaultFuzzyLevel=.7}'
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
@@ -249,7 +247,7 @@ private:
 
     /*
      * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
-     * example: field:keyword^3 AND keyword2 AND keyword* AND keyword*^3 AND keyword^2~.5
+     * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
     bool keywordParser(string &input);
@@ -275,7 +273,7 @@ private:
     void geoParser();
     /*
      * populates the fieldFilter using localparamters.
-     * example: q=keyword , has no fieldFilter specified. it will look into the lpFieldFilters for the
+     * example: 'q=gnuth' , has no fieldFilter specified. it will look into the lpFieldFilters for the
      * fallback and use that to populate the fieldFilter for this keyword
      */
     void populateFieldFilterUsingLp();
@@ -288,7 +286,7 @@ private:
     void populateFieldFilterUsingQueryFields(const string &input);
     /*
      * checks if boost value is present in the input
-     * example: keyword^4 has boost value 4. keyword^ has no boost value
+     * example: 'gnuth^4' has boost value '4'. 'gnuth^' has no boost value
      */
     void checkForBoostNums(const string &input, boost::smatch &matches);
     /*
@@ -298,17 +296,21 @@ private:
     void extractNumbers(const string &input, boost::smatch &matches);
     /*
      * checks if the fuzzylevel is present in the input string
-     * example: keyword~.8 has fuzzylevel as .8. keyword~ has no fuzzylevel specified.
+     * example: 'gnuth~.8' has fuzzylevel as '.8'. 'gnuth~' has no fuzzylevel specified.
      */
     void checkForFuzzyNums(const string &input, boost::smatch &matches);
     /*
      * populates the raw keywords, that is the keyword without modifiers.
      * modifiers are *,^ and ~.
-     * example: keyword^3 has keyword as a rawkeyword. this function populates the RawKeywords vector in container.
+     * example: 'gnuth^3' has 'gnuth' as a rawkeyword. this function populates the RawKeywords vector in container.
      */
     void populateRawKeywords(const string &input);
     /*
-     * populates the termBooleanOperator in the container
+     * populates the termBooleanOperators in the container
+     * checks if the termOperator is one of 'OR,||,AND,&&'
+     *  true: sets the container's termBooleanOperator to the corresponding enum.
+     *  function raises warning if termOperator is anything other than 'AND' or '&&'.
+     *  and sets the termBooleanOperator to BooleanOperatorAND enum value.
      */
     void populateTermBooleanOperator(const string &termOperator);
     /*
@@ -350,19 +352,19 @@ private:
     void setGeoContainerProperties(const char*centerLat, const char* centerLong,
             const char* radiusParam);
     /*
-     * example: orderby=desc
+     * example: 'orderby=desc'
      * looks for the parameter orderby in headers and parses it.
      */
     string orderByParser();
     /*
      * populates teh fields vector related to facet.feild
-     * example: facet.field=category
+     * example: 'facet.field=category'
      */
     void populateFacetFieldsSimple(FacetQueryContainer &fqc);
     /*
      * populates the fields vector related to facet.range.
      * Also, calls the populateParallelRangeVectors function to populate the related parallel vectors.
-     * example facet.range=price
+     * example 'facet.range=price'
      */
     void populateFacetFieldsRange(FacetQueryContainer &fqc);
     /*
@@ -375,7 +377,8 @@ private:
     void populateFilterQueryTermBooleanOperator(const string &termOperator);
     /*
      * parses the localparameter value from input string. It changes input string and populates the value
-     * example. for input: abc field = xyz} ,the paramter value will contain abc and the input will be changed to field = xyz}
+     * example. for input: 'Author defaultBoostLevel = 2}' ,the paramter 'value' will contain 'Author'
+     *  and the 'input' will be changed to 'defaultBoostLevel = 2}'
      */
     bool parseLpValue(string &input, string &value);
 
@@ -385,66 +388,100 @@ private:
     bool parseLpDelimeter(string &input);
     /*
      * parses the localparameter key from input string. It changes input string and populates the field
-     * example. for input: "field = xyz field2 = abc}" ,the paramter field will contain field and the input will be changed to "= xyz field2 =abc}"
+     * example. for input: 'defaultSearchFields = Author defaultBoostLevel = 2}' ,the paramter field will be
+     * 'defaultSearchFields' and the input will be changed to '= Author defaultBoostLevel = 2}'
      */
     bool parseLpKey(string &input, string &field);
     /*
      * sets the lp key and lp value in the container.
+     * @lpKey a localparameter key
+     * @lpVal a localparameter value
+     * this functions checks for the validity of lpVal based on the lpKey.
+     * if the lpKey and lpVal are have valid syntax it sets the corresponding variable in the queryParser.
+     * else, it raises warning and ignores the lpKey and lpVal
+     * We support following lpKeys
+     * 1) "defaultFieldOperator"
+     * 2) "defaultfuzzyLevel"
+     * 3) "defaultBoostLevel"
+     * 4) "defaultPrefixComplete"
+     * 5) "defaultSearchFields"
+     *
+     * Example: lpKey = 'defaultSearchFields' and lpVal= 'Author'
      */
     void setLpKeyValinContainer(const string &lpKey, const string &lpVal);
     /*
      * parses the boolean operator, the string must begin with it
-     * example: AND field:keyword.
-     * output will be AND
+     * example: 'AND defaultSearchFields:Author'.
+     * output will be 'AND'
      */
     bool parseTermBoolOperator(string &input, string &output);
     /*
      * parses the field
-     * example: field:keyword
-     * outpur will be field
+     * example: 'Author:gnuth'
+     * output will be 'Author'
      *
      */
     bool parseField(string &input, string &field);
     /**
      * parses the keyword string
-     * example: keyword*^~
-     * output will be keyword
+     * example: 'gnuth*^~'
+     * output will be 'gnuth'
      */
     bool parseKeyword(string &input, string &output);
     /*
-     * parses the * keyword
+     * parses the '*' keyword
      */
     bool parseKeyWordForAsteric(string &input, string &output);
     /*
      * parses the prefix modifier
-     * example *^4
-     * output will have *
+     * example '*^4'
+     * output will be '*'
      */
     bool parsePrefixModifier(string &input, string &output);
     /*
      * parses the boost modifier
-     * eample: ^4~.8
-     * output will have ^4
+     * eample: '^4~.8'
+     * output will be '^4'
+     * input will be changed to ~.8
      */
     bool parseBoostModifier(string &input, string &output);
     /*
      * populate boost info
+     * Example: '^4'
+     * if 'isParsed' is 'True', checks if the 'input' contains a number. In this example it contains '4'.
+     * it will populate the keywordBoostLevel vector with 4.
+     * Incase the input string was just '^', it will populate the keywordBoostLevel
+     *  with the  lPdefaultBoostLevel value as specified in
+     * local Parameters.
      */
     void populateBoostInfo(bool isParsed, string &input);
     /*
-     * populate fuzzyinfo
+     ~* populate boost info
+     * Example: '^.4'
+     * if 'isParsed' is 'True', checks if the 'input' contains a 'dot' followed by a number. In this example it contains '.4'.
+     * it will populate the keywordFuzzyLevel vector with 4.
+     * Incase the input string was just '~', it will populate the keywordFuzzyLevel
+     *  with the  lPdefaultFuzzyLevel value as specified in
+     * local Parameters.
      */
     void populateFuzzyInfo(bool isParsed, string &input);
     /*
-     * parses the fuzzy modifier
+     * example: input : '~.8 AND Author:gnuth'
+     * parses the fuzzy modifier.
+     * input will be changed to 'AND Author:gnuth'
+     * output will be '~.8'
      */
     bool parseFuzzyModifier(string &input, string &output);
     /*
-     * checs if cmplx string is present. removes it too.
-     */
-    bool parseComplx(string &input, string &output);
-    /*
-     * clears the keyword related parallel vectors if required
+     * clears the keyword related parallel vectors if required.
+     * Checks if the an entry is present for the following vectors in the parametersInQuery vector.
+     * If no entry is present for a vector, that vector will be cleared
+     * Following are the vectors:
+     * keywordFuzzyLevel
+     * keywordBoostLevel
+     * keywordPrefixComplete
+     * fieldFilter
+     * fieldFilterOps
      */
     void clearMainQueryParallelVectorsIfNeeded();
 };

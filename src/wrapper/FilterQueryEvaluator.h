@@ -386,12 +386,12 @@ private:
 class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
 public:
 
-    FilterQueryEvaluator(std::vector<std::pair<MessageType, string> > *messages,
-            BooleanOperation *termFQBooleanOperator) {
+    FilterQueryEvaluator(
+            std::vector<std::pair<MessageType, string> > *messages) {
         this->operation = srch2::instantsearch::BooleanOperatorAND;
         this->isFqBoolOperatorSet = false;
         this->messages = messages;
-        this->termFQBooleanOperator = termFQBooleanOperator;
+        this->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
     }
     void setOperation(BooleanOperation op) {
         this->operation = op;
@@ -423,88 +423,117 @@ public:
         return false; // TODO : should change to ASSERT(false); because it should never reach here
     }
 
-    bool validate(const Schema & schema){
-        for(std::vector<QueryExpression *>::iterator criterion = criteria.begin();
-                criterion != criteria.end() ; ++criterion){
-            if(! (*criterion)->validate(schema)){
+    bool validate(const Schema & schema) {
+        for (std::vector<QueryExpression *>::iterator criterion =
+                criteria.begin(); criterion != criteria.end(); ++criterion) {
+            if (!(*criterion)->validate(schema)) {
                 return false;
             }
         }
         return true;
     }
+    /*
+     * it looks to see if there is any post processing filter
+     * if there is then it fills up the container accordingly
+     *
+     * example: 'fq=price:[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+     *
+     */
     bool parseAndAddCriterion(string &fq) {
         bool parseNextTerm = true;
         while (parseNextTerm) {
             string fqField;
-            bool isParsed = this->parseFqField(fq, fqField);
-            if (!isParsed) {
-                // it is not a assignment not a range
-                // see if it's a complx query
-                string complxStr = "";
-                isParsed = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
-                if (!isParsed) {
+            //NOTE:example related comments are only valid for the first time iteration inside the while loop
+            if (fq.length() > 0) {
+                bool hasParsedParameter = this->parseFqField(fq, fqField);
+                if (!hasParsedParameter) {
+                    // it is not a assignment not a range
+                    // see if it's a complx query
+                    string complxStr = "";
+                    hasParsedParameter = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
+                    if (!hasParsedParameter) {
+                        parseNextTerm = false;
+                        Logger::info(
+                                " Parsing error:: not a valid filter query");
+                        this->messages->push_back(
+                                make_pair(MessageError,
+                                        "Parse error, not a valid filter query term."));
+                        return false;
+                    } else {
+                        Logger::debug(
+                                " 'CMPLX$' found, possible complex expression query");
+                        string dummyField = "NO_FIELD";
+                        hasParsedParameter = this->addCriterion(fq,
+                                FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
+                        if (!hasParsedParameter) {
+                            return false;
+                        }
+                        boost::algorithm::trim(fq);
+                    }
+                } else {
+                    // hasParsedParameter is true, fq is now changed to : '[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+                    // fqField is 'price:'
+                    // remove the ':' form 'price:'
+                    fqField = fqField.substr(0, fqField.length() - 1);
+                    boost::algorithm::trim(fqField);
+                    // check if it's a range query or asignment.
+                    if ('[' == fq.at(0)) {
+                        Logger::debug(" '[' found, possible range query");
+                        string keyword = "";
+                        fq = fq.substr(1);
+                        hasParsedParameter = this->addCriterion(fq,
+                                FqKeywordTypeRange, fqField); // it parses fq for range query parameters
+                        if (!hasParsedParameter) {
+                            //this->isParsedError = true;
+                            return false;
+                        }
+                    } else {
+                        Logger::debug(
+                                " '[' not found, possible assignment query");
+                        string keyword = "";
+                        hasParsedParameter = this->addCriterion(fq,
+                                FqKeywordTypeAssignment, fqField); // it parses fq for range query parameters
+                        if (!hasParsedParameter) {
+                            //this->isParsedError = true; //TODO:
+                            return false;
+                        }
+                    }
+                }
+                // first term has been parsed.
+                // fq should have been changed to 'AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+                string boolOperator = "";
+                hasParsedParameter = this->parseFqBoolOperator(fq,
+                        boolOperator); //
+                if (hasParsedParameter) {
+                    this->setOperation(this->termFQBooleanOperator);
+                    string msgStr = "boolean operator is " + boolOperator;
+                    Logger::debug(msgStr.c_str());
+                    parseNextTerm = true;
+                    Logger::debug("LOOPING AGAIN");
+                } else {
+                    // no boolean operator found.
+                    // if the fq string length is >0 throw error.
                     parseNextTerm = false;
-                    Logger::info(" Parsing error:: not a valid filter query");
-                    this->messages->push_back(
-                            make_pair(MessageError,
-                                    "Parse error, not a valid filter query term."));
-                    return false;
-                } else {
-                    Logger::debug(
-                            " 'CMPLX$' found, possible complex expression query");
-                    string dummyField = "NO_FIELD";
-                    isParsed = this->addCriterion(fq, FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
-                    if (!isParsed) {
+                    if (fq.length() > 0) {
+                        // raise error message
+                        Logger::info(
+                                " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                        this->messages->push_back(
+                                make_pair(MessageError,
+                                        "Parse error, expecting boolean operator while parsing filter query terms."));
+                        //this->isParsedError = true; // TODO:
                         return false;
                     }
-                    boost::algorithm::trim(fq);
                 }
             } else {
-                // remove the ':'
-                fqField = fqField.substr(0, fqField.length() - 1);
-                boost::algorithm::trim(fqField);
-                // check if it's a range query or asignment.
-                if ('[' == fq.at(0)) {
-                    Logger::debug(" '[' found, possible range query");
-                    string keyword = "";
-                    fq = fq.substr(1);
-                    isParsed = this->addCriterion(fq, FqKeywordTypeRange, fqField); // it parses fq for range query parameters
-                    if (!isParsed) {
-                        //this->isParsedError = true;
-                        return false;
-                    }
-                } else {
-                    Logger::debug(" '[' not found, possible assignment query");
-                    string keyword = "";
-                    isParsed = this->addCriterion(fq, FqKeywordTypeAssignment, fqField); // it parses fq for range query parameters
-                    if (!isParsed) {
-                        //this->isParsedError = true; //TODO:
-                        return false;
-                    }
-                }
-            }
-            string boolOperator = "";
-            isParsed = this->parseFqBoolOperator(fq, boolOperator);
-            if (isParsed) {
-                this->setOperation(*this->termFQBooleanOperator);
-                string msgStr = "boolean operator is " + boolOperator;
-                Logger::debug(msgStr.c_str());
-                parseNextTerm = true;
-                Logger::debug("LOOPING AGAIN");
-            } else {
-                // no boolean operator found.
-                // if the fq string length is >0 throw error.
-                parseNextTerm = false;
-                if (fq.length() > 0) {
-                    // raise error message
-                    Logger::info(
-                            " Parsing error:: expecting boolean operator while parsing terms, not found.");
-                    this->messages->push_back(
-                            make_pair(MessageError,
-                                    "Parse error, expecting boolean operator while parsing filter query terms."));
-                    //this->isParsedError = true; // TODO:
-                    return false;
-                }
+                // fq received here is of length 0
+                // raise an error.
+                Logger::info(
+                        " Parsing error:: expecting filter query term, not found.");
+                this->messages->push_back(
+                        make_pair(MessageError,
+                                "Parse error, expecting filter query term, not found."));
+                return false;
             }
         }
         return true;
@@ -520,7 +549,7 @@ private:
     BooleanOperation operation;
     bool isFqBoolOperatorSet;
     std::vector<std::pair<MessageType, string> > *messages;
-    BooleanOperation *termFQBooleanOperator;
+    BooleanOperation termFQBooleanOperator;
     bool parseFqField(string &input, string &field) {
         boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
         return doParse(input, re, field);
@@ -531,12 +560,12 @@ private:
     }
     bool parseFqBoolOperator(string &input, string &output) {
         boost::regex re(FQ_TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
-        bool isParsed = doParse(input, re, output);
-        if (!this->isFqBoolOperatorSet && isParsed) {
+        bool hasBooleanOperator = doParse(input, re, output);
+        if (!this->isFqBoolOperatorSet && hasBooleanOperator) {
             this->populateFilterQueryTermBooleanOperator(output);
             this->isFqBoolOperatorSet = true;
         }
-        return isParsed;
+        return hasBooleanOperator;
     }
     void populateFilterQueryTermBooleanOperator(const string &termOperator) {
         /*
@@ -546,11 +575,11 @@ private:
         Logger::debug("inside populateFilterQueryTermBooleanOperators.");
         if (boost::iequals("OR", termOperator)
                 || termOperator.compare("||") == 0) {
-            *this->termFQBooleanOperator =
+            this->termFQBooleanOperator =
                     srch2::instantsearch::BooleanOperatorOR;
         } else if (boost::iequals("AND", termOperator)
                 || termOperator.compare("&&") == 0) {
-            *this->termFQBooleanOperator =
+            this->termFQBooleanOperator =
                     srch2::instantsearch::BooleanOperatorAND;
         } else {
             // generate MessageWarning and use AND
@@ -559,7 +588,7 @@ private:
                             "Invalid boolean operator specified as fq term boolean operator "
                                     + termOperator
                                     + ", ignoring it and using 'AND'."));
-            *this->termFQBooleanOperator =
+            this->termFQBooleanOperator =
                     srch2::instantsearch::BooleanOperatorAND;
         }
         Logger::debug(
