@@ -81,6 +81,7 @@ public:
     srch2::instantsearch::TermType lpKeywordPrefixComplete; // stores the fallback termType for keywords
     // localparamter related variables end
     bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
+    bool isSearchTypeSet; // whether the searchType has been set or not.
 
 private:
 
@@ -132,6 +133,8 @@ private:
     static const string getFacetRangeKey(const string &facetField, const string &facetRangeProperty){
         return "f.%s.facet.%s",facetField.c_str(),facetRangeProperty.c_str();
     }
+    //searchType
+    static const char* const searchType;
     /*
      * example: q={param=key param2=key2}field1=keyword1 AND field2=keyword2* AND field3=keyword3*^2~.8
      * 1. Parse the string and find

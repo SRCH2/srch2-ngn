@@ -76,3 +76,5 @@ DartConfiguration.tcl
 tags
 cscope.out
 .ycm*
+# test logs
+log.txt
