@@ -107,7 +107,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const unsigned ts1,
+        const unsigned retrievedResults, const string & message, const unsigned ts1,
         struct timespec &tstart, struct timespec &tend) {
     Json::FastWriter writer;
     Json::Value root;
@@ -261,6 +261,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         }
     }
 
+    root["message"] = message;
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
@@ -675,7 +676,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 indexDataContainerConf, finalResults, plan.getExactQuery(),
                 server->indexer, plan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(), ts1, tstart, tend);
+                finalResults->getNumberOfResults(),paramContainer.getMessageString() , ts1, tstart, tend);
 
         break;
     case GetAllResultsSearchType:
@@ -690,14 +691,14 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     indexDataContainerConf, finalResults, plan.getExactQuery(),
                     server->indexer, plan.getOffset(),
                     finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(), ts1, tstart, tend);
+                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
         } else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
         {
             HTTPRequestHandler::printResults(req, headers, plan,
                     indexDataContainerConf, finalResults, plan.getExactQuery(),
                     server->indexer, plan.getOffset(),
                     plan.getOffset() + plan.getResultsToRetrieve(),
-                    finalResults->getNumberOfResults(), ts1, tstart, tend);
+                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
         }
 
         break;
