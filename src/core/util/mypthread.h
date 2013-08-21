@@ -10,14 +10,14 @@
 #include <pthread.h>
 
 #ifdef __MACH__ // For Mac OSX
-#define NON_LINUX
+#define NOT_LINUX
 #else
 #ifdef ANDROID
-#define NON_LINUX
+#define NOT_LINUX
 #endif
 #endif
 
-#ifdef NON_LINUX
+#ifdef NOT_LINUX
 /**
  * DO NOT USE sem_ini
  * As it is provided bellow sem_ini does not work on mac. But instead we can use

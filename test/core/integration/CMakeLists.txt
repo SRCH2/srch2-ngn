@@ -69,10 +69,6 @@ ADD_EXECUTABLE(Scalability_Test Scalability_Test.cpp ${IndexIntegration_Source})
 TARGET_LINK_LIBRARIES(Scalability_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
 LIST(APPEND INTEGRATION_TESTS Scalability_Test)
 
-ADD_LIBRARY(srch2scaleTest SHARED Scalability_Test.cpp ${IndexIntegration_Source})
-SET_TARGET_PROPERTIES(srch2scaleTest PROPERTIES COMPILE_FLAGS -fPIC)
-TARGET_LINK_LIBRARIES(srch2scaleTest ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
-
 ADD_EXECUTABLE(Scoring_Test Scoring_Test.cpp ${IndexIntegration_Source})
 TARGET_LINK_LIBRARIES(Scoring_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
 LIST(APPEND INTEGRATION_TESTS Scoring_Test)
