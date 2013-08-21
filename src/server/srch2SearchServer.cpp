@@ -592,8 +592,7 @@ int main(int argc, char** argv)
     delete[] threads;
     fclose(logFile);
     // free resource before exit
-    for(int i = 0; i < MAX_THREADS; i++)
-    {
+    for(int i = 0; i < MAX_THREADS; i++){
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
