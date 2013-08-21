@@ -105,37 +105,36 @@ public:
 
     const unsigned getInvertedListElement(unsigned index) const
     {
-        ts_shared_ptr<vectorview<unsigned> > readView;
+        shared_ptr<vectorview<unsigned> > readView;
         this->invList->getReadView(readView);
         return readView->getElement(index);
     };
 
+    void getInvertedList(shared_ptr<vectorview<unsigned> >& readview) const
+    {
+        this->invList->getReadView(readview);
+    }
+
     unsigned getReadViewSize() const
     {
-        ts_shared_ptr<vectorview<unsigned> > readView;
+        shared_ptr<vectorview<unsigned> > readView;
         this->invList->getReadView(readView);
         return readView->size();
     };
 
     unsigned getWriteViewSize() const
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        return writeView->size();
+        return this->invList->getWriteView()->size();
     };
 
     void setInvertedListElement(unsigned index, unsigned recordId)
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        writeView->at(index) = recordId;
+        this->invList->getWriteView()->at(index) = recordId;
     };
 
     void addInvertedListElement(unsigned recordId)
     {
-        ts_shared_ptr<vectorview<unsigned> > writeView;
-        this->invList->getWriteView(writeView);
-        writeView->push_back(recordId);
+        this->invList->getWriteView()->push_back(recordId);
     };
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
@@ -164,8 +163,9 @@ public:
      * [invertedList.offset,invertedList.currentHitCount] and return the InvertedListElement at invertedList.offset + cursor.
      * We make assertions to check if offset, offset + currentHitCount is within getTotalLengthOfInvertedLists(). Also, assert to check if currentHitCount > cursor.
      */
-    const unsigned getInvertedListElementByDirectory(const unsigned invertedListId, const unsigned cursor) const;
+    void getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;
     unsigned getInvertedListSize_ReadView(const unsigned invertedListId) const;
+
     bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset, 
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
@@ -221,11 +221,12 @@ public:
         // the readview and writeview of each InvertedList and the InvertedIndexVector are not separated.
         // so we need to call finalCommit() to separate them.
         // We do not need to sort each inverted list since it's already sorted.  So we pass a "false" flag.
-        invertedIndex.finalCommit(false);
      };
 
-    static void save(const InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
+    static void save(InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
     {
+        if(invertedIndex.mergeRequired())
+            invertedIndex.merge();
         ofstream ofs(invertedIndexFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);
         oa << invertedIndex;
@@ -235,7 +236,7 @@ public:
 
     void printInvList(const unsigned invertedListId) const
     {
-        ts_shared_ptr<vectorview<InvertedListContainerPtr> > readView;
+        shared_ptr<vectorview<InvertedListContainerPtr> > readView;
         this->invertedIndexVector->getReadView(readView);
 
         unsigned readViewListSize = readView->getElement(invertedListId)->getReadViewSize();
@@ -285,11 +286,24 @@ private:
 
     friend class boost::serialization::access;
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
+    void save(Archive & ar, const unsigned int version) const
     {
         ar & invertedIndexVector;
         ar & keywordIds;
-        ar & commited_WriteView;
+    }
+
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version)
+    {
+        ar & invertedIndexVector;
+        ar & keywordIds;
+        commited_WriteView = true;
+    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int file_version)
+    {
+        boost::serialization::split_member(ar, *this, file_version);
     }
 };
 

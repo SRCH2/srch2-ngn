@@ -222,12 +222,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     root["offset"] = start;
     root["limit"] = end - start;
 
-    if (queryPlan.getSearchType() == GetAllResultsSearchType
-            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
-                    {
+//    if (queryPlan.getSearchType() == GetAllResultsSearchType
+//            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
+//                    {
         root["results_found"] = retrievedResults;
 
-    }
+//    }
 
     const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults =
             queryResults->getFacetResults();

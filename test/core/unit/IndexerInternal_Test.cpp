@@ -87,7 +87,7 @@ void testIndexData()
     /// test Trie
     Trie_Internal *trie = indexData->trie;
 
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr rootSharedPtr;
     trie->getTrieRootNode_ReadView(rootSharedPtr);
     TrieNode *root = rootSharedPtr->root;

@@ -43,6 +43,9 @@ ADD_TEST(PositionIndex_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PositionIndex
 ADD_TEST(InvertedIndex_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/InvertedIndex_Test "--verbose")
 
 ADD_TEST(ActiveNode_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ActiveNode_Test "--verbose")
+
+ADD_TEST(Cowvector_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cowvector_Test "--verbose")
+
 ADD_TEST(Cache_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cache_Test "--verbose")
 ADD_TEST(Compression_S16_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Compression_S16_Test "--verbose")
 	

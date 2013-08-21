@@ -53,7 +53,6 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 		}
 	}
 
-	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 	return tokenStream;
 }
 

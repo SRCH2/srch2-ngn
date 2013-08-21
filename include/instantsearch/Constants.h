@@ -52,7 +52,8 @@ typedef enum {
 
 typedef enum {
     STANDARD_ANALYZER,    // StandardAnalyzer
-    SIMPLE_ANALYZER       // SimpleAnalyzer
+    SIMPLE_ANALYZER,       // SimpleAnalyzer
+    CHINESE_ANALYZER    // ChineseAnalyzer
 } AnalyzerType;
 
 

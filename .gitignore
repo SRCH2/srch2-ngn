@@ -33,6 +33,7 @@ tmp/**/*
 *.idx
 *.orig
 build/
+debug/
 local.properties
 .classpath
 .settings/
@@ -70,3 +71,8 @@ thirdparty/libunwind/libunwind-0.99-beta/
 *Makefile
 CMakeCache.txt
 DartConfiguration.tcl
+
+# Some ctags/cscope files
+tags
+cscope.out
+.ycm*

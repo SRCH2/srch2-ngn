@@ -4,8 +4,8 @@
  *  Created on: 2013-5-17
  */
 
-#ifndef __CORE_ANALYZER__TOKENIZER_H__
-#define __CORE_ANALYZER__TOKENIZER_H__
+#ifndef __CORE_ANALYZER_TOKENIZER_H__
+#define __CORE_ANALYZER_TOKENIZER_H__
 
 #include "TokenStream.h"
 
@@ -16,8 +16,9 @@ namespace instantsearch {
  */
 class Tokenizer: public TokenStream {
 public:
-    Tokenizer() {
+    Tokenizer():TokenStream(){
     }
+protected:
     virtual bool incrementToken() = 0;
     virtual ~Tokenizer() {
     }

@@ -7,8 +7,8 @@
  *      Author: iman
  */
 
-#ifndef __CORE_ANALYZER__SYNONYMFILTER_H_ANALYZER__
-#define __CORE_ANALYZER__SYNONYMFILTER_H_ANALYZER__
+#ifndef __CORE_ANALYZER_SYNONYMFILTER_H__
+#define __CORE_ANALYZER_SYNONYMFILTER_H__
 
 #include <string>
 #include <vector>

@@ -109,13 +109,13 @@ typedef Trie Trie_Internal;
 
 struct IndexReadStateSharedPtr_Token
 {
-    typedef ts_shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
+    typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr trieRootNodeSharedPtr;
 
-    typedef ts_shared_ptr<vectorview<ForwardListPtr> > ForwardIndexReadView;
+    typedef boost::shared_ptr<vectorview<ForwardListPtr> > ForwardIndexReadView;
     ForwardIndexReadView forwardIndexReadViewSharedPtr;
 
-    typedef ts_shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
+    typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
 };
 
