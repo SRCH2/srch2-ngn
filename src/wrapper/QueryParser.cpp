@@ -18,7 +18,7 @@ const char* const QueryParser::fieldListDelimiter = ","; //solr
 const char* const QueryParser::fieldListParamName = "fl"; //solr
 const char* const QueryParser::debugControlParamName = "debugQuery"; //solr
 const char* const QueryParser::debugParamName = "debug"; //solr
-const char* const QueryParser::startParamName = "start"; //solr
+const char* const QueryParser::startParamName = "starts"; //solr
 const char* const QueryParser::rowsParamName = "rows"; //solr
 const char* const QueryParser::timeAllowedParamName = "timeAllowed"; //solr
 const char* const QueryParser::ommitHeaderParamName = "omitHeader"; //solr
@@ -183,7 +183,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                             this->isParsedError = true;
                         }
                     }
-                }else{
+                } else {
                     parseNextTerm = false;
                 }
             }
@@ -944,7 +944,7 @@ bool QueryParser::keywordParser(string &input) {
     /*
      *
      */
-    if(input.length() == 0){ // check if the keyword starts with a quote
+    if (input.length() == 0) { // check if the keyword starts with a quote
         Logger::info("PARSE ERROR, returning from  keywordParser.");
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -970,7 +970,7 @@ bool QueryParser::keywordParser(string &input) {
     if (!hasParsedParameter) {
         // no field found, this can happen if the term contains only
         // the keyword part. like 'algorithm'
-       // in this case, we will populate the field using the localParameter values.
+        // in this case, we will populate the field using the localParameter values.
         this->populateFieldFilterUsingLp();
     } else {
         // field is found. this can happen in the case 'Author:gnuth', here 'Author:' is the field
@@ -1040,7 +1040,7 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
      *  and sets the termBooleanOperator to BooleanOperatorAND enum value.
      */
     Logger::debug("inside  populateTermBooleanOperator.");
-    if (boost::iequals("OR", termOperator) || termOperator.compare("||") == 0) {
+    if (boost::iequals("OR", termOperator)) {
         // we do not support OR as of now so raising a MessageWarning and setting it to AND.
         // generate MessageWarning and use AND
         this->container->messages.push_back(
@@ -1048,8 +1048,7 @@ void QueryParser::populateTermBooleanOperator(const string &termOperator) {
                         "We do not supprt OR  specified, ignoring it and using 'AND'."));
         this->container->termBooleanOperator =
                 srch2::instantsearch::BooleanOperatorAND;
-    } else if (boost::iequals("AND", termOperator)
-            || termOperator.compare("&&") == 0) {
+    } else if (boost::iequals("AND", termOperator)) {
         this->container->termBooleanOperator =
                 srch2::instantsearch::BooleanOperatorAND;
     } else {
