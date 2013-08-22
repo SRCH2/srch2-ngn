@@ -167,11 +167,14 @@ class SmokeTest():
             os.kill(int(stat[1]), signal.SIGUSR1)
             self.debugToConsole("server killed!")
         except:
-            s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-            a = s.split()
-            cmd = "kill -9 {0}".format(a[-1])
-            os.system(cmd)
-            self.debugToConsole("server killed")
+            try:
+                s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+                a = s.split()
+                cmd = "kill -9 {0}".format(a[-1])
+                os.system(cmd)
+                self.debugToConsole("server killed")
+            except:
+                print "no running instance found to kill, moving ahead."
     def restartServer(self):
         """
             restart the server, first kills the existing running server, then starts server
@@ -179,7 +182,7 @@ class SmokeTest():
         self.debugToConsole("********restarting the server**********")
         #self.killServer()  
         self.startServer()
-        smoke.pingServer()
+        self.pingServer()
         self.debugToConsole("********server up**********")
 
     def resultHandler(self, results):
@@ -210,6 +213,10 @@ class SmokeTest():
         if self.debug:
             print msg
 
+    def rebootServer(self):
+        self.killServer()
+        self.startServer()
+        time.sleep(3) # let the server restart
 if __name__ == '__main__':
     config = { 'server_binaryPath': '../../../build/src/server/',
                 'queriesPath': './queries.txt',
@@ -217,7 +224,9 @@ if __name__ == '__main__':
                 'server_host': 'http://localhost',
                 'server_confg_file_path':'./conf.ini',
                 'debug' : False,
-                'server_binary_name':'srch2-search-server'
+                'server_binary_name':'srch2-search-server',
+                'geoqueriesPath':'./geoqueries.txt',
+                'server_geoconfig_file_path': './geoconf.ini'
     }
     smoke = SmokeTest(config)
     try:
@@ -231,8 +240,14 @@ if __name__ == '__main__':
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
         #start testing
         results = smoke.doTest();
+        smoke.queriesPath=config['geoqueriesPath']
+        smoke.server_confg_file_path= config['server_geoconfig_file_path']
+        smoke.rebootServer()
+        geoResults = smoke.doTest();
         #print the test results
         smoke.resultHandler(results)
+        print "*"*decoration, "TESTING GEO QUERIES", "*"*decoration
+        smoke.resultHandler(geoResults)
         print "*"*decoration, "TESTING ENDS", "*"*decoration
         #smoke.killServer();
     except:

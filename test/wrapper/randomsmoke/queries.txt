@@ -25,11 +25,6 @@ q={defaultBoostLevel=2} category:Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&facet=t
 q={defaultBoostLevel=2} category:Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&facet=true&facet.field=model&facet.field=price
 q={defaultBoostLevel=2} category:Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&facet=true&facet.field=model
 q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9
-q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983
-q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983&searchType=geo
-q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983&searchType=topK
-q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&clat=60.217491000000003&clong=-160.888983&radius=80&searchType=topK
-q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&clat=60.217491000000003&clong=-160.888983&radius=80&searchType=topK&fq=model:JEEP
 q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&fq=model:JEEP
 q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&fq=model:[JEEP TO HONDA]
 q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9&fq=price:[10 TO 2000]
@@ -70,4 +65,3 @@ q={defaultBoostLevel=asd}
 q={defaultBoostLevel=1}
 q={defaultBoostLevel=asd}personal AND
 q={defaultBoostLevel=2}personal AND
-lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&searchType=geo
