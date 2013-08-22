@@ -1,6 +1,8 @@
 import sys
 import math
-
+# This script uses an existing input data and appends synthetic fields which are proper for testing post processing
+# filters like Faceted Search, Sort Filter and Filter Query. Three fields are appended. "price", "likes" and "model"
+# which is of types float, unsigned and text.
 def preparePrice():
    price = []
    for i in range(0,100):

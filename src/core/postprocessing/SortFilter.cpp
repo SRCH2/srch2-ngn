@@ -65,7 +65,9 @@ public:
 };
 
 SortFilter::~SortFilter() {
-    delete evaluator; // this object is allocated in plan Generator
+    if(evaluator != NULL){
+        delete evaluator; // this object is allocated in plan Generator
+    }
 }
 
 // TODO : we don't need query in new design
@@ -102,8 +104,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
             queryResultIterator != output->impl->sortedFinalResults.end() ; ++queryResultIterator){
         QueryResult * queryResult = *queryResultIterator;
         bool isValid = false;
-        const ForwardList * list = forwardIndex->getForwardList(
-                queryResult->internalRecordId, isValid);
+        const ForwardList * list = forwardIndex->getForwardList(queryResult->internalRecordId, isValid);
         ASSERT(isValid);
         const VariableLengthAttributeContainer * nonSearchableAttributeContainer =
                 list->getNonSearchableAttributeContainer();
@@ -117,8 +118,6 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
             queryResult->valuesOfParticipatingNonSearchableAttributes[*attributesIterator] =
                     scores.at(std::distance(attributes->begin() , attributesIterator));
         }
-
-
     }
 
     // 3. now sort the results based on the comparator

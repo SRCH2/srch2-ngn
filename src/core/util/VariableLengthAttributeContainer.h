@@ -17,8 +17,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef _UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
-#define _UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
+#ifndef __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
+#define __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
 
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
@@ -36,7 +36,16 @@
 
 namespace srch2 {
 namespace instantsearch {
-
+/*
+ * This class implements a directory-less variable length encoding. It has a Byte array which keeps
+ * the values of the fields. The encoding uses sizeof(unsigned), sizeof(float) and sizeof(long) bytes
+ * to store unsigned, float and long values respectively. For strings, this encoding first stores the
+ * size of the string in 4 bytes and then the bytes of the actual string.
+ * Example:
+ * fields : price(FLOAT), discount(FLOAT), citation(UNSIGNED), name(TEXT), id(UNSIGNED)
+ * sample data :  12.5  , 2              , 34                , johnson      , 253
+ * | 4 bytes (12.5) | 4 bytes (2) | 4 bytes (citation) | 4 bytes (7) | 7 bytes (johnson) | 4 bytes (253)
+ */
 class VariableLengthAttributeContainer {
 
 public:
@@ -45,12 +54,11 @@ public:
     ~VariableLengthAttributeContainer();
 
     // fills the container with the values
-    void fill(const Schema * schema,
-            const vector<string> & nonSearchableAttributeValues);
+    void fill(const Schema * schema,const vector<string> & nonSearchableAttributeValues);
 
     // deallocates the data and clears the container. After calling this function it can be filled again.
     void clear();
-    // getting string representation of the attribute value
+    // gets string representation of the attribute value
     std::string getAttribute(unsigned nonSearchableAttributeIndex,
             const Schema * schema) const;
 
@@ -135,4 +143,4 @@ private:
 }
 }
 
-#endif // _UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
+#endif // __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_

@@ -112,7 +112,6 @@ void VariableLengthAttributeContainer::getAttribute(const unsigned nonSearchable
     ASSERT(false);
 }
 
-// TODO TODO TODO this function is not tested
 // gets values of attributes in iters in Score objects. iters must be ascending.
 void VariableLengthAttributeContainer::getBatchOfAttributes(
         const std::vector<unsigned> & nonSearchableAttributeIndexesArg, const Schema * schema,
@@ -273,9 +272,9 @@ FilterType VariableLengthAttributeContainer::getAttributeType(unsigned iter,
 
 
 void VariableLengthAttributeContainer::getSizeOfNonSearchableAttributeValueInData(
-        FilterType type, unsigned startOffset, unsigned & size) const {
+        FilterType fulterType, unsigned startOffset, unsigned & size) const {
     unsigned sizeOfString = 0;
-    switch (type) {
+    switch (fulterType) {
     case ATTRIBUTE_TYPE_UNSIGNED:
         size = sizeof(unsigned);
         break;
@@ -317,8 +316,7 @@ void VariableLengthAttributeContainer::convertFloatToByteArray(float input,
         output[startOffset + i] = p[i];
     }
 }
-float VariableLengthAttributeContainer::convertByteArrayToFloat(
-        unsigned startOffset) const {
+float VariableLengthAttributeContainer::convertByteArrayToFloat(unsigned startOffset) const {
     Byte * bytePointer = this->data + startOffset;
     float * floatPointer = (float *) bytePointer;
     return *floatPointer;
