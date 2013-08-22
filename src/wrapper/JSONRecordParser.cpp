@@ -288,38 +288,39 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-
-    while(getline(in, line)  && in.good() )
-    {
-        bool parseSuccess = false;
-
-        std::stringstream error;
-        parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
-
-        if(parseSuccess)
+    if(in.good()){
+        while(getline(in, line))
         {
-            // Add the record to the index
-            //indexer->addRecordBeforeCommit(record, 0);
-            indexer->addRecord(record, 0);
-        }
-        else
-        {
-            //TODO: cout to logger
-            error << "at line:" << lineCounter;
-            Logger::error("%s", error.str().c_str());
-        }
-        record->clear();
+            bool parseSuccess = false;
 
-        int reportFreq = 10000;
-        if (lineCounter % reportFreq == 0)
-        {
-          std::cout << "Indexing first " << lineCounter << " records";
+            std::stringstream error;
+            parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
+
+            if(parseSuccess)
+            {
+                // Add the record to the index
+                //indexer->addRecordBeforeCommit(record, 0);
+                indexer->addRecord(record, 0);
+            }
+            else
+            {
+                //TODO: cout to logger
+                error << "at line:" << lineCounter;
+                Logger::error("%s", error.str().c_str());
+            }
+            record->clear();
+
+            int reportFreq = 10000;
+            if (lineCounter % reportFreq == 0)
+            {
+              std::cout << "Indexing first " << lineCounter << " records";
+            }
+            if (lineCounter % (reportFreq - 1) == 0)
+            {
+              std::cout << "\r";
+            }
+            ++lineCounter;
         }
-        if (lineCounter % (reportFreq - 1) == 0)
-        {
-          std::cout << "\r";
-        }
-        ++lineCounter;
     }
     Logger::console("Indexed %d records.", lineCounter);
 

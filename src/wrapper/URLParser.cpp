@@ -610,7 +610,6 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 		termBoost,
                 		similarityBoost,
                 		Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
-
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
 

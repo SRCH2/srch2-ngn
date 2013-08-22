@@ -194,6 +194,25 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     return queryResultsInternal->getNumberOfResults();
 }
 
+
+void IndexSearcherInternal::depthInsertExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm)
+{
+    if (trieNode->isTerminalNode())
+    {
+        ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
+        mapSearcherTerm.expansionStructureVector.push_back(expansion);
+    }
+    if(distance < bound)
+    {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++)
+        {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthInsertExpansion(child, distance+1, bound, mapSearcherTerm);
+        }
+    }
+}
+
+
 int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* queryResults)
 {
     QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
@@ -225,11 +244,14 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
             iter.getItem(trieNode, distance);
             ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
             //expansion.termPtr = queryTerms->at(i);
-            vector<CharType> str;
-            boost::shared_ptr<TrieRootNodeAndFreeList > rv;
-            this->indexData->trie->getTrieRootNode_ReadView(rv);
-            this->indexData->trie->getPrefixString(rv->root, trieNode, str);
-            mapSearcherTerm.expansionStructureVector.push_back(expansion);
+
+            if(queryTerms->at(i)->getTermType() == TERM_TYPE_COMPLETE){
+                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                depthInsertExpansion(trieNode, distance, queryTerms->at(i)->getThreshold(), mapSearcherTerm);
+            }
+            else{
+                mapSearcherTerm.expansionStructureVector.push_back(expansion);
+            }
         }
 
         // Similar to the part in TermVirtualList.cpp destructor, which is used in text only index.
