@@ -169,8 +169,6 @@ JNIEXPORT void Java_com_srch2_android_lib_SRCH2Index_commitIndex(JNIEnv* env,
 }
 #endif
 
-vector<string> matchedKeywords;
-vector<unsigned> editDistances;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -209,6 +207,8 @@ JNIEXPORT jobject Java_com_srch2_android_lib_SRCH2Index_query(JNIEnv* env,
 
 	// Foreach queryResult
 
+    vector<string> matchedKeywords;
+    vector<unsigned> editDistances;
 	for (int i = 0; i < count; i++) {
 		float score = queryResults->getResultScore(i);
 		string record = queryResults->getInMemoryRecordString(i);
