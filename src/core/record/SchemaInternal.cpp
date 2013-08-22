@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "SchemaInternal.h"
@@ -146,11 +146,11 @@ int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName,
         this->nonSearchableAttributeTypeVector[iter->second] = type;
     } else {
         this->nonSearchableAttributeNameToId[attributeName] =
-                this->nonSearchableAttributeNameToId.size() - 1;
+                this->nonSearchableAttributeNameToId.size();
         this->nonSearchableAttributeDefaultValueVector.push_back(defaultValue);
         this->nonSearchableAttributeTypeVector.push_back(type);
     }
-    return this->nonSearchableAttributeNameToId.size() - 1;
+    return this->nonSearchableAttributeNameToId.size();
 
 }
 

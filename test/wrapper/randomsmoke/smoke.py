@@ -217,6 +217,7 @@ class SmokeTest():
         self.killServer()
         self.startServer()
         time.sleep(3) # let the server restart
+
 if __name__ == '__main__':
     config = { 'server_binaryPath': '../../../build/src/server/',
                 'queriesPath': './queries.txt',
@@ -241,7 +242,7 @@ if __name__ == '__main__':
         #start testing
         results = smoke.doTest();
         smoke.queriesPath=config['geoqueriesPath']
-        smoke.server_confg_file_path= config['server_geoconfig_file_path']
+        smoke.config_file_path= config['server_geoconfig_file_path']
         smoke.rebootServer()
         geoResults = smoke.doTest();
         #print the test results
