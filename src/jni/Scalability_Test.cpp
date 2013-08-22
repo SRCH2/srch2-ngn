@@ -3,6 +3,7 @@
 #include "SRCH2SDK.h"
 
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <cstdlib>
 #include <cstring>
