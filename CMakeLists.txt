@@ -21,6 +21,22 @@
 # cmake build_type is release mode
 #
 #    terminal> cmake -DDO_DEBUG=0 -DDO_PROFILE=1 ..
+#
+# 3) Create srch2 lib for Android
+#    We need to setup the Android building environment first
+#    terminal> cd ./android_prerequisite
+#    terminal> ./build_android.sh    # It will cost 10 minutes for the first time .
+#
+#    It will append all the requisite environment setting in $HOME/.bashrc
+#    Then we can build the android version by following step
+#    
+#    terminal> source ~/.bashrc
+#    terminal> mkdir -p build/android
+#    terminal> cd build/android
+#    terminal> android-cmake ../../
+#    
+#    Then run make -j4 , the srch2 lib will show in the build/android/libs
+#    
 ########################################################################################################
 
 # Project name is not mandatory, but you should use it
@@ -102,7 +118,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
     endif()
     IF(ANDROID)
-        SET(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR}/libs/${ANDROID_NDK_ABI_NAME})
+        SET(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are installed to" )
         SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
         SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})

@@ -44,7 +44,7 @@ then
     echo "skip alias"
 else
     echo "export ANDROID_STANDALONE_TOOLCHAIN=$ANDROID_STANDALONE_TOOLCHAIN" >> $HOME/.bashrc
-    echo "alias android-cmake='cmake -DCMAKE_TOOLCHAIN_FILE=$ANDTOOLCHAIN'" >> $HOME/.bashrc
+    echo "alias android-cmake='cmake -DCMAKE_TOOLCHAIN_FILE=$ANDTOOLCHAIN -DLIBRARY_OUTPUT_PATH_ROOT=.'" >> $HOME/.bashrc
 fi
 
 #Install Boost

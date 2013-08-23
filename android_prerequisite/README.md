@@ -10,7 +10,7 @@ At last it will build Boost and Openssl for Android platform
 
 Currently, it works only for arm chip set. 
 
-When the script finished, you can build the libsrch2-core.so in ../libs/armeabi-v7a 
+When the script finished, you can build the libsrch2-core.so in build directry: $build/ibs/armeabi-v7a 
 by following command
 ```
 cd ..
