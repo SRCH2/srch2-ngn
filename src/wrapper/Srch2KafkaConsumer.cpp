@@ -58,6 +58,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
                     Logger::console("Creating new empty index");
 				}
 			};
+			AnalyzerHelper::saveAnalyzerResource(this->indexDataContainerConf);
 			break;
 		}
 		case srch2http::INDEXLOAD:

@@ -37,7 +37,7 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 		synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
 	}
 
-	// append the stemmer file to the install direcrtory
+	// append the stemmer file to the install directory
 	std::string stemmerFilterFilePath = configMgr->getInstallDir() + configMgr->getStemmerFile();
 	// gets the path of stopFilter
 	std::string stopFilterFilePath = configMgr->getStopFilePath();
@@ -53,36 +53,55 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 			configMgr->getRecordAllowedSpecialCharacters());
 }
 
-void AnalyzerHelper::initializeAnalyzerResource(
-		const ConfigManager* conf) {
-
-	SynonymContainer::getInstance().initSynonymContainer(conf->getSynonymFilePath());
-	StemmerContainer::getInstance().initStemmerContainer(conf->getStemmerFile());
-	StopWordContainer::getInstance().initStopWordContainer(conf->getStopFilePath());
-
+void AnalyzerHelper::initializeAnalyzerResource (const ConfigManager* conf) {
+	if (conf->getSynonymFilePath().compare("") != 0) {
+		SynonymContainer::getInstance().initSynonymContainer(conf->getSynonymFilePath());
+	}
+	if (conf->getStemmerFile().compare("") != 0) {
+		StemmerContainer::getInstance().initStemmerContainer(conf->getStemmerFile());
+	}
+	if (conf->getStopFilePath().compare("") != 0) {
+		StopWordContainer::getInstance().initStopWordContainer(conf->getStopFilePath());
+	}
 }
 
-void AnalyzerHelper::loadAnalyzerResource(
-		const ConfigManager* conf) {
-
-	const std::string& directoryName = conf->getIndexPath();
-	std::ifstream ifs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-	boost::archive::binary_iarchive ia(ifs);
-	SynonymContainer::getInstance().loadSynonymContainer(ia);
-	StemmerContainer::getInstance().loadStemmerContainer(ia);
-	StopWordContainer::getInstance().loadStopWordContainer(ia);
-	ifs.close();
+void AnalyzerHelper::loadAnalyzerResource(const ConfigManager* conf) {
+	try{
+		const std::string& directoryName = conf->getIndexPath();
+		std::ifstream ifs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+		if (ifs.good())
+		{
+			boost::archive::binary_iarchive ia(ifs);
+			SynonymContainer::getInstance().loadSynonymContainer(ia);
+			StemmerContainer::getInstance().loadStemmerContainer(ia);
+			StopWordContainer::getInstance().loadStopWordContainer(ia);
+			ifs.close();
+		}else {
+			ifs.close();
+			initializeAnalyzerResource(conf);
+			saveAnalyzerResource(conf);
+		}
+	}catch (std::exception& ex){
+		Logger::error("Error while loading Analyzer resource files");
+		Logger::error(ex.what());
+	}
 }
 
-void AnalyzerHelper::saveAnalyzerResource(
-		const ConfigManager* conf) {
-	const std::string& directoryName = conf->getIndexPath();
-	std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-	boost::archive::binary_oarchive oa(ofs);
-	SynonymContainer::getInstance().saveSynonymContainer(oa);
-	StemmerContainer::getInstance().saveStemmerContainer(oa);
-	StopWordContainer::getInstance().saveStopWordContainer(oa);
-	ofs.close();
+void AnalyzerHelper::saveAnalyzerResource(const ConfigManager* conf) {
+	try{
+		const std::string& directoryName = conf->getIndexPath();
+		std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+		if (ofs.good()) {
+			boost::archive::binary_oarchive oa(ofs);
+			SynonymContainer::getInstance().saveSynonymContainer(oa);
+			StemmerContainer::getInstance().saveStemmerContainer(oa);
+			StopWordContainer::getInstance().saveStopWordContainer(oa);
+		}
+		ofs.close();
+	}catch(std::exception& ex){
+		Logger::error("Error while saving Analyzer resource");
+		Logger::error(ex.what());
+	}
 }
 
 } // namesoace wrapper
