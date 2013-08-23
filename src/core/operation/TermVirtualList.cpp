@@ -123,12 +123,13 @@ void TermVirtualList::depthInitialiseBitSet(const TrieNode* trieNode, unsigned d
     if (trieNode->isTerminalNode())
     {
         unsigned invertedListId = trieNode->getInvertedListOffset();
-        shared_ptr<vectorview<unsigned> > readview;
-        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
-        for(unsigned invertedListCounter = 0; invertedListCounter < readview->size(); invertedListCounter++)
+        this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+        for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
         {
-            bitSet.set(readview->at(invertedListCounter));
+            bitSet.set(invertedListReadView->at(invertedListCounter));
         }
+        termCount++;
+        recordCount += invertedListReadView->size();
     }
     if(distance < bound)
     {
@@ -152,17 +153,17 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentMaxEditDistanceOnHeap = 0;
     this->recordID = -1;
 
-    timespec t1;
+    /*timespec t1;
     timespec t2;
-    double time_span;
+    double time_span;*/
 
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        clock_gettime(CLOCK_REALTIME, &t1);
+        /*clock_gettime(CLOCK_REALTIME, &t1);*/
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        clock_gettime(CLOCK_REALTIME, &t2);
+        /*clock_gettime(CLOCK_REALTIME, &t2);
         time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-        cout << "create iterator: " << time_span << " milliseconds." << endl;
+        cout << "create iterator: " << time_span << " milliseconds." << endl;*/
         //TODO: change the condition to call it when the similar keywords or record number is too much
         if(true)
         {
@@ -170,21 +171,26 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
-            clock_gettime(CLOCK_REALTIME, &t1);
+            termCount = 0;
+            recordCount = 0;
+            /*clock_gettime(CLOCK_REALTIME, &t1);*/
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(prefixNode, leafNode, distance);
                 unsigned invertedListId = leafNode->getInvertedListOffset();
-                shared_ptr<vectorview<unsigned> > readview;
-                this->invertedIndex->getInvertedListReadView(invertedListId, readview);
-                for(unsigned invertedListCounter = 0; invertedListCounter < readview->size(); invertedListCounter++)
+                this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+                for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
                 {
-                    bitSet.set(readview->at(invertedListCounter));
+                    bitSet.set(invertedListReadView->at(invertedListCounter));
                 }
+                termCount++;
+                recordCount += invertedListReadView->size();
             }
-            clock_gettime(CLOCK_REALTIME, &t2);
-            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            cout << "term count:" << termCount << endl;
+            cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
-            cout << "OR operation2: " << time_span << " milliseconds." << endl;
+            /*clock_gettime(CLOCK_REALTIME, &t2);
+            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            cout << "OR operation2: " << time_span << " milliseconds." << endl;*/
         }
         else{
             cursorVector.reserve(iter.size());
@@ -205,16 +211,20 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
             unsigned distance;
-            clock_gettime(CLOCK_REALTIME, &t1);
+            termCount = 0;
+            recordCount = 0;
+            /*clock_gettime(CLOCK_REALTIME, &t1);*/
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(trieNode, distance);
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 depthInitialiseBitSet(trieNode, distance, term->getThreshold());
             }
-            clock_gettime(CLOCK_REALTIME, &t2);
-            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            cout << "term count:" << termCount << endl;
+            cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
-            cout << "OR operation1: " << time_span << " milliseconds." << endl;
+            /*clock_gettime(CLOCK_REALTIME, &t2);
+            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            cout << "OR operation1: " << time_span << " milliseconds." << endl;*/
         }
         else{
             cursorVector.reserve(iter.size());

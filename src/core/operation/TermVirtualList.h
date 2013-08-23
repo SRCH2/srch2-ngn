@@ -173,6 +173,9 @@ public:
     BitSet bitSet;
     int recordID;
     RecordIdSetIterator* bitSetIter;
+    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    int termCount;
+    int recordCount;
 
 private:
 

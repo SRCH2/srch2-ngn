@@ -523,9 +523,9 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
         if(true)
         {
-            timespec t1;
+            /*timespec t1;
             timespec t2;
-            clock_gettime(CLOCK_REALTIME, &t1);
+            clock_gettime(CLOCK_REALTIME, &t1);*/
             int recordID;
             int count = 0;
             QueryResult queryResult;
@@ -540,10 +540,10 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 queryResultsInternal->insertResult(queryResult);
                 count++;
             }
-            clock_gettime(CLOCK_REALTIME, &t2);
+            /*clock_gettime(CLOCK_REALTIME, &t2);
             double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
             cout << "AND cost: " << time_span << " milliseconds." << endl;
-            cout << "total records number: " << count <<endl;
+            cout << "total records number: " << count <<endl;*/
         }
         else{
             HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
@@ -795,13 +795,13 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResultsInternal *queryRe
             str << "ActiveNodes compute:"<<*term->getKeyword();
             queryResults->addMessage(str.str().c_str());
 
-            timespec t1;
+            /*timespec t1;
             timespec t2;
-            clock_gettime(CLOCK_REALTIME, &t1);
+            clock_gettime(CLOCK_REALTIME, &t1);*/
             PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
-            clock_gettime(CLOCK_REALTIME, &t2);
+            /*clock_gettime(CLOCK_REALTIME, &t2);
             double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-            cout << "compute active node set cost: " << time_span << " milliseconds." << endl;
+            cout << "compute active node set cost: " << time_span << " milliseconds." << endl;*/
 
             queryResults->addMessage("ActiveNode computed");
 
