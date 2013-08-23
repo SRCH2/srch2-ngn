@@ -25,7 +25,7 @@
 # 3) Create srch2 lib for Android
 #    We need to setup the Android building environment first
 #    terminal> cd ./android_prerequisite
-#    terminal> ./build_android.sh    # It will cost 10 minutes for the first time .
+#    terminal> ./build_android.sh    # It will cost 10 minutes for the first time.
 #
 #    It will append all the requisite environment setting in $HOME/.bashrc
 #    Then we can build the android version by following step
@@ -173,16 +173,18 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+        MESSAGE(STATUS "liblog = ${log_LIBRARY}")
+	    MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
+	    MESSAGE(STATUS "libz = ${z_LIBRARY}")	
     ELSEIF (LINUX_OS)
     	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+        MESSAGE(STATUS "librt = ${rt_LIBRARY}")
+	    MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
+	    MESSAGE(STATUS "libz = ${z_LIBRARY}")	
     ENDIF ()
 	
-	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
-	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
-	MESSAGE(STATUS "libz = ${z_LIBRARY}")	
-
     IF (ANDROID)
     	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
         LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")

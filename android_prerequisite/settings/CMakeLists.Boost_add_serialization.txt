@@ -65,6 +65,8 @@ set(Boost_INCLUDE_DIRS ${boost_root})
 set(Boost_LIBRARIES boost_serialization boost_filesystem boost_system boost_program_options boost_iostreams boost_date_time)
 set(Boost_LINK_DIRS ${LIBRARY_OUTPUT_PATH})
 
+message(STATUS "libBoost = $Boost_LIBRARIES")	
+
 configure_file(${CMAKE_SOURCE_DIR}/BoostConfig.cmake.in
                ${CMAKE_BINARY_DIR}/BoostConfig.cmake @ONLY)
                
