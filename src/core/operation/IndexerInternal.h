@@ -25,9 +25,6 @@
 #include <instantsearch/Indexer.h>
 #include "operation/Cache.h"
 #include "operation/IndexData.h"
-#include "analyzer/StandardAnalyzer.h"
-#include "analyzer/SimpleAnalyzer.h"
-
 #include <pthread.h>
 #include <string>
 #include <sstream>
@@ -103,7 +100,7 @@ public:
     {
         // CREATE NEW Index
         this->index =  IndexData::create(indexMetaData->directoryName,
-                                         analyzer,
+        								 analyzer,
                                          schema,
                                          indexMetaData->trieBootstrapFileNameWithPath,
                                          srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
@@ -172,7 +169,7 @@ public:
     /**
      * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.
      */
-    INDEXWRITE_RETVAL addRecord(const Record *record, const uint64_t kafkaMessageOffset);
+    INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer, const uint64_t kafkaMessageOffset);
 
     /**
      * Deletes all the records.
@@ -189,11 +186,6 @@ public:
     {
         this->index->getReadView(readToken);
         return this->index;
-    }
-
-    const srch2::instantsearch::Analyzer *getAnalyzer() const
-    {
-        return this->index->getAnalyzer();
     }
 
     const srch2::instantsearch::Schema *getSchema() const

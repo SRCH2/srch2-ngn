@@ -104,7 +104,7 @@ bool parsePoint(string &line, Point &pt)
 	return true;
 }
 
-void addLocationRecord(Indexer *indexer, Schema *schema, unsigned primaryKey, const string &firstAttribute, const string &secondAttribute, double pointX, double pointY)
+void addLocationRecord(Indexer *indexer, Schema *schema, Analyzer* analyzer, unsigned primaryKey, const string &firstAttribute, const string &secondAttribute, double pointX, double pointY)
 {
 	Point point;
 	point.x = pointX;
@@ -115,13 +115,13 @@ void addLocationRecord(Indexer *indexer, Schema *schema, unsigned primaryKey, co
 	record->setSearchableAttributeValue(1, secondAttribute);
 	record->setLocationAttributeValue(point.x, point.y);
 
-	indexer->addRecord(record, 0);
+	indexer->addRecord(record, analyzer, 0);
 
 	delete record;
 }
 
 // each record has two searchable attributes
-void readRecordsFromFile(Indexer *indexer, Schema *schema, const string &directoryName)
+void readRecordsFromFile(Indexer *indexer, Schema *schema, Analyzer* analyzer, const string &directoryName)
 {
 	string primaryKeysFile = directoryName + "/primaryKeys.txt";
 	string pointsFile = directoryName + "/points.txt";
@@ -162,7 +162,7 @@ void readRecordsFromFile(Indexer *indexer, Schema *schema, const string &directo
 		ASSERT  ( retval ); //cannot parse points file correctly"
         (void)retval;
 
-		addLocationRecord(indexer, schema, primaryKey, firstAttrLine, secondAttrLine, point.x, point.y);
+		addLocationRecord(indexer, schema, analyzer, primaryKey, firstAttrLine, secondAttrLine, point.x, point.y);
 	}
 }
 
@@ -687,11 +687,11 @@ void testSingleNodeQuadTree(string directoryName)
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	// Create five records of 3 attributes and add them to the index
-	addLocationRecord(indexer, schema, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 100.0, 100.0);
-	addLocationRecord(indexer, schema, 200, "George Harris", "Here comes the sun", 101.0, 101.0);
-	addLocationRecord(indexer, schema, 300, "George Harris", "Here comes the sun", 102.0, 102.0);
-	addLocationRecord(indexer, schema, 400, "George Harris", "Here comes the sun", -101.0, -101.0);
-	addLocationRecord(indexer, schema, 500, "George Harris", "Here comes the sun", -100.0, -100.0);
+	addLocationRecord(indexer, schema, analyzer, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 100.0, 100.0);
+	addLocationRecord(indexer, schema, analyzer, 200, "George Harris", "Here comes the sun", 101.0, 101.0);
+	addLocationRecord(indexer, schema, analyzer, 300, "George Harris", "Here comes the sun", 102.0, 102.0);
+	addLocationRecord(indexer, schema, analyzer, 400, "George Harris", "Here comes the sun", -101.0, -101.0);
+	addLocationRecord(indexer, schema, analyzer, 500, "George Harris", "Here comes the sun", -100.0, -100.0);
 
 	// commit the index
     bool retval = indexer->commit();
@@ -742,8 +742,8 @@ void testCircleRange(string directoryName)
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	// Create five records of 3 attributes and add them to the index
-	addLocationRecord(indexer, schema, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 1.0, 1.0);
-	addLocationRecord(indexer, schema, 200, "Tom Smith and Jack Lennon", "Yesterday Once More", 2.0, 2.0);
+	addLocationRecord(indexer, schema, analyzer, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 1.0, 1.0);
+	addLocationRecord(indexer, schema, analyzer, 200, "Tom Smith and Jack Lennon", "Yesterday Once More", 2.0, 2.0);
 
 	// commit the index
     bool retval = indexer->commit();
@@ -788,7 +788,7 @@ void testInsertingRecordsWithSameLocation(const string &directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/sameLocation100");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/sameLocation100");
 
 	// commit the index
     bool retval = indexer->commit();
@@ -830,11 +830,11 @@ void testSpecialQueryRange(string directoryName)
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	// Create five records of 3 attributes and add them to the index
-	addLocationRecord(indexer, schema, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 100.0, 100.0);
-	addLocationRecord(indexer, schema, 200, "George Harris", "Here comes the sun", 101.0, 101.0);
-	addLocationRecord(indexer, schema, 300, "George Harris", "Here comes the sun", 102.0, 102.0);
-	addLocationRecord(indexer, schema, 400, "George Harris", "Here comes the sun", -101.0, -101.0);
-	addLocationRecord(indexer, schema, 500, "George Harris", "Here comes the sun", -100.0, -100.0);
+	addLocationRecord(indexer, schema, analyzer, 100, "Tom Smith and Jack Lennon", "Yesterday Once More", 100.0, 100.0);
+	addLocationRecord(indexer, schema, analyzer, 200, "George Harris", "Here comes the sun", 101.0, 101.0);
+	addLocationRecord(indexer, schema, analyzer, 300, "George Harris", "Here comes the sun", 102.0, 102.0);
+	addLocationRecord(indexer, schema, analyzer, 400, "George Harris", "Here comes the sun", -101.0, -101.0);
+	addLocationRecord(indexer, schema, analyzer, 500, "George Harris", "Here comes the sun", -100.0, -100.0);
 
 	// commit the index
     bool retval = indexer->commit();
@@ -884,7 +884,7 @@ void testThousandRecordsQuadTree(string directoryName)
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
 	// commit the index
     bool retval = indexer->commit();
@@ -940,7 +940,7 @@ void testPrefixSearch(string directoryName)
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
 	// commit the index
     bool retval = indexer->commit();
@@ -1054,7 +1054,7 @@ void autoGeneratedTestCases(string directoryName)
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
 	// commit the index
     bool retval = indexer->commit();
@@ -1095,7 +1095,7 @@ void testFuzzySearch(string directoryName)
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
 	// commit the index
     bool retval = indexer->commit();
@@ -1129,7 +1129,7 @@ void testSerialization(string directoryName)
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
-	readRecordsFromFile(indexer, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
 	// serialize the index
 	indexer->commit();
@@ -1162,7 +1162,7 @@ void testDeserialization(string directoryName)
 
 	// rebuild the old quadtree
 	Indexer *indexer2 = Indexer::create(indexMetaData, analyzer, schema);
-	readRecordsFromFile(indexer2, schema, directoryName+"/quadtree/1K");
+	readRecordsFromFile(indexer2, schema, analyzer, directoryName+"/quadtree/1K");
 	indexer2->commit();
 	QuadTree *qt2 = dynamic_cast<IndexReaderWriter *>(indexer2)->getQuadTree();
 
@@ -1212,7 +1212,7 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
 		indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 		time(&t1);
-		readRecordsFromFile(indexer, schema, directoryName+"/1M");
+		readRecordsFromFile(indexer, schema, analyzer, directoryName+"/1M");
 	}
 
 	// commit the index

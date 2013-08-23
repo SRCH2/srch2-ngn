@@ -19,7 +19,7 @@ namespace instantsearch {
 class TokenStream {
 public:
     boost::shared_ptr<TokenStreamContainer> tokenStreamContainer;
-    TokenStream() {
+    TokenStream():tokenStreamContainer() {
         tokenStreamContainer.reset(new TokenStreamContainer());
     }
     virtual bool processToken() = 0;

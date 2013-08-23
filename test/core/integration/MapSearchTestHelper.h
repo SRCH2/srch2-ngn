@@ -140,7 +140,7 @@ bool ifAllExpectedResultsAreFound(const vector<unsigned> &expectedResults, const
 	return true;
 }
 
-void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
+void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema, Analyzer* analyzer)
 {
 	ifstream data(filepath.c_str());
 
@@ -201,7 +201,7 @@ void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
 		record->setLocationAttributeValue(p.x, p.y);
 
 		// add the record
-		index->addRecord(record, 0);
+		index->addRecord(record, analyzer, 0);
 		delete record;
 	}
 

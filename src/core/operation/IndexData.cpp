@@ -28,8 +28,6 @@
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "geo/QuadTree.h"
-#include "analyzer/StandardAnalyzer.h"
-#include "analyzer/SimpleAnalyzer.h"
 #include <instantsearch/Record.h>
 #include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
@@ -54,8 +52,8 @@ namespace srch2 {
 namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
-        Analyzer *analyzer,
-        Schema *schema,
+		Analyzer *analyzer,
+		Schema *schema,
         const string &trieBootstrapFileNameWithPath,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
@@ -67,13 +65,6 @@ IndexData::IndexData(const string &directoryName,
 			exit(1);
 		}
 	}
-
-    /* Create a copy of analyzer as the user created analyzer can be dereferenced by the user any time.
-     * Shared pointer could be one solution to overcome this.
-     * //TODO Need to serialise Analyzer for stopwords
-     */
-    // get the analyzer type to instantiate a new analyzer
-    this->analyzer = new Analyzer(*analyzer);
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -93,7 +84,7 @@ IndexData::IndexData(const string &directoryName,
     this->writeCounter = new WriteCounter();
     this->commited = false;
 
-    this->addBootstrapKeywords(trieBootstrapFileNameWithPath);
+    this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
@@ -107,25 +98,6 @@ IndexData::IndexData(const string& directoryName)
 			exit(1);
 		}
 	}
-
-    std::ifstream ifs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-	boost::archive::binary_iarchive ia(ifs);
-	AnalyzerType analyzerType;
-	ia >> analyzerType;
-
-	this->analyzer = new Analyzer(
-	                    DISABLE_STEMMER_NORMALIZER,
-                        "",
-                        "",
-                        "",
-                        SYNONYM_DONOT_KEEP_ORIGIN,
-                        "",
-                        analyzerType);
-
-    this->analyzer->load(ia);
-
-    ifs.close();
-    //this->analyzerInternal->setIndexDirectory(directoryName);
 
     this->schemaInternal = new SchemaInternal();
     SchemaInternal::load(*(this->schemaInternal), directoryName + "/" + string(IndexConfig::schemaFileName));
@@ -166,7 +138,7 @@ IndexData::IndexData(const string& directoryName)
 }
 
 /// Add a record
-INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
+INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
     INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
 
@@ -185,7 +157,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
         this->mergeRequired = true;
         /// analyze the record (tokenize it, remove stop words)
         map<string, TokenAttributeHits > tokenAttributeHitsMap;
-        this->analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
+        analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
         KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
@@ -308,7 +280,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record)
     return returnValue;
 }
 
-void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath)
+void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer* analyzer)
 {
     try
     {
@@ -322,7 +294,7 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
                 std::vector<std::string> keywords;
                 //char c = '.';
 //                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                this->analyzer->tokenizeQuery(line, keywords);
+                analyzer->tokenizeQuery(line, keywords);
 
                 for (std::vector<std::string>::const_iterator kiter = keywords.begin();
                             kiter != keywords.end();
@@ -648,11 +620,7 @@ void IndexData::_save(const string &directoryName) const
         InvertedIndex::save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
     else
         QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
-    std::ofstream ofs((directoryName+"/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-    boost::archive::binary_oarchive oa(ofs);
-    oa << this->analyzer->getAnalyzerType();
-    this->analyzer->save(oa);
-    ofs.close();
+
     this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
 }
 
@@ -666,11 +634,6 @@ void IndexData::printNumberOfBytes() const
     }
 }
 
-const Analyzer* IndexData::getAnalyzer() const
-{
-    return this->analyzer;
-}
-
 const Schema* IndexData::getSchema() const
 {
     return dynamic_cast<const Schema *>(this->schemaInternal);
@@ -678,7 +641,6 @@ const Schema* IndexData::getSchema() const
 
 IndexData::~IndexData()
 {
-    delete this->analyzer;
     delete this->trie;
     delete this->forwardIndex;
 
