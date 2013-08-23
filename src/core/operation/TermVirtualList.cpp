@@ -117,7 +117,29 @@ void TermVirtualList::depthInitialiseTermVirtualListElement(const TrieNode* trie
 		}
 	}
 }
-    
+
+void TermVirtualList::depthInitialiseBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound)
+{
+    if (trieNode->isTerminalNode())
+    {
+        unsigned invertedListId = trieNode->getInvertedListOffset();
+        shared_ptr<vectorview<unsigned> > readview;
+        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+        for(unsigned invertedListCounter = 0; invertedListCounter < readview->size(); invertedListCounter++)
+        {
+            bitSet.set(readview->at(invertedListCounter));
+        }
+    }
+    if(distance < bound)
+    {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++)
+        {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthInitialiseTermVirtualListElement(child, distance+1, bound);
+        }
+    }
+}
+
 // Iterate over active nodes, fill the vector, and call make_heap on it.
 TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
                  Term *term, float prefixMatchPenalty)
@@ -128,31 +150,82 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->prefixMatchPenalty = prefixMatchPenalty;
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
+    this->recordID = -1;
+
+    timespec t1;
+    timespec t2;
+    double time_span;
 
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
+        clock_gettime(CLOCK_REALTIME, &t1);
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        cursorVector.reserve(iter.size());
-        invertedListReadViewVector.reserve(iter.size());
-        for (; !iter.isDone(); iter.next()) {
+        clock_gettime(CLOCK_REALTIME, &t2);
+        time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+        cout << "create iterator: " << time_span << " milliseconds." << endl;
+        //TODO: change the condition to call it when the similar keywords or record number is too much
+        if(true)
+        {
+            bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
-            iter.getItem(prefixNode, leafNode, distance);
-            initialiseTermVirtualListElement(prefixNode, leafNode, distance);
+            clock_gettime(CLOCK_REALTIME, &t1);
+            for(;!iter.isDone(); iter.next()){
+                iter.getItem(prefixNode, leafNode, distance);
+                unsigned invertedListId = leafNode->getInvertedListOffset();
+                shared_ptr<vectorview<unsigned> > readview;
+                this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+                for(unsigned invertedListCounter = 0; invertedListCounter < readview->size(); invertedListCounter++)
+                {
+                    bitSet.set(readview->at(invertedListCounter));
+                }
+            }
+            clock_gettime(CLOCK_REALTIME, &t2);
+            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            bitSetIter = bitSet.iterator();
+            cout << "OR operation2: " << time_span << " milliseconds." << endl;
+        }
+        else{
+            cursorVector.reserve(iter.size());
+            invertedListReadViewVector.reserve(iter.size());
+            for (; !iter.isDone(); iter.next()) {
+                TrieNodePointer leafNode;
+                TrieNodePointer prefixNode;
+                unsigned distance;
+                iter.getItem(prefixNode, leafNode, distance);
+                initialiseTermVirtualListElement(prefixNode, leafNode, distance);
+            }
         }
     }
     else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        cursorVector.reserve(iter.size());
-        invertedListReadViewVector.reserve(iter.size());
-        for (; !iter.isDone(); iter.next()) {
+        if(true)
+        {
+            bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
             unsigned distance;
-            iter.getItem(trieNode, distance);
-            distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-            depthInitialiseTermVirtualListElement(trieNode, distance, term->getThreshold());
-
+            clock_gettime(CLOCK_REALTIME, &t1);
+            for(;!iter.isDone(); iter.next()){
+                iter.getItem(trieNode, distance);
+                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                depthInitialiseBitSet(trieNode, distance, term->getThreshold());
+            }
+            clock_gettime(CLOCK_REALTIME, &t2);
+            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
+            bitSetIter = bitSet.iterator();
+            cout << "OR operation1: " << time_span << " milliseconds." << endl;
+        }
+        else{
+            cursorVector.reserve(iter.size());
+            invertedListReadViewVector.reserve(iter.size());
+            for (; !iter.isDone(); iter.next()) {
+                TrieNodePointer trieNode;
+                unsigned distance;
+                iter.getItem(trieNode, distance);
+                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                depthInitialiseTermVirtualListElement(trieNode, distance, term->getThreshold());
+            }
         }
     }
 

@@ -380,6 +380,11 @@ unsigned InvertedIndex::getInvertedListSize_ReadView(const unsigned invertedList
     return readView->getElement(invertedListId)->getReadViewSize();
 }
 
+unsigned InvertedIndex::getRecordNumber() const
+{
+    return this->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+}
+
 unsigned InvertedIndex::getTotalNumberOfInvertedLists_ReadView() const
 {
     shared_ptr<vectorview<InvertedListContainerPtr> > readView;

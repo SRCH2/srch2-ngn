@@ -32,6 +32,8 @@
 #include <queue>
 #include <set>
 #include "util/cowvector/cowvector.h"
+#include "util/BitSet.h"
+#include "util/RecordIdSetIterator.h"
 
 using std::vector;
 using std::queue;
@@ -137,6 +139,7 @@ public:
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
     void depthInitialiseTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitialiseBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
     bool getNext(HeapItemForIndexSearcher *heapItem);
     void getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
     void setCursors(vector<unsigned> *invertedListCursors);
@@ -166,6 +169,10 @@ public:
     }
 
     void print_test() const;
+
+    BitSet bitSet;
+    int recordID;
+    RecordIdSetIterator* bitSetIter;
 
 private:
 
