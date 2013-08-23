@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(android-boost)
+#Force to build static library
+set(BUILD_SHARED_LIBS OFF)
 
 #find patched boost directory
 set(boost_root ${CMAKE_CURRENT_SOURCE_DIR}/boost_1_45_0 CACHE PATH 

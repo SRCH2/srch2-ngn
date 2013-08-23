@@ -48,7 +48,8 @@ else
 fi
 
 #Install Boost
-if [ `ls -l $ANDROID_STANDALONE_TOOLCHAIN/user/lib/libboost_* | wc -l` -lt 9 ];then
+if [ `ls -l $ANDROID_STANDALONE_TOOLCHAIN/user/lib/libboost_*.a | wc -l` -lt 9 ];then
+    rm -f $ANDROID_STANDALONE_TOOLCHAIN/user/lib/libboost_*.so #Force to rm shared library
     cd $ANDROID_CMAKE_HOME/common-libs/boost
     ./get_boost.sh
     mv CMakeLists.txt CMakeLists.txt.orig
