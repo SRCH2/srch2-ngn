@@ -7,7 +7,7 @@
 
 #include "analyzer/StandardAnalyzer.h"
 #include "util/Logger.h"
-#include "util/Evaluate.h"
+#include "PerformanceTool.h"
 
 #define CHECK_DELETE(ptr)	{if(ptr!=NULL){delete ptr; ptr=NULL;}};
 

@@ -138,7 +138,7 @@ class ReadCounter
         {
             pthread_spin_lock(&m_spinlock);
             ++this->counter;
-            pthread_spin_unlock(&m_spinlock);
+            pthread_spin_unlock(&m_spinlock);   
         }
     
         uint64_t getCount() const

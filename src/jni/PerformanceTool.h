@@ -1,7 +1,7 @@
 //$Id$
 
-#ifndef __CORE_UTIL_EVALUATE_H__
-#define __CORE_UTIL_EVALUATE_H___
+#ifndef __CORE_UTIL_PERFERMANCE_H__
+#define __CORE_UTIL_PERFERMANCE_H__
 
 #include <ctime>
 

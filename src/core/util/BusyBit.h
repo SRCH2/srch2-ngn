@@ -51,12 +51,12 @@ private:
 public:
     BusyBit()
     {
-    	pthread_spin_init(&m_spinlock, 0);
+        pthread_spin_init(&m_spinlock, 0);
         this->busyBit = 0;
     }
 
     ~BusyBit() {
-    	pthread_spin_destroy(&m_spinlock);
+        pthread_spin_destroy(&m_spinlock);
     }
 
     bool isFree() const
