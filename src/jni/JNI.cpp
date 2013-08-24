@@ -1,6 +1,6 @@
 #include "SRCH2SDK.h"
 #include "util/Logger.h"
-#include "util/Evaluate.h"
+#include "PerformanceTool.h"
 
 using namespace srch2::sdk;
 using namespace srch2::util;

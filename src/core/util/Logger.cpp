@@ -30,7 +30,7 @@ char* Logger::formatCurrentTime(char* buffer, unsigned size) {
 
 char* Logger::formatLogString(char* buffer, const char* prefix) {
 	char timebuffer[32];
-	sprintf(buffer, "%s SRCH2 ", formatCurrentTime(timebuffer, 32));
+	sprintf(buffer, "%s ", formatCurrentTime(timebuffer, 32));
 	if (prefix != NULL) {
 		sprintf(buffer + strlen(buffer), "%s\t", prefix);
 	}

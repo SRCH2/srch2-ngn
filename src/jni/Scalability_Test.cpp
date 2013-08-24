@@ -9,7 +9,7 @@
 #include <cstring>
 #include <cstdio>
 #include "util/Logger.h"
-#include "util/Evaluate.h"
+#include "PerformanceTool.h"
 #include "analyzer/StandardAnalyzer.h"
 
 
