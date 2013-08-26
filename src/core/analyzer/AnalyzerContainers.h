@@ -15,10 +15,8 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <string>
 #include <map>
-#include <vector>
+#include <set>
 #include <fstream>
-
-
 
 namespace srch2 {
 namespace instantsearch{
@@ -34,20 +32,6 @@ public:
 	static SynonymContainer& getInstance();
 private:
 	static SynonymContainer *synonymContainer;
-	/*
-	 * If we have folllwing synonym rules
-	 * s1: new york = ny
-	 * s2: new york city = nyc
-	 * s3: bill = william
-	 *
-	 * The map elements will be as following:
-	 *
-	 * new => <SYNONYM_PREFIX_ONLY, "" >
-	 * new york => <SYNONYM_PREFIX_AND_COMPLETE, 'ny'>
-	 * new york city => <SYNONYM_COMPLETE_ONLY, 'nyc'>
-	 * bill => <SYNONYM_COMPLETE_ONLY, 'william'>
-	 * orange: Nothing will be in the map for it.
-	 */
 	std::map<std::string, std::pair<SynonymTokenType, std::string> > synonymMap;
 	const std::string synonymDelimiter;
 	SynonymContainer(const std::string &delimiter):synonymDelimiter(delimiter) {}
@@ -81,7 +65,7 @@ public:
 	static StopWordContainer& getInstance();
 private:
 	static StopWordContainer *stopWordContainer;
-	std::vector<std::string> stopWordsVector;
+	std::set<std::string> stopWordsSet;
 	StopWordContainer() {}
 	StopWordContainer(const StopWordContainer&) {}
 	void operator == (const StopWordContainer&){}

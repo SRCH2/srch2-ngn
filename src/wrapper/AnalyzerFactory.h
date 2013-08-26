@@ -19,6 +19,7 @@ namespace srch2 {
         class AnalyzerFactory {
         public:
             static srch2is::Analyzer* createAnalyzer(const ConfigManager* conf);
+            static srch2is::Analyzer* getCurrentThreadAnalyzer(const ConfigManager* configMgr);
         private:
             AnalyzerFactory();
         };

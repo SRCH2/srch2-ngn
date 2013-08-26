@@ -335,6 +335,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     Logger::console("Saving Index.....");
     indexer->save();
     Logger::console("Index saved.");
+    delete analyzer;
 }
 
 // convert other types to string

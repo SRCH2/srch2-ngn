@@ -586,7 +586,11 @@ int main(int argc, char** argv)
     }
 
     delete[] threads;
-    fclose(logFile);
+
+    // if no log file is set in config file. This variable should be null.
+    // Hence, we should do null check before calling fclose
+    if (logFile)
+    	fclose(logFile);
 
     return EXIT_SUCCESS;
 }

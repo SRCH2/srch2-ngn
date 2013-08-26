@@ -8,9 +8,10 @@
 #include "AnalyzerContainers.h"
 #include "util/Logger.h"
 #include "util/Assert.h"
-#include <boost/serialization/vector.hpp>
+#include <boost/serialization/set.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/algorithm/string.hpp>
 
 using srch2::util::Logger;
 
@@ -28,9 +29,30 @@ SynonymContainer& SynonymContainer::getInstance() {
 	return *synonymContainer;
 }
 
+/*
+ * If we have folllwing synonym rules
+ * s1: new york = ny
+ * s2: new york city = nyc
+ * s3: bill = william
+ *
+ * The map elements will be as following:
+ *
+ * new => <SYNONYM_PREFIX_ONLY, "" >
+ * new york => <SYNONYM_PREFIX_AND_COMPLETE, 'ny'>
+ * new york city => <SYNONYM_COMPLETE_ONLY, 'nyc'>
+ * bill => <SYNONYM_COMPLETE_ONLY, 'william'>
+ * orange: Nothing will be in the map for it.
+ */
 void SynonymContainer::initSynonymContainer (const std::string synonymFilePath) {
 	// using file path to create an ifstream object
 	std::ifstream input(synonymFilePath.c_str());
+
+	if (!input.good())
+	{
+		Logger::error("The synonym file = \"%s\" could not be opened.", synonymFilePath.c_str());
+		return;
+	}
+	this->synonymMap.clear();
 	// Reads the map file line by line and fills the map
 	std::string line;
 	while (getline(input, line)) {
@@ -46,6 +68,9 @@ void SynonymContainer::initSynonymContainer (const std::string synonymFilePath) 
 		}
 		std::string leftHandSide = line.substr(0, index);
 		std::string rightHandSide = line.substr(index + this->synonymDelimiter.length());
+
+		boost::algorithm::trim(leftHandSide);
+		boost::algorithm::trim(rightHandSide);
 
 		/*
 		 * This part will put the whole lefthandside into the map.
@@ -134,20 +159,20 @@ void StemmerContainer::initStemmerContainer( const std::string stemmerFilePath) 
 	std::ifstream input(stemmerFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-        Logger::error("The file %s could not be opened.", stemmerFilePath.c_str());
+        Logger::error("The stemmer file = \"%s\" could not be opened.", stemmerFilePath.c_str());
  		return;
 	}
 	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
+	this->dictionaryWords.clear();
 	std::string str;
 	while (getline(input, str)) {
+		boost::algorithm::trim(str);
 		this->dictionaryWords.insert(make_pair(str, 1));
 	}
 }
 
 bool StemmerContainer::contains(const std::string& str){
-	std::map<std::string, int>::const_iterator iter =
-			this->dictionaryWords.begin();
-	iter = this->dictionaryWords.find(str);
+	std::map<std::string, int>::const_iterator iter = this->dictionaryWords.find(str);
 	if (iter != this->dictionaryWords.end()) {
 		return true;
 	} else {
@@ -177,25 +202,26 @@ void StopWordContainer::initStopWordContainer(const std::string stopWordsFilePat
 	std::ifstream input(stopWordsFilePath.c_str());
 		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-	    Logger::error("The stop words list file %s could not open.", stopWordsFilePath.c_str());
+	    Logger::error("The stop words list file = \"%s\" could not be opened.", stopWordsFilePath.c_str());
 		return;
 	}
 	//	Reads the stop word files line by line and fills the vector
+	this->stopWordsSet.clear();
 	while (getline(input, str)) {
-		stopWordsVector.push_back(str);
+		boost::algorithm::trim(str);
+		this->stopWordsSet.insert(str);
 	}
 }
 
 bool StopWordContainer::contains(const std::string& str) {
-	return (std::find(this->stopWordsVector.begin(),
-				this->stopWordsVector.end(), str) != this->stopWordsVector.end());
+	return (this->stopWordsSet.find(str) != this->stopWordsSet.end());
 }
 void StopWordContainer::loadStopWordContainer( boost::archive::binary_iarchive& ia) {
-	ia >> this->stopWordsVector;
+	ia >> this->stopWordsSet;
 }
 
 void StopWordContainer::saveStopWordContainer(boost::archive::binary_oarchive& oa) {
-	oa << this->stopWordsVector;
+	oa << this->stopWordsSet;
 }
 
 } // instantsearch

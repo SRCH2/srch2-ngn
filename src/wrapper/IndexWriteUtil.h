@@ -185,9 +185,8 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-            Analyzer* analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
+            Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
-            delete analyzer;
 
     		switch( ret )
 			{

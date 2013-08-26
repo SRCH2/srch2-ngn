@@ -12,6 +12,8 @@
 #include <analyzer/AnalyzerContainers.h>
 #include <index/IndexUtil.h>
 
+#include <boost/thread/tss.hpp>
+
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
@@ -51,6 +53,17 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 			synonymFilterFilePath,
 			synonymKeepOriginFlag,
 			configMgr->getRecordAllowedSpecialCharacters());
+}
+
+Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configMgr) {
+
+	static boost::thread_specific_ptr<Analyzer> _ts_analyzer_object;
+	if (_ts_analyzer_object.get() == NULL)
+	{
+		cout << "Create Analyzer object for thread = %d " << pthread_self() << endl;
+		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(configMgr));
+	}
+	return _ts_analyzer_object.get();
 }
 
 void AnalyzerHelper::initializeAnalyzerResource (const ConfigManager* conf) {
