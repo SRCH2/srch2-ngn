@@ -6,7 +6,7 @@ binary=$SRCH2_ENGINE_DIR/srch2-search-server
 pingServer(){
     info=$( curl -s http://localhost:$PORT/search?q=p | grep -o results)
     count=0
-    while [  -z $info  ]; do
+    while [  -z "$info"  ]; do
         if [ "$count" -eq 0 ]; then
             echo "waiting the server to be up"
         fi
