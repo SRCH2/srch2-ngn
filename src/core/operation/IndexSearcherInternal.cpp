@@ -521,7 +521,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::vector<unsigned> queryResultAttributeBitmaps;
         std::vector<unsigned> queryResultEditDistances;
 
-        if(true)
+        if(false)
         {
             /*timespec t1;
             timespec t2;
@@ -629,12 +629,17 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         }
                     }
                     else {*/
-                        std::vector<CharType> temp;
-                        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                       heapItem->trieNode, temp);
-                        string str;
-                        charTypeVectorToUtf8String(temp, str);
-                        queryResultMatchingKeywords.at(i) = str;
+                        if(true){
+                            queryResultMatchingKeywords.at(i) = "";
+                        }
+                        else{
+                            std::vector<CharType> temp;
+                            this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                           heapItem->trieNode, temp);
+                            string str;
+                            charTypeVectorToUtf8String(temp, str);
+                            queryResultMatchingKeywords.at(i) = str;
+                        }
                     //}
                 
                     queryResultEditDistances.at(i) = heapItem->ed;
@@ -896,92 +901,99 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
     for (unsigned int j = start; j < virtualListVector->size(); ++j) {
         if (skip == j) // skip the virtual list popped up in round robin
             continue;
-    
-        PrefixActiveNodeSet *prefixActiveNodeSet;
-        virtualListVector->at(j)->getPrefixActiveNodeSet(prefixActiveNodeSet);
-        unsigned termSearchableAttributeIdToFilterTermHits = 
-            virtualListVector->at(j)->getTermSearchableAttributeIdToFilterTermHits();
-        
         bool found = false;
-
-        // assume the iterator returns the ActiveNodes in the increasing order based on edit distance
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet, queryTerms->at(j)->getThreshold());
-                !iter.isDone(); iter.next()) {
-            const TrieNode *trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-        
-            unsigned minId = trieNode->getMinId();
-            unsigned maxId = trieNode->getMaxId();
-            if (virtualListVector->at(j)->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
-                if (trieNode->isTerminalNode())
-                    maxId = minId;
-                else
-                    continue;  // ignore non-terminal nodes
+        if (true){
+            if(virtualListVector->at(j)->bitSet.get(recordId)){
+                found = true;
+                queryResultMatchingKeywords.at(j) = "";
+                queryResultBitmaps.at(j) = 0;
+                queryResultEditDistances.at(j) = 0;
+                queryResultTermScores.at(j) = 1.0;
             }
-        
-            unsigned matchingKeywordId;
-            float termRecordStaticScore;
-            unsigned termAttributeBitmap;
-           /* bool isStemmed;
-            // the similarity between a record and a prefix is the largest
-            // similarity between this prefix and keywords in the record
-            if (this->indexData->analyzerInternal->getStemmerNormalizerType() 
-                    != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
-                if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(recordId, minId, maxId, 
-                                          termSearchableAttributeIdToFilterTermHits, 
-                                          matchingKeywordId, termRecordStaticScore, isStemmed)) {
-                    if(isStemmed) {
-                        // "STEM" is the matching keyword that denotes the stemmed keyword
-                        queryResultMatchingKeywords.at(j)="STEM";
+        }
+        else{
+            PrefixActiveNodeSet *prefixActiveNodeSet;
+            virtualListVector->at(j)->getPrefixActiveNodeSet(prefixActiveNodeSet);
+            unsigned termSearchableAttributeIdToFilterTermHits =
+                virtualListVector->at(j)->getTermSearchableAttributeIdToFilterTermHits();
+            // assume the iterator returns the ActiveNodes in the increasing order based on edit distance
+            for (ActiveNodeSetIterator iter(prefixActiveNodeSet, queryTerms->at(j)->getThreshold());
+                    !iter.isDone(); iter.next()) {
+                const TrieNode *trieNode;
+                unsigned distance;
+                iter.getItem(trieNode, distance);
+
+                unsigned minId = trieNode->getMinId();
+                unsigned maxId = trieNode->getMaxId();
+                if (virtualListVector->at(j)->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+                    if (trieNode->isTerminalNode())
+                        maxId = minId;
+                    else
+                        continue;  // ignore non-terminal nodes
+                }
+
+                unsigned matchingKeywordId;
+                float termRecordStaticScore;
+                unsigned termAttributeBitmap;
+               /* bool isStemmed;
+                // the similarity between a record and a prefix is the largest
+                // similarity between this prefix and keywords in the record
+                if (this->indexData->analyzerInternal->getStemmerNormalizerType()
+                        != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
+                    if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(recordId, minId, maxId,
+                                              termSearchableAttributeIdToFilterTermHits,
+                                              matchingKeywordId, termRecordStaticScore, isStemmed)) {
+                        if(isStemmed) {
+                            // "STEM" is the matching keyword that denotes the stemmed keyword
+                            queryResultMatchingKeywords.at(j)="STEM";
+                        }
+                        else {
+                            std::vector<CharType> temp;
+                            this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                               trieNode, temp);
+                            string str;
+                            charTypeVectorToUtf8String(temp, str);
+                            queryResultMatchingKeywords.at(j) = str;
+                        }
+                        queryResultEditDistances.at(j) = distance;
+    
+                        // the following flag shows whether the matching keyword is a prefix (not a complete) match
+                        // of the query term
+                        bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+                        queryResultTermScores.at(j) =
+                            query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+                                                                          queryTerms->at(j)->getKeyword()->size(),
+                                                                          isPrefixMatch,
+                                                                          query->getPrefixMatchPenalty());
+                        found = true;
+                        break;
                     }
-                    else {
+                }
+                else {*/
+                    if (this->indexData->forwardIndex->haveWordInRange(recordId, minId, maxId,
+                                                                   termSearchableAttributeIdToFilterTermHits,
+                                                                   matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
                         std::vector<CharType> temp;
                         this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, 
-                                           trieNode, temp);
+                                                           trieNode, temp);
                         string str;
                         charTypeVectorToUtf8String(temp, str);
                         queryResultMatchingKeywords.at(j) = str;
+                        queryResultBitmaps.at(j) = termAttributeBitmap;
+                        queryResultEditDistances.at(j) = distance;
+
+                        bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+                        queryResultTermScores.at(j) =
+                            query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+                                          queryTerms->at(j)->getKeyword()->size(),
+                                          isPrefixMatch,
+                                          query->getPrefixMatchPenalty());
+                        found = true;
+                        break;
                     }
-                    queryResultEditDistances.at(j) = distance;
-
-                    // the following flag shows whether the matching keyword is a prefix (not a complete) match
-                    // of the query term
-                    bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-                    queryResultTermScores.at(j) = 
-                        query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
-                                                                      queryTerms->at(j)->getKeyword()->size(),
-                                                                      isPrefixMatch,
-                                                                      query->getPrefixMatchPenalty());
-                    found = true;
-                    break;
                 }
-            }
-            else {*/
-                if (this->indexData->forwardIndex->haveWordInRange(recordId, minId, maxId, 
-                                                               termSearchableAttributeIdToFilterTermHits, 
-                                                               matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
-                    std::vector<CharType> temp;
-                    this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, 
-                                                       trieNode, temp);
-                    string str;
-                    charTypeVectorToUtf8String(temp, str);
-                    queryResultMatchingKeywords.at(j) = str;
-                    queryResultBitmaps.at(j) = termAttributeBitmap;
-                    queryResultEditDistances.at(j) = distance;
-
-                    bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-                    queryResultTermScores.at(j) = 
-                        query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
-                                      queryTerms->at(j)->getKeyword()->size(),
-                                      isPrefixMatch,
-                                      query->getPrefixMatchPenalty()); 
-                    found = true;
-                    break;
-                }
-            }
         //}
-
+        }
         if (!found)
             return false;
     }

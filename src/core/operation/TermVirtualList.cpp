@@ -297,113 +297,133 @@ bool TermVirtualList::_addItemsToPartialHeap()
 
 bool TermVirtualList::getMaxScore(float & score)
 {
-    //If heapVector is empty
-    if (this->itemsHeap.size() == 0)
-    {
-        return false;
+    if(true){
+        score = 1.0;
+        return true;
     }
-    //If partialHeap is empty
-    if (this->numberOfItemsInPartialHeap == 0)
-    {
-        if ( this->_addItemsToPartialHeap() == false)
+    else{
+        //If heapVector is empty
+        if (this->itemsHeap.size() == 0)
         {
             return false;
         }
-    }
-    if (this->numberOfItemsInPartialHeap != 0)
-    {
-        HeapItem *currentHeapMax = *(itemsHeap.begin());
-        score = currentHeapMax->termRecordRuntimeScore;
-        return true;
-    }
-    else
-    {
-        return false;
+        //If partialHeap is empty
+        if (this->numberOfItemsInPartialHeap == 0)
+        {
+            if ( this->_addItemsToPartialHeap() == false)
+            {
+                return false;
+            }
+        }
+        if (this->numberOfItemsInPartialHeap != 0)
+        {
+            HeapItem *currentHeapMax = *(itemsHeap.begin());
+            score = currentHeapMax->termRecordRuntimeScore;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
 
 bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 {
-    //If heapVector is empty
-    if (this->itemsHeap.size() == 0) {
-        //heapItem = NULL;
-        return false;
-    }
-    
-    // If partialHeap is empty
-    if (this->numberOfItemsInPartialHeap == 0) {
-        if (this->_addItemsToPartialHeap() == false)
+    if(true){
+        returnHeapItem->recordId = this->bitSetIter->nextRecord();
+        returnHeapItem->termRecordRuntimeScore = 1.0;
+        returnHeapItem->trieNode = 0;
+        returnHeapItem->attributeBitMap = 0;
+        returnHeapItem->ed = 0;
+        returnHeapItem->positionIndexOffset = 0;
+        if(returnHeapItem->recordId != RecordIdSetIterator::NO_MORE_RECORDS)
+            return true;
+        else
             return false;
     }
-    
-    if (this->numberOfItemsInPartialHeap != 0) {
-        // Elements are there in PartialHeap and pop them out to calling function
-        HeapItem *currentHeapMax = *(itemsHeap.begin());
-        pop_heap(itemsHeap.begin(), itemsHeap.begin() + this->numberOfItemsInPartialHeap, 
-             TermVirtualList::HeapItemCmp());
+    else{
+        //If heapVector is empty
+        if (this->itemsHeap.size() == 0) {
+            //heapItem = NULL;
+            return false;
+        }
         
-        returnHeapItem->recordId = currentHeapMax->recordId;
-        returnHeapItem->termRecordRuntimeScore = currentHeapMax->termRecordRuntimeScore;
-        returnHeapItem->trieNode = currentHeapMax->trieNode;
-        returnHeapItem->attributeBitMap = currentHeapMax->attributeBitMap;
-        returnHeapItem->ed = currentHeapMax->ed;
-        returnHeapItem->positionIndexOffset = currentHeapMax->positionIndexOffset;
+        // If partialHeap is empty
+        if (this->numberOfItemsInPartialHeap == 0) {
+            if (this->_addItemsToPartialHeap() == false)
+                return false;
+        }
         
-        unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
-        unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
-        this->invertedListReadViewVector.clear();
-        const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
-        unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
+        if (this->numberOfItemsInPartialHeap != 0) {
+            // Elements are there in PartialHeap and pop them out to calling function
+            HeapItem *currentHeapMax = *(itemsHeap.begin());
+            pop_heap(itemsHeap.begin(), itemsHeap.begin() + this->numberOfItemsInPartialHeap,
+                 TermVirtualList::HeapItemCmp());
+
+            returnHeapItem->recordId = currentHeapMax->recordId;
+            returnHeapItem->termRecordRuntimeScore = currentHeapMax->termRecordRuntimeScore;
+            returnHeapItem->trieNode = currentHeapMax->trieNode;
+            returnHeapItem->attributeBitMap = currentHeapMax->attributeBitMap;
+            returnHeapItem->ed = currentHeapMax->ed;
+            returnHeapItem->positionIndexOffset = currentHeapMax->positionIndexOffset;
             
-        bool foundValidHit = 0;
-
-        // Check cursor is less than invertedList Size.
-        while (currentHeapMaxCursor < currentHeapMaxInvertedListSize) {
-            // InvertedList has more elements. Push invertedListElement at cursor into virtualList.
-
-            unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
-            // calculate record offset online
-            unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
-            unsigned termAttributeBitmap = 0;
-            currentHeapMaxCursor++;
+            unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
+            unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
+            this->invertedListReadViewVector.clear();
+            const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
+            unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
                 
-            // check isValidTermPositionHit
-            float termRecordStaticScore = 0;
-            if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-                                    term->getAttributeToFilterTermHits(), termAttributeBitmap,
-                                        termRecordStaticScore)) {
-                foundValidHit = 1;
-                this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
-                // Update cursor of popped virtualList in invertedListCursorVector. 
-                // Cursor always points to next element in invertedList
-                currentHeapMax->recordId = recordId;
-                currentHeapMax->termRecordRuntimeScore = 
-                    DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
-                                             currentHeapMax->ed,
-                                             term->getKeyword()->size(),
-                                             currentHeapMax->isPrefixMatch,
-                                             this->prefixMatchPenalty);
-                currentHeapMax->attributeBitMap = termAttributeBitmap;
-                currentHeapMax->positionIndexOffset = recordOffset;
-                push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap, 
-                      TermVirtualList::HeapItemCmp());
-                break;
+            bool foundValidHit = 0;
+
+            // Check cursor is less than invertedList Size.
+            while (currentHeapMaxCursor < currentHeapMaxInvertedListSize) {
+                // InvertedList has more elements. Push invertedListElement at cursor into virtualList.
+
+                unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
+                // calculate record offset online
+                unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+                unsigned termAttributeBitmap = 0;
+                currentHeapMaxCursor++;
+
+                // check isValidTermPositionHit
+                float termRecordStaticScore = 0;
+                if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+                                        term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                                            termRecordStaticScore)) {
+                    foundValidHit = 1;
+                    this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
+                    // Update cursor of popped virtualList in invertedListCursorVector.
+                    // Cursor always points to next element in invertedList
+                    currentHeapMax->recordId = recordId;
+                    currentHeapMax->termRecordRuntimeScore =
+                        DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
+                                                 currentHeapMax->ed,
+                                                 term->getKeyword()->size(),
+                                                 currentHeapMax->isPrefixMatch,
+                                                 this->prefixMatchPenalty);
+                    currentHeapMax->attributeBitMap = termAttributeBitmap;
+                    currentHeapMax->positionIndexOffset = recordOffset;
+                    push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
+                          TermVirtualList::HeapItemCmp());
+                    break;
+                }
             }
+
+            if (!foundValidHit) {
+                //InvertedList cursor end reached and so decrement number of elements in partialHeap
+                this->numberOfItemsInPartialHeap--;
+                //Delete the head of heap that represents empty converted list
+                delete currentHeapMax;
+                //TODO OPT Don't erase, accumulate and delete at the end.
+                this->itemsHeap.erase(itemsHeap.begin()+this->numberOfItemsInPartialHeap);
+            }
+
+            return true;
         }
-        
-        if (!foundValidHit) {
-            //InvertedList cursor end reached and so decrement number of elements in partialHeap
-            this->numberOfItemsInPartialHeap--;
-            //Delete the head of heap that represents empty converted list
-            delete currentHeapMax;
-            //TODO OPT Don't erase, accumulate and delete at the end.
-            this->itemsHeap.erase(itemsHeap.begin()+this->numberOfItemsInPartialHeap);
+        else {
+            return false;
         }
-        
-        return true;
-    }
-    else {
-        return false;
     }
 }
 
