@@ -117,12 +117,25 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     std::vector<std::string> queryResultMatchingKeywords;
     std::vector<unsigned> queryResultBitmaps;
     std::vector<unsigned> queryResultEditDistances;
-    //TODO change the condition to call it or old method
-    if(true)
-    {
+    HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
+
+    //find the smallest virtualList
+    unsigned smallestVirtualListVectorId = 0;
+    unsigned smallestVirtualListVectorSize = virtualListVector->at(0)->getVirtualListTotalLength();
+    for (unsigned int iter = 1; iter < virtualListVector->size(); ++iter) {
+        unsigned currentSize = virtualListVector->at(iter)->getVirtualListTotalLength();
+        if( smallestVirtualListVectorSize > currentSize ) {
+            smallestVirtualListVectorId = iter;
+            smallestVirtualListVectorSize = currentSize;
+        }
+    }
+    // if the smallest virtual list also need to merge
+    if(virtualListVector->at(smallestVirtualListVectorId)->needMerge){
+        if(smallestVirtualListVectorId)
+            swap(virtualListVector->at(smallestVirtualListVectorId), virtualListVector->at(0));
         clock_gettime(CLOCK_REALTIME, &t1);
         int recordID;
-        int count = 0;
+        //int count = 0;
         QueryResult queryResult;
         while((recordID = nextRecord(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
             //cout << recordID<<endl;
@@ -133,31 +146,17 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
             queryResult.attributeBitmaps = queryResultBitmaps;
             queryResult.editDistances = queryResultEditDistances;
             queryResultsInternal->insertResult(queryResult);
-            count++;
+            //count++;
         }
-        clock_gettime(CLOCK_REALTIME, &t2);
+        /*clock_gettime(CLOCK_REALTIME, &t2);
         double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
         cout << "AND cost: " << time_span << " milliseconds." << endl;
-        cout << "total records number: " << count <<endl;
+        cout << "total records number: " << count <<endl;*/
     }
-    else
-    {
-        HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
-
-        //find the smallest virtualList
-        unsigned smallestVirtualListVectorId = 0;
-        unsigned smallestVirtualListVectorSize = virtualListVector->at(0)->getVirtualListTotalLength();
-        for (unsigned int iter = 1; iter < virtualListVector->size(); ++iter) {
-            unsigned currentSize = virtualListVector->at(iter)->getVirtualListTotalLength();
-            if( smallestVirtualListVectorSize > currentSize ) {
-                smallestVirtualListVectorId = iter;
-                smallestVirtualListVectorSize = currentSize;
-            }
-        }
-
+    else{
         // fill the visited list with the current queryResults
         std::set<unsigned> visitedList;
-    
+
         //unsigned idsFound = 0;
         while(virtualListVector->at(smallestVirtualListVectorId)->getNext(heapItem))
         {
@@ -521,169 +520,143 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::vector<unsigned> queryResultAttributeBitmaps;
         std::vector<unsigned> queryResultEditDistances;
 
-        if(false)
-        {
-            /*timespec t1;
-            timespec t2;
-            clock_gettime(CLOCK_REALTIME, &t1);*/
-            int recordID;
-            int count = 0;
-            QueryResult queryResult;
-            while((recordID = nextRecord(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
-                //cout << recordID<<endl;
-                queryResult.internalRecordId = recordID;
-                float recordScore = 1.0;
-                queryResult.score = recordScore;
-                queryResult.matchingKeywords = queryResultMatchingKeywords;
-                queryResult.attributeBitmaps = queryResultAttributeBitmaps;
-                queryResult.editDistances = queryResultEditDistances;
-                queryResultsInternal->insertResult(queryResult);
-                count++;
+        HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
+        queryResults->addMessage("Fagin's Loop Start");
+        while (!stop) {
+            // maxScoreForUnvisitedRecords is the upper bound of the scores of these unvisited records
+            maxScoreForUnvisitedRecords = 0;
+            for (unsigned int i = 0; i < virtualListVector->size(); ++i)
+            {
+               float score;
+
+               if(!virtualListVector->at(i)->getMaxScore(score))
+               {
+                   stop = true;
+                   break;
+               }
+               maxScoreForUnvisitedRecords =
+                       query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
+                               query->getQueryTerms()->at(i)->getBoost(), score) ;
             }
-            /*clock_gettime(CLOCK_REALTIME, &t2);
-            double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-            cout << "AND cost: " << time_span << " milliseconds." << endl;
-            cout << "total records number: " << count <<endl;*/
-        }
-        else{
-            HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
-            queryResults->addMessage("Fagin's Loop Start");
-            while (!stop) {
-                // maxScoreForUnvisitedRecords is the upper bound of the scores of these unvisited records
-                maxScoreForUnvisitedRecords = 0;
-                for (unsigned int i = 0; i < virtualListVector->size(); ++i)
-                {
-                   float score;
-
-                   if(!virtualListVector->at(i)->getMaxScore(score))
-                   {
-                       stop = true;
-                       break;
-                   }
-                   maxScoreForUnvisitedRecords =
-                           query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
-                                   query->getQueryTerms()->at(i)->getBoost(), score) ;
+            // round robin: go through all the virtual lists
+            for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
+                // Step 2
+                // get one element from one virtual list
+                // if the term virtual list has no more item, stop
+                if(!virtualListVector->at(i)->getNext(heapItem)) {
+                    stop = true;
+                    break;
                 }
-                // round robin: go through all the virtual lists
-                for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
-                    // Step 2
-                    // get one element from one virtual list
-                    // if the term virtual list has no more item, stop
-                    if(!virtualListVector->at(i)->getNext(heapItem)) {
-                        stop = true;
-                        break;
-                    }
 
-                    float newScore = heapItem->termRecordRuntimeScore ;
-                    virtualListVector->at(i)->getMaxScore(newScore);
+                float newScore = heapItem->termRecordRuntimeScore ;
+                virtualListVector->at(i)->getMaxScore(newScore);
 
-                    // old value = old_value - popped item score + next item score
-                    maxScoreForUnvisitedRecords = query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
-                           query->getQueryTerms()->at(i)->getBoost(),
-                           newScore - heapItem->termRecordRuntimeScore /*order reversed to make it 'subtract'*/) ;
-                
-                    // get the recordId
-                    unsigned internalRecordId = heapItem->recordId;
-                
-                    // if the record has been seen before, do nothing
-                    if (visitedList.count(internalRecordId))
-                        continue;
+                // old value = old_value - popped item score + next item score
+                maxScoreForUnvisitedRecords = query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
+                       query->getQueryTerms()->at(i)->getBoost(),
+                       newScore - heapItem->termRecordRuntimeScore /*order reversed to make it 'subtract'*/) ;
 
-                    // mark the record as seen
-                    visitedList.insert(internalRecordId);
+                // get the recordId
+                unsigned internalRecordId = heapItem->recordId;
 
-                    // assign the vectors with default values to clear them
-                    queryResultTermScores.assign(query->getQueryTerms()->size(), 0);
-                    queryResultMatchingKeywords.assign(query->getQueryTerms()->size(), "");
-                    queryResultAttributeBitmaps.assign(query->getQueryTerms()->size(), 0);
-                    queryResultEditDistances.assign(query->getQueryTerms()->size(), 0);
+                // if the record has been seen before, do nothing
+                if (visitedList.count(internalRecordId))
+                    continue;
 
-                    /*// Check if the hit is from a stemmed keyword.
-                    if (this->indexData->analyzerInternal->getStemmerNormalizerType()
-                            != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
-                        unsigned heapItemKeywordId;//Unused
-                        float heapItemScore;//Unused
-                        bool heapItemIsStemmed;
-                        unsigned minId = heapItem->trieNode->getMinId();
-                        unsigned maxId = heapItem->trieNode->getMaxId();
-                        unsigned termSearchableAttributeIdToFilterTermHits =
-                        virtualListVector->at(i)->getTermSearchableAttributeIdToFilterTermHits();
+                // mark the record as seen
+                visitedList.insert(internalRecordId);
 
-                        // TODO Optimise this lookup, so that score , matchingKeywordId is not calculated twice for a stemmed heapItem hit.
-                        if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(internalRecordId,
-                                                  minId, maxId,
-                                                  termSearchableAttributeIdToFilterTermHits,
-                                                  heapItemKeywordId,
-                                                  heapItemScore,
-                                                  heapItemIsStemmed)) {
-                            if(heapItemIsStemmed) {
-                                queryResultMatchingKeywords.at(i)="STEM"; // "STEM" is the matching keyword that denotes the stemmed keyword
-                            }
-                            else {
-                                std::vector<CharType> temp;
-                                this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, heapItem->trieNode, temp);
-                                string str;
-                                charTypeVectorToUtf8String(temp, str);
-                                queryResultMatchingKeywords.at(i) = str;
-                            }
+                // assign the vectors with default values to clear them
+                queryResultTermScores.assign(query->getQueryTerms()->size(), 0);
+                queryResultMatchingKeywords.assign(query->getQueryTerms()->size(), "");
+                queryResultAttributeBitmaps.assign(query->getQueryTerms()->size(), 0);
+                queryResultEditDistances.assign(query->getQueryTerms()->size(), 0);
+
+                /*// Check if the hit is from a stemmed keyword.
+                if (this->indexData->analyzerInternal->getStemmerNormalizerType()
+                        != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
+                    unsigned heapItemKeywordId;//Unused
+                    float heapItemScore;//Unused
+                    bool heapItemIsStemmed;
+                    unsigned minId = heapItem->trieNode->getMinId();
+                    unsigned maxId = heapItem->trieNode->getMaxId();
+                    unsigned termSearchableAttributeIdToFilterTermHits =
+                    virtualListVector->at(i)->getTermSearchableAttributeIdToFilterTermHits();
+
+                    // TODO Optimise this lookup, so that score , matchingKeywordId is not calculated twice for a stemmed heapItem hit.
+                    if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(internalRecordId,
+                                              minId, maxId,
+                                              termSearchableAttributeIdToFilterTermHits,
+                                              heapItemKeywordId,
+                                              heapItemScore,
+                                              heapItemIsStemmed)) {
+                        if(heapItemIsStemmed) {
+                            queryResultMatchingKeywords.at(i)="STEM"; // "STEM" is the matching keyword that denotes the stemmed keyword
                         }
-                    }
-                    else {*/
-                        if(true){
-                            queryResultMatchingKeywords.at(i) = "";
-                        }
-                        else{
+                        else {
                             std::vector<CharType> temp;
-                            this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                           heapItem->trieNode, temp);
+                            this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, heapItem->trieNode, temp);
                             string str;
                             charTypeVectorToUtf8String(temp, str);
                             queryResultMatchingKeywords.at(i) = str;
                         }
-                    //}
-                
-                    queryResultEditDistances.at(i) = heapItem->ed;
-                    queryResultTermScores.at(i) = heapItem->termRecordRuntimeScore;
-                    queryResultAttributeBitmaps.at(i) = heapItem->attributeBitMap;
-                    
-                    // Step 3
-                    // Do random access on the other TermVirtualLists
-                    if(randomAccess(virtualListVector, queryResultTermScores,
-                            queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
-                            query, internalRecordId, i, 0))    {
-                        bool validForwardList;
-                        this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
-                        if (validForwardList) {
-                            // add this record to topK results if its score is good enough
-                            QueryResult queryResult;
-                            queryResult.internalRecordId = internalRecordId;
-                            queryResult.score = query->getRanker()->computeOverallRecordScore(query,
-                                                             queryResultTermScores);
-                            queryResult.matchingKeywords = queryResultMatchingKeywords;
-                            queryResult.attributeBitmaps = queryResultAttributeBitmaps;
-                            queryResult.editDistances = queryResultEditDistances;
-                            queryResultsInternal->insertResult(queryResult);
-
-                            //add this record to the candidate list for caching purposes
-                            CandidateResult candidate;
-                            candidate.internalRecordId = internalRecordId;
-                            candidate.termScores = queryResultTermScores;
-                            candidate.matchingKeywords = queryResultMatchingKeywords;
-                            candidate.attributeBitmaps = queryResultAttributeBitmaps;
-                            candidate.editDistances = queryResultEditDistances;
-                            candidateList->push_back(candidate);
-                        }
                     }
+                }
+                else {*/
+                    if(virtualListVector->at(i)->needMerge){
+                        queryResultMatchingKeywords.at(i) = "";
+                    }
+                    else{
+                        std::vector<CharType> temp;
+                        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                       heapItem->trieNode, temp);
+                        string str;
+                        charTypeVectorToUtf8String(temp, str);
+                        queryResultMatchingKeywords.at(i) = str;
+                    }
+                //}
 
+                queryResultEditDistances.at(i) = heapItem->ed;
+                queryResultTermScores.at(i) = heapItem->termRecordRuntimeScore;
+                queryResultAttributeBitmaps.at(i) = heapItem->attributeBitMap;
+                
+                // Step 3
+                // Do random access on the other TermVirtualLists
+                if(randomAccess(virtualListVector, queryResultTermScores,
+                        queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
+                        query, internalRecordId, i, 0))    {
+                    bool validForwardList;
+                    this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
+                    if (validForwardList) {
+                        // add this record to topK results if its score is good enough
+                        QueryResult queryResult;
+                        queryResult.internalRecordId = internalRecordId;
+                        queryResult.score = query->getRanker()->computeOverallRecordScore(query,
+                                                         queryResultTermScores);
+                        queryResult.matchingKeywords = queryResultMatchingKeywords;
+                        queryResult.attributeBitmaps = queryResultAttributeBitmaps;
+                        queryResult.editDistances = queryResultEditDistances;
+                        queryResultsInternal->insertResult(queryResult);
+
+                        //add this record to the candidate list for caching purposes
+                        CandidateResult candidate;
+                        candidate.internalRecordId = internalRecordId;
+                        candidate.termScores = queryResultTermScores;
+                        candidate.matchingKeywords = queryResultMatchingKeywords;
+                        candidate.attributeBitmaps = queryResultAttributeBitmaps;
+                        candidate.editDistances = queryResultEditDistances;
+                        candidateList->push_back(candidate);
+                    }
                 }
 
-                // check for the stopping condition
-                if (queryResultsInternal->hasTopK(maxScoreForUnvisitedRecords))
-                    break;
             }
 
-            delete heapItem;
+            // check for the stopping condition
+            if (queryResultsInternal->hasTopK(maxScoreForUnvisitedRecords))
+                break;
         }
+
+        delete heapItem;
 
         queryResults->addMessage("Fagin's loop end");
         queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
@@ -902,7 +875,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
         if (skip == j) // skip the virtual list popped up in round robin
             continue;
         bool found = false;
-        if (true){
+        if (virtualListVector->at(j)->needMerge){
             if(virtualListVector->at(j)->bitSet.get(recordId)){
                 found = true;
                 queryResultMatchingKeywords.at(j) = "";

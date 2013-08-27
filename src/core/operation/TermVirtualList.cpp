@@ -126,7 +126,8 @@ void TermVirtualList::depthInitialiseBitSet(const TrieNode* trieNode, unsigned d
         this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
         for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
         {
-            bitSet.set(invertedListReadView->at(invertedListCounter));
+            if(bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+                bitSetSize++;
         }
         termCount++;
         recordCount += invertedListReadView->size();
@@ -152,6 +153,8 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
     this->recordID = -1;
+    this->needMerge = false;
+    this->bitSetSize = 0;
 
     /*timespec t1;
     timespec t2;
@@ -165,7 +168,9 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
         cout << "create iterator: " << time_span << " milliseconds." << endl;*/
         //TODO: change the condition to call it when the similar keywords or record number is too much
-        if(true)
+        if(iter.size() >= TERMCOUNTTHRESHOLD)
+            this->needMerge = true;
+        if(this->needMerge)
         {
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
@@ -180,13 +185,14 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
                 for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
                 {
-                    bitSet.set(invertedListReadView->at(invertedListCounter));
+                    if(bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+                        bitSetSize ++;
                 }
                 termCount++;
                 recordCount += invertedListReadView->size();
             }
-            cout << "term count:" << termCount << endl;
-            cout << "record count:" << recordCount << endl;
+            //cout << "term count:" << termCount << endl;
+            //cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
             /*clock_gettime(CLOCK_REALTIME, &t2);
             time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
@@ -206,7 +212,9 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     }
     else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        if(true)
+        if(iter.size() >= TERMCOUNTTHRESHOLD)
+            this->needMerge = true;
+        if(this->needMerge)
         {
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
@@ -219,8 +227,8 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 depthInitialiseBitSet(trieNode, distance, term->getThreshold());
             }
-            cout << "term count:" << termCount << endl;
-            cout << "record count:" << recordCount << endl;
+            //cout << "term count:" << termCount << endl;
+            //cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
             /*clock_gettime(CLOCK_REALTIME, &t2);
             time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
@@ -297,7 +305,7 @@ bool TermVirtualList::_addItemsToPartialHeap()
 
 bool TermVirtualList::getMaxScore(float & score)
 {
-    if(true){
+    if(this->needMerge){
         score = 1.0;
         return true;
     }
@@ -330,7 +338,7 @@ bool TermVirtualList::getMaxScore(float & score)
 
 bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 {
-    if(true){
+    if(this->needMerge){
         returnHeapItem->recordId = this->bitSetIter->nextRecord();
         returnHeapItem->termRecordRuntimeScore = 1.0;
         returnHeapItem->trieNode = 0;
@@ -465,12 +473,17 @@ void TermVirtualList::print_test() const
     }
 }
 unsigned TermVirtualList::getVirtualListTotalLength() {
-	unsigned totalLen = 0;
-	for (unsigned i=0; i<itemsHeap.size(); i++)
-	{
-	    totalLen += this->invertedListReadViewVector[itemsHeap[i]->cursorVectorPosition]->size();
-	}
-	return totalLen;
+    if(this->needMerge){
+        return bitSetSize;
+    }
+    else{
+        unsigned totalLen = 0;
+        for (unsigned i=0; i<itemsHeap.size(); i++)
+        {
+            totalLen += this->invertedListReadViewVector[itemsHeap[i]->cursorVectorPosition]->size();
+        }
+        return totalLen;
+    }
 }
 
 }}

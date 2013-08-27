@@ -40,6 +40,7 @@ using std::queue;
 using std::pair;
 using std::set;
 using std::string;
+#define TERMCOUNTTHRESHOLD 350
 
 namespace srch2
 {
@@ -113,7 +114,6 @@ struct HeapItem
 class TermVirtualList
 {
 public:
-
     struct HeapItemCmp
     {
         unsigned termLength; // length of the query term
@@ -176,6 +176,8 @@ public:
     shared_ptr<vectorview<unsigned> > invertedListReadView;
     int termCount;
     int recordCount;
+    bool needMerge;
+    int bitSetSize;
 
 private:
 
