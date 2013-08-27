@@ -89,7 +89,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -173,12 +173,13 @@ void testScoreDefaultIndex(string index_dir, string data_file)
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    const Analyzer *analyzer = getAnalyzer();
 
     validate(analyzer, indexSearcher, sort1Map, sort2Map);
 
     delete indexSearcher;
     delete indexer;
+    delete analyzer;
 
 }
 

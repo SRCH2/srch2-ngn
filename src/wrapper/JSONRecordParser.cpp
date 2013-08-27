@@ -16,6 +16,8 @@
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include <instantsearch/Analyzer.h>
+#include "AnalyzerFactory.h"
 
 using namespace snappy;
 
@@ -289,6 +291,9 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
 
     unsigned lineCounter = 0;
 
+    // use same analyzer object for all the records
+    srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
+
     while(getline(in, line)  && in.good() )
     {
         bool parseSuccess = false;
@@ -300,7 +305,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         {
             // Add the record to the index
             //indexer->addRecordBeforeCommit(record, 0);
-            indexer->addRecord(record, 0);
+            indexer->addRecord(record, analyzer, 0);
         }
         else
         {
@@ -330,6 +335,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     Logger::console("Saving Index.....");
     indexer->save();
     Logger::console("Index saved.");
+    delete analyzer;
 }
 
 // convert other types to string

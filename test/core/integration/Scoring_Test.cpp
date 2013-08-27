@@ -79,7 +79,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -163,7 +163,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -600,7 +600,7 @@ void testScoreDefaultIndex(string index_dir, string data_file)
 
     IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
 
-    const Analyzer *analyzer1 = indexer1->getAnalyzer();
+    const Analyzer *analyzer1 = getAnalyzer();
 
     validateDefaultIndexScoresExpression1(analyzer1, indexSearcher1);
 
@@ -614,7 +614,7 @@ void testScoreDefaultIndex(string index_dir, string data_file)
 
     IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
 
-    const Analyzer *analyzer2 = indexer2->getAnalyzer();
+    const Analyzer *analyzer2 = getAnalyzer();
 
     validateDefaultIndexScoresExpression2(analyzer2, indexSearcher2);
 
@@ -631,7 +631,7 @@ void testScoreGeoIndex(string index_dir, string data_file)
 
     IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
 
-    const Analyzer *analyzer1 = indexer1->getAnalyzer();
+    const Analyzer *analyzer1 = getAnalyzer();
 
     validateGeoIndexScoresExpression1(analyzer1, indexSearcher1);
 
@@ -645,7 +645,7 @@ void testScoreGeoIndex(string index_dir, string data_file)
 
     IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
 
-    const Analyzer *analyzer2 = indexer2->getAnalyzer();
+    const Analyzer *analyzer2 = getAnalyzer();
 
     validateGeoIndexScoresExpression2(analyzer2, indexSearcher2);
 

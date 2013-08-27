@@ -203,8 +203,7 @@ class IndexData
 private:
 
     ///Added for stemmer integration
-    IndexData(const string& directoryName, 
-            Analyzer *analyzer, Schema *schema,
+    IndexData(const string& directoryName, Analyzer *analyzer, Schema *schema,
             const string &trieBootstrapFileNameWithPath,
             const StemmerNormalizerFlagType &stemmerFlag);
             
@@ -256,12 +255,13 @@ private:
 
 public:
     
-    inline static IndexData* create(const string& directoryName, 
-                Analyzer *analyzer, Schema *schema, 
+    inline static IndexData* create(const string& directoryName,
+    			Analyzer *analyzer,
+                Schema *schema,
                 const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer, schema, trieBootstrapFileNameWithPath, stemmerFlag);
+        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag);
     }
     
     inline static IndexData* load(const string& directoryName)
@@ -274,7 +274,6 @@ public:
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
-    Analyzer *analyzer;
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;
@@ -289,7 +288,7 @@ public:
     }
 
     // add a record
-    INDEXWRITE_RETVAL _addRecord(const Record *record);
+    INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
@@ -300,7 +299,7 @@ public:
         return this->kafkaOffset_CurrentIndexSnapshot;
     }
 
-    void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath);
+    void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
 
     void _setKafkaOffsetOfCurrentIndexSnapshot(const uint64_t kafkaOffset_CurrentIndexSnapshot)
     {
@@ -331,7 +330,7 @@ public:
     void _save(const std::string &directoryName) const;
     
     const Schema* getSchema() const;
-    const Analyzer* getAnalyzer() const;
+
     const std::string& getLicenseFileNameWithPath() const { return this->licenseFileNameWithPath; }
 
     std::string getInMemoryData(unsigned internalRecordId) const

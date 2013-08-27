@@ -97,7 +97,7 @@ int main(int argc, char **argv)
         IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-        const Analyzer *analyzer = indexer->getAnalyzer();
+        const Analyzer *analyzer = getAnalyzer();
 
         for (vector<string>::iterator vectIter = file.begin(); vectIter!= file.end(); vectIter ++) {
             //for( vector<string>::iterator vectIter = file.begin(); vectIter!= file.begin()+200; vectIter++ )
@@ -115,6 +115,7 @@ int main(int argc, char **argv)
             output_print.push_back(out.str());
         }
         delete indexSearcher;
+        delete analyzer;
     }
 
     clock_gettime(CLOCK_REALTIME, &tend);
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
         IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-        const Analyzer *analyzer = indexer->getAnalyzer();
+        const Analyzer *analyzer = getAnalyzer();
         for (vector<string>::iterator vectIter = file.begin(); vectIter!= file.end(); vectIter ++) {
             //for( vector<string>::iterator vectIter = file.begin(); vectIter!= file.begin()+200; vectIter++ )
             clock_gettime(CLOCK_REALTIME, &tstart_d_each);
@@ -152,6 +153,7 @@ int main(int argc, char **argv)
         delete indexSearcher;
         delete indexer;
         delete cache;
+        delete analyzer;
     }
 
     cout << "Double Searcher Ping done." << endl;
