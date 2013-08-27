@@ -24,7 +24,7 @@ public:
 	{
 		assert(x >= 0);
 		if(!x) return 1;
-		else return (int)log2(x)+1;
+		else return (int)(log(x)/log(2))+1;
 	}
 
 	// encodeUnsigned compress array[from, from+num) in one unsigned using S16 directory
