@@ -29,6 +29,14 @@ SynonymContainer& SynonymContainer::getInstance() {
 	return *synonymContainer;
 }
 
+void SynonymContainer::free() {
+	if (synonymContainer)
+	{
+		delete synonymContainer;
+		synonymContainer = NULL;
+	}
+}
+
 /*
  * If we have folllwing synonym rules
  * s1: new york = ny
@@ -155,6 +163,14 @@ StemmerContainer& StemmerContainer::getInstance() {
 	return *stemmerContainer;
 }
 
+void StemmerContainer::free() {
+	if (stemmerContainer)
+	{
+		delete stemmerContainer;
+		stemmerContainer = NULL;
+	}
+}
+
 void StemmerContainer::initStemmerContainer( const std::string stemmerFilePath) {
 	std::ifstream input(stemmerFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
@@ -195,6 +211,13 @@ StopWordContainer& StopWordContainer::getInstance() {
 		stopWordContainer = new StopWordContainer();
 	}
 	return *stopWordContainer;
+}
+void StopWordContainer::free() {
+	if (stopWordContainer)
+	{
+		delete stopWordContainer;
+		stopWordContainer = NULL;
+	}
 }
 void StopWordContainer::initStopWordContainer(const std::string stopWordsFilePath) {
 	std::string str;

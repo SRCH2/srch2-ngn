@@ -30,6 +30,7 @@ public:
 	void getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue);
 	// this is thread unsafe. Make sure you call it from main thread only.
 	static SynonymContainer& getInstance();
+	static void free();
 private:
 	static SynonymContainer *synonymContainer;
 	std::map<std::string, std::pair<SynonymTokenType, std::string> > synonymMap;
@@ -47,6 +48,7 @@ public:
 	bool contains(const std::string& str);
 	// this is thread unsafe. Make sure you call it from main thread only.
 	static StemmerContainer& getInstance();
+	static void free();
 private:
 	static StemmerContainer *stemmerContainer;
 	std::map<std::string, int> dictionaryWords;
@@ -63,6 +65,7 @@ public:
 	bool contains(const std::string& str);
 	// this is thread unsafe. Make sure you call it from main thread only.
 	static StopWordContainer& getInstance();
+	static void free();
 private:
 	static StopWordContainer *stopWordContainer;
 	std::set<std::string> stopWordsSet;
