@@ -60,7 +60,7 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configM
 	static boost::thread_specific_ptr<Analyzer> _ts_analyzer_object;
 	if (_ts_analyzer_object.get() == NULL)
 	{
-		cout << "Create Analyzer object for thread = %d " << pthread_self() << endl;
+		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
 		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(configMgr));
 	}
 	return _ts_analyzer_object.get();
