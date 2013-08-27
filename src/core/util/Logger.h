@@ -45,7 +45,11 @@ private:
 	static void writeToFile(FILE* out, const char* str);
 public:
 	static inline void setOutputFile(FILE* file) {
-		_out_file = file;
+		if (file != NULL){
+			_out_file = file;
+		}else{
+			Logger::warn("The given logger file is NULL");
+		}
 	}
 	static inline void setLogLevel(LogLevel logLevel) {
 		_logLevel = logLevel;

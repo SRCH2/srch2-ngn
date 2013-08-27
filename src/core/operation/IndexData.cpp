@@ -52,8 +52,8 @@ namespace srch2 {
 namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
-		Analyzer *analyzer,
-		Schema *schema,
+        Analyzer *analyzer,
+        Schema *schema,
         const string &trieBootstrapFileNameWithPath,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
@@ -61,9 +61,9 @@ IndexData::IndexData(const string &directoryName,
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
-		}
+        if (createDir(directoryName.c_str()) == -1){
+            throw std::runtime_error("Index Directory can not be created");
+        }
 	}
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
@@ -94,9 +94,8 @@ IndexData::IndexData(const string& directoryName)
     this->directoryName = directoryName;
 
     if(!checkDirExistence(directoryName.c_str())){
-		if(createDir(directoryName.c_str()) == -1){
-			exit(1);
-		}
+        Logger::error("Given index path %s does not exist", directoryName.c_str());
+        throw std::runtime_error("Index load exception ");
 	}
 
     this->schemaInternal = new SchemaInternal();
