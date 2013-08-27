@@ -29,7 +29,7 @@ class SmokeTest():
         self.binaryPath = config['server_binaryPath']
         self.binaryName = config['server_binary_name']
         self.queriesPath = config['queriesPath']
-        self.config_file_path =config['server_confg_file_path']
+        self.config_file_path = config['server_confg_file_path']
         self.port = config['server_port']
         self.host = config['server_host']
         self.debug = config['debug']
@@ -115,7 +115,7 @@ class SmokeTest():
         try:
             for query in queries:
                 lineNum += 1
-                query = query.strip()
+                query = query.strip().decode("utf-8")
                 # '@@' is for block comment. all lines after @@ will be ignored till another line with '@@' is found
                 if query == "@@":
                      # it's a block comment, toggle block
@@ -218,6 +218,13 @@ class SmokeTest():
         self.startServer()
         time.sleep(3) # let the server restart
 
+    def printSummary(self, resultDict):
+        for summarykey in resultDict:
+            print "*"*10, summarykey , " test summary", "*"*10
+            for key in resultDict[summarykey]:
+                print len(resultDict[summarykey][key]), " test cases " , key
+        
+
 if __name__ == '__main__':
     config = { 'server_binaryPath': '../../../build/src/server/',
                 'queriesPath': './queries.txt',
@@ -241,8 +248,8 @@ if __name__ == '__main__':
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
         #start testing
         results = smoke.doTest();
-        smoke.queriesPath=config['geoqueriesPath']
-        smoke.config_file_path= config['server_geoconfig_file_path']
+        smoke.queriesPath = config['geoqueriesPath']
+        smoke.config_file_path = config['server_geoconfig_file_path']
         smoke.rebootServer()
         geoResults = smoke.doTest();
         #print the test results
@@ -250,6 +257,9 @@ if __name__ == '__main__':
         print "*"*decoration, "TESTING GEO QUERIES", "*"*decoration
         smoke.resultHandler(geoResults)
         print "*"*decoration, "TESTING ENDS", "*"*decoration
+        smoke.printSummary({"TopK and GetAll":results,
+                             "Geo":geoResults
+                             })
         #smoke.killServer();
     except:
         #exception caught, kill the server

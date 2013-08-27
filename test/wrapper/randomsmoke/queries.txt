@@ -46,6 +46,12 @@ q=Services AND Personal* ^ ~
 q={defaultBoostLevel=2}personal AND service&sort=true
 q={defaultBoostLevel=asd}Personal^
 q=Services&facet=true&facet.field=name
+q=Ser六书六書daجمشیدsd AND as六书六書daجمشید*~
+q=अँधेरीसुन्दर AND as六书六書daجمشید*~ AND 會意字^4
+q=सुन्दर^4~.8 AND as六书六書daجمشید*~ AND 會意字^4
+q=सुन्दर
+q=Servicesर~.9
+q={defaultBoostLevel=2} Personal*^3~.6 AND Ser*^3~.1 AND Be*~.9& fq=model:सुन्दर AND model:HONDA&facet=true&facet.field=price
 @fail
 q={q=Personal^3 AND Services
 q={q=Personal^3 AND Services}
@@ -65,3 +71,6 @@ q={defaultBoostLevel=asd}
 q={defaultBoostLevel=1}
 q={defaultBoostLevel=asd}personal AND
 q={defaultBoostLevel=2}personal AND
+q=Ser六书六書daجمشیدsd AND as六书六書daجمشید*~.
+q=q=Ser六书六書daجمشیدsd AND as六书六書daجمشید*~अँधेरीसुन्दर
+q=q=Sँधेरीसुन्दरer六书六書daجمشیدsd^ँधेरीसुन्दर AND as六书六書daجمشید*~

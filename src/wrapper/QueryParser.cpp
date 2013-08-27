@@ -1244,7 +1244,6 @@ void QueryParser::extractSearchType() {
         size_t st;
         searchType = evhttp_uridecode(searchTypeTmp, 0, &st);
     }
-    Logger::debug("returning from responseWriteTypeParameterParser function");
     // else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
     Logger::debug("inside extractSearchType, checking for geo parameter");
     const char * leftBottomLatTemp = evhttp_find_header(&headers,
