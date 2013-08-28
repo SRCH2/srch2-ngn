@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     indexerDataContainer.cache = new srch2is::Cache(134217728,20000); // 134217728 bytes = 1GB
     IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     indexerDataContainer.indexer = Indexer::load(indexMetaData1);
-    indexerDataContainer.analyzer = indexerDataContainer.indexer->getAnalyzer();
+    indexerDataContainer.analyzer = getAnalyzer();
 
     std::string line;
     cout << "Index:" << INDEX_DIR << endl;

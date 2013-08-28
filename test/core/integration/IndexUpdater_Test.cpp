@@ -69,21 +69,21 @@ void addSimpleRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     index->commit();
     index->save();
@@ -121,7 +121,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRecordBoost(90);
     record->setSortableAttributeValue(0,"100");
     record->setSortableAttributeValue(1,"9.1");
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     record->clear();
     record->setPrimaryKey(1002);
@@ -130,7 +130,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setSortableAttributeValue(0,"200");
     record->setSortableAttributeValue(1,"3.14159265");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     record->clear();
     record->setPrimaryKey(1003);
@@ -139,7 +139,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setSortableAttributeValue(0,"300");
     record->setSortableAttributeValue(1,"4.234");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     //indexer->print_Index();
     index->commit();
@@ -164,7 +164,7 @@ void test1()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "tom", hits -> 1001, 1003
     {
@@ -186,7 +186,7 @@ void test1()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -255,7 +255,7 @@ void test2()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "smith", hits -> 1001, 1003
     {
@@ -287,7 +287,7 @@ void test2()
     record->setSearchableAttributeValue(1, "jimi hendrix");
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -338,7 +338,7 @@ void test3()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Update a Deserialised Index with Duplicate
     Record *record = new Record(index->getSchema());
@@ -346,7 +346,7 @@ void test3()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     //Update a Deserialised Index with Duplicate
     record->clear();
@@ -354,7 +354,7 @@ void test3()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     //Update a Deserialised Index with Duplicate
     record->clear();
@@ -362,7 +362,7 @@ void test3()
     record->setSearchableAttributeValue(1, "tom tom tom tom"); // THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -413,7 +413,7 @@ void test4()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     std::string recordId = "1998";
     index->deleteRecord(recordId, 0);
@@ -466,7 +466,7 @@ void test5()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Update a Deserialised Index with Duplicate
     Record *record = new Record(index->getSchema());
@@ -474,7 +474,7 @@ void test5()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -524,7 +524,7 @@ void test6()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "jemi", hits -> 1002, 1998
     {
@@ -628,7 +628,7 @@ void test8()
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "jimi+jobs", hits -> 1998
     {
@@ -704,7 +704,7 @@ void test9()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "tom", hits -> 1001, 1003
     {
@@ -729,7 +729,7 @@ void test9()
     record->setSortableAttributeValue(0,"400");
     record->setSortableAttributeValue(1,"2.234");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -779,7 +779,7 @@ void test10()
            
     Indexer *index = Indexer::load(indexMetaData1);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     //Query: "jimi+jobs", hits -> 1998 ;descending ;sortAttribute 0;
     {
@@ -884,14 +884,14 @@ void test11()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     ASSERT(index->commit() == 1);
 
@@ -900,7 +900,7 @@ void test11()
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
 
     index->commit();
@@ -932,7 +932,7 @@ void test11()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,  0);
 
     sleep(mergeEveryNSeconds+1);
 

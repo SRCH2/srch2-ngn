@@ -20,7 +20,9 @@
 #ifndef ASSERT_H_
 #define ASSERT_H_
 
+#ifndef ANDROID
 #include <execinfo.h>
+#endif
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -32,6 +34,7 @@ namespace instantsearch
 
 inline void print_trace (void)
 {
+#ifndef ANDROID
     void *array[10];
     size_t size;
     char **strings;
@@ -46,6 +49,7 @@ inline void print_trace (void)
         printf ("%s\n", strings[i]);
 
     free (strings);
+#endif
 }
 
 #ifndef ASSERT_LEVEL

@@ -16,6 +16,8 @@
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include <instantsearch/Analyzer.h>
+#include "AnalyzerFactory.h"
 
 using namespace snappy;
 
@@ -289,6 +291,8 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
 
     unsigned lineCounter = 0;
 
+    // use same analyzer object for all the records
+    srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
         while(getline(in, line))
         {
@@ -301,7 +305,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             {
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
-                indexer->addRecord(record, 0);
+                indexer->addRecord(record, analyzer, 0);
             }
             else
             {
@@ -314,7 +318,30 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             int reportFreq = 10000;
             if (lineCounter % reportFreq == 0)
             {
-              std::cout << "Indexing first " << lineCounter << " records" << "\r";
+                bool parseSuccess = false;
+
+                std::stringstream error;
+                parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
+
+                if(parseSuccess)
+                {
+                    // Add the record to the index
+                    //indexer->addRecordBeforeCommit(record, 0);
+                    indexer->addRecord(record, 0);
+                }
+                else
+                {
+                    //TODO: cout to logger
+                    error << "at line:" << lineCounter;
+                    Logger::error("%s", error.str().c_str());
+                }
+                record->clear();
+
+                int reportFreq = 10000;
+                if (lineCounter % reportFreq == 0)
+                {
+                  std::cout << "Indexing first " << lineCounter << " records" << "\r";
+                }
             }
         }
     }
@@ -331,6 +358,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     Logger::console("Saving Index.....");
     indexer->save();
     Logger::console("Index saved.");
+    delete analyzer;
 }
 
 // convert other types to string
