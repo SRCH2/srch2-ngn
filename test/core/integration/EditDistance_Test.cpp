@@ -70,7 +70,7 @@ void buildLocalIndex(string INDEX_DIR)
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
 /*
     // create another record
@@ -112,7 +112,7 @@ void test1()
     IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    const Analyzer *analyzer = getAnalyzer();
 
     //Edit distance 0
     ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
@@ -181,6 +181,7 @@ void test1()
     delete indexSearcher;
     delete indexer;
     delete cache;
+    delete analyzer;
 }
 
 int main(int argc, char **argv)

@@ -1,4 +1,4 @@
-/*
+/* $Id$
  * =====================================================================================
  *
  *       Filename:  DictionaryBuilder.cpp
@@ -15,10 +15,10 @@
  *
  * =====================================================================================
  */
-#include "analyzer/Dictionary.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "analyzer/Dictionary.h"
 #include "util/Logger.h"
 
 using namespace std;

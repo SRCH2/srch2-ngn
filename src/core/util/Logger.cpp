@@ -40,11 +40,14 @@ char* Logger::formatLogString(char* buffer, const char* prefix) {
 
 void Logger::writeToFile(FILE* out, const char* str) {
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_DEBUG, "SRCH2", prefix, str);
-#else
+	if (out == stderr || out == stdout) {
+		__android_log_print(ANDROID_LOG_DEBUG, "SRCH2", str);
+		return;
+	}
+#endif
 	fprintf(out, "%s\n", str);
 	fflush(out);
-#endif
+
 }
 
 void Logger::console(const char *format, ...) {

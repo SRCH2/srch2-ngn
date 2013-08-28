@@ -36,7 +36,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include "util/FileOps.h"
-
+#include "analyzer/AnalyzerContainers.cpp"
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -602,12 +602,20 @@ int main(int argc, char** argv)
     }
 
     delete[] threads;
-    fclose(logFile);
-    // free resource before exit
+
+    // if no log file is set in config file. This variable should be null.
+    // Hence, we should do null check before calling fclose
+    if (logFile)
+    	fclose(logFile);
+// free resource before exit
     for(int i = 0; i < MAX_THREADS; i++){
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
+
+    StemmerContainer::free();
+    SynonymContainer::free();
+    StopWordContainer::free();
     cout << "Shutting down." << endl;
     return EXIT_SUCCESS;
 }

@@ -7,7 +7,7 @@ This package includes a tool kit to generate a license key for the Bimaple engin
 
 To compile it:
 
- shell> make build
+ shell> mkdir build
  shell> cd build
  shell> cmake ..
  shell> make

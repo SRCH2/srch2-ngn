@@ -555,7 +555,7 @@ void HTTPResponse::searchCommand(evhttp_request *req, Srch2Server *server)
     clock_gettime(CLOCK_REALTIME, &tstart);
 
     const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
-    const Analyzer *analyzer = server->indexer->getAnalyzer();
+    const Analyzer *analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);  // Do not delete this analyzer
 
     URLParserHelper urlParserHelper;
 

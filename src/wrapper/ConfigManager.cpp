@@ -461,8 +461,8 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess, std:
 	if(vm.count("log-level")){
 		loglevel = static_cast<Logger::LogLevel> (vm["log-level"].as<int>());
 	}else{
-		//default name is log.txt
-		httpServerAccessLogFile = "log.txt";
+		//default level is INFO
+		loglevel = srch2::util::Logger::SRCH2_LOG_INFO;
 	}
 
 	if (vm.count("error-log-file")) {

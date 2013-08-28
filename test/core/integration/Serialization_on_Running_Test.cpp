@@ -87,7 +87,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
 
         records_in_index.push_back(newp);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -103,7 +103,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     return indexer;
 }
 
-void updateAndSaveIndex(Indexer *indexer, string data_file, vector<pair<string, string> > &records_in_index)
+void updateAndSaveIndex(Indexer *indexer, Analyzer* analyzer, string data_file, vector<pair<string, string> > &records_in_index)
 {
     Record *record = new Record(indexer->getSchema());
 
@@ -149,7 +149,7 @@ void updateAndSaveIndex(Indexer *indexer, string data_file, vector<pair<string, 
 
         records_in_index.push_back(newp);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -237,7 +237,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -253,7 +253,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     return indexer;
 }
 
-void updateAndSaveGeoIndex(Indexer *indexer, string data_file, vector<pair<pair<string, Point>, string> > &records_in_index)
+void updateAndSaveGeoIndex(Indexer *indexer,Analyzer* analyzer, string data_file, vector<pair<pair<string, Point>, string> > &records_in_index)
 {
     Record *record = new Record(indexer->getSchema());
 
@@ -312,7 +312,7 @@ void updateAndSaveGeoIndex(Indexer *indexer, string data_file, vector<pair<pair<
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -366,14 +366,14 @@ void testDefaultIndex(string index_dir)
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     validateDefaultIndex(analyzer, indexSearcher, records_in_index);
     cout << "Init Default Index Validated." << endl;
 
     // update the index and serialize it
 
-    updateAndSaveIndex(indexer, index_dir+"/data/update", records_in_index);
+    updateAndSaveIndex(indexer, analyzer, index_dir+"/data/update", records_in_index);
     sleep(mergeEveryNSeconds + 1);
 
     // load the index again and validate it
@@ -384,7 +384,7 @@ void testDefaultIndex(string index_dir)
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
 
-    const Analyzer *analyzerLoaded = indexerLoaded->getAnalyzer();
+    Analyzer *analyzerLoaded = getAnalyzer();
 
     validateDefaultIndex(analyzerLoaded, indexSearcherLoaded, records_in_index);
 
@@ -408,14 +408,14 @@ void testGeoIndex(string index_dir)
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     validateGeoIndex(analyzer, indexSearcher, records_in_index);
     cout << "Init Geo Index Validated." << endl;
 
     // update the index and serialize it
 
-    updateAndSaveGeoIndex(indexer, index_dir+"/data/update", records_in_index);
+    updateAndSaveGeoIndex(indexer, analyzer, index_dir+"/data/update", records_in_index);
     sleep(mergeEveryNSeconds + 1);
 
     // load the index again and validate it
@@ -426,7 +426,7 @@ void testGeoIndex(string index_dir)
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
 
-    const Analyzer *analyzerLoaded = indexerLoaded->getAnalyzer();
+    Analyzer *analyzerLoaded = getAnalyzer();
 
     validateGeoIndex(analyzerLoaded, indexSearcherLoaded, records_in_index);
 

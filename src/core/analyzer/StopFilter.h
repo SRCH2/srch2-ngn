@@ -19,6 +19,7 @@ using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
+class StopWordContainer;
 
 class StopFilter: public TokenFilter {
 public:
@@ -37,10 +38,7 @@ public:
 
 private:
 
-	/*
-	 * list of stop words
-	 */
-	std::vector<std::string> stopWordsVector;
+	StopWordContainer& stopWordsContainer;
 
 	/*
 	 *  input: a token
@@ -48,16 +46,7 @@ private:
 	 */
 	bool isStopWord(const std::string &token) const;
 
-	/*
-	 *  creates the list of stop words.
-	 */
-	void createStopWordList(const std::string &indexDirectory);
 
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-		ar & stopWordsVector;
-	}
 };
 
 }

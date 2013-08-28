@@ -56,13 +56,12 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     return commitReturnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, const uint64_t kafkaMessageOffset)
+INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer, const uint64_t kafkaMessageOffset)
 {
     writelock();
     this->writesCounter_forMerge++;
-
     this->kafkaOffset_LatestWriteView = kafkaMessageOffset;
-    INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record);
+    INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
 
     writeunlock();
     
