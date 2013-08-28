@@ -34,7 +34,6 @@ class HTTPResponse
         static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
         static void updateCommand(evhttp_request *req, Srch2Server *server);
         static void saveCommand(evhttp_request *req, Srch2Server *server);
-        static void shutdownCommand(evhttp_request *req, vector<struct event_base *> *bases,  srch2http::Srch2Server* server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
         static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
         static void activateCommand(evhttp_request *req, Srch2Server *server);

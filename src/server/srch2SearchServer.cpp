@@ -28,6 +28,7 @@
 #include "util/Logger.h"
 #include "util/Version.h"
 #include <event2/http.h>
+#include <signal.h>
 
 #include <sys/types.h>
 
@@ -280,14 +281,6 @@ void cb_bmactivate(evhttp_request *req, void *arg)
     HTTPResponse::activateCommand(req, server);
 }
 
-void cb_bmshutdown(evhttp_request *req, void *arg)
-{
-    vector<struct event_base *> * bases = reinterpret_cast<vector<struct event_base *> *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPResponse::shutdownCommand(req, bases, &server);
-}
-
 /**
  * NotFound event handler.
  * @param req evhttp request object
@@ -373,6 +366,19 @@ void parseProgramArguments(int argc, char** argv, po::options_description& descr
         cout << description << endl;
         exit(-1);
     }
+}
+
+pthread_t *threads;
+int MAX_THREADS;
+/**
+ * Kill the server.  This function can be called from another thread to kill the server
+ */
+
+static void killServer(int signal) {
+    cout << "\rStop server threads." << endl;
+    for(int i = 0; i< MAX_THREADS; i++)
+        pthread_cancel(threads[i]);
+    cout << "stop server" << endl;
 }
 
 int main(int argc, char** argv)
@@ -490,8 +496,6 @@ int main(int argc, char** argv)
         evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
 
         evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
-
-        evhttp_set_cb(http_server, "/shutdown", cb_bmshutdown, evbase);
     }
 
     /* 4). bind socket */
@@ -519,7 +523,7 @@ int main(int argc, char** argv)
     evhttp_free(http_server);
     event_base_free(evbase);
 
-    int MAX_THREADS = serverConf->getNumberOfThreads();
+    MAX_THREADS = serverConf->getNumberOfThreads();
 
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d", MAX_THREADS, http_addr, http_port);
 
@@ -530,7 +534,7 @@ int main(int argc, char** argv)
     // Step 2: Serving server
 
     int fd = bindSocket(http_addr, http_port);
-    pthread_t *threads = new pthread_t[MAX_THREADS];
+    threads = new pthread_t[MAX_THREADS];
     vector<struct event_base *> evbases;
     vector<struct evhttp *> http_servers;
     for (int i = 0; i < MAX_THREADS; i++) {
@@ -566,8 +570,6 @@ int main(int argc, char** argv)
             evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
 
             evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
-
-            evhttp_set_cb(http_server, "/shutdown", cb_bmshutdown, &evbases);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -585,6 +587,16 @@ int main(int argc, char** argv)
             return -1;
     }
 
+    /* Set signal handlers */
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    struct sigaction siginfo;
+    siginfo.sa_handler = killServer;
+    siginfo.sa_mask = sigset;
+    siginfo.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &siginfo, NULL);
+    sigaction(SIGTERM, &siginfo, NULL);
+
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_join(threads[i], NULL);
     }
@@ -596,5 +608,6 @@ int main(int argc, char** argv)
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
+    cout << "Shutting down." << endl;
     return EXIT_SUCCESS;
 }
