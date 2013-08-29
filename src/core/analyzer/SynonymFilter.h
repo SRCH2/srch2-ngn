@@ -43,7 +43,7 @@ using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
-
+class SynonymContainer;
 class SynonymFilter: public TokenFilter {
 public:
 	/*
@@ -69,24 +69,6 @@ private:
 	 */
 	srch2::instantsearch::SynonymKeepOriginFlag keepOriginFlag;
 
-	const string synonymDelimiter;
-
-	/*
-	 * If we have folllwing synonym rules
-	 * s1: new york = ny
-	 * s2: new york city = nyc
-	 * s3: bill = william
-	 *
-	 * The map elements will be as following:
-	 *
-	 * new => <SYNONYM_PREFIX_ONLY, "" >
-	 * new york => <SYNONYM_PREFIX_AND_COMPLETE, 'ny'>
-	 * new york city => <SYNONYM_COMPLETE_ONLY, 'nyc'>
-	 * bill => <SYNONYM_COMPLETE_ONLY, 'william'>
-	 * orange: Nothing will be in the map for it.
-	 */
-	map<string, pair<SynonymTokenType, string> > synonymMap;
-
 	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
 	 */
@@ -96,11 +78,6 @@ private:
 	 * It is a buffer for tokens to check if we have multi-word synonyms
 	 */
 	std::vector<string> tokenBuffer;
-
-	/*
-	 *  creates the map of stop words.
-	 */
-	void createMap(const string &synonymFilePath);
 
 	/*
 	 * put the synonyms of existing tokens into the buffer of to-be-emitted tokens
@@ -123,14 +100,8 @@ private:
 	 */
 	void emitCurrentToken();
 
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-		ar & synonymMap;
-		ar & emitBuffer;
-		ar & tokenBuffer;
-		ar & keepOriginFlag;
-	}
+	SynonymContainer& synonymContainer;
+
 };
 
 }}

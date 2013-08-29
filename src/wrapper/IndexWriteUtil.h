@@ -6,7 +6,7 @@
 #include "json/json.h"
 #include "JSONRecordParser.h"
 #include "ConfigManager.h"
-
+#include "AnalyzerFactory.h"
 #include "evhttp.h"
 
 namespace srch2
@@ -24,7 +24,9 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
+            delete analyzer;
 
     		switch( ret )
 			{
@@ -183,7 +185,8 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+            Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
 
     		switch( ret )
 			{

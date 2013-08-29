@@ -83,7 +83,7 @@ def prepareQuery(queryKeywords):
     query = query + '&facet=true&facet.field=model&facet.range=price&facet.range=likes'
     ################# rows parameter
     query = query + '&rows=1'
-#    print 'Query : ' + query
+    print 'Query : ' + query
     ##################################
     return query
 

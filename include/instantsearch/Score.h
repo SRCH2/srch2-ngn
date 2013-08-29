@@ -58,7 +58,7 @@ namespace srch2
     	void setScore(const Score& score);
     	void setScore(FilterType type , string value);
 
-    	FilterType getType(){
+    	FilterType getType() const{
     		return valueType;
     	}
 
@@ -73,7 +73,11 @@ namespace srch2
 
     	float castToFloat();
 
-
+    	/*
+    	 * returns 0 if this < start
+    	 * otherwise, returns floor((this - start) / gap)+1
+    	 */
+    	unsigned findIndexOfContainingInterval(Score & start , Score & end, Score & gap) const;
 
 
     	string toString() const;

@@ -113,7 +113,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("class", "A");
     record->setRecordBoost(10);
     record->setInMemoryData("test string");
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1002);
@@ -124,7 +124,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("class", "A");
     record->setRecordBoost(20);
     record->setInMemoryData("test string");
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1003);
@@ -135,7 +135,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("class", "B");
     record->setRecordBoost(30);
     record->setInMemoryData("test string");
-    index->addRecord(record, 0);
+    index->addRecord(record,analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1004);
@@ -146,7 +146,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("class", "B");
     record->setRecordBoost(40);
     record->setInMemoryData("test string");
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,0);
 
     record->clear();
     record->setPrimaryKey(1005);
@@ -158,7 +158,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("class", "C");
     record->setRecordBoost(50);
     record->setInMemoryData("test string");
-    index->addRecord(record, 0);
+    index->addRecord(record,analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1006);
@@ -168,7 +168,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("price", "5.34");
     record->setNonSearchableAttributeValue("class", "C");
     record->setRecordBoost(60);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,0);
 
     record->clear();
     record->setPrimaryKey(1007);
@@ -178,7 +178,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("price", "4.34");
     record->setNonSearchableAttributeValue("class", "D");
     record->setRecordBoost(80);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,0);
 
     record->clear();
     record->setPrimaryKey(1008);
@@ -188,7 +188,7 @@ void addRecords() {
     record->setNonSearchableAttributeValue("price", "3.34");
     record->setNonSearchableAttributeValue("class", "E");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer,0);
 
     index->commit();
     index->save();

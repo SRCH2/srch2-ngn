@@ -89,6 +89,7 @@ typedef enum
     SearchTypeMapQuery
 } QueryType;
 
+//TODO add prefix OP
 typedef enum
 {
 	LESS_THAN ,

@@ -598,6 +598,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
+
     // start the timer for search
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
@@ -636,7 +637,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataContainerConf,
-            *(server->indexer->getSchema()), *(server->indexer->getAnalyzer()),
+            *(server->indexer->getSchema()), *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     qr.rewrite();
 

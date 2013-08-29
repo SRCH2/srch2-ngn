@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include "util/Assert.h"
 #include <limits>
+#include <cmath>
 
 
 namespace srch2
@@ -220,6 +221,37 @@ namespace srch2
 
 		return result;
 	}
+
+    unsigned Score::findIndexOfContainingInterval(Score & start , Score & end, Score & gap) const{
+        float thisScore = 0;
+        float startScore = 0;
+        float endScore = 0;
+        float gapScore = 0;
+        switch (this->getType()) {
+            case ATTRIBUTE_TYPE_UNSIGNED:
+                if(this->intScore < start.getIntScore()){
+                    return 0;
+                }
+                thisScore = this->getIntScore();
+                startScore = start.getIntScore();
+                endScore = end.getIntScore();
+                gapScore = gap.getIntScore();
+                break;
+            case ATTRIBUTE_TYPE_FLOAT:
+                if(this->floatScore < start.getFloatScore()){
+                    return 0;
+                }
+                thisScore = this->getFloatScore();
+                startScore = start.getFloatScore();
+                endScore = end.getFloatScore();
+                gapScore = gap.getFloatScore();
+                break;
+            default:
+                ASSERT(false);
+                return 0;
+        }
+        return floor((thisScore - startScore) / gapScore) + 1 ;
+    }
 
     Score::Score(const Score& score){
     	setScore(score);

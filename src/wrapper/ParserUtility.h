@@ -1,5 +1,5 @@
-#ifndef _WRAPPER_PARSERUTILITY_H_
-#define _WRAPPER_PARSERUTILITY_H_
+#ifndef __WRAPPER_PARSERUTILITY_H__
+#define __WRAPPER_PARSERUTILITY_H__
 
 #include <string>
 #include <cstdlib>
@@ -73,4 +73,4 @@ bool validateValueWithType(srch2::instantsearch::FilterType type,
 }
 }
 
-#endif // _WRAPPER_PARSERUTILITY_H_
+#endif // __WRAPPER_PARSERUTILITY_H__

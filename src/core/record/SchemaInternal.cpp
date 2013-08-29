@@ -37,6 +37,9 @@ SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType,
     this->indexType = indexType;
     this->positionIndexType = positionIndexType;
     this->scoringExpressionString = "1"; // DEFAULT SCORE
+    this->nonSearchableAttributeNameToId.clear();
+    this->nonSearchableAttributeDefaultValueVector.clear();
+    this->nonSearchableAttributeTypeVector.clear();
 }
 
 SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
@@ -145,8 +148,9 @@ int SchemaInternal::setNonSearchableAttribute(const std::string &attributeName,
                 defaultValue;
         this->nonSearchableAttributeTypeVector[iter->second] = type;
     } else {
-        this->nonSearchableAttributeNameToId[attributeName] =
-                this->nonSearchableAttributeNameToId.size();
+        unsigned sizeNonSearchable = this->nonSearchableAttributeNameToId.size();
+        this->nonSearchableAttributeNameToId[attributeName] = sizeNonSearchable;
+
         this->nonSearchableAttributeDefaultValueVector.push_back(defaultValue);
         this->nonSearchableAttributeTypeVector.push_back(type);
     }

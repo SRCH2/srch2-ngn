@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
 	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);
-	const Analyzer *analyzer = index->getAnalyzer();
+	Analyzer *analyzer = getAnalyzer();
 
 	std::vector<std::string> file;
 	std::string line;
@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 
 	delete indexSearcher;
 	delete index;
+	delete analyzer;
 
 	cout << "Executed " << file.size() << "queries in " << ts2 << " milliseconds." << endl;
 	cout << "QueryStressTest passed!" << endl;
