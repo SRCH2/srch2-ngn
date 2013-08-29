@@ -89,7 +89,8 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             // increments the correct facet by one
             impl->doAggregation(attributeValue,
                     facetField->second,
-                    &(output->impl->facetResults[facetField->first]));
+                    &(output->impl->facetResults[facetField->first]) ,
+                    std::distance(impl->lowerBoundsOfIntervals.begin(),facetField));
 
         }
 

@@ -598,6 +598,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
+
     // start the timer for search
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);

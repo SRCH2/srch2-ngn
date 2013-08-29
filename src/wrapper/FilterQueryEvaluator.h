@@ -33,10 +33,10 @@
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>
 #include "RegexConstants.h"
-//#include "Assert.h"
+#include "util/Assert.h"
 
-#ifndef __WRAPPER_FILTERQUERYEVALUATOR_H_
-#define __WRAPPER_FILTERQUERYEVALUATOR_H_
+#ifndef __WRAPPER_FILTERQUERYEVALUATOR_H__
+#define __WRAPPER_FILTERQUERYEVALUATOR_H__
 
 using namespace std;
 using srch2::instantsearch::Score;
@@ -45,7 +45,7 @@ using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
 using srch2::instantsearch::BooleanOperation;
 using srch2::instantsearch::AttributeCriterionOperation;
 using srch2::instantsearch::Schema;
-
+using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper {
 typedef enum {
@@ -58,8 +58,8 @@ public:
 
     virtual bool validate(const Schema & schema) = 0;
 
-    virtual bool getBooleanValue(
-            std::map<std::string, Score> nonSearchableAttributeValues)= 0;
+    virtual bool evaluate(
+            std::map<std::string, Score> & nonSearchableAttributeValues)= 0;
 
     virtual ~QueryExpression() {
     }
@@ -70,9 +70,14 @@ public:
 
 private:
 };
-class SolrRangeQueryExpression: public QueryExpression {
+
+/*
+ * Example of a RangeQueryExpression is : price:[ 10 TO 100]
+ * which means only return those results that : 10 <= result.price <= 100
+ */
+class RangeQueryExpression: public QueryExpression {
 public:
-    SolrRangeQueryExpression(std::string field,
+    RangeQueryExpression(std::string field,
             std::vector<std::pair<MessageType, string> > *messages) {
         this->attributeName = field;
         this->negative = false;
@@ -81,14 +86,21 @@ public:
 
     bool parse(string &expressionString) {
         // it has field. create a vector and populate container->fieldFilter.
+        /*
+         * Example of this case : -price:[ 10 TO 200 ]
+         * The "-" in the beginning means price is NOT in this range.
+         */
+        ASSERT(this->attributeName.length() > 1);
         boost::algorithm::trim(attributeName);
         if (this->attributeName.at(0) == '-') {
+            ASSERT(this->attributeName.length() > 2);
             this->negative = true;
             this->attributeName = this->attributeName.substr(1);
         } else {
             this->negative = false;
         }
         string keyword = "";
+        // TODO isParsed is a bad name
         bool isParsed = parseFqRangeKeyword(expressionString, keyword); // extract the keyword
         if (!isParsed) {
             // there is parsing error
@@ -131,8 +143,13 @@ public:
         return true;
     }
 
-    bool getBooleanValue(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
+    /*
+     * Checks the value of a result record to see if
+     * it is in the range or not. The interval is closed.
+     * For example: a result with value 10 returns true for range [10 TO *]
+     */
+    bool evaluate(
+            std::map<std::string, Score> & nonSearchableAttributeValues) {
         // first find the value coming from the record
         Score value = nonSearchableAttributeValues[this->attributeName];
         bool lowerBoundCheck = false;
@@ -160,17 +177,22 @@ public:
         return result;
     }
 
-    ~SolrRangeQueryExpression() {
+    ~RangeQueryExpression() {
     }
-    ;
 
 private:
+    // the name of the attribute which is checked against the range
     std::string attributeName;
+    // the lower bound value
     string attributeValueLower;
+    // the upper bound value
     string attributeValueUpper;
+    // if the expression has a - in the beginning negative is true
     bool negative;
+    // TODO : if keyword is not a good name change it to rangeExpression
     bool setLowerAndUpperValues(string &keyword) {
         boost::smatch matches;
+        // we do the same thing as SOLR : TO is case sensitive.
         string fieldKeywordDelimeterRegexString = "\\s+TO\\s+";
         boost::regex fieldDelimeterRegex(fieldKeywordDelimeterRegexString);
         boost::regex_search(keyword, matches, fieldDelimeterRegex);
@@ -182,6 +204,7 @@ private:
             string upperVal = keyword.substr(
                     matches.position() + matches.length()); // extract the keyword
             boost::algorithm::trim(upperVal);
+            // TODO is this a wrong comment ?
             // remove '[' and ']'
             this->attributeValueUpper = upperVal;
             return true;
@@ -194,9 +217,9 @@ private:
     }
 };
 
-class SolrAssignmentQueryExpression: public QueryExpression {
+class EqualityQueryExpression: public QueryExpression {
 public:
-    SolrAssignmentQueryExpression(std::string field,
+    EqualityQueryExpression(std::string field,
             std::vector<std::pair<MessageType, string> > *messages) {
         this->negative = false;
         this->operation = srch2::instantsearch::EQUALS;
@@ -205,9 +228,12 @@ public:
     }
 
     bool parse(string &expressionString) {
+        //TODO keyword is not a good name. change to expression
         string keyword;
         // it has field. create a vector and populate container->fieldFilter.
+        ASSERT(this->attributeName.length() > 1);
         if (this->attributeName.at(0) == '-') {
+            ASSERT(this->attributeName.length() > 2);
             this->negative = true;
             this->attributeName = this->attributeName.substr(1);
         } else {
@@ -247,9 +273,12 @@ public:
         return true;
     }
 
-    bool getBooleanValue(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
+    bool evaluate(
+            std::map<std::string, Score> & nonSearchableAttributeValues) {
 
+        // Compatible with SOLR : * means anything not empty.
+        // Because the actual value can contain * if range bound is * we change it
+        // to empty string and negate the variable negative.
         if (attributeValue.compare("*") == 0) {
             attributeValue = "";
             negative = !negative;
@@ -257,6 +286,10 @@ public:
         // first find the value coming from the record
         Score value = nonSearchableAttributeValues[this->attributeName];
 
+        if(attributeValue.compare("") == 0 &&
+                (value.getType() == srch2is::ATTRIBUTE_TYPE_UNSIGNED || value.getType() == srch2is::ATTRIBUTE_TYPE_FLOAT)){
+            attributeValue = value.minimumValue().toString() + "";
+        }
         Score valueToCheck;
         valueToCheck.setScore(value.getType(), attributeValue);
 
@@ -268,9 +301,8 @@ public:
         }
     }
 
-    ~SolrAssignmentQueryExpression() {
+    ~EqualityQueryExpression() {
     }
-    ;
 
 private:
     std::string attributeName;
@@ -282,12 +314,19 @@ private:
 // this class gets a string which is an expression of nuon-searchable attribute names,it evluates the expression
 // based on the Score value of those attributes coming from records.
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
+// TODO : add good examples
+/*
+ * Exmaple of ComplexQueryExpression is CMPLX$price - discount < income * rate$
+ * It accepts any kind of math expression which uses UNSIGNED/FLOAT non-searchable
+ * attributes.
+ */
 class ComplexQueryExpression: public QueryExpression {
 public:
     ComplexQueryExpression(
             std::vector<std::pair<MessageType, string> > *messages) {
         this->messages = messages;
     }
+    // TODO : leave a comment to explain this function
     bool parse(string &expressionString) {
         this->parsedExpression = "";
         bool isParsed = this->parseComplxExpression(expressionString,
@@ -319,6 +358,9 @@ public:
                 nonSearchableAttributes->begin();
                 nonSearchableAttribute != nonSearchableAttributes->end();
                 ++nonSearchableAttribute) {
+            // Since we only accept unsigned and float non-searchable attributes
+            // this if-else statement only inserts these non-searchable-attributes into
+            // the symbol table. This symbol table is passed to exprtk library.
             if (schema.getTypeOfNonSearchableAttribute(
                     nonSearchableAttribute->second)
                     == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED
@@ -332,7 +374,7 @@ public:
             }
         }
 
-        // now reister the symbol table in the library
+        // now register the symbol table in the library
         expression.register_symbol_table(symbolTable);
 
         // now parse the string
@@ -340,36 +382,8 @@ public:
         return expressionParser.compile(parsedExpression, expression);
     }
 
-    bool getBooleanValue(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
-        return getBooleanValueNumericalMode(nonSearchableAttributeValues);
-    }
-
-    ~ComplexQueryExpression() {
-    }
-    ;
-
-private:
-    string parsedExpression;
-    exprtk::expression<double> expression;
-    exprtk::symbol_table<double> symbolTable;
-    std::map<string, double> symbolVariables;
-
-    bool getBooleanValueNumericalMode(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
-
-        float result = getValueNumericalMode(nonSearchableAttributeValues);
-
-        if (result == 0) {
-            return false;
-        }
-        return true;
-
-    }
-
-    float getValueNumericalMode(
-            std::map<std::string, Score> nonSearchableAttributeValues) {
-
+    bool evaluate(
+            std::map<std::string, Score> & nonSearchableAttributeValues) {
         // set values of variables
         for (std::map<std::string, double>::iterator symbol = symbolVariables
                 .begin(); symbol != symbolVariables.end(); ++symbol) {
@@ -377,9 +391,23 @@ private:
                     .castToFloat();
         }
 
-        return this->expression.value();
+        float result = this->expression.value();
 
+        if (result == 0) {
+            return false;
+        }
+        return true;
     }
+
+    ~ComplexQueryExpression() {
+    }
+
+private:
+    string parsedExpression;
+    exprtk::expression<double> expression;
+    exprtk::symbol_table<double> symbolTable;
+    std::map<string, double> symbolVariables;
+
 
 };
 class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
@@ -387,44 +415,44 @@ public:
 
     FilterQueryEvaluator(
             std::vector<std::pair<MessageType, string> > *messages) {
-        this->operation = srch2::instantsearch::BooleanOperatorAND;
+        this->queryExpressionOperation = srch2::instantsearch::BooleanOperatorAND;
         this->isFqBoolOperatorSet = false;
         this->messages = messages;
         this->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
     }
     void setOperation(BooleanOperation op) {
-        this->operation = op;
+        this->queryExpressionOperation = op;
     }
     bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
-        switch (operation) {
+        switch (queryExpressionOperation) {
         case srch2::instantsearch::BooleanOperatorAND:
-            for (std::vector<QueryExpression *>::iterator criterion = criteria
-                    .begin(); criterion != criteria.end(); ++criterion) {
+            for (std::vector<QueryExpression *>::iterator criterion = expressions
+                    .begin(); criterion != expressions.end(); ++criterion) {
                 QueryExpression * qe = *criterion;
-                if (!qe->getBooleanValue(nonSearchableAttributeValues)) {
+                if (!qe->evaluate(nonSearchableAttributeValues)) {
                     return false;
                 }
             }
             return true;
         case srch2::instantsearch::BooleanOperatorOR:
-            for (std::vector<QueryExpression *>::iterator criterion = criteria
-                    .begin(); criterion != criteria.end(); ++criterion) {
+            for (std::vector<QueryExpression *>::iterator criterion = expressions
+                    .begin(); criterion != expressions.end(); ++criterion) {
                 QueryExpression * qe = *criterion;
-                if (qe->getBooleanValue(nonSearchableAttributeValues)) {
+                if (qe->evaluate(nonSearchableAttributeValues)) {
                     return true;
                 }
             }
             return false;
-            break;
         default:
             break;
         }
-        return false; // TODO : should change to ASSERT(false); because it should never reach here
+        ASSERT(false);
+        return false;
     }
 
     bool validate(const Schema & schema) {
         for (std::vector<QueryExpression *>::iterator criterion =
-                criteria.begin(); criterion != criteria.end(); ++criterion) {
+                expressions.begin(); criterion != expressions.end(); ++criterion) {
             if (!(*criterion)->validate(schema)) {
                 return false;
             }
@@ -442,89 +470,8 @@ public:
         bool parseNextTerm = true;
         while (parseNextTerm) {
             string fqField;
-            //NOTE:example related comments are only valid for the first time iteration inside the while loop
-            if (fq.length() > 0) {
-                bool hasParsedParameter = this->parseFqField(fq, fqField);
-                if (!hasParsedParameter) {
-                    // it is not a assignment not a range
-                    // see if it's a complx query
-                    string complxStr = "";
-                    hasParsedParameter = this->parseComplx(fq, complxStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
-                    if (!hasParsedParameter) {
-                        parseNextTerm = false;
-                        Logger::info(
-                                " Parsing error:: not a valid filter query");
-                        this->messages->push_back(
-                                make_pair(MessageError,
-                                        "Parse error, not a valid filter query term."));
-                        return false;
-                    } else {
-                        Logger::debug(
-                                " 'CMPLX$' found, possible complex expression query");
-                        string dummyField = "NO_FIELD";
-                        hasParsedParameter = this->addCriterion(fq,
-                                FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
-                        if (!hasParsedParameter) {
-                            return false;
-                        }
-                        boost::algorithm::trim(fq);
-                    }
-                } else {
-                    // hasParsedParameter is true, fq is now changed to : '[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
-                    // fqField is 'price:'
-                    // remove the ':' form 'price:'
-                    fqField = fqField.substr(0, fqField.length() - 1);
-                    boost::algorithm::trim(fqField);
-                    // check if it's a range query or asignment.
-                    if ('[' == fq.at(0)) {
-                        Logger::debug(" '[' found, possible range query");
-                        string keyword = "";
-                        fq = fq.substr(1);
-                        hasParsedParameter = this->addCriterion(fq,
-                                FqKeywordTypeRange, fqField); // it parses fq for range query parameters
-                        if (!hasParsedParameter) {
-                            //this->isParsedError = true;
-                            return false;
-                        }
-                    } else {
-                        Logger::debug(
-                                " '[' not found, possible assignment query");
-                        string keyword = "";
-                        hasParsedParameter = this->addCriterion(fq,
-                                FqKeywordTypeAssignment, fqField); // it parses fq for range query parameters
-                        if (!hasParsedParameter) {
-                            //this->isParsedError = true; //TODO:
-                            return false;
-                        }
-                    }
-                }
-                // first term has been parsed.
-                // fq should have been changed to 'AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
-                string boolOperator = "";
-                hasParsedParameter = this->parseFqBoolOperator(fq,
-                        boolOperator); //
-                if (hasParsedParameter) {
-                    this->setOperation(this->termFQBooleanOperator);
-                    string msgStr = "boolean operator is " + boolOperator;
-                    Logger::debug(msgStr.c_str());
-                    parseNextTerm = true;
-                    Logger::debug("LOOPING AGAIN");
-                } else {
-                    // no boolean operator found.
-                    // if the fq string length is >0 throw error.
-                    parseNextTerm = false;
-                    if (fq.length() > 0) {
-                        // raise error message
-                        Logger::info(
-                                " Parsing error:: expecting boolean operator while parsing terms, not found.");
-                        this->messages->push_back(
-                                make_pair(MessageError,
-                                        "Parse error, expecting boolean operator while parsing filter query terms."));
-                        //this->isParsedError = true; // TODO:
-                        return false;
-                    }
-                }
-            } else {
+            // TODO : comment about this block
+            if(fq.length() == 0){
                 // fq received here is of length 0
                 // raise an error.
                 Logger::info(
@@ -534,25 +481,113 @@ public:
                                 "Parse error, expecting filter query term, not found."));
                 return false;
             }
+            //NOTE:example related comments are only valid for the first time iteration inside the while loop
+            bool hasParsedParameter = this->parseFqField(fq, fqField);
+            if (!hasParsedParameter) {
+                // it is not an equality nor a range expression
+                // see if it's a complex expression
+                string complexStr = "";
+                hasParsedParameter = this->parseComplx(fq, complexStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
+                if (!hasParsedParameter) {
+                    parseNextTerm = false;
+                    Logger::info(
+                            " Parsing error:: not a valid filter query");
+                    this->messages->push_back(
+                            make_pair(MessageError,
+                                    "Parse error, not a valid filter query term."));
+                    return false;
+                }
+                Logger::debug(
+                        " 'CMPLX$' found, possible complex expression query");
+                string dummyField = "NO_FIELD";
+                hasParsedParameter = this->addCriterion(fq,
+                        FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
+                if (!hasParsedParameter) {
+                    return false;
+                }
+                boost::algorithm::trim(fq);
+            } else {
+                // hasParsedParameter is true, fq is now changed to : '[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+                // fqField is 'price:'
+                // remove the ':' from 'price:'
+                fqField = fqField.substr(0, fqField.length() - 1);
+                boost::algorithm::trim(fqField);
+                // check if it's a range query or assignment.
+                if ('[' == fq.at(0)) {
+                    Logger::debug(" '[' found, possible range expression");
+                    string keyword = "";
+                    fq = fq.substr(1);
+                    hasParsedParameter = this->addCriterion(fq,
+                            FqKeywordTypeRange, fqField); // it parses fq for range expression parameters
+                    if (!hasParsedParameter) {
+                        return false;
+                    }
+                } else {
+                    Logger::debug(
+                            " '[' not found, possible equality expression");
+                    string keyword = "";
+                    hasParsedParameter = this->addCriterion(fq,
+                            FqKeywordTypeAssignment, fqField); // it parses fq for range expression parameters
+                    if (!hasParsedParameter) {
+                        return false;
+                    }
+                }
+            }
+            // so far a new term has been parsed.
+            // now we will continue with parsing the next operator
+            // fq should have been changed to 'AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+            string boolOperator = "";
+            hasParsedParameter = this->parseFqBoolOperator(fq,
+                    boolOperator); //
+            if (hasParsedParameter) {
+                this->setOperation(this->termFQBooleanOperator);
+                string msgStr = "boolean operator is " + boolOperator;
+                Logger::debug(msgStr.c_str());
+                parseNextTerm = true;
+                Logger::debug("LOOPING AGAIN");
+            } else {
+                // no boolean operator found.
+                // if the fq string length is > 0, throw an error.
+                parseNextTerm = false;
+                if (fq.length() > 0) {
+                    // raise error message
+                    Logger::info(
+                            " Parsing error:: expecting boolean operator while parsing terms, not found.");
+                    this->messages->push_back(
+                            make_pair(MessageError,
+                                    "Parse error, expecting boolean operator while parsing filter query terms."));
+                    return false;
+                }
+            }
         }
         return true;
     }
     ~FilterQueryEvaluator() {
         for (std::vector<QueryExpression *>::iterator criterion =
-                criteria.begin(); criterion != criteria.end(); ++criterion) {
-            delete *criterion;
+                expressions.begin(); criterion != expressions.end(); ++criterion) {
+            if(*criterion != NULL){
+                delete *criterion;
+            }
         }
     }
 private:
-    std::vector<QueryExpression *> criteria;
-    BooleanOperation operation;
+    // each expression is one term (one conjuct or disjunc) of the query
+    // for example: for fq= price:[10 TO 100] AND model:JEEP, this vector contains
+    // two elements.
+    std::vector<QueryExpression *> expressions;
+    // for example: for fq= price:[10 TO 100] AND model:JEEP, this member is AND
+    BooleanOperation queryExpressionOperation;
+    // TODO : add comment to explain the purpose
     bool isFqBoolOperatorSet;
     std::vector<std::pair<MessageType, string> > *messages;
+    // TODO : add comment to explain the purpose
     BooleanOperation termFQBooleanOperator;
+
     bool parseFqField(string &input, string &field) {
         boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.
         return doParse(input, re, field);
     }
+    // TODO : change the name of function to parseComplexExpression
     bool parseComplx(string &input, string &output) {
         boost::regex re(COMPLEX_TERM_REGEX_STRING); //TODO: compile this regex when the engine starts.
         return doParse(input, re, output);
@@ -564,11 +599,12 @@ private:
             this->populateFilterQueryTermBooleanOperator(output);
             this->isFqBoolOperatorSet = true;
         }
+        // TODO : add an else statement to add a warning in case operators are not compatible with each other ...
         return hasBooleanOperator;
     }
     void populateFilterQueryTermBooleanOperator(const string &termOperator) {
         /*
-         * populates teh termFQBooleanOperators in container.
+         * populates the termFQBooleanOperators in container.
          */
         // TODO: check for && and || also
         Logger::debug("inside populateFilterQueryTermBooleanOperators.");
@@ -597,36 +633,36 @@ private:
             string &field) {
         bool isParsable = false;
         switch (type) {
-        case FqKeywordTypeRange: {
-            SolrRangeQueryExpression * sre = new SolrRangeQueryExpression(field,
+        case FqKeywordTypeRange:{
+            RangeQueryExpression * sre = new RangeQueryExpression(field,
                     this->messages);
             isParsable = sre->parse(criteriaString);
             if (!isParsable) {
                 return false; // TODO: get the message
             } else {
-                criteria.push_back(sre);
+                expressions.push_back(sre);
                 return true;
             }
         }
-        case FqKeywordTypeAssignment: {
-            SolrAssignmentQueryExpression * sqe =
-                    new SolrAssignmentQueryExpression(field, this->messages);
+        case FqKeywordTypeAssignment:{
+            EqualityQueryExpression * sqe =
+                    new EqualityQueryExpression(field, this->messages);
             isParsable = sqe->parse(criteriaString);
             if (!isParsable) {
-                return false;
+                return false;// TODO: get the message
             } else {
-                criteria.push_back(sqe);
+                expressions.push_back(sqe);
                 return true;
             }
         }
-        case FqKeywordTypeComplex: {
+        case FqKeywordTypeComplex:{
             ComplexQueryExpression * cqe = new ComplexQueryExpression(
                     this->messages);
             isParsable = cqe->parse(criteriaString);
             if (!isParsable) {
-                return false;
+                return false;// TODO: get the message
             } else {
-                criteria.push_back(cqe);
+                expressions.push_back(cqe);
                 return true;
             }
         }
@@ -641,4 +677,4 @@ private:
 }
 }
 
-#endif // _WRAPPER_FILTERQUERYEVALUATOR_H_
+#endif // __WRAPPER_FILTERQUERYEVALUATOR_H__

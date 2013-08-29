@@ -17,8 +17,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
-#define __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H_
+#ifndef __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H__
+#define __UTIL_VARIABLE_ATTRIBUTE_CONTAINER_H__
 
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
@@ -43,8 +43,8 @@ namespace instantsearch {
  * size of the string in 4 bytes and then the bytes of the actual string.
  * Example:
  * fields : price(FLOAT), discount(FLOAT), citation(UNSIGNED), name(TEXT), id(UNSIGNED)
- * sample data :  12.5  , 2              , 34                , johnson      , 253
- * | 4 bytes (12.5) | 4 bytes (2) | 4 bytes (citation) | 4 bytes (7) | 7 bytes (johnson) | 4 bytes (253)
+ * sample data :  12.5  , 43.45              , 34                , johnson      , 253
+ * | 4 bytes (12.5) | 4 bytes (43.45) | 4 bytes (citation) | 4 bytes (7) | 7 bytes (johnson) | 4 bytes (253)
  */
 class VariableLengthAttributeContainer {
 
@@ -95,8 +95,8 @@ private:
 
     // this function tells us the number of bytes used in the data for the attribute starting from startOffset
     // 4 bytes for size is included for TEXT case ...
-    void getSizeOfNonSearchableAttributeValueInData(FilterType type,
-            unsigned startOffset, unsigned & size) const;
+    unsigned getSizeOfNonSearchableAttributeValueInData(FilterType type,
+            unsigned startOffset) const;
 
     // Converting unsigned and char vector together.
     void convertUnsignedToByteArray(unsigned input, Byte * output,
