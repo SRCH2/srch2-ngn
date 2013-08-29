@@ -6768,7 +6768,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 
 	record->setRecordBoost(90);
 
-	index->addRecord(record, 0);
+	index->addRecord(record, analyzer, 0);
 
 	record->clear();
 	record->setPrimaryKey(1002);
@@ -6780,7 +6780,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 
 	record->setRecordBoost(90);
 
-	index->addRecord(record, 0);
+	index->addRecord(record,analyzer, 0);
 
 	record->clear();
 	record->setPrimaryKey(1003);
@@ -6791,7 +6791,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "C");
 
 	record->setRecordBoost(10);
-	index->addRecord(record, 0);
+	index->addRecord(record,analyzer, 0);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -6804,7 +6804,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "ج");
 
 	record->setRecordBoost(90);
-	index->addRecord(record, 0);
+	index->addRecord(record,analyzer, 0);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -6816,7 +6816,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "د");
 
 	record->setRecordBoost(90);
-	index->addRecord(record, 0);
+	index->addRecord(record,analyzer, 0);
 
 	index->commit();
 	index->save();
