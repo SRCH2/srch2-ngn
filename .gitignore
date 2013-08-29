@@ -75,6 +75,7 @@ DartConfiguration.tcl
 # Some ctags/cscope files
 tags
 cscope.out
+cscope.files
 .ycm*
 # test logs
 log.txt

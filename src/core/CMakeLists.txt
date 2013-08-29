@@ -3,12 +3,14 @@
 
 #CHENLI: Disable M1 code for now
 FILE(GLOB SRCH2_LIB_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "index/*.cpp" "ranking/*.cpp" "operation/*.cpp" "postprocessing/*.cpp" "record/*.cpp" "util/*.cpp" "analyzer/*.cpp" "query/*.cpp" "license/*.cpp" "geo/*.cpp")
- 
+
+IF(ANDROID)
+    FILE(GLOB JNI_FILE RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "../jni/*.cpp")
+    SET(SRCH2_LIB_SRC ${SRCH2_LIB_SRC} ${JNI_FILE})
+ENDIF()
+
 # additional includes
 INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES( /usr/lib/
-				  /usr/lib/x86_64-linux-gnu/
-				  /usr/lib64/)
 
 #CHENLI: generating a shared library if needed.
 IF (BUILD_STATIC)
@@ -22,7 +24,7 @@ IF(ENABLE_PROFILER)
 ENDIF()
 
 SET_TARGET_PROPERTIES(srch2_core PROPERTIES COMPILE_FLAGS -fPIC)
-TARGET_LINK_LIBRARIES(srch2_core ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES})				
+TARGET_LINK_LIBRARIES(srch2_core ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES})				
 
 # install
 #INSTALL(TARGETS srch2_core DESTINATION lib)

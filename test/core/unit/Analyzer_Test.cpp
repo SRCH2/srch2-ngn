@@ -36,7 +36,7 @@
 #include "operation/IndexSearcherInternal.h"
 #include "util/Assert.h"
 #include "util/cowvector/compression/cowvector_S16.h"
-
+#include "analyzer/AnalyzerContainers.h"
 using namespace std;
 using namespace srch2::instantsearch;
 
@@ -901,7 +901,7 @@ void testAnalyzerSerilization(string dataDir) {
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     index->commit();
     index->save();
@@ -950,7 +950,7 @@ void testAnalyzerSerilization(string dataDir) {
     record2->setSearchableAttributeValue("article_authors", " and Jack Lennon");
     record2->setSearchableAttributeValue("article_title", "Yeste More");
     record2->setRecordBoost(10);
-    index2->addRecord(record2, 0);
+    index2->addRecord(record2, analyzer2, 0);
 
     index2->commit();
     index2->save();
@@ -981,6 +981,10 @@ int main() {
     Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
 
     string dataDir(getenv("dataDir"));
+
+    SynonymContainer::getInstance().initSynonymContainer(dataDir + "/synonymFile.txt" );
+	StemmerContainer::getInstance().initStemmerContainer(dataDir + "/StemmerHeadwords.txt" );
+	StopWordContainer::getInstance().initStopWordContainer(dataDir + "/stopWordsFile.txt" );
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;

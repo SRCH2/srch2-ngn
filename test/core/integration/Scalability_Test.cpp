@@ -64,7 +64,7 @@ void buildIndex(string dataFile, string indexDir) {
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -135,7 +135,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -345,7 +345,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
 
     cout << "Index loaded." << endl;
 
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     if (!isGeo) {
         warmUp(analyzer, indexSearcher);
@@ -358,6 +358,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     delete indexSearcher;
     delete index;
     delete indexMetaData;
+    delete analyzer;
 
 }
 int main(int argc, char **argv) {

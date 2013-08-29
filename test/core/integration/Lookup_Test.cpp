@@ -80,7 +80,7 @@ void buildIndex(string data_file, string index_dir)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -154,8 +154,9 @@ void updateIndexAndLookupRecord(string data_file, Indexer *index)
 
             cellCounter++;
         }
-
-        index->addRecord(record, 0);
+        Analyzer* analyzer = getAnalyzer();
+        index->addRecord(record, analyzer, 0);
+        delete analyzer;
 
         // test looking up a record that was just inserted and NOT merged yet
         ASSERT(index->lookupRecord(recordToLookup) == LU_TO_BE_INSERTED);

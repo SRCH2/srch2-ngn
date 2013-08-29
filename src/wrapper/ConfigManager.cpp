@@ -704,6 +704,12 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
         parseError << "Path of index files is not set.\n";
         configSuccess = false;
     }
+	if(vm.count("log-level")){
+		loglevel = static_cast<Logger::LogLevel> (vm["log-level"].as<int>());
+	}else{
+		//default level is INFO
+		loglevel = srch2::util::Logger::SRCH2_LOG_INFO;
+	}
 
     if (vm.count("access-log-file")) {
         httpServerAccessLogFile = vm["access-log-file"].as<string>();
@@ -711,12 +717,6 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
         parseError << "httpServerAccessLogFile is not set.\n";
     }
 
-    if (vm.count("log-level")) {
-        loglevel = static_cast<Logger::LogLevel>(vm["log-level"].as<int>());
-    } else {
-        //default name is log.txt
-        httpServerAccessLogFile = "log.txt";
-    }
 
     if (vm.count("error-log-file")) {
         httpServerErrorLogFile = vm["error-log-file"].as<string>();

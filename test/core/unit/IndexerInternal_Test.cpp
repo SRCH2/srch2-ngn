@@ -63,14 +63,14 @@ void testIndexData()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    indexData->_addRecord(record);
+    indexData->_addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
     record->setRecordBoost(90);
-    indexData->_addRecord(record);
+    indexData->_addRecord(record, analyzer);
 
     indexData->_commit();
     //index->print_Index();
@@ -80,7 +80,7 @@ void testIndexData()
     record->setSearchableAttributeValue(0, "Jimaai Hendaarix");
     record->setSearchableAttributeValue(1, "Littaale waaing");
     record->setRecordBoost(90);
-    indexData->_addRecord(record);
+    indexData->_addRecord(record, analyzer);
 
     //index->print_Index();
 
@@ -208,7 +208,7 @@ void test1()
         record->setSearchableAttributeValue("article_title", title);
 
         record->setRecordBoost(rand() % 100);
-        index->addRecord(record, 0);
+        index->addRecord(record, analyzer, 0);
 
         // for creating another record
         record->clear();
@@ -249,14 +249,14 @@ void addRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     index->commit();
     //index->commit();
@@ -269,7 +269,7 @@ void addRecords()
     record->setSearchableAttributeValue(0, "Jimaai Hendaarix");
     record->setSearchableAttributeValue(1, "Littaale waaing");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     //index->print_Index();
 
@@ -287,6 +287,9 @@ void test3()
     
     /// Test the Trie
 
+    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+       		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     string INDEX_DIR = ".";
@@ -301,7 +304,7 @@ void test3()
     record->setSearchableAttributeValue(0, "steve jobs");
     record->setSearchableAttributeValue(1, "stanford speech");
     record->setRecordBoost(90);
-    indexer->addRecord(record, 0);
+    indexer->addRecord(record, analyzer, 0);
     indexer->merge_ForTesting();
 
 /*    // create an index searcher
@@ -319,6 +322,7 @@ void test3()
     delete indexSearcher;*/
 
     delete indexer;
+    delete analyzer;
 }
 
 int main(int argc, char *argv[])

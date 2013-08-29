@@ -61,7 +61,7 @@ bool parsePoint(string &line, Point &pt)
 	return true;
 }
 
-void addLocationRecordWithSingleAttr(vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, unsigned primaryKey, const string &firstAttribute, double pointX, double pointY)
+void addLocationRecordWithSingleAttr(vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema,Analyzer* analyzer, unsigned primaryKey, const string &firstAttribute, double pointX, double pointY)
 {
     if (pointX > 200.0 || pointX < -200.0
         || pointY > 200.0 || pointY < -200.0)
@@ -76,7 +76,7 @@ void addLocationRecordWithSingleAttr(vector< pair<string, pair<string, Point> > 
 	record->setSearchableAttributeValue(0, firstAttribute);
 	record->setLocationAttributeValue(point.x, point.y);
 
-	indexer->addRecord(record, 0);
+	indexer->addRecord(record, analyzer, 0);
 
     // store the inserted record to search later
     pair<string, Point> recordToSearch (pkey_string.str(), point);
@@ -85,7 +85,7 @@ void addLocationRecordWithSingleAttr(vector< pair<string, pair<string, Point> > 
 	delete record;
 }
 
-void readSingleAttrRecordsFromFile(vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, const string &directoryName)
+void readSingleAttrRecordsFromFile(vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer, const string &directoryName)
 {
     string primaryKeysFile = directoryName + "/primaryKeys.txt";
     string pointsFile = directoryName + "/points.txt";
@@ -127,7 +127,7 @@ void readSingleAttrRecordsFromFile(vector< pair<string, pair<string, Point> > > 
         (void)retval;
 
         //addLocationRecord(indexer, schema, primaryKey, firstAttrLine, secondAttrLine, point.x, point.y);
-        addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, primaryKey, firstAttrLine, point.x, point.y);
+        addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, primaryKey, firstAttrLine, point.x, point.y);
     }
 }
 
@@ -259,9 +259,9 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
  *
  * Add a record:                      "zooa"           (900,2)            add to o-filter "z" prefix, now 11 records, threshold is not exceeded
  */
-void test1 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test1 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer *analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10001, "zooa", 44.968731, -189.636891); // 900 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10001, "zooa", 44.968731, -189.636891); // 900 root
 }
 
 /*
@@ -305,27 +305,27 @@ void test1 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Index
  *
  * Add 9 records:                     "zoob"           (907-915,6)        add to o-filter "zo" prefix, now 16 records, threshold is not exceeded
  */
-void test2 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test2 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10002, "zoob", 42.084911, -80.146126); //901 root
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10003, "zoob", 42.320222, -71.592598); //902 root
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10004, "zoob", 39.955758, -82.719177); //903 root
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10005, "zoob", 41.667911, -71.53612); //904 root
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10006, "zoob", 29.743723, -94.96186); //905 root
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10007, "zoob", 40.725395, -73.976924); //906 root "z" too many, split, recover "z" on root's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10002, "zoob", 42.084911, -80.146126); //901 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10003, "zoob", 42.320222, -71.592598); //902 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10004, "zoob", 39.955758, -82.719177); //903 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10005, "zoob", 41.667911, -71.53612); //904 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10006, "zoob", 29.743723, -94.96186); //905 root
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10007, "zoob", 40.725395, -73.976924); //906 root "z" too many, split, recover "z" on root's children quad nodes o-filter
                                                                                                             //    root->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10008, "zoob", 41.857385, -69.970816); //907 root->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10009, "zoob", 38.230989, -85.696596); //908 root->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10010, "zoob", 35.939134, -80.056366); //909 root->6 "z" too many, split, recover "z" on 6's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10008, "zoob", 41.857385, -69.970816); //907 root->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10009, "zoob", 38.230989, -85.696596); //908 root->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10010, "zoob", 35.939134, -80.056366); //909 root->6 "z" too many, split, recover "z" on 6's children quad nodes o-filter
                                                                                                             //            but because already has "z"'s descendent prefixes on root, we can't build any o-filter here
                                                                                                             //            other than "zo", also shouldn't build "za", "zb"...
                                                                                                             //    6->1    on o-filter of "z", which was just recovered
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10011, "zoob", 37.112809, -94.480568); //910 root->6->1
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10012, "zoob", 41.119993, -81.074922); //911 root->6->1
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10013, "zoob", 39.863316, -74.95829); //912 root->6->5
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10014, "zoob", 39.895954, -76.613581); //913 root->6->1
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10015, "zoob", 41.511911, -87.25581); //914 root->6->1
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10016, "zoob", 33.846493, -84.249827); //915 root->6->1 "z" too many, split, recover "z" on 1's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10011, "zoob", 37.112809, -94.480568); //910 root->6->1
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10012, "zoob", 41.119993, -81.074922); //911 root->6->1
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10013, "zoob", 39.863316, -74.95829); //912 root->6->5
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10014, "zoob", 39.895954, -76.613581); //913 root->6->1
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10015, "zoob", 41.511911, -87.25581); //914 root->6->1
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10016, "zoob", 33.846493, -84.249827); //915 root->6->1 "z" too many, split, recover "z" on 1's children quad nodes o-filter
                                                                                                             //               but because already has "z"'s descendent prefixes on root, we can't build any o-filter here
                                                                                                             //    1->9 prefix "z" is new for 9, it's not recovered ealier, so we build new o-filter for "z" here
 }
@@ -347,9 +347,9 @@ void test2 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Index
  *                                    "zoob"             901-915
  * ----------------
  */
-void test3 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test3 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10017, "zooa", 42.313758, -71.224739); //916 root    "zo" too many, split, recover "zo" on root's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10017, "zooa", 42.313758, -71.224739); //916 root    "zo" too many, split, recover "zo" on root's children quad nodes o-filter
                                                                                                             //    root->6 on o-filter of "zo"
                                                                                                             //    6->5 on o-filter of "z"
 }
@@ -366,32 +366,32 @@ void test3 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Index
  *
  * ----------------
  */
-void test4 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test4 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10018, "zoob", 41.032842, -85.112838); //917 root->6 "zo" too many, split, recover "zo" on 6's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10018, "zoob", 41.032842, -85.112838); //917 root->6 "zo" too many, split, recover "zo" on 6's children quad nodes o-filter
                                                                                                             //            but because already has "zo"'s descendent prefixes on root, we can't build any o-filter here
                                                                                                             //    6->1    on o-filter of "zo"
                                                                                                             //    1->10   on o-filter of "z"
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10019, "zoob", 39.784264, -196.90046); //918 root    "zoob" too many, and doesn't have any descendent prefix to put on o-filter here
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10019, "zoob", 39.784264, -196.90046); //918 root    "zoob" too many, and doesn't have any descendent prefix to put on o-filter here
                                                                                                             //            recover "zoob" on root's children quad nodes o-filter (if no ancestor prefixes are already there)
                                                                                                             //    root->2 on o-filter of "z"
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10020, "zooa", 29.720766, -95.644299); //919 root->6->1->0
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10021, "zooa", 42.006142, -87.723387); //920 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10022, "zooa", 39.932171, -91.367813); //921 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10023, "zooa", 40.651611, -74.323787); //922 root->6->5
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10024, "zooa", 41.387675, -88.436038); //923 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10025, "zooa", 41.65234, -93.620104); //924 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10026, "zooa", 32.475117, -84.87687); //925 root->6->1 "zo" too many, split, has "zooa" on root's o-filter, so can only build o-filter for "zoob" here
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10020, "zooa", 29.720766, -95.644299); //919 root->6->1->0
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10021, "zooa", 42.006142, -87.723387); //920 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10022, "zooa", 39.932171, -91.367813); //921 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10023, "zooa", 40.651611, -74.323787); //922 root->6->5
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10024, "zooa", 41.387675, -88.436038); //923 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10025, "zooa", 41.65234, -93.620104); //924 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10026, "zooa", 32.475117, -84.87687); //925 root->6->1 "zo" too many, split, has "zooa" on root's o-filter, so can only build o-filter for "zoob" here
                                                                                                            //               recover "zo" on 1's children quad nodes o-filter (if no ancestor prefixes are already there)
                                                                                                            //    1->9       on o-filter of "z"
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10027, "zooa", 41.55043, -88.102959);  //926 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10028, "zooa", 37.086221, -76.470469); //927 root->6->1->13
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10029, "zooa", 39.754002, -75.129142); //928 root->6->1->14
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10030, "zooa", 40.844204, -73.986604); //929 root->6->5
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10031, "zooa", 38.59078, -92.2489); //930 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10032, "zooa", 38.969364, -77.080132); //931 root->6->1->14
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10033, "zooa", 41.89024, -88.00116); //932 root->6->1->6
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10034, "zooa", 27.624649, -80.436362); //933 root "zooa" too many, and doesn't have any descendent prefix to put on o-filter here
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10027, "zooa", 41.55043, -88.102959);  //926 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10028, "zooa", 37.086221, -76.470469); //927 root->6->1->13
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10029, "zooa", 39.754002, -75.129142); //928 root->6->1->14
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10030, "zooa", 40.844204, -73.986604); //929 root->6->5
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10031, "zooa", 38.59078, -92.2489); //930 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10032, "zooa", 38.969364, -77.080132); //931 root->6->1->14
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10033, "zooa", 41.89024, -88.00116); //932 root->6->1->6
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10034, "zooa", 27.624649, -80.436362); //933 root "zooa" too many, and doesn't have any descendent prefix to put on o-filter here
                                                                                                             // recover "zooa" on root's children quad nodes o-filter (if no ancestor prefixes are already there)
                                                                                                             // root->6 "zooa" too many, and doesn't have any descendent prefix to put on o-filter here
                                                                                                             // recover "zooa" on 6's children quad nodes o-filter  (if no ancestor prefixes are already there)
@@ -399,114 +399,114 @@ void test4 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Index
                                                                                                             // 1->12
 }
 
-void test5 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test5 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99901, "zoo", 46.725251, -122.954566); //934 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99902, "zoo", 46.735251, -122.954566); //935 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99903, "zoo", 46.745251, -122.954566); //936 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99904, "zoo", 46.755251, -122.954566); //937 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99905, "zoo", 46.765251, -122.954566); //938 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99906, "zoo", 46.775251, -122.954566); //939 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99907, "zoo", 46.785251, -122.954566); //940 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99908, "zoo", 46.795251, -122.954566); //941 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99909, "zoo", 46.705251, -122.954566); //942 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99910, "zoo", 46.715251, -122.964566); //943 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99911, "zoo", 46.715251, -122.974566); //944 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99912, "zoo", 46.715251, -122.984566); //945 root->2
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99913, "zoo", 46.715251, -122.994566); //946 root->2 "z" too many, split, recover "z" on 2's children quad nodes o-filter
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99901, "zoo", 46.725251, -122.954566); //934 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99902, "zoo", 46.735251, -122.954566); //935 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99903, "zoo", 46.745251, -122.954566); //936 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99904, "zoo", 46.755251, -122.954566); //937 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99905, "zoo", 46.765251, -122.954566); //938 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99906, "zoo", 46.775251, -122.954566); //939 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99907, "zoo", 46.785251, -122.954566); //940 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99908, "zoo", 46.795251, -122.954566); //941 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99909, "zoo", 46.705251, -122.954566); //942 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99910, "zoo", 46.715251, -122.964566); //943 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99911, "zoo", 46.715251, -122.974566); //944 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99912, "zoo", 46.715251, -122.984566); //945 root->2
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99913, "zoo", 46.715251, -122.994566); //946 root->2 "z" too many, split, recover "z" on 2's children quad nodes o-filter
                                                                                                             //    2->13 on o-filter of "z", which was just recovered
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99914, "zoo", 46.715251, -122.904566); //947 root->2->13
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99915, "zoo", 46.715251, -122.914566); //948 root->2 "zo" too many, split, recover
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99914, "zoo", 46.715251, -122.904566); //947 root->2->13
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99915, "zoo", 46.715251, -122.914566); //948 root->2 "zo" too many, split, recover
                                                                                                             //    2->13 "z"  too many, split, recover "z" on 13's children quad nodes o-filter
                                                                                                             //    13->3 on o-filter of "z", which was just recovered
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99916, "zoo", 46.715251, -122.924566); //949 root->2->13->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 99917, "zoo", 46.715251, -122.934566); //950 root->2->13 "zo" too many, "zoo" also too many
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99916, "zoo", 46.715251, -122.924566); //949 root->2->13->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 99917, "zoo", 46.715251, -122.934566); //950 root->2->13 "zo" too many, "zoo" also too many
                                                                                                             //    13->3 "zo" too many, "zoo" also too many
                                                                                                             //    3->5(leaf) "zo" too many, "zoo" also too many
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10035, "zooa", 46.715251, -122.954566); //951 root->2 on o-filter of "zooa"
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10035, "zooa", 46.715251, -122.954566); //951 root->2 on o-filter of "zooa"
                                                                                                              //    2->13->3->5
 }
 
-void test6 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test6 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10036, "zooa", 34.004789, -117.328692); //952 root->2 on o-filter of "zooa"
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10036, "zooa", 34.004789, -117.328692); //952 root->2 on o-filter of "zooa"
                                                                                                              //    2->13->5 on o-filter of "z"
 }
 
-void test7 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test7 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10037, "zooa", -150.0, 150.0); //953 root->12
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10038, "zooa", -50.0, 150.0); //954 root->13
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10039, "zooa", 50.0, 150.0); //955 root->14
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10040, "zooa", 150.0, 150.0); //956 root->15
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10041, "zooa", -150.0, 50.0); //957 root->8
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10042, "zooa", -50.0, 50.0); //958 root->9
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10043, "zooa", 50.0, 50.0); //959 root->10
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10044, "zooa", 150.0, 50.0); //960 root->11
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10045, "zooa", -150.0, -50.0); //961 root->4
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10046, "zooa", -50.0, -50.0); //962 root->5
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10047, "zooa", 150.0, -50.0); //963 root->7
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10048, "zooa", -150.0, -150.0); //964 root->0
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10049, "zooa", -50.0, -150.0);  //965 root->1
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10050, "zooa", 150.0, -150.0); //966 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10051, "zooa", 151.0, -151.0); //967 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10037, "zooa", -150.0, 150.0); //953 root->12
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10038, "zooa", -50.0, 150.0); //954 root->13
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10039, "zooa", 50.0, 150.0); //955 root->14
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10040, "zooa", 150.0, 150.0); //956 root->15
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10041, "zooa", -150.0, 50.0); //957 root->8
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10042, "zooa", -50.0, 50.0); //958 root->9
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10043, "zooa", 50.0, 50.0); //959 root->10
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10044, "zooa", 150.0, 50.0); //960 root->11
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10045, "zooa", -150.0, -50.0); //961 root->4
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10046, "zooa", -50.0, -50.0); //962 root->5
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10047, "zooa", 150.0, -50.0); //963 root->7
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10048, "zooa", -150.0, -150.0); //964 root->0
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10049, "zooa", -50.0, -150.0);  //965 root->1
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10050, "zooa", 150.0, -150.0); //966 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10051, "zooa", 151.0, -151.0); //967 root->3
 }
 
-void test8 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test8 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10052, "zooa", 150.1, -150.0); //968 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10053, "zooa", 150.2, -150.0); //969 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10054, "zooa", 150.3, -150.0); //970 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10055, "zooa", 150.4, -150.0); //971 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10056, "zooa", 150.5, -150.0); //972 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10057, "zooa", 150.0, -150.1); //973 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10058, "zooa", 150.0, -150.2); //974 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10059, "zooa", 151.0, -151.3); //975 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10060, "zooa", 151.0, -151.4); //976 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10061, "zooa", 151.0, -151.5); //977 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10062, "zooa", 151.6, -151.0); //978 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10063, "zooa", 151.7, -151.0); //979 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10064, "zooa", 151.8, -151.0); //980 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10065, "zooa", 151.9, -151.0); //981 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10066, "zooa", 151.0, -151.6); //982 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10067, "zooa", 151.0, -151.7); //983 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10068, "zooa", 151.0, -151.8); //984 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10069, "zooa", 151.0, -151.9); //985 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10070, "zooa", 151.0, -150.1); //986 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10071, "zooa", 151.0, -150.2); //987 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10072, "zooa", 151.0, -150.3); //988 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10073, "zooa", 151.0, -150.4); //989 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10074, "zooa", 151.0, -150.5); //990 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10075, "zooa", 151.0, -150.6); //991 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10076, "zooa", 151.0, -150.7); //992 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10077, "zooa", 151.0, -150.8); //993 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10078, "zooa", 151.0, -150.9); //994 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10079, "zooa", 150.6, -151.6); //995 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10080, "zooa", 150.7, -151.6); //996 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10081, "zooa", 150.8, -151.6); //997 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10082, "zooa", 150.9, -151.6); //998 root->3
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10083, "zooa", 150.9, -150.6); //999 root->3 split the leaf node 
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10052, "zooa", 150.1, -150.0); //968 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10053, "zooa", 150.2, -150.0); //969 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10054, "zooa", 150.3, -150.0); //970 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10055, "zooa", 150.4, -150.0); //971 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10056, "zooa", 150.5, -150.0); //972 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10057, "zooa", 150.0, -150.1); //973 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10058, "zooa", 150.0, -150.2); //974 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10059, "zooa", 151.0, -151.3); //975 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10060, "zooa", 151.0, -151.4); //976 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10061, "zooa", 151.0, -151.5); //977 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10062, "zooa", 151.6, -151.0); //978 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10063, "zooa", 151.7, -151.0); //979 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10064, "zooa", 151.8, -151.0); //980 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10065, "zooa", 151.9, -151.0); //981 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10066, "zooa", 151.0, -151.6); //982 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10067, "zooa", 151.0, -151.7); //983 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10068, "zooa", 151.0, -151.8); //984 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10069, "zooa", 151.0, -151.9); //985 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10070, "zooa", 151.0, -150.1); //986 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10071, "zooa", 151.0, -150.2); //987 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10072, "zooa", 151.0, -150.3); //988 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10073, "zooa", 151.0, -150.4); //989 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10074, "zooa", 151.0, -150.5); //990 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10075, "zooa", 151.0, -150.6); //991 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10076, "zooa", 151.0, -150.7); //992 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10077, "zooa", 151.0, -150.8); //993 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10078, "zooa", 151.0, -150.9); //994 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10079, "zooa", 150.6, -151.6); //995 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10080, "zooa", 150.7, -151.6); //996 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10081, "zooa", 150.8, -151.6); //997 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10082, "zooa", 150.9, -151.6); //998 root->3
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10083, "zooa", 150.9, -150.6); //999 root->3 split the leaf node
                                                                                                     //    "z", "zo", "zooa" all too many, don't build any o-filter
                                                                                                     //    3->6 (leaf)
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10084, "zoob", 150.7, -150.6); //1000 root->3 create o-filter for "zoob"
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10084, "zoob", 150.7, -150.6); //1000 root->3 create o-filter for "zoob"
                                                                                                     //    3->6 (leaf)
 }
 
 // start to test the assign-new-keyword-ids functionality
-void test9 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema)
+void test9 (vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Schema *schema, Analyzer* analyzer)
 {
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10085, "zzzzzzzzzzzzzzz", 150.9, -151.7); //1001 root create o-filter for new keyword prefix "zzzzzzzzzzzzzzz" 
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10085, "zzzzzzzzzzzzzzz", 150.9, -151.7); //1001 root create o-filter for new keyword prefix "zzzzzzzzzzzzzzz"
                                                                                                                //     root->3->6 (leaf)
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10086, "zzzzzzzzzzzzzzz1", 150.9, -152.0); //1002
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10087, "zzzzzzzzzzzzzzz2", 150.9, -152.1); //1003
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10088, "zzzzzzzzzzzzzzz3", 150.9, -152.2); //1004
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10089, "zzzzzzzzzzzzzzz4", 150.9, -152.3); //1005
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10090, "zzzzzzzzzzzzzzz5", 150.9, -152.4); //1006
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10091, "zzzzzzzzzzzzzzz6", 150.9, -152.5); //1007
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10092, "zzzzzzzzzzzzzzz7", 150.9, -152.6); //1008
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10093, "zzzzzzzzzzzzzzz8", 150.9, -152.7); //1009
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10094, "zzzzzzzzzzzzzzz9", 150.9, -152.8); //1010
-   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10095, "zzzzzzzzzzzzzzz0", 150.9, -152.9); //1011
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10086, "zzzzzzzzzzzzzzz1", 150.9, -152.0); //1002
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10087, "zzzzzzzzzzzzzzz2", 150.9, -152.1); //1003
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10088, "zzzzzzzzzzzzzzz3", 150.9, -152.2); //1004
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10089, "zzzzzzzzzzzzzzz4", 150.9, -152.3); //1005
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10090, "zzzzzzzzzzzzzzz5", 150.9, -152.4); //1006
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10091, "zzzzzzzzzzzzzzz6", 150.9, -152.5); //1007
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10092, "zzzzzzzzzzzzzzz7", 150.9, -152.6); //1008
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10093, "zzzzzzzzzzzzzzz8", 150.9, -152.7); //1009
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10094, "zzzzzzzzzzzzzzz9", 150.9, -152.8); //1010
+   addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10095, "zzzzzzzzzzzzzzz0", 150.9, -152.9); //1011
 
 }
 
@@ -514,23 +514,23 @@ void testInsertion(vector< pair<string, pair<string, Point> > > &recordsToSearch
 {
     /// read, insert and search new records
 
-    test1(recordsToSearch, indexer, schema);
+    test1(recordsToSearch, indexer, schema, analyzer);
 
-    test2(recordsToSearch, indexer, schema);
+    test2(recordsToSearch, indexer, schema, analyzer);
 
-    test3(recordsToSearch, indexer, schema);
+    test3(recordsToSearch, indexer, schema, analyzer);
 
-    test4(recordsToSearch, indexer, schema);
+    test4(recordsToSearch, indexer, schema, analyzer);
 
-    test5(recordsToSearch, indexer, schema);
+    test5(recordsToSearch, indexer, schema, analyzer);
 
-    test6(recordsToSearch, indexer, schema);
+    test6(recordsToSearch, indexer, schema, analyzer);
 
-    test7(recordsToSearch, indexer, schema);
+    test7(recordsToSearch, indexer, schema, analyzer);
 
-    test8(recordsToSearch, indexer, schema);
+    test8(recordsToSearch, indexer, schema, analyzer);
 
-    test9(recordsToSearch, indexer, schema);
+    test9(recordsToSearch, indexer, schema, analyzer);
 
     sleep(mergeEveryNSeconds + 1);
     searchRecords(recordsToSearch, indexer, analyzer);
@@ -572,15 +572,15 @@ void testSmallInitLargeInsertion(const string directoryName)
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
-    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10000001, "gravity paul", 29.743723, -94.96186);
-    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10000002, "god the devil and the world", 42.084911, -80.146126);
-    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10000003, "juliet", 42.320222, -71.592598);
-    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10000004, "lie to me", 39.955758, -82.719177);
-    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, 10000005, "afro", 41.667911, -71.53612);
+    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000001, "gravity paul", 29.743723, -94.96186);
+    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000002, "god the devil and the world", 42.084911, -80.146126);
+    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000003, "juliet", 42.320222, -71.592598);
+    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000004, "lie to me", 39.955758, -82.719177);
+    addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000005, "afro", 41.667911, -71.53612);
     indexer->commit();
     searchRecords(recordsToSearch, indexer, analyzer);
     cout << "Small init index built correctly." << endl;
-    readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, directoryName+"/geo_update/aLotRecords");
+    readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, analyzer, directoryName+"/geo_update/aLotRecords");
     //readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, directoryName+"/geo_update/xrecords");
     sleep(mergeEveryNSeconds + 1);
     searchRecords(recordsToSearch, indexer, analyzer);
@@ -631,7 +631,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     vector< pair<string, pair<string, Point> > > recordsToSearch;
 
     // Read init data
-    readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, directoryName+"/geo_update/900records");
+    readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, analyzer, directoryName+"/geo_update/900records");
 
     // Commit the index
     indexer->commit();

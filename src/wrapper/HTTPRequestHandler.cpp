@@ -637,7 +637,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataContainerConf,
-            *(server->indexer->getSchema()), *(server->indexer->getAnalyzer()),
+            *(server->indexer->getSchema()), *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     qr.rewrite();
 
