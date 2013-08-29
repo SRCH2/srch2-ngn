@@ -30,6 +30,7 @@
 #include <string>
 #include <fstream>
 #include "util/Assert.h"
+#include "analyzer/AnalyzerContainers.h"
 
 using namespace std;
 using srch2::util::Logger;
@@ -40,87 +41,15 @@ namespace instantsearch {
 SynonymFilter::SynonymFilter(TokenStream * tokenStream,
 		const std::string &synonymFilterFilePath,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-		TokenFilter(tokenStream), synonymDelimiter("=>") {
+		TokenFilter(tokenStream), synonymContainer(SynonymContainer::getInstance())  {
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
-	this->createMap(synonymFilterFilePath); // construct the synoymMap
 	this->keepOriginFlag = synonymKeepOriginFlag;
-}
-
-void SynonymFilter::createMap(const std::string &synonymFilePath) {
-	// using file path to create an ifstream object
-	std::ifstream input(synonymFilePath.c_str());
-	// Reads the map file line by line and fills the map
-	std::string line;
-	while (getline(input, line)) {
-		/*
-		 * for example we have "A=>B" in the file
-		 * "A" is leftHandSide
-		 * "B" is rightHandSide
-		 */
-		std::size_t index = line.find(this->synonymDelimiter);
-		// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
-		if (index <= 0) {
-			continue;
-		}
-		string leftHandSide = line.substr(0, index);
-		string rightHandSide = line.substr(index + this->synonymDelimiter.length());
-
-		/*
-		 * This part will put the whole lefthandside into the map.
-		 * It checks if it already exists or not.
-		 * If the lefthandside is already there: only if it was prefix_only we will change it to prefix_and_complete, Otherwise, we won't touch it.
-		 * If the lefthandside is not already there: it inserst it into the map.
-		 */
-		std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
-		if (pos != this->synonymMap.end()) {
-			if (this->synonymMap[leftHandSide].first == SYNONYM_PREFIX_ONLY) {
-				ASSERT(this->synonymMap[leftHandSide].second == "");
-				this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-				this->synonymMap[leftHandSide].second =  rightHandSide;
-			}
-		} else {
-			this->synonymMap.insert(make_pair(leftHandSide, make_pair(SYNONYM_COMPLETE_ONLY, rightHandSide)));
-		}
-		ASSERT(this->synonymMap[leftHandSide].first != SYNONYM_NOT_PREFIX_NOT_COMPLETE);
-
-		/*
-		 * Here will add the sub sequence of Tokens to the map.
-		 * For example, if the lefthandside is "new york city", the whole string is already inserted into the map.
-		 * Now we should take care of "new york" and "new"
-		 * In the while() loop, first "new york" will be added and then "new"
-		 * For each of them, if it is already there and its flag is complete_only, we change it to prefix_and_complete and if it is not there, we add it as prefix_only
-		 */
-		std::size_t found ;
-		while (true) {
-			found = leftHandSide.rfind(" ");
-			if (found == std::string::npos) {
-				break;
-			}
-			leftHandSide = leftHandSide.substr(0, found);
-			std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
-			if (pos != this->synonymMap.end()) {
-				if (this->synonymMap[leftHandSide].first == SYNONYM_COMPLETE_ONLY) {
-					ASSERT(this->synonymMap[leftHandSide].second != ""); // unless the righthandsde is empty in the synonym file
-					this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-				}
-			} else {
-				this->synonymMap.insert(make_pair(leftHandSide, make_pair(SYNONYM_PREFIX_ONLY, "")));
-			}
-			ASSERT(this->synonymMap[leftHandSide].first != SYNONYM_NOT_PREFIX_NOT_COMPLETE);
-		}
-
-	}
 }
 
 
 pair<SynonymTokenType, std::string> SynonymFilter::getValuePairOf(const std::string &key) {
-	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(key);
 	pair<SynonymTokenType, std::string> valuePair;
-	if (pos != this->synonymMap.end()) {
-		valuePair = make_pair(pos->second.first, pos->second.second);
-	} else {
-		valuePair = make_pair(SYNONYM_NOT_PREFIX_NOT_COMPLETE, "");
-	}
+	synonymContainer.getValue(key, valuePair);
 	return valuePair;
 }
 
@@ -138,22 +67,23 @@ void SynonymFilter::pushSynonymsOfExistingTokensInEmitBuffer() {
 				tempToken += this->tokenBuffer[j] + " ";
 			}
 			tempToken = tempToken.substr(0, tempToken.length() - 1);
-			std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(tempToken);
-			if (pos != this->synonymMap.end()) {
-				if (this->synonymMap[tempToken].first != SYNONYM_PREFIX_ONLY) {
-					if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
-						for (int k = 0; k <=i; k++) {
-							this->emitBuffer.push_back(this->tokenBuffer[k]);
-						}
+			pair<SynonymTokenType, std::string> valuePair;
+			synonymContainer.getValue(tempToken, valuePair);
+
+			if (valuePair.first == SYNONYM_COMPLETE_ONLY || valuePair.first == SYNONYM_PREFIX_AND_COMPLETE) {
+				if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word
+					for (int k = 0; k <=i; k++) {
+						this->emitBuffer.push_back(this->tokenBuffer[k]);
 					}
-					this->emitBuffer.push_back(this->synonymMap[tempToken].second);
-					for (int k = i; k >= 0; k--) {
-						this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
-						flag = true;
-					}
-					break;
 				}
+				this->emitBuffer.push_back(valuePair.second);
+				for (int k = i; k >= 0; k--) {
+					this->tokenBuffer.erase(this->tokenBuffer.begin() + k);
+					flag = true;
+				}
+				break;
 			}
+
 		}
 		if (!flag) {
 			this->emitBuffer.push_back(this->tokenBuffer[0]);

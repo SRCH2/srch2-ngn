@@ -37,44 +37,12 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 	{
 		case srch2http::INDEXCREATE:
 		{
-
-
-			// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
-			StemmerNormalizerFlagType stemmerFlag;
-			// gets the stem flag and set the stemType
-			if (indexDataContainerConf->getStemmerFlag()) {
-				stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
-			} else {
-				stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
-			}
-			// This flag shows if we need to keep the origin word or not.
-			SynonymKeepOriginFlag synonymKeepOriginFlag;
-			// gets the stem flag and set the stemType
-			if (indexDataContainerConf->getSynonymKeepOrigFlag()) {
-				synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
-			} else {
-				synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
-			}
-
-			// append the stemmer file to the install direcrtory
-			std::string stemmerFilterFilePath = indexDataContainerConf->getInstallDir() + indexDataContainerConf->getStemmerFile();
-			// gets the path of stopFilter
-			std::string stopFilterFilePath = indexDataContainerConf->getStopFilePath();
-			// gets the path of stopFilter
-			std::string  synonymFilterFilePath = indexDataContainerConf->getSynonymFilePath();
-
-			// Create an analyzer
-			srch2is::Analyzer *analyzer = new Analyzer(stemmerFlag,
-					stemmerFilterFilePath,
-					stopFilterFilePath,
-					synonymFilterFilePath,
-					synonymKeepOriginFlag,
-					indexDataContainerConf->getRecordAllowedSpecialCharacters());
-
+			AnalyzerHelper::initializeAnalyzerResource(this->indexDataContainerConf);
 			// Create a schema to the data source definition in the Srch2ServerConf
 			srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataContainerConf);
-
+			Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataContainerConf);
 			indexer = Indexer::create(indexMetaData, analyzer, schema);
+			delete analyzer;
 			switch(indexDataContainerConf->getDataSourceType())
 			{
 				case srch2http::FILEBOOTSTRAP_TRUE:
@@ -90,13 +58,15 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
                     Logger::console("Creating new empty index");
 				}
 			};
+			AnalyzerHelper::saveAnalyzerResource(this->indexDataContainerConf);
 			break;
 		}
 		case srch2http::INDEXLOAD:
 		{
 			// Load from index-dir directly, skip creating an index initially.
 			indexer = Indexer::load(indexMetaData);
-
+			// Load Analayzer data from disk
+			AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
 			bool isAttributeBasedSearch = (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX);
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
 			{

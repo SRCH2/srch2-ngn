@@ -30,6 +30,7 @@
 #include <string.h>
 #include <fstream>
 #include "util/Logger.h"
+#include "analyzer/AnalyzerContainers.h"
 
 using namespace std;
 using srch2::util::Logger;
@@ -38,9 +39,9 @@ namespace srch2 {
 namespace instantsearch {
 
 StopFilter::StopFilter(TokenStream *tokenStream,
-		std::string &stopFilterFilePath) : TokenFilter(tokenStream) {
+		std::string &stopFilterFilePath) : TokenFilter(tokenStream),
+				stopWordsContainer(StopWordContainer::getInstance()) {
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
-	this->createStopWordList(stopFilterFilePath); // construct the stopWordDictionary
 }
 
  /*
@@ -48,8 +49,7 @@ StopFilter::StopFilter(TokenStream *tokenStream,
  * */
 bool StopFilter::isStopWord(const std::string &token) const {
 	// returns true if the given token is a stop word, else it reaturns false
-	return (std::find(this->stopWordsVector.begin(),
-			this->stopWordsVector.end(), token) != this->stopWordsVector.end());
+	return stopWordsContainer.contains(token);
 }
 
 bool StopFilter::processToken() {
@@ -70,23 +70,5 @@ bool StopFilter::processToken() {
 
 StopFilter::~StopFilter() {
 }
-
-
- void StopFilter::createStopWordList(const std::string &stopWordsFilePath) {
-	std::string str;
-	//  using file path to create an ifstream object
-	std::ifstream input(stopWordsFilePath.c_str());
-	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
-        Logger::error("The stop words list file %s could not open.", stopWordsFilePath.c_str());
-		return;
-	}
-	//	Reads the stop word files line by line and fills the vector
-	while (getline(input, str)) {
-		this->stopWordsVector.push_back(str);
-	}
-}
-
-
 
 }}

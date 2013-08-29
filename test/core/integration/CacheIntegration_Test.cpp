@@ -152,7 +152,7 @@ int main(int argc, char **argv)
            Indexer *indexer1 = Indexer::load(indexMetaData1);
         Indexer *indexer2 = Indexer::load(indexMetaData2);
         
-        const Analyzer *analyzer = indexer1->getAnalyzer();
+        const Analyzer *analyzer = getAnalyzer();
 
         IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
         IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
@@ -184,6 +184,7 @@ int main(int argc, char **argv)
         delete indexer1;
         cout << "done1" << endl;
         delete indexer2;
+        delete analyzer;
 
     }
     cout<<"Cache Integration tests Succesful!!"<<endl;

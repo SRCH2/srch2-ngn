@@ -34,7 +34,7 @@ struct TokenDetails {
 	int endStringOffset; /* offset to the end of the string */
 	int stringOffset; /* a general offset into the string */
 };
-
+class StemmerContainer;
 class StemmerFilter: public TokenFilter {
 public:
 	/*
@@ -46,7 +46,7 @@ public:
 	/*
 	 * searchHeadWords() search if the given string is present in the HeadWordsDictionary \
      * */
-	int searchWord(const std::string &search) const;
+	bool searchWord(const std::string &search) const;
 
 	/*
 	 * input : Token to be stemmed  Output : StemmedToken
@@ -61,18 +61,8 @@ public:
 	virtual ~StemmerFilter();
 
 private:
-	/*
-	 *  create the HeadWordsMap from the file of headwords.
-	 */
-	int createWordMap(const std::string &indexDirectory);
-	std::map<std::string, int> dictionaryWords;
+	StemmerContainer& stemmerContainer;
 	// StemmerType type;
-	friend class boost::serialization::access;
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-		ar & dictionaryWords;
-	}
 };
 
 class StemmerFilterInternal {

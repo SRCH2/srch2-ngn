@@ -145,7 +145,7 @@ void buildIndex(string indexDir)
         }
         //cout<<endl;
         // add the record
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
         record->clear();
     }
     // build the index
@@ -250,7 +250,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
             }
             cellCounter++;
         }
-        bool added = indexer->addRecord(record, 0);
+        bool added = indexer->addRecord(record, analyzer, 0);
         (void)added;
         //if (added == -1)
         //cout<< "Outside:"<< docsCounter << " " << endl;
@@ -1223,5 +1223,9 @@ void csvline_populate(vector<string> &record, const string& line, char delimiter
     return;
 }
 
+Analyzer * getAnalyzer() {
+	 return new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+     		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+}
 
 #endif /* __INTEGRATIONTESTHELPER_H__ */

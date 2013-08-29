@@ -79,7 +79,7 @@ void buildIndex(string data_file, string index_dir)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -102,7 +102,7 @@ void buildIndex(string data_file, string index_dir)
 }
 
 // Read data from file, update the index
-void updateIndex(string data_file, Indexer *index)
+void updateIndex(string data_file, Indexer *index, Analyzer* analyzer)
 {
     /// Set up the Schema
     Schema *schema = Schema::create(srch2is::DefaultIndex);
@@ -145,7 +145,7 @@ void updateIndex(string data_file, Indexer *index)
             cellCounter++;
         }
 
-        index->addRecord(record, 0);
+        index->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 
     cout << "Index loaded." << endl;
 
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = getAnalyzer();
 
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 35);
     compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 40);
 
-    updateIndex(update_data_file, index);
+    updateIndex(update_data_file, index, analyzer);
     
     // test pagination after update
     compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 10);
@@ -252,6 +252,7 @@ int main(int argc, char **argv)
     delete indexSearcher;
     delete index;
     delete indexMetaData;
+    delete analyzer;
 
     return 0;
 }

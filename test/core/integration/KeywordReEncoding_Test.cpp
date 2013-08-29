@@ -84,21 +84,21 @@ void addSimpleRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
     index->commit();
     index->save();
@@ -135,7 +135,7 @@ void testRead(Indexer *indexer)
     indexer = Indexer::load(indexMetaData1);
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    const Analyzer *analyzer =getAnalyzer();
 
     //Query: "tom", hits -> 1001, 1003
     {
@@ -218,6 +218,7 @@ void testRead(Indexer *indexer)
     }
 
     delete indexSearcher;
+    delete analyzer;
 
 }
 
@@ -265,14 +266,16 @@ void* writerUsingSimilarKeywords(void *arg)
         //record->setSearchableAttributeValue(2, string3 + " " + string4);
 
         record->setRecordBoost(90);
-        indexer->addRecord(record, 0);
+        Analyzer *analyzer = getAnalyzer();
+
+        indexer->addRecord(record, analyzer, 0);
         indexer->merge_ForTesting();
     
         vector<unsigned> recordIds;
         recordIds.push_back(recordPrimaryKey);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-        const Analyzer *analyzer = indexer->getAnalyzer();
         ping(analyzer, indexSearcher, aString + numstr, 1 , recordIds);
+        delete analyzer;
     }
 
     pthread_mutex_unlock(&msg_mutex);
