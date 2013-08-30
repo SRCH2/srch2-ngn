@@ -53,6 +53,7 @@ IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
 
 }
 
+// This is a helper function of nextRecord
 int IndexSearcherInternal::doNext(int recordID, vector<TermVirtualList* >* virtualListVector)
 {
     // suppose we keep n(0 ~ n-1) virtual list, the first one(idx:0) called lead,
@@ -76,13 +77,16 @@ int IndexSearcherInternal::doNext(int recordID, vector<TermVirtualList* >* virtu
     return recordID;
  }
 
+// return the nextRecord which exists in all the virtual lists, if there are no more records, will return NO_MORE_RECORDS
 int IndexSearcherInternal::nextRecord(vector<TermVirtualList* >* virtualListVector)
 {
+    // choose the first virtual list as the lead
     TermVirtualList *lead = virtualListVector->at(0);
+    // get the next record of lead
     lead->recordID = lead->bitSetIter->nextRecord();
-    if(virtualListVector->size() > 1)
+    if(virtualListVector->size() > 1)// if there are still other lists, we need to call doNext function to get next recordID
         return doNext(lead->recordID, virtualListVector);
-    else
+    else // otherwise we can return lead's recordID as the next record
         return lead->recordID;
 }
 
@@ -91,8 +95,6 @@ int IndexSearcherInternal::nextRecord(vector<TermVirtualList* >* virtualListVect
 // pagination. Returns the number of records found
 int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults)
 {
-    timespec t1;
-    timespec t2;
     //TODO: check the queryResults was create using query.
     //TODO: Use edit distance and length in ranking
     this->computeTermVirtualList(queryResults);
@@ -132,31 +134,23 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
             smallestVirtualListVectorSize = currentSize;
         }
     }
-    // if the smallest virtual list also need to merge
+    // if the smallest virtual list also need to merge, we will use nextRecord function to get all the records
     if(virtualListVector->at(smallestVirtualListVectorId)->needMerge){
-        if(smallestVirtualListVectorId)
+        if(smallestVirtualListVectorId)// if smallestVirtualListVectorId is not the first one, we will swap it to be the first one, which will boost the process of nextRecord
             swap(virtualListVector->at(smallestVirtualListVectorId), virtualListVector->at(0));
-        clock_gettime(CLOCK_REALTIME, &t1);
         int recordID;
-        //int count = 0;
-
+        // we loop the record and add them to the result.
         while((recordID = nextRecord(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
-            //cout << recordID<<endl;
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
-            queryResult->internalRecordId = recordID;
-            queryResult->_score.setScore(1.0);
-            queryResult->matchingKeywords = queryResultMatchingKeywords;
-            queryResult->attributeBitmaps = queryResultBitmaps;
-            queryResult->editDistances = queryResultEditDistances;
-            queryResultsInternal->insertResult(queryResult);
-            //count++;
+            queryResult->internalRecordId = recordID;                       // keep the internalRecordId
+            queryResult->_score.setScore(1.0);                              // since we can't make a difference of these record, we give them the same score
+            queryResult->matchingKeywords = queryResultMatchingKeywords;    // The matching words will also be the same with search query
+            queryResult->attributeBitmaps = queryResultBitmaps;             // We lose the Bitmaps the keywords mathched
+            queryResult->editDistances = queryResultEditDistances;          // and also the edit distance
+            queryResultsInternal->insertResult(queryResult);                // insert the result to queryResultsInternal
         }
-        /*clock_gettime(CLOCK_REALTIME, &t2);
-        double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-        cout << "AND cost: " << time_span << " milliseconds." << endl;
-        cout << "total records number: " << count <<endl;*/
     }
-    else{
+    else{ // we don't need a bitse to merge the smallestVirtualListVectorId virtual list
         // fill the visited list with the current queryResults
         std::set<unsigned> visitedList;
 
@@ -605,7 +599,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 }
                 else {*/
                     if(virtualListVector->at(i)->needMerge){
-                        queryResultMatchingKeywords.at(i) = "";
+                        queryResultMatchingKeywords.at(i) = "";     //if the list is merge to a bitset, the matching keywords is the same to the query term.
                     }
                     else{
                         std::vector<CharType> temp;
@@ -877,16 +871,17 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
         if (skip == j) // skip the virtual list popped up in round robin
             continue;
         bool found = false;
+        // if the j th virtual list need merge to be a Bitset
         if (virtualListVector->at(j)->needMerge){
-            if(virtualListVector->at(j)->bitSet.get(recordId)){
-                found = true;
-                queryResultMatchingKeywords.at(j) = "";
-                queryResultBitmaps.at(j) = 0;
-                queryResultEditDistances.at(j) = 0;
-                queryResultTermScores.at(j) = 1.0;
+            if(virtualListVector->at(j)->bitSet.get(recordId)){ // if the bit of recordId is set, we find it
+                found = true;                                   // we find it in this list
+                queryResultMatchingKeywords.at(j) = "";         // the matching term is the same to the query term, we just ignore it
+                queryResultBitmaps.at(j) = 0;                   // we lose this bitmap
+                queryResultEditDistances.at(j) = 0;             // we lose the edit distance
+                queryResultTermScores.at(j) = 1.0;              // we assign the same score for it
             }
         }
-        else{
+        else{  //go to the old logic to get verify it
             PrefixActiveNodeSet *prefixActiveNodeSet;
             virtualListVector->at(j)->getPrefixActiveNodeSet(prefixActiveNodeSet);
             unsigned termSearchableAttributeIdToFilterTermHits =

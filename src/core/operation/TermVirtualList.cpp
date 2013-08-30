@@ -157,11 +157,6 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->recordID = -1;
     this->needMerge = false;
     this->bitSetSize = 0;
-
-    /*timespec t1;
-    timespec t2;
-    double time_span;*/
-
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         /*clock_gettime(CLOCK_REALTIME, &t1);*/
@@ -172,7 +167,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         //TODO: change the condition to call it when the similar keywords or record number is too much
         if(iter.size() >= TERMCOUNTTHRESHOLD)
             this->needMerge = true;
-        if(this->needMerge)
+        if(this->needMerge)// if this term virtual list is merged to a Bitset
         {
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
@@ -180,11 +175,11 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             unsigned distance;
             //termCount = 0;
             //recordCount = 0;
-            /*clock_gettime(CLOCK_REALTIME, &t1);*/
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(prefixNode, leafNode, distance);
                 unsigned invertedListId = leafNode->getInvertedListOffset();
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+                // loop the inverted list to add it to the Bitset
                 for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
                 {
                     if(bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
@@ -193,14 +188,9 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 //termCount++;
                 //recordCount += invertedListReadView->size();
             }
-            //cout << "term count:" << termCount << endl;
-            //cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
-            /*clock_gettime(CLOCK_REALTIME, &t2);
-            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-            cout << "OR operation2: " << time_span << " milliseconds." << endl;*/
         }
-        else{
+        else{   // go to the old logic
             cursorVector.reserve(iter.size());
             invertedListReadViewVector.reserve(iter.size());
             for (; !iter.isDone(); iter.next()) {
@@ -216,25 +206,22 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
         if(iter.size() >= TERMCOUNTTHRESHOLD)
             this->needMerge = true;
-        if(this->needMerge)
+        if(this->needMerge) // if this term virtual list is merged to a Bitset
         {
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
             unsigned distance;
             //termCount = 0;
             //recordCount = 0;
-            /*clock_gettime(CLOCK_REALTIME, &t1);*/
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(trieNode, distance);
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                // loop the distance depth of the tire to add the term invertedlist to Bitset
                 depthInitializeBitSet(trieNode, distance, term->getThreshold());
             }
             //cout << "term count:" << termCount << endl;
             //cout << "record count:" << recordCount << endl;
             bitSetIter = bitSet.iterator();
-            /*clock_gettime(CLOCK_REALTIME, &t2);
-            time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-            cout << "OR operation1: " << time_span << " milliseconds." << endl;*/
         }
         else{
             cursorVector.reserve(iter.size());
