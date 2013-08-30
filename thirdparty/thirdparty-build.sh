@@ -37,6 +37,6 @@ cd gperftools-2.0
 
 CURRENTDIR=$(pwd)
 echo "INSTALLING google perftools in $CURRENTDIR/../"
-./configure --prefix=$CURRENTDIR/../
+LDFLAGS=-L$CURRENTDIR/../../libunwind/lib/ ./configure --prefix=$CURRENTDIR/../
 make && make install
 
