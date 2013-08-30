@@ -1,4 +1,4 @@
-//$Id: URLParser.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: URLParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include "URLParser.h"
 
@@ -49,104 +49,104 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
     //first check range query without keywords: (1)searchType=SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS;(2)keywords is null;(3)Attribute Latitude and Longitude are not "IGNORE"
     if (indexDataContainerConf->getSearchType() == SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS){//check if the query is a range query but without information
 
-		 const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
-		 if (!keywordsParamName){//check if keyword information is empty
-			 if(indexDataContainerConf->getAttributeLatitude()!="IGNORE"&&indexDataContainerConf->getAttributeLongitude()!="IGNORE"){// if the Attribute Latitude and Longitude are not IGNORE, we say query contains the range
-				urlParserHelper.parserSuccess=true;
-				urlParserHelper.searchType = 2;
-				//set the position which the results starts from to retrieve
-				{
-					const char *resultsToRetrieveStartParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveStartParamName);
-					if (resultsToRetrieveStartParamName){
-						size_t sz;
-						char *resultsToRetrieveStartParamName_cstar = evhttp_uridecode(resultsToRetrieveStartParamName, 0, &sz);
-						urlParserHelper.offset = atoi(resultsToRetrieveStartParamName_cstar);
-						delete resultsToRetrieveStartParamName_cstar;
-					}
-					else{//default value is 0
-						urlParserHelper.offset = 0;
-					}
-				}
+         const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
+         if (!keywordsParamName){//check if keyword information is empty
+             if(indexDataContainerConf->getAttributeLatitude()!="IGNORE"&&indexDataContainerConf->getAttributeLongitude()!="IGNORE"){// if the Attribute Latitude and Longitude are not IGNORE, we say query contains the range
+                urlParserHelper.parserSuccess=true;
+                urlParserHelper.searchType = 2;
+                //set the position which the results starts from to retrieve
+                {
+                    const char *resultsToRetrieveStartParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveStartParamName);
+                    if (resultsToRetrieveStartParamName){
+                        size_t sz;
+                        char *resultsToRetrieveStartParamName_cstar = evhttp_uridecode(resultsToRetrieveStartParamName, 0, &sz);
+                        urlParserHelper.offset = atoi(resultsToRetrieveStartParamName_cstar);
+                        delete resultsToRetrieveStartParamName_cstar;
+                    }
+                    else{//default value is 0
+                        urlParserHelper.offset = 0;
+                    }
+                }
 
-				//get the limited number of results to retrieval
-				{
-					const char *resultsToRetrieveLimitParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveLimitParamName);
-					if (resultsToRetrieveLimitParamName){
-						size_t sz;
-						char *resultsToRetrieveLimitParamName_cstar = evhttp_uridecode(resultsToRetrieveLimitParamName, 0, &sz);
-						urlParserHelper.resultsToRetrieve = atoi(resultsToRetrieveLimitParamName_cstar);
-						delete resultsToRetrieveLimitParamName_cstar;
-					}
-					else{
-						urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve();
-					}
-				}
-				//use the exactQuery to construct the query for the range query without keywords
-				//for this query, only need to set the range of query
-				this->exactQuery = new Query(MapQuery);
-				//set the rectangle range
-				const char *paramIter_latLB = evhttp_find_header(&headers, URLParser::leftBottomLatitudeParamName);
-				const char *paramIter_lngLB = evhttp_find_header(&headers, URLParser::leftBottomLongitudeParamName);
-				const char *paramIter_latRT = evhttp_find_header(&headers, URLParser::rightTopLatitudeParamName);
-				const char *paramIter_lngRT = evhttp_find_header(&headers, URLParser::rightTopLongitudeParamName);
-				//set the circle range
-				const char *paramIter_latCT = evhttp_find_header(&headers, URLParser::centerLatitudeParamName);
-				const char *paramIter_lngCT = evhttp_find_header(&headers, URLParser::centerLongitudeParamName);
-				const char *paramIter_radius= evhttp_find_header(&headers, URLParser::radiusParamName);
+                //get the limited number of results to retrieval
+                {
+                    const char *resultsToRetrieveLimitParamName = evhttp_find_header(&headers, URLParser::resultsToRetrieveLimitParamName);
+                    if (resultsToRetrieveLimitParamName){
+                        size_t sz;
+                        char *resultsToRetrieveLimitParamName_cstar = evhttp_uridecode(resultsToRetrieveLimitParamName, 0, &sz);
+                        urlParserHelper.resultsToRetrieve = atoi(resultsToRetrieveLimitParamName_cstar);
+                        delete resultsToRetrieveLimitParamName_cstar;
+                    }
+                    else{
+                        urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve();
+                    }
+                }
+                //use the exactQuery to construct the query for the range query without keywords
+                //for this query, only need to set the range of query
+                this->exactQuery = new Query(SearchTypeMapQuery);
+                //set the rectangle range
+                const char *paramIter_latLB = evhttp_find_header(&headers, URLParser::leftBottomLatitudeParamName);
+                const char *paramIter_lngLB = evhttp_find_header(&headers, URLParser::leftBottomLongitudeParamName);
+                const char *paramIter_latRT = evhttp_find_header(&headers, URLParser::rightTopLatitudeParamName);
+                const char *paramIter_lngRT = evhttp_find_header(&headers, URLParser::rightTopLongitudeParamName);
+                //set the circle range
+                const char *paramIter_latCT = evhttp_find_header(&headers, URLParser::centerLatitudeParamName);
+                const char *paramIter_lngCT = evhttp_find_header(&headers, URLParser::centerLongitudeParamName);
+                const char *paramIter_radius= evhttp_find_header(&headers, URLParser::radiusParamName);
 
-				//check the parameters of rectangle are not null and set rectangle range
-				if ( paramIter_latLB && paramIter_lngLB
-					 && paramIter_latRT && paramIter_lngRT ){
-					size_t sz1;
-					char *paramIter_latLB_cstar = evhttp_uridecode(paramIter_latLB, 0, &sz1);
-					double range_min_x = atof(paramIter_latLB_cstar);
-					delete paramIter_latLB_cstar;
+                //check the parameters of rectangle are not null and set rectangle range
+                if ( paramIter_latLB && paramIter_lngLB
+                     && paramIter_latRT && paramIter_lngRT ){
+                    size_t sz1;
+                    char *paramIter_latLB_cstar = evhttp_uridecode(paramIter_latLB, 0, &sz1);
+                    double range_min_x = atof(paramIter_latLB_cstar);
+                    delete paramIter_latLB_cstar;
 
-					size_t sz2;
-					char *paramIter_lngLB_cstar = evhttp_uridecode(paramIter_lngLB, 0, &sz2);
-					double range_min_y = atof(paramIter_lngLB_cstar);
-					delete paramIter_lngLB_cstar;
+                    size_t sz2;
+                    char *paramIter_lngLB_cstar = evhttp_uridecode(paramIter_lngLB, 0, &sz2);
+                    double range_min_y = atof(paramIter_lngLB_cstar);
+                    delete paramIter_lngLB_cstar;
 
-					size_t sz3;
-					char *paramIter_latRT_cstar = evhttp_uridecode(paramIter_latRT, 0, &sz3);
-					double range_max_x = atof(paramIter_latRT_cstar);
-					delete paramIter_latRT_cstar;
+                    size_t sz3;
+                    char *paramIter_latRT_cstar = evhttp_uridecode(paramIter_latRT, 0, &sz3);
+                    double range_max_x = atof(paramIter_latRT_cstar);
+                    delete paramIter_latRT_cstar;
 
-					size_t sz4;
-					char *paramIter_lngRT_cstar = evhttp_uridecode(paramIter_lngRT, 0, &sz4);
-					double range_max_y = atof(paramIter_lngRT_cstar);
-					delete paramIter_lngRT_cstar;
+                    size_t sz4;
+                    char *paramIter_lngRT_cstar = evhttp_uridecode(paramIter_lngRT, 0, &sz4);
+                    double range_max_y = atof(paramIter_lngRT_cstar);
+                    delete paramIter_lngRT_cstar;
 
-					exactQuery->setRange(range_min_x, range_min_y, range_max_x, range_max_y);
+                    exactQuery->setRange(range_min_x, range_min_y, range_max_x, range_max_y);
 
-				}
-				else if (paramIter_latCT && paramIter_lngCT && paramIter_radius){//check the parameters of circle are not null and set the circle range
-					size_t sz1;
-					char *paramIter_latCT_cstar = evhttp_uridecode(paramIter_latCT, 0, &sz1);
-					double x = atof(paramIter_latCT_cstar);
-					delete paramIter_latCT_cstar;
+                }
+                else if (paramIter_latCT && paramIter_lngCT && paramIter_radius){//check the parameters of circle are not null and set the circle range
+                    size_t sz1;
+                    char *paramIter_latCT_cstar = evhttp_uridecode(paramIter_latCT, 0, &sz1);
+                    double x = atof(paramIter_latCT_cstar);
+                    delete paramIter_latCT_cstar;
 
-					size_t sz2;
-					char *paramIter_lngCT_cstar = evhttp_uridecode(paramIter_lngCT, 0, &sz2);
-					double y = atof(paramIter_lngCT_cstar);
-					delete paramIter_lngCT_cstar;
+                    size_t sz2;
+                    char *paramIter_lngCT_cstar = evhttp_uridecode(paramIter_lngCT, 0, &sz2);
+                    double y = atof(paramIter_lngCT_cstar);
+                    delete paramIter_lngCT_cstar;
 
-					size_t sz3;
-					char *paramIter_radius_cstar = evhttp_uridecode(paramIter_radius, 0, &sz3);
-					double r = atof(paramIter_radius_cstar);
-					delete paramIter_radius_cstar;
+                    size_t sz3;
+                    char *paramIter_radius_cstar = evhttp_uridecode(paramIter_radius, 0, &sz3);
+                    double r = atof(paramIter_radius_cstar);
+                    delete paramIter_radius_cstar;
 
-					exactQuery->setRange(x, y, r);
-				}
-				else{
-					urlParserHelper.parserSuccess=false;
-				}
-				return;
-			 }
+                    exactQuery->setRange(x, y, r);
+                }
+                else{
+                    urlParserHelper.parserSuccess=false;
+                }
+                return;
+             }
 
-		 }
+         }
 
-	}
+    }
 
     // the following code is constructing the query:(1)keywords only search;(2)keywords+geo
     {
@@ -181,12 +181,12 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
         {
             const char *keywordsParamName = evhttp_find_header(&headers, URLParser::keywordsParamName);
             if (keywordsParamName){
-            	//cout << string(keywordsParamName)<<endl;
+                //cout << string(keywordsParamName)<<endl;
                 size_t sz;
                 char *keywordsParamName_cstar = evhttp_uridecode(keywordsParamName, 0, &sz);
 
                 if (indexDataContainerConf->getSupportAttributeBasedSearch()){
-                	// get searchable attribute to get map from attribute name to Id
+                    // get searchable attribute to get map from attribute name to Id
                     analyzer->tokenizeQueryWithFilter(keywordsParamName_cstar, queryKeywordVector, URLParser::queryDelimiter,
                             URLParser::filterDelimiter, URLParser::fieldsAndDelimiter, URLParser::fieldsOrDelimiter,
                             schema->getSearchableAttribute(), filters);
@@ -205,18 +205,18 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 delete keywordsParamName_cstar;
             }
             else{
-            	urlParserHelper.parserSuccess = false;
-            	urlParserHelper.parserErrorMessage << "{\"error\":\"Empty search query\"}";
-            	return;
+                urlParserHelper.parserSuccess = false;
+                urlParserHelper.parserErrorMessage << "{\"error\":\"Empty search query\"}";
+                return;
             }
 
-            
+
             if (queryKeywordVector.size() == 0){
                 urlParserHelper.parserSuccess = false;
                 urlParserHelper.parserErrorMessage << "{\"error\":\"Query keywords are malformed\"}";
                 return;
             }
-        
+
         }
 
 
@@ -260,12 +260,12 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 delete termTypesParamName_cstar;
 
                 for (unsigned idx=0; idx<termTypesParamName_str.size(); idx++){
-					if (termTypesParamName_str[idx] == '0'){
-						termTypeVector.push_back(TERM_TYPE_PREFIX);
-					}
-					else if (termTypesParamName_str[idx] == '1')
-						termTypeVector.push_back(TERM_TYPE_COMPLETE);
-				}
+                    if (termTypesParamName_str[idx] == '0'){
+                        termTypeVector.push_back(TERM_TYPE_PREFIX);
+                    }
+                    else if (termTypesParamName_str[idx] == '1')
+                        termTypeVector.push_back(TERM_TYPE_COMPLETE);
+                }
 
                 if (termTypeVector.size() != numberOfKeywords){
                     urlParserHelper.parserSuccess = false;
@@ -281,15 +281,15 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                         termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
                     if(queryKeywordVector[numberOfKeywords - 1] != " "){
-                    	if (!indexDataContainerConf->getQueryTermType())
-                    		//The QueryTermType in the configure file decided the type of the last keyword only.
-                    		termTypeVector.push_back(TERM_TYPE_PREFIX);
-                    	else
-                    		termTypeVector.push_back(TERM_TYPE_COMPLETE);
+                        if (!indexDataContainerConf->getQueryTermType())
+                            //The QueryTermType in the configure file decided the type of the last keyword only.
+                            termTypeVector.push_back(TERM_TYPE_PREFIX);
+                        else
+                            termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
                     else{
-                    	queryKeywordVector.pop_back();
-                    	numberOfKeywords = numberOfKeywords - 1;
+                        queryKeywordVector.pop_back();
+                        numberOfKeywords = numberOfKeywords - 1;
                     }
 
                 }
@@ -364,7 +364,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
         urlParserHelper.offset = 0; //default
         urlParserHelper.resultsToRetrieve = indexDataContainerConf->getDefaultResultsToRetrieve(); //atoi(values[5].c_str());
         int sortAttribute = indexDataContainerConf->getAttributeToSort(); //atoi(values[6].c_str());
-        SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? Ascending : Descending; //(atoi(values[7].c_str()) == 0) ? Ascending : Descending;
+        SortOrder order = (indexDataContainerConf->getOrdering()== 0) ? SortOrderAscending : SortOrderDescending; //(atoi(values[7].c_str()) == 0) ? Ascending : Descending;
 
         {
             const char *searchTypeParamName = evhttp_find_header(&headers, URLParser::searchTypeParamName);
@@ -381,7 +381,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 else{
                     urlParserHelper.searchType = atoi(searchTypeParamName_str.c_str());
 
-                    if (indexDataContainerConf->getSortableAttributesName()->size()==0 && urlParserHelper.searchType==1)
+                    if (indexDataContainerConf->getNonSearchableAttributes()->size()==0 && urlParserHelper.searchType==1)
                         urlParserHelper.searchType = 0;
                 }
             }
@@ -426,8 +426,8 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
         switch (urlParserHelper.searchType)
         {
             case 0:
-                this->exactQuery = new Query(TopKQuery);
-                this->fuzzyQuery = new Query(TopKQuery);
+                this->exactQuery = new Query(SearchTypeTopKQuery);
+                this->fuzzyQuery = new Query(SearchTypeTopKQuery);
                 break;
 
             case 1:
@@ -437,9 +437,11 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                         size_t sz;
                         char *attributeToSortParamName_cstar = evhttp_uridecode(attributeToSortParamName, 0, &sz);
                         sortAttribute = atoi(attributeToSortParamName_cstar);
-                        
-                        if (sortAttribute < 0 || sortAttribute > indexDataContainerConf->getSortableAttributesName()->size()-1)
+
+                        if (sortAttribute < 0 || sortAttribute > indexDataContainerConf->getNonSearchableAttributes()->size()-1)
+                        {
                             sortAttribute = indexDataContainerConf->getAttributeToSort();
+                        }
 
                         delete attributeToSortParamName_cstar;
                     }
@@ -453,19 +455,19 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                     if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? SortOrderAscending : SortOrderDescending;
                         delete orderParamName_cstar;
                     }
                     else{
-                        order = (indexDataContainerConf->getOrdering() == 0) ? Ascending : Descending;
+                        order = (indexDataContainerConf->getOrdering() == 0) ? SortOrderAscending : SortOrderDescending;
                     }
                 }
 
                 urlParserHelper.sortby = sortAttribute;
                 urlParserHelper.order = order;
 
-                this->exactQuery = new Query(GetAllResultsQuery);
-                this->fuzzyQuery = new Query(GetAllResultsQuery);
+                this->exactQuery = new Query(SearchTypeGetAllResultsQuery);
+                this->fuzzyQuery = new Query(SearchTypeGetAllResultsQuery);
 
                 this->exactQuery->setSortableAttribute(sortAttribute, order);
                 this->fuzzyQuery->setSortableAttribute(sortAttribute, order);
@@ -473,15 +475,15 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 break;
 
             case 2:
-                this->exactQuery = new Query(MapQuery);
-                this->fuzzyQuery = new Query(MapQuery);
+                this->exactQuery = new Query(SearchTypeMapQuery);
+                this->fuzzyQuery = new Query(SearchTypeMapQuery);
 
                 {
                     const char *orderParamName = evhttp_find_header(&headers, URLParser::orderParamName);
                     if (orderParamName){
                         size_t sz;
                         char *orderParamName_cstar = evhttp_uridecode(orderParamName, 0, &sz);
-                        order = (atoi(orderParamName_cstar) == 0) ? Ascending : Descending;
+                        order = (atoi(orderParamName_cstar) == 0) ? SortOrderAscending : SortOrderDescending;
                         delete orderParamName_cstar;
                     }
 
@@ -599,17 +601,17 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
             Term *fuzzyTerm;
 
             if(urlParserHelper.isFuzzy){
-            	exactTerm = new Term(queryKeywordVector[i],
-            			termType,
-            			termBoost,
-            			similarityBoost,
-            			0);
+                exactTerm = new Term(queryKeywordVector[i],
+                        termType,
+                        termBoost,
+                        similarityBoost,
+                        0);
 
                 fuzzyTerm = new Term(queryKeywordVector[i],
-                		termType,
-                		termBoost,
-                		similarityBoost,
-                		Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
+                        termType,
+                        termBoost,
+                        similarityBoost,
+                        Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -619,10 +621,10 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
 
             }else{
                 exactTerm = new Term(queryKeywordVector[i],
-                		termType,
-                		termBoost,
-                		similarityBoost,
-                		0);
+                        termType,
+                        termBoost,
+                        similarityBoost,
+                        0);
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 this->exactQuery->add(exactTerm);

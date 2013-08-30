@@ -115,7 +115,7 @@ bool test(string INDEX_DIR, vector<unsigned> &recordId, int attributeId, unsigne
 		query->add(term);
 	}
 
-	srch2is::QueryResults *queryResults = srch2is::QueryResults::create(indexSearcher, query);
+	srch2is::QueryResults *queryResults = new srch2is::QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 	// Step 3: Search the index and display results
 

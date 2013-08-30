@@ -1,4 +1,4 @@
-//$Id: Record.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Record.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -21,6 +21,7 @@
 #define __RECORD_H__
 
 #include <instantsearch/platform.h>
+#include <instantsearch/Constants.h>
 
 #include <string>
 
@@ -30,11 +31,7 @@ namespace instantsearch
 {
 class Schema;
 
-typedef enum {
-    LU_PRESENT_IN_READVIEW_AND_WRITEVIEW,
-    LU_TO_BE_INSERTED,
-    LU_ABSENT_OR_TO_BE_DELETED
-} INDEXLOOKUP_RETVAL;
+
 
 /**
  * This class defines a data record passed to the Indexer. The Schema
@@ -100,6 +97,19 @@ public:
     bool setSortableAttributeValue(const std::string &attributeName,
                 const std::string &attributeValue);
 
+
+    /**
+     * Set the value of an attribute.
+     *
+     * These attributes are used to sort the results
+     * and must have numerical values.
+     *
+     * @param[in] attributeName name of the Attribute;
+     * @param[in] attributeValue  text string for the Attribute.
+     */
+    bool setNonSearchableAttributeValue(const std::string &attributeName,
+                const std::string &attributeValue);
+
     /**
      * Sets the value of the attribute given its index in the list
      * of attributes in the schema.
@@ -107,7 +117,7 @@ public:
      * @param attributeId The index of an attribute in the schema.
      * @param attributeValue The text string of this attribute.
      */
-    bool setSortableAttributeValue(const unsigned attributeId,
+    bool setNonSearchableAttributeValue(const unsigned attributeId,
                     const std::string &attributeValue);
 
     /**
@@ -115,7 +125,8 @@ public:
      */
     std::string *getSearchableAttributeValue(const unsigned attributeId) const;
 
-    std::string *getSortableAttributeValue(const unsigned attributeId) const;
+
+    std::string *getNonSearchableAttributeValue(const unsigned attributeId) const;
 
     /**
      *

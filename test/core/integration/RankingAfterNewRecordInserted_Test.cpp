@@ -1,4 +1,4 @@
-//$Id: RankingAfterNewRecordInserted_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: RankingAfterNewRecordInserted_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 // This test will first build an index with 4809 records, commit, then insert one more record.
 // After that, the test will query a keyword in the inserted record to see if top10 results is consistent with top25 results.
@@ -79,7 +79,7 @@ void buildIndex(string data_file, string index_dir)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -120,6 +120,8 @@ void updateIndex(string data_file, Indexer *index)
     /// Read records from file
     /// the file should have two fields, seperated by '^'
     /// the first field is the primary key, the second field is a searchable attribute
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+                                "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
     while(getline(data,line))
     {
         unsigned cellCounter = 0;
@@ -145,7 +147,7 @@ void updateIndex(string data_file, Indexer *index)
             cellCounter++;
         }
 
-        index->addRecord(record, 0);
+        index->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -160,6 +162,7 @@ void updateIndex(string data_file, Indexer *index)
     data.close();
 
     delete schema;
+    delete analyzer;
 }
 // Read queries from file and do the search
 void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *analyzer, IndexSearcher *indexSearcher, const unsigned k1, const unsigned k2)
@@ -243,15 +246,17 @@ int main(int argc, char **argv)
 
     updateIndex(update_data_file, index);
     
-    const Analyzer *analyzer = index->getAnalyzer();
+
 
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+                                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     checkTopK1andTopK2(query_file, primaryKey_file, analyzer, indexSearcher, 10, 25);
 
     delete indexSearcher;
     delete index;
     delete indexMetaData;
-
+    delete analyzer;
     return 0;
 }

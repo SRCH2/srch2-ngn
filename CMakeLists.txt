@@ -21,6 +21,22 @@
 # cmake build_type is release mode
 #
 #    terminal> cmake -DDO_DEBUG=0 -DDO_PROFILE=1 ..
+#
+# 3) Create srch2 lib for Android
+#    We need to setup the Android building environment first
+#    terminal> cd ./android_prerequisite
+#    terminal> ./build_android.sh    # It will cost 10 minutes for the first time.
+#
+#    It will append all the requisite environment setting in $HOME/.bashrc
+#    Then we can build the android version by following step
+#    
+#    terminal> source ~/.bashrc
+#    terminal> mkdir -p build/android
+#    terminal> cd build/android
+#    terminal> android-cmake ../../
+#    
+#    Then run make -j4 , the srch2 lib will show in the build/android/libs
+#    
 ########################################################################################################
 
 # Project name is not mandatory, but you should use it
@@ -38,8 +54,13 @@ ENDIF(COMMAND cmake_policy)
 SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
+IF(ANDROID)
+    SET(BUILD_STATIC OFF)
+ENDIF()
+
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
+SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 
 SET(MAC_OS OFF CACHE BOOL "")
@@ -96,7 +117,12 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     else()
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
     endif()
-    SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    IF(ANDROID)
+        SET(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are installed to" )
+        SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    ELSE()
+        SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    ENDIF()
     
     IF(DO_COVERAGE)
     	MESSAGE(STATUS "COVERAGE tags Turned ON")
@@ -127,7 +153,13 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	SET(Boost_DEBUG OFF)
     ENDIF ()
 	
-    SET(sys_LIBRARY_DIRS "/usr/lib64/" "/lib/" "/lib64/")
+    IF (ANDROID)
+    	SET(sys_LIBRARY_DIRS 
+            "${ANDROID_TOOLCHAIN_ROOT}/user/lib"
+		    )
+    ELSE()
+    	SET(sys_LIBRARY_DIRS "/usr/lib64/" "/lib/" "/lib64/")
+    ENDIF()
 					
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS serialization program_options regex system thread REQUIRED )
@@ -137,29 +169,40 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
 	
     # Finally the rt, dl and z library
-    IF (LINUX_OS)
+    IF (ANDROID)
+	    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
+        FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+        MESSAGE(STATUS "liblog = ${log_LIBRARY}")
+	    MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
+	    MESSAGE(STATUS "libz = ${z_LIBRARY}")	
+    ELSEIF (LINUX_OS)
     	FIND_LIBRARY(rt_LIBRARY NAMES rt PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
         FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+        MESSAGE(STATUS "librt = ${rt_LIBRARY}")
+	    MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
+	    MESSAGE(STATUS "libz = ${z_LIBRARY}")	
+    ENDIF ()
 	
-	MESSAGE(STATUS "librt = ${rt_LIBRARY}")
-	MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
-	MESSAGE(STATUS "libz = ${z_LIBRARY}")	
-
-    ENDIF()
-
-     IF (BUILD64BIT)
-	MESSAGE(STATUS "Buildling for 64 bit platform")
-	LINK_DIRECTORIES( "/usr/lib/x86_64-linux-gnu/" "/usr/lib64/")
-     ELSE ()
-	MESSAGE(STATUS "Buildling for 32 bit platform")
-	LINK_DIRECTORIES("/usr/lib/")
-     ENDIF ()
-     IF (LINUX_OS)
-	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
-     ELSEIF (MAC_OS)
-        SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
-     ENDIF ()   
+    IF (ANDROID)
+    	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+        LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
+    ELSE ()
+        IF (BUILD64BIT)
+	        MESSAGE(STATUS "Buildling for 64 bit platform")
+	        LINK_DIRECTORIES( "/usr/lib/x86_64-linux-gnu/" "/usr/lib64/")
+        ELSE ()
+	        MESSAGE(STATUS "Buildling for 32 bit platform")
+	        LINK_DIRECTORIES("/usr/lib/")
+        ENDIF ()
+        IF (LINUX_OS)
+	        SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
+        ELSEIF (MAC_OS)
+            SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
+        ENDIF()
+    ENDIF ()   
+	
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
 	ADD_SUBDIRECTORY(src/core)
@@ -170,22 +213,30 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
 	ELSE ()
             IF(MAC_OS) 
-      		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
+      		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
             ELSE()
                 SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
             ENDIF()
 	ENDIF()
 
-	ADD_SUBDIRECTORY(src/wrapper)
-	ADD_SUBDIRECTORY(src/server)
+    IF (NOT ANDROID)
+        ADD_SUBDIRECTORY(src/wrapper)
+        ADD_SUBDIRECTORY(src/server)
+    	IF (BUILD_TEST)
+            INCLUDE (CTest)
+            ADD_SUBDIRECTORY(test)
+            ADD_DEPENDENCIES(build_integration_test srch2_core)
+            ADD_DEPENDENCIES(build_unit_test srch2_core) 
+        ENDIF()
+
+	    IF(BUILD_UTILITY)
+            ADD_SUBDIRECTORY(utilities/dictionary-builder)
+        ENDIF()
 	
-	IF (BUILD_TEST)
-		INCLUDE (CTest)
-		ADD_SUBDIRECTORY(test)
-		ADD_DEPENDENCIES(build_integration_test srch2_core)
-		ADD_DEPENDENCIES(build_unit_test srch2_core) 
-	ENDIF()
-		
+    ENDIF()
+    #ADD_SUBDIRECTORY(src/wrapper)
+    #ADD_SUBDIRECTORY(src/server)
+	
 	#ADD_SUBDIRECTORY(examples)
 	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
 	#ADD_DEPENDENCIES(examples_python srch2_lib)
@@ -210,7 +261,7 @@ INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSION
 
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.ini DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 
-INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/release_notes/RELEASE_${VERSION} DESTINATION conf RENAME "RELEASE_NOTES" PERMISSIONS OWNER_READ OWNER_WRITE)
+INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/release_notes/RELEASE_${VERSION} DESTINATION . RENAME "RELEASE_NOTES" PERMISSIONS OWNER_READ OWNER_WRITE)
 
 INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
 

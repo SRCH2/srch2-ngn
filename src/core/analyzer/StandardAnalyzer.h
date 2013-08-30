@@ -43,6 +43,9 @@ public:
 			AnalyzerInternal(standardAnalyzer) {
 		this->analyzerType = STANDARD_ANALYZER;
 	}
+
+	string applyFilters(const string * input) ;
+
 	TokenStream *createOperatorFlow();
 	virtual ~StandardAnalyzer();
 };

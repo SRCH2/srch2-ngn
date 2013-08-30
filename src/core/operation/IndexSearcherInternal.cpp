@@ -1,5 +1,5 @@
 
-// $Id: IndexSearcherInternal.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexSearcherInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,9 +20,9 @@
 
 #include <instantsearch/Query.h>
 #include <instantsearch/Ranker.h>
+#include <instantsearch/Score.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
-
 #include "operation/IndexerInternal.h"
 #include "operation/IndexSearcherInternal.h"
 #include "operation/ActiveNode.h"
@@ -50,6 +50,7 @@ IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;
+
 }
 
 // find the next k answer starting from "offset". Can be used for
@@ -58,9 +59,9 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 {
     //TODO: check the queryResults was create using query.
     //TODO: Use edit distance and length in ranking
-    QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
-    this->computeTermVirtualList(queryResultsInternal);
+    this->computeTermVirtualList(queryResults);
 
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
     // get the std::vector of virtual lists of each term
     std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
@@ -169,19 +170,17 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                                               validForwardList);
             if (validForwardList) {
                 // add this record to topK results if its score is good enough
-                QueryResult queryResult;
-                queryResult.internalRecordId = internalRecordId;
-                float recordScore = 
-                    fl->getForwardListSortableAttributeScore(this->indexData->forwardIndex->getSchema(), query->getSortableAttributeId());
+                QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+                queryResult->internalRecordId = internalRecordId;
                 //unsigned sumOfEditDistances = std::accumulate(queryResultEditDistances.begin(), 
                 //                          queryResultEditDistances.end(), 0);
-                queryResult.score = recordScore;
+                queryResult->_score.setScore(fl->getForwardListNonSearchableAttributeScore(this->indexData->forwardIndex->getSchema(), query->getSortableAttributeId()));
                 //    query->getRanker()->computeResultScoreUsingAttributeScore(query, recordScore, 
                 //                                  sumOfEditDistances, 
                 //                                  queryTermsLength);
-                queryResult.matchingKeywords = queryResultMatchingKeywords;
-                queryResult.attributeBitmaps = queryResultBitmaps;
-                queryResult.editDistances = queryResultEditDistances;
+                queryResult->matchingKeywords = queryResultMatchingKeywords;
+                queryResult->attributeBitmaps = queryResultBitmaps;
+                queryResult->editDistances = queryResultEditDistances;
                 queryResultsInternal->insertResult(queryResult);
             }
         }
@@ -191,12 +190,12 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     
     delete heapItem;
     
-    return queryResultsInternal->getNumberOfResults();
+    return queryResultsInternal->sortedFinalResults.size();
 }
 
 int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* queryResults)
 {
-    QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
 
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
 
@@ -283,7 +282,7 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
 
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
 
-    return queryResultsInternal->getNumberOfResults();
+    return queryResultsInternal->sortedFinalResults.size();
 }
 
 // find the next k answer starting from "offset". Can be used for
@@ -311,15 +310,15 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     }
 
     //TODO: Corner case: check that queryResults was created using the query.
-    QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
 
     // if queryResults has enough results to answer this query return those results
-    if(queryResultsInternal->getNumberOfResults() >= (unsigned)offset+nextK) {
+    if(queryResults->getNumberOfResults() >= (unsigned)offset+nextK) {
         return nextK;
     }
 
     // set nextK to compute
-    queryResultsInternal->setNextK(offset + nextK - queryResultsInternal->getNumberOfResults());
+    queryResultsInternal->setNextK(offset + nextK - queryResults->getNumberOfResults());
 
     /********Step 1**********/
     // Cache lookup, assume a query with the first k terms found in the cache
@@ -353,16 +352,16 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
             //TODO OPT struct copy in insertResult
             // add this record to topK results if its score is good enough
-            QueryResult queryResult;
-            queryResult.internalRecordId = internalRecordId;
+            QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+            queryResult->internalRecordId = internalRecordId;
         
             bool forwardListValid = false;
             this->indexData->forwardIndex->getForwardList(internalRecordId, forwardListValid);
             if (forwardListValid) {
-                queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
-                queryResult.matchingKeywords = queryResultMatchingKeywords;
-                queryResult.attributeBitmaps = queryResultAttributeBitmaps;
-                queryResult.editDistances = queryResultEditDistances;
+                queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
+                queryResult->matchingKeywords = queryResultMatchingKeywords;
+                queryResult->attributeBitmaps = queryResultAttributeBitmaps;
+                queryResult->editDistances = queryResultEditDistances;
                 queryResultsInternal->insertResult(queryResult);
             }
         }
@@ -377,7 +376,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::set<unsigned> visitedList;
         queryResultsInternal->fillVisitedList(visitedList);
     
-        this->computeTermVirtualList(queryResultsInternal);
+        this->computeTermVirtualList(queryResults);
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
@@ -430,13 +429,13 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                     bool validForwardList;
                     this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
                     if (validForwardList) {
-                        QueryResult queryResult;
-                        queryResult.internalRecordId = internalRecordId;
+                        QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+                        queryResult->internalRecordId = internalRecordId;
                 
-                        queryResult.score = query->getRanker()->computeOverallRecordScore(query, queryResultTermScores);
-                        queryResult.matchingKeywords = queryResultMatchingKeywords;
-                        queryResult.attributeBitmaps = queryResultAttributeBitmaps;
-                        queryResult.editDistances = queryResultEditDistances;
+                        queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
+                        queryResult->matchingKeywords = queryResultMatchingKeywords;
+                        queryResult->attributeBitmaps = queryResultAttributeBitmaps;
+                        queryResult->editDistances = queryResultEditDistances;
                         queryResultsInternal->insertResult(queryResult);
                 
                         // add this record to the candidate list for caching purposes
@@ -567,13 +566,12 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                     this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
                     if (validForwardList) {
                         // add this record to topK results if its score is good enough
-                        QueryResult queryResult;
-                        queryResult.internalRecordId = internalRecordId;
-                        queryResult.score = query->getRanker()->computeOverallRecordScore(query,
-                                                         queryResultTermScores);
-                        queryResult.matchingKeywords = queryResultMatchingKeywords;
-                        queryResult.attributeBitmaps = queryResultAttributeBitmaps;
-                        queryResult.editDistances = queryResultEditDistances;
+                        QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+                        queryResult->internalRecordId = internalRecordId;
+                        queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query,queryResultTermScores));//TODO
+                        queryResult->matchingKeywords = queryResultMatchingKeywords;
+                        queryResult->attributeBitmaps = queryResultAttributeBitmaps;
+                        queryResult->editDistances = queryResultEditDistances;
                         queryResultsInternal->insertResult(queryResult);
                     
                         //add this record to the candidate list for caching purposes
@@ -630,7 +628,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         delete heapItem;
     }
     
-    return queryResultsInternal->getNumberOfResults() - offset;
+    return queryResults->getNumberOfResults() - offset;
 }
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
@@ -640,17 +638,18 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
     if (this->indexData->isCommited() == false)
         return returnValue;
     
-    if (query->getQueryType() == srch2::instantsearch::TopKQuery) {
+    if (query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchTopKQuery(query, offset, nextK, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
-    else if(query->getQueryType() == srch2::instantsearch::GetAllResultsQuery) {
+    else if(query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchGetAllResultsQuery(query, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
     //queryResults->printResult();
+
     return returnValue;
 }
 
@@ -674,7 +673,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 // for doing a range query with a rectangle
  void IndexSearcherInternal::search(const Rectangle &queryRectangle, QueryResults *queryResults)
 {
-	QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
+	QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
@@ -689,7 +688,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 // for doing a range query with a circle,
  void IndexSearcherInternal::search(const Circle &queryCircle, QueryResults *queryResults)
   {
-	  QueryResultsInternal *queryResultsInternal = dynamic_cast<QueryResultsInternal *>(queryResults);
+	  QueryResultsInternal *queryResultsInternal = queryResults->impl;
 	      this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
 	      this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
 	      this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
@@ -698,11 +697,11 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 	      this->indexer->rwMutexForWriter->unlockRead();
   }
 
-void IndexSearcherInternal::computeTermVirtualList(QueryResultsInternal *queryResults) const
+void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) const
 {
-    const Query *query = queryResults->getQuery();
+    const Query *query = queryResults->impl->getQuery();
     const vector<Term* > *queryTerms = query->getQueryTerms();
-    if (query->getQueryType() != MapQuery) {
+    if (query->getQueryType() != SearchTypeMapQuery) {
         for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
              vectorIterator != queryTerms->end();
              vectorIterator++ ) {
@@ -727,7 +726,7 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResultsInternal *queryRe
             //if(termActiveNodeSet->isResultsCached() == false)
             //    delete termActiveNodeSet;
 
-            queryResults->virtualListVector->push_back(termVirtualList);
+            queryResults->impl->virtualListVector->push_back(termVirtualList);
         }
     }
 }

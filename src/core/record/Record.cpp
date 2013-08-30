@@ -1,5 +1,5 @@
 
-// $Id: Record.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Record.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -42,7 +42,7 @@ struct Record::Impl
 {
     string primaryKey;
     std::vector<string> searchableAttributeValues;
-    std::vector<string> sortableAttributeValues;
+    std::vector<string> nonSearchableAttributeValues;
     float boost;
     const Schema *schema;
     std::string inMemoryRecordString;
@@ -56,7 +56,7 @@ Record::Record(const Schema *schema):impl(new Impl)
 {
     impl->schema = schema;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),"");
-    impl->sortableAttributeValues.assign(impl->schema->getNumberOfSortableAttributes(),"");
+    impl->nonSearchableAttributeValues.assign(impl->schema->getNumberOfNonSearchableAttributes(),"");
     impl->boost = 1;
     impl->primaryKey = "";
     impl->point.x = 0;
@@ -93,27 +93,29 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
     return true;
 }
 
-bool Record::setSortableAttributeValue(const std::string &attributeName,
-            const std::string &attributeValue)
-{
-    int attributeId = impl->schema->getSortableAttributeId(attributeName);
+
+
+bool Record::setNonSearchableAttributeValue(const std::string &attributeName,
+            const std::string &attributeValue){
+    int attributeId = impl->schema->getNonSearchableAttributeId(attributeName);
     if (attributeId < 0) {
         return false;
     }
-    return setSortableAttributeValue(attributeId, attributeValue);
+    return setNonSearchableAttributeValue(attributeId, attributeValue);
 }
 
-bool Record::setSortableAttributeValue(const unsigned attributeId,
-                const std::string &attributeValue)
-{
-    if (attributeId >= impl->schema->getNumberOfSortableAttributes()) {
+
+
+
+bool Record::setNonSearchableAttributeValue(const unsigned attributeId,
+                const std::string &attributeValue){
+    if (attributeId >= impl->schema->getNumberOfNonSearchableAttributes()) {
         return false;
     }
 
-    impl->sortableAttributeValues[attributeId] = attributeValue;
+    impl->nonSearchableAttributeValues[attributeId] = attributeValue;
     return true;
 }
-
 
 
 std::string *Record::getSearchableAttributeValue(const unsigned attributeId) const
@@ -125,13 +127,14 @@ std::string *Record::getSearchableAttributeValue(const unsigned attributeId) con
     return &impl->searchableAttributeValues[attributeId];
 }
 
-std::string *Record::getSortableAttributeValue(const unsigned attributeId) const
+
+std::string *Record::getNonSearchableAttributeValue(const unsigned attributeId) const
 {
-    if (attributeId >= impl->schema->getNumberOfSortableAttributes())
+    if (attributeId >= impl->schema->getNumberOfNonSearchableAttributes())
     {
         return NULL;
     }
-    return &impl->sortableAttributeValues[attributeId];
+    return &impl->nonSearchableAttributeValues[attributeId];
 }
 
 // add the primary key value
@@ -215,7 +218,7 @@ std::pair<double,double> Record::getLocationAttributeValue() const
 void Record::clear()
 {
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),"");
-    impl->sortableAttributeValues.assign(impl->schema->getNumberOfSortableAttributes(),"");
+    impl->nonSearchableAttributeValues.assign(impl->schema->getNumberOfNonSearchableAttributes(), "");
     impl->boost = 1;
     impl->primaryKey = "";
     impl->inMemoryRecordString = "";

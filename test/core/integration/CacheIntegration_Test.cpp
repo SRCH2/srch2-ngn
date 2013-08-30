@@ -1,5 +1,5 @@
 
-// $Id: CacheIntegration_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: CacheIntegration_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
            Indexer *indexer1 = Indexer::load(indexMetaData1);
         Indexer *indexer2 = Indexer::load(indexMetaData2);
         
-        const Analyzer *analyzer = indexer1->getAnalyzer();
+        const Analyzer *analyzer = getAnalyzer();
 
         IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
         IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
@@ -184,6 +184,7 @@ int main(int argc, char **argv)
         delete indexer1;
         cout << "done1" << endl;
         delete indexer2;
+        delete analyzer;
 
     }
     cout<<"Cache Integration tests Succesful!!"<<endl;

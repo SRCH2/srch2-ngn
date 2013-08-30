@@ -20,11 +20,26 @@ public:
 	static const unsigned big_directory[][MAX_COL];
 	static const unsigned small_directory[][MAX_COL];
 
+    // This integer log2 function reference from this link:
+    // http://www.southwindsgames.com/blog/2009/01/19/fast-integer-log2-function-in-cc/ 
+	static inline unsigned int intLog2(register unsigned int x) {
+		register unsigned int l=0;
+		if(x >= 1<<16) { x>>=16; l|=16; }
+		if(x >= 1<<8) { x>>=8; l|=8; }
+		if(x >= 1<<4) { x>>=4; l|=4; }
+		if(x >= 1<<2) { x>>=2; l|=2; }
+		if(x >= 1<<1) l|=1;
+		return l;
+	}
+
 	static int byte(const int x)
 	{
 		assert(x >= 0);
 		if(!x) return 1;
-		else return (int)log2(x)+1;
+        // We use this formula instead of the original 
+        // " (int)(log(x)/log(2))+1" in the third-party library 
+        // because a double-to-int conversion may lose precision,
+		else return intLog2(x)+1;
 	}
 
 	// encodeUnsigned compress array[from, from+num) in one unsigned using S16 directory

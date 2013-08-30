@@ -23,9 +23,6 @@ LIST(APPEND UNIT_TESTS Trie_Test)
 #ADD_EXECUTABLE(ForwardIndex_Test ForwardIndex_Test.cpp)
 #TARGET_LINK_LIBRARIES(ForwardIndex_Test ${UNIT_TEST_LIBS})
 	
-ADD_EXECUTABLE(DictionaryBuilder DictionaryBuilder.cpp)
-TARGET_LINK_LIBRARIES(DictionaryBuilder ${UNIT_TEST_LIBS})
-
 ADD_EXECUTABLE(FieldBoost_Test FieldBoost_Test.cpp)
 TARGET_LINK_LIBRARIES(FieldBoost_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS FieldBoost_Test)
@@ -101,6 +98,13 @@ LIST(APPEND UNIT_TESTS QuadTree_Test)
 ADD_EXECUTABLE(GeoIndexUpdate_Test GeoIndexUpdate_Test.cpp)
 TARGET_LINK_LIBRARIES(GeoIndexUpdate_Test ${UNIT_TEST_LIBS})	
 LIST(APPEND UNIT_TESTS GeoIndexUpdate_Test)
+
+
+ADD_EXECUTABLE(VariableLengthAttributeContainer_Test VariableLengthAttributeContainer_Test.cpp)
+TARGET_LINK_LIBRARIES(VariableLengthAttributeContainer_Test ${UNIT_TEST_LIBS})	
+LIST(APPEND UNIT_TESTS VariableLengthAttributeContainer_Test)
+
+
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

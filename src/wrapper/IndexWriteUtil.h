@@ -6,7 +6,7 @@
 #include "json/json.h"
 #include "JSONRecordParser.h"
 #include "ConfigManager.h"
-
+#include "AnalyzerFactory.h"
 #include "evhttp.h"
 
 namespace srch2
@@ -24,7 +24,9 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
+            delete analyzer;
 
     		switch( ret )
 			{
@@ -160,7 +162,7 @@ struct IndexWriteUtil
 			//delete the record from the index
 			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId))
 			{
-				case OP_FAIL:
+				case srch2::instantsearch::OP_FAIL:
 				{
                     // record to update doesn't exit, will insert it
                     break;
@@ -183,7 +185,8 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, offset);
+            Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
 
     		switch( ret )
 			{
@@ -215,7 +218,7 @@ struct IndexWriteUtil
 
         switch ( ret )
         {
-            case OP_FAIL:
+            case srch2::instantsearch::OP_FAIL:
             {
                 log_str << "\"resume\":\"no record with given primary key\"}";
                 break;
@@ -236,7 +239,7 @@ struct IndexWriteUtil
     static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
-    	if ( indexer->commit() == OP_SUCCESS)
+    	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     	{
 	  
 	  // CHENLI: do not save indexes to disk since we can always rebuild them from

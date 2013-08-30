@@ -30,7 +30,7 @@ namespace srch2
 namespace instantsearch
 {
 
-Indexer *Indexer::create(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema)
+Indexer *Indexer::create(IndexMetaData* indexMetaData,Analyzer* analyzer, Schema *schema)
 {
     return new IndexReaderWriter(indexMetaData, analyzer, schema);
 }

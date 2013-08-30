@@ -1,4 +1,4 @@
-//$Id: Schema.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Schema.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -21,39 +21,17 @@
 #define __SCHEMA_H__
 
 #include <instantsearch/platform.h>
+#include <instantsearch/Constants.h>
 #include <string>
 #include <map>
+#include <vector>
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-typedef enum
-{
-    DefaultIndex = 0,
-    LocationIndex = 1
-} IndexType;
 
-typedef enum
-{
-    UNSIGNED = 0,
-    FLOAT = 1
-} FilterType;
-
-/*typedef enum
-{
-    LUCENESCORE = 0,
-    ABSOLUTESCORE = 1
-} RecordScoreType;*/
-
-
-typedef enum
-{
-    FULLPOSITIONINDEX = 0, // the index of keyword in the record
-    FIELDBITINDEX = 1,// keeps the attribute in which a keyword appears in
-    NOPOSITIONINDEX = 2 // For stemmer to work, positionIndex must be enabled.
-} PositionIndexType;
 
 /**
  * This class defines a schema of records, which describes the
@@ -118,18 +96,32 @@ public:
     virtual int setSearchableAttribute(const std::string &attributeName,
             unsigned attributeBoost = 1) = 0;
 
-    /**
-     * @param defaultValue is the default value of attributeName. Its type is
-     * float or integer.
-     */
-    virtual int setSortableAttribute(const std::string &attributeName,
-            FilterType type, const std::string defaultValue) = 0;
+
+
+
+    virtual int setNonSearchableAttribute(const std::string &attributeName,
+            FilterType type, const std::string & defaultValue) = 0;
 
     /**
      * Returns the AttributeName of the primaryKey
      */
     virtual const std::string* getPrimaryKey() const = 0;
 
+
+    // get searchable attribute
+    virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;
+    /**
+     * Gets the index of an attribute name by doing an internal
+     * lookup. The index of an attribute depends on the order in
+     * which the function setAtrribute was called. The index starts
+     * at 0 for the first added attribute, than 1 and so on.
+     * @return the index if the attribute is found, or -1 otherwise.
+     */
+    virtual int getSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
+    /**
+     * @returns the number of attributes in the schema.
+     */
+    virtual unsigned getNumberOfSearchableAttributes() const = 0;
     /**
      * Gets the boost value of the attribute with
      * attributeId.  \return the boost value of the attribute;
@@ -147,34 +139,21 @@ public:
      */
     virtual unsigned getBoostSumOfSearchableAttributes() const = 0;
 
-    virtual const std::string* getDefaultValueOfSortableAttribute(const unsigned searchableAttributeNameId) const = 0;
-    virtual srch2::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned searchableAttributeNameId) const = 0;
 
-    // get searchable attribute
-    virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;
-    /**
-     * Gets the index of an attribute name by doing an internal
-     * lookup. The index of an attribute depends on the order in
-     * which the function setAtrribute was called. The index starts
-     * at 0 for the first added attribute, than 1 and so on.
-     * @return the index if the attribute is found, or -1 otherwise.
-     */
-    virtual int getSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
 
-    /**
-     * Gets the index of an attribute name by doing an internal
-     * lookup. The index of an attribute depends on the order in
-     * which the function setAtrribute was called. The index starts
-     * at 0 for the first added attribute, than 1 and so on.
-     * @return the index if the attribute is found, or -1 otherwise.
-     */
-    virtual int getSortableAttributeId(const std::string &searchableAttributeName) const = 0;
 
-    /**
-     * @returns the number of attributes in the schema.
-     */
-    virtual unsigned getNumberOfSearchableAttributes() const = 0;
-    virtual unsigned getNumberOfSortableAttributes() const = 0;
+
+
+    // non Searchable attributes
+    virtual const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual int getNonSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
+    virtual unsigned getNumberOfNonSearchableAttributes() const = 0;
+    virtual const std::map<std::string , unsigned> * getNonSearchableAttributes() const  = 0;
+
+
+
+
 
     /**
 	 * Sets the expression which is used to calculate the score of a record

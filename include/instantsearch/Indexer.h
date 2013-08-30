@@ -1,4 +1,4 @@
-//$Id: Indexer.h 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: Indexer.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,6 +25,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Record.h>
+#include <instantsearch/Constants.h>
 
 #include <string>
 #include <stdint.h>
@@ -79,11 +80,7 @@ public:
 };
 
 
-typedef enum {
-    OP_FAIL,
-    OP_SUCCESS,
-    OP_KEYWORDID_SPACE_PROBLEM
-} INDEXWRITE_RETVAL;
+
 
 class Indexer
 {
@@ -98,7 +95,7 @@ public:
 
     /*
     * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.*/
-    virtual INDEXWRITE_RETVAL addRecord(const Record *record, const uint64_t kafkaMessageOffset) = 0;
+    virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer, const uint64_t kafkaMessageOffset) = 0;
 
     /*
     * Deletes all the records.*/
@@ -123,19 +120,6 @@ public:
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
 
     virtual const std::string getIndexHealth() const = 0;
-
-    /**
-     * Returns a reference to the deserialized analyzer object that
-     * was originally used to analyze records inside the IndexWriter.
-     * In this way, the user can use the same analyzer for both the
-     * indexed data and the input query. For example, consider an
-     * index structure created from a record collection in which
-     * characters such as "@&" are replaced by a space, and stop
-     * words such as "the" and "an" were ignored.
-     * Using the same analyzer, we can do the same preprocessing
-     * operations on a query.
-     */
-    virtual const srch2::instantsearch::Analyzer *getAnalyzer() const = 0;
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 

@@ -1,4 +1,4 @@
-//$Id: Query.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Query.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -22,7 +22,10 @@
 
 #include <instantsearch/platform.h>
 #include <instantsearch/Term.h>
+#include <instantsearch/Constants.h>
 #include <vector>
+#include <string>
+
 
 namespace srch2
 {
@@ -30,19 +33,8 @@ namespace instantsearch
 {
 
 class Ranker;
+class ResultsPostProcessorPlan;
 
-typedef enum
-{
-    TopKQuery = 0,
-    GetAllResultsQuery = 1,
-    MapQuery = 2
-} QueryType;
-
-typedef enum
-{
-    Ascending = 0,
-    Descending = 1
-} SortOrder;
 
 /**
  * This class defines a query that is passed to the IndexSearcher. A
@@ -144,6 +136,23 @@ public:
      */
     void setSortableAttribute(unsigned filterAttributeId, srch2::instantsearch::SortOrder order);
     unsigned getSortableAttributeId() const;
+
+
+
+    // TODO temperory functions, to test range search filter
+    void setNonSearchableAttributeName(std::string name);
+    std::string getNonSearchableAttributeName() const;
+
+    void setNonSearchableAttributeValue(std::string value);
+    std::string getNonSearchableAttributeValue() const;
+
+
+
+
+
+    void setPostProcessingPlan(ResultsPostProcessorPlan * plan);
+    ResultsPostProcessorPlan * getPostProcessingPlan();
+
 
     /*
      * TODO Should change this function's name to

@@ -46,12 +46,12 @@ private:
 public:
     ts_shared_ptr()
     {
-        pthread_spin_init(&m_spinlock, 0);
+    	pthread_spin_init(&m_spinlock, 0);
     }
 
     ~ts_shared_ptr()
     {
-        pthread_spin_destroy(&m_spinlock);
+    	pthread_spin_destroy(&m_spinlock);
     }
 
     void reset(T *optr)

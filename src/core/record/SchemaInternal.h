@@ -1,4 +1,4 @@
-//$Id: SchemaInternal.h 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: SchemaInternal.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -37,10 +37,8 @@
 
 using std::fstream;
 
-namespace srch2
-{
-namespace instantsearch
-{
+namespace srch2 {
+namespace instantsearch {
 
 /**
  * This class defines a schema of records, which describes the
@@ -78,15 +76,17 @@ namespace instantsearch
  *    make the PrimaryKey searchable by adding it as one of the
  *    [AttributeId, AttributeName, AttributeBoost] triple, say [3, PhoneNumber, 60].
  */
-class SchemaInternal: public Schema
-{
+class SchemaInternal: public Schema {
 public:
 
     /**
      * Creates a Schema object
      */
-    SchemaInternal() { };
-    SchemaInternal(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType);
+    SchemaInternal() {
+    }
+    ;
+    SchemaInternal(srch2::instantsearch::IndexType indexType,
+            srch2::instantsearch::PositionIndexType positionIndexType);
     SchemaInternal(const SchemaInternal &schemaInternal);
 
     srch2::instantsearch::IndexType getIndexType() const;
@@ -106,7 +106,11 @@ public:
     int setSearchableAttribute(const std::string &attributeName,
             unsigned attributeBoost = 1);
 
-    int setSortableAttribute(const std::string &attributeName, FilterType type, std::string defaultValue);
+    int setSortableAttribute(const std::string &attributeName, FilterType type,
+            std::string defaultValue);
+
+    int setNonSearchableAttribute(const std::string &attributeName,
+            FilterType type, const std::string & defaultValue);
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -118,20 +122,19 @@ public:
      * attributeId.  \return the boost value of the attribute;
      * "0" if the attribute does not exist.
      */
-    unsigned getBoostOfSearchableAttribute(const unsigned searchableAttributeNameId) const;
-
+    unsigned getBoostOfSearchableAttribute(
+            const unsigned searchableAttributeNameId) const;
     const std::map<std::string, unsigned>& getSearchableAttribute() const;
-
     /**
      * Gets the sum of all attribute boosts in the schema.  The
      * returned value can be used for the normalization of
      * attribute boosts.
      */
     unsigned getBoostSumOfSearchableAttributes() const;
-
-    const std::string* getDefaultValueOfSortableAttribute(const unsigned sortableAttributeNameId) const;
-    srch2::instantsearch::FilterType getTypeOfSortableAttribute(const unsigned sortableAttributeNameId) const;
-
+    /**
+     * @returns the number of attributes in the schema.
+     */
+    unsigned getNumberOfSearchableAttributes() const;
     /**
      * Gets the index of an attribute name by doing an internal
      * lookup. The index of an attribute depends on the order in
@@ -139,18 +142,19 @@ public:
      * at 0 for the first added attribute, than 1 and so on.
      * @return the index if the attribute is found, or -1 otherwise.
      */
-    int getSearchableAttributeId(const std::string &searchableAttributeName) const;
+    int getSearchableAttributeId(
+            const std::string &searchableAttributeName) const;
 
-    int getSortableAttributeId(const std::string &searchableAttributeName) const;
+    const std::string* getDefaultValueOfNonSearchableAttribute(
+            const unsigned searchableAttributeNameId) const;
+    FilterType getTypeOfNonSearchableAttribute(
+            const unsigned searchableAttributeNameId) const;
+    int getNonSearchableAttributeId(
+            const std::string &searchableAttributeName) const;
+    unsigned getNumberOfNonSearchableAttributes() const;
+    const std::map<std::string, unsigned> * getNonSearchableAttributes() const;
 
-    /**
-     * @returns the number of attributes in the schema.
-     */
-    unsigned getNumberOfSearchableAttributes() const;
-
-    unsigned getNumberOfSortableAttributes() const;
-
-    int commit(){
+    int commit() {
         this->commited = 1;
         return 0;
     }
@@ -166,22 +170,24 @@ public:
     /**
      * Internal functions
      */
-    static void load(SchemaInternal &schemaInternal, const std::string &schemaFullPathFileName)
-    {
+    static void load(SchemaInternal &schemaInternal,
+            const std::string &schemaFullPathFileName) {
         // read the ForwardIndex from the file
         std::ifstream ifs(schemaFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_iarchive ia(ifs);
         ia >> schemaInternal;
         ifs.close();
-    };
+    }
+    ;
 
-    static void save(const SchemaInternal &schemaInternal, const std::string &schemaFullPathFileName)
-    {
+    static void save(const SchemaInternal &schemaInternal,
+            const std::string &schemaFullPathFileName) {
         std::ofstream ofs(schemaFullPathFileName.c_str(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);
         oa << schemaInternal;
         ofs.close();
-    };
+    }
+    ;
 
 private:
     std::string primaryKey;
@@ -191,13 +197,13 @@ private:
      * http://www.boost.org/doc/libs/1_37_0/libs/multi_index/doc/index.html
      * http://stackoverflow.com/questions/535317/checking-value-exist-in-a-stdmap-c
      */
-    std::map< std::string , unsigned > searchableAttributeNameToId;
+    std::map<std::string, unsigned> searchableAttributeNameToId;
 
     std::vector<unsigned> searchableAttributeBoostVector;
 
-    std::map< std::string , unsigned> sortableAttributeNameToId;
-    std::vector<FilterType> sortableAttributeTypeVector;
-    std::vector<std::string> sortableAttributeDefaultValueVector;
+    std::map<std::string, unsigned> nonSearchableAttributeNameToId;
+    std::vector<FilterType> nonSearchableAttributeTypeVector;
+    std::vector<std::string> nonSearchableAttributeDefaultValueVector;
 
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -209,20 +215,20 @@ private:
     friend class boost::serialization::access;
 
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
+    void serialize(Archive & ar, const unsigned int version) {
         ar & primaryKey;
         ar & scoringExpressionString;
         ar & searchableAttributeNameToId;
         ar & searchableAttributeBoostVector;
-        ar & sortableAttributeNameToId;
-        ar & sortableAttributeTypeVector;
-        ar & sortableAttributeDefaultValueVector;
+        ar & nonSearchableAttributeNameToId;
+        ar & nonSearchableAttributeTypeVector;
+        ar & nonSearchableAttributeDefaultValueVector;
         ar & indexType;
         ar & positionIndexType;
     }
 };
 
-}}
+}
+}
 
 #endif //__SCHEMAINTERNAL_H__
