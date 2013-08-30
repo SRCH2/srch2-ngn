@@ -174,7 +174,12 @@ public:
     /**
      * Destructor of the QueryResults object.
      */
-    ~QueryResults();
+    /*
+     * If a class has a virtual function, then it is possible that some other class extends the base one
+     * and in this case the destructor also must be virtual. So if we have a virtual function in a class, the destructor also
+     * must be virtual.
+     */
+    virtual ~QueryResults();
 
 
 
