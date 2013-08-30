@@ -128,7 +128,7 @@ if [ $? -gt 0 ]; then
 fi
 
 echo '----do tests_used_for_statemedia--------------'
-#./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
+./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
 
 #if [ $? -gt 0 ]; then
 #    echo " --- error ---"

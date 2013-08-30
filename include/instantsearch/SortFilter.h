@@ -14,18 +14,15 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
 
-#ifndef _CORE_POSTPROCESSING_SORTFILTER_H_
-#define _CORE_POSTPROCESSING_SORTFILTER_H_
-
+#ifndef __CORE_POSTPROCESSING_SORTFILTER_H__
+#define __CORE_POSTPROCESSING_SORTFILTER_H__
 
 #include <vector>
 #include <algorithm>
-
-
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
@@ -35,7 +32,6 @@ namespace srch2
 {
 namespace instantsearch
 {
-
 
 class SortEvaluator
 {
@@ -48,18 +44,15 @@ public:
 
 class SortFilter : public ResultsPostProcessorFilter
 {
-
 public:
 	// TODO : we don't need query in new design
 	void doFilter(IndexSearcher * indexSearcher, const Query * query,
 			 QueryResults * input, QueryResults * output);
 	~SortFilter();
-
-
 	SortEvaluator * evaluator;
 };
 
 }
 }
-#endif // _CORE_POSTPROCESSING_SORTFILTER_H_
+#endif // __CORE_POSTPROCESSING_SORTFILTER_H__
 

@@ -64,6 +64,7 @@ end
 puts "Starting search"
 100.times do
   kw = keywords.sample
+  kw = "%7BdefaultPreficComplete=COMPLETE%7D" + kw + "*"
   Bimaple.search(kw)
    #puts "search: #{kw}"
 end

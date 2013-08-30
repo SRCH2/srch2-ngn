@@ -18,77 +18,35 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H_
-#define _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H_
+#ifndef __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
+#define __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
 
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
-#include "instantsearch/Score.h"
 #include "query/QueryResultsInternal.h"
-#include "string"
-#include <vector>
-using namespace std;
-
-
+#include "instantsearch/NonSearchableAttributeExpressionFilter.h"
 namespace srch2
 {
 namespace instantsearch
 {
 
 
+// Example:
+// fq=price:[* TO 100] AND model:JEEP AND CMPLX$price - discount < 100$
+// This class checks to see if a result passes these criteria or not ...
 class NonSearchableAttributeExpressionFilterInternal
 {
 
-
 public:
-
-	NonSearchableAttributeExpressionFilterInternal(NonSearchableAttributeExpressionFilter * filter){
-		this->filter = filter;
-	}
-
+	NonSearchableAttributeExpressionFilterInternal(NonSearchableAttributeExpressionFilter * filter);
 	// evaluates expression object coming from query using result data to see
 	// if it passes the query criterion.
-	bool doesPassCriterion(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result){
-
-
-		// fetch the names and ids of non searchable attributes from schema
-		vector<string> attributes;
-		vector<unsigned> attributeIds;
-		for(map<string,unsigned>::const_iterator attr = schema->getNonSearchableAttributes()->begin();
-				attr != schema->getNonSearchableAttributes()->end() ; ++attr ){
-			attributes.push_back(attr->first);
-			attributeIds.push_back(attr->second);
-		}
-
-		// now fetch the values of different attributes from forward index
-		vector<Score> scores;
-		bool isValid = false;
-		const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
-		ASSERT(isValid);
-		const VariableLengthAttributeContainer * container = list->getNonSearchableAttributeContainer();
-		container->getBatchOfAttributes(attributeIds,schema,&scores);
-
-		// now call the evaluator to see if this record passes the criteria or not
-		// A criterion can be for example price:12 or price:[* TO 100]
-		map<string, Score> valuesForEvaluation;
-
-		// prepare the evaluator input
-		unsigned s =0;
-		for(vector<string>::iterator attr = attributes.begin() ; attr != attributes.end() ; ++attr ){
-			valuesForEvaluation[*attr] = scores.at(s);
-			s++;
-		}
-
-		return filter->evaluator->evaluate(valuesForEvaluation);
-
-	}
+	bool doPass(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result);
 
 private:
 	NonSearchableAttributeExpressionFilter * filter ;
-
 };
 
-
 }
 }
-#endif // _CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H_
+#endif // __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
