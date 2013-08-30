@@ -222,6 +222,11 @@ namespace srch2
 		return result;
 	}
 
+	// Example
+	// if start = 10, end = 100, gap = 10
+	// this->value = 1 => returns 0
+	// this->value = 10 => returns 1
+	// this->value = 21 => returns 2
     unsigned Score::findIndexOfContainingInterval(Score & start , Score & end, Score & gap) const{
         float thisScore = 0;
         float startScore = 0;
@@ -229,6 +234,7 @@ namespace srch2
         float gapScore = 0;
         switch (this->getType()) {
             case ATTRIBUTE_TYPE_UNSIGNED:
+                // first bucket which covers less-than-start values is zero
                 if(this->intScore < start.getIntScore()){
                     return 0;
                 }
@@ -238,6 +244,7 @@ namespace srch2
                 gapScore = gap.getIntScore();
                 break;
             case ATTRIBUTE_TYPE_FLOAT:
+                // first bucket which covers less-than-start values is zero
                 if(this->floatScore < start.getFloatScore()){
                     return 0;
                 }
@@ -248,8 +255,9 @@ namespace srch2
                 break;
             default:
                 ASSERT(false);
-                return 0;
+                return -1; // invalid group id
         }
+        // generating group id for intervals, the buckets given to values greater than start are grater than or equal to 1
         return floor((thisScore - startScore) / gapScore) + 1 ;
     }
 

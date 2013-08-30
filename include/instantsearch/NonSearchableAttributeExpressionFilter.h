@@ -14,13 +14,12 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
 
-#ifndef _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
-#define _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
-
+#ifndef __CORE_POSTPROICESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H__
+#define __CORE_POSTPROICESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H__
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/IndexSearcher.h"
@@ -30,9 +29,7 @@ namespace srch2
 {
 namespace instantsearch
 {
-
 class NonSearchableAttributeExpressionFilterInternal;
-
 
 class NonSearchableAttributeExpressionEvaluator
 {
@@ -41,27 +38,21 @@ public:
 	virtual ~NonSearchableAttributeExpressionEvaluator(){};
 };
 
-
 class NonSearchableAttributeExpressionFilter : public ResultsPostProcessorFilter
 {
-
 public:
 	NonSearchableAttributeExpressionFilter();
-	void doFilter(IndexSearcher * indexSearcher,   const Query * query,
+	void doFilter(IndexSearcher * indexSearcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~NonSearchableAttributeExpressionFilter();
-
 	// this object is allocated and de-allocated ourside this class.
 	NonSearchableAttributeExpressionEvaluator * evaluator;
 
 private:
-
 	NonSearchableAttributeExpressionFilterInternal * impl;
-
-
 };
 
 }
 }
-#endif // _NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H_
+#endif // __CORE_POSTPROICESSING_NONSEARCHABLEATTRIBTEEXPRESSIONFILTER_H__
 

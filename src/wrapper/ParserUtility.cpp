@@ -199,6 +199,7 @@ bool validateValueWithType(srch2::instantsearch::FilterType type,
         return isTime(value);
     }
     // flow never reaches here
+    // TODO : Add assert
     return false;
 }
 

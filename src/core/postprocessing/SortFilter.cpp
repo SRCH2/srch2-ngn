@@ -41,7 +41,6 @@ private:
     SortFilter * filter;
 
 public:
-
     ResultNonSearchableAttributeComparator(SortFilter * filter,
             ForwardIndex* forwardIndex, Schema * schema, const Query * query) {
         this->filter = filter;
@@ -52,15 +51,9 @@ public:
 
     // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
     bool operator()(const QueryResult * lhs, const QueryResult * rhs) const {
-
         // do the comparison
-        if (filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
-                rhs->valuesOfParticipatingNonSearchableAttributes) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-
+        return filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
+                rhs->valuesOfParticipatingNonSearchableAttributes) > 0;
     }
 };
 
@@ -88,8 +81,8 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
     // extract all the information from forward index
     // 1. find the participating attributes
     /*
-     * Example : for example if the query contains "name,age,bdate ASC" , the participating attributes are
-     *           name, age and bdate.
+     * Example : for example if the query contains "name,age,birthdate ASC" , the participating attributes are
+     *           name, age and birthdate.
      */
     const vector<string> * attributes =
             evaluator->getParticipatingAttributes();
@@ -110,8 +103,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
                 list->getNonSearchableAttributeContainer();
         // now get the values from the container
         vector<Score> scores;
-        nonSearchableAttributeContainer->getBatchOfAttributes(attributeIds, schema,
-                &scores);
+        nonSearchableAttributeContainer->getBatchOfAttributes(attributeIds, schema,&scores);
         // save the values in QueryResult objects
         for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
                 attributesIterator != attributes->end() ; ++attributesIterator){
@@ -123,9 +115,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
     // 3. now sort the results based on the comparator
     std::sort(output->impl->sortedFinalResults.begin(),
             output->impl->sortedFinalResults.end(),
-            ResultNonSearchableAttributeComparator(this, forwardIndex, schema,
-                    query));
-
+            ResultNonSearchableAttributeComparator(this, forwardIndex, schema, query));
 }
 
 }

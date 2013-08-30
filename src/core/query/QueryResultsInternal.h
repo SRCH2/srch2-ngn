@@ -55,24 +55,19 @@ public:
     string externalRecordId;
     unsigned internalRecordId;
     Score _score;
-
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
-
     std::map<std::string,Score> valuesOfParticipatingNonSearchableAttributes;
-
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     Score getResultScore() const
     {
     	return _score;
     }
-
-
     friend class QueryResultFactoryInternal;
-private:
 
+private:
     QueryResult(const QueryResult& copy_from_me){
     	externalRecordId = copy_from_me.externalRecordId;
     	internalRecordId = copy_from_me.internalRecordId;
@@ -83,13 +78,7 @@ private:
     }
     QueryResult(){
     };
-
-
-
-
 };
-
-
 
 class QueryResultComparator
 {

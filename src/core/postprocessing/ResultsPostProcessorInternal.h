@@ -18,16 +18,13 @@
  */
 
 
-#ifndef _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_
-#define _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_
+#ifndef __CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H__
+#define __CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H__
 
 #include <vector>
 
-
-
 #include <instantsearch/ResultsPostProcessor.h>
 #include "util/Assert.h"
-
 
 using namespace std;
 
@@ -36,12 +33,15 @@ namespace srch2
 namespace instantsearch
 {
 
-
 class ResultsPostProcessorPlanInternal
 {
 public:
 	vector<ResultsPostProcessorFilter *> filterVector;
 	vector<ResultsPostProcessorFilter *>::iterator filterIterator;
+
+	ResultsPostProcessorPlanInternal(){
+	    filterIterator = filterVector.end();
+	}
 
 	~ResultsPostProcessorPlanInternal(){
 		for(vector<ResultsPostProcessorFilter *>::iterator filter = filterVector.begin();
@@ -58,4 +58,4 @@ public:
 }
 }
 
-#endif // _CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H_
+#endif // __CORE_POSTPROCESSING_RESULTSPOSTPROCESSORINTERNAL_H__

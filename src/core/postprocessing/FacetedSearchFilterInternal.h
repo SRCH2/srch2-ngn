@@ -24,32 +24,26 @@
 #include <map>
 #include <string>
 #include <algorithm>
-
 #include "instantsearch/Score.h"
-
 #include "operation/IndexSearcherInternal.h"
 
 namespace srch2 {
 namespace instantsearch {
 
 class FacetedSearchFilterInternal
-
 {
 
 public:
-
-    // TODO : add example to explain this function
-    // TODO : change the logic to use map for one and vector and binary search for one
-    void doAggregation(const Score & attributeValue,
-            const std::vector<Score> & lowerBounds,
-            std::vector<pair<string, float> > * counts , unsigned indexOfField) ;
+    FacetedSearchFilterInternal(){
+        isPrepared = false;
+    }
 
     void doAggregationRange(const Score & attributeValue,
             const std::vector<Score> & lowerBounds,
             std::vector<pair<string, float> > * counts , Score & start, Score & end, Score & gap);
 
     void doAggregationCategorical(const Score & attributeValue,
-            std::vector<pair<string, float> > * counts);
+            std::map<string , float > * count);
 
     // this function prepares the "lowerbound" structure from the parallel string vectors
     void prepareFacetInputs(IndexSearcher *indexSearcher);
@@ -60,14 +54,13 @@ public:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
-
     // these members are filled in prepareFacetInputs
     std::vector<Score> rangeStartScores;
     std::vector<Score> rangeEndScores;
     std::vector<Score> rangeGapScores;
-
     // TODO : in the future we must suppose different range sizes ....
     std::map<std::string, std::vector<Score> > lowerBoundsOfIntervals;
+    bool isPrepared;
 };
 
 }

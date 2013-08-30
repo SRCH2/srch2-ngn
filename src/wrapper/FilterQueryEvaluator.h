@@ -16,6 +16,8 @@
 
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
+#ifndef __WRAPPER_FILTERQUERYEVALUATOR_H__
+#define __WRAPPER_FILTERQUERYEVALUATOR_H__
 
 #include <iostream>
 #include <string>
@@ -35,8 +37,6 @@
 #include "RegexConstants.h"
 #include "util/Assert.h"
 
-#ifndef __WRAPPER_FILTERQUERYEVALUATOR_H__
-#define __WRAPPER_FILTERQUERYEVALUATOR_H__
 
 using namespace std;
 using srch2::instantsearch::Score;
