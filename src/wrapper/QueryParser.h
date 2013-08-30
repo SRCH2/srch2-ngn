@@ -130,6 +130,8 @@ private:
     static const char* const facetRangeGap;
     static const char* const facetRangeEnd;
     static const char* const facetRangeStart;
+    static const char* const facetField;
+    static const char* const facetRangeField;
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f.%s.facet.%s", facetField.c_str(), facetRangeProperty.c_str();
@@ -250,7 +252,7 @@ private:
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    bool keywordParser(string &input);
+    bool termParser(string &input);
 
     /*
      * this function parsers only the parameters which are specific to Top-K

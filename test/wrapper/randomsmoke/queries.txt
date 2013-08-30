@@ -1,5 +1,7 @@
 @pass
 q=Personal^3 AND Services
+q=category.name:Personal^3 AND Services
+q=category.name+category:Personal^3 AND Services
 q=category:Personal^3 AND Services
 q=category:Personal^3 AND name:Services
 q=Personal*^3 AND Services
@@ -67,6 +69,7 @@ q=Services AND Personal~.8^4
 q=Services AND Personal^^4
 q=Services AND Personal^4~1
 q=Services AND Personal~~.7
+q=:category:Services
 q={defaultBoostLevel=asd}
 q={defaultBoostLevel=1}
 q={defaultBoostLevel=asd}personal AND

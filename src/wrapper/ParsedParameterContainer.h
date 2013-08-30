@@ -157,6 +157,20 @@ public:
         topKParameterContainer = NULL;
         getAllResultsParameterContainer = NULL;
         geoParameterContainer = NULL;
+        isFuzzy=true;
+        prefixMatchPenalty=0;
+        isOmitHeader=false;
+        maxTimeAllowed=0;
+        lengthBoost=0;
+        responseResultsFormat=JSON;
+        isDebugEnabled=false;
+        termFQBooleanOperator=OP_NOT_SPECIFIED;
+        termBooleanOperator = OP_NOT_SPECIFIED;
+        queryDebugLevel= CompleteDebug;
+        isTermBooleanOperatorSet=false;
+        isFqBooleanOperatorSet=false;
+        resultsStartOffset=0; // defaults to 0
+        numberOfResults=10; // defaults to 10
     }
 
     ~ParsedParameterContainer() {

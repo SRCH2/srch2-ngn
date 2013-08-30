@@ -58,6 +58,9 @@ const char* const QueryParser::facetParamName = "facet"; //solr
 const char* const QueryParser::facetRangeGap = "gap";
 const char* const QueryParser::facetRangeEnd = "end";
 const char* const QueryParser::facetRangeStart = "start";
+const char* const QueryParser::facetField = "facet.field";
+const char* const QueryParser::facetRangeField = "facet.range";
+
 //searchType
 const char* const QueryParser::searchType = "searchType";
 
@@ -106,25 +109,35 @@ bool QueryParser::parse() {
      */
 
     // do some parsing
-    this->isFuzzyParser();
-    this->mainQueryParser();
-    this->debugQueryParser();
-    this->fieldListParser();
-    this->startOffsetParameterParser();
-    this->numberOfResultsParser();
-    this->timeAllowedParameterParser();
-    this->omitHeaderParameterParser();
-    this->responseWriteTypeParameterParser();
-    this->filterQueryParameterParser();
-    this->lengthBoostParser();
-    this->prefixMatchPenaltyParser();
-    this->extractSearchType();
-    if (this->container->hasParameterInQuery(GeoSearchType)) {
-        this->geoParser();
-    } else if (this->container->hasParameterInQuery(GetAllResultsSearchType)) {
-        this->getAllResultsParser();
-    } else {
-        this->topKParameterParser();
+    try {
+        this->isFuzzyParser();
+        this->mainQueryParser();
+        this->debugQueryParser();
+        this->fieldListParser();
+        this->startOffsetParameterParser();
+        this->numberOfResultsParser();
+        this->timeAllowedParameterParser();
+        this->omitHeaderParameterParser();
+        this->responseWriteTypeParameterParser();
+        this->filterQueryParameterParser();
+        this->lengthBoostParser();
+        this->prefixMatchPenaltyParser();
+        this->extractSearchType();
+        if (this->container->hasParameterInQuery(GeoSearchType)) {
+            this->geoParser();
+        } else if (this->container->hasParameterInQuery(
+                GetAllResultsSearchType)) {
+            this->getAllResultsParser();
+        } else {
+            this->topKParameterParser();
+        }
+    } catch (exception& e) {
+        Logger::error(e.what());
+        // error msg
+        this->isParsedError = true;
+        this->container->messages.push_back(
+                make_pair(MessageError,
+                        "Ooops! Something went wrong while parsing the query. If you face this again, please contact srch2."));
     }
     return !this->isParsedError; // return true for success, false for parse error
 }
@@ -133,7 +146,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
     /*
      * example: q={defaultSearchFields=Author defaultFuzzyLevel=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
      * 1. calls localParameterParser()
-     * 2. calls the keywordParser();
+     * 2. calls the termParser();
      */
     // 1. get the mainQuery string.
     Logger::info("parsing the main query.");
@@ -149,10 +162,10 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         if (this->localParameterParser(mainQueryStr)) {
             // the mainQueryStr now doesn't have the lopcalparameter part.
             // mainQueryStr modified to 'title:algo* AND publisher:mac* AND lang:engl*^2~.8'
-            // 3. call the keywordParser().
+            // 3. call the termParser().
             bool parseNextTerm = true;
             while (parseNextTerm) {
-                if (this->keywordParser(mainQueryStr)) {
+                if (this->termParser(mainQueryStr)) {
                     // this comment is only valid for first iteration in this while loop
                     // mainQueryStr modified to 'AND publisher:mac* AND lang:engl*^2~.8'
                     string boolOperator = "";
@@ -235,9 +248,8 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
      * example: facet.field=category
      */
     Logger::debug("inside populateFacetFieldSimple function");
-    const char* key = "facet.field"; // TODO: usse a constant
     vector<string> facetFields;
-    custom_evhttp_find_headers(&headers, key, facetFields);
+    custom_evhttp_find_headers(&headers, facetField, facetFields);
     for (vector<string>::iterator facetField = facetFields.begin();
             facetField != facetFields.end(); ++facetField) {
         fqc.fields.push_back(*facetField);
@@ -257,9 +269,8 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
      * example facet.range=price
      */
     Logger::debug("inside populateFacetFieldsRange function");
-    const char* key = "facet.range"; // TODO: use a constant
     vector<string> facetFields;
-    custom_evhttp_find_headers(&headers, key, facetFields);
+    custom_evhttp_find_headers(&headers, facetRangeField, facetFields);
     for (vector<string>::iterator facetField = facetFields.begin();
             facetField != facetFields.end(); ++facetField) {
         fqc.fields.push_back(*facetField);
@@ -329,9 +340,19 @@ void QueryParser::lengthBoostParser() {
         size_t st;
         string lengthBoost = evhttp_uridecode(lengthBoostTmp, 0, &st);
         if (isFloat(lengthBoost)) {
-            this->container->parametersInQuery.push_back(
-                    srch2::httpwrapper::LengthBoostFlag);
-            this->container->lengthBoost = atof(lengthBoost.c_str());
+            const float lboost = atof(lengthBoost.c_str());
+            if (lboost <= 1 && lboost >= 0) {
+                this->container->parametersInQuery.push_back(
+                        srch2::httpwrapper::LengthBoostFlag);
+                this->container->lengthBoost = lboost;
+            } else {
+                //raise error
+                this->container->messages.push_back(
+                        make_pair(MessageError,
+                                "lengthBoost should be a floating point number in between 0 and 1, both inclusive."));
+                this->isParsedError = true;
+            }
+
         } else {
             //raise error
             this->container->messages.push_back(
@@ -357,10 +378,18 @@ void QueryParser::prefixMatchPenaltyParser() {
         string prefixMatchPenalty = evhttp_uridecode(prefixMatchPenaltyTmp, 0,
                 &st);
         if (isFloat(prefixMatchPenalty)) {
-            this->container->parametersInQuery.push_back(
-                    srch2::httpwrapper::PrefixMatchPenaltyFlag);
-            this->container->prefixMatchPenalty = atof(
-                    prefixMatchPenalty.c_str());
+            const float ppm = atof(prefixMatchPenalty.c_str());
+            if (ppm <= 1 && ppm >= 0) {
+                this->container->parametersInQuery.push_back(
+                        srch2::httpwrapper::PrefixMatchPenaltyFlag);
+                this->container->prefixMatchPenalty = ppm;
+            } else {
+                //raise error
+                this->container->messages.push_back(
+                        make_pair(MessageError,
+                                "ppm should be a floating point number in between 0 and 1, both inclusive."));
+                this->isParsedError = true;
+            }
         } else {
             //raise error
             this->container->messages.push_back(
@@ -391,18 +420,20 @@ void QueryParser::fieldListParser() {
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::ReponseAttributesList);
         char * fieldStr = strdup(fl.c_str());
-        char * pch = strtok(fieldStr, QueryParser::fieldListDelimiter);
-        while (pch) {
-            string field = pch;
+
+        vector<string> tokens;
+        boost::split(tokens, fieldStr,
+                boost::is_any_of(QueryParser::fieldListDelimiter));
+        for (std::vector<string>::iterator fieldItr = tokens.begin();
+                fieldItr != tokens.end(); ++fieldItr) {
+            string field = *fieldItr;
             if (field.compare("*") == 0) {
                 this->container->responseAttributesList.clear();
                 this->container->responseAttributesList.push_back("*");
                 return;
             }
             this->container->responseAttributesList.push_back(field);
-            pch = strtok(fieldStr, NULL);
         }
-        delete fieldStr;
     }
     Logger::debug("returning from fieldListParser function");
 }
@@ -705,20 +736,9 @@ void QueryParser::sortParser() {
         string sortString = evhttp_uridecode(sortTemp, 0, &st);
         // we have sortString, we need to tokenize this string and populate the
         // parameters in SortQueryEvaluator class object.
-        char *sortStringDup = strdup(sortString.c_str()); // strtok takes char* and not const char* so creating duplicate of input.
-        char *fieldToken = strtok(sortStringDup, sortFiledsDelimiter);
         vector<string> fieldTokens;
-        Logger::debug("tokenizing pair using delimiter");
-        while (fieldToken) {
-            // this first token is filed name and second is its value
-            // get the local parameter field
-            string sToken = string(fieldToken);
-            Logger::debug("triming the token %s", sToken.c_str());
-            boost::algorithm::trim(sToken);
-            Logger::debug("token trimed %s", sToken.c_str());
-            fieldTokens.push_back(sToken);
-            fieldToken = strtok(NULL, lpKeyValDelimiter);
-        }
+        boost::split(fieldTokens, sortString,
+                boost::is_any_of(sortFiledsDelimiter));
         if (!fieldTokens.empty()) {
             SortQueryContainer *sortQueryContainer = new SortQueryContainer();
             sortQueryContainer->evaluator = new SortFilterEvaluator();
@@ -755,7 +775,6 @@ void QueryParser::sortParser() {
                         ->sortQueryContainer = sortQueryContainer;
             }
         }
-        delete sortStringDup; // free copy
     }
     Logger::debug("returning from sortParser function");
 }
@@ -792,6 +811,7 @@ bool QueryParser::localParameterParser(string &input) {
     if (input.at(0) == '{') {
         Logger::debug("localparamter string found, extracting it.");
         input = input.substr(1); // input is modifed to 'defaultSearchFields=Author defaultFuzzyLevel=.7}gnuth'
+        // TODO: do a memory profiling to see if substr is cpu costly. Yes? use unsigned as a cursor over the input string.
         string lpField = "";
         while (parseLpKey(input, lpField)) {
             if (parseLpDelimeter(input)) {
@@ -917,15 +937,15 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
     } else if (0 == lpKey.compare(lpFieldFilterParamName)) {
         // val might be a comma separated string of fields.  Author,Name..
         // tokenize it on ',' and set the vector in container.
-        char *fieldStr = strdup(lpVal.c_str()); // the strtok function takes char* and not const char* so create dulpicate of val as char*.
-        char * fieldToken = strtok(fieldStr, lpFieldFilterDelimiter);
-        while (fieldToken) {
-            string sToken = string(fieldToken);
+        vector<string> fieldTokens;
+        boost::split(fieldTokens, lpVal,
+                boost::is_any_of(lpFieldFilterDelimiter));
+        for (std::vector<string>::iterator fieldTokenItr = fieldTokens.begin();
+                fieldTokenItr != fieldTokens.end(); ++fieldTokenItr) {
+            string sToken = *fieldTokenItr;
             boost::algorithm::trim(sToken); // trim the token
             this->lpFieldFilter.push_back(sToken); // set field in container
-            fieldToken = strtok(NULL, lpFieldFilterDelimiter); // get the next filed. (the syntax is weird, but thats how it works.)
         }
-        delete fieldStr; // free the fieldStr, duplicate of val.
     } else {
         // this localparameter is not supported. raise a MessageWarning msg.
         this->container->messages.push_back(
@@ -933,7 +953,7 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
                         "Invalid local parameter " + lpKey + ", ignoring it."));
     }
 }
-bool QueryParser::keywordParser(string &input) {
+bool QueryParser::termParser(string &input) {
     /*
      * this function parses the keyword string for the boolean operators, boost information, fuzzy flags ...
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
@@ -971,6 +991,8 @@ bool QueryParser::keywordParser(string &input) {
         // no field found, this can happen if the term contains only
         // the keyword part. like 'algorithm'
         // in this case, we will populate the field using the localParameter values.
+        // the execution can come here also if the field syntax provided is not correct.
+        // the error will be catched later
         this->populateFieldFilterUsingLp();
     } else {
         // field is found. this can happen in the case 'Author:gnuth', here 'Author:' is the field
@@ -1093,6 +1115,7 @@ void QueryParser::checkForFuzzyNums(const string &input,
     /*
      * checks if the fuzzylevel is present in the input string
      * example: keyword~.8 has fuzzylevel as .8. keyword~ has no fuzzylevel specified.
+     * input is ~.8 or ~
      */
     Logger::debug("inside checkForFuzzyNums");
     boost::regex re(CHECK_FUZZY_NUMBER_REGEX_STRING);
@@ -1137,7 +1160,7 @@ void QueryParser::populateFieldFilterUsingLp() {
     Logger::debug("returning from populateFieldFilterUsingLp");
 }
 
-void QueryParser::populateFieldFilterUsingQueryFields(const string &input) {
+void QueryParser::populateFieldFilterUsingQueryFields(const string &input) { // TODO: note what is input
     /*
      * check if '.'s are present
      * check if '+' are present tokenize on . or + and
@@ -1478,25 +1501,18 @@ void QueryParser::setInQueryParametersIfNotSet(ParameterName param) {
 void QueryParser::setFuzzyLevelInContainer(const float f) {
     /*
      * sets the fuzzylevel in the container->keywordFuzzyLevel variable.
-     * check if isFuzzyFlag is set
-     *      true-> check if is fuzzy is true or false,
-     *                  true -> use the fuzzylevel as specified
-     *                  else -> set 0.0 as fuzzylevel
-     *      false-> set the fuzzy level as specified
+     *  check isFuzzy
+     *            true -> use the fuzzylevel as specified
+     *            else -> set 0.0 as fuzzylevel
      */
     Logger::debug("inside setFuzzyLevelInContainer");
-    if (this->container->hasParameterInQuery(IsFuzzyFlag)) {
-        // this is set, fuzzyFlag came from  query parameter.
-        if (this->container->isFuzzy) {
-            // use the fuzzylevel provided with keyword
-            this->container->keywordFuzzyLevel.push_back(f);
-        } else {
-            // set fuzzy level to 0
-            this->container->keywordFuzzyLevel.push_back(0.0f);
-        }
-    } else {
-        // set the values as specified with keyword
+    // this is set, fuzzyFlag came from  query parameter.
+    if (this->container->isFuzzy) {
+        // use the fuzzylevel provided with keyword
         this->container->keywordFuzzyLevel.push_back(f);
+    } else {
+        // set fuzzy level to 0
+        this->container->keywordFuzzyLevel.push_back(0.0f);
     }
     Logger::debug("returning from setFuzzyLevelInContainer");
 }
