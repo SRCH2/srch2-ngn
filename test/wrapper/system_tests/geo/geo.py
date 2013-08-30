@@ -5,10 +5,10 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 port = '8081'
 
 def pingServer():
-    info = 'curl -s "http://localhost:' + port + '/search?q=p&ct_lat=61.18&ct_lng=-149.1&radius=0.5" | grep -q results '
+    info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
     while os.system(info) !=0:
           time.sleep(1)
-          info = 'curl -s "http://localhost:' + port + '/search?q=p&ct_lat=61.18&ct_lng=-149.1&radius=0.5" | grep -q results '
+          info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
 
 #the function of checking the results
 def checkResult(query, responseJson, resultValue):
@@ -41,6 +41,18 @@ def checkResult(query, responseJson, resultValue):
     if isPass == 1:
         print  query+' test pass'
 
+#prepare the query based on the valid syntax
+def prepareQuery(ct_lat,ct_long,ct_radius):
+    query = ''
+    ################# GEO parameters
+    query = query + 'radius=' + ct_radius
+    query = query + '&clat=' + ct_lat
+    query = query + '&clong=' + ct_long
+    #print 'Query : ' + query
+    ##################################
+    return query
+
+
 def testGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
@@ -59,7 +71,7 @@ def testGeo(queriesAndResultsPath, binary_path):
         resultValue=(value[1]).split()
         #construct the query
         query='http://localhost:' + port + '/search?'
-        query=query+'ct_lat='+str(queryGeo[1])+'&ct_lng='+str(queryGeo[0])+'&radius='+ str(radius)
+        query = query + prepareQuery(queryGeo[1],queryGeo[0],str(radius))
         #print query
         
         # do the query
@@ -70,11 +82,16 @@ def testGeo(queriesAndResultsPath, binary_path):
         checkResult(query, response_json['results'], resultValue )
 
     #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
     print '=============================='
-
+    try:
+        s = commands.getoutput('ps aux | grep srch2-search-server')
+        stat = s.split()
+        os.kill(int(stat[1]), signal.SIGUSR1)
+    except: 
+        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+        a = s.split()
+        cmd = "kill -9 {0}".format(a[-1])
+        os.system(cmd)
 if __name__ == '__main__':   
     #Path of the query file
     #  each line like "-149.880918+61.155358||01c90b4effb2353742080000" ---- query||record_ids(results)

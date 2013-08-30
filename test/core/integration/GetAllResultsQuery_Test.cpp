@@ -31,8 +31,9 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     schema->setSearchableAttribute("category", 1);
     schema->setScoringExpression(expression);
 
-    schema->setSortableAttribute("id_for_sort", srch2::instantsearch::UNSIGNED, "0");
-    schema->setSortableAttribute("latitude", srch2::instantsearch::FLOAT, "1");
+
+    schema->setNonSearchableAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0" );
+    schema->setNonSearchableAttribute("latitude", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     /// Create an Analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
@@ -65,7 +66,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
             if (cellCounter == 0)
             {
                 record->setPrimaryKey(cell.c_str());
-                record->setSortableAttributeValue(0, cell);  // use the id number to be one sortable attribute
+                record->setNonSearchableAttributeValue(0, cell); // use the id number to be one sortable attribute
                 sort1Map[cell] = atoi(cell.c_str());
             }
             else if (cellCounter == 1)
@@ -82,7 +83,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
             }
             else if (cellCounter == 4)
             {
-                record->setSortableAttributeValue(1, cell); // use the latitude to be another sortable attribute
+                record->setNonSearchableAttributeValue(1, cell); // use the latitude to be another sortable attribute
                 sort2Map[record->getPrimaryKey()] = atof(cell.c_str());
             }
 

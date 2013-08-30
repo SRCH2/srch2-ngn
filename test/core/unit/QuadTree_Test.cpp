@@ -1,4 +1,4 @@
-//$Id: QuadTree_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: QuadTree_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -192,7 +192,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -217,7 +217,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -248,7 +248,7 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -273,7 +273,8 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 
 	query->setRange(x, y, radius);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -304,7 +305,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -329,7 +330,8 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 
@@ -338,7 +340,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	{
 		vector<string> matchingKeywords;
 		queryResults->getMatchingKeywords(i, matchingKeywords);
-		cout << queryResults->getRecordId(i) << " | Score: " << queryResults->getResultScore(i)
+		cout << queryResults->getRecordId(i) << " | Score: " << queryResults->getResultScoreString(i)
 											<<  " | Match: " << matchingKeywords[0] << endl;
 	}
 
@@ -356,7 +358,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-	Query *query = new Query(MapQuery);
+	Query *query = new Query(SearchTypeMapQuery);
 
 	for (unsigned i = 0; i < keywords.size(); ++i)
 	{
@@ -381,7 +383,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
 	indexSearcher->search(query, queryResults);
 

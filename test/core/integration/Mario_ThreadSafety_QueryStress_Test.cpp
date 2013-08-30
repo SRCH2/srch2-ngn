@@ -68,7 +68,7 @@ void queryStressTest(double &time)
 
 		query->setRange(indexerDataContainer.ranges[vectIter].min.x, indexerDataContainer.ranges[vectIter].min.y, indexerDataContainer.ranges[vectIter].max.x, indexerDataContainer.ranges[vectIter].max.y);
 
-		QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+		QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 		indexSearcher->search(query, queryResults);
 

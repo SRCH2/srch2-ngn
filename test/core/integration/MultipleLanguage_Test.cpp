@@ -6733,6 +6733,101 @@ void testSpanishLatin()
 	delete index;
 }
 
+void addFarsiRecordsWithNonSearchableAttribute(){
+	///Create Schema
+	Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
+	schema->setPrimaryKey("article_id"); // integer, not searchable
+	schema->setSearchableAttribute("article_id"); // convert id to searchable text
+	schema->setSearchableAttribute("article_tittle", 2); // searchable text
+	schema->setSearchableAttribute("article_sentence", 7); // searchable text
+
+	schema->setNonSearchableAttribute("price" , ATTRIBUTE_TYPE_UNSIGNED , "0" );
+	schema->setNonSearchableAttribute("class" , ATTRIBUTE_TYPE_TEXT , "الف" );
+
+
+	Record *record = new Record(schema);
+    Analyzer *analyzer = new Analyzer(
+            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+
+	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryMWrites = 5;
+	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
+			mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+
+	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+
+	//pure english
+	record->setPrimaryKey(1001);
+	record->setSearchableAttributeValue("article_tittle",
+			"book Tom Smith and Jack Lennon");
+	record->setSearchableAttributeValue("article_sentence",
+			"Come Yesterday Once More");
+	record->setNonSearchableAttributeValue("price" , "1001");
+	record->setNonSearchableAttributeValue("class" , "الف");
+
+	record->setRecordBoost(90);
+
+	index->addRecord(record, analyzer, 0);
+
+	record->clear();
+	record->setPrimaryKey(1002);
+	record->setSearchableAttributeValue(1, "Jimi Hendrix");
+	record->setSearchableAttributeValue(2, "Little wing");
+
+	record->setNonSearchableAttributeValue("price" , "1002");
+	record->setNonSearchableAttributeValue("class" , "ب");
+
+	record->setRecordBoost(90);
+
+	index->addRecord(record,analyzer, 0);
+
+	record->clear();
+	record->setPrimaryKey(1003);
+	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
+	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
+
+	record->setNonSearchableAttributeValue("price" , "1003");
+	record->setNonSearchableAttributeValue("class" , "C");
+
+	record->setRecordBoost(10);
+	index->addRecord(record,analyzer, 0);
+
+	// pure Tra_Chinese characters
+	record->clear();
+	record->setPrimaryKey(1101);
+	record->setSearchableAttributeValue("article_tittle", "Barnaby چین Rudge");
+	record->setSearchableAttributeValue("article_sentence",
+			"اظهار نظر او که کلاغ به تدریج منقرض شدن");
+
+	record->setNonSearchableAttributeValue("price" , "1101");
+	record->setNonSearchableAttributeValue("class" , "ج");
+
+	record->setRecordBoost(90);
+	index->addRecord(record,analyzer, 0);
+
+	record->clear();
+	record->setPrimaryKey(1103);
+	record->setSearchableAttributeValue(1, "واحد ضد چین");
+	record->setSearchableAttributeValue(2,
+			"مواد منفجره، وکیل مدافع جوزف آنتونلی مورد از دست دادن هرگز - و یا پشت سر هم از وجدان");
+
+	record->setNonSearchableAttributeValue("price" , "1103");
+	record->setNonSearchableAttributeValue("class" , "د");
+
+	record->setRecordBoost(90);
+	index->addRecord(record,analyzer, 0);
+
+	index->commit();
+	index->save();
+
+	delete schema;
+	delete record;
+	delete analyzer;
+	delete index;
+}
+
+
 int main(int argc, char **argv) {
 
 	//test simple chinese
@@ -6871,6 +6966,7 @@ int main(int argc, char **argv) {
 	// test Spanish-Latin
 	testSpanishLatin();
 	cout << "test Spanish-Latin passed" << endl;
+
 
 	return 0;
 }

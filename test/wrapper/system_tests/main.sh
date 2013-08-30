@@ -5,6 +5,15 @@ SYSTEM_TEST_DIR=$1
 SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
+
+echo '----do high_insert_test--------------'
+./high_insert_test/autotest.sh $SRCH2_ENGINE_DIR
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 echo '----do exact_A1 test--------------'
 python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt
 
@@ -69,6 +78,31 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do facted search test--------------'
+python ./faceted_search/faceted_search.py $SRCH2_ENGINE_DIR ./faceted_search/queriesAndResults.txt ./faceted_search/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+echo '----do sort filter test--------------'
+python ./sort_filter/sort_filter.py $SRCH2_ENGINE_DIR ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+echo '----do filter query test--------------'
+python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+
 echo '----do geo test--------------'
 python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt
 
@@ -94,12 +128,12 @@ if [ $? -gt 0 ]; then
 fi
 
 echo '----do tests_used_for_statemedia--------------'
-./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
+#./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
 
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
+#if [ $? -gt 0 ]; then
+#    echo " --- error ---"
+#    exit -1
+#fi
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
     rm -rf data

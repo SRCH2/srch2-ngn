@@ -1,4 +1,4 @@
-//$Id: Srch2KafkaConsumer.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: Srch2KafkaConsumer.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 #include "Srch2KafkaConsumer.h"
 #include "IndexWriteUtil.h"

@@ -41,6 +41,34 @@ def checkResult(query, responseJson,resultValue):
     if isPass == 1:
         print  query+' test pass'
 
+#prepare the query based on the valid syntax
+def prepareQuery(queryKeywords):
+    query = ''
+    #################  prepare main query part
+    query = query + 'q='
+    # local parameters
+    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
+    # keywords section
+    for i in range(0, len(queryKeywords)):
+        # first extract the filters
+        queryTermParts = queryKeywords[i].split(':')
+        fieldFilter = ''
+        if len(queryTermParts) == 2:
+            fieldFilter = queryTermParts[1] + '%3A'
+        keyword = queryTermParts[0]
+        # now add them to the query
+        if i == (len(queryKeywords)-1):
+            query=query+fieldFilter+keyword+'*'+'~' # last keyword prefix
+        else:
+            query=query+fieldFilter+keyword+'~'+'%20AND%20'
+    ################# fuzzy parameter
+    query = query + '&fuzzy=true'
+
+#    print 'Query : ' + query
+    ##################################
+    return query
+
+
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
@@ -57,13 +85,9 @@ def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?q='
-        for i in range(0, len(queryValue)):
-            if i == (len(queryValue)-1):
-                query=query+queryValue[i]
-            else:
-                query=query+queryValue[i]+'+'
-        query=query+'&fuzzy=1'
+        query='http://localhost:' + port + '/search?'
+        query = query + prepareQuery(queryValue)
+
         #print query
         
         # do the query
@@ -74,11 +98,16 @@ def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
         checkResult(query, response_json['results'], resultValue )
        
     #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
     print '=============================='
-
+    try:
+        s = commands.getoutput('ps aux | grep srch2-search-server')
+        stat = s.split()
+        os.kill(int(stat[1]), signal.SIGUSR1)
+    except: 
+        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+        a = s.split()
+        cmd = "kill -9 {0}".format(a[-1])
+        os.system(cmd)
 if __name__ == '__main__':   
     #Path of the query file
     #each line like "Alaska:name||01c90b4effb2353742080000" ---- query||record_ids(results)

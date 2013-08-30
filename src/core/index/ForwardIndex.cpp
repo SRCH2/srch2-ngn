@@ -1,5 +1,4 @@
-
-// $Id: ForwardIndex.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: ForwardIndex.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -15,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "ForwardIndex.h"
@@ -35,46 +34,22 @@ using std::string;
 using std::pair;
 using std::make_pair;
 
-namespace srch2
-{
-namespace instantsearch
-{
-
+namespace srch2 {
+namespace instantsearch {
 
 bool ForwardList::isAttributeBasedSearch = false;
 
-float ForwardIndex::_getSortableAttributeValue(unsigned sortableAttributeIndex,
-                                const string* sortableAttributeValueString) const
-{
-    if (sortableAttributeValueString == NULL ||  sortableAttributeValueString->compare("") == 0) {
-        sortableAttributeValueString = this->schemaInternal->getDefaultValueOfSortableAttribute(sortableAttributeIndex);
-    }
-
-    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(sortableAttributeIndex);
-
-    if (filterType == srch2::instantsearch::UNSIGNED) {
-        unsigned value = (unsigned)( atoi(sortableAttributeValueString->c_str()) ) ;
-        return  value;
-    }
-
-    // filterType == srch2::instantsearch::FLOAT
-
-    float value = (float)( atof(sortableAttributeValueString->c_str()) );
-
-    return value;
-}
-
-ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal)
-{
-    this->forwardListDirectory = new cowvector< ForwardListPtr>();
+ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal) {
+    this->forwardListDirectory = new cowvector<ForwardListPtr>();
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
     this->mergeRequired = true;
 }
 
-ForwardIndex::ForwardIndex( const SchemaInternal* schemaInternal, unsigned expectedNumberOfDocumentsToInitialize)
-{
-    this->forwardListDirectory = new cowvector<ForwardListPtr>(expectedNumberOfDocumentsToInitialize);
+ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal,
+        unsigned expectedNumberOfDocumentsToInitialize) {
+    this->forwardListDirectory = new cowvector<ForwardListPtr>(
+            expectedNumberOfDocumentsToInitialize);
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
     this->mergeRequired = true;
@@ -117,54 +92,59 @@ void ForwardIndex::resetDeleteFlag(unsigned internalRecordId)
 }
 
 
-void printForwardList(unsigned id, const ForwardList *fl)
+void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema)
 {
+
     Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
     Logger::debug("RecordBoost: %.3f, Size: %d" , fl->getRecordBoost(), fl->getNumberOfKeywords());
-    Logger::debug("sortableAttributeList:");
+    Logger::debug("nonsearchableAttributeList:");
 
-	for (unsigned idx = 0; idx < fl->getNumberOfSortableAttributes(); idx ++) {
-        Logger::debug("[%.5f]", fl->getSortableAttribute(idx));
+	for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes(); idx ++) {
+		Logger::debug("[%.5f]", fl->getNonSearchableAttributeValue(idx , schema).c_str());
 	}
-    //keyword Id list
-    Logger::debug("keywordIdList: ");
+	//keyword Id list
+	Logger::debug("keywordIdList: ");
+
+
+
+	//keyword Id list
 	for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
-        Logger::debug("[%d]", fl->getKeywordId(idx));
+	        Logger::debug("[%d]", fl->getKeywordId(idx));
 	}
+
     // keyword score list
     Logger::debug("keywordRecordStaticScore:");
-	for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
-        Logger::debug("[%.5f]", fl->getKeywordRecordStaticScore(idx) );
-	}
+    for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
+        Logger::debug("[%.5f]", fl->getKeywordRecordStaticScore(idx));
+    }
 
     // keyword attribute list
-	if (fl->getKeywordAttributeBitmaps() != NULL)
-	{
+    if (fl->getKeywordAttributeBitmaps() != NULL) {
 
         Logger::debug("keywordAttributeList: ");
-		for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx ++) {
+        for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
             Logger::debug("[%d]", fl->getKeywordAttributeBitmap(idx));
-		}
-	}
+        }
+    }
 }
 
-void printVector(const vector<unsigned> *fl)
-{
+void printVector(const vector<unsigned> *fl) {
     Logger::debug("( 1o0o1 ) Size: %ld", fl->size());
-    
+
     for (vector<unsigned>::const_iterator flIter = fl->begin();
-     flIter != fl->end(); ++flIter ) {
+            flIter != fl->end(); ++flIter) {
         Logger::debug("[%d]", *flIter);
     }
 }
 
 // do binary search to probe in forward list
-bool ForwardIndex::haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, 
-                   const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId,
-                   unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore) const
-{
+bool ForwardIndex::haveWordInRange(const unsigned recordId,
+        const unsigned minId, const unsigned maxId,
+        const unsigned termSearchableAttributeIdToFilterTermHits,
+        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore) const {
     ASSERT(minId <= maxId);
-    ASSERT (recordId < this->getTotalNumberOfForwardLists_ReadView());
+    ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
 
     bool valid = false;
     const ForwardList* fl = this->getForwardList(recordId, valid);
@@ -172,18 +152,19 @@ bool ForwardIndex::haveWordInRange(const unsigned recordId, const unsigned minId
     // Deleted flag is set
     if (valid == false)
         return false;
-    
-    return fl->haveWordInRange(this->schemaInternal, minId, maxId, termSearchableAttributeIdToFilterTermHits,
-    		matchingKeywordId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
+
+    return fl->haveWordInRange(this->schemaInternal, minId, maxId,
+            termSearchableAttributeIdToFilterTermHits, matchingKeywordId,
+            matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
 }
 
-bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const unsigned minId, const unsigned maxId, 
-                          const unsigned termSearchableAttributeIdToFilterTermHits, 
-                          unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
-                          bool &isStemmed) const
-{
+bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
+        const unsigned minId, const unsigned maxId,
+        const unsigned termSearchableAttributeIdToFilterTermHits,
+        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore, bool &isStemmed) const {
     assert(minId <= maxId);
-    ASSERT (recordId < this->getTotalNumberOfForwardLists_ReadView());
+    ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
 
     bool valid = false;
     const ForwardList* fl = this->getForwardList(recordId, valid);
@@ -192,9 +173,10 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId, const uns
     if (valid == false)
         return false;
 
-    return fl->haveWordInRangeWithStemmer(this->schemaInternal, minId, maxId, 
-                      termSearchableAttributeIdToFilterTermHits, matchingKeywordId, matchingKeywordAttributeBitmap,
-                      matchingKeywordRecordStaticScore, isStemmed);
+    return fl->haveWordInRangeWithStemmer(this->schemaInternal, minId, maxId,
+            termSearchableAttributeIdToFilterTermHits, matchingKeywordId,
+            matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore,
+            isStemmed);
 }
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
@@ -209,7 +191,7 @@ const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) 
     shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
     valid = readView->getElement(recordId).second;
-    return  readView->getElement(recordId).first;
+    return readView->getElement(recordId).first;
 }
 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
@@ -220,36 +202,45 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 
 //unsigned ForwardList::getForwardListElement(unsigned cursor) const
 //{
-    /*  unsigned offset = this->forwardListDirectory[recordId].offset;
+/*  unsigned offset = this->forwardListDirectory[recordId].offset;
 
-    ASSERT(cursor < this->forwardListDirectory[recordId].numberOfKeywords);
-    ASSERT(offset + this->forwardListDirectory[recordId].numberOfKeywords <= this->getTotalLengthOfForwardLists());
+ ASSERT(cursor < this->forwardListDirectory[recordId].numberOfKeywords);
+ ASSERT(offset + this->forwardListDirectory[recordId].numberOfKeywords <= this->getTotalLengthOfForwardLists());
 
-    return &(keywordVector[offset + cursor]);*/
-    //TODO check bounds
- //   return this->keywordIdVector->at(cursor);
+ return &(keywordVector[offset + cursor]);*/
+//TODO check bounds
+//   return this->keywordIdVector->at(cursor);
 //}
+Score ForwardList::getForwardListNonSearchableAttributeScore(
+        const SchemaInternal* schemaInternal,
+        unsigned schemaNonSearchableAttributeId) const {
 
-float ForwardList::getForwardListSortableAttributeScore(const SchemaInternal* schemaInternal, unsigned schemaSortableAttributeId) const
-{
-    ASSERT( schemaSortableAttributeId < schemaInternal->getNumberOfSortableAttributes() );
+    ASSERT(
+            schemaNonSearchableAttributeId
+                    < schemaInternal->getNumberOfNonSearchableAttributes());
 
-    srch2::instantsearch::FilterType filterType = schemaInternal->getTypeOfSortableAttribute(schemaSortableAttributeId);
+    FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(
+            schemaNonSearchableAttributeId);
 
-    float scoreItem = 0.0;
+    Score score;
 
-    if (filterType == srch2::instantsearch::UNSIGNED) {
-        scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
-    }
-    else if (filterType == srch2::instantsearch::FLOAT) {
-        scoreItem = this->getSortableAttribute(schemaSortableAttributeId);
-    }
-    else
-    {
-        ASSERT(false);
-    }
+    switch (filterType) {
+		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			break;
+	}
 
-    return scoreItem;
+    return score;
+
 }
 
 void ForwardIndex::commit()
@@ -277,9 +268,10 @@ void ForwardIndex::merge()
     }
 }
 
-void ForwardIndex::addRecord(const Record *record, const unsigned recordId, KeywordIdKeywordStringInvertedListIdTriple &keywordIdList, map<string, TokenAttributeHits > &tokenAttributeHitsMap)
-{
-    ASSERT (recordId == this->getTotalNumberOfForwardLists_WriteView());
+void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
+        KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
+        map<string, TokenAttributeHits> &tokenAttributeHitsMap) {
+    ASSERT(recordId == this->getTotalNumberOfForwardLists_WriteView());
 
     /**recordOrder maintains the order in which the records were added to forwardIndex. This is used at the commit stage,
      * to interpret the order of positionIndex entries.
@@ -287,65 +279,72 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
 
     //An unused position was found
     /*if (!commited_WriteView)
-    {
-        recordOrder.push_back(recordId);
-    }*/
+     {
+     recordOrder.push_back(recordId);
+     }*/
     // We consider KEYWORD_THRESHOLD keywords at most, skip the extra ones
-    if(keywordIdList.size() >= KEYWORD_THRESHOLD)
-    	keywordIdList.resize(KEYWORD_THRESHOLD);
+    if (keywordIdList.size() >= KEYWORD_THRESHOLD)
+        keywordIdList.resize(KEYWORD_THRESHOLD);
 
-    unsigned sortableAttributeListCapacity = this->schemaInternal->getNumberOfSortableAttributes();
     unsigned keywordListCapacity = keywordIdList.size();
 
-    ForwardList *forwardList = new ForwardList(sortableAttributeListCapacity, keywordListCapacity);
+    ForwardList *forwardList = new ForwardList(keywordListCapacity);
     forwardList->setExternalRecordId(record->getPrimaryKey());
     forwardList->setRecordBoost(record->getRecordBoost());
     forwardList->setInMemoryData(record->getInMemoryData());
     forwardList->setNumberOfKeywords(keywordIdList.size());
 
+    //Adding Non searchable Attribute list
+    vector<string> nonSearchableAttributeValues;
+    for (unsigned iter = 0;
+            iter < this->schemaInternal->getNumberOfNonSearchableAttributes();
+            ++iter) {
 
-    //Adding Sortable Attribute list
-    for ( unsigned iter = 0; iter < this->schemaInternal->getNumberOfSortableAttributes() ; ++iter)
-    {
-        const string* sortableAttributeValueString = record->getSortableAttributeValue(iter);
-        forwardList->setSortableAttribute(iter, this->_getSortableAttributeValue(iter, sortableAttributeValueString));
+        const string * nonSearchableAttributeValueString = record
+                ->getNonSearchableAttributeValue(iter);
+        nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
+    forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
+
 
     // Add KeywordId List
-    for (unsigned iter=0; iter < keywordIdList.size(); ++iter)
-    {
+    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
         forwardList->setKeywordId(iter, keywordIdList[iter].first);
     }
 
     //Add Score List
-    for (unsigned iter=0; iter < keywordIdList.size(); ++iter)
-    {
+    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
 
-        map<string, TokenAttributeHits>::const_iterator mapIterator = tokenAttributeHitsMap.find(keywordIdList[iter].second.first);
+        map<string, TokenAttributeHits>::const_iterator mapIterator =
+                tokenAttributeHitsMap.find(keywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
-        forwardList->setKeywordRecordStaticScore(iter, forwardList->computeFieldBoostSummation(this->schemaInternal, mapIterator->second));
+        forwardList->setKeywordRecordStaticScore(iter,
+                forwardList->computeFieldBoostSummation(this->schemaInternal,
+                        mapIterator->second));
     }
-    
+
     // support attribute-based search
-    if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
-    {
-    	ForwardList::isAttributeBasedSearch = true;
-        forwardList->setKeywordAttributeBitmaps(new unsigned[keywordListCapacity]);
-        
-        for (unsigned iter=0; iter < keywordIdList.size(); ++iter)
-        {
-            map<string, TokenAttributeHits>::const_iterator mapIterator = tokenAttributeHitsMap.find(keywordIdList[iter].second.first);
+    if (this->schemaInternal->getPositionIndexType()
+            == srch2::instantsearch::FIELDBITINDEX) {
+        ForwardList::isAttributeBasedSearch = true;
+        forwardList->setKeywordAttributeBitmaps(
+                new unsigned[keywordListCapacity]);
+
+        for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
+            map<string, TokenAttributeHits>::const_iterator mapIterator =
+                    tokenAttributeHitsMap.find(
+                            keywordIdList[iter].second.first);
             ASSERT(mapIterator != tokenAttributeHitsMap.end());
             unsigned bitVector = 0;
-            for (unsigned i=0; i<mapIterator->second.attributeList.size(); i++)
-            {
-                int attributeId = ((mapIterator->second.attributeList.at(i)) >> 24) - 1;
+            for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+                    i++) {
+                int attributeId = ((mapIterator->second.attributeList.at(i))
+                        >> 24) - 1;
                 bitVector |= (1 << attributeId);
             }
             forwardList->setKeywordAttributeBitmap(iter, bitVector);
         }
     }
-
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
@@ -356,37 +355,40 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId, Keyw
 }
 
 // TODO check if this is still useful
-void ForwardIndex::addDummyFirstRecord()// For Trie bootstrap
+void ForwardIndex::addDummyFirstRecord()			// For Trie bootstrap
 {
     ForwardListPtr managedForwardListPtr;
-    managedForwardListPtr.first = new ForwardList(0,0);
+    managedForwardListPtr.first = new ForwardList(0);
     managedForwardListPtr.second = false;
     this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 }
 
 // convert the keyword ids for a given record using the given id mapper
-void ForwardIndex::reassignKeywordIds(const unsigned recordId, const map<unsigned, unsigned> &keywordIdMapper)
-{
+void ForwardIndex::reassignKeywordIds(const unsigned recordId,
+        const map<unsigned, unsigned> &keywordIdMapper) {
     bool valid = false;
     // currently the read view and the write view should be the same
     //ForwardList *forwardList = getForwardListToChange(recordId, valid); 
-    ForwardList *forwardList = const_cast<ForwardList *>(getForwardList(recordId, valid)); 
-  
+    ForwardList *forwardList = const_cast<ForwardList *>(getForwardList(
+            recordId, valid));
+
     // ingore the deleted records
-    if (valid == false) return;
+    if (valid == false)
+        return;
 
     // TODO: CHECK
     vector<NewKeywordIdKeywordOffsetTriple> forwardListReOrderAtCommit;
-    this->reorderForwardList(forwardList, keywordIdMapper, forwardListReOrderAtCommit);
+    this->reorderForwardList(forwardList, keywordIdMapper,
+            forwardListReOrderAtCommit);
 }
 
 //void ForwardIndex::commit(ForwardList *forwardList, const vector<unsigned> *oldIdToNewIdMap,
-void ForwardIndex::commit(ForwardList *forwardList, const map<unsigned, unsigned> &oldIdToNewIdMapper,
-              vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit )
-{
-    if (this->commited_WriteView == false)
-    {
-        reorderForwardList(forwardList, oldIdToNewIdMapper, forwardListReOrderAtCommit);
+void ForwardIndex::commit(ForwardList *forwardList,
+        const map<unsigned, unsigned> &oldIdToNewIdMapper,
+        vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit) {
+    if (this->commited_WriteView == false) {
+        reorderForwardList(forwardList, oldIdToNewIdMapper,
+                forwardListReOrderAtCommit);
     }
 }
 
@@ -398,9 +400,9 @@ void ForwardIndex::commit(ForwardList *forwardList, const map<unsigned, unsigned
  * we also keep other stuff like attribute scores, it should make sure the orders remain consistent.
  *
  */
-void ForwardIndex::reorderForwardList(ForwardList *forwardList, const map<unsigned, unsigned> &oldIdToNewIdMapper,
-                      vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit)
-{
+void ForwardIndex::reorderForwardList(ForwardList *forwardList,
+        const map<unsigned, unsigned> &oldIdToNewIdMapper,
+        vector<NewKeywordIdKeywordOffsetTriple> &forwardListReOrderAtCommit) {
 
     forwardListReOrderAtCommit.clear();
 
@@ -411,12 +413,13 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList, const map<unsign
 
     // Pack keywordIdList, keywordRecordStaticScore, keywordAttributeList into keywordRichInformation for sorting based on new keywordId
     vector<KeywordRichInformation> keywordRichInformationList(numberOfKeywords);
-    for (keywordOffset = 0; keywordOffset < forwardList->getNumberOfKeywords(); ++keywordOffset)
-    {
+    for (keywordOffset = 0; keywordOffset < forwardList->getNumberOfKeywords();
+            ++keywordOffset) {
         //Get new keywordId
         unsigned keywordId = forwardList->getKeywordId(keywordOffset);
         unsigned newKeywordId;
-        map<unsigned, unsigned>::const_iterator mapperIter = oldIdToNewIdMapper.find(keywordId);
+        map<unsigned, unsigned>::const_iterator mapperIter = oldIdToNewIdMapper
+                .find(keywordId);
         if (mapperIter == oldIdToNewIdMapper.end())
             newKeywordId = keywordId;
         else
@@ -428,46 +431,50 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList, const map<unsign
 
         //Add new keyword Id, score, attribute to the new position
         keywordRichInformationList[keywordOffset].keywordId = newKeywordId;
-        keywordRichInformationList[keywordOffset].keywordScore = forwardList->getKeywordRecordStaticScore(keywordOffset);
+        keywordRichInformationList[keywordOffset].keywordScore = forwardList
+                ->getKeywordRecordStaticScore(keywordOffset);
 
         // support attribute-based search
-        if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
-            keywordRichInformationList[keywordOffset].keywordAttribute = forwardList->getKeywordAttributeBitmap(keywordOffset);
+        if (this->schemaInternal->getPositionIndexType()
+                == srch2::instantsearch::FIELDBITINDEX)
+            keywordRichInformationList[keywordOffset].keywordAttribute =
+                    forwardList->getKeywordAttributeBitmap(keywordOffset);
     }
-    
-    // Note: May be not necessary
-    std::sort(forwardListReOrderAtCommit.begin(),forwardListReOrderAtCommit.end());
 
-    std::sort(keywordRichInformationList.begin(), keywordRichInformationList.end());
+    // Note: May be not necessary
+    std::sort(forwardListReOrderAtCommit.begin(),
+            forwardListReOrderAtCommit.end());
+
+    std::sort(keywordRichInformationList.begin(),
+            keywordRichInformationList.end());
     //Unpack keywordRichInformation to keywordIdList, keywordRecordStaticScore, keywordAttributeList
     keywordOffset = 0;
-    for (vector<KeywordRichInformation>::iterator iter = keywordRichInformationList.begin();
-       iter != keywordRichInformationList.end();
-       ++iter)
-    {
+    for (vector<KeywordRichInformation>::iterator iter =
+            keywordRichInformationList.begin();
+            iter != keywordRichInformationList.end(); ++iter) {
         // Copy keywordId
         forwardList->setKeywordId(keywordOffset, iter->keywordId);
-      
+
         // Copy score
-        forwardList->setKeywordRecordStaticScore(keywordOffset, iter->keywordScore);
-      
+        forwardList->setKeywordRecordStaticScore(keywordOffset,
+                iter->keywordScore);
+
         //copy attribute
         // support attribute-based search
-        if( this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
-        {
-            forwardList->setKeywordAttributeBitmap(keywordOffset, iter->keywordAttribute);
+        if (this->schemaInternal->getPositionIndexType()
+                == srch2::instantsearch::FIELDBITINDEX) {
+            forwardList->setKeywordAttributeBitmap(keywordOffset,
+                    iter->keywordAttribute);
         }
         ++keywordOffset;
     }
 }
 
-void ForwardIndex::finalCommit()
-{
+void ForwardIndex::finalCommit() {
     this->commited_WriteView = true;
 }
 
-unsigned ForwardIndex::getNumberOfBytes() const
-{
+unsigned ForwardIndex::getNumberOfBytes() const {
     unsigned totalSize = 0;
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
@@ -477,8 +484,7 @@ unsigned ForwardIndex::getNumberOfBytes() const
     totalSize += readView->size() * sizeof(ForwardListPtr);
 
     //iterate through the forward list of each record                                                                                                                                                           
-    for (unsigned counter = 0; counter < readView->size(); ++counter)
-    {
+    for (unsigned counter = 0; counter < readView->size(); ++counter) {
         const ForwardList* fl = readView->getElement(counter).first;
         totalSize += fl->getNumberOfBytes();
     }
@@ -487,69 +493,66 @@ unsigned ForwardIndex::getNumberOfBytes() const
 }
 
 // Print a forwardIndex to debugging
-void ForwardIndex::print_test()
-{
+void ForwardIndex::print_test() {
     Logger::debug("ForwardIndex:");
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
 
-    Logger::debug("readView size: %d",readView->size());
+    Logger::debug("readView size: %d", readView->size());
 
-    for (unsigned counter = 0; counter < readView->size(); ++counter)
-    {
+    for (unsigned counter = 0; counter < readView->size(); ++counter) {
         bool valid = false;
         const ForwardList* fl = this->getForwardList(counter, valid);
 
         if (valid == false)
             continue;
-        printForwardList(counter, fl);
+        printForwardList(counter, fl, this->schemaInternal);
     }
 }
 
-void ForwardIndex::print_size() const
-{
-    Logger::debug("Forward Index Size: %d bytes" , getNumberOfBytes());
+void ForwardIndex::print_size() const {
+    Logger::debug("Forward Index Size: %d bytes", getNumberOfBytes());
 }
-
-
 
 /************ForwardList*********************/
 //low_bound return a pointer to the first element in the range [first, last) which is less than val
-const unsigned* lower_bound(const unsigned* first, const unsigned* last, const unsigned val)
-{
-	const unsigned* it;
-	unsigned step;
-	unsigned count = last - first;
-	while(count > 0)
-	{
-		step = count/2;
-		it = first+step;
-		if(*it < val)
-		{
-			first = ++it;
-			count -= step+1;
-		}
-		else count = step;
-	}
-	return first;
+const unsigned* lower_bound(const unsigned* first, const unsigned* last,
+        const unsigned val) {
+    const unsigned* it;
+    unsigned step;
+    unsigned count = last - first;
+    while (count > 0) {
+        step = count / 2;
+        it = first + step;
+        if (*it < val) {
+            first = ++it;
+            count -= step + 1;
+        } else
+            count = step;
+    }
+    return first;
 }
 
-bool ForwardList::getWordsInRange(const SchemaInternal* schema, const unsigned minId, const unsigned maxId,   
-                                  const unsigned termSearchableAttributeIdToFilterTermHits, vector<unsigned> &keywordIdsVector) const
-{
+bool ForwardList::getWordsInRange(const SchemaInternal* schema,
+        const unsigned minId, const unsigned maxId,
+        const unsigned termSearchableAttributeIdToFilterTermHits,
+        vector<unsigned> &keywordIdsVector) const {
     const unsigned* vectorBegin = this->getKeywordIds();
-    const unsigned* vectorEnd = this->getKeywordIds() + this->getNumberOfKeywords();
+    const unsigned* vectorEnd = this->getKeywordIds()
+            + this->getNumberOfKeywords();
     const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd, minId);
-    ASSERT(vectorEnd-vectorBegin == this->getNumberOfKeywords());
-    
+    ASSERT(vectorEnd - vectorBegin == this->getNumberOfKeywords());
+
     bool returnValue = false;
 
     float matchingKeywordRecordStaticScore = 0.0;
     unsigned matchingKeywordRecordAttributeBitmap = 0;
-    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId))    {
+    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-                       termSearchableAttributeIdToFilterTermHits, matchingKeywordRecordAttributeBitmap,matchingKeywordRecordStaticScore)) {
+                termSearchableAttributeIdToFilterTermHits,
+                matchingKeywordRecordAttributeBitmap,
+                matchingKeywordRecordStaticScore)) {
             returnValue = true;
             keywordIdsVector.push_back(*vectorIterator); // found a keyword id in the [minId, maxId] range
         }
@@ -561,66 +564,71 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema, const unsigned m
 }
 
 // Do binary search to probe in the forward list
-bool ForwardList::haveWordInRange(const SchemaInternal* schema, const unsigned minId, const unsigned maxId, 
-                  const unsigned termSearchableAttributeIdToFilterTermHits, unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
-                  float &matchingKeywordRecordStaticScore) const
-{
+bool ForwardList::haveWordInRange(const SchemaInternal* schema,
+        const unsigned minId, const unsigned maxId,
+        const unsigned termSearchableAttributeIdToFilterTermHits,
+        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore) const {
     const unsigned* vectorBegin = this->getKeywordIds();
-    const unsigned* vectorEnd = this->getKeywordIds()+ this->getNumberOfKeywords();
+    const unsigned* vectorEnd = this->getKeywordIds()
+            + this->getNumberOfKeywords();
     const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd, minId);
-    ASSERT(vectorEnd-vectorBegin == this->getNumberOfKeywords());
+    ASSERT(vectorEnd - vectorBegin == this->getNumberOfKeywords());
 
     bool returnValue = false;
     matchingKeywordRecordStaticScore = 0;
     unsigned tempAttributeBitmap = 0;
 
-    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId))
-    {
-    	float tempScore = 0;
-		if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-						   termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,tempScore)) {
-			if(tempScore > matchingKeywordRecordStaticScore){
-				matchingKeywordRecordStaticScore = tempScore;
-				matchingKeywordAttributeBitmap = tempAttributeBitmap;
-				returnValue = true;
-				matchingKeywordId = *vectorIterator; // found a keyword id in the [minId, maxId] range
-			}
-			break;
-		}
-		vectorIterator++;
+    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
+        float tempScore = 0;
+        if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
+                termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,
+                tempScore)) {
+            if (tempScore > matchingKeywordRecordStaticScore) {
+                matchingKeywordRecordStaticScore = tempScore;
+                matchingKeywordAttributeBitmap = tempAttributeBitmap;
+                returnValue = true;
+                matchingKeywordId = *vectorIterator; // found a keyword id in the [minId, maxId] range
+            }
+            break;
+        }
+        vectorIterator++;
     }
 
     return returnValue;
 }
 
-unsigned ForwardList::getKeywordOffset(unsigned keywordId) const
-{
-	const unsigned* vectorBegin = this->getKeywordIds();
-	const unsigned* vectorEnd = this->getKeywordIds()+ this->getNumberOfKeywords();
-	ASSERT(vectorEnd-vectorBegin == this->getNumberOfKeywords());
-	const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd, keywordId);
-	return vectorIterator - vectorBegin;
+unsigned ForwardList::getKeywordOffset(unsigned keywordId) const {
+    const unsigned* vectorBegin = this->getKeywordIds();
+    const unsigned* vectorEnd = this->getKeywordIds()
+            + this->getNumberOfKeywords();
+    ASSERT(vectorEnd - vectorBegin == this->getNumberOfKeywords());
+    const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd,
+            keywordId);
+    return vectorIterator - vectorBegin;
 }
 
 /// Added for stemmer
-bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema, const unsigned minId, const unsigned maxId, 
-                         const unsigned termSearchableAttributeIdToFilterTermHits, 
-                         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
-                         bool& isStemmed) const
-{
+bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema,
+        const unsigned minId, const unsigned maxId,
+        const unsigned termSearchableAttributeIdToFilterTermHits,
+        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore, bool& isStemmed) const {
 
-    
-	const unsigned* vectorBegin = this->getKeywordIds();
-	const unsigned* vectorEnd = this->getKeywordIds()+ this->getNumberOfKeywords();
-	const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd, minId);
-    ASSERT(vectorEnd-vectorBegin == this->getNumberOfKeywords());
+    const unsigned* vectorBegin = this->getKeywordIds();
+    const unsigned* vectorEnd = this->getKeywordIds()
+            + this->getNumberOfKeywords();
+    const unsigned* vectorIterator = lower_bound(vectorBegin, vectorEnd, minId);
+    ASSERT(vectorEnd - vectorBegin == this->getNumberOfKeywords());
 
     bool returnValue = false;
 
-    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId) ) {
-        if (this->isValidRecordTermHitWithStemmer(schema, (vectorIterator - vectorBegin), 
-                          termSearchableAttributeIdToFilterTermHits, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore,
-                          isStemmed)) {
+    while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
+        if (this->isValidRecordTermHitWithStemmer(schema,
+                (vectorIterator - vectorBegin),
+                termSearchableAttributeIdToFilterTermHits,
+                matchingKeywordAttributeBitmap,
+                matchingKeywordRecordStaticScore, isStemmed)) {
             returnValue = true;
             matchingKeywordId = *vectorIterator;
             break;
@@ -630,14 +638,13 @@ bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema, const
     return returnValue;
 }
 
-float ForwardList::computeFieldBoostSummation(const Schema *schema, const TokenAttributeHits &hits) const
-{
-   float sumOfFieldBoost = 0.0;
-    
-   for (vector<unsigned>::const_iterator vectorIterator = hits.attributeList.begin();
-            vectorIterator != hits.attributeList.end();
-            vectorIterator++ )
-    {
+float ForwardList::computeFieldBoostSummation(const Schema *schema,
+        const TokenAttributeHits &hits) const {
+    float sumOfFieldBoost = 0.0;
+
+    for (vector<unsigned>::const_iterator vectorIterator = hits.attributeList
+            .begin(); vectorIterator != hits.attributeList.end();
+            vectorIterator++) {
         int attributeId = ((*vectorIterator) >> 24) - 1;
         sumOfFieldBoost += schema->getBoostOfSearchableAttribute(attributeId);
     }
@@ -645,57 +652,59 @@ float ForwardList::computeFieldBoostSummation(const Schema *schema, const TokenA
     return 1.0 + (sumOfFieldBoost / schema->getBoostSumOfSearchableAttributes());
 }
 
-unsigned ForwardList::getNumberOfBytes() const
-{
-    unsigned numberOfBytes = sizeof(ForwardList) + this->externalRecordId.size() 
-    + this->inMemoryData.size() + 2 * this->getNumberOfKeywords() * sizeof(unsigned);
-    if (this->getKeywordAttributeBitmaps()!=NULL)
-        numberOfBytes += this->getNumberOfKeywords()*sizeof(unsigned);
+unsigned ForwardList::getNumberOfBytes() const {
+    unsigned numberOfBytes = sizeof(ForwardList) + this->externalRecordId.size()
+            + this->inMemoryData.size()
+            + 2 * this->getNumberOfKeywords() * sizeof(unsigned);
+    if (this->getKeywordAttributeBitmaps() != NULL)
+        numberOfBytes += this->getNumberOfKeywords() * sizeof(unsigned);
     return numberOfBytes;
 }
 
 // READER accesses this function
-bool ForwardIndex::getExternalRecordId_ReadView(const unsigned internalRecordId, std::string &externalRecordId) const
-{
+bool ForwardIndex::getExternalRecordId_ReadView(const unsigned internalRecordId,
+        std::string &externalRecordId) const {
     ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_ReadView());
-    
+
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(internalRecordId, valid);
-    
-    if (valid == false)    {
+    const ForwardList* forwardList = this->getForwardList(internalRecordId,
+            valid);
+
+    if (valid == false) {
         externalRecordId = -1;
         return false;
-    }
-    else {
+    } else {
         externalRecordId = forwardList->getExternalRecordId();
         return true;
     }
 }
 
-bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema, unsigned keywordOffset, 
-                       unsigned searchableAttributeId, unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore) const
-{
-	matchingKeywordRecordStaticScore =  this->getKeywordRecordStaticScore(keywordOffset);
+bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
+        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore) const {
+    matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
+            keywordOffset);
     // support attribute-based search
-    if (searchableAttributeId == 0 || (schema->getPositionIndexType() != srch2::instantsearch::FIELDBITINDEX)) {
+    if (searchableAttributeId == 0
+            || (schema->getPositionIndexType()
+                    != srch2::instantsearch::FIELDBITINDEX)) {
         return true;
-    }
-    else {
-        ASSERT(this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
+    } else {
+        ASSERT(
+                this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
         bool AND = searchableAttributeId & 0x80000000; // test the highest bit
-        matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(keywordOffset);
-        if (AND)
-        {
+        matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
+                keywordOffset);
+        if (AND) {
             searchableAttributeId &= 0x7fffffff; // turn off the highest bit
-            return (matchingKeywordAttributeBitmap & searchableAttributeId) == searchableAttributeId;
-        }
-        else
-        {
+            return (matchingKeywordAttributeBitmap & searchableAttributeId)
+                    == searchableAttributeId;
+        } else {
             return (matchingKeywordAttributeBitmap & searchableAttributeId) != 0;
         }
     }
 }
-
 
 /*
  *
@@ -721,175 +730,185 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema, unsigned ke
  *      isValidRecordHit = true
  *      isStemmed = yes
  */
-bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema, unsigned keywordOffset, 
-                          unsigned searchableAttributeId,  unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
-                          bool &isStemmed) const
-{
+bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
+        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore, bool &isStemmed) const {
     ASSERT(0);
     return false;
-/*    termRecordStaticScore = 0;
-    bool returnValue = false;
-    
-    // Case 1 // For stemmer to work, positionIndex must be enabled.
-    if (searchableAttributeId == -1) {
-        termRecordStaticScore =  this->getTermRecordStaticScore(schema,keywordOffset);
-        returnValue = true;
-        isStemmed = true;
-    
-        pair<unsigned,unsigned> pos(this->getStartEndIndexOfPositionHitsForGivenKeywordOffset(schema, keywordOffset));
-        vector<unsigned>::const_iterator vectorIterator = this->keywordIdVector->begin() + pos.first;
+    /*    termRecordStaticScore = 0;
+     bool returnValue = false;
 
-        while ((vectorIterator != this->keywordIdVector->end())
-               && (vectorIterator != this->keywordIdVector->begin() + pos.second)
-               && isStemmed) {
-            unsigned pos = ((*vectorIterator) & (0xffffff-1));
-            if (pos != (0xffffff-1)) {
-                isStemmed = false;
-            }
-            ++vectorIterator;
-        }
-    }
-    else { // Case 2 and 3
-        //Check if the hit is a stemmed hit
-        termRecordStaticScore = this->getTermRecordStaticScore(schema,keywordOffset);
-    
-        pair<unsigned,unsigned> pos(this->getStartEndIndexOfPositionHitsForGivenKeywordOffset(schema, keywordOffset));
-        vector<unsigned>::const_iterator vectorIterator = this->keywordIdVector->begin() + pos.first;
-        isStemmed = true;
-    
-        while ((vectorIterator != this->keywordIdVector->end())
-               && (vectorIterator != this->keywordIdVector->begin() + pos.second)
-               && isStemmed) {
-            int attributeId = ((*vectorIterator) >> 24) - 1;
-            unsigned pos = ((*vectorIterator) & (0xffffff-1));
+     // Case 1 // For stemmer to work, positionIndex must be enabled.
+     if (searchableAttributeId == -1) {
+     termRecordStaticScore =  this->getTermRecordStaticScore(schema,keywordOffset);
+     returnValue = true;
+     isStemmed = true;
 
-            if (attributeId == searchableAttributeId) {
-                returnValue = true;
-                if (pos != (0xffffff-1)) {
-                    isStemmed = false;
-                }
-            }
-            ++vectorIterator;
-        }
-    }
+     pair<unsigned,unsigned> pos(this->getStartEndIndexOfPositionHitsForGivenKeywordOffset(schema, keywordOffset));
+     vector<unsigned>::const_iterator vectorIterator = this->keywordIdVector->begin() + pos.first;
 
-    return returnValue;
-*/
+     while ((vectorIterator != this->keywordIdVector->end())
+     && (vectorIterator != this->keywordIdVector->begin() + pos.second)
+     && isStemmed) {
+     unsigned pos = ((*vectorIterator) & (0xffffff-1));
+     if (pos != (0xffffff-1)) {
+     isStemmed = false;
+     }
+     ++vectorIterator;
+     }
+     }
+     else { // Case 2 and 3
+     //Check if the hit is a stemmed hit
+     termRecordStaticScore = this->getTermRecordStaticScore(schema,keywordOffset);
+
+     pair<unsigned,unsigned> pos(this->getStartEndIndexOfPositionHitsForGivenKeywordOffset(schema, keywordOffset));
+     vector<unsigned>::const_iterator vectorIterator = this->keywordIdVector->begin() + pos.first;
+     isStemmed = true;
+
+     while ((vectorIterator != this->keywordIdVector->end())
+     && (vectorIterator != this->keywordIdVector->begin() + pos.second)
+     && isStemmed) {
+     int attributeId = ((*vectorIterator) >> 24) - 1;
+     unsigned pos = ((*vectorIterator) & (0xffffff-1));
+
+     if (attributeId == searchableAttributeId) {
+     returnValue = true;
+     if (pos != (0xffffff-1)) {
+     isStemmed = false;
+     }
+     }
+     ++vectorIterator;
+     }
+     }
+
+     return returnValue;
+     */
 }
 
-
 /**********************************************/
-std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const
-{
+std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(internalRecordId, valid);
+    const ForwardList* forwardList = this->getForwardList(internalRecordId,
+            valid);
     if (valid == false)
         return string("");
     else
         return forwardList->getInMemoryData();
 }
 
-float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId, unsigned keywordOffset) const
-{
+float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId,
+        unsigned keywordOffset) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId, valid);
+    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
+            valid);
     if (valid == false)
         return 0;
     else
         return forwardList->getKeywordRecordStaticScore(keywordOffset);
 }
 
-bool ForwardIndex::isValidRecordTermHit(unsigned forwardIndexId, unsigned keywordOffset, 
-                    unsigned searchableAttributeId, unsigned &matchingKeywordAttributeBitmap, float& matchingKeywordRecordStaticScore) const
-{
+bool ForwardIndex::isValidRecordTermHit(unsigned forwardIndexId,
+        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned &matchingKeywordAttributeBitmap,
+        float& matchingKeywordRecordStaticScore) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId, valid);
+    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
+            valid);
     if (valid && forwardList != NULL)
-        return forwardList->isValidRecordTermHit(this->schemaInternal, keywordOffset, 
-                         searchableAttributeId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
+        return forwardList->isValidRecordTermHit(this->schemaInternal,
+                keywordOffset, searchableAttributeId,
+                matchingKeywordAttributeBitmap,
+                matchingKeywordRecordStaticScore);
     else
         return false;
 }
 
-bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId, unsigned keywordOffset, 
-                           unsigned searchableAttributeId,  unsigned &matchingKeywordAttributeBitmap, float &matchingKeywordRecordStaticScore,
-                           bool &isStemmed) const
-{
+bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
+        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned &matchingKeywordAttributeBitmap,
+        float &matchingKeywordRecordStaticScore, bool &isStemmed) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId, valid);
+    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
+            valid);
     if (valid && forwardList != NULL)
-        return forwardList->isValidRecordTermHitWithStemmer(this->schemaInternal, keywordOffset, 
-                                    searchableAttributeId, matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore, isStemmed);
+        return forwardList->isValidRecordTermHitWithStemmer(
+                this->schemaInternal, keywordOffset, searchableAttributeId,
+                matchingKeywordAttributeBitmap,
+                matchingKeywordRecordStaticScore, isStemmed);
     else
         return false;
 }
 
 /********-record-id-converter-**********/
 // WRITER accesses this function
-void ForwardIndex::appendExternalRecordId_WriteView(const std::string &externalRecordId, unsigned &internalRecordId)
-{
+void ForwardIndex::appendExternalRecordId_WriteView(
+        const std::string &externalRecordId, unsigned &internalRecordId) {
     //bool returnValue = false;
     /*if ( this->getInternalRecordId(externalRecordId, internalRecordId) == false)
-      {*/
+     {*/
     //this->internalToExternalRecordIdVector.push_back(std::make_pair(externalRecordId,true)); // Added in ForwardIndex::addRecord(...)
     internalRecordId = this->getTotalNumberOfForwardLists_WriteView();
-    this->externalToInternalRecordIdMap_WriteView[externalRecordId] = internalRecordId;
+    this->externalToInternalRecordIdMap_WriteView[externalRecordId] =
+            internalRecordId;
     //returnValue = true;
     /*}
-      else
-      {
-      internalRecordId = (unsigned)(-1);
-      }*/
+     else
+     {
+     internalRecordId = (unsigned)(-1);
+     }*/
     //return returnValue;
 }
 
 // delete a record with a specific id
 // WRITER accesses this function
-bool ForwardIndex::deleteRecord_WriteView(const std::string &externalRecordId)
-{
+bool ForwardIndex::deleteRecord_WriteView(const std::string &externalRecordId) {
     unsigned internalRecordId;
-    
-    return deleteRecordGetInternalId_WriteView(externalRecordId, internalRecordId);
+
+    return deleteRecordGetInternalId_WriteView(externalRecordId,
+            internalRecordId);
 }
 
 // delete a record with a specific id, return the deleted internalRecordId
 // WRITER accesses this function
-bool ForwardIndex::deleteRecordGetInternalId_WriteView(const std::string &externalRecordId, unsigned &internalRecordId)
-{
-    bool found = this->getInternalRecordId_WriteView(externalRecordId, internalRecordId);
+bool ForwardIndex::deleteRecordGetInternalId_WriteView(
+        const std::string &externalRecordId, unsigned &internalRecordId) {
+    bool found = this->getInternalRecordId_WriteView(externalRecordId,
+            internalRecordId);
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
         this->externalToInternalRecordIdMap_WriteView.erase(externalRecordId);
         this->mergeRequired = true; // tell the merge thread to merge
     }
-    
+
     return found;
 }
 
 // recover a deleted record with a specific internal id
 // WRITER accesses this function
-bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId, unsigned internalRecordId)
-{
+bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId,
+        unsigned internalRecordId) {
     // see if the external record id exists in the externalToInternalRecordIdMap 
-    bool found = this->getInternalRecordId_WriteView(externalRecordId, internalRecordId);
+    bool found = this->getInternalRecordId_WriteView(externalRecordId,
+            internalRecordId);
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
         this->externalToInternalRecordIdMap_WriteView[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
         this->mergeRequired = true; // tell the merge thread to merge
     }
-    
+
     return !found;
 }
 
 // check if a record with a specific internal id exists
 // WRITER accesses this function
-INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord_WriteView(const std::string &externalRecordId) const
-{
+INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord_WriteView(
+        const std::string &externalRecordId) const {
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
-    std::map<string,unsigned>::const_iterator mapIter = 
-        this->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
+    std::map<string, unsigned>::const_iterator mapIter = this
+            ->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
 
     if (mapIter == this->externalToInternalRecordIdMap_WriteView.end())
         return LU_ABSENT_OR_TO_BE_DELETED;
@@ -904,29 +923,29 @@ INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord_WriteView(const std::string &exter
 }
 
 // WRITER accesses this function
-bool ForwardIndex::getInternalRecordId_WriteView(const std::string &externalRecordId, unsigned &internalRecordId) const
-{
+bool ForwardIndex::getInternalRecordId_WriteView(
+        const std::string &externalRecordId, unsigned &internalRecordId) const {
     if (externalRecordId.empty())
         return false;
-    
-    std::map<string,unsigned>::const_iterator mapIter = 
-    this->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
+
+    std::map<string, unsigned>::const_iterator mapIter = this
+            ->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
     if (mapIter != this->externalToInternalRecordIdMap_WriteView.end()) {
         internalRecordId = mapIter->second;
         //ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_WriteView());
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
 
-unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId, unsigned keywordId) const
-{
-	bool valid = false;
-	const ForwardList* forwardList = this->getForwardList(forwardListId, valid);
-	//assert(valid == true);
-	return forwardList->getKeywordOffset(keywordId);
+unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
+        unsigned keywordId) const {
+    bool valid = false;
+    const ForwardList* forwardList = this->getForwardList(forwardListId, valid);
+    //assert(valid == true);
+    return forwardList->getKeywordOffset(keywordId);
 }
 
-}}
+}
+}

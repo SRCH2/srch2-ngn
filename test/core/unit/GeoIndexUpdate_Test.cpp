@@ -1,4 +1,4 @@
-//$Id: GeoIndexUpdate_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: GeoIndexUpdate_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 #include <sstream>
 #include <iostream> 
 #include <time.h>
@@ -161,7 +161,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         // for each prefix of the first keyword
         for(unsigned j = 1; j <= queryKeywords[0].size(); j++)
         {
-            Query *query = new Query(MapQuery);
+            Query *query = new Query(SearchTypeMapQuery);
 
             // gernerate a term for the prefix, add it to the query
             string prefix = queryKeywords[0].substr(0, j);
@@ -182,7 +182,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
                              recordsToSearch[i].second.second.x + 0.05,
                              recordsToSearch[i].second.second.y + 0.05 );
 
-            QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
             unsigned expectedRecordId = atoi(recordsToSearch[i].second.first.c_str());
             indexSearcher->search(query, queryResults);

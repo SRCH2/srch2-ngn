@@ -12,7 +12,9 @@
 #include <map>
 #include <fstream>
 #include <instantsearch/Analyzer.h>
+#include <instantsearch/Constants.h>
 #include <boost/regex.hpp>
+#include <string>
 #include "TokenStream.h"
 #include "util/Logger.h"
 
@@ -38,6 +40,10 @@ public:
 			const std::string &stopWordFilePath = "",
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
+
+
+	string applyFilters(string input) ;
+
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;

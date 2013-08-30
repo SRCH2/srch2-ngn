@@ -28,6 +28,7 @@
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 #include "AnalyzerInternal.h"
+#include "util/encoding.h"
 using std::pair;
 using namespace std;
 
@@ -92,6 +93,25 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
     this->synonymKeepOriginFlag = synonymKeepOriginFlag;
 
 }
+
+string AnalyzerInternal::applyFilters(string input) {
+
+   // TokenStream * tokenStream = this->createOperatorFlow();
+
+    this->tokenStream->fillInCharacters(input);
+
+    string result = "";
+    while (tokenStream->processToken()) {
+        vector<CharType> charVector;
+        charVector = tokenStream->getProcessedToken();
+        string tmp;
+        charTypeVectorToUtf8String(charVector, tmp);
+        result += tmp;
+        break; //only returns the first output of filters
+    }
+    return result;
+}
+
 
 /**
  * Function to tokenize a given record.
