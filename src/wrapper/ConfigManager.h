@@ -4,6 +4,7 @@
 #define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
+#include "WrapperConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -20,17 +21,6 @@ namespace po = boost::program_options;
 namespace srch2 {
 namespace httpwrapper {
 
-typedef enum {
-    KAFKAWRITEAPI = 0, HTTPWRITEAPI = 1
-} WriteApiType;
-
-typedef enum {
-    INDEXCREATE = 0, INDEXLOAD = 1
-} IndexCreateOrLoad;
-
-typedef enum {
-    FILEBOOTSTRAP_FALSE = 0, FILEBOOTSTRAP_TRUE = 1
-} DataSourceType;
 
 class ConfigManager {
 private:
@@ -64,14 +54,26 @@ private:
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
-	// < keyword, < offset, boost > >
-	map<string, pair<unsigned, unsigned> > searchableAttributesTriple;
-	vector<string> sortableAttributes;
-	string attributeRecordBoost;
 
+    // < name, <required, <default, <offset, boost> > > >
+    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
+
+	string attributeRecordBoost;
 	string scoringExpressionString;
-	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-	vector<string> sortableAttributesDefaultValue;
+
+
+	// < name, <type, <default, isSortable>>>
+	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
+
+
+
+	// facet
+	bool facetEnabled;
+	vector<int> facetTypes; // 0 : simple , 1 : range
+	vector<string> facetAttributes;
+	vector<string> facetStarts;
+	vector<string> facetEnds;
+	vector<string> facetGaps;
 
 	//vector<unsigned> attributesBoosts;
 
@@ -116,12 +118,8 @@ public:
     ConfigManager(std::string& configfile);
 	virtual ~ConfigManager();
 
-	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,
-			std::stringstream &parseError);
-	void _setDefaultSearchableAttributeBoosts(
-			const vector<string> &searchableAttributesVector);
-	void parse(const boost::program_options::variables_map &vm,
-			bool &configSuccess, std::stringstream &parseError);
+	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
+	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
 
 	const std::string& getCustomerName() const;
 	uint32_t getDocumentLimit() const;
@@ -131,12 +129,13 @@ public:
 	const std::string& getFilePath() const;
 	const std::string& getPrimaryKey() const;
 
-	const map<string, pair<unsigned, unsigned> > * getSearchableAttributes() const;
-	const vector<string> * getAttributesToReturnName() const;
+	const map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > * getSearchableAttributes() const;
 
-	const vector<string> * getSortableAttributesName() const;
-	const vector<srch2::instantsearch::FilterType> * getSortableAttributesType() const;
-	const vector<string> * getSortableAttributesDefaultValue() const;
+	const map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > * getNonSearchableAttributes() const;
+
+    const vector<string> * getAttributesToReturnName() const;
+
+
 
 	//const vector<unsigned>* getAttributesBoosts() const;
 	const std::string& getAttributeRecordBoostName() const;
@@ -200,7 +199,26 @@ public:
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
-    void loadConfigFile() ;
+
+	vector<string> getAttributesToReturn() const {
+		return attributesToReturn;
+	}
+
+	void setAttributesToReturn(vector<string> attributesToReturn) {
+		this->attributesToReturn = attributesToReturn;
+	}
+
+
+	bool isFacetEnabled() const;
+
+	const vector<string> * getFacetAttributes() const ;
+	const vector<int> * getFacetTypes() const;
+	const vector<string> * getFacetStarts() const ;
+	const vector<string> * getFacetEnds() const ;
+
+	const vector<string> * getFacetGaps() const ;
+
+        void loadConfigFile() ;
 };
 
 }

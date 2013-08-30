@@ -1,5 +1,5 @@
 
-// $Id: JSONRecordParser.cpp 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: JSONRecordParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 #include <iostream>
 #include <sstream>
@@ -16,6 +16,9 @@
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include "ParserUtility.h"
+#include <instantsearch/Analyzer.h>
+#include "AnalyzerFactory.h"
 
 using namespace snappy;
 
@@ -102,45 +105,83 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         record->setInMemoryData(compressedInputLine);
     }
 
-    for (map<string, pair<unsigned, unsigned> >::const_iterator attributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
-            attributeIter != indexDataContainerConf->getSearchableAttributes()->end();
-            ++attributeIter)
+
+    for (map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator attributeIter
+    		= indexDataContainerConf->getSearchableAttributes()->begin();
+    		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
-        string attributeKeyName = attributeIter->first;
-        //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
-        //Json::Value localValue = root.get(attributeKeyName, "NULL" );
-        //string attributeStringValue = localValue.asString();
+    	string attributeKeyName = attributeIter->first;
+
         string attributeStringValue;
         getJsonValueString(root, attributeKeyName, attributeStringValue, "attributes-search");
 
         if (attributeStringValue.compare("NULL") != 0)
         {
             record->setSearchableAttributeValue(attributeKeyName,attributeStringValue);
+        }else{ // error if required or set to default
+        	if(attributeIter->second.first){ // true means required
+        		// ERROR
+                error << "\nRequired field has a null value.";
+                return false;// Raise Error
+        	}else{
+        		// passing the default value from config file
+        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+        	}
         }
     }
 
-    for (vector<string>::const_iterator attributeIter = indexDataContainerConf->getSortableAttributesName()->begin();
-            attributeIter != indexDataContainerConf->getSortableAttributesName()->end();
+
+    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator attributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+            attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
             ++attributeIter)
     {
-        string attributeKeyName = *attributeIter;
+
+        string attributeKeyName = attributeIter->first;
         //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
-        string attributeStringValue;
-        getJsonValueString(root, attributeKeyName, attributeStringValue, "attributes-sort");
-        if (attributeStringValue=="") // if the attribute is int or float, convert it to string
-        {
-            double attributeDoubleValue;
-            getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "attributes-sort");
-            stringstream s;
-            s << attributeDoubleValue;
-            attributeStringValue = s.str();
+        // if type is date/time check the syntax
+        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
+        	string attributeStringValue;
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
+        	if(attributeStringValue==""){
+        		// ERROR
+                error << "\nDATE/TIME field has non recognizable format.";
+                return false;// Raise Error
+        	}else{
+                if (attributeStringValue.compare("NULL") != 0)
+                {
+                    record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+                }else{
+                    if(attributeIter->second.second.second){
+                        // ERROR
+                        error << "\nRequifred non-searchable attribute is null.";
+                        return false;// Raise Error
+                    }else{
+                        // set the default value
+                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                    }
+                }
+        	}
+        }else{
+
+            string attributeStringValue;
+            getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
+            if (attributeStringValue=="") // if the attribute is int or float, convert it to string
+            {
+                double attributeDoubleValue;
+                getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
+                stringstream s;
+                s << attributeDoubleValue;
+                attributeStringValue = s.str();
+            }
+            // TODO : how should user enter data/time attributes ? right now it should be a long value as an string.
+
+            if (attributeStringValue.compare("NULL") != 0)
+            {
+                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+            }
         }
 
-        if (attributeStringValue.compare("NULL") != 0)
-        {
-            record->setSortableAttributeValue(attributeKeyName, attributeStringValue);
-        }
     }
 
     // Add recordBoost, setSortableAttribute and setScoreAttribute
@@ -250,23 +291,25 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     }
 
     // Set SearchableAttributes
-    map<string, pair<unsigned, unsigned> >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
-        schema->setSearchableAttribute(searchableAttributeIter->first, searchableAttributeIter->second.second); // searchable text
+        schema->setSearchableAttribute(searchableAttributeIter->first, searchableAttributeIter->second.second.second.second); // searchable text
     }
 
-    // Set SortableAttributes
-    vector<string>::const_iterator sortableAttributeNameIter = indexDataContainerConf->getSortableAttributesName()->begin();
-    vector<srch2::instantsearch::FilterType>::const_iterator sortableAttributeTypeIter = indexDataContainerConf->getSortableAttributesType()->begin();
-    vector<string>::const_iterator sortableAttributeDefaultValueIter = indexDataContainerConf->getSortableAttributesDefaultValue()->begin();
-    for ( ; sortableAttributeNameIter != indexDataContainerConf->getSortableAttributesName()->end();
-            ++sortableAttributeNameIter, ++sortableAttributeTypeIter, ++sortableAttributeDefaultValueIter)
+
+    // Set NonSearchableAttributes
+    map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator
+    	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
     {
-        //schema->setSortableAttribute("score",srch2::instantsearch::FLOAT, "1");
-        schema->setSortableAttribute(*sortableAttributeNameIter,*sortableAttributeTypeIter,*sortableAttributeDefaultValueIter); // sortable attribute
+
+        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first, nonSearchableAttributeIter->second.first ,
+        		nonSearchableAttributeIter->second.second.first);
     }
+
 
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
@@ -289,6 +332,9 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
 
     unsigned lineCounter = 0;
 
+    // use same analyzer object for all the records
+    srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
+
     while(getline(in, line)  && in.good() )
     {
         bool parseSuccess = false;
@@ -300,7 +346,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         {
             // Add the record to the index
             //indexer->addRecordBeforeCommit(record, 0);
-            indexer->addRecord(record, 0);
+            indexer->addRecord(record, analyzer, 0);
         }
         else
         {
@@ -330,6 +376,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     Logger::console("Saving Index.....");
     indexer->save();
     Logger::console("Index saved.");
+    delete analyzer;
 }
 
 // convert other types to string
@@ -365,21 +412,45 @@ void convertValueToString(Json::Value value, string &stringValue){
   // calling "asString()" to deal with the case where the input data was not formatted
   // properly.
   // if the type is int or double we convert it to string
-  // Written by CHENLI
-  void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue, 
-                       const std::string &key,
-                       std::string &stringValue,
-                       const string &configName)
-  {
-	  if(!jsonValue.isMember(key))
-		{
-		  stringValue = "";
-		  cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
-			return;
-		}
-    Json::Value value = jsonValue.get(key, "NULL");
-    convertValueToString(value, stringValue);
-  }
+  // parameter configName is used to be included in error/warning messages to make them meaningful ...
+void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
+		const std::string &key,
+		std::string &stringValue,
+		const string &configName)
+{
+	if(!jsonValue.isMember(key))
+	{
+		stringValue = "";
+		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		return;
+	}
+	Json::Value value = jsonValue.get(key, "NULL");
+	convertValueToString(value, stringValue);
+}
+
+
+// get the string from a json value based on a key value.
+// check to see if it is proper date/time format.
+void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
+		const std::string &key,
+		std::string &stringValue,
+		const string &configName){
+	if(!jsonValue.isMember(key))
+	{
+		stringValue = "";
+		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+		return;
+	}
+	string temp;
+	Json::Value value = jsonValue.get(key, "NULL");
+	convertValueToString(value, temp);
+
+	// now check to see if it has proper date/time format
+
+	stringValue = convertTimeFormatToLong(temp);
+    return;
+
+}
 
   // get the double from a json value based on a key value.  Check the type first before
   // calling "asDouble()" to deal with the case where the input data was not formatted
@@ -401,6 +472,8 @@ void convertValueToString(Json::Value value, string &stringValue){
     	doubleValue = value.asDouble();
     else if (value.isInt())
     	doubleValue = value.asInt();
+    else if (value.isUInt())
+    	doubleValue = value.asUInt();
     else // if the type is not double not int, set it to 0
     {
     	doubleValue = 0;

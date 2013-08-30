@@ -199,7 +199,8 @@ bool test(int argc, char** argv)
 	delete indexMetaData;
 	delete indexer;
 	delete serverConf;
-	fclose(logFile);
+	if (logFile)
+		fclose(logFile);
 
 	return true;
 }

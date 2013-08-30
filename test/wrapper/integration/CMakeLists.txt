@@ -25,5 +25,14 @@ TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
 						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
 					)
-
 ADD_DEPENDENCIES(WrapperCreateIndexFromFile_Test srch2_core)
+					
+					
+ADD_EXECUTABLE(PostProcessingFilter_Test PostProcessingFilters_Test.cpp)
+TARGET_LINK_LIBRARIES(PostProcessingFilter_Test 
+						${Srch2InstantSearch_LIBRARIES} 
+						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+						${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+						)	
+ADD_DEPENDENCIES(PostProcessingFilter_Test srch2_core)
+

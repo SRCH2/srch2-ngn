@@ -31,6 +31,7 @@
 #include <fstream>
 #include "util/encoding.h"
 #include "util/Logger.h"
+#include "analyzer/AnalyzerContainers.h"
 
 using namespace std;
 using srch2::util::Logger;
@@ -39,51 +40,21 @@ namespace srch2 {
 namespace instantsearch {
 // TODO: width limit 80 chars
 StemmerFilter::StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath) :
-		TokenFilter(tokenStream) {
+		TokenFilter(tokenStream),stemmerContainer(StemmerContainer::getInstance()) {
 	// Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
 	const std::string stemmerFiltePath = stemmerFilePath;
 
 	// copies the shared_ptr: sharedToken
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
-	// construct the dictionary
-	this->createWordMap(stemmerFiltePath);
-}
 
-// Creates the map of English words based on the dictionary file.
-
-int StemmerFilter::createWordMap(const std::string &stemmerFilePath) {
-	//  using file path to create an ifstream object
-	std::ifstream input(stemmerFilePath.c_str());
-	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
-        Logger::error("The file %s could not be opened.", stemmerFilePath.c_str());
-		return -1;
-	}
-	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
-	std::string str;
-	while (getline(input, str)) {
-		this->dictionaryWords.insert(make_pair(str, 1));
-	}
-
-	return 0;
 }
 
 StemmerFilter::~StemmerFilter() {
-	this->dictionaryWords.clear();
 }
 
 //  search if the given string is present in the DictionaryWords
-int StemmerFilter::searchWord(const std::string &searchWord) const {
-	//	An iterator on the map
-	std::map<std::string, int>::const_iterator iter =
-			this->dictionaryWords.begin();
-	iter = this->dictionaryWords.find(searchWord);
-	//	If the iter resulted from the find() is equal to the end(), it means it did not find the search word, otherwise it did.
-	if (iter != this->dictionaryWords.end()) {
-		return 1;
-	} else {
-		return 0;
-	}
+bool StemmerFilter::searchWord(const std::string &searchWord) const {
+	return stemmerContainer.contains(searchWord);
 }
 
 /* Stems the input Token to be stemmed

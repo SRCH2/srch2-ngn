@@ -421,24 +421,24 @@ Trie *constructNoFuzzyTrie()
 void testNoFuzzyPrefixActiveNodeSet()
 {
 
-	Trie *trie = constructNoFuzzyTrie();
+        Trie *trie = constructNoFuzzyTrie();
 
-	PrefixActiveNodeSet *prefixActiveNodeSet = NULL, *newPrefixActiveNodeSet = NULL;
-	vector<string> similarPrefixes;
+        PrefixActiveNodeSet *prefixActiveNodeSet = NULL, *newPrefixActiveNodeSet = NULL;
+        vector<string> similarPrefixes;
 
-	prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-	vector<CharType> charTypeVector = getCharTypeVector("ㄉㄨㄥ");
-	for(unsigned i = 0; i < charTypeVector.size(); i++)
-		newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(charTypeVector[i]); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
+        prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
+        vector<CharType> charTypeVector = getCharTypeVector("ㄉㄨㄥ");
+        for(unsigned i = 0; i < charTypeVector.size(); i++)
+                newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(charTypeVector[i]); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
 
-	prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
-	ASSERT(similarPrefixes.size() == 1);
-	ASSERT(checkContainment(similarPrefixes, "ㄉㄨㄥ"));
+        prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
+        ASSERT(similarPrefixes.size() == 1);
+        ASSERT(checkContainment(similarPrefixes, "ㄉㄨㄥ"));
 
-	delete newPrefixActiveNodeSet;
+        delete newPrefixActiveNodeSet;
 
-	// finally, we can delete the trie
-	delete trie;
+        // finally, we can delete the trie
+        delete trie;
 }
 
 void testPrefixIterators()
@@ -682,7 +682,7 @@ void testActiveNodeWithTrieUpdate()
         std::cout << "word:" << word << std::endl;
         if(trieNode->isTerminalNode())
         {
-        	vector<CharType> prefix;
+                vector<CharType> prefix;
             trie->getPrefixString_NotThreadSafe(trieNode, prefix);
             string prefixStr;
             charTypeVectorToUtf8String(prefix, prefixStr);

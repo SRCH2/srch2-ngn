@@ -1,4 +1,4 @@
-//$Id: AttributedBasedSearch_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: AttributedBasedSearch_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 #include <analyzer/AnalyzerInternal.h>
 #include <instantsearch/Indexer.h>
@@ -78,7 +78,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -98,8 +98,8 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
                 unsigned numOfResults, const vector<string> &resultIds, const vector<vector<unsigned> > &resultAttributeBitmap)
 {
     
-    Query *query = new Query(srch2::instantsearch::TopKQuery);
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
     {

@@ -84,7 +84,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -107,7 +107,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
 
     Term *term = NULL;
@@ -122,7 +122,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
 
@@ -142,14 +142,14 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
 {
 
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
     query->setRange(lb_lat,lb_lng,rt_lat,rt_lng);
     Rectangle *rectangleRange = new Rectangle();
     rectangleRange->min.x = lb_lat;
     rectangleRange->min.y = lb_lng;
     rectangleRange->max.x = rt_lat;
     rectangleRange->max.y = rt_lng;
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(*rectangleRange, queryResults);
     ASSERT(expected.size() == queryResults->getNumberOfResults());
@@ -167,14 +167,14 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 {
 
 	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-	Query *query = new Query(srch2::instantsearch::MapQuery);
+	Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 	query->setRange(lb_lat,lb_lng,radius);
 	Point pnt;
 	pnt.x=lb_lat;
 	pnt.y=lb_lng;
 	Circle *circleRange = new Circle(pnt,radius);
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 	indexSearcher->search(*circleRange,queryResults);
 	ASSERT(expected.size() == queryResults->getNumberOfResults());
 	for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)

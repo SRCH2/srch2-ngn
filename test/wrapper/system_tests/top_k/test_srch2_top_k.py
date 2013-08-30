@@ -95,9 +95,10 @@ if __name__ == "__main__":
         else:
             topk_B = str(sys.argv[3])
             topk_A = str(sys.argv[4])
-            base_url = base + "/search?fuzzy=1&type=0&start=0&q="+query
-            url_A = base_url + "&limit="+topk_A
-            url_B = base_url + "&limit="+topk_B
+            base_url = base + "/search?fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query
+            url_A = base_url + "&rows="+topk_A
+            print 'URL A : ' + url_A
+            url_B = base_url + "&rows="+topk_B
             jsonTop10 = urllib2.urlopen(url_A).read()
             jsonTop20 = urllib2.urlopen(url_B).read()
             if ( verify(jsonTop10, topk_A,  jsonTop20, topk_B) ):
@@ -110,7 +111,13 @@ if __name__ == "__main__":
         print "python test_srch2_top_k.py ${query} ${topk_A} ${topk_B}"
 
         #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
-    
+    print "======================================="
+    try:
+        s = commands.getoutput('ps aux | grep srch2-search-server')
+        stat = s.split()
+        os.kill(int(stat[1]), signal.SIGUSR1)
+    except: 
+        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+        a = s.split()
+        cmd = "kill -9 {0}".format(a[-1])
+        os.system(cmd) 

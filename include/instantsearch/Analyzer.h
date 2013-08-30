@@ -21,7 +21,7 @@
 #define __INCLUDE_INSTANTSEARCH__ANALYZER_H__
 
 #include <instantsearch/platform.h>
-
+#include <instantsearch/Constants.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -35,30 +35,6 @@ namespace instantsearch {
 
 class AnalyzerInternal;
 
-typedef enum {
-	// there is no numbering for this enum. By default the numbers start from 0
-	DISABLE_STEMMER_NORMALIZER, // Disables stemming
-	ENABLE_STEMMER_NORMALIZER, // Enables stemming
-	ONLY_NORMALIZER
-} StemmerNormalizerFlagType;
-
-typedef enum {
-	DICTIONARY_PORTER_STEMMER
-// We can add other kinds of stemmer here, like MIRROR_STEMMER
-
-} StemmerType; // TODO: I should remove the '_' from the name, (it is temporary)
-
-typedef enum {
-	SYNONYM_KEEP_ORIGIN, // Disables stemming
-	SYNONYM_DONOT_KEEP_ORIGIN   // Enables stemming
-} SynonymKeepOriginFlag;
-
-
-typedef enum {
-	STANDARD_ANALYZER,  // StandardAnalyzer
-	SIMPLE_ANALYZER,    // SimpleAnalyzer
-    CHINESE_ANALYZER    // ChineseAnalyzer
-} AnalyzerType;
 
 struct TokenAttributeHits {
     /** Each entry has position information as follows:
@@ -82,8 +58,6 @@ struct TokenAttributeHits {
 
 
 class Record;
-
-
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -106,6 +80,8 @@ public:
 	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
+
+	std::string applyFilters(std::string input);
 
 	void tokenizeQuery(const std::string &queryString,
 			std::vector<std::string> &queryKeywords) const;

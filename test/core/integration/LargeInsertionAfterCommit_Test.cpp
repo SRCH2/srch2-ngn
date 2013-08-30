@@ -1,4 +1,4 @@
-//$Id: LargeInsertionAfterCommit_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: LargeInsertionAfterCommit_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 // This test case will insert a large amount of records after the index is committed,
 // then try to search each inserted record.
@@ -72,7 +72,7 @@ void buildIndex(string data_file, string index_dir)
             cellCounter++;
         }
 
-        indexer->addRecord(record, 0);
+        indexer->addRecord(record, analyzer, 0);
 
         docsCounter++;
 
@@ -112,6 +112,8 @@ void updateIndex(string data_file, Indexer *index)
     /// Read records from file
     /// the file should have two fields, seperated by '^'
     /// the first field is the primary key, the second field is a searchable attribute
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+        		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
     while(getline(data,line))
     {
         unsigned cellCounter = 0;
@@ -131,9 +133,7 @@ void updateIndex(string data_file, Indexer *index)
 
             cellCounter++;
         }
-
-        index->addRecord(record, 0);
-
+        index->addRecord(record, analyzer, 0);
         docsCounter++;
 
         record->clear();
@@ -148,6 +148,7 @@ void updateIndex(string data_file, Indexer *index)
     data.close();
 
     delete schema;
+    delete analyzer;
 }
 // Read queries from file and do the search
 void readQueriesAndDoQueries(string path, const Analyzer *analyzer, IndexSearcher *indexSearcher)
@@ -207,7 +208,8 @@ int main(int argc, char **argv)
 
     updateIndex(update_data_file, index);
     
-    const Analyzer *analyzer = index->getAnalyzer();
+    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
+            		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
@@ -216,6 +218,7 @@ int main(int argc, char **argv)
     delete indexSearcher;
     delete index;
     delete indexMetaData;
+    delete analyzer;
 
     return 0;
 }

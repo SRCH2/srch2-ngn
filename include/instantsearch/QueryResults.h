@@ -1,4 +1,4 @@
-//$Id: QueryResults.h 3480 2013-06-19 08:00:34Z jiaying $
+//$Id: QueryResults.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <instantsearch/platform.h>
 
@@ -32,6 +33,18 @@ namespace instantsearch
 
 class Query;
 class IndexSearcher;
+class Score;
+class QueryResultsInternal;
+class QueryResultFactoryInternal;
+
+
+
+class QueryResultFactory{
+public:
+	QueryResultFactory();
+    ~QueryResultFactory();
+    QueryResultFactoryInternal * impl;
+};
 
 /**
  * This class defines QueryResults that acts as a container to hold
@@ -45,6 +58,9 @@ class IndexSearcher;
 class MYLIB_EXPORT QueryResults
 {
 public:
+
+
+
     /**
      * TODO: change this to constructor. Also verify how much code changes will be
      * required to this.
@@ -52,7 +68,12 @@ public:
      * @param[in] indexSearcher the reference to an IndexSearcher object.
      * @param[in] query the reference to a Query object.
      */
-    static QueryResults* create(IndexSearcher* indexSearcher, Query* query);
+    QueryResults(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+
+
+	QueryResults();
+	void init(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+
 
     /**
      * Checks if the iterator reaches the end. @return false if
@@ -63,7 +84,7 @@ public:
     /**
      * Gets the number of result items in the QueryResults object.
      */
-    virtual unsigned getNumberOfResults() const = 0;
+    unsigned getNumberOfResults() const;
 
     /**
      * Gets the current record id while iterating through the QueryResults object.
@@ -73,21 +94,22 @@ public:
     /**
      * Gets the record id of the 'position'-th item in the QueryResults object.
      */
-    virtual std::string getRecordId(unsigned position) const = 0;
+    std::string getRecordId(unsigned position) const ;
 
     /**
      * Gets the record id of the 'position'-th item in the QueryResults object.
      * TODO: Move/remove getInternalRecordId to internal include files. There should be a mapping from external
      * Used to access the InMemoryData.
      */
-    virtual unsigned getInternalRecordId(unsigned position) const = 0;
+    unsigned getInternalRecordId(unsigned position) const ;
 
-    virtual std::string getInMemoryRecordString(unsigned position) const = 0;
+    std::string getInMemoryRecordString(unsigned position) const ;
 
     /**
      * Gets the score of the 'position'-th item in the QueryResults object.
      */
-    virtual float getResultScore(unsigned position) const = 0;
+    std::string getResultScoreString(unsigned position) const ;
+    Score getResultScore(unsigned position) const ;
 
     /**
      *
@@ -104,7 +126,7 @@ public:
      * keyword in the record for the second query keyword
      * "compilor".
      */
-    virtual void getMatchingKeywords(const unsigned position, std::vector<std::string> &matchingKeywords) const = 0;
+    void getMatchingKeywords(const unsigned position, std::vector<std::string> &matchingKeywords) const ;
 
     /**
      * Gets the edit distances of the 'position'-th item in the
@@ -116,36 +138,53 @@ public:
      * to the query keywords.
      *
      * For example, for the query "ulman compilor", a result
-     * record with keywords "ullman principles conpiler" will
+     * recorprivate:
+    struct Impl;
+    Impl *impl;d with keywords "ullman principles conpiler" will
      * return [1,2] in the editDistances vector.  In particular,
      * "2" means that the best matching keyword ("conpiler") in
      * this record has an edit distance 2 to the second query
      * keyword "compilor".
      */
-    virtual void getEditDistances(const unsigned position, std::vector<unsigned> &editDistances) const = 0;
+    void getEditDistances(const unsigned position, std::vector<unsigned> &editDistances) const ;
 
     // The following two functions only work for attribute based search
-    virtual void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const = 0;
+    virtual void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const ;
 
-    virtual void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const = 0;
+    void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const ;
     /*
      *   In Geo search return distance between location of the result and center of the query rank.
      *   TODO: Change the name to getGeoDistance()
      */
-    virtual double getPhysicalDistance(const unsigned position) const = 0;
+    double getPhysicalDistance(const unsigned position) const ;
+
+    const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
+
+    void copyForPostProcessing(QueryResults * sourceQueryResults) const ;
+
+    void clear();
 
     //TODO: These three functions for internal debugging. remove from the header
-    virtual void printStats() const = 0;
+    void printStats() const ;
 
-    virtual void printResult() const = 0;
+    void printResult() const ;
 
-    virtual void addMessage(const char* msg) = 0;
+    void addMessage(const char* msg) ;
 
     /**
      * Destructor of the QueryResults object.
      */
-    virtual ~QueryResults() {};
+    ~QueryResults();
+
+
+
+
+
+    QueryResultsInternal *impl;
 };
+
+
+
 }}
 
 #endif /* __QUERYRESULTS_H__ */

@@ -1,5 +1,5 @@
 
-// $Id: EditDistance_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: EditDistance_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -70,7 +70,7 @@ void buildLocalIndex(string INDEX_DIR)
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
-    index->addRecord(record, 0);
+    index->addRecord(record, analyzer, 0);
 
 /*
     // create another record
@@ -112,7 +112,7 @@ void test1()
     IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-    const Analyzer *analyzer = indexer->getAnalyzer();
+    const Analyzer *analyzer = getAnalyzer();
 
     //Edit distance 0
     ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
@@ -181,6 +181,7 @@ void test1()
     delete indexSearcher;
     delete indexer;
     delete cache;
+    delete analyzer;
 }
 
 int main(int argc, char **argv)

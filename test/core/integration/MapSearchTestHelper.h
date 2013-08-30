@@ -140,7 +140,7 @@ bool ifAllExpectedResultsAreFound(const vector<unsigned> &expectedResults, const
 	return true;
 }
 
-void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
+void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema, Analyzer* analyzer)
 {
 	ifstream data(filepath.c_str());
 
@@ -201,7 +201,7 @@ void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema)
 		record->setLocationAttributeValue(p.x, p.y);
 
 		// add the record
-		index->addRecord(record, 0);
+		index->addRecord(record, analyzer, 0);
 		delete record;
 	}
 
@@ -225,7 +225,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 		// Output the result information
 		cout << "\nResult-(" << resultIter << ") RecordId:"
 				<< queryResults->getRecordId(resultIter)
-				<< "\tScore:" << queryResults->getResultScore(resultIter)
+				<< "\tScore:" << queryResults->getResultScoreString(resultIter)
 				<< "\nDistance:" << queryResults->getPhysicalDistance(resultIter);
 
 		cout << "\nMatching Keywords:" << endl;
@@ -243,7 +243,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 
 float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -264,12 +264,12 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
     //printGeoResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0);
+    float resVal = queryResults->getResultScore(0).getFloatScore();
     delete queryResults;
     delete query;
     return resVal;
@@ -277,7 +277,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
 
 int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -304,7 +304,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResults);
     //printGeoResults(queryResults);
@@ -318,7 +318,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
 
 unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
-    Query *query = new Query(srch2::instantsearch::MapQuery);
+    Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
     vector<string> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -333,7 +333,7 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     }
 
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
-    QueryResults *queryResultsK = QueryResults::create(indexSearcher, query);
+    QueryResults *queryResultsK = new QueryResults(new QueryResultFactory(),indexSearcher, query);
 
     indexSearcher->search(query, queryResultsK);
 

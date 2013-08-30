@@ -17,6 +17,8 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch {
 
+
+
 // create operator flow and link share pointer to the data
 TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();

@@ -46,7 +46,7 @@ using srch2is::print_trace;
 int main(int argc, char *argv[])
 {
 
-    Query *query1 = new Query(srch2is::TopKQuery);
+    Query *query1 = new Query(srch2is::SearchTypeTopKQuery);
     string keywords[2] = {
             "tom","cat"
     };
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
     delete query1;
     //New Query
-    Query *query2 = new Query(srch2is::TopKQuery);
+    Query *query2 = new Query(srch2is::SearchTypeTopKQuery);
 
     // for each keyword in the user input, add a term to the query
     for (unsigned i = 0; i < 1; ++i)

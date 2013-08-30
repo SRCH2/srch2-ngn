@@ -91,6 +91,10 @@ const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
     return this->analyzerInternal->getRecordAllowedSpecialCharacters();
 }
 
+std::string Analyzer::applyFilters(std::string input){
+    return this->analyzerInternal->applyFilters(input);
+}
+
 void Analyzer::tokenizeQuery(const std::string &queryString,
         std::vector<std::string> &queryKeywords) const {
     this->analyzerInternal->tokenizeQuery(queryString, queryKeywords);

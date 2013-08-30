@@ -157,7 +157,7 @@ void searchCommand(vector<string> &values, Indexer *indexer, char delimiter, cha
 		query->add(term);
 	}
 
-	QueryResults *queryResults = QueryResults::create(indexSearcher, query);
+	QueryResults *queryResults =new  QueryResults(new QueryResultFactory(),indexSearcher, query);
 
 	int idsFound = 0;
 

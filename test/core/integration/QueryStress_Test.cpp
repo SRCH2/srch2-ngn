@@ -1,5 +1,5 @@
 
-// $Id: QueryStress_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: QueryStress_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 
 #include <instantsearch/Analyzer.h>
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
 	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);
-	const Analyzer *analyzer = index->getAnalyzer();
+	Analyzer *analyzer = getAnalyzer();
 
 	std::vector<std::string> file;
 	std::string line;
@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 
 	delete indexSearcher;
 	delete index;
+	delete analyzer;
 
 	cout << "Executed " << file.size() << "queries in " << ts2 << " milliseconds." << endl;
 	cout << "QueryStressTest passed!" << endl;
