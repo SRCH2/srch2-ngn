@@ -39,37 +39,6 @@ std::string &removeWhiteSpace(std::string &s) {
     return s;
 }
 
-//std::vector<std::string> &split(std::string &s, std::string delimiter) {
-//    std::vector<std::string> result;
-//    std::string source = s;
-//
-//    std::string::size_type lastpos = source.find(delimiter, 0);
-//
-//    if (lastpos == std::string::npos) {
-//        result.push_back(source);
-//        return result;
-//    }
-//    if (lastpos != 0) {
-//        result.push_back(source.substr(0, lastpos));
-//        source = source.substr(lastpos, source.size() - lastpos);
-//    }
-//    // Skip delimiters at beginning.
-//    lastpos = lastpos + delimiter.size();
-//    // Find first "non-delimiter".
-//    std::string::size_type pos = source.find(delimiter, lastpos);
-//
-//    while (std::string::npos != pos && std::string::npos != lastpos) {
-//        // Found a token, add it to the vector.
-//        result.push_back(source.substr(lastpos, pos - lastpos));
-//        // Skip delimiters.  Note the "not_of"
-//        lastpos = lastpos + delimiter.size();
-//        // Find next "non-delimiter"
-//        pos = source.find(delimiter, lastpos);
-//    }
-//    return result;
-//
-//}
-
 // source : http://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
 bool isInteger(const std::string & s) {
     if (s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+')))
