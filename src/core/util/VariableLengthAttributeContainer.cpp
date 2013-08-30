@@ -281,6 +281,8 @@ unsigned VariableLengthAttributeContainer::getSizeOfNonSearchableAttributeValueI
         return sizeof(long);
         break;
     }
+    ASSERT(false);
+    return 0;
 }
 
 void VariableLengthAttributeContainer::convertUnsignedToByteArray(

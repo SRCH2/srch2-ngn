@@ -36,7 +36,7 @@ std::string &trim(std::string &s);
 
 std::string &removeWhiteSpace(std::string &s);
 
-std::vector<std::string> &split(std::string &s, std::string delimiter);
+//std::vector<std::string> &split(std::string &s, std::string delimiter);
 
 bool isInteger(const std::string & s);
 

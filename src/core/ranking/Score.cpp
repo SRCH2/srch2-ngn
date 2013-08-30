@@ -202,7 +202,7 @@ namespace srch2
 	}
 
 	float Score::castToFloat(){
-		float result ;
+		float result = 0;
 		switch (valueType) {
 				case ATTRIBUTE_TYPE_UNSIGNED:
 					result = (float) getIntScore();

@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
-
+#include "util/Assert.h"
 #include "instantsearch/Score.h"
 
 using namespace std;
@@ -117,21 +117,21 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
             facetTypeIterator != facetTypes.end(); ++facetTypeIterator) {
 
         std::vector<Score> lowerBounds;
+		Score & start = rangeStartScores.at(facetTypeIndex);
+		Score & end = rangeEndScores.at(facetTypeIndex);
+		Score & gap = rangeGapScores.at(facetTypeIndex);
+		Score lowerBoundToAdd = start;
         switch (*facetTypeIterator) {
         case FacetTypeCategorical: // lower bounds vector is empty, because lower bounds are not determined before results
             break;
 
         case FacetTypeRange:
-            Score & start = rangeStartScores.at(facetTypeIndex);
-            Score & end = rangeEndScores.at(facetTypeIndex);
-            Score & gap = rangeGapScores.at(facetTypeIndex);
             ASSERT(start.getType() != srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
 
             // Example : start : 1, gap : 10 , end : 100
             // first -large_value is added as the first category
             // then 1, 11, 21, ...and 91 are added in the loop.
             // and 101 is added after loop.
-            Score lowerBoundToAdd = start;
             lowerBounds.push_back(lowerBoundToAdd.minimumValue()); // to collect data smaller than start
             while (lowerBoundToAdd < end) {
                 lowerBounds.push_back(lowerBoundToAdd); // data of normal categories
@@ -139,6 +139,9 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
             }
             lowerBounds.push_back(lowerBoundToAdd); // to collect data greater than end
             break;
+        default:
+        	ASSERT(false);
+        	break;
         }
         lowerBoundsOfIntervals[fields.at(facetTypeIndex)] = lowerBounds;
         //
