@@ -88,7 +88,7 @@ def testExactA1(queriesAndResultsPath, binary_path):
         #construct the query
         query='http://localhost:' + port + '/search?'
         query = query + prepareQuery(queryValue) 
-        print query
+        #print query
         #do the query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)

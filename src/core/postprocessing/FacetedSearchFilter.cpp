@@ -52,34 +52,34 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
     // initialize results of each attribute
     // temporary container for categorical
     std::map<string , std::map<string , float > > categoricalCounts;
-    for (std::map<std::string, std::vector<Score> >::iterator facetAttributeIterator =
-            impl->lowerBoundsOfIntervals.begin();
-            facetAttributeIterator != impl->lowerBoundsOfIntervals.end(); ++facetAttributeIterator) {
-
+//    for (std::map<std::string, std::vector<Score> >::iterator facetAttributeIterator =
+//            impl->lowerBoundsOfIntervals.begin();
+//            facetAttributeIterator != impl->lowerBoundsOfIntervals.end(); ++facetAttributeIterator) {
+    for(std::vector<std::string>::iterator facetField = impl->fields.begin();
+            facetField != impl->fields.end() ; ++facetField){
         // inserts the same number of zero scores as the number of lowerbounds
         // in the vector (each one as the initial value of a category)
         // NOTE: if it's a Simple facet field categoricalCounts will be initialized
-        if(facetAttributeIterator->second.empty()){ // Categorical
+        if(impl->facetTypes.at(std::distance(impl->fields.begin() , facetField)) == srch2is::FacetTypeCategorical){ // Categorical
             std::map<string , float > counts;
-            categoricalCounts[facetAttributeIterator->first] = counts;
+            categoricalCounts[*facetField] = counts;
         }else{ // range
             std::vector<std::pair<std::string, float> > zeroCounts;
             // this line inserts the entry into the map
-            output->impl->facetResults[facetAttributeIterator->first] = zeroCounts;
-            for (vector<Score>::iterator lb = facetAttributeIterator->second.begin();
-                    lb != facetAttributeIterator->second.end(); ++lb) {
+            output->impl->facetResults[*facetField] = zeroCounts;
+            for (int i=0; i<  impl->lowerBoundsOfIntervals[*facetField].size() ; i++) {
                 // pushing back zeros directly to the map entry
-                output->impl->facetResults[facetAttributeIterator->first].push_back(make_pair(lb->toString(), 0));
+                output->impl->facetResults[*facetField].push_back(
+                        make_pair(impl->lowerBoundsOfIntervals[*facetField].at(i).toString(), 0));
             }
         }
     }
 
     // translate list of attribute names to list of attribute IDs
     std::vector<unsigned> attributeIds;
-    for (std::map<std::string, std::vector<Score> >::iterator iter =
-            impl->lowerBoundsOfIntervals.begin();
-            iter != impl->lowerBoundsOfIntervals.end(); ++iter) {
-        attributeIds.push_back(schema->getNonSearchableAttributeId(iter->first));
+    for(std::vector<std::string>::iterator facetField = impl->fields.begin();
+            facetField != impl->fields.end() ; ++facetField){
+        attributeIds.push_back(schema->getNonSearchableAttributeId(*facetField));
     }
 
     // move on the results once and do all facet calculations.
@@ -101,22 +101,22 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
         nonSearchableAttributes->getBatchOfAttributes(attributeIds, schema, &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
-        for(std::map<std::string, std::vector<Score> >::iterator facetField =
-                impl->lowerBoundsOfIntervals.begin();
-                facetField != impl->lowerBoundsOfIntervals.end(); ++facetField) {
+        for(std::vector<std::string>::iterator facetField = impl->fields.begin();
+                facetField != impl->fields.end() ; ++facetField){
             Score & attributeValue = attributeDataValues.at(
-                                   std::distance(impl->lowerBoundsOfIntervals.begin(),
-                                           facetField));
+                                   std::distance(impl->fields.begin() , facetField));
             // choose the type of aggregation for this attribute
             // increments the correct facet by one
-            if (facetField->second.empty()) { // Categorical facet
+            if(impl->facetTypes.at(std::distance(impl->fields.begin() , facetField)) == srch2is::FacetTypeCategorical){
                 // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
-                impl->doAggregationCategorical(attributeValue, &(categoricalCounts[facetField->first]));
-            }else{
-                impl->doAggregationRange(attributeValue , facetField->second , &(output->impl->facetResults[facetField->first]) ,
-                        impl->rangeStartScores.at(std::distance(impl->lowerBoundsOfIntervals.begin(),facetField)),
-                        impl->rangeEndScores.at(std::distance(impl->lowerBoundsOfIntervals.begin(),facetField)),
-                        impl->rangeGapScores.at(std::distance(impl->lowerBoundsOfIntervals.begin(),facetField)));
+                impl->doAggregationCategorical(attributeValue, &(categoricalCounts[*facetField]));
+            }else{ // range
+                impl->doAggregationRange(attributeValue ,
+                        impl->lowerBoundsOfIntervals[*facetField] ,
+                        &(output->impl->facetResults[*facetField]) ,
+                        impl->rangeStartScores.at(std::distance(impl->fields.begin() , facetField)),
+                        impl->rangeEndScores.at(std::distance(impl->fields.begin() , facetField)),
+                        impl->rangeGapScores.at(std::distance(impl->fields.begin() , facetField)));
             }
         }
     }
