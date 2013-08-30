@@ -174,7 +174,7 @@ public:
     /**
      * Destructor of the QueryResults object.
      */
-    ~QueryResults();
+    virtual ~QueryResults();
 
 
 
