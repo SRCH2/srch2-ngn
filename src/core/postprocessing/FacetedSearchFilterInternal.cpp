@@ -25,24 +25,21 @@
 
 #include "instantsearch/Score.h"
 
-
 using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
 void FacetedSearchFilterInternal::doAggregationCategorical(const Score & attributeValue,
-        std::vector<pair<string, float> > * counts) {
+        std::map<string , float > * counts) {
 
     // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
-    // TODO : optimization on find and access and increment ...
-    for (std::vector<pair<string, float> >::iterator p =
-            counts->begin(); p != counts->end(); ++p) {
-        if (p->first.compare(attributeValue.toString()) == 0) {
-            p->second ++; // this value is seen before
-            return;
-        }
+    std::map<string , float >::iterator p = counts->find(attributeValue.toString());
+    if( p != counts->end()){
+        p->second ++;
+        return;
     }
-    counts->push_back(make_pair(attributeValue.toString(), 1)); // add a new value
+    // not found in map, initialization with 1
+    (*counts)[attributeValue.toString()] = 1;
     return;
 }
 
@@ -51,30 +48,15 @@ void FacetedSearchFilterInternal::doAggregationRange(const Score & attributeValu
         const std::vector<Score> & lowerBounds,
         std::vector<pair<string, float> > * counts  , Score & start, Score & end, Score & gap) {
 
-    unsigned intervalIndex = attributeValue.findIndexOfContainingInterval(start,end, gap);
-
-    if(intervalIndex > counts->size()){
-        intervalIndex =  counts->size() - 1;
-    }
-    counts->at(intervalIndex).second ++ ;
-    return;
-
-}
-void FacetedSearchFilterInternal::doAggregation(const Score & attributeValue,
-        const std::vector<Score> & lowerBounds,
-        std::vector<pair<string, float> > * counts , unsigned indexOfField) {
-
-    if (lowerBounds.empty()) { // Categorical facet
-        // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
-        doAggregationCategorical(attributeValue, counts);
+    unsigned groupId = attributeValue.findIndexOfContainingInterval(start,end, gap);
+    if(groupId == -1){
         return;
     }
-    doAggregationRange(attributeValue , lowerBounds , counts ,
-            rangeStartScores.at(indexOfField),
-            rangeEndScores.at(indexOfField),
-            rangeGapScores.at(indexOfField));
-
-
+    if(groupId >= counts->size()){
+        groupId =  counts->size() - 1;
+    }
+    counts->at(groupId).second ++ ;
+    return;
 }
 
 /*
@@ -87,10 +69,17 @@ void FacetedSearchFilterInternal::doAggregation(const Score & attributeValue,
  */
 void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearcher) {
 
+    if(isPrepared){
+        return;
+    }else{
+        isPrepared = true;
+    }
+
     IndexSearcherInternal * indexSearcherInternal =
             dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Schema * schema = indexSearcherInternal->getSchema();
     ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+
 
     // 1. parse the values into Score.
     unsigned fieldIndex = 0;

@@ -231,6 +231,21 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
     const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults =
             queryResults->getFacetResults();
+    // Example:
+    // ["facet" : {"facet_field_name":"model" ,
+    //             "facet_info":
+    //                         {["category_name":"JEEP", "category_value":"10"]
+    //                          ["category_name":"BMW", "category_value":"20"]
+    //                          ["category_name":"HONDA", "category_value":"12"]
+    //                         }
+    //            }"facet_field_name":"price" ,
+    //             "facet_info":
+    //                         {["category_name":"lessthanstart", "category_value":"10"]
+    //                          ["category_name":"0", "category_value":"30"]
+    //                          ["category_name":"10", "category_value":"2"]
+    //                          ["category_name":"20", "category_value":"23"]
+    //                         }
+    //]
     if (!facetResults->empty()) { // we have facet results to print
         root["facets"].resize(facetResults->size());
 
@@ -626,10 +641,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryValidator qv(*(server->indexer->getSchema()),
             *(server->indexDataContainerConf), &paramContainer);
 
-    bool isValid = qv.validate();
+    bool valid = qv.validate();
 
-    if (!isValid) {
-         // if the query is not valid print the error message to the response
+    if (!valid) {
+         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
         return;
@@ -641,22 +656,16 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             &paramContainer);
     qr.rewrite();
 
-    if(paramContainer.getMessageString().compare("") != 0){ // must be changed to warning level of logger
-        Logger::console("Query : %s", req->uri);
-        Logger::console("Messages : \n%s", paramContainer.getMessageString().c_str());
-    }
-
-
     //4. generate the queries and the plan
     QueryPlanGen qpg(paramContainer, indexDataContainerConf);
-    QueryPlan plan;
-    qpg.generatePlan(&plan);
+    QueryPlan queryPlan;
+    qpg.generatePlan(&queryPlan);
 
     //5. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();
     // TODO : is it possible to make executor and planGen singleton ?
-    QueryExecutor qe(plan, resultsFactory, server);
+    QueryExecutor qe(queryPlan, resultsFactory, server);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
@@ -669,43 +678,36 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //6. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
-    switch (plan.getSearchType()) {
+    switch (queryPlan.getSearchType()) {
     case TopKSearchType:
-
         finalResults->printStats();
-        HTTPRequestHandler::printResults(req, headers, plan,
-                indexDataContainerConf, finalResults, plan.getExactQuery(),
-                server->indexer, plan.getOffset(),
+        HTTPRequestHandler::printResults(req, headers, queryPlan,
+                indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
+                server->indexer, queryPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),paramContainer.getMessageString() , ts1, tstart, tend);
-
         break;
+
     case GetAllResultsSearchType:
     case GeoSearchType:
-
         finalResults->printStats();
-
-        if (plan.getOffset() + plan.getResultsToRetrieve()
-                > finalResults->getNumberOfResults()) // Case where you have return 10,20, but we got only 0,15 results.
-                {
-            HTTPRequestHandler::printResults(req, headers, plan,
-                    indexDataContainerConf, finalResults, plan.getExactQuery(),
-                    server->indexer, plan.getOffset(),
+        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve() > finalResults->getNumberOfResults()) {
+            // Case where you have return 10,20, but we got only 0,15 results.
+            HTTPRequestHandler::printResults(req, headers, queryPlan,
+                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
+                    server->indexer, queryPlan.getOffset(),
                     finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
-        } else // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-        {
-            HTTPRequestHandler::printResults(req, headers, plan,
-                    indexDataContainerConf, finalResults, plan.getExactQuery(),
-                    server->indexer, plan.getOffset(),
-                    plan.getOffset() + plan.getResultsToRetrieve(),
+        } else {// Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+            HTTPRequestHandler::printResults(req, headers, queryPlan,
+                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
+                    server->indexer, queryPlan.getOffset(),
+                    queryPlan.getOffset() + queryPlan.getResultsToRetrieve(),
                     finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
         }
-
         break;
     default:
         break;
-
     }
 
     // 7. delete allocated structures
@@ -713,7 +715,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
-
 }
 
 }

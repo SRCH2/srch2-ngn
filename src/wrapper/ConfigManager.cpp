@@ -590,28 +590,28 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                     facetType != facetTypes.end() ; ++facetType){
                 if(*facetType == 0){ // Categorical
                     if(facetStarts.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
-                        parseError << "Facet start value should be \"\" for Categorical facets. Value changed.\n";
+                        parseError << "Facet start value should be - for Categorical facets. Value changed.\n";
                         facetStarts.at(std::distance(facetTypes.begin() , facetType)) = "";
                     }
                     if(facetEnds.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
-                        parseError << "Facet end value should be \"\" for Categorical facets. Value changed.\n";
+                        parseError << "Facet end value should be - for Categorical facets. Value changed.\n";
                         facetEnds.at(std::distance(facetTypes.begin() , facetType)) = "";
                     }
                     if(facetGaps.at(std::distance(facetTypes.begin() , facetType)).compare("-") != 0){
-                        parseError << "Facet gap value should be \"\" for Categorical facets. Value changed.\n";
+                        parseError << "Facet gap value should be - for Categorical facets. Value changed.\n";
                         facetGaps.at(std::distance(facetTypes.begin() , facetType)) = "";
                     }
                 }else{
                     if(facetStarts.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
-                        parseError << "Facet start value should be \"\" for Categorical facets. Facet disabled.\n";
+                        parseError << "Facet start value should not be - for Categorical facets. Facet disabled.\n";
                         facetEnabled = false;
                     }
                     if(facetEnds.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
-                        parseError << "Facet end value should be \"\" for Categorical facets. Facet disabled.\n";
+                        parseError << "Facet end value should not be - for Categorical facets. Facet disabled.\n";
                         facetEnabled = false;
                     }
                     if(facetGaps.at(std::distance(facetTypes.begin() , facetType)).compare("-") == 0){
-                        parseError << "Facet gap value should be \"\" for Categorical facets. Facet disabled.\n";
+                        parseError << "Facet gap value should not be - for Categorical facets. Facet disabled.\n";
                         facetEnabled = false;
                     }
                 }

@@ -37,10 +37,10 @@ QueryValidator::QueryValidator(const Schema & schema,
     this->paramContainer = paramContainer;
 }
 
-// this function goes through the sumary and based on that validates the query.
+// this function goes through the queryParameters and based on that validates the query.
 bool QueryValidator::validate() {
 
-    // validation case : Only one of the search types should exist in summary
+    // validation case : Only one of the search types should exist in queryParameters
     int numberOfProvidedSearchTypes = 0;
     if (paramContainer->hasParameterInQuery(TopKSearchType)) {
         numberOfProvidedSearchTypes++;
@@ -102,22 +102,33 @@ bool QueryValidator::validate() {
     }
 
     // validate filter list
+    // Example : q= title,name:foo AND body.abstract:bar
+    // title, name, body and abstract should be declared as searchable attributes.
     if (!validateExistenceOfAttributesInFieldList()) {
         return false;
     }
 
     // validate sort filter
+    // Example : sort=price,discount&orderby=asc
+    // price and discount must be non-searchable attributes
     if (!validateExistenceOfAttributesInSortFiler()) {
         return false;
     }
 
     // validate facet filter
+    // Example : facet=true&facet.field=model&facet.range=price&f.price.start=10
+    // model and price must be non-searchable
+    // f.price.start should be compatible with price type
+    // price should not be of type text
     if (!validateExistenceOfAttributesInFacetFiler()) {
         return false;
     }
 
     // validate filter query
-    if(! validateFilterQuery()){
+    // Example :
+    // fq=price:[* TO 100] AND model:JEEP AND CMPLX$price - discount < 100$
+    // price, model and discount should be non-searchable attributes.
+    if(!validateFilterQuery()){
         return false;
     }
 
@@ -192,7 +203,7 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     }
     if (sortFilterShouldBeRemoved) {
         // Warning : Sort will be canceled.
-        // The following if-else statement removes the flag of sort filter from the corresponding summary
+        // The following if-else statement removes the flag of sort filter from the corresponding queryParameters
         if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
 
             paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
@@ -271,8 +282,6 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             continue; // no need to do anymore validation for this field because it'll be removed from facets.
         }
 
-
-
         //2. Range facets should be of type unsigned or float or date
         FilterType fieldType = schema.getTypeOfNonSearchableAttribute(
                 schema.getNonSearchableAttributeId(*field));
@@ -289,9 +298,23 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                             "Field " + *field
                                     + " is not a proper field for range facet. No facet will be calculated on this field. "));
 
-            facetParallelVectorsIndexesToErase.push_back(
-                    facetParallelVectorsIndex);
+            facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
             continue;
+        }
+
+        // should fill the UNSPECIFIED facet types
+        if(!facetQueryContainer->types.empty() &&
+                facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeNonSpecified){
+            if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
+                    this->indexDataContainerConf.getFacetAttributes()->end() ,
+                    *field) == this->indexDataContainerConf.getFacetAttributes()->end()){
+                paramContainer->messages.push_back(
+                        std::make_pair(MessageWarning,
+                                "Facet type for field " + *field
+                                        + " is not given. No facet will be calculated on this field. "));
+                facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
+                continue;
+            }
         }
 
         // empty string is the place holder for start,end and gap of facets.
@@ -303,32 +326,62 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             valid = validateValueWithType(fieldType,
                     facetQueryContainer->rangeStarts.at(
                             facetParallelVectorsIndex));
+        }else{
+            if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
+                    this->indexDataContainerConf.getFacetAttributes()->end() ,
+                    *field) == this->indexDataContainerConf.getFacetAttributes()->end()){
+                paramContainer->messages.push_back(
+                        std::make_pair(MessageWarning,
+                                "Start value for field " + *field
+                                        + " is not given. No facet will be calculated on this field. "));
+                facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
+                continue;
+            }
         }
-        // TODO : else : then this field must exist in config file
         if (valid && !facetQueryContainer->rangeEnds.empty()
                 && facetQueryContainer->rangeEnds.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
             valid = validateValueWithType(fieldType,
                     facetQueryContainer->rangeEnds.at(
                             facetParallelVectorsIndex));
+        }else{
+            if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
+                    this->indexDataContainerConf.getFacetAttributes()->end() ,
+                    *field) == this->indexDataContainerConf.getFacetAttributes()->end()){
+                paramContainer->messages.push_back(
+                        std::make_pair(MessageWarning,
+                                "End value for field " + *field
+                                        + " is not given. No facet will be calculated on this field. "));
+                facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
+                continue;
+            }
         }
-        // TODO : else : then this field must exist in config file
+
         if (valid && !facetQueryContainer->rangeGaps.empty()
                 && facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
             valid = validateValueWithType(fieldType,
                     facetQueryContainer->rangeGaps.at(
                             facetParallelVectorsIndex));
+        }else{
+            if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
+                    this->indexDataContainerConf.getFacetAttributes()->end() ,
+                    *field) == this->indexDataContainerConf.getFacetAttributes()->end()){
+                paramContainer->messages.push_back(
+                        std::make_pair(MessageWarning,
+                                "Gap value for field " + *field
+                                        + " is not given. No facet will be calculated on this field. "));
+                facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
+                continue;
+            }
         }
-        // TODO :  else : then this field must exist in config file
         if (!valid) { // start,end or gap value is not compatible with attribute type
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "Start,End or Gap value for field " + *field
                                     + " is not compatible with its type. No facet will be calculated on this field. "));
 
-            facetParallelVectorsIndexesToErase.push_back(
-                    facetParallelVectorsIndex);
+            facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
             continue;
         }
 
@@ -338,7 +391,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
     if (facetQueryContainer->fields.size() != 0 &&
             facetParallelVectorsIndexesToErase.size() == facetQueryContainer->fields.size()) {
         // all facet fields are removed, so there is no facet query anymore
-        // facet must be removed from summary
+        // facet must be removed from queryParameters
         if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
 
             paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
@@ -403,7 +456,6 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
     facetQueryContainer->rangeGaps = rangeGaps;
 
     return true;
-
 }
 
 bool QueryValidator::validateFilterQuery(){
@@ -427,22 +479,6 @@ bool QueryValidator::validateFilterQuery(){
     }
     return true;
 }
-
-//bool QueryValidator::validateValueWithType(srch2is::FilterType type,
-//        string  & value) {
-//    switch (type) {
-//    case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-//        return isInteger(value);
-//    case srch2is::ATTRIBUTE_TYPE_FLOAT:
-//        return isFloat(value);
-//    case srch2is::ATTRIBUTE_TYPE_TEXT:
-//        return true; // TEXT does not have any criteria ?????
-//    case srch2is::ATTRIBUTE_TYPE_TIME:
-//        return isTime(value);
-//    }
-//    // flow never reaches here
-//    return false;
-//}
 
 }
 }

@@ -18,24 +18,21 @@
  */
 
 #include "ResultsPostProcessorInternal.h"
-
 #include "instantsearch/IndexSearcher.h"
 #include "operation/IndexSearcherInternal.h"
 #include <instantsearch/ResultsPostProcessor.h>
 
 using namespace std;
 
-
 namespace srch2
 {
 namespace instantsearch
 {
 
-
 ResultsPostProcessorPlan::ResultsPostProcessorPlan(){
 	impl = new ResultsPostProcessorPlanInternal();
-	impl->filterIterator = impl->filterVector.end();
 }
+
 ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
 	delete impl;
 }
@@ -43,47 +40,35 @@ ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
 void ResultsPostProcessorPlan::addFilterToPlan(ResultsPostProcessorFilter * filter){
 	impl->filterVector.push_back(filter);
 }
+
 void ResultsPostProcessorPlan::clearPlan(){
 	impl->filterVector.clear();
 }
+
 void ResultsPostProcessorPlan::beginIteration(){
 	impl->filterIterator = impl->filterVector.begin();
 }
+
 ResultsPostProcessorFilter * ResultsPostProcessorPlan::nextFilter(){
-	if(impl->filterIterator == impl->filterVector.end()) return NULL;
+	if(impl->filterIterator == impl->filterVector.end()){
+	    return NULL;
+	}
 	ResultsPostProcessorFilter * resultsPostProcessingFilter = *impl->filterIterator;
 	++(impl->filterIterator);
 	return resultsPostProcessingFilter;
 }
+
 bool ResultsPostProcessorPlan::hasMoreFilters() const{
-	if(impl->filterIterator != impl->filterVector.end()) return true;
-	else{
+	if(impl->filterIterator != impl->filterVector.end()){
+	    return true;
+	}else{
 		return false;
 	}
 }
+
 void ResultsPostProcessorPlan::closeIteration(){
 	impl->filterIterator = impl->filterVector.end();
 }
-
-
-
-//ResultsPostProcessor::ResultsPostProcessor(IndexSearcher *indexSearcher){
-//
-//
-
-//}
-//
-//ResultsPostProcessor::~ResultsPostProcessor(){
-//	// de-allocate plans
-//}
-//
-//
-//void ResultsPostProcessor::runPlan(Query * query, QueryResults * input, QueryResults *  output){
-
-//}
-
-
-
 
 }
 }

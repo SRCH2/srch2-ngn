@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 #include "QueryPlanGen.h"
 #include <instantsearch/Query.h>
@@ -26,11 +26,12 @@
 #include "QueryPlan.h"
 #include <algorithm>
 #include <sstream>
+#include "util/Assert.h"
 
 using namespace std;
 
 namespace srch2is = srch2::instantsearch;
-
+using namespace srch2is;
 using srch2is::Query;
 
 namespace srch2 {
@@ -136,7 +137,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
         plan->setSearchType(GeoSearchType);
     } // else : there is no else because validator makes sure type is set in parser
 
-    // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search) then fuzzy is always false
+    // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
     if (paramsContainer.hasParameterInQuery(IsFuzzyFlag)) {
         plan->setFuzzy(paramsContainer.isFuzzy
                         && (paramsContainer.rawQueryKeywords.size() != 0));
@@ -146,7 +147,6 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
     }
 
     // 3. set the offset of results to retrieve
-
     if (paramsContainer.hasParameterInQuery(ResultsStartOffset)) {
         plan->setOffset(paramsContainer.resultsStartOffset);
     } else { // get it from configuration file
@@ -161,7 +161,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
                 indexDataContainerConf->getDefaultResultsToRetrieve());
     }
 
-    // 5. based on the search type get needed information and create the query objects
+    // 5. based on the search type, get needed information and create the query objects
     switch (plan->getSearchType()) {
     case TopKSearchType:
         createExactAndFuzzyQueriesForTopK(plan);
@@ -173,12 +173,11 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
         createExactAndFuzzyQueriesForGeo(plan);
         break;
     default:
-        // SOME SORT OF ASSERT(false) debug gaurd
+        ASSERT(false);
         break;
     }
 
     fillExactAndFuzzyQueriesWithCommonInformation(plan);
-
 }
 
 void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
@@ -190,7 +189,6 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     }
 
     // 2. Extract the common information from the container
-
     // length boost
     if (paramsContainer.hasParameterInQuery(LengthBoostFlag)) {
         plan->getExactQuery()->setLengthBoost(paramsContainer.lengthBoost);
@@ -207,7 +205,6 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     }
 
     // prefix match penalty flag
-
     if (paramsContainer.hasParameterInQuery(PrefixMatchPenaltyFlag)) {
         plan->getExactQuery()->setPrefixMatchPenalty(
                 paramsContainer.prefixMatchPenalty);

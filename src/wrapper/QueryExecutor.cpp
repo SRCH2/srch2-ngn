@@ -22,6 +22,7 @@
 #include "ParsedParameterContainer.h" // only for ParameterName enum , FIXME : must be changed when we fix constants problem
 #include "query/QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
+#include "util/Assert.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -50,16 +51,19 @@ void QueryExecutor::execute(QueryResults * finalResults) {
         executeGeo(finalResults);
         break;
     default:
-        // TODO some debug operation like ASSERT(false) : becauee flow should never reach here
+        ASSERT(false);
         break;
     };
 
     // Free objects
     delete indexSearcher;
-
 }
 
 void QueryExecutor::executeTopK(QueryResults * finalResults) {
+
+    if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
+        return;
+    }
 
     int idsExactFound = 0;
 
@@ -106,7 +110,7 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
                         < fuzzyQueryResults->getNumberOfResults()) {
             std::string recordId = fuzzyQueryResults->getRecordId(
                     fuzzyQueryResultsIter);
-            if (!exactVisitedList.count(recordId)) // recordid not there
+            if (!exactVisitedList.count(recordId)) // record id not there
                     {
                 exactQueryResultsInternal->sortedFinalResults.push_back(
                         fuzzyQueryResultsInternal->sortedFinalResults[fuzzyQueryResultsIter]);
@@ -117,7 +121,7 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
     }
 
     // execute post processing
-    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
     finalResults->init(this->queryResultFactory, indexSearcher,
             this->queryPlan.getExactQuery());
@@ -130,6 +134,10 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
 }
 
 void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
+
+    if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
+        return;
+    }
 
     int idsExactFound = 0;
 
@@ -149,7 +157,7 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
     }
 
     // execute post processing
-    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
     finalResults->init(this->queryResultFactory, indexSearcher,
             (this->queryPlan.isFuzzy()) ?
@@ -164,7 +172,6 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
             finalResults);
 
     delete queryResults;
-
 }
 
 void QueryExecutor::executeGeo(QueryResults * finalResults) {
@@ -198,8 +205,6 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
         }
     } else // keywords and geo search
     {
-        //cout << "reached map query" << endl;
-        //srch2is::QueryResults *exactQueryResults = srch2is::QueryResults::create(indexSearcher, urlToDoubleQuery->exactQuery);
         indexSearcher->search(this->queryPlan.getExactQuery(),
                 exactQueryResults);
         idsExactFound = exactQueryResults->getNumberOfResults();
@@ -248,7 +253,7 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
     }
 
     // execute post processing
-    // since this object is only allocated with an empty constructor this init function needs to be called to
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
     finalResults->init(this->queryResultFactory, indexSearcher,
             this->queryPlan.getExactQuery());
@@ -258,7 +263,6 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             exactQueryResults, finalResults);
 
     delete exactQueryResults;
-
 }
 
 void QueryExecutor::executePostProcessingPlan(Query * query,
@@ -275,6 +279,7 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
     // short circuit in case the plan doesn't have any filters in it.
     // if no plan is set in Query or there is no filter in it,
     // then there is no post processing so just mirror the results
+    // TODO : in the future try to avoid this copy of pointers
     if (postProcessingPlan == NULL) {
         outputQueryResults->copyForPostProcessing(inputQueryResults);
         return;
@@ -290,7 +295,7 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
     // iterating on filters and applying them on list of results
     ResultsPostProcessorFilter * filter = postProcessingPlan->nextFilter();
     while(true){
-        // clear the output to be ready to accept the result of the filter
+        // clear the output to be ready to accept the results of the filter
         outputQueryResults->clear();
         // apply the filter on the input and put the results in output
         filter->doFilter(indexSearcher, query, inputQueryResults,
@@ -307,7 +312,6 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
         }
     }
     postProcessingPlan->closeIteration();
-
 }
 
 }

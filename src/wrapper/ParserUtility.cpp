@@ -1,10 +1,8 @@
-
 #include "ParserUtility.h"
 #include <string>
 #include <cstdlib>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
 
 using boost::posix_time::time_input_facet;
 using std::locale;
@@ -73,9 +71,9 @@ std::vector<std::string> &split(std::string &s, std::string delimiter) {
 }
 
 // source : http://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
-bool isInteger(const std::string & s)
-{
-   if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+bool isInteger(const std::string & s) {
+    if (s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+')))
+        return false;
 
     char * p;
     strtol(s.c_str(), &p, 10);
@@ -120,23 +118,21 @@ time_t convertPtimeToTimeT(boost::posix_time::ptime t) {
 // convert other types to string
 template<class T>
 string convertToStr(T value) {
-  std::ostringstream o;
-  if (!(o << value))
-    return "";
-  return o.str();
+    std::ostringstream o;
+    if (!(o << value))
+        return "";
+    return o.str();
 }
 
-
-std::string convertTimeFormatToLong(std::string & timeString){
-    std::string stringValue = "" ;
-    for(size_t i=0; i<localeFormats; ++i)
-    {
+std::string convertTimeFormatToLong(std::string & timeString) {
+    std::string stringValue = "";
+    for (size_t i = 0; i < localeFormats; ++i) {
         std::istringstream ss(timeString);
         ss.imbue(localeInputs[i]);
         boost::posix_time::ptime this_time;
         ss >> this_time;
 
-        if(this_time != boost::posix_time::not_a_date_time){
+        if (this_time != boost::posix_time::not_a_date_time) {
             time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
             long valueLong = value;
             std::ostringstream o;
@@ -148,11 +144,11 @@ std::string convertTimeFormatToLong(std::string & timeString){
     return stringValue;
 
 }
-std::string convertLongToTimeFormat(std::string & timeLong){
+std::string convertLongToTimeFormat(std::string & timeLong) {
     static boost::posix_time::ptime empch;
 }
-void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key,
-        vector<string> &values) {
+void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+        const char *key, vector<string> &values) {
     struct evkeyval *header;
     int c = 0;
     TAILQ_FOREACH(header, headers, next)
@@ -163,31 +159,27 @@ void custom_evhttp_find_headers(const struct evkeyvalq *headers, const char *key
         }
     }
 }
-bool doParse(string &input, const boost::regex &re,
-        string &output) {
+bool doParse(string &input, const boost::regex &re, string &output) {
     boost::smatch matches;
     boost::regex_search(input, matches, re);
     if (matches[0].matched) {
-        if (0 == matches.position()) {
-            output = input.substr(matches.position(), matches.length());
-            boost::algorithm::trim(output);
-            input = input.substr(matches.position() + matches.length());
-            boost::algorithm::trim(input);
-           // string logMsg = "remove " + output + ", input modified to: "
-            //        + input;
-            Logger::debug("Remove %s,input modified to: %s",output.c_str(),input.c_str());
-            //Logger::debug(logMsg.c_str());
-            return true;
-        } else {
-            return false;
-        }
+        output = input.substr(matches.position(), matches.length());
+        boost::algorithm::trim(output);
+        input = input.substr(matches.position() + matches.length());
+        boost::algorithm::trim(input);
+        // string logMsg = "remove " + output + ", input modified to: "
+        //        + input;
+        Logger::debug("Remove %s,input modified to: %s", output.c_str(),
+                input.c_str());
+        //Logger::debug(logMsg.c_str());
+        return true;
     } else {
         return false;
     }
 }
 
 bool validateValueWithType(srch2::instantsearch::FilterType type,
-        string  & value) {
+        string & value) {
     switch (type) {
     case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
         return isInteger(value);
@@ -199,6 +191,7 @@ bool validateValueWithType(srch2::instantsearch::FilterType type,
         return isTime(value);
     }
     // flow never reaches here
+    // TODO : Add assert
     return false;
 }
 
