@@ -29,7 +29,7 @@ class SmokeTest():
         self.binaryPath = config['server_binaryPath']
         self.binaryName = config['server_binary_name']
         self.queriesPath = config['queriesPath']
-        self.config_file_path =config['server_confg_file_path']
+        self.config_file_path = config['server_confg_file_path']
         self.port = config['server_port']
         self.host = config['server_host']
         self.debug = config['debug']
@@ -115,7 +115,7 @@ class SmokeTest():
         try:
             for query in queries:
                 lineNum += 1
-                query = query.strip()
+                query = query.strip().decode("utf-8")
                 # '@@' is for block comment. all lines after @@ will be ignored till another line with '@@' is found
                 if query == "@@":
                      # it's a block comment, toggle block
@@ -218,6 +218,23 @@ class SmokeTest():
         self.startServer()
         time.sleep(3) # let the server restart
 
+    def printSummary(self, resultDict):
+        for summarykey in resultDict:
+            print "*"*10, summarykey , " test summary", "*"*10
+            for key in resultDict[summarykey]:
+                print len(resultDict[summarykey][key]), " test cases " , key
+        
+    def doNonGeoTest(self):
+        self.rebootServer()
+        results = self.doTest()
+        return results
+
+    def doGeoTest(self):
+        self.queriesPath = config['geoqueriesPath']
+        self.config_file_path = config['server_geoconfig_file_path']
+        self.rebootServer()
+        geoResults = self.doTest()
+        return geoResults
 if __name__ == '__main__':
     config = { 'server_binaryPath': '../../../build/src/server/',
                 'queriesPath': './queries.txt',
@@ -232,25 +249,19 @@ if __name__ == '__main__':
     smoke = SmokeTest(config)
     try:
         #kill any existing instance of server
-        smoke.killServer();
-        #start the server
-        smoke.startServer();
-        #ping the server
-        smoke.pingServer();
         decoration = 40
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
-        #start testing
-        results = smoke.doTest();
-        smoke.queriesPath=config['geoqueriesPath']
-        smoke.config_file_path= config['server_geoconfig_file_path']
-        smoke.rebootServer()
-        geoResults = smoke.doTest();
+        results = smoke.doNonGeoTest()
+        geoResults = smoke.doGeoTest()
         #print the test results
         smoke.resultHandler(results)
-        print "*"*decoration, "TESTING GEO QUERIES", "*"*decoration
-        smoke.resultHandler(geoResults)
+        print "*"*decoration, "GEO QUERIES", "*"*decoration
+        #smoke.resultHandler(geoResults)
         print "*"*decoration, "TESTING ENDS", "*"*decoration
-        #smoke.killServer();
+        smoke.printSummary({"TopK and GetAll":results,
+                             "Geo":geoResults
+                             })
+        smoke.killServer();
     except:
         #exception caught, kill the server
         print "sys.exc_info:", sys.exc_info()[0]

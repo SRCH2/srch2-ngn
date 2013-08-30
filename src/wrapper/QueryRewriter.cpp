@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2013 SRCH2 Inc. All rights reserved
+ * Copyright © 2013 SRCH2 Inc. All rights reserved
  */
 
 #include "QueryRewriter.h"
@@ -38,7 +38,7 @@ QueryRewriter::QueryRewriter(const ConfigManager *indexDataContainerConf,
 }
 
 void QueryRewriter::rewrite() {
-    // go through the summary and call the analyzer on the query if needed.
+    // go through the queryParameters and call the analyzer on the query if needed.
 
     /*
      * Example:
@@ -54,6 +54,9 @@ void QueryRewriter::rewrite() {
 
     // prepare field filter bits
     // Field filter should be changed from field names to field bit filter
+    // Example: q= title,name:foo AND body.abstract:bar
+    // title,name means title OR name and must be translated to a 32 bit representation
+    // body.abstract means body AND abstract
     prepareFieldFilters();
 
     // rewrite facet query:
@@ -117,8 +120,10 @@ void QueryRewriter::applyAnalyzer() {
     for (vector<string>::iterator keyword =
             paramContainer->rawQueryKeywords.begin();
             keyword != paramContainer->rawQueryKeywords.end(); ++keyword) {
+        // Currently we only get the first token coming out of analyzer chain for each
+        // keyword. In future we should handle synonyms TODO
         string keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
-        if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's probably stopword
+        if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
             keywordIndexesToErase.push_back(keywordIndex);
         } else { // just apply the analyzer
             *keyword = keywordAfterAnalyzer;
@@ -160,7 +165,13 @@ void QueryRewriter::applyAnalyzer() {
     paramContainer->fieldFilterOps = fieldFilterOps;
     paramContainer->fieldFilterNumbers = fieldFilterNumbers;
 
-    // TODO : validation case : what if all keywords are stop words and not the vectors are empty ?
+    if(paramContainer->rawQueryKeywords.size() == 0){
+        if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
+            paramContainer->messages.push_back(
+                    std::make_pair(MessageWarning,
+                            "After ignoring stop words no keyword is left to search."));
+        }
+    }
 
 }
 
@@ -256,7 +267,7 @@ void QueryRewriter::prepareFacetFilterInfo() {
     // 1. Remove everything if facet is disabled in config file.
     if (!indexDataContainerConf->isFacetEnabled()) {
 
-        // remove facet flag from summary
+        // remove facet flag from queryParameters
 
         if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
 
@@ -303,7 +314,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
             int fieldFacetTypeInt =
                     indexDataContainerConf->getFacetTypes()->at(
                             std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
-            // TODO : validation case : if there is any missing information and this field is not in config file either
             // this field must be removed from facet fields.
             if(fieldFacetTypeInt == 0){
                 facetQueryContainer->types.push_back(srch2is::FacetTypeCategorical);
@@ -311,7 +321,7 @@ void QueryRewriter::prepareFacetFilterInfo() {
                 facetQueryContainer->types.push_back(srch2is::FacetTypeRange);
             }
         }
-    }else{ // if types vector is not empty it's assumed to be equal size with fields (from parser)
+    }else{ // if the "types" vector is not empty, it's assumed to be equal size with fields (from parser)
         for (std::vector<srch2is::FacetType>::iterator facetType =
                 facetQueryContainer->types.begin();
                 facetType != facetQueryContainer->types.end(); ++facetType) {
@@ -323,8 +333,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                 int fieldFacetTypeInt =
                         indexDataContainerConf->getFacetTypes()->at(
                                 std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
-                // TODO : validation case : if there is any missing information and this field is not in config file either
-                // this field must be removed from facet fields.
                 if(fieldFacetTypeInt == 0){
                     *facetType = srch2is::FacetTypeCategorical;
                 }else if (fieldFacetTypeInt == 1){
@@ -349,7 +357,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                         indexDataContainerConf->getFacetAttributes()->begin(),
                         indexDataContainerConf->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
-                // TODO : using tmp - begin() might not be safe
                 if (facetIteratorInConfVector
                         != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
                     string startFromConfig =
@@ -358,8 +365,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeStarts.at(facetFieldIndex) = startFromConfig;
                 }
-                // else : TODO : validation case : if there is any missing information and this field is not in config file either
-                // this field must be removed from facet fields.
             }
 
             if (facetQueryContainer->rangeEnds.at(facetFieldIndex).compare("") == 0) {
@@ -368,7 +373,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                         indexDataContainerConf->getFacetAttributes()->begin(),
                         indexDataContainerConf->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
-                // TODO : using tmp - begin() might not be safe
                 if (facetIteratorInConfVector
                         != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
                     string endFromConfig =
@@ -377,8 +381,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeEnds.at(facetFieldIndex) = endFromConfig;
                 }
-                // else : TODO : validation case : if there is any missing information and this field is not in config file either
-                // this field must be removed from facet fields.
             }
 
             if (facetQueryContainer->rangeGaps.at(facetFieldIndex).compare("") == 0) {
@@ -387,7 +389,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                         indexDataContainerConf->getFacetAttributes()->begin(),
                         indexDataContainerConf->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
-                // TODO : using tmp - begin() might not be safe
                 if (facetIteratorInConfVector
                         != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
                     string gapFromConfig =
@@ -396,8 +397,6 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeGaps.at(facetFieldIndex) = gapFromConfig;
                 }
-                // else : TODO : validation case : if there is any missing information and this field is not in config file either
-                // this field must be removed from facet fields.
             }
         }
 

@@ -137,9 +137,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     {
 
         string attributeKeyName = attributeIter->first;
-        //string attributeStringValue = root.get(attributeKeyName, "NULL" ).asString();
 
-        // if type is date/time check the syntax
+        // if type is date/time, check the syntax
         if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
         	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
@@ -148,13 +147,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 error << "\nDATE/TIME field has non recognizable format.";
                 return false;// Raise Error
         	}else{
-                if (attributeStringValue.compare("NULL") != 0)
-                {
+                if (attributeStringValue.compare("NULL") != 0){
                     record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
                     if(attributeIter->second.second.second){
                         // ERROR
-                        error << "\nRequifred non-searchable attribute is null.";
+                        error << "\nRequired non-searchable attribute is null.";
                         return false;// Raise Error
                     }else{
                         // set the default value
@@ -166,7 +164,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
             string attributeStringValue;
             getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
-            if (attributeStringValue=="") // if the attribute is int or float, convert it to string
+            if (attributeStringValue.compare("") == 0) // if the attribute is int or float, convert it to string
             {
                 double attributeDoubleValue;
                 getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
@@ -174,11 +172,19 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 s << attributeDoubleValue;
                 attributeStringValue = s.str();
             }
-            // TODO : how should user enter data/time attributes ? right now it should be a long value as an string.
 
             if (attributeStringValue.compare("NULL") != 0)
             {
                 record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+            }else{
+                if(attributeIter->second.second.second){
+                    // ERROR
+                    error << "\nRequired non-searchable attribute is null.";
+                    return false;// Raise Error
+                }else{
+                    // set the default value
+                    record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                }
             }
         }
 
@@ -190,8 +196,6 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     {
         // use "score" as boost
         string attributeKeyName = indexDataContainerConf->getAttributeRecordBoostName();
-        //float recordBoost = (float)root.get(attributeKeyName, "NULL" ).asDouble();
-        //float recordBoost;
         double recordBoost;
         getJsonValueDouble(root, attributeKeyName, recordBoost, "attribute-record-boost");
 
@@ -350,8 +354,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         }
         else
         {
-            //TODO: cout to logger
-            error << "at line:" << lineCounter;
+            Logger::error("at line: %d" , lineCounter);
             Logger::error("%s", error.str().c_str());
         }
         record->clear();
@@ -363,8 +366,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         }
         ++lineCounter;
     }
-    // empty the line by covering the "Indexing first XXX records" text with a space
-    cout << "                                                       " << "\r";
+    Logger::console("                                                     \r");
     Logger::console("Indexed %d records.", lineCounter);
 
     in.close();
@@ -435,8 +437,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 		const std::string &key,
 		std::string &stringValue,
 		const string &configName){
-	if(!jsonValue.isMember(key))
-	{
+	if(!jsonValue.isMember(key)){
 		stringValue = "";
 		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
 		return;

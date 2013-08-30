@@ -18,43 +18,34 @@
  */
 
 
-#ifndef _FACETEDSEARCHFILTER_H_
-#define _FACETEDSEARCHFILTER_H_
-
+#ifndef __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__
+#define __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__
 
 #include <vector>
 #include <map>
 #include <string>
 #include <algorithm>
-
-
 #include "ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
 #include "instantsearch/Score.h"
 #include "instantsearch/IndexSearcher.h"
 #include <instantsearch/Constants.h>
 
-
 namespace srch2
 {
 namespace instantsearch
 {
 
-
 class FacetedSearchFilterInternal;
-
 class FacetedSearchFilter : public ResultsPostProcessorFilter
 {
 
 public:
-
 	FacetedSearchFilter();
 	// TODO : we don't need query in new design
 	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
-
-
 	void initialize(std::vector<FacetType> & facetTypes,
 			std::vector<std::string> & fields,
 			std::vector<std::string> & rangeStarts,
@@ -62,19 +53,9 @@ public:
 			std::vector<std::string> & rangeGaps);
 
 private:
-
 	FacetedSearchFilterInternal * impl;
-
-
-
-
-
-
-
-
 };
 
 }
 }
-#endif // _FACETEDSEARCHFILTER_H_
-
+#endif // __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__

@@ -88,7 +88,7 @@ def testFuzzyM1(queriesAndResultsPath, binary_path):
     radius = 0.5
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
-        print"line is", line
+        #print"line is", line
         #get the query keyword and results
         value = line.split('||')
         queryValue = value[0].split('^')

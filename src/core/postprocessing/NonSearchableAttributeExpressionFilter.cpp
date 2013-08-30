@@ -39,10 +39,12 @@ namespace instantsearch
 NonSearchableAttributeExpressionFilter::NonSearchableAttributeExpressionFilter(){
 	impl = new NonSearchableAttributeExpressionFilterInternal(this);
 }
+
 NonSearchableAttributeExpressionFilter::~NonSearchableAttributeExpressionFilter(){
 	delete evaluator; // this object is allocated in plan Generator
 	delete impl;
 }
+
 void NonSearchableAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
 		QueryResults * input, QueryResults * output){
 
@@ -53,21 +55,12 @@ void NonSearchableAttributeExpressionFilter::doFilter(IndexSearcher * indexSearc
 	// iterating on results and checking the criteria on each of them
 	for(vector<QueryResult *>::iterator resultIter = input->impl->sortedFinalResults.begin(); resultIter != input->impl->sortedFinalResults.end() ; ++resultIter){
 		QueryResult * result = *resultIter;
-
-		bool pass = impl->doesPassCriterion(schema, forwardIndex , result);
-
-		// if the result passes the filter criteria it's copied into the output.
-		if(pass){
+		// if the result passes the filter criteria, it's copied into the output.
+		if(impl->doPass(schema, forwardIndex , result)){
 			output->impl->sortedFinalResults.push_back(result);
 		}
-
-
 	}
-
-
 }
-
-
 
 }
 }
