@@ -137,15 +137,15 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         clock_gettime(CLOCK_REALTIME, &t1);
         int recordID;
         //int count = 0;
-        QueryResult queryResult;
+
         while((recordID = nextRecord(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
             //cout << recordID<<endl;
-            queryResult.internalRecordId = recordID;
-            float recordScore = 1.0;
-            queryResult.score = recordScore;
-            queryResult.matchingKeywords = queryResultMatchingKeywords;
-            queryResult.attributeBitmaps = queryResultBitmaps;
-            queryResult.editDistances = queryResultEditDistances;
+            QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+            queryResult->internalRecordId = recordID;
+            queryResult->_score.setScore(1.0);
+            queryResult->matchingKeywords = queryResultMatchingKeywords;
+            queryResult->attributeBitmaps = queryResultBitmaps;
+            queryResult->editDistances = queryResultEditDistances;
             queryResultsInternal->insertResult(queryResult);
             //count++;
         }
