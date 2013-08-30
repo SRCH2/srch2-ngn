@@ -1,4 +1,4 @@
-// $Id: IndexSearcherInternal.h 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexSearcherInternal.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -25,6 +25,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
+#include <query/QueryResultsInternal.h>
 
 //#include "operation/Cache.h"
 //#include "IndexerInternal.h"
@@ -84,11 +85,19 @@ public:
     }
 
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
-    void computeTermVirtualList(QueryResultsInternal *queryResults) const;
+    void computeTermVirtualList(QueryResults *queryResults) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex(){
         return this->indexData->invertedIndex;
+    }
+
+    ForwardIndex * getForwardIndex(){
+    	return this->indexData->forwardIndex;
+    }
+
+    Schema * getSchema(){
+    	return this->indexData->schemaInternal;
     }
 
     void cacheClear();

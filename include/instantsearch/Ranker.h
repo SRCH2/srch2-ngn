@@ -1,4 +1,4 @@
-// $Id: Ranker.h 3456 2013-06-14 02:11:13Z jiaying $
+// $Id: Ranker.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -20,8 +20,10 @@
 #ifndef __RANKER_H__
 #define __RANKER_H__
 
+#include <instantsearch/Constants.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
+#include <instantsearch/Score.h>
 #include <vector>
 
 using std::vector;
@@ -56,6 +58,11 @@ namespace srch2
         // on a list in a descending order
         static bool compareRecordsGreaterThan(float leftRecordScore,  unsigned leftRecordId,
                           float rightRecordScore, unsigned rightRecordId);
+        // compare two records based on their scores and record ids
+        // used in InvertedList and QueryResultsInternal as a ">" operator to rank the elements
+        // on a list in a descending order
+        static bool compareRecordsGreaterThan(const Score &  leftRecordScore,  unsigned leftRecordId,
+                          const Score & rightRecordScore, unsigned rightRecordId);//TODO
 
         // Used by GetAllResultsRanker. Default implementation returns 0.
         virtual float computeResultScoreUsingAttributeScore(const Query *query, 
@@ -70,7 +77,7 @@ namespace srch2
     };
     
     typedef Ranker DefaultTopKRanker;
-    
+
     class GetAllResultsRanker : public Ranker
     {
     public:

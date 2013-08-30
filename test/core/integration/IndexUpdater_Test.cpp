@@ -1,5 +1,5 @@
 
-// $Id: IndexUpdater_Test.cpp 3480 2013-06-19 08:00:34Z jiaying $
+// $Id: IndexUpdater_Test.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -103,8 +103,9 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
-    schema->setSortableAttribute("citationcount", srch2::instantsearch::UNSIGNED, "0");
-    schema->setSortableAttribute("pagerank", srch2::instantsearch::FLOAT, "1");
+
+    schema->setNonSearchableAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setNonSearchableAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     Record *record = new Record(schema);
 
@@ -119,16 +120,16 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    record->setSortableAttributeValue(0,"100");
-    record->setSortableAttributeValue(1,"9.1");
-    index->addRecord(record, analyzer,  0);
+    record->setNonSearchableAttributeValue(0, "100");
+    record->setNonSearchableAttributeValue(1, "9.1");
+    index->addRecord(record, analyzer , 0);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
-    record->setSortableAttributeValue(0,"200");
-    record->setSortableAttributeValue(1,"3.14159265");
+    record->setNonSearchableAttributeValue(0, "200");
+    record->setNonSearchableAttributeValue(1, "3.14159265");
     record->setRecordBoost(90);
     index->addRecord(record, analyzer,  0);
 
@@ -136,8 +137,8 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
-    record->setSortableAttributeValue(0,"300");
-    record->setSortableAttributeValue(1,"4.234");
+    record->setNonSearchableAttributeValue(0, "300");
+    record->setNonSearchableAttributeValue(1, "4.234");
     record->setRecordBoost(10);
     index->addRecord(record, analyzer,  0);
 
@@ -726,8 +727,8 @@ void test9()
     record->setPrimaryKey(1999);
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
-    record->setSortableAttributeValue(0,"400");
-    record->setSortableAttributeValue(1,"2.234");
+    record->setNonSearchableAttributeValue(0, "400");
+    record->setNonSearchableAttributeValue(1, "2.234");
     record->setRecordBoost(90);
     index->addRecord(record, analyzer,  0);
 
