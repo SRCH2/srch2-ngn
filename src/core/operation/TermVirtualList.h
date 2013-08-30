@@ -138,8 +138,8 @@ public:
             Term *term, float prefixMatchPenalty = 0.95);
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
-    void depthInitialiseTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
-    void depthInitialiseBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
     bool getNext(HeapItemForIndexSearcher *heapItem);
     void getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
     void setCursors(vector<unsigned> *invertedListCursors);
@@ -170,13 +170,19 @@ public:
 
     void print_test() const;
 
+    // if the similar terms are too many, we will merge them in this bitset
     BitSet bitSet;
+    // the current recordId, initial value is -1
     int recordID;
+    // The Iterator of bitset
     RecordIdSetIterator* bitSetIter;
+    // current inverted list Readview
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    int termCount;
-    int recordCount;
+    //int termCount;
+    //int recordCount;
+    // check if we need to merge the inverted lists to be a bitset
     bool needMerge;
+    // the number of records in the bitset
     int bitSetSize;
 
 private:

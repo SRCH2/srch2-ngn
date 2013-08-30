@@ -1,20 +1,30 @@
-#ifndef __BITSET_H__
-#define __BITSET_H__
+#ifndef __UTIL_BITSET_H__
+#define __UTIL_BITSET_H__
 
 #include <stdint.h>
 #include <string.h>
 #include "BitSetIterator.h"
 //#include "BitUtil.h"
 
+/*
+ *  Bitset is very similar to vector<bool>, it contains a collection of bits, and provides constant-time access to each bit.
+ *  It have two difference from the stl bitset<T>.
+ *  1. stl bitset<T> must have the template parameter T, which specifies the number of bits in the bitset,
+ *  must be an integer constant. Our Bitset doesn't have such restrict, it can be resize.
+ *  2. stl bitset<T> does not have iterators, we have BitSetIterator, which can be return by iterator function.
+ * */
 class BitSet {
 
 private:
-    //TODO Take care of release memory
+    // This is bits array, we used uint64_t as the container
     uint64_t* bits;
+    // numBits specify how many bits kept in this Bitset
     int numBits;
+    // workLength is the number of uint64_t we allocate, in Bitset, we can keep at most 64 * wordLength bits.
     int wordLength;
 
 public:
+    // constructors
     BitSet(){
         bits = NULL;
         numBits = wordLength = 0;
@@ -40,7 +50,7 @@ public:
         wordLength = other.wordLength;
     }
 
-
+    // destructor
     ~BitSet() {
         if (bits)
             delete[] bits;
@@ -54,6 +64,7 @@ public:
         return num;
     }
 
+    // resize the array
     void resize(int numBits){
         this->numBits = numBits;
         wordLength = bits2words(numBits);
@@ -66,7 +77,7 @@ public:
         bits = newbits;
     }
 
-    //TODO take case of the release of the memory
+    // return an iterator of this Bitset
     RecordIdSetIterator* iterator() {
         return new BitSetIterator(bits, wordLength);
     }
@@ -74,6 +85,8 @@ public:
     int length() {
         return numBits;
     }
+
+    // get bit at index position(start from 0)
     bool get(int index) {
         assert(index >= 0 && index < numBits);
         int wordNum = index >> 6;
@@ -82,6 +95,7 @@ public:
         return (bits[wordNum] & bitmask) != 0;
     }
 
+    // set bit at index position(start from 0)
     void set(int index){
 	   assert(index >= 0 && index < numBits);
 	   int wordNum = index >> 6;
@@ -90,7 +104,7 @@ public:
 	   bits[wordNum] |= bitmask;
    }
 
-
+    // get bit at index position(start from 0), then set it
     bool getAndSet(int index) {
         assert(index >= 0 && index < numBits);
         int wordNum = index >> 6;
@@ -101,6 +115,7 @@ public:
         return val;
     }
 
+    // clear bit at index position(start from 0)
     void clear(int index) {
         assert(index >= 0 && index < numBits);
         int wordNum = index >> 6;
@@ -109,6 +124,7 @@ public:
         bits[wordNum] &= ~bitmask;
     }
 
+    // get bit at index position(start from 0), then clear it
     bool getAndClear(int index) {
         assert(index >= 0 && index < numBits);
         int wordNum = index >> 6;

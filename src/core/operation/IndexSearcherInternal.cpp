@@ -55,6 +55,8 @@ IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
 
 int IndexSearcherInternal::doNext(int recordID, vector<TermVirtualList* >* virtualListVector)
 {
+    // suppose we keep n(0 ~ n-1) virtual list, the first one(idx:0) called lead,
+    // we loop the others lists to get a recordID (which exist in the lead for sure), exist in all the other lists(1 ~ n-1)
     for(int i = 1; i< virtualListVector->size(); i++)
     {
         if(virtualListVector->at(i)->recordID < recordID)

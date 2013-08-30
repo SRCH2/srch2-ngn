@@ -131,8 +131,10 @@ private:
     bool randomAccess(std::vector<TermVirtualList* > *virtualListVector,std::vector<float> &queryResultTermScores,
             std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
 
+    // This is a helper function of nextRecord
     int doNext(int recordID, vector<TermVirtualList* >* virtualListVector);
 
+    // return the nextRecord which exists in all the virtual lists, if there are no more records, will return NO_MORE_RECORDS
     int nextRecord(vector<TermVirtualList* >* virtualListVector);
 };
 

@@ -1,18 +1,26 @@
-#ifndef __BITSETITERATOR_H__
-#define __BITSETITERATOR_H__
+#ifndef __UTIL_BITSETITERATOR_H__
+#define __UTIL_BITSETITERATOR_H__
 #include "RecordIdSetIterator.h"
-// An iterator to iterate over set bits
+
+// An iterator to iterate over Bitset
 class BitSetIterator: public RecordIdSetIterator {
 public:
     static const int bitlist[256];
 private:
+    // arr is a pointer to the Bitset's bits
     uint64_t* arr;
+    // words is the wordLength of Bitset
     int words;
+    // i is current word position
     int i;
+    // word contains current 64 bits
     uint64_t word;
+    // shift bit in a word
     int wordShift;
+    // indexArray keep next bits in current shifted word
     unsigned indexArray;
-    int curDocId;
+    // current record id
+    int curRecordId;
 
 public:
 
@@ -20,12 +28,13 @@ public:
         arr = bits;
         words = numWords;
         i = -1;
-        curDocId = -1;
+        curRecordId = -1;
         word = 0;
         wordShift = 0;
         indexArray = 0;
     }
 
+    // return the next Record in the Bitset
     int nextRecord() {
         if (indexArray == 0) {
             if (word != 0) {
@@ -35,7 +44,7 @@ public:
 
             while (word == 0) {
                 if (++i >= words) {
-                    return curDocId = NO_MORE_RECORDS;
+                    return curRecordId = NO_MORE_RECORDS;
                 }
                 word = arr[i];
                 wordShift = -1;
@@ -45,15 +54,16 @@ public:
         int bitIndex = (indexArray & 0x0f) + wordShift;
         indexArray >>= 4;
 
-        return curDocId = (i<<6) + bitIndex;
+        return curRecordId = (i<<6) + bitIndex;
     }
 
+    // advance the next record which id >= target
     int advance(int target) {
     	indexArray = 0;
     	i = target >> 6;
     	if (i >= words) {
     		word = 0;
-    		return curDocId = NO_MORE_RECORDS;
+    		return curRecordId = NO_MORE_RECORDS;
     	}
     	wordShift = target & 0x3f;
     	word = arr[i] >> wordShift;
@@ -63,7 +73,7 @@ public:
     	else {
     		while (word == 0) {
     			if (++i >= words) {
-    				return curDocId = NO_MORE_RECORDS;
+    				return curRecordId = NO_MORE_RECORDS;
     			}
     			word = arr[i];
     		}
@@ -74,11 +84,11 @@ public:
 
     	int bitIndex = (indexArray & 0x0f) + wordShift;
     	indexArray >>= 4;
-    	return curDocId = (i<<6) + bitIndex;
+    	return curRecordId = (i<<6) + bitIndex;
     }
 
     int recordID() {
-        return curDocId;
+        return curRecordId;
     }
 
 
