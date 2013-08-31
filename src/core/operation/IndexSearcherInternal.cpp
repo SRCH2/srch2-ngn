@@ -193,8 +193,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     return queryResultsInternal->sortedFinalResults.size();
 }
 
-// Given a trie node, a distance, and an upper bound, we want to insert its descendants to the mapSearcherTerm.exapnsions
-// (as restricted by the distance and the bound
+// Given a trie node, a distance, and an upper bound, we want to insert its descendants to the mapSearcherTerm.exapnsions as restricted by the distance and the bound
 void IndexSearcherInternal::depthInsertExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm)
 {
     if (trieNode->isTerminalNode()) {
