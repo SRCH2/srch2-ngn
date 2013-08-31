@@ -607,7 +607,7 @@ int main(int argc, char** argv)
     // Hence, we should do null check before calling fclose
     if (logFile)
     	fclose(logFile);
-// free resource before exit
+// free resources before we exit
     for(int i = 0; i < MAX_THREADS; i++){
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
