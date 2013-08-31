@@ -59,18 +59,15 @@ int IndexSearcherInternal::getNextMatchingRecordID(int recordID, vector<TermVirt
 {
     // suppose we keep n(0 ~ n-1) virtual list, the first one(idx:0) called lead,
     // we loop the others lists to get a recordID (which exist in the lead for sure), exist in all the other lists(1 ~ n-1)
-    for(int i = 1; i< virtualListVector->size(); i++)
-    {
-        if(virtualListVector->at(i)->currentRecordID < recordID)
-        {
+    for (int i = 1; i< virtualListVector->size(); i++) {
+        if (virtualListVector->at(i)->currentRecordID < recordID) {
             // Move the cursor of the i-th list forward.
             virtualListVector->at(i)->currentRecordID = virtualListVector->at(i)->bitSetIter->advance(recordID);
-            if(virtualListVector->at(i)->currentRecordID > recordID)
-            {
+            if (virtualListVector->at(i)->currentRecordID > recordID) {
                 // The record ID doesn't exist on the list. So we need to change this ID, and restart the iteration from the 0-th list.
                 recordID = virtualListVector->at(i)->currentRecordID;
                 virtualListVector->at(0)->currentRecordID
-                         = virtualListVector->at(0)->bitSetIter->advance(recordID);
+                = virtualListVector->at(0)->bitSetIter->advance(recordID);
                 recordID = virtualListVector->at(0)->currentRecordID;
                 // After "i++" we will continue from the 1-st list.
                 i = 0;
@@ -79,7 +76,7 @@ int IndexSearcherInternal::getNextMatchingRecordID(int recordID, vector<TermVirt
         }
     }
     return recordID;
- }
+}
 
 // return the nextRecord which exists in all the virtual lists, if there are no more records, will return NO_MORE_RECORDS
 int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualListVector)
@@ -88,7 +85,7 @@ int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualLis
     TermVirtualList *lead = virtualListVector->at(0);
     // get the next record of lead
     lead->currentRecordID = lead->bitSetIter->getNextRecordId();
-    if(virtualListVector->size() > 1)// if there are still other lists, we need to call doNext function to get next recordID
+    if (virtualListVector->size() > 1)// if there are still other lists, we need to call doNext function to get next recordID
         return getNextMatchingRecordID(lead->currentRecordID, virtualListVector);
     else // otherwise we can return lead's recordID as the next record
         return lead->currentRecordID;
@@ -109,16 +106,14 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
 
     unsigned queryTermsLength = 1; // To prevent division by 0 in normalised edit distance calculation
-    for (vector<Term *>::const_iterator queryTermsIterator = queryTerms->begin(); 
-         queryTermsIterator != queryTerms->end(); queryTermsIterator++ )
-    {
+    for (vector<Term *>::const_iterator queryTermsIterator = queryTerms->begin();
+            queryTermsIterator != queryTerms->end(); queryTermsIterator++ ) {
         Term *term = *queryTermsIterator;
         queryTermsLength += term->getKeyword()->size();
     }
 
     //Empty Query case
-    if (queryTerms->size() == 0)
-    {
+    if (queryTerms->size() == 0) {
         return 0;
     }
 
@@ -133,18 +128,18 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     unsigned smallestVirtualListVectorSize = virtualListVector->at(0)->getVirtualListTotalLength();
     for (unsigned int iter = 1; iter < virtualListVector->size(); ++iter) {
         unsigned currentSize = virtualListVector->at(iter)->getVirtualListTotalLength();
-        if( smallestVirtualListVectorSize > currentSize ) {
+        if ( smallestVirtualListVectorSize > currentSize ) {
             smallestVirtualListVectorId = iter;
             smallestVirtualListVectorSize = currentSize;
         }
     }
     // if the smallest virtual list also need to merge, we will use nextRecord function to get all the records
-    if(virtualListVector->at(smallestVirtualListVectorId)->usingBitset){
-        if(smallestVirtualListVectorId)// if smallestVirtualListVectorId is not the first one, we will swap it to be the first one, which will improve the performance of iterating through its records
+    if (virtualListVector->at(smallestVirtualListVectorId)->usingBitset) {
+        if (smallestVirtualListVectorId)// if smallestVirtualListVectorId is not the first one, we will swap it to be the first one, which will improve the performance of iterating through its records
             swap(virtualListVector->at(smallestVirtualListVectorId), virtualListVector->at(0));
         int recordID;
         // we loop the record and add them to the result.
-        while((recordID = getNextRecordID(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
+        while ((recordID = getNextRecordID(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS) {
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
             queryResult->internalRecordId = recordID;                       // keep the internalRecordId
             queryResult->_score.setScore(1.0);                              // since we can't make a difference of these record, we give them the same score
@@ -153,20 +148,17 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
             queryResult->editDistances = queryResultEditDistances;          // and also the edit distance
             queryResultsInternal->insertResult(queryResult);                // insert the result to queryResultsInternal
         }
-    }
-    else{ // we don't need a bitse to merge the smallestVirtualListVectorId virtual list
+    } else { // we don't need a bitse to merge the smallestVirtualListVectorId virtual list
         // fill the visited list with the current queryResults
         std::set<unsigned> visitedList;
 
         //unsigned idsFound = 0;
-        while(virtualListVector->at(smallestVirtualListVectorId)->getNext(heapItem))
-        {
+        while (virtualListVector->at(smallestVirtualListVectorId)->getNext(heapItem)) {
 
             unsigned internalRecordId = heapItem->recordId;
 
             // if the record has been seen before, do nothing
-            if(visitedList.count(internalRecordId))
-            {
+            if (visitedList.count(internalRecordId)) {
                 continue;
             }
             // mark the record as seen
@@ -222,10 +214,10 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 
             // Do random access on the other TermVirtualLists
             if (randomAccess(virtualListVector, queryResultTermScores, queryResultMatchingKeywords, queryResultBitmaps,
-                     queryResultEditDistances, query, internalRecordId, smallestVirtualListVectorId, 0)) {
+                             queryResultEditDistances, query, internalRecordId, smallestVirtualListVectorId, 0)) {
                 bool  validForwardList = false;
                 const ForwardList *fl = this->indexData->forwardIndex->getForwardList(internalRecordId,
-                                                  validForwardList);
+                                        validForwardList);
                 if (validForwardList) {
                     // add this record to topK results if its score is good enough
                     QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
@@ -256,8 +248,7 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
 
     //Empty Query case
-    if (queryTerms->size() == 0)
-    {
+    if (queryTerms->size() == 0) {
         return 0;
     }
 
@@ -266,15 +257,13 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
     //timespec ts2;
     //clock_gettime(CLOCK_REALTIME, &ts1);
     vector<MapSearcherTerm> mapSearcherTermVector;
-    for(unsigned i = 0; i < queryTerms->size(); i++)
-    {
+    for (unsigned i = 0; i < queryTerms->size(); i++) {
         MapSearcherTerm mapSearcherTerm;
         // TODO
         // after the bug in active node is fixed, see if we should use LeafNodeSetIterator/ActiveNodeSetIterator for PREFIX/COMPLETE terms.
         // see TermVirtualList::TermVirtualList() in src/operation/TermVirtualList.cpp
         PrefixActiveNodeSet *prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet, queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next())
-        {
+        for (ActiveNodeSetIterator iter(prefixActiveNodeSet, queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
@@ -290,12 +279,9 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
         // Similar to the part in TermVirtualList.cpp destructor, which is used in text only index.
         // If it's in the cache, set the busyBit off so that it can be freed in the future.
         // if it's not in the cache, we can delete it right away.
-        if (prefixActiveNodeSet->isResultsCached() == true)
-        {
+        if (prefixActiveNodeSet->isResultsCached() == true) {
             prefixActiveNodeSet->busyBit->setFree();
-        }
-        else
-        { 
+        } else {
             // see ticket https://trac.assembla.com/srch2-root/ticket/142
             // prefixActiveNodeSet->busyBit->setFree();
             delete prefixActiveNodeSet;
@@ -312,15 +298,12 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
     vector<double> values;
     query->getRange(values);
     Shape *searchRange = NULL;
-    if (values.size()==3)
-    {
+    if (values.size()==3) {
         Point p;
         p.x = values[0];
         p.y = values[1];
         searchRange = new Circle(p, values[2]);
-    }
-    else
-    {
+    } else {
         pair<pair<double, double>, pair<double, double> > rect;
         rect.first.first = values[0];
         rect.first.second = values[1];
@@ -369,7 +352,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
 
     // if queryResults has enough results to answer this query return those results
-    if(queryResults->getNumberOfResults() >= (unsigned)offset+nextK) {
+    if (queryResults->getNumberOfResults() >= (unsigned)offset+nextK) {
         return nextK;
     }
 
@@ -380,14 +363,14 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     // Cache lookup, assume a query with the first k terms found in the cache
     queryResults->addMessage("Conjunction Cache Get");
     ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
-    int cacheResponse = this->cacheManager->getCachedConjunctionResult(query->getQueryTerms(), 
-                                       conjunctionCacheResultsEntry);
+    int cacheResponse = this->cacheManager->getCachedConjunctionResult(query->getQueryTerms(),
+                        conjunctionCacheResultsEntry);
 
     // Case 1: Cache hit and "k" results are in cache. No need to compute termVirtualList.
     if (conjunctionCacheResultsEntry != NULL
-        && cacheResponse == 1
-        && conjunctionCacheResultsEntry->queryTerms->size() == query->getQueryTerms()->size()
-        && conjunctionCacheResultsEntry->candidateList->size() >= (unsigned)offset+nextK) {
+            && cacheResponse == 1
+            && conjunctionCacheResultsEntry->queryTerms->size() == query->getQueryTerms()->size()
+            && conjunctionCacheResultsEntry->candidateList->size() >= (unsigned)offset+nextK) {
         queryResults->addMessage("Conjunction Cache Hit - case 1");
         // Do random access to find out if the candidates are valid results
         for (unsigned int i = 0; i < conjunctionCacheResultsEntry->candidateList->size(); ++i) {
@@ -410,7 +393,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // add this record to topK results if its score is good enough
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
             queryResult->internalRecordId = internalRecordId;
-        
+
             bool forwardListValid = false;
             this->indexData->forwardIndex->getForwardList(internalRecordId, forwardListValid);
             if (forwardListValid) {
@@ -426,27 +409,26 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         if (conjunctionCacheResultsEntry->isCached == 0)
             delete conjunctionCacheResultsEntry;
         queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    }
-    else {
+    } else {
         // fill the visited list with the current queryResults
         std::set<unsigned> visitedList;
         queryResultsInternal->fillVisitedList(visitedList);
-    
+
         this->computeTermVirtualList(queryResults);
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
         // container for the records that contains all the terms in this query (for caching purposes)
         vector<CandidateResult> *candidateList = new std::vector<CandidateResult>();
-    
+
         // Cached results for the first k terms
         // TODO revive caching here
         if ( false
-            && (conjunctionCacheResultsEntry != NULL)
-            && (cacheResponse == 1)
-         // && (conjunctionCacheResultsEntry->queryTerms != NULL)
-         // && (virtualListVector != NULL)
-            && (conjunctionCacheResultsEntry->queryTerms->size() <= virtualListVector->size()) ) {
+                && (conjunctionCacheResultsEntry != NULL)
+                && (cacheResponse == 1)
+                // && (conjunctionCacheResultsEntry->queryTerms != NULL)
+                // && (virtualListVector != NULL)
+                && (conjunctionCacheResultsEntry->queryTerms->size() <= virtualListVector->size()) ) {
             queryResults->addMessage("Conjunction Cache Hit - case 2");
             // Set the cursors of the first k TermVirtualLists
             for (unsigned int i = 0; i < conjunctionCacheResultsEntry->queryTerms->size(); ++i)    {
@@ -456,30 +438,30 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // Do random access to find out if the candidates are valid results
             for (unsigned int i = 0; i < conjunctionCacheResultsEntry->candidateList->size(); ++i) {
                 unsigned internalRecordId = conjunctionCacheResultsEntry->candidateList->at(i).internalRecordId;
-            
-                    // if the record has been seen before, do nothing
+
+                // if the record has been seen before, do nothing
                 if (visitedList.count(internalRecordId)) {
                     continue;
                 }
                 // mark the record as seen
                 visitedList.insert(internalRecordId);
-            
+
                 // create the score vector with k cached term scores and leave the rest as 0 to be filled in random access
                 std::vector<float> queryResultTermScores(conjunctionCacheResultsEntry->candidateList->at(i).termScores);
                 queryResultTermScores.resize(query->getQueryTerms()->size(), 0);
-                    
+
                 std::vector<std::string> queryResultMatchingKeywords(conjunctionCacheResultsEntry->candidateList->at(i).matchingKeywords);
                 std::vector<unsigned> queryResultAttributeBitmaps(conjunctionCacheResultsEntry->candidateList->at(i).attributeBitmaps);
                 queryResultMatchingKeywords.resize(query->getQueryTerms()->size(), "");
 
                 std::vector<unsigned> queryResultEditDistances(conjunctionCacheResultsEntry->candidateList->at(i).editDistances);
                 queryResultEditDistances.resize(query->getQueryTerms()->size(), 0);
-            
-                if (randomAccess(virtualListVector, queryResultTermScores, 
-                        queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
-                        query, internalRecordId, 
-                        conjunctionCacheResultsEntry->queryTerms->size()-1, 
-                        conjunctionCacheResultsEntry->queryTerms->size())) {
+
+                if (randomAccess(virtualListVector, queryResultTermScores,
+                                 queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
+                                 query, internalRecordId,
+                                 conjunctionCacheResultsEntry->queryTerms->size()-1,
+                                 conjunctionCacheResultsEntry->queryTerms->size())) {
                     //TODO OPT struct copy in insertResult
                     // add this record to topK results if its score is good enough
                     bool validForwardList;
@@ -487,13 +469,13 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                     if (validForwardList) {
                         QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
                         queryResult->internalRecordId = internalRecordId;
-                
+
                         queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
                         queryResult->matchingKeywords = queryResultMatchingKeywords;
                         queryResult->attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult->editDistances = queryResultEditDistances;
                         queryResultsInternal->insertResult(queryResult);
-                
+
                         // add this record to the candidate list for caching purposes
                         CandidateResult candidate;
                         candidate.internalRecordId = internalRecordId;
@@ -508,7 +490,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // Give back cache busy bit.
             conjunctionCacheResultsEntry->busyBit->setFree();
             if (conjunctionCacheResultsEntry->isCached == 0)
-            delete conjunctionCacheResultsEntry;
+                delete conjunctionCacheResultsEntry;
         }
 
         // Fagin's Algorithm
@@ -524,25 +506,23 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         while (!stop) {
             // maxScoreForUnvisitedRecords is the upper bound of the scores of these unvisited records
             maxScoreForUnvisitedRecords = 0;
-            for (unsigned int i = 0; i < virtualListVector->size(); ++i)
-            {
-               float score;
+            for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
+                float score;
 
-               if(!virtualListVector->at(i)->getMaxScore(score))
-               {
-                   stop = true;
-                   break;
-               }
-               maxScoreForUnvisitedRecords =
-                       query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
-                               query->getQueryTerms()->at(i)->getBoost(), score) ;
+                if (!virtualListVector->at(i)->getMaxScore(score)) {
+                    stop = true;
+                    break;
+                }
+                maxScoreForUnvisitedRecords =
+                    query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
+                            query->getQueryTerms()->at(i)->getBoost(), score) ;
             }
             // round robin: go through all the virtual lists
             for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
                 // Step 2
                 // get one element from one virtual list
                 // if the term virtual list has no more item, stop
-                if(!virtualListVector->at(i)->getNext(heapItem)) {
+                if (!virtualListVector->at(i)->getNext(heapItem)) {
                     stop = true;
                     break;
                 }
@@ -552,8 +532,8 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
                 // old value = old_value - popped item score + next item score
                 maxScoreForUnvisitedRecords = query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
-                       query->getQueryTerms()->at(i)->getBoost(),
-                       newScore - heapItem->termRecordRuntimeScore /*order reversed to make it 'subtract'*/) ;
+                                              query->getQueryTerms()->at(i)->getBoost(),
+                                              newScore - heapItem->termRecordRuntimeScore /*order reversed to make it 'subtract'*/) ;
 
                 // get the recordId
                 unsigned internalRecordId = heapItem->recordId;
@@ -602,28 +582,27 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                     }
                 }
                 else {*/
-                    if(virtualListVector->at(i)->usingBitset){
-                        queryResultMatchingKeywords.at(i) = "";     //if the list is merge to a bitset, the matching keywords is the same to the query term.
-                    }
-                    else{
-                        std::vector<CharType> temp;
-                        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                       heapItem->trieNode, temp);
-                        string str;
-                        charTypeVectorToUtf8String(temp, str);
-                        queryResultMatchingKeywords.at(i) = str;
-                    }
+                if (virtualListVector->at(i)->usingBitset) {
+                    queryResultMatchingKeywords.at(i) = "";     //if the list is merge to a bitset, the matching keywords is the same to the query term.
+                } else {
+                    std::vector<CharType> temp;
+                    this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                                           heapItem->trieNode, temp);
+                    string str;
+                    charTypeVectorToUtf8String(temp, str);
+                    queryResultMatchingKeywords.at(i) = str;
+                }
                 //}
 
                 queryResultEditDistances.at(i) = heapItem->ed;
                 queryResultTermScores.at(i) = heapItem->termRecordRuntimeScore;
                 queryResultAttributeBitmaps.at(i) = heapItem->attributeBitMap;
-                
+
                 // Step 3
                 // Do random access on the other TermVirtualLists
-                if(randomAccess(virtualListVector, queryResultTermScores,
-                        queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
-                        query, internalRecordId, i, 0))    {
+                if (randomAccess(virtualListVector, queryResultTermScores,
+                                 queryResultMatchingKeywords, queryResultAttributeBitmaps, queryResultEditDistances,
+                                 query, internalRecordId, i, 0))    {
                     bool validForwardList;
                     this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
                     if (validForwardList) {
@@ -673,22 +652,22 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
         // Optimize query terms deep copy
         for (std::vector<Term*>::const_iterator iter = query->getQueryTerms()->begin();
-             iter!=query->getQueryTerms()->end(); iter++) {
+                iter!=query->getQueryTerms()->end(); iter++) {
             std::string tmp((*iter)->getKeyword()->c_str());
             cacheQueryTerms->push_back(new Term( tmp, (*iter)->getTermType(),
-                         (*iter)->getBoost(), (*iter)->getSimilarityBoost(),
-                         (*iter)->getThreshold() ) );
+                                                 (*iter)->getBoost(), (*iter)->getSimilarityBoost(),
+                                                 (*iter)->getThreshold() ) );
         }
 
         queryResults->addMessage("Cache Set start");
 
         this->cacheManager->setCachedConjunctionResult(query->getQueryTerms(),
-                                   new ConjunctionCacheResultsEntry(cacheQueryTerms,
-                                                candidateList,
-                                                virtualListCursorsVector));
+                new ConjunctionCacheResultsEntry(cacheQueryTerms,
+                                                 candidateList,
+                                                 virtualListCursorsVector));
         queryResults->addMessage("Cache Set end");
     }
-    
+
     return queryResults->getNumberOfResults() - offset;
 }
 
@@ -698,13 +677,12 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 
     if (this->indexData->isCommited() == false)
         return returnValue;
-    
+
     if (query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchTopKQuery(query, offset, nextK, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
-    }
-    else if(query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
+    } else if (query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
         returnValue = this->searchGetAllResultsQuery(query, queryResults);
         this->indexData->rwMutexForIdReassign->unlockRead();
@@ -732,9 +710,9 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 
 
 // for doing a range query with a rectangle
- void IndexSearcherInternal::search(const Rectangle &queryRectangle, QueryResults *queryResults)
+void IndexSearcherInternal::search(const Rectangle &queryRectangle, QueryResults *queryResults)
 {
-	QueryResultsInternal *queryResultsInternal = queryResults->impl;
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
@@ -747,16 +725,16 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 
 
 // for doing a range query with a circle,
- void IndexSearcherInternal::search(const Circle &queryCircle, QueryResults *queryResults)
-  {
-	  QueryResultsInternal *queryResultsInternal = queryResults->impl;
-	      this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
-	      this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
-	      this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
-	      queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-	      this->indexData->rwMutexForIdReassign->unlockRead();
-	      this->indexer->rwMutexForWriter->unlockRead();
-  }
+void IndexSearcherInternal::search(const Circle &queryCircle, QueryResults *queryResults)
+{
+    QueryResultsInternal *queryResultsInternal = queryResults->impl;
+    this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
+    this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
+    this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
+    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
+    this->indexData->rwMutexForIdReassign->unlockRead();
+    this->indexer->rwMutexForWriter->unlockRead();
+}
 
 void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) const
 {
@@ -764,8 +742,8 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
     const vector<Term* > *queryTerms = query->getQueryTerms();
     if (query->getQueryType() != SearchTypeMapQuery) {
         for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
-             vectorIterator != queryTerms->end();
-             vectorIterator++ ) {
+                vectorIterator != queryTerms->end();
+                vectorIterator++ ) {
             // compute the active nodes for this term
             Term *term = *vectorIterator;
             std::stringstream str;
@@ -785,8 +763,8 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
 
             // compute the virtual list for this term
             float prefixMatchPenalty = query->getPrefixMatchPenalty();
-            TermVirtualList *termVirtualList = new TermVirtualList(this->indexData->invertedIndex, termActiveNodeSet, 
-                                       term, prefixMatchPenalty);
+            TermVirtualList *termVirtualList = new TermVirtualList(this->indexData->invertedIndex, termActiveNodeSet,
+                    term, prefixMatchPenalty);
             queryResults->addMessage("TermVList computed");
 
             ///check if termActiveNodeSet is cached, if not delete it to prevent memory leaks.
@@ -816,8 +794,7 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
     PrefixActiveNodeSet *initialPrefixActiveNodeSet = NULL;
     int cacheResponse = this->cacheManager->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
-    if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) // NO CacheHit,  response = 0
-    {
+    if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
         initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold());
@@ -828,8 +805,7 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
     PrefixActiveNodeSet *prefixActiveNodeSet = initialPrefixActiveNodeSet;
 
-    for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++)
-    {
+    for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
         CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
 
         PrefixActiveNodeSet *newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
@@ -837,17 +813,15 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
 
         // If the last result was not put into the cache successfully (e.g., due to
         // limited cache size), we can safely delete it now
-        if (prefixActiveNodeSet->isResultsCached() == false)
-        {
+        if (prefixActiveNodeSet->isResultsCached() == false) {
             //if (prefixActiveNodeSet->busyBit->isBusy())
-                delete prefixActiveNodeSet;
+            delete prefixActiveNodeSet;
         }
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
-        if (iter >= 2 && (cacheResponse != -1)) // Cache not busy and keywordLength is at least 2.
-        {
+        if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
             cacheResponse = this->cacheManager->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }
@@ -862,30 +836,29 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
  * skip = start-1 will guarantee not to skip anything not computed yet; because the term at index "start-1" is already cached.
  */
 bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtualListVector,
-                     std::vector<float> &queryResultTermScores, 
-                     std::vector<std::string> &queryResultMatchingKeywords,
-                     std::vector<unsigned> &queryResultBitmaps,
-                     std::vector<unsigned> &queryResultEditDistances,
-                     const Query *query, unsigned recordId, 
-                     unsigned skip, unsigned start)
+        std::vector<float> &queryResultTermScores,
+        std::vector<std::string> &queryResultMatchingKeywords,
+        std::vector<unsigned> &queryResultBitmaps,
+        std::vector<unsigned> &queryResultEditDistances,
+        const Query *query, unsigned recordId,
+        unsigned skip, unsigned start)
 {
     const std::vector<Term* > *queryTerms = query->getQueryTerms();
-    
+
     for (unsigned int j = start; j < virtualListVector->size(); ++j) {
         if (skip == j) // skip the virtual list popped up in round robin
             continue;
         bool found = false;
         // if the j th virtual list need merge to be a Bitset
-        if (virtualListVector->at(j)->usingBitset){
-            if(virtualListVector->at(j)->bitSet.get(recordId)){ // if the bit of recordId is set, we find it
+        if (virtualListVector->at(j)->usingBitset) {
+            if (virtualListVector->at(j)->bitSet.get(recordId)) { // if the bit of recordId is set, we find it
                 found = true;                                   // we find it in this list
                 queryResultMatchingKeywords.at(j) = "";         // the matching term is the same to the query term, we just ignore it
                 queryResultBitmaps.at(j) = 0;                   // we lose this bitmap
                 queryResultEditDistances.at(j) = 0;             // we lose the edit distance
                 queryResultTermScores.at(j) = 1.0;              // we assign the same score for it
             }
-        }
-        else{  //do the verification
+        } else {  //do the verification
             PrefixActiveNodeSet *prefixActiveNodeSet;
             virtualListVector->at(j)->getPrefixActiveNodeSet(prefixActiveNodeSet);
             unsigned termSearchableAttributeIdToFilterTermHits =
@@ -909,64 +882,64 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
                 unsigned matchingKeywordId;
                 float termRecordStaticScore;
                 unsigned termAttributeBitmap;
-               /* bool isStemmed;
-                // the similarity between a record and a prefix is the largest
-                // similarity between this prefix and keywords in the record
-                if (this->indexData->analyzerInternal->getStemmerNormalizerType()
-                        != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
-                    if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(recordId, minId, maxId,
-                                              termSearchableAttributeIdToFilterTermHits,
-                                              matchingKeywordId, termRecordStaticScore, isStemmed)) {
-                        if(isStemmed) {
-                            // "STEM" is the matching keyword that denotes the stemmed keyword
-                            queryResultMatchingKeywords.at(j)="STEM";
-                        }
-                        else {
-                            std::vector<CharType> temp;
-                            this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                               trieNode, temp);
-                            string str;
-                            charTypeVectorToUtf8String(temp, str);
-                            queryResultMatchingKeywords.at(j) = str;
-                        }
-                        queryResultEditDistances.at(j) = distance;
-    
-                        // the following flag shows whether the matching keyword is a prefix (not a complete) match
-                        // of the query term
-                        bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-                        queryResultTermScores.at(j) =
-                            query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
-                                                                          queryTerms->at(j)->getKeyword()->size(),
-                                                                          isPrefixMatch,
-                                                                          query->getPrefixMatchPenalty());
-                        found = true;
-                        break;
-                    }
-                }
-                else {*/
-                    if (this->indexData->forwardIndex->haveWordInRange(recordId, minId, maxId,
-                                                                   termSearchableAttributeIdToFilterTermHits,
-                                                                   matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
-                        std::vector<CharType> temp;
-                        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root, 
-                                                           trieNode, temp);
-                        string str;
-                        charTypeVectorToUtf8String(temp, str);
-                        queryResultMatchingKeywords.at(j) = str;
-                        queryResultBitmaps.at(j) = termAttributeBitmap;
-                        queryResultEditDistances.at(j) = distance;
+                /* bool isStemmed;
+                 // the similarity between a record and a prefix is the largest
+                 // similarity between this prefix and keywords in the record
+                 if (this->indexData->analyzerInternal->getStemmerNormalizerType()
+                         != srch2::instantsearch::NO_STEMMER_NORMALIZER) {
+                     if (this->indexData->forwardIndex->haveWordInRangeWithStemmer(recordId, minId, maxId,
+                                               termSearchableAttributeIdToFilterTermHits,
+                                               matchingKeywordId, termRecordStaticScore, isStemmed)) {
+                         if(isStemmed) {
+                             // "STEM" is the matching keyword that denotes the stemmed keyword
+                             queryResultMatchingKeywords.at(j)="STEM";
+                         }
+                         else {
+                             std::vector<CharType> temp;
+                             this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                                trieNode, temp);
+                             string str;
+                             charTypeVectorToUtf8String(temp, str);
+                             queryResultMatchingKeywords.at(j) = str;
+                         }
+                         queryResultEditDistances.at(j) = distance;
 
-                        bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-                        queryResultTermScores.at(j) =
-                            query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
-                                          queryTerms->at(j)->getKeyword()->size(),
-                                          isPrefixMatch,
-                                          query->getPrefixMatchPenalty());
-                        found = true;
-                        break;
-                    }
+                         // the following flag shows whether the matching keyword is a prefix (not a complete) match
+                         // of the query term
+                         bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+                         queryResultTermScores.at(j) =
+                             query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+                                                                           queryTerms->at(j)->getKeyword()->size(),
+                                                                           isPrefixMatch,
+                                                                           query->getPrefixMatchPenalty());
+                         found = true;
+                         break;
+                     }
+                 }
+                 else {*/
+                if (this->indexData->forwardIndex->haveWordInRange(recordId, minId, maxId,
+                        termSearchableAttributeIdToFilterTermHits,
+                        matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+                    std::vector<CharType> temp;
+                    this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                                           trieNode, temp);
+                    string str;
+                    charTypeVectorToUtf8String(temp, str);
+                    queryResultMatchingKeywords.at(j) = str;
+                    queryResultBitmaps.at(j) = termAttributeBitmap;
+                    queryResultEditDistances.at(j) = distance;
+
+                    bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+                    queryResultTermScores.at(j) =
+                        query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+                                queryTerms->at(j)->getKeyword()->size(),
+                                isPrefixMatch,
+                                query->getPrefixMatchPenalty());
+                    found = true;
+                    break;
                 }
-        //}
+            }
+            //}
         }
         if (!found)
             return false;
@@ -991,7 +964,7 @@ bool IndexSearcherInternal::cacheHit(const Query *query)
     // Cache lookup, assume a query with the first k terms found in the cache
     ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
     this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
-    
+
     // Cached results for the first k terms
     if (conjunctionCacheResultsEntry != NULL)
         return true;

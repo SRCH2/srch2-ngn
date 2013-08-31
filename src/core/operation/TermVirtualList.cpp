@@ -31,8 +31,8 @@ namespace srch2
 namespace instantsearch
 {
 
-void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNode, 
-                               TrieNodePointer leafNode, unsigned distance)
+void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNode,
+        TrieNodePointer leafNode, unsigned distance)
 {
     unsigned invertedListId = leafNode->getInvertedListOffset();
     unsigned invertedListCounter = 0;
@@ -49,26 +49,25 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     unsigned termAttributeBitmap = 0;
     while (1) {
         if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-                                                           term->getAttributeToFilterTermHits(), termAttributeBitmap,
-                                                           termRecordStaticScore) ) {
+                term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                termRecordStaticScore) ) {
             foundValidHit = 1;
             break;
         }
-    
+
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
-        	// calculate record offset online
-        	recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+            // calculate record offset online
+            recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
             ++invertedListCounter;
-        }
-        else {
+        } else {
             break;
         }
     }
-    
+
     if (foundValidHit == 1) {
         this->numberOfItemsInPartialHeap ++; // increment partialHeap counter
-        
+
         if (this->numberOfItemsInPartialHeap == 0)
             this->currentMaxEditDistanceOnHeap = distance;
 
@@ -76,27 +75,26 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
             bool isPrefixMatch = (prefixNode != leafNode);
             float termRecordRuntimeScore =
                 DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
-                                                                 distance,
-                                                                 term->getKeyword()->size(),
-                                                                 isPrefixMatch,
-                                                                 this->prefixMatchPenalty);
+                        distance,
+                        term->getKeyword()->size(),
+                        isPrefixMatch,
+                        this->prefixMatchPenalty);
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, prefixNode,
                                                    distance, isPrefixMatch));
-        }
-        else { // complete term
-            float termRecordRuntimeScore = 
+        } else { // complete term
+            float termRecordRuntimeScore =
                 DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
-                                                                 distance,
-                                                                 term->getKeyword()->size(),
-                                                                 false,
-                                                                 this->prefixMatchPenalty);// prefix match == false
+                        distance,
+                        term->getKeyword()->size(),
+                        false,
+                        this->prefixMatchPenalty);// prefix match == false
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, leafNode, distance, false));
         }
-    
+
         // Cursor points to the next element on InvertedList
         this->cursorVector.push_back(invertedListCounter);
         // keep the inverted list readviews in invertedListVector such that we can safely access them
@@ -106,38 +104,32 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
 
 void TermVirtualList::depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound)
 {
-	if (trieNode->isTerminalNode())
-	       initialiseTermVirtualListElement(NULL, trieNode, distance);
-	if(distance < bound)
-	{
-		for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++)
-		{
-			const TrieNode *child = trieNode->getChild(childIterator);
-			depthInitializeTermVirtualListElement(child, distance+1, bound);
-		}
-	}
+    if (trieNode->isTerminalNode())
+        initialiseTermVirtualListElement(NULL, trieNode, distance);
+    if (distance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthInitializeTermVirtualListElement(child, distance+1, bound);
+        }
+    }
 }
 
 // this function will depth initialize bitset, which will be used for complete term
 void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound)
 {
-    if (trieNode->isTerminalNode())
-    {
+    if (trieNode->isTerminalNode()) {
         unsigned invertedListId = trieNode->getInvertedListOffset();
         this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
-        for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
-        {
+        for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
             // set the bit of the record id to be true
-            if(!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+            if (!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
                 bitSetSize++;
         }
         //termCount++;
         //totalInveretListLength  += invertedListReadView->size();
     }
-    if(distance < bound)
-    {
-        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++)
-        {
+    if (distance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
             depthInitializeTermVirtualListElement(child, distance+1, bound);
         }
@@ -146,7 +138,7 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned d
 
 // Iterate over active nodes, fill the vector, and call make_heap on it.
 TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-                 Term *term, float prefixMatchPenalty)
+                                 Term *term, float prefixMatchPenalty)
 {
     this->invertedIndex = invertedIndex;
     this->prefixActiveNodeSet = prefixActiveNodeSet;
@@ -162,32 +154,30 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
         // This is our query-optimization logic. If the total number of leaf nodes for the term is
         // greater than a threshold, we use bitset to do the union/intersection operations.
-        if(iter.size() >= TERM_COUNT_THRESHOLD)
+        if (iter.size() >= TERM_COUNT_THRESHOLD)
             this->usingBitset = true;
-        if(this->usingBitset){// This term needs bitset
+        if (this->usingBitset) {// This term needs bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
-            for(;!iter.isDone(); iter.next()){
+            for (; !iter.isDone(); iter.next()) {
                 iter.getItem(prefixNode, leafNode, distance);
                 unsigned invertedListId = leafNode->getInvertedListOffset();
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
                 // loop the inverted list to add it to the Bitset
-                for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
-                {
+                for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
                     // We compute the union of these bitsets. We increment the number of bits only if the previous bit was 0.
-                    if(!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+                    if (!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
                         bitSetSize ++;
                 }
                 //termCount++;
                 //totalInveretListLength  += invertedListReadView->size();
             }
             bitSetIter = bitSet.iterator();
-        }
-        else{   // If we don't use a bitset, we use the TA algorithm
+        } else { // If we don't use a bitset, we use the TA algorithm
             cursorVector.reserve(iter.size());
             invertedListReadViewVector.reserve(iter.size());
             for (; !iter.isDone(); iter.next()) {
@@ -198,19 +188,17 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 initialiseTermVirtualListElement(prefixNode, leafNode, distance);
             }
         }
-    }
-    else { // case 2: Term is complete
+    } else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        if(iter.size() >= TERM_COUNT_THRESHOLD)
+        if (iter.size() >= TERM_COUNT_THRESHOLD)
             this->usingBitset = true;
-        if(this->usingBitset) // if this term virtual list is merged to a Bitset
-        {
+        if (this->usingBitset) { // if this term virtual list is merged to a Bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
-            for(;!iter.isDone(); iter.next()){
+            for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 // loop the distance depth of the tire to add the term invertedlist to Bitset
@@ -219,8 +207,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             //cout << "term count:" << numberOfLeafNodes << endl;
             //cout << "record count:" << totalInveretListLength  << endl;
             bitSetIter = bitSet.iterator();
-        }
-        else{
+        } else {
             cursorVector.reserve(iter.size());
             invertedListReadViewVector.reserve(iter.size());
             for (; !iter.isDone(); iter.next()) {
@@ -249,8 +236,8 @@ TermVirtualList::~TermVirtualList()
     this->invertedListReadViewVector.clear();
     this->term = NULL;
     this->invertedIndex = NULL;
-    
-    if (prefixActiveNodeSet->isResultsCached() == true)    
+
+    if (prefixActiveNodeSet->isResultsCached() == true)
         prefixActiveNodeSet->busyBit->setFree();
     else
         delete prefixActiveNodeSet;
@@ -266,24 +253,23 @@ bool TermVirtualList::_addItemsToPartialHeap()
         if (this->numberOfItemsInPartialHeap == 0) {
             // partialHeap is empty, assign new maxEditDistance and add items to partialHeap
             if (currentItem->ed > this->currentMaxEditDistanceOnHeap) {
-            this->currentMaxEditDistanceOnHeap = currentItem->ed;
-            this->numberOfItemsInPartialHeap++;
-            returnValue =true;
+                this->currentMaxEditDistanceOnHeap = currentItem->ed;
+                this->numberOfItemsInPartialHeap++;
+                returnValue =true;
             }
-        }
-        else {
+        } else {
             // Edit distance on itemHeap is less than maxEditDistance so far seen
             if (currentItem->ed <= this->currentMaxEditDistanceOnHeap) {
-            this->numberOfItemsInPartialHeap++;
-            returnValue = true;
+                this->numberOfItemsInPartialHeap++;
+                returnValue = true;
             }        //stopping condition: partialheap is not empty and edit distance is greater than maxEditDistance
             else
-            break;
+                break;
         }
     }
     // PartialHeap changed;
     if (returnValue) {
-        make_heap(this->itemsHeap.begin(),this->itemsHeap.begin()+numberOfItemsInPartialHeap, 
+        make_heap(this->itemsHeap.begin(),this->itemsHeap.begin()+numberOfItemsInPartialHeap,
                   TermVirtualList::HeapItemCmp());
     }
     return returnValue;
@@ -291,32 +277,25 @@ bool TermVirtualList::_addItemsToPartialHeap()
 
 bool TermVirtualList::getMaxScore(float & score)
 {
-    if(this->usingBitset){
+    if (this->usingBitset) {
         score = 1.0;
         return true;
-    }
-    else{
+    } else {
         //If heapVector is empty
-        if (this->itemsHeap.size() == 0)
-        {
+        if (this->itemsHeap.size() == 0) {
             return false;
         }
         //If partialHeap is empty
-        if (this->numberOfItemsInPartialHeap == 0)
-        {
-            if ( this->_addItemsToPartialHeap() == false)
-            {
+        if (this->numberOfItemsInPartialHeap == 0) {
+            if ( this->_addItemsToPartialHeap() == false) {
                 return false;
             }
         }
-        if (this->numberOfItemsInPartialHeap != 0)
-        {
+        if (this->numberOfItemsInPartialHeap != 0) {
             HeapItem *currentHeapMax = *(itemsHeap.begin());
             score = currentHeapMax->termRecordRuntimeScore;
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
@@ -324,7 +303,7 @@ bool TermVirtualList::getMaxScore(float & score)
 
 bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 {
-    if(this->usingBitset){
+    if (this->usingBitset) {
         returnHeapItem->recordId = this->bitSetIter->getNextRecordId();
         // When we use the bitset to get the next record for this virtual list, we don't have all the information for this record.
         returnHeapItem->termRecordRuntimeScore = 1.0;
@@ -332,29 +311,28 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         returnHeapItem->attributeBitMap = 0;
         returnHeapItem->ed = 0;
         returnHeapItem->positionIndexOffset = 0;
-        if(returnHeapItem->recordId != RecordIdSetIterator::NO_MORE_RECORDS)
+        if (returnHeapItem->recordId != RecordIdSetIterator::NO_MORE_RECORDS)
             return true;
         else
             return false;
-    }
-    else{
+    } else {
         //If heapVector is empty
         if (this->itemsHeap.size() == 0) {
             //heapItem = NULL;
             return false;
         }
-        
+
         // If partialHeap is empty
         if (this->numberOfItemsInPartialHeap == 0) {
             if (this->_addItemsToPartialHeap() == false)
                 return false;
         }
-        
+
         if (this->numberOfItemsInPartialHeap != 0) {
             // Elements are there in PartialHeap and pop them out to calling function
             HeapItem *currentHeapMax = *(itemsHeap.begin());
             pop_heap(itemsHeap.begin(), itemsHeap.begin() + this->numberOfItemsInPartialHeap,
-                 TermVirtualList::HeapItemCmp());
+                     TermVirtualList::HeapItemCmp());
 
             returnHeapItem->recordId = currentHeapMax->recordId;
             returnHeapItem->termRecordRuntimeScore = currentHeapMax->termRecordRuntimeScore;
@@ -362,13 +340,13 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
             returnHeapItem->attributeBitMap = currentHeapMax->attributeBitMap;
             returnHeapItem->ed = currentHeapMax->ed;
             returnHeapItem->positionIndexOffset = currentHeapMax->positionIndexOffset;
-            
+
             unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
             unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
             this->invertedListReadViewVector.clear();
             const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
             unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
-                
+
             bool foundValidHit = 0;
 
             // Check cursor is less than invertedList Size.
@@ -384,8 +362,8 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                 // check isValidTermPositionHit
                 float termRecordStaticScore = 0;
                 if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-                                        term->getAttributeToFilterTermHits(), termAttributeBitmap,
-                                            termRecordStaticScore)) {
+                        term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                        termRecordStaticScore)) {
                     foundValidHit = 1;
                     this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
                     // Update cursor of popped virtualList in invertedListCursorVector.
@@ -393,14 +371,14 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                     currentHeapMax->recordId = recordId;
                     currentHeapMax->termRecordRuntimeScore =
                         DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
-                                                 currentHeapMax->ed,
-                                                 term->getKeyword()->size(),
-                                                 currentHeapMax->isPrefixMatch,
-                                                 this->prefixMatchPenalty);
+                                currentHeapMax->ed,
+                                term->getKeyword()->size(),
+                                currentHeapMax->isPrefixMatch,
+                                this->prefixMatchPenalty);
                     currentHeapMax->attributeBitMap = termAttributeBitmap;
                     currentHeapMax->positionIndexOffset = recordOffset;
                     push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
-                          TermVirtualList::HeapItemCmp());
+                              TermVirtualList::HeapItemCmp());
                     break;
                 }
             }
@@ -415,8 +393,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
             }
 
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -426,7 +403,7 @@ void TermVirtualList::getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveN
 {
     prefixActiveNodeSet = this->prefixActiveNodeSet;
 }
-    
+
 void TermVirtualList::setCursors(std::vector<unsigned> *invertedListCursors)
 {
     // TODO mar 1
@@ -434,7 +411,7 @@ void TermVirtualList::setCursors(std::vector<unsigned> *invertedListCursors)
         unsigned a = invertedListCursors->size();
         unsigned b = this->cursorVector.size();
         (void)( a == b);
-    
+
         //ASSERT(invertedListCursors->size() == this->cursorVector.size());
         copy(invertedListCursors->begin(), invertedListCursors->end(), this->cursorVector.begin());
     }
@@ -459,18 +436,18 @@ void TermVirtualList::print_test() const
         Logger::debug("InvListPosition:\tRecord: %d\t Score:%.5f", (*heapIterator)->recordId, (*heapIterator)->termRecordRuntimeScore);
     }
 }
-unsigned TermVirtualList::getVirtualListTotalLength() {
-    if(this->usingBitset){
+unsigned TermVirtualList::getVirtualListTotalLength()
+{
+    if (this->usingBitset) {
         return bitSetSize;
-    }
-    else{
+    } else {
         unsigned totalLen = 0;
-        for (unsigned i=0; i<itemsHeap.size(); i++)
-        {
+        for (unsigned i=0; i<itemsHeap.size(); i++) {
             totalLen += this->invertedListReadViewVector[itemsHeap[i]->cursorVectorPosition]->size();
         }
         return totalLen;
     }
 }
 
-}}
+}
+}
