@@ -193,18 +193,16 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     return queryResultsInternal->sortedFinalResults.size();
 }
 
-
+// Given a trie node, a distance, and an upper bound, we want to insert its descendants to the mapSearcherTerm.exapnsions
+// (as restricted by the distance and the bound
 void IndexSearcherInternal::depthInsertExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm)
 {
-    if (trieNode->isTerminalNode())
-    {
+    if (trieNode->isTerminalNode()) {
         ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
         mapSearcherTerm.expansionStructureVector.push_back(expansion);
     }
-    if(distance < bound)
-    {
-        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++)
-        {
+    if (distance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
             depthInsertExpansion(child, distance+1, bound, mapSearcherTerm);
         }
@@ -246,6 +244,7 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
 
             if(queryTerms->at(i)->getTermType() == TERM_TYPE_COMPLETE){
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                // If the keyword is a fuzzy complete keyword, we also need to add additional keywords with a distance up to the threashold
                 depthInsertExpansion(trieNode, distance, queryTerms->at(i)->getThreshold(), mapSearcherTerm);
             }
             else{
