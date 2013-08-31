@@ -128,11 +128,11 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned d
         for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
         {
             // set the bit of the record id to be true
-            if(bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+            if(!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
                 bitSetSize++;
         }
         //termCount++;
-        //recordCount += invertedListReadView->size();
+        //totalInveretListLength  += invertedListReadView->size();
     }
     if(distance < bound)
     {
@@ -154,27 +154,23 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->prefixMatchPenalty = prefixMatchPenalty;
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
-    this->recordID = -1;
-    this->needMerge = false;
+    this->currentRecordID = -1;
+    this->usingBitset = false;
     this->bitSetSize = 0;
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        /*clock_gettime(CLOCK_REALTIME, &t1);*/
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        /*clock_gettime(CLOCK_REALTIME, &t2);
-        time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
-        cout << "create iterator: " << time_span << " milliseconds." << endl;*/
-        //TODO: change the condition to call it when the similar keywords or record number is too much
-        if(iter.size() >= TERMCOUNTTHRESHOLD)
-            this->needMerge = true;
-        if(this->needMerge)// if this term virtual list is merged to a Bitset
-        {
+        // This is our query-optimization logic. If the total number of leaf nodes for the term is
+        // greater than a threshold, we use bitset to do the union/intersection operations.
+        if(iter.size() >= TERM_COUNT_THRESHOLD)
+            this->usingBitset = true;
+        if(this->usingBitset){// This term needs bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
-            //termCount = 0;
-            //recordCount = 0;
+            //numberOfLeafNodes = 0;
+            //totalInveretListLength  = 0;
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(prefixNode, leafNode, distance);
                 unsigned invertedListId = leafNode->getInvertedListOffset();
@@ -182,15 +178,16 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 // loop the inverted list to add it to the Bitset
                 for(unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++)
                 {
-                    if(bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+                    // We compute the union of these bitsets. We increment the number of bits only if the previous bit was 0.
+                    if(!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
                         bitSetSize ++;
                 }
                 //termCount++;
-                //recordCount += invertedListReadView->size();
+                //totalInveretListLength  += invertedListReadView->size();
             }
             bitSetIter = bitSet.iterator();
         }
-        else{   // go to the old logic
+        else{   // If we don't use a bitset, we use the TA algorithm
             cursorVector.reserve(iter.size());
             invertedListReadViewVector.reserve(iter.size());
             for (; !iter.isDone(); iter.next()) {
@@ -204,23 +201,23 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     }
     else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        if(iter.size() >= TERMCOUNTTHRESHOLD)
-            this->needMerge = true;
-        if(this->needMerge) // if this term virtual list is merged to a Bitset
+        if(iter.size() >= TERM_COUNT_THRESHOLD)
+            this->usingBitset = true;
+        if(this->usingBitset) // if this term virtual list is merged to a Bitset
         {
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
             unsigned distance;
-            //termCount = 0;
-            //recordCount = 0;
+            //numberOfLeafNodes = 0;
+            //totalInveretListLength  = 0;
             for(;!iter.isDone(); iter.next()){
                 iter.getItem(trieNode, distance);
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 // loop the distance depth of the tire to add the term invertedlist to Bitset
                 depthInitializeBitSet(trieNode, distance, term->getThreshold());
             }
-            //cout << "term count:" << termCount << endl;
-            //cout << "record count:" << recordCount << endl;
+            //cout << "term count:" << numberOfLeafNodes << endl;
+            //cout << "record count:" << totalInveretListLength  << endl;
             bitSetIter = bitSet.iterator();
         }
         else{
@@ -294,7 +291,7 @@ bool TermVirtualList::_addItemsToPartialHeap()
 
 bool TermVirtualList::getMaxScore(float & score)
 {
-    if(this->needMerge){
+    if(this->usingBitset){
         score = 1.0;
         return true;
     }
@@ -327,8 +324,9 @@ bool TermVirtualList::getMaxScore(float & score)
 
 bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 {
-    if(this->needMerge){
-        returnHeapItem->recordId = this->bitSetIter->nextRecord();
+    if(this->usingBitset){
+        returnHeapItem->recordId = this->bitSetIter->getNextRecordId();
+        // When we use the bitset to get the next record for this virtual list, we don't have all the information for this record.
         returnHeapItem->termRecordRuntimeScore = 1.0;
         returnHeapItem->trieNode = 0;
         returnHeapItem->attributeBitMap = 0;
@@ -462,7 +460,7 @@ void TermVirtualList::print_test() const
     }
 }
 unsigned TermVirtualList::getVirtualListTotalLength() {
-    if(this->needMerge){
+    if(this->usingBitset){
         return bitSetSize;
     }
     else{

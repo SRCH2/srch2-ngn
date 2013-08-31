@@ -53,22 +53,26 @@ IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
 
 }
 
-// This is a helper function of nextRecord
-int IndexSearcherInternal::doNext(int recordID, vector<TermVirtualList* >* virtualListVector)
+// This is a helper function of nextRecord. It takes a record ID from the 0-th list,
+// and looks for the remaining lists for the next record ID by doing an intersection operation ("AND" logic).
+int IndexSearcherInternal::getNextMatchingRecordID(int recordID, vector<TermVirtualList* >* virtualListVector)
 {
     // suppose we keep n(0 ~ n-1) virtual list, the first one(idx:0) called lead,
     // we loop the others lists to get a recordID (which exist in the lead for sure), exist in all the other lists(1 ~ n-1)
     for(int i = 1; i< virtualListVector->size(); i++)
     {
-        if(virtualListVector->at(i)->recordID < recordID)
+        if(virtualListVector->at(i)->currentRecordID < recordID)
         {
-            virtualListVector->at(i)->recordID = virtualListVector->at(i)->bitSetIter->advance(recordID);
-            if(virtualListVector->at(i)->recordID > recordID)
+            // Move the cursor of the i-th list forward.
+            virtualListVector->at(i)->currentRecordID = virtualListVector->at(i)->bitSetIter->advance(recordID);
+            if(virtualListVector->at(i)->currentRecordID > recordID)
             {
-                recordID = virtualListVector->at(i)->recordID;
-                virtualListVector->at(0)->recordID
+                // The record ID doesn't exist on the list. So we need to change this ID, and restart the iteration from the 0-th list.
+                recordID = virtualListVector->at(i)->currentRecordID;
+                virtualListVector->at(0)->currentRecordID
                          = virtualListVector->at(0)->bitSetIter->advance(recordID);
-                recordID = virtualListVector->at(0)->recordID;
+                recordID = virtualListVector->at(0)->currentRecordID;
+                // After "i++" we will continue from the 1-st list.
                 i = 0;
                 continue;
             }
@@ -78,16 +82,16 @@ int IndexSearcherInternal::doNext(int recordID, vector<TermVirtualList* >* virtu
  }
 
 // return the nextRecord which exists in all the virtual lists, if there are no more records, will return NO_MORE_RECORDS
-int IndexSearcherInternal::nextRecord(vector<TermVirtualList* >* virtualListVector)
+int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualListVector)
 {
     // choose the first virtual list as the lead
     TermVirtualList *lead = virtualListVector->at(0);
     // get the next record of lead
-    lead->recordID = lead->bitSetIter->nextRecord();
+    lead->currentRecordID = lead->bitSetIter->getNextRecordId();
     if(virtualListVector->size() > 1)// if there are still other lists, we need to call doNext function to get next recordID
-        return doNext(lead->recordID, virtualListVector);
+        return getNextMatchingRecordID(lead->currentRecordID, virtualListVector);
     else // otherwise we can return lead's recordID as the next record
-        return lead->recordID;
+        return lead->currentRecordID;
 }
 
 
@@ -135,12 +139,12 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         }
     }
     // if the smallest virtual list also need to merge, we will use nextRecord function to get all the records
-    if(virtualListVector->at(smallestVirtualListVectorId)->needMerge){
-        if(smallestVirtualListVectorId)// if smallestVirtualListVectorId is not the first one, we will swap it to be the first one, which will boost the process of nextRecord
+    if(virtualListVector->at(smallestVirtualListVectorId)->usingBitset){
+        if(smallestVirtualListVectorId)// if smallestVirtualListVectorId is not the first one, we will swap it to be the first one, which will improve the performance of iterating through its records
             swap(virtualListVector->at(smallestVirtualListVectorId), virtualListVector->at(0));
         int recordID;
         // we loop the record and add them to the result.
-        while((recordID = nextRecord(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
+        while((recordID = getNextRecordID(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS){
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
             queryResult->internalRecordId = recordID;                       // keep the internalRecordId
             queryResult->_score.setScore(1.0);                              // since we can't make a difference of these record, we give them the same score
@@ -598,7 +602,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                     }
                 }
                 else {*/
-                    if(virtualListVector->at(i)->needMerge){
+                    if(virtualListVector->at(i)->usingBitset){
                         queryResultMatchingKeywords.at(i) = "";     //if the list is merge to a bitset, the matching keywords is the same to the query term.
                     }
                     else{
@@ -872,7 +876,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
             continue;
         bool found = false;
         // if the j th virtual list need merge to be a Bitset
-        if (virtualListVector->at(j)->needMerge){
+        if (virtualListVector->at(j)->usingBitset){
             if(virtualListVector->at(j)->bitSet.get(recordId)){ // if the bit of recordId is set, we find it
                 found = true;                                   // we find it in this list
                 queryResultMatchingKeywords.at(j) = "";         // the matching term is the same to the query term, we just ignore it
@@ -881,7 +885,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
                 queryResultTermScores.at(j) = 1.0;              // we assign the same score for it
             }
         }
-        else{  //go to the old logic to get verify it
+        else{  //do the verification
             PrefixActiveNodeSet *prefixActiveNodeSet;
             virtualListVector->at(j)->getPrefixActiveNodeSet(prefixActiveNodeSet);
             unsigned termSearchableAttributeIdToFilterTermHits =

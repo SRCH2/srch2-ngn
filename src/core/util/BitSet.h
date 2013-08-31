@@ -3,24 +3,28 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "util/Assert.h"
 #include "BitSetIterator.h"
-//#include "BitUtil.h"
 
+namespace srch2
+{
+namespace instantsearch
+{
 /*
  *  Bitset is very similar to vector<bool>, it contains a collection of bits, and provides constant-time access to each bit.
- *  It have two difference from the stl bitset<T>.
+ *  It has two difference from the stl bitset<T>.
  *  1. stl bitset<T> must have the template parameter T, which specifies the number of bits in the bitset,
- *  must be an integer constant. Our Bitset doesn't have such restrict, it can be resize.
- *  2. stl bitset<T> does not have iterators, we have BitSetIterator, which can be return by iterator function.
+ *  must be an integer constant. Our Bitset doesn't have such a restriction, it can be resized.
+ *  2. stl bitset<T> does not have iterators. Bitset can have a BitSetIterator, which can be returned by calling an iterator function.
  * */
 class BitSet {
 
 private:
-    // This is bits array, we used uint64_t as the container
+    // This is an array of bits. We use uint64_t as the container
     uint64_t* bits;
-    // numBits specify how many bits kept in this Bitset
+    // numBits specifies how many bits are kept in this array
     int numBits;
-    // workLength is the number of uint64_t we allocate, in Bitset, we can keep at most 64 * wordLength bits.
+    // workLength is the number of uint64_t's we allocate. We keep at most 64 * wordLength bits.
     int wordLength;
 
 public:
@@ -31,18 +35,20 @@ public:
     }
 
     BitSet(int numBits) {
+        ASSERT(numBits >= 0);
         this->numBits = numBits;
-        wordLength = bits2words(numBits);
+        wordLength = getWordNumberForBits(numBits);
         bits = new uint64_t[wordLength];
     }
 
     BitSet(uint64_t* storedBits, int numBits) {
-        this->wordLength = bits2words(numBits);
+        ASSERT(numBits >= 0);
+        this->wordLength = getWordNumberForBits(numBits);
         this->numBits = numBits;
         this->bits = storedBits;
     }
 
-    // do deep copy
+    // Copy constructor. We do a deep copy
     BitSet(const BitSet &other) {
         bits = new uint64_t[other.wordLength];
         memcpy(bits, other.bits, other.wordLength);
@@ -56,25 +62,26 @@ public:
             delete[] bits;
     }
 
-    // return the number of 64 bit words int to hold numBits
-    int bits2words(int numBits) {
-        int num = numBits >> 6;
-        if ((numBits & 63) != 0)
-            num++;
-        return num;
+    // return the number of 64-bit words to store a given number of bits
+    int getWordNumberForBits(int numBits) {
+        int wordNumber = numBits >> 6;
+        if ((numBits & 0x3f) != 0) // If the remainder is more than 0, we need to allocate one more word for these bits.
+            wordNumber++;
+        return wordNumber;
     }
 
     // resize the array
     void resize(int numBits){
+        ASSERT(numBits >= 0);
         this->numBits = numBits;
-        wordLength = bits2words(numBits);
-        uint64_t* newbits = new uint64_t[wordLength];
-        memset(newbits, 0, wordLength*sizeof(uint64_t));
+        wordLength = getWordNumberForBits(numBits);
+        uint64_t* newBits = new uint64_t[wordLength];
+        memset(newBits, 0, wordLength*sizeof(uint64_t));
         if(bits){
-            memcpy(newbits, bits, wordLength);
+            memcpy(newBits, bits, wordLength);
             delete[] bits;
         }
-        bits = newbits;
+        bits = newBits;
     }
 
     // return an iterator of this Bitset
@@ -82,34 +89,40 @@ public:
         return new BitSetIterator(bits, wordLength);
     }
 
-    int length() {
+    int getBitNumber() {
         return numBits;
     }
 
     // get bit at index position(start from 0)
     bool get(int index) {
-        assert(index >= 0 && index < numBits);
+        ASSERT(index >= 0 && index < numBits);
         int wordNum = index >> 6;
-        int bit = index & 0x3f;
-        uint64_t bitmask = 1L << bit;
+        int remainderBits = index & 0x3f;
+        // for example. we get index = 66, we will first get wordNum = 66 >> 6 = 1, remainderBits = 66 & 0x3f = 2,
+        // so we will return the idx=1 word's idx=2 bit value
+        uint64_t bitmask = 1L << remainderBits;
         return (bits[wordNum] & bitmask) != 0;
     }
 
     // set bit at index position(start from 0)
     void set(int index){
-	   assert(index >= 0 && index < numBits);
+       ASSERT(index >= 0 && index < numBits);
 	   int wordNum = index >> 6;
 	   int bit = index & 0x3f;
+	   // for example. we get index = 66, we will first get wordNum = 66 >> 6 = 1, remainderBits = 66 & 0x3f = 2,
+	   // so we will set the idx=1 word's idx=2 bit value to be 1
 	   uint64_t bitmask = 1L << bit;
 	   bits[wordNum] |= bitmask;
    }
 
     // get bit at index position(start from 0), then set it
     bool getAndSet(int index) {
-        assert(index >= 0 && index < numBits);
+        ASSERT(index >= 0 && index < numBits);
         int wordNum = index >> 6;
         int bit = index & 0x3f;
         uint64_t bitmask = 1L << bit;
+        // for example. we get index = 66, we will first get wordNum = 66 >> 6 = 1, remainderBits = 66 & 0x3f = 2,
+        // so we will set the idx=1 word's idx=2 bit value to be 1, and return the old value
         bool val = (bits[wordNum] & bitmask) != 0;
         bits[wordNum] |= bitmask;
         return val;
@@ -117,23 +130,29 @@ public:
 
     // clear bit at index position(start from 0)
     void clear(int index) {
-        assert(index >= 0 && index < numBits);
+        ASSERT(index >= 0 && index < numBits);
         int wordNum = index >> 6;
         int bit = index & 0x3f;
+        // for example. we get index = 66, we will first get wordNum = 66 >> 6 = 1, remainderBits = 66 & 0x3f = 2,
+        // so we will set the idx=1 word's idx=2 bit value to be 0
         uint64_t bitmask = 1L << bit;
         bits[wordNum] &= ~bitmask;
     }
 
-    // get bit at index position(start from 0), then clear it
+    // get the bit at a given index position (starting from 0), then clear it
     bool getAndClear(int index) {
-        assert(index >= 0 && index < numBits);
+        ASSERT(index >= 0 && index < numBits);
         int wordNum = index >> 6;
         int bit = index & 0x3f;
         uint64_t bitmask = 1L << bit;
+        // for example. we get index = 66, we will first get wordNum = 66 >> 6 = 1, remainderBits = 66 & 0x3f = 2,
+        // so we will set the idx=1 word's idx=2 bit value to be 0, and return the old value
         bool val = (bits[wordNum] & bitmask) != 0;
         bits[wordNum] &= ~bitmask;
         return val;
     }
 };
 
+}
+}
 #endif

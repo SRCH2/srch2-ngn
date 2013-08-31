@@ -2,13 +2,17 @@
 #define __UTIL_BITSETITERATOR_H__
 #include "RecordIdSetIterator.h"
 
+namespace srch2
+{
+namespace instantsearch
+{
 // An iterator to iterate over Bitset
 class BitSetIterator: public RecordIdSetIterator {
 public:
-    static const int bitlist[256];
+    static const int bitList[256];
 private:
-    // arr is a pointer to the Bitset's bits
-    uint64_t* arr;
+    // bits is a pointer to the Bitset's bits
+    uint64_t* bits;
     // words is the wordLength of Bitset
     int words;
     // i is current word position
@@ -25,7 +29,7 @@ private:
 public:
 
     BitSetIterator(uint64_t* bits, int numWords) {
-        arr = bits;
+        bits = bits;
         words = numWords;
         i = -1;
         curRecordId = -1;
@@ -35,25 +39,28 @@ public:
     }
 
     // return the next Record in the Bitset
-    int nextRecord() {
+    int getNextRecordId() {
+        // if the indexArray is empty, we will move next from word
         if (indexArray == 0) {
             if (word != 0) {
                 word >>= 8;
                 wordShift += 8;
             }
-
+            // while the word is empty we will get next word
             while (word == 0) {
-                if (++i >= words) {
+                if (++i >= words) {// if it's larger than words, return no more records
                     return curRecordId = NO_MORE_RECORDS;
                 }
-                word = arr[i];
+                // set the word and wordShift
+                word = bits[i];
                 wordShift = -1;
             }
+            //shift to the next wordshift
             shift();
         }
-        int bitIndex = (indexArray & 0x0f) + wordShift;
+        int bitIndex = (indexArray & 0x0f) + wordShift; //get the bit index
         indexArray >>= 4;
-
+        // return current record id
         return curRecordId = (i<<6) + bitIndex;
     }
 
@@ -66,7 +73,7 @@ public:
     		return curRecordId = NO_MORE_RECORDS;
     	}
     	wordShift = target & 0x3f;
-    	word = arr[i] >> wordShift;
+    	word = bits[i] >> wordShift;
     	if (word != 0) {
     		wordShift--;
     	}
@@ -75,7 +82,7 @@ public:
     			if (++i >= words) {
     				return curRecordId = NO_MORE_RECORDS;
     			}
-    			word = arr[i];
+    			word = bits[i];
     		}
     		wordShift = -1;
     	}
@@ -87,12 +94,12 @@ public:
     	return curRecordId = (i<<6) + bitIndex;
     }
 
-    int recordID() {
+    int getCurrentRecordID() {
         return curRecordId;
     }
 
 
-    uint64_t cost() {
+    uint64_t getNumberOfWords() {
         return words / 64;
     }
 
@@ -111,9 +118,11 @@ private:
             wordShift +=8;
             word >>=8;
         }
-        indexArray = bitlist[(int)word & 0xff];
+        indexArray = bitList[(int)word & 0xff];
     }
 
 };
 
+}
+}
 #endif

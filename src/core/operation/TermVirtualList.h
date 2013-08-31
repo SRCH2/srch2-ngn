@@ -40,7 +40,7 @@ using std::queue;
 using std::pair;
 using std::set;
 using std::string;
-#define TERMCOUNTTHRESHOLD 350
+#define TERM_COUNT_THRESHOLD 350
 
 namespace srch2
 {
@@ -173,16 +173,16 @@ public:
     // if the similar terms are too many, we will merge them in this bitset
     BitSet bitSet;
     // the current recordId, initial value is -1
-    int recordID;
+    int currentRecordID;
     // The Iterator of bitset
     RecordIdSetIterator* bitSetIter;
     // current inverted list Readview
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    //int termCount;
-    //int recordCount;
-    // check if we need to merge the inverted lists to be a bitset
-    bool needMerge;
-    // the number of records in the bitset
+    //int numberOfLeafNodes;
+    //int totalInveretListLength ;
+    // a flag indicating whether we need to use a bitset
+    bool usingBitset;
+    // the number of records in the bitset, which is the total number of records in the data set
     int bitSetSize;
 
 private:

@@ -131,11 +131,11 @@ private:
     bool randomAccess(std::vector<TermVirtualList* > *virtualListVector,std::vector<float> &queryResultTermScores,
             std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
 
-    // This is a helper function of nextRecord
-    int doNext(int recordID, vector<TermVirtualList* >* virtualListVector);
+    // This is a helper function of nextRecord. It takes a record ID from the 0-th list, and looks for the remaining lists for the next record ID by doing an intersection operation ("AND" logic).
+    int getNextMatchingRecordID(int recordID, vector<TermVirtualList* >* virtualListVector);
 
-    // return the nextRecord which exists in all the virtual lists, if there are no more records, will return NO_MORE_RECORDS
-    int nextRecord(vector<TermVirtualList* >* virtualListVector);
+    // return the next record that exists in all the virtual lists ("AND of these keyword lists). If there are no more records, return NO_MORE_RECORDS
+    int getNextRecordID(vector<TermVirtualList* >* virtualListVector);
 };
 
 }}
