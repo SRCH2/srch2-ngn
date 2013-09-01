@@ -6,6 +6,14 @@ SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
+echo '----do exact_A1 test--------------'
+python ./save_shutdown_restart_test/save_shutdown_restart_test.py $SRCH2_ENGINE_DIR
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 echo '----do high_insert_test--------------'
 ./high_insert_test/autotest.sh $SRCH2_ENGINE_DIR
 
