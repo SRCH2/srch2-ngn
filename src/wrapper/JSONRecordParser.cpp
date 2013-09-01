@@ -338,35 +338,35 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
 
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
-
-    while(getline(in, line)  && in.good() )
-    {
-        bool parseSuccess = false;
-
-        std::stringstream error;
-        parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
-
-        if(parseSuccess)
+    if(in.good()){
+        while(getline(in, line))
         {
-            // Add the record to the index
-            //indexer->addRecordBeforeCommit(record, 0);
-            indexer->addRecord(record, analyzer, 0);
-        }
-        else
-        {
-            Logger::error("at line: %d" , lineCounter);
-            Logger::error("%s", error.str().c_str());
-        }
-        record->clear();
+            bool parseSuccess = false;
 
-        int reportFreq = 10000;
-        if (lineCounter % reportFreq == 0)
-        {
-          std::cout << "Indexing first " << lineCounter << " records" << "\r";
+            std::stringstream error;
+            parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
+
+            if(parseSuccess)
+            {
+                // Add the record to the index
+                //indexer->addRecordBeforeCommit(record, 0);
+                indexer->addRecord(record, analyzer, 0);
+            }
+            else
+            {
+                Logger::error("at line: %d" , lineCounter);
+                Logger::error("%s", error.str().c_str());
+            }
+            record->clear();
+            int reportFreq = 10000;
+            if (lineCounter % reportFreq == 0)
+            {
+              std::cout << "Indexing first " << lineCounter << " records" << "\r";
+            }
+            ++lineCounter;
         }
-        ++lineCounter;
     }
-    Logger::console("                                                     \r");
+    std::cout<<"                                                     \r";
     Logger::console("Indexed %d records.", lineCounter);
 
     in.close();

@@ -33,7 +33,6 @@ void ConfigManager::loadConfigFile(){
     //("customer-name", po::value<string>(), "customer name") // REQUIRED
     ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
     ("index-type", po::value<int>(), "index-type") // REQUIRED
-    ("index-load-or-create", po::value<bool>(), "index-load-or-create")
     ("data-source-type", po::value<bool>(), "Data source type")
 
     ("kafka-consumer-topicname", po::value<string>(),"Kafka consumer topic name") // REQUIRED
@@ -683,15 +682,6 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
         writeApiType = HTTPWRITEAPI;
     }
 
-    if (vm.count("index-load-or-create")) {
-        indexCreateOrLoad =
-                vm["index-load-or-create"].as<bool>() == 0 ?
-                        INDEXCREATE : INDEXLOAD;
-    } else {
-        indexCreateOrLoad = INDEXCREATE;
-        //parseError << "index-load-or-create is not set.\n";
-    }
-
     if (vm.count("trie-bootstrap-dict-file")) {
         trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
     } else {
@@ -1025,10 +1015,6 @@ int ConfigManager::getNumberOfThreads() const {
 
 DataSourceType ConfigManager::getDataSourceType() const {
 	return dataSourceType;
-}
-
-IndexCreateOrLoad ConfigManager::getIndexCreateOrLoad() const {
-	return indexCreateOrLoad;
 }
 
 WriteApiType ConfigManager::getWriteApiType() const {
