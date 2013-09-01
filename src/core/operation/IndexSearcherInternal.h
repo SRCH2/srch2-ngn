@@ -128,7 +128,7 @@ private:
 
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 
-    void depthInsertExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
+    void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
 
     bool randomAccess(std::vector<TermVirtualList* > *virtualListVector,std::vector<float> &queryResultTermScores,
             std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
