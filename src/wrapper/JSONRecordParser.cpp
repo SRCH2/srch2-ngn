@@ -366,7 +366,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             ++lineCounter;
         }
     }
-    Logger::console("                                                     \r");
+    std::cout<<"                                                     \r";
     Logger::console("Indexed %d records.", lineCounter);
 
     in.close();
