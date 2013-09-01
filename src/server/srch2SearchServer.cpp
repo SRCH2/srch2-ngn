@@ -610,8 +610,8 @@ int main(int argc, char** argv)
     }
 
     delete[] threads;
+    Logger::console("Saving Indexes ...");
     server.indexer->save();
-    Logger::console("Index saved");
     // if no log file is set in config file. This variable should be null.
     // Hence, we should do null check before calling fclose
     if (logFile)
