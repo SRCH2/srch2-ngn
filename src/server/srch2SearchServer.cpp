@@ -376,8 +376,10 @@ int MAX_THREADS;
 
 static void killServer(int signal) {
     Logger::console("Stopping server.");
-    for(int i = 0; i< MAX_THREADS; i++)
+    for(int i = 0; i< MAX_THREADS; i++){
         pthread_cancel(threads[i]);
+        Logger::console("Thread = <%u> stopped", threads[i]);
+    }
 }
 
 int main(int argc, char** argv)
@@ -588,8 +590,12 @@ int main(int argc, char** argv)
 
     /* Set signal handlers */
     sigset_t sigset;
-    sigemptyset(&sigset);
+    // handle signal of Ctrl-C interruption
+    sigaddset(&sigset, SIGINT);
+    // handle signal of terminate(kill)
+    sigaddset(&sigset, SIGTERM);
     struct sigaction siginfo;
+    // add the handler to be killServer
     siginfo.sa_handler = killServer;
     siginfo.sa_mask = sigset;
     siginfo.sa_flags = SA_RESTART;
@@ -601,7 +607,7 @@ int main(int argc, char** argv)
     }
 
     delete[] threads;
-
+    server.indexer->save();
     // if no log file is set in config file. This variable should be null.
     // Hence, we should do null check before calling fclose
     if (logFile)
@@ -611,7 +617,6 @@ int main(int argc, char** argv)
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
-
     StemmerContainer::free();
     SynonymContainer::free();
     StopWordContainer::free();
