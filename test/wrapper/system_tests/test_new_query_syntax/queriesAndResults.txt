@@ -1,0 +1,9 @@
+&facet=true&facet.range=price||2 4 6 19 23 25 27 32 33 43
+&fq=model%3ABMW&facet=true&facet.range=price||2 4
+&fq=model%3ABMW%20OR%20likes%3A%5B44%20TO%20*%5D%20OR%20CMPLX%24price%3E88%20and%20price%3C96%24&facet=true&facet.range=price||2 4 6 82 85 96
+&fq=likes%3A%5B44%20TO%20*%5D%20OR%20CMPLX%24price%3E88%20and%20price%3C96%24&facet=true&facet.range=price||6 82 85 96
+&fq=CMPLX%24price%3E88%20and%20price%3C96%24&facet=true&facet.range=price||6
+&fq=likes%3A%5B44%20TO%20100%5D&facet=true&facet.range=price||82 85 96
+&fq=model%3ATOYOTA&facet=true&facet.range=price&f.price.facet.range.start=10||82 85
+&fq=likes%3A%5B4%20TO%20*%5D&facet=true&facet.range=price&f.price.facet.range.end=90||19 23 25 27 32 33 43 85 85
+&fq=model%3ABMW&facet=true&facet.range=price&sort=price&orderby=asc||4 2
