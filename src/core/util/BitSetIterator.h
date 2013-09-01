@@ -29,7 +29,7 @@ private:
 public:
 
     BitSetIterator(uint64_t* bits, int numWords) {
-        bits = bits;
+        this->bits = bits;
         words = numWords;
         i = -1;
         curRecordId = -1;
@@ -40,13 +40,13 @@ public:
 
     // return the next Record in the Bitset
     int getNextRecordId() {
-        // if the indexArray is empty, we will move next from word
+        // if the indexArray is empty, we will move to the next byte in current word
         if (indexArray == 0) {
             if (word != 0) {
                 word >>= 8;
                 wordShift += 8;
             }
-            // while the word is empty we will get next word
+            // if the word is empty, we move to the next word
             while (word == 0) {
                 if (++i >= words) {// if it's larger than words, return no more records
                     return curRecordId = NO_MORE_RECORDS;
