@@ -595,9 +595,12 @@ int main(int argc, char** argv)
     // handle signal of terminate(kill)
     sigaddset(&sigset, SIGTERM);
     struct sigaction siginfo;
-    // add the handler to be killServer
+    // add the handler to be killServer, sa_sigaction and sa_handler are union type, so we don't need to assign sa_sigaction to be NULL
     siginfo.sa_handler = killServer;
     siginfo.sa_mask = sigset;
+    // If a blocked call to one of the following interfaces is interrupted by a signal handler,
+    // then the call will be automatically restarted after the signal handler returns if the SA_RESTART flag was used;
+    // otherwise the call will fail with the error EINTR, check the detail at http://man7.org/linux/man-pages/man7/signal.7.html
     siginfo.sa_flags = SA_RESTART;
     sigaction(SIGINT, &siginfo, NULL);
     sigaction(SIGTERM, &siginfo, NULL);
@@ -608,6 +611,7 @@ int main(int argc, char** argv)
 
     delete[] threads;
     server.indexer->save();
+    Logger::console("Index saved");
     // if no log file is set in config file. This variable should be null.
     // Hence, we should do null check before calling fclose
     if (logFile)
