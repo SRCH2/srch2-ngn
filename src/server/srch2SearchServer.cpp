@@ -375,10 +375,9 @@ int MAX_THREADS;
  */
 
 static void killServer(int signal) {
-    cout << "\rStop server threads." << endl;
+    Logger::console("Stopping server.");
     for(int i = 0; i< MAX_THREADS; i++)
         pthread_cancel(threads[i]);
-    cout << "stop server" << endl;
 }
 
 int main(int argc, char** argv)
@@ -616,6 +615,6 @@ int main(int argc, char** argv)
     StemmerContainer::free();
     SynonymContainer::free();
     StopWordContainer::free();
-    cout << "Shutting down." << endl;
+    Logger::console("Server stopped successfully");
     return EXIT_SUCCESS;
 }
