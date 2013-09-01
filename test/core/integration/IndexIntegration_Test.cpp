@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 	//Sort keywordList
 	forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
-	typedef ts_shared_ptr<TrieRootNodeAndFreeList<char> > TrieRootNodeSharedPtr;
+	typedef shared_ptr<TrieRootNodeAndFreeList<char> > TrieRootNodeSharedPtr;
 	TrieRootNodeSharedPtr rootSharedPtr;
 	trie->getTrieRootNode_ReadView(rootSharedPtr);
 	TrieNode<char> *root = rootSharedPtr->root;

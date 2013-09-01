@@ -80,7 +80,7 @@ public:
 		return m_size;
 	}
 protected:
-	ts_shared_ptr<vector<vector<unsigned> > > compressedDataBlocks;		// the compressed blocks
+	shared_ptr<vector<vector<unsigned> > > compressedDataBlocks;		// the compressed blocks
 	vector<unsigned> lastBuffer;										// the last one block
 	unsigned lastBufferSize;											// the size of the last one
 	vector<unsigned> decompressedBlock;									// the cached block
@@ -270,8 +270,8 @@ private:
 class CowInvertedList {
 
 private:
-    ts_shared_ptr<InvertedListVectorView > m_readView;
-    ts_shared_ptr<InvertedListVectorView > m_writeView;
+    shared_ptr<InvertedListVectorView > m_readView;
+    shared_ptr<InvertedListVectorView > m_writeView;
 
     friend class boost::serialization::access;
 
@@ -309,12 +309,12 @@ public:
 
     virtual ~CowInvertedList() {}
 
-    void getReadView(ts_shared_ptr<InvertedListVectorView>& view) const
+    void getReadView(shared_ptr<InvertedListVectorView>& view) const
     {
         view = m_readView;
     }
 
-    void getWriteView(ts_shared_ptr<InvertedListVectorView> & view)
+    void getWriteView(shared_ptr<InvertedListVectorView> & view)
     {
         view = m_writeView;
     }

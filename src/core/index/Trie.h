@@ -46,8 +46,9 @@
 #include <set>
 #include <cassert>
 #include <queue>
-
-#include "util/cowvector/ts_shared_ptr.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include "util/mypthread.h"
 #include "util/Assert.h"
 #include "util/encoding.h"
 

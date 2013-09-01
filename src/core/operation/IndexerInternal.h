@@ -25,11 +25,11 @@
 #include <instantsearch/Indexer.h>
 #include "operation/Cache.h"
 #include "operation/IndexData.h"
-#include <pthread.h>
 #include <string>
 #include <sstream>
 #include <vector>
 #include <memory>
+#include "util/mypthread.h"
 
 using std::vector;
 using std::string;

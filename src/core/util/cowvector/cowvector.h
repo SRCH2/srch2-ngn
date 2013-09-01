@@ -24,7 +24,9 @@
 #include <boost/serialization/vector.hpp>
 #include <cstring>
 #include "util/Assert.h"
-#include "ts_shared_ptr.h"
+#include "../mypthread.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 using boost::shared_ptr;
 
