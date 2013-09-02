@@ -23,9 +23,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <iostream>
-#include <pthread.h>
 #include <cstdlib>
 #include <stdio.h>
+#include "util/mypthread.h"
 
 using namespace std;
 using namespace srch2::instantsearch;
