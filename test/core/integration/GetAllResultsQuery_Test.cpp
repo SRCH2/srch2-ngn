@@ -121,7 +121,6 @@ void validateIntSortableAttrDescending(const Analyzer *analyzer, IndexSearcher *
     {
         if (descending)
         {
-        	std::cout << recordIds[i-1] << " " ;
             ASSERT( sortMap.at(recordIds[i-1]) >= sortMap.at(recordIds[i]) );
         }
         else

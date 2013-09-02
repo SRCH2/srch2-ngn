@@ -101,7 +101,6 @@ bool QueryValidator::validate() {
         }
     }
 
-
     // validate filter list
     // Example : q= title,name:foo AND body.abstract:bar
     // title, name, body and abstract should be declared as searchable attributes.
