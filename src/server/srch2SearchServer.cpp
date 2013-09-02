@@ -612,10 +612,6 @@ int main(int argc, char** argv)
     delete[] threads;
     Logger::console("Saving Indexes ...");
     server.indexer->save();
-    // if no log file is set in config file. This variable should be null.
-    // Hence, we should do null check before calling fclose
-    if (logFile)
-    	fclose(logFile);
 // free resources before we exit
     for(int i = 0; i < MAX_THREADS; i++){
         evhttp_free(http_servers[i]);
@@ -625,5 +621,9 @@ int main(int argc, char** argv)
     SynonymContainer::free();
     StopWordContainer::free();
     Logger::console("Server stopped successfully");
+    // if no log file is set in config file. This variable should be null.
+    // Hence, we should do null check before calling fclose
+    if (logFile)
+        fclose(logFile);
     return EXIT_SUCCESS;
 }
