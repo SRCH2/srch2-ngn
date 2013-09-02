@@ -28,6 +28,7 @@
 #include "util/Logger.h"
 #include "util/Version.h"
 #include <event2/http.h>
+#include <signal.h>
 
 #include <sys/types.h>
 
@@ -190,11 +191,10 @@ static void ajax_health_command(struct mg_connection *conn,
  */
 void cb_bmsearch(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	srch2http::HTTPRequestHandler::searchCommand(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    srch2http::HTTPRequestHandler::searchCommand(req, server);
 }
 
 /**
@@ -204,11 +204,10 @@ void cb_bmsearch(evhttp_request *req, void *arg)
  */
 void cb_bmlookup(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	srch2http::HTTPRequestHandler::lookupCommand(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    srch2http::HTTPRequestHandler::lookupCommand(req, server);
 }
 
 /**
@@ -218,15 +217,12 @@ void cb_bmlookup(evhttp_request *req, void *arg)
  */
 void cb_bminfo(evhttp_request *req, void *arg)
 {
-
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
     /*string meminfo;
     getMemoryInfo(meminfo);*/
-
     string versioninfo = getCurrentVersion();
-
     HTTPRequestHandler::infoCommand(req, server, versioninfo);
 }
 
@@ -237,29 +233,26 @@ void cb_bminfo(evhttp_request *req, void *arg)
  */
 void cb_bmwrite_v0(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	HTTPRequestHandler::writeCommand_v0(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::writeCommand_v0(req, server);
 }
 
 void cb_bmupdate(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	HTTPRequestHandler::updateCommand(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::updateCommand(req, server);
 }
 
 void cb_bmsave(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	HTTPRequestHandler::saveCommand(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::saveCommand(req, server);
 }
 
 /**
@@ -269,11 +262,10 @@ void cb_bmsave(evhttp_request *req, void *arg)
  */
 void cb_bmwrite_v1(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	HTTPRequestHandler::writeCommand_v1(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::writeCommand_v1(req, server);
 }
 
 /**
@@ -283,13 +275,11 @@ void cb_bmwrite_v1(evhttp_request *req, void *arg)
  */
 void cb_bmactivate(evhttp_request *req, void *arg)
 {
-
-	Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-	evhttp_add_header(req->output_headers, "Content-Type",
-                    "application/json; charset=UTF-8");
-	HTTPRequestHandler::activateCommand(req, server);
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::activateCommand(req, server);
 }
-
 
 /**
  * NotFound event handler.
@@ -375,6 +365,20 @@ void parseProgramArguments(int argc, char** argv, po::options_description& descr
         cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
         cout << description << endl;
         exit(-1);
+    }
+}
+
+pthread_t *threads;
+int MAX_THREADS;
+/**
+ * Kill the server.  This function can be called from another thread to kill the server
+ */
+
+static void killServer(int signal) {
+    Logger::console("Stopping server.");
+    for(int i = 0; i< MAX_THREADS; i++){
+        pthread_cancel(threads[i]);
+        Logger::console("Thread = <%u> stopped", threads[i]);
     }
 }
 
@@ -520,7 +524,7 @@ int main(int argc, char** argv)
     evhttp_free(http_server);
     event_base_free(evbase);
 
-    int MAX_THREADS = serverConf->getNumberOfThreads();
+    MAX_THREADS = serverConf->getNumberOfThreads();
 
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d", MAX_THREADS, http_addr, http_port);
 
@@ -531,16 +535,19 @@ int main(int argc, char** argv)
     // Step 2: Serving server
 
     int fd = bindSocket(http_addr, http_port);
-    pthread_t *threads = new pthread_t[MAX_THREADS];
-
+    threads = new pthread_t[MAX_THREADS];
+    vector<struct event_base *> evbases;
+    vector<struct evhttp *> http_servers;
     for (int i = 0; i < MAX_THREADS; i++) {
         evbase = event_init();
+        evbases.push_back(evbase);
         if (NULL == evbase) {
             perror("event_base_new");
             return 1;
         }
 
         http_server = evhttp_new(evbase);
+        http_servers.push_back(http_server);
         //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
 
         if (NULL == http_server) {
@@ -581,20 +588,42 @@ int main(int argc, char** argv)
             return -1;
     }
 
+    /* Set signal handlers */
+    sigset_t sigset;
+    // handle signal of Ctrl-C interruption
+    sigaddset(&sigset, SIGINT);
+    // handle signal of terminate(kill)
+    sigaddset(&sigset, SIGTERM);
+    struct sigaction siginfo;
+    // add the handler to be killServer, sa_sigaction and sa_handler are union type, so we don't need to assign sa_sigaction to be NULL
+    siginfo.sa_handler = killServer;
+    siginfo.sa_mask = sigset;
+    // If a blocked call to one of the following interfaces is interrupted by a signal handler,
+    // then the call will be automatically restarted after the signal handler returns if the SA_RESTART flag was used;
+    // otherwise the call will fail with the error EINTR, check the detail at http://man7.org/linux/man-pages/man7/signal.7.html
+    siginfo.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &siginfo, NULL);
+    sigaction(SIGTERM, &siginfo, NULL);
+
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_join(threads[i], NULL);
     }
 
     delete[] threads;
-
-    // if no log file is set in config file. This variable should be null.
-    // Hence, we should do null check before calling fclose
-    if (logFile)
-    	fclose(logFile);
-
+    Logger::console("Saving Indexes ...");
+    server.indexer->save();
+// free resources before we exit
+    for(int i = 0; i < MAX_THREADS; i++){
+        evhttp_free(http_servers[i]);
+        event_base_free(evbases[i]);
+    }
     StemmerContainer::free();
     SynonymContainer::free();
     StopWordContainer::free();
-
+    Logger::console("Server stopped successfully");
+    // if no log file is set in config file. This variable should be null.
+    // Hence, we should do null check before calling fclose
+    if (logFile)
+        fclose(logFile);
     return EXIT_SUCCESS;
 }

@@ -96,7 +96,6 @@ private:
 	bool synonymKeepOrigFlag;
 	std::string stopFilterFilePath;
 	DataSourceType dataSourceType;
-	IndexCreateOrLoad indexCreateOrLoad;
 	WriteApiType writeApiType;
 
 
@@ -169,7 +168,6 @@ public:
 	int getNumberOfThreads() const;
 
 	DataSourceType getDataSourceType() const;
-	IndexCreateOrLoad getIndexCreateOrLoad() const;
 	WriteApiType getWriteApiType() const;
 
 	int getSearchResponseFormat() const;

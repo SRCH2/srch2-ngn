@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/time.h>
-#include <pthread.h>
+#include "util/mypthread.h"
 
 using namespace std;
 using namespace srch2::instantsearch;

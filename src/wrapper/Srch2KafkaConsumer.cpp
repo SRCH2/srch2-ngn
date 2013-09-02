@@ -4,6 +4,8 @@
 #include "IndexWriteUtil.h"
 #include "json/json.h"
 #include "util/Logger.h"
+#include "util/FileOps.h"
+#include "index/IndexUtil.h"
 
 using namespace srch2::instantsearch;
 namespace srch2is = srch2::instantsearch;
@@ -28,12 +30,41 @@ IndexMetaData *Srch2KafkaConsumer::createIndexMetaData(const ConfigManager *inde
 	return indexMetaData;
 }
 
+// Check if index files already exist.
+bool checkIndexExistence(const ConfigManager *indexDataContainerConf)
+{
+    const string &directoryName = indexDataContainerConf->getIndexPath();
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::forwardIndexFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
+        return false;
+    if (indexDataContainerConf->getIndexType() == srch2::instantsearch::DefaultIndex){
+        // Check existence of the inverted index file for basic keyword search ("A1")
+        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+            return false;
+    }else{
+        // Check existence of the quadtree index file for geo keyword search ("M1")
+        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
+            return false;
+    }
+    return true;
+}
+
 void Srch2KafkaConsumer::createAndBootStrapIndexer()
 {
 	// create IndexMetaData
 	IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataContainerConf);
+	IndexCreateOrLoad indexCreateOrLoad;
+	if(checkIndexExistence(indexDataContainerConf))
+	    indexCreateOrLoad = srch2http::INDEXLOAD;
+	else
+	    indexCreateOrLoad = srch2http::INDEXCREATE;
 
-	switch (indexDataContainerConf->getIndexCreateOrLoad())
+	switch (indexCreateOrLoad)
 	{
 		case srch2http::INDEXCREATE:
 		{
@@ -71,7 +102,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
 			{
 				cout << indexer->getSchema()->getPositionIndexType() << " " << indexDataContainerConf->getSupportAttributeBasedSearch() <<endl;
-				cout << "[Warning] support-attribute-based-search changed in config file, run with index-load-or-create=0 again!"<< endl;
+				cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
 			}
 			break;
 		}
