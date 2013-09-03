@@ -45,9 +45,9 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         print  query+' test pass'
     else:
         print  query+' test failed'
+    print '------------------------------------------------------------------'
 
 def checkFacetResults(query, responseJson, facetResultValue):
-
    for i in range(0,len(responseJson)):
       facet_line = ''
       facet_field_name = responseJson[i]['facet_field_name']
@@ -67,7 +67,7 @@ def checkFacetResults(query, responseJson, facetResultValue):
 def prepareQuery(queryKeywords):
     query = ''
     #################  prepare main query part
-    query = query + 'q=food*~'
+    #query = query + ''
     # local parameters
     query = query + queryKeywords
 
