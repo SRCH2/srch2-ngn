@@ -28,6 +28,10 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
 #include <instantsearch/QueryResults.h>
+#include <instantsearch/ResultsPostProcessor.h>
+#include <instantsearch/SortFilter.h>
+#include <../wrapper/SortFilterEvaluator.h>
+#include <operation/IndexSearcherInternal.h>
 #include "util/Assert.h"
 
 #include <query/QueryResultsInternal.h>
@@ -451,6 +455,53 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
     }
 }
 
+QueryResults * applyFilter(QueryResults * initialQueryResults,
+        IndexSearcher * indexSearcher, Query * query,
+        ResultsPostProcessorPlan * plan) {
+
+//    ResultsPostProcessor postProcessor(indexSearcher);
+
+    QueryResults * finalQueryResults = new QueryResults(
+            new QueryResultFactory(), indexSearcher, query);
+
+    plan->beginIteration();
+
+    // short circuit in case the plan doesn't have any filters in it.
+    // if no plan is set in Query or there is no filter in it,
+    // then there is no post processing so just mirror the results
+    if (plan == NULL) {
+        finalQueryResults->copyForPostProcessing(initialQueryResults);
+        return finalQueryResults;
+    }
+
+    plan->beginIteration();
+    if (!plan->hasMoreFilters()) {
+        finalQueryResults->copyForPostProcessing(initialQueryResults);
+        plan->closeIteration();
+        return finalQueryResults;
+    }
+
+    // iterating on filters and applying them on list of results
+    while (plan->hasMoreFilters()) {
+        ResultsPostProcessorFilter * filter = plan->nextFilter();
+
+        // clear the output to be ready to accept the result of the filter
+        finalQueryResults->clear();
+        // apply the filter on the input and put the results in output
+        filter->doFilter(indexSearcher, query, initialQueryResults,
+                finalQueryResults);
+        // if there is going to be other filters, chain the output to the input
+        if (plan->hasMoreFilters()) {
+            initialQueryResults->copyForPostProcessing(finalQueryResults);
+        }
+
+    }
+    plan->closeIteration();
+
+    return finalQueryResults;
+}
+
+
 //Test the ConjunctiveResults cache
 bool pingCacheDoubleQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher1, IndexSearcher *indexSearcher2, string queryString)
 {
@@ -787,9 +838,31 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
 
 bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter, int attributeIdToSort = -1)
 {
+    IndexSearcherInternal *indexSearcherInternal =
+            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
-    query->setSortableAttribute(attributeIdToSort,srch2is::SortOrderDescending);
+
+    ResultsPostProcessorPlan * plan = NULL;
+    plan = new ResultsPostProcessorPlan();
+    SortFilter * sortFilter = new SortFilter();
+    srch2::httpwrapper::SortFilterEvaluator * eval =
+            new srch2::httpwrapper::SortFilterEvaluator();
+    sortFilter->evaluator = eval;
+	eval->order = srch2::instantsearch::SortOrderDescending;
+    const std::map<std::string , unsigned> * nonSearchableAttributes =
+    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    string attributeToSortName = "";
+    for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
+    		nSA != nonSearchableAttributes->end() ; nSA++){
+    	if(nSA->second == attributeIdToSort){
+    		attributeToSortName = nSA->first;
+    	}
+    }
+    eval->field.push_back(attributeToSortName);
+
+    plan->addFilterToPlan(sortFilter);
+
 
     int resultCount = 10;
 
@@ -799,9 +872,13 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
+
+    QueryResultFactory * factory = new QueryResultFactory();
+    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
+            indexSearcherInternal, query, plan);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
-    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
-    printResults(queryResults);
+    bool returnvalue =  checkResults(queryResultsAfterFilter, numberofHits, recordIDs);
+    printResults(queryResultsAfterFilter);
     delete queryResults;
     delete query;
     return returnvalue;
@@ -809,13 +886,34 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
 
 void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, bool descending, vector<string> &recordIds, int attributeIdToFilter, int attributeIdToSort = -1)
 {
+    IndexSearcherInternal *indexSearcherInternal =
+            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
     
+    ResultsPostProcessorPlan * plan = NULL;
+    plan = new ResultsPostProcessorPlan();
+    SortFilter * sortFilter = new SortFilter();
+    srch2::httpwrapper::SortFilterEvaluator * eval =
+            new srch2::httpwrapper::SortFilterEvaluator();
+    sortFilter->evaluator = eval;
     if (descending)
-        query->setSortableAttribute(attributeIdToSort, srch2is::SortOrderDescending);
+		eval->order = srch2::instantsearch::SortOrderDescending;
     else
-        query->setSortableAttribute(attributeIdToSort, srch2is::SortOrderAscending);
+		eval->order = srch2::instantsearch::SortOrderAscending;
+    const std::map<std::string , unsigned> * nonSearchableAttributes =
+    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    string attributeToSortName = "";
+    for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
+    		nSA != nonSearchableAttributes->end() ; nSA++){
+    	if(nSA->second == attributeIdToSort){
+    		attributeToSortName = nSA->first;
+    	}
+    }
+    eval->field.push_back(attributeToSortName);
+
+    plan->addFilterToPlan(sortFilter);
+
 
     int resultCount = 10;
 
@@ -825,10 +923,14 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *index
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
 
     indexSearcher->search(query, queryResults, resultCount);
-    for (unsigned resultCounter = 0; resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
-        recordIds.push_back(queryResults->getRecordId(resultCounter));
 
-    printResults(queryResults);
+    QueryResultFactory * factory = new QueryResultFactory();
+    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
+            indexSearcherInternal, query, plan);
+
+    for (unsigned resultCounter = 0; resultCounter < queryResultsAfterFilter->getNumberOfResults(); resultCounter++ )
+        recordIds.push_back(queryResultsAfterFilter->getRecordId(resultCounter));
+    printResults(queryResultsAfterFilter);
 
     delete queryResults;
     delete query;

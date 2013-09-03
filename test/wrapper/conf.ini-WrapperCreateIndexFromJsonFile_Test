@@ -12,7 +12,7 @@ index-type=0
 # 0 - Create the index-dir from scratch
 # 1 - Load from index-dir directly, skip creating an index initially.
 # OPTIONAL. Defaults to 0
-index-load-or-create=0
+#index-load-or-create=0
 
 # 0 - Insert using HTTP API
 # 1 - Insert using KAFKA

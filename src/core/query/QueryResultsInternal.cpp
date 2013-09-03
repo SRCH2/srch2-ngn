@@ -170,8 +170,10 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
 }
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
-    bool descending = (this->query->getSortableAttributeIdSortOrder()
-            == srch2::instantsearch::SortOrderDescending);
+//    bool descending = (this->query->getSortableAttributeIdSortOrder()
+//            == srch2::instantsearch::SortOrderDescending);
+	bool descending = true; // Since we deleted order parameter in configuration but we didn't delete the usage in the code,
+								// we change this place to always use descending which means higher scores first.
 
     int numberOfSortedResults = this->sortedFinalResults.size();
 

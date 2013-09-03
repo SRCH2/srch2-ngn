@@ -74,7 +74,7 @@ void test_1(){
 
 	VariableLengthAttributeContainer vlac;
 	std::string record1[10] =
-	{"John Smith" , "23" , "2000344567" , "Doctor" , "70.4567" , "12000" , "John" , "Smith" , "12345" , "34567"};
+	{"John Smith" , "23" , "2344567" , "Doctor" , "70.4567" , "12000" , "John" , "Smith" , "12345" , "34567"};
 	vector<string> nonSearchableAttributeValues;
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record1,record1 + 10);
 	vlac.fill(schema, nonSearchableAttributeValues);
@@ -86,7 +86,7 @@ void test_1(){
 	//////////////////////////////
 
 	std::string record2[10] =
-	{"John Black Patterson" , "0" , "22220344567" , "Professor" , "70.4567" , "12000" , "John" , "" , "1235" , "3467"};
+	{"John Black Patterson" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "" , "1235" , "3467"};
 	nonSearchableAttributeValues.clear();
 	vlac.clear();
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record2 , record2+10);
@@ -97,7 +97,7 @@ void test_1(){
 	/////////////////////////////////
 
 	std::string record3[10] =
-	{"" , "0" , "22220344567" , "Professor" , "-70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
+	{"" , "0" , "20344567" , "Professor" , "-70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
     vlac.clear();
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record3 , record3+10);
@@ -108,7 +108,7 @@ void test_1(){
 	//////////////////////////////////////////////
 
 	std::string record4[10] =
-	{"" , "0" , "22220344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
+	{"" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
     vlac.clear();
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record4 , record4+10);
@@ -116,11 +116,11 @@ void test_1(){
 	ASSERT(vlac.getFloatAttribute(4,schema) == float(70.4567));
 	ASSERT(vlac.getUnsignedAttribute(8,schema) == 9835);
 	ASSERT(vlac.getTextAttribute(3,schema) == "Professor");
-	ASSERT(vlac.getTimeAttribute(2,schema) == 22220344567);
+	ASSERT(vlac.getTimeAttribute(2,schema) == 20344567);
 	/////////////////////////////////////////////
 
 	std::string record5[10] =
-	{"David Simpson" , "3245" , "22220344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
+	{"David Simpson" , "3245" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
     vlac.clear();
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record5 , record5+10);
@@ -128,11 +128,11 @@ void test_1(){
 	ASSERT(vlac.getFloatAttribute(4,schema) == float(70.4567));
 	ASSERT(vlac.getUnsignedAttribute(8,schema) == 9835);
 	ASSERT(vlac.getTextAttribute(3,schema) == "Professor");
-	ASSERT(vlac.getTimeAttribute(2,schema) == 22220344567);
+	ASSERT(vlac.getTimeAttribute(2,schema) == 20344567);
 	////////////////////////////////////////////
 
 	std::string record6[10] =
-	{"" , "0" , "22220344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
+	{"" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
     vlac.clear();
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record6 , record6+10);
@@ -145,7 +145,7 @@ void test_1(){
 	attributes.push_back(7);
 	attributes.push_back(8);
 	vlac.getBatchOfAttributes(attributes , schema, &results);
-	ASSERT(results.at(0).getTimeScore() == 22220344567);
+	ASSERT(results.at(0).getTimeScore() == 20344567);
 	ASSERT(results.at(1).getTextScore().compare("Professor") == 0);
 	ASSERT(results.at(2).getIntScore() == 12000);
 	ASSERT(results.at(3).getTextScore().compare("Smith Patterson") == 0);

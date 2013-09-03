@@ -14,7 +14,7 @@
 #include "ConfigManager.h"
 #include "Srch2KafkaConsumer.h"
 
-#include <pthread.h>
+#include "util/mypthread.h"
 
 namespace srch2is = srch2::instantsearch;
 using std::string;

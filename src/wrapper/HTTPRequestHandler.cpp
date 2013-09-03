@@ -538,7 +538,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
         IndexWriteUtil::_saveCommand(server->indexer, log_str);
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The index has been saved to disk successfully\", \"log\":["
+                "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
                         + log_str.str() + "]}\n");
         Logger::info("%s", log_str.str().c_str());
         break;
