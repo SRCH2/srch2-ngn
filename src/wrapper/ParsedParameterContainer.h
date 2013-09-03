@@ -199,6 +199,8 @@ public:
     std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
     std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
     std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.
+    std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
+    std::vector<short>  PhraseSlops;   // vector to store proximity slops
     std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
     // debug query parser parameters
     bool isDebugEnabled;
@@ -271,7 +273,7 @@ public:
     // parsed error?
     bool isFqBooleanOperatorSet;
     //TODO: move it close to the messages.
-
+    std::map<string, vector<unsigned> > PhraseKeyWordsPositionMap;
 };
 
 }

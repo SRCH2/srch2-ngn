@@ -96,7 +96,7 @@ std::string Analyzer::applyFilters(std::string input){
 }
 
 void Analyzer::tokenizeQuery(const std::string &queryString,
-        std::vector<std::string> &queryKeywords) const {
+        std::vector<TokensInfo> &queryKeywords) const {
     this->analyzerInternal->tokenizeQuery(queryString, queryKeywords);
 }
 
@@ -111,7 +111,7 @@ const AnalyzerType& Analyzer::getAnalyzerType() const {
 
 // TODO: Refactor the function and its arguments. Possibly move to wrapper
 void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
-        std::vector<std::string> &queryKeywords, const char &delimiterCharacter,
+        std::vector<TokensInfo> &queryKeywords, const char &delimiterCharacter,
         const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
         const char &fieldsOrCharacter,
         const std::map<std::string, unsigned> &searchableAttributesNameToId,

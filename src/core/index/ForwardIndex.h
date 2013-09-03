@@ -39,6 +39,7 @@
 #include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/Score.h"
 #include "util/mytime.h"
+#include "util/ULEB128.h"
 
 using std::vector;
 using std::fstream;
@@ -252,6 +253,11 @@ public:
 
     //void mapOldIdsToNewIds();
 
+    // Position Indexes APIs
+    void setPositionIndex(vector<uint8_t>& v);
+    void getKeyWordPostionsInRecordField(unsigned ki, unsigned ai, vector<unsigned>& pl) const;
+    //uint8_t * setPositionIndex() { return positionIndex; }
+
 private:
     friend class boost::serialization::access;
 
@@ -288,6 +294,7 @@ private:
         ar & this->externalRecordId;
         ar & this->inMemoryData;
         ar & this->nonSearchableAttributeValues;
+        ar & this->positionIndex;
     }
 
     // members
@@ -301,6 +308,7 @@ private:
     VariableLengthAttributeContainer nonSearchableAttributeValues;
 
     unsigned* keywordAttributeBitmaps;
+    vector<uint8_t> positionIndex;
 
 };
 
@@ -561,6 +569,10 @@ public:
      * Access the InMemoryData of a record using InternalRecordId
      */
     std::string getInMemoryData(unsigned internalRecordId) const;
+
+    void convertToVarLengthArray(const vector<unsigned>& positionListVector,
+    							 vector<uint8_t>& grandBuffer);
+
 };
 
 }

@@ -170,7 +170,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
         urlParserHelper.searchType = indexDataContainerConf->getSearchType(); //TopK: 0; Advanced: 1
         string sep;
         sep += URLParser::queryDelimiter;
-        vector<string> queryKeywordVector;
+        vector<TokensInfo> queryKeywordVector;
         vector<TermType> termTypeVector;
         vector<string> termBoostsVector;
         vector<string> similarityBoostsVector;
@@ -200,7 +200,11 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 string query=string(keywordsParamName_cstar);
 
                 if(!query.empty() && query.substr(query.length()-1, 1) == " "){
-                    queryKeywordVector.push_back(" ");
+                	TokensInfo t;
+                	t.token = " "; t.position = 0;
+                	// This is a temporary push_back ..it will be removed later..although I think it
+                	// is bad idea to do this logic here. Should be refactored - Surendra
+                    queryKeywordVector.push_back(t);
                 }
                 delete keywordsParamName_cstar;
             }
@@ -280,7 +284,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                     for (unsigned iter = 0; iter < numberOfKeywords - 1; iter++){
                         termTypeVector.push_back(TERM_TYPE_COMPLETE);
                     }
-                    if(queryKeywordVector[numberOfKeywords - 1] != " "){
+                    if(queryKeywordVector[numberOfKeywords - 1].token != " "){
                         if (!indexDataContainerConf->getQueryTermType())
                             //The QueryTermType in the configure file decided the type of the last keyword only.
                             termTypeVector.push_back(TERM_TYPE_PREFIX);
@@ -601,17 +605,17 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
             Term *fuzzyTerm;
 
             if(urlParserHelper.isFuzzy){
-                exactTerm = new Term(queryKeywordVector[i],
+                exactTerm = new Term(queryKeywordVector[i].token,
                         termType,
                         termBoost,
                         similarityBoost,
                         0);
 
-                fuzzyTerm = new Term(queryKeywordVector[i],
+                fuzzyTerm = new Term(queryKeywordVector[i].token,
                         termType,
                         termBoost,
                         similarityBoost,
-                        Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i])));
+                        Term::getNormalizedThreshold(getUtf8StringCharacterNumber(queryKeywordVector[i].token)));
 
                 exactTerm->addAttributeToFilterTermHits(filters[i]);
                 fuzzyTerm->addAttributeToFilterTermHits(filters[i]);
@@ -620,7 +624,7 @@ URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *ana
                 this->fuzzyQuery->add(fuzzyTerm);
 
             }else{
-                exactTerm = new Term(queryKeywordVector[i],
+                exactTerm = new Term(queryKeywordVector[i].token,
                         termType,
                         termBoost,
                         similarityBoost,

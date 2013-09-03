@@ -446,7 +446,8 @@ private:
      * output will be '^4'
      * input will be changed to ~.8
      */
-    bool parseBoostModifier(string &input, string &output);
+    bool parseBoostModifier(string &input, string &output,
+            const bool isPhraseKeyword);
     /*
      * populate boost info
      * Example: '^4'
@@ -456,10 +457,11 @@ private:
      *  with the  lPdefaultBoostLevel value as specified in
      * local Parameters.
      */
-    void populateBoostInfo(bool isParsed, string &input);
+    void populateBoostInfo(bool isParsed, string &input,
+            const bool isPhraseKeyword);
     /*
-     ~* populate boost info
-     * Example: '^.4'
+     * populate fuzzy info
+     * Example: '~.4'
      * if 'isParsed' is 'True', checks if the 'input' contains a 'dot' followed by a number. In this example it contains '.4'.
      * it will populate the keywordFuzzyLevel vector with 4.
      * Incase the input string was just '~', it will populate the keywordFuzzyLevel
@@ -468,12 +470,29 @@ private:
      */
     void populateFuzzyInfo(bool isParsed, string &input);
     /*
+     *populate proximity info
+     * Example: '~4'
+     * if 'isParsed' is 'True', checks if the 'input' contains a number. In this example it contains '4'.
+     * it will populate the keywordFuzzyLevel vector with 4.
+     * Incase the input string was just '~', it will populate the keywordFuzzyLevel
+     *  with the  lPdefaultFuzzyLevel value as specified in
+     * local Parameters.
+     */
+    void populateProximityInfo(bool isParsed, string &input);
+    /*
      * example: input : '~.8 AND Author:gnuth'
      * parses the fuzzy modifier.
      * input will be changed to 'AND Author:gnuth'
      * output will be '~.8'
      */
     bool parseFuzzyModifier(string &input, string &output);
+    /*
+     * example '~8 AND Author:gnuth'
+     * parses the proximity modifier.
+     * input will be changed to 'AND Author:gnuth'
+     * output will be '~8'
+     */
+    bool parseProximityModifier(string &input, string &output);
     /*
      * clears the keyword related parallel vectors if required.
      * Checks if the an entry is present for the following vectors in the parametersInQuery vector.

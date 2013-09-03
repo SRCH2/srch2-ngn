@@ -27,7 +27,9 @@ const string MAIN_QUERY_KEYWORD_REGEX_STRING = "^[^\\*\\^\\~\\s:]+";
 const string MAIN_QUERY_ASTERIC_KEYWORD_REGEX_STRING = "^\\*\\s*";
 const string PREFIX_MODIFIER_REGEX_STRING = "^\\*";
 const string BOOST_MODIFIER_REGEX_STRING = "^\\^\\d*";
+const string PHRASE_BOOST_MODIFIER_REGEX_STRING = "^\\^\\d+";
 const string FUZZE_MODIFIER_REGEX_STRING = "^~(\\.\\d){0,1}";
+const string PROXIMITY_MODIFIER_REGEX_STRING = "^~\\d+";
 const string FQ_FIELD_REGEX_STRING = "^-{0,1}[\\w_]+\\s*:";
 const string COMPLEX_TERM_REGEX_STRING = "^CMPLX\\$";
 

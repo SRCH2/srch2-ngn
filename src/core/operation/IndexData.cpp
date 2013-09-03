@@ -290,19 +290,20 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
             std::string line;
             while ( std::getline(infile, line) )
             {
-                std::vector<std::string> keywords;
+                std::vector<TokensInfo> tokensInfo;
                 //char c = '.';
 //                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                analyzer->tokenizeQuery(line, keywords);
+                analyzer->tokenizeQuery(line, tokensInfo);
 
-                for (std::vector<std::string>::const_iterator kiter = keywords.begin();
-                            kiter != keywords.end();
+                for (std::vector<TokensInfo>::const_iterator kiter = tokensInfo.begin();
+                            kiter != tokensInfo.end();
                             ++kiter)
                 {
                     /// add words to trie
                     unsigned invertedIndexOffset = 0;
                     unsigned keywordId = 0;
-                    keywordId = this->trie->addKeyword(getCharTypeVector(*kiter), invertedIndexOffset);
+                    string keyword = kiter->token;
+                    keywordId = this->trie->addKeyword(getCharTypeVector(keyword), invertedIndexOffset);
                     this->invertedIndex->incrementDummyHitCount(invertedIndexOffset);
                 }
             }

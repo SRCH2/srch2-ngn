@@ -122,7 +122,23 @@ void QueryRewriter::applyAnalyzer() {
             keyword != paramContainer->rawQueryKeywords.end(); ++keyword) {
         // Currently we only get the first token coming out of analyzer chain for each
         // keyword. In future we should handle synonyms TODO
-        string keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
+    	string keywordAfterAnalyzer = "";
+    	if (paramContainer->isPhraseKeywordFlags[keywordIndex]){
+    		std::vector<TokensInfo> analyzedQueryKeywords;
+    		analyzerNotConst.tokenizeQuery(*keyword, analyzedQueryKeywords);
+    		keywordAfterAnalyzer.clear();
+    		vector<unsigned> positionIndexes;
+    		for (int i=0; i < analyzedQueryKeywords.size(); ++i){
+    			if (i)
+    				keywordAfterAnalyzer.append(" ");
+    			keywordAfterAnalyzer.append(analyzedQueryKeywords[i].token);
+    			positionIndexes.push_back(analyzedQueryKeywords[i].position);
+    		}
+    		if (positionIndexes.size() > 0)
+    			paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
+    	}else{
+    		keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
+    	}
         if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
             keywordIndexesToErase.push_back(keywordIndex);
         } else { // just apply the analyzer
@@ -139,6 +155,8 @@ void QueryRewriter::applyAnalyzer() {
     std::vector<std::vector<std::string> > fieldFilter;
     std::vector<srch2is::BooleanOperation> fieldFilterOps;
     std::vector<unsigned> fieldFilterNumbers;
+    std::vector<bool> isPhraseKeywordFlags;
+    std::vector<short> phraseSlops;
     // first keep the rest of keywords so that indexes stay valid (cannot remove and iterate in the same time)
     for (int i = 0; i < paramContainer->rawQueryKeywords.size(); i++) {
         if (std::find(keywordIndexesToErase.begin(), keywordIndexesToErase.end(), i)
@@ -154,6 +172,10 @@ void QueryRewriter::applyAnalyzer() {
                 keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
             }
             fieldFilterNumbers.push_back(paramContainer->fieldFilterNumbers.at(i));
+            if (paramContainer->hasParameterInQuery(IsPhraseKeyword)){
+            	isPhraseKeywordFlags.push_back(paramContainer->isPhraseKeywordFlags.at(i));
+            }
+            phraseSlops.push_back(paramContainer->PhraseSlops.at(i));
         }
     }
     // then copy back
@@ -164,6 +186,8 @@ void QueryRewriter::applyAnalyzer() {
     paramContainer->fieldFilter = fieldFilter;
     paramContainer->fieldFilterOps = fieldFilterOps;
     paramContainer->fieldFilterNumbers = fieldFilterNumbers;
+    paramContainer->isPhraseKeywordFlags = isPhraseKeywordFlags;
+    paramContainer->PhraseSlops = phraseSlops;
 
     if(paramContainer->rawQueryKeywords.size() == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){

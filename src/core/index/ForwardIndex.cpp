@@ -28,11 +28,12 @@
 #include "util/Assert.h"
 
 #include <boost/array.hpp>
-
 using srch2::util::Logger;
 using std::string;
 using std::pair;
 using std::make_pair;
+
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -306,10 +307,10 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
     forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
 
-
     // Add KeywordId List
     for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
         forwardList->setKeywordId(iter, keywordIdList[iter].first);
+        //cout <<  keywordIdList[iter].first << "' : '" << keywordIdList[iter].second.first << "'" << endl;
     }
 
     //Add Score List
@@ -327,24 +328,57 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     if (this->schemaInternal->getPositionIndexType()
             == srch2::instantsearch::FIELDBITINDEX) {
         ForwardList::isAttributeBasedSearch = true;
-        forwardList->setKeywordAttributeBitmaps(
-                new unsigned[keywordListCapacity]);
-
-        for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
-            map<string, TokenAttributeHits>::const_iterator mapIterator =
-                    tokenAttributeHitsMap.find(
-                            keywordIdList[iter].second.first);
-            ASSERT(mapIterator != tokenAttributeHitsMap.end());
-            unsigned bitVector = 0;
-            for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-                    i++) {
-                int attributeId = ((mapIterator->second.attributeList.at(i))
-                        >> 24) - 1;
-                bitVector |= (1 << attributeId);
-            }
-            forwardList->setKeywordAttributeBitmap(iter, bitVector);
-        }
     }
+    forwardList->setKeywordAttributeBitmaps(
+    		new unsigned[keywordListCapacity]);
+
+    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
+    	map<string, TokenAttributeHits>::const_iterator mapIterator =
+    			tokenAttributeHitsMap.find(
+    					keywordIdList[iter].second.first);
+    	ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    	unsigned bitVector = 0;
+    	for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+    			i++) {
+    		int attributeId = ((mapIterator->second.attributeList.at(i))
+    				>> 24) - 1;
+    		bitVector |= (1 << attributeId);
+    	}
+    	forwardList->setKeywordAttributeBitmap(iter, bitVector);
+    }
+
+    // Add position indexes in forward list
+    typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
+    vector<uint8_t> grandBuffer;
+    // To avoid frequent resizing, reserve space for vector
+    grandBuffer.reserve(keywordIdList.size() * 50);
+
+    for (unsigned int i = 0; i < keywordIdList.size(); ++i) {
+    	 string keyWord = keywordIdList[i].second.first;
+    	 TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyWord);
+    	 ASSERT(iterator != tokenAttributeHitsMap.end());
+    	 unsigned prevAttributeId = 0;
+		 vector<unsigned> positionListVector;
+		 for (unsigned i = 0; i < iterator->second.attributeList.size(); ++i)
+		 {
+			 unsigned attributeId = (iterator->second.attributeList[i] >> 24) - 1; // 0th based
+			 unsigned position =  (iterator->second.attributeList[i] & 0xFFFFFF);  // Non Zero
+
+			 // create position list for the token in a given attribute
+			 if (i == 0 || prevAttributeId == attributeId) {
+				 positionListVector.push_back(position);
+			 } else {
+				 convertToVarLengthArray(positionListVector, grandBuffer);
+				 positionListVector.clear();
+				 positionListVector.push_back(position);
+			 }
+			 prevAttributeId = attributeId;
+		 }
+		 // convert the remaining
+		 convertToVarLengthArray(positionListVector, grandBuffer);
+		 positionListVector.clear();
+    }
+    forwardList->setPositionIndex(grandBuffer);
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
@@ -352,6 +386,23 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 
     this->mergeRequired = true;
+}
+
+void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListVector,
+										   vector<uint8_t>& grandBuffer) {
+
+	uint8_t * buffer = 0;
+	unsigned size = ULEB128::uInt32VectorToVarLenArray(positionListVector, &buffer);
+	uint8_t vlb[4];
+	short len;
+	ULEB128::uInt32ToVarLengthBytes(size , vlb, &len);
+	for (int k =0; k < len; ++k)
+		grandBuffer.push_back(vlb[k]);
+	for (int k =0; k < size; ++k)
+		grandBuffer.push_back(buffer[k]);
+
+	if (buffer)
+		free(buffer);
 }
 
 // TODO check if this is still useful
@@ -785,6 +836,82 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      return returnValue;
      */
 }
+
+void ForwardList::setPositionIndex(vector<uint8_t>& v){
+	positionIndex = v;
+	ASSERT(positionIndex.size() == positionIndex.capacity());
+}
+unsigned getBitSet(unsigned v);
+unsigned getBitSetPositionOfAttr(unsigned v, unsigned c);
+
+void ForwardList::getKeyWordPostionsInRecordField(unsigned keyId, unsigned attributeId, vector<unsigned>& pl) const{
+
+	// plain linear scan
+	unsigned i = 0;
+	for (i = 0; i < numberOfKeywords; ++i) {
+		if (keywordIds[i] == keyId) {
+			break;
+		}
+	}
+	if ( i == numberOfKeywords)
+		return;
+	unsigned keyOffset = i;
+	unsigned currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
+	if ((currKeyattributeBitMap & (1 << attributeId)) == 0)
+		return;
+
+	const uint8_t * piPtr = &positionIndex[0];
+	unsigned offset = 0;
+
+	// get the correct byte array position for current keyword + attribute combination
+	unsigned j;
+	for (j = 0; j < keyOffset ; ++j) {
+		currKeyattributeBitMap = keywordAttributeBitmaps[j];
+		unsigned cnt = getBitSet(currKeyattributeBitMap);
+		for (unsigned k = 0; k < cnt; ++k){
+			unsigned value;
+			short byteRead;
+			ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
+			offset += byteRead + value;
+		}
+	}
+	currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
+	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
+	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
+
+	ASSERT(totalBitSet >= attrBitPosition);
+	for (int i = 0; i < totalBitSet; ++i){
+		unsigned value;
+		short byteRead;
+		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
+		if (i == attrBitPosition - 1){
+			ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + offset + byteRead), value, pl);
+			break;
+		}else {
+			offset += byteRead + value;
+		}
+	}
+}
+unsigned getBitSet(unsigned v) {
+	unsigned int c; // c accumulates the total bits set in v
+	for (c = 0; v; c++)
+	{
+	  v &= v - 1; // clear the least significant bit set
+	}
+	return c;
+}
+
+unsigned getBitSetPositionOfAttr(unsigned v, unsigned c) {
+	unsigned shift = 0;
+	unsigned cnt = 1;
+	while(shift < c) {
+		if ((v & (1 << shift)) == 1)
+			++cnt;
+		++shift;
+	}
+	return cnt;
+}
+
 
 /**********************************************/
 std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {

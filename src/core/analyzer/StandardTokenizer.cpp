@@ -22,6 +22,7 @@ bool StandardTokenizer::incrementToken() {
         ///check whether the scanning is over.
         if ((tokenStreamContainer->offset)
                 >= (tokenStreamContainer->completeCharVector).size()) {
+        	tokenStreamContainer->currentTokenPosition++;
             return (tokenStreamContainer->currentToken).empty() ?
                     false : true;
         }
@@ -42,6 +43,7 @@ bool StandardTokenizer::incrementToken() {
         switch (currentCharacterType) {
         case CharSet::DELIMITER_TYPE:
             if (!(tokenStreamContainer->currentToken).empty()) {
+            	tokenStreamContainer->currentTokenPosition++;
                 return true;
             }
             break;
@@ -54,6 +56,7 @@ bool StandardTokenizer::incrementToken() {
                 if (!(tokenStreamContainer->currentToken).empty()) //if the currentToken is not null, we need produce the token
                 {
                     (tokenStreamContainer->offset)--;
+                    tokenStreamContainer->currentTokenPosition++;
                     return (!(tokenStreamContainer->currentToken).empty()) ?
                             true : false;
                 } else
@@ -66,6 +69,7 @@ bool StandardTokenizer::incrementToken() {
             } else {
                 (tokenStreamContainer->currentToken).push_back(currentChar);
             }
+            tokenStreamContainer->currentTokenPosition++;
             return (!(tokenStreamContainer->currentToken).empty()) ?
                     true : false;
         }

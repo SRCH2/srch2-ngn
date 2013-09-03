@@ -39,6 +39,7 @@ typedef enum {
     KeywordBoostLevel,
     FieldFilter,
     QueryPrefixCompleteFlag,
+    IsPhraseKeyword,
     IsDebugEnabled,
     ReponseAttributesList,
     ResultsStartOffset,

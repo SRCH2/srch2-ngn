@@ -959,26 +959,16 @@ bool QueryParser::termParser(string &input) {
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    Logger::info("inside keyword parser.");
+    Logger::info("inside term parser.");
     Logger::debug("input received is %s", input.c_str());
     /*
      *
      */
-    if (input.length() == 0) { // check if the keyword starts with a quote
+    if (input.length() == 0) {
         Logger::info("PARSE ERROR, returning from  keywordParser.");
         this->container->messages.push_back(
                 make_pair(MessageError,
                         "Parse error, expecting keyword, not found "));
-        this->isParsedError = true;
-        return false;
-    }
-    if (input.at(0) == '\"') {
-        // we do not support phrase search as of now
-        Logger::info(
-                "PARSE ERROR, unexpected character \" found at the begining of the keyword.");
-        this->container->messages.push_back(
-                make_pair(MessageError,
-                        "Parse error, unexpected character \" found at the begining of the keyword."));
         this->isParsedError = true;
         return false;
     }
@@ -993,18 +983,62 @@ bool QueryParser::termParser(string &input) {
         // in this case, we will populate the field using the localParameter values.
         // the execution can come here also if the field syntax provided is not correct.
         // the error will be catched later
+        Logger::debug(
+                "no fieldFilter present in query, looking into localparameter for field filter");
         this->populateFieldFilterUsingLp();
     } else {
+
         // field is found. this can happen in the case 'Author:gnuth', here 'Author:' is the field
         // populate the field
         // remove the trailing :
         field = field.substr(0, field.length() - 1); // field is now 'Author' earlier it was 'Author:'
+        Logger::debug("field filter found %s ", field.c_str());
         // populate the container's fieldFilter Vector using this field
         this->populateFieldFilterUsingQueryFields(field);
     }
     // now get the keyword part of the term
-    string keywordStr = "";
-    hasParsedParameter = parseKeyword(input, keywordStr);
+    /*
+     * but first check if it can be a phrase search.
+     *
+     */
+    string keywordStr = ""; // this will store the parsed keyword.
+    bool isPhraseKeyword = false;
+    if (input.at(0) == '"') {  // check if the keyword starts with a quote
+        /* see if there is another '"'
+         * true: remove the leading and trailing '"'
+         *      mark a flag for phrase search.
+         * false:
+         *      raise an error.
+         */
+        Logger::debug("can be  a possible phrase search");
+        input = input.substr(1); // remove the leading '"'
+        // find the occurence of '"' and get the position.
+        // check if input ends with '"'
+        size_t found = input.find('"');
+        if (found != string::npos) {
+            Logger::debug("\" found at position %d in the input string %s",
+                    found, input.c_str());
+            // get the keywrod string till this position
+            keywordStr = input.substr(0, found);
+            // modify the input string
+            input = input.substr(found + 1); // +1 to remove the '"'
+            // set the isPhraseVector for this keyword
+            isPhraseKeyword = true;
+            hasParsedParameter = true; // signifies we have parsed the keyword
+            this->setInQueryParametersIfNotSet(IsPhraseKeyword);
+        } else {
+            // raise error.
+            this->container->messages.push_back(
+                    make_pair(MessageError,
+                            "Parse error, single quote found while parsing q for keyword"));
+            this->isParsedError = true;
+            return false;
+        }
+
+    } else {
+        hasParsedParameter = parseKeyword(input, keywordStr); // keywordStr will contain the parsed keyword, input will be modified
+    }
+    this->container->isPhraseKeywordFlags.push_back(isPhraseKeyword);
     if (hasParsedParameter) {
         // keyword obtained, get modifiers, keywordStr is 'gnuth'
         // populate the rawKeyword vector in container
@@ -1027,30 +1061,42 @@ bool QueryParser::termParser(string &input) {
             return false;
         }
     }
-    // check for prefix modifier, i.e. '*
-    string prefixModifier = "";
-    hasParsedParameter = parsePrefixModifier(input, prefixModifier);
-    if (hasParsedParameter) {
-        this->setInQueryParametersIfNotSet(QueryPrefixCompleteFlag);
-        // '*' is present
-        Logger::debug("prefix modifier used in query");
-        this->container->keywordPrefixComplete.push_back(
-                srch2::instantsearch::TERM_TYPE_PREFIX); // use the lp variable value
-    } else {
-        // use the fallback specified in localparameters.
-        this->container->keywordPrefixComplete.push_back(
-                this->lpKeywordPrefixComplete);
+    if (!isPhraseKeyword) {
+        // not a pharse keyword, check if prefix modifier is persent.
+        // check for prefix modifier, i.e. '*
+        string prefixModifier = "";
+        hasParsedParameter = parsePrefixModifier(input, prefixModifier);
+        if (hasParsedParameter) {
+            this->setInQueryParametersIfNotSet(QueryPrefixCompleteFlag);
+            // '*' is present
+            Logger::debug("prefix modifier used in query");
+            this->container->keywordPrefixComplete.push_back(
+                    srch2::instantsearch::TERM_TYPE_PREFIX); // use the lp variable value
+        } else {
+            // use the fallback specified in localparameters.
+            this->container->keywordPrefixComplete.push_back(
+                    this->lpKeywordPrefixComplete);
+        }
     }
     // check for boost modifier, i.e. '^'
     string boostModifier = "";
-    hasParsedParameter = parseBoostModifier(input, boostModifier);
-    this->populateBoostInfo(hasParsedParameter, boostModifier);
+    hasParsedParameter = parseBoostModifier(input, boostModifier,
+            isPhraseKeyword);
+    this->populateBoostInfo(hasParsedParameter, boostModifier, isPhraseKeyword);
     // check for fuzzy modifier. i.e. '~'
     string fuzzyModifier = "";
-    hasParsedParameter = parseFuzzyModifier(input, fuzzyModifier);
-    this->populateFuzzyInfo(hasParsedParameter, fuzzyModifier);
-    Logger::info("returning from  keywordParser.");
+    if (!isPhraseKeyword) {
+        hasParsedParameter = parseFuzzyModifier(input, fuzzyModifier);
+        this->populateFuzzyInfo(hasParsedParameter, fuzzyModifier);
+        this->container->PhraseSlops.push_back(0); // no slop for non phrase keywords
+    } else {
+        hasParsedParameter = parseProximityModifier(input, fuzzyModifier);
+        this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
+        this->container->keywordFuzzyLevel.push_back(0.0f);
+    }
+    Logger::info("returning from  termParser.");
     return true;
+
 }
 
 void QueryParser::populateTermBooleanOperator(const string &termOperator) {
@@ -1253,7 +1299,7 @@ void QueryParser::extractSearchType() {
      *  set the parametersInQuery.
      *
      */
-    // if serachType mentioned in queryParameter use that.
+// if serachType mentioned in queryParameter use that.
     const string geoType = "geo";
     const string getAllType = "getAll";
     const string topKType = "topK";
@@ -1267,7 +1313,7 @@ void QueryParser::extractSearchType() {
         size_t st;
         searchType = evhttp_uridecode(searchTypeTmp, 0, &st);
     }
-    // else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
+// else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
     Logger::debug("inside extractSearchType, checking for geo parameter");
     const char * leftBottomLatTemp = evhttp_find_header(&headers,
             QueryParser::leftBottomLatParamName);
@@ -1506,7 +1552,7 @@ void QueryParser::setFuzzyLevelInContainer(const float f) {
      *            else -> set 0.0 as fuzzylevel
      */
     Logger::debug("inside setFuzzyLevelInContainer");
-    // this is set, fuzzyFlag came from  query parameter.
+// this is set, fuzzyFlag came from  query parameter.
     if (this->container->isFuzzy) {
         // use the fuzzylevel provided with keyword
         this->container->keywordFuzzyLevel.push_back(f);
@@ -1562,31 +1608,47 @@ bool QueryParser::parsePrefixModifier(string &input, string &output) {
     boost::regex re(PREFIX_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
-bool QueryParser::parseBoostModifier(string &input, string &output) {
-    boost::regex re(BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
-    return doParse(input, re, output);
+bool QueryParser::parseBoostModifier(string &input, string &output,
+        const bool isPhraseKeyword) {
+    bool hasParsed = false;
+    if (isPhraseKeyword) {
+        boost::regex re(PHRASE_BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        hasParsed = doParse(input, re, output);
+    } else {
+        boost::regex re(BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+        hasParsed = doParse(input, re, output);
+    }
+    return hasParsed;
 }
-void QueryParser::populateBoostInfo(bool isParsed, string &input) {
+void QueryParser::populateBoostInfo(bool isParsed, string &input,
+        const bool isPhraseKeyword) {
     if (isParsed) {
-        Logger::debug("boost modifier used in query");
-        boost::smatch matches;
         this->setInQueryParametersIfNotSet(KeywordBoostLevel);
-        this->checkForBoostNums(input, matches); // check if boost value is present
-        if (matches[0].matched) {
-            // get the boost value;
+        Logger::debug("boost modifier used in query");
+        boost::smatch numMatches;
+        if (isPhraseKeyword) {
             Logger::debug("boost value is specified, extracting it.");
-            boost::smatch numMatches;
-            this->extractNumbers(matches[0].str(), numMatches);
-            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
-            Logger::debug("boost value is %d", boostNum);
-            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
+            this->extractNumbers(input, numMatches);
         } else {
-            // there is no value specified
-            Logger::debug(
-                    "boost value is not specified, using the lp value or -1");
-            this->container->keywordBoostLevel.push_back(
-                    this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
+            boost::smatch matches;
+            this->checkForBoostNums(input, matches); // check if boost value is present eg. '^4'
+            if (matches[0].matched) {
+                // get the boost value;
+                Logger::debug("boost value is specified, extracting it.");
+                this->extractNumbers(matches[0].str(), numMatches); // extract '4' from '^4'
+            } else {
+                // there is no value specified
+                Logger::debug(
+                        "boost value is not specified, using the lp value or -1");
+                this->container->keywordBoostLevel.push_back(
+                        this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
+                return;
+            }
         }
+        // if execution reaches here, no need to check 'numMatches[0].matches' condition.
+        unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
+        Logger::debug("boost value is %d", boostNum);
+        this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
     } else {
         Logger::debug("boost value is not specified, using the lp value or -1");
         this->container->keywordBoostLevel.push_back(this->lpKeywordBoostLevel); // selts the localParameter specified value
@@ -1596,12 +1658,16 @@ bool QueryParser::parseFuzzyModifier(string &input, string &output) {
     boost::regex re(FUZZE_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
+bool QueryParser::parseProximityModifier(string &input, string &output) {
+    boost::regex re(PROXIMITY_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
+}
 void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     if (isParsed) {
         Logger::debug("fuzzy modifier used in query");
         this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
         boost::smatch matches;
-        this->checkForFuzzyNums(input, matches); // check if boost value is present
+        this->checkForFuzzyNums(input, matches); // check if fuzzy value is present
         if (matches[0].matched) {
             // get the fuzzy value;
             Logger::debug("fuzzy value is specified extracting it");
@@ -1622,6 +1688,22 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     }
 }
 
+void QueryParser::populateProximityInfo(bool isParsed, string &input) {
+    if (isParsed) {
+        Logger::debug("Proximity slop used in query");
+        //this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
+        // get the fuzzy value;
+        Logger::debug("fuzzy value is specified extracting it");
+        boost::smatch numMatches;
+        this->extractNumbers(input, numMatches);
+        unsigned proximityNum = atoi(numMatches[0].str().c_str()); // convert to float
+        Logger::debug("proximity value is %d", proximityNum);
+        this->container->PhraseSlops.push_back(proximityNum);
+    } else {
+    	this->container->PhraseSlops.push_back(0);
+    }
+}
+
 void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
     Logger::debug("inside clearMainQueryParallelVectorsIfNeeded().");
     if (this->container->hasParameterInQuery(KeywordFuzzyLevel)) {
@@ -1631,22 +1713,27 @@ void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
         this->container->keywordFuzzyLevel.clear();
         Logger::debug("keywordFuzzyLevel paralel vector cleared.");
     }
-    // check if KeywordBoostLevel was set
+// check if KeywordBoostLevel was set
     if (!this->container->hasParameterInQuery(KeywordBoostLevel)) {
         this->container->keywordBoostLevel.clear(); // clear the boost level vector.
         Logger::debug("keywordBoostLevel paralel vector cleared.");
     }
-    // check if QueryPrefixCompleteFlag was set
+// check if QueryPrefixCompleteFlag was set
     if (!this->container->hasParameterInQuery(QueryPrefixCompleteFlag)) {
         this->container->keywordPrefixComplete.clear();
         Logger::debug("keywordPrefixComplete paralel vector cleared.");
     }
-    // cehck if FieldFilter was set
+// cehck if FieldFilter was set
     if (!this->container->hasParameterInQuery(FieldFilter)) {
         // clear filedFilter vector and filedFilterOps vector
         this->container->fieldFilter.clear();
         this->container->fieldFilterOps.clear();
         Logger::debug("fieldFilter and fieldFilterOps paralel vector cleared.");
+    }
+    // check if QueryPrefixCompleteFlag was set
+    if (!this->container->hasParameterInQuery(IsPhraseKeyword)) {
+        this->container->isPhraseKeywordFlags.clear();
+        Logger::debug("isPhraseKeyword paralel vector cleared.");
     }
     Logger::debug("returning from clearMainQueryParallelVectorsIfNeeded().");
 }
