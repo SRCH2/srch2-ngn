@@ -37,7 +37,6 @@ namespace srch2
 {
 namespace instantsearch
 {
-
 void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList)
 {
 	// sort this inverted list only if the flag is true.
@@ -45,13 +44,13 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
 	if (needToSortEachInvertedList) {
 		vectorview<unsigned>* &writeView = this->invList->getWriteView();
 
-		vector<InvertedListElement> elem(writeView->size());
+		vector<InvertedListIdAndScore> elem(writeView->size());
 		for(unsigned i = 0; i< writeView->size(); i++)
 		{
 			elem[i].recordId = writeView->getElement(i);
-			elem[i].positionIndexOffset = forwardIndex->getKeywordOffset(elem[i].recordId, keywordId);
+			elem[i].score = forwardIndex->getTermRecordStaticScore(elem[i].recordId, forwardIndex->getKeywordOffset(elem[i].recordId, keywordId));
 		}
-		std::sort(elem.begin(), elem.end(), InvertedListContainer::InvertedListElementGreaterThan(forwardIndex));
+		std::sort(elem.begin(), elem.end(), InvertedListContainer::InvertedListElementGreaterThan());
 
 		for(unsigned i = 0; i< writeView->size(); i++)
 		{
@@ -71,17 +70,17 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 	vectorview<unsigned>* &writeView = this->invList->getWriteView();
 
 	unsigned writeViewListSize = writeView->size();
-	vector<InvertedListElement> elem(writeView->size());
+	vector<InvertedListIdAndScore> elem(writeView->size());
 
 	for(unsigned i = 0; i< writeView->size(); i++)
 	{
 		elem[i].recordId = writeView->getElement(i);
-		elem[i].positionIndexOffset = forwardIndex->getKeywordOffset(elem[i].recordId, keywordId);
+		elem[i].score = forwardIndex->getTermRecordStaticScore(elem[i].recordId, forwardIndex->getKeywordOffset(elem[i].recordId, keywordId));
 	}
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
 
-	std::sort(elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex) );
+	std::sort(elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
 	// if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
 	// In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
 	if(readView.get() == writeView){
@@ -89,7 +88,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 	    return;
 	}
 
-	std::inplace_merge (elem.begin(), elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan(forwardIndex));
+	std::inplace_merge (elem.begin(), elem.begin() + readViewListSize, elem.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
 
 	// If the read view and write view are sharing the same array, we have to separate the write view from the read view.
 	if(writeView->getArray() == readView->getArray())

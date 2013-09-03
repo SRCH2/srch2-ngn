@@ -60,19 +60,15 @@ private:
     class InvertedListElementGreaterThan
     {
     private:
-        const ForwardIndex* forwardIndex;
     public:
-        InvertedListElementGreaterThan(const ForwardIndex* forwardIndex) {
-            this->forwardIndex = forwardIndex;
+        InvertedListElementGreaterThan() {
         }
 
         // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
-        bool operator() (const InvertedListElement &lhs, const InvertedListElement &rhs) const
+        bool operator() (const InvertedListIdAndScore &lhs, const InvertedListIdAndScore &rhs) const
         {
-            float leftRecordScore  = this->forwardIndex->getTermRecordStaticScore(lhs.recordId, lhs.positionIndexOffset);
-            float rightRecordScore = this->forwardIndex->getTermRecordStaticScore(rhs.recordId, rhs.positionIndexOffset);
-            return DefaultTopKRanker::compareRecordsGreaterThan(leftRecordScore,  lhs.recordId,
-                                                                rightRecordScore, rhs.recordId);
+            return DefaultTopKRanker::compareRecordsGreaterThan(lhs.score,  lhs.recordId,
+                    rhs.score, rhs.recordId);
         }
     };
 

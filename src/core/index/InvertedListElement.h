@@ -50,5 +50,10 @@ struct InvertedListElement {
     }
 
 };
+struct InvertedListIdAndScore {
+    unsigned recordId;
+    unsigned score;
+};
+
 }}
 #endif /* INVERTED_LIST_ELEMENT_H */
