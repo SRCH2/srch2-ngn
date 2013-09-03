@@ -137,7 +137,7 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
                 lowerBounds.push_back(lowerBoundToAdd); // data of normal categories
                 lowerBoundToAdd = lowerBoundToAdd + gap;
             }
-            lowerBounds.push_back(lowerBoundToAdd); // to collect data greater than end
+            lowerBounds.push_back(end); // to collect data greater than end
             break;
         default:
         	ASSERT(false);
