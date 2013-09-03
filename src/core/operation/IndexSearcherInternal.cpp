@@ -176,6 +176,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                 //unsigned sumOfEditDistances = std::accumulate(queryResultEditDistances.begin(), 
                 //                          queryResultEditDistances.end(), 0);
 				queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
+                //We compute the score for this query result here. This score will be used later to sort the results.
                 //    query->getRanker()->computeResultScoreUsingAttributeScore(query, recordScore, 
                 //                                  sumOfEditDistances, 
                 //                                  queryTermsLength);
