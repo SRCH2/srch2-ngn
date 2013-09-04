@@ -44,6 +44,7 @@ class TermVirtualList;
 QueryResultsInternal::QueryResultsInternal() {
     Logger::info("Query Results internal created.");
     this->virtualListVector = NULL;
+    this->stat = NULL;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
@@ -112,7 +113,9 @@ QueryResultsInternal::~QueryResultsInternal() {
         nextKResultsHeap.pop();
     }
 
-    delete this->stat;
+    if(this->stat != NULL){
+		delete this->stat;
+    }
 }
 
 void QueryResultsInternal::setNextK(const unsigned k) {
