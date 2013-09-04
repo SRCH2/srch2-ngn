@@ -4,10 +4,10 @@ relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,7.0|0.002,1.0|0.0
 relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,2.0|0.0015,7.0|0.002,1.0|0.0025,5.0|0.003,0.0|
 relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,0.0|0.002,1.0|0.0025,5.0|0.003,0.0|
 relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,0.0|0.002,1.0|0.0025,5.0|0.003,0.0|
-relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,1.0|0.002,0.0|0.0025,0.0|0.003,0.0|
-relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,2.0|0.0015,7.0|0.002,1.0|0.0025,5.0|0.003,0.0|
-relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,1.0|0.002,0.0|0.0025,0.0|0.003,0.0|
+relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,0.0|0.002,0.0|0.0025,0.0|0.003,0.0|
+relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,2.0|0.0015,7.0|0.002,1.0|0.0025,5.0|0.0026,0.0|
 relevance||lessThanStart,0.0|0,0.0|0.0004,0.0|0.0008,0.0|0.0012,1.0|0.0016,0.0|0.0020,2.0|0.0024,0.0|0.0028,0.0|0.003,0.0|
+relevance||lessThanStart,0.0|0,0.0|0.0005,0.0|0.001,0.0|0.0015,1.0|0.002,0.0|0.0025,0.0|0.003,0.0|
 primary_category||_location_citytown,3.0|
 primary_category||_american_football_football_player,1.0|_category_common_topic,2.0|_en_anthropologist,1.0|_en_composer,1.0|_en_journalist,1.0|_geography_river,1.0|_location_citytown,3.0|_music_artist,2.0|_music_musical_group,1.0|_olympics_olympic_athlete,1.0|_tv_tv_director,1.0|
 primary_category||_olympics_olympic_athlete,1.0|_people_deceased_person,1.0|
@@ -27,4 +27,4 @@ primary_category||_american_football_football_player,1.0|_category_common_topic,
 primary_category||_american_football_football_player,1.0|_category_common_topic,2.0|_en_anthropologist,1.0|_en_composer,1.0|_en_journalist,1.0|_geography_river,1.0|_location_citytown,3.0|_music_artist,2.0|_music_musical_group,1.0|_olympics_olympic_athlete,1.0|_tv_tv_director,1.0|
 primary_category||_music_artist,1.0|
 primary_category||_music_artist,1.0|
-primary_category||_location_citytown,3.0|
+primary_category||_music_artist,1.0|

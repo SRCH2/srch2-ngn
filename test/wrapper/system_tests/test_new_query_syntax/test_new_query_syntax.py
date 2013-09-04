@@ -45,7 +45,6 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         print  query+' test pass'
     else:
         print  query+' test failed'
-    print '------------------------------------------------------------------'
 
 def checkFacetResults(query, responseJson, facetResultValue):
    for i in range(0,len(responseJson)):
@@ -109,6 +108,8 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         #check the result
         checkResult(query, response_json, resultValue, facetResultValue[j])
         j=j+1
+        print j
+        print '------------------------------------------------------------------'
     try:
         s = commands.getoutput('ps aux | grep srch2-search-server')
         stat = s.split()
