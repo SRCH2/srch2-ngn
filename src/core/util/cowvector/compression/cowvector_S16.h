@@ -5,7 +5,7 @@
 
 #include "S16.h"
 #include "util/cowvector/cowvector.h"
-#include "index/InvertedListElement.h"
+#include "index/InvertedIndex.h"
 #include <vector>
 
 using namespace std;

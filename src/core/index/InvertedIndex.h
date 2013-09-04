@@ -29,8 +29,6 @@
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "util/RankerExpression.h"
-#include "index/InvertedListElement.h"
-#include "util/cowvector/compression/cowvector_S16.h"
 
 #include <fstream>
 #include <algorithm>
@@ -52,6 +50,44 @@ namespace srch2
 {
 namespace instantsearch
 {
+
+struct InvertedListElement {
+    unsigned recordId;
+    unsigned positionIndexOffset;
+
+    InvertedListElement(): recordId(0), positionIndexOffset(0) {};
+    InvertedListElement(unsigned _recordId, unsigned _positionIndexOffset): recordId(_recordId), positionIndexOffset(_positionIndexOffset) {};
+    InvertedListElement(const InvertedListElement &invertedlistElement)
+    {
+        if(this != &invertedlistElement)
+        {
+            this->recordId = invertedlistElement.recordId;
+            this->positionIndexOffset = invertedlistElement.positionIndexOffset;
+        }
+    }
+    InvertedListElement& operator=(const InvertedListElement &invertedlistElement)
+    {
+        if(this != &invertedlistElement)
+        {
+            this->recordId = invertedlistElement.recordId;
+            this->positionIndexOffset = invertedlistElement.positionIndexOffset;
+        }
+        return *this;
+    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & recordId;
+        ar & positionIndexOffset;
+    }
+};
+
+struct InvertedListIdAndScore {
+    unsigned recordId;
+    unsigned score;
+};
+
 
 class InvertedListContainer
 {
