@@ -87,6 +87,13 @@ typedef enum {
 } DataSourceType;
 
 
+enum DateTimeType{
+    DateTimeTypeNow,
+    DateTimeTypePointOfTime,
+    DateTimeTypeDurationOfTime
+};
+
+
 }
 
 }

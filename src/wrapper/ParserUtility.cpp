@@ -78,12 +78,6 @@ bool isTime(const std::string & s) {
     return (*p == 0);
 }
 
-time_t convertPtimeToTimeT(boost::posix_time::ptime t) {
-    static boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-    return (t - epoch).ticks()
-            / boost::posix_time::time_duration::ticks_per_second();
-}
-
 // convert other types to string
 template<class T>
 string convertToStr(T value) {
@@ -93,30 +87,6 @@ string convertToStr(T value) {
     return o.str();
 }
 
-std::string convertTimeFormatToLong(std::string & timeString) {
-    std::string stringValue = "";
-    for (size_t i = 0; i < localeFormats; ++i) {
-        std::istringstream ss(timeString);
-        ss.imbue(localeInputs[i]);
-        boost::posix_time::ptime this_time;
-        ss >> this_time;
-
-        if (this_time != boost::posix_time::not_a_date_time) {
-            time_t value = srch2::httpwrapper::convertPtimeToTimeT(this_time);
-            long valueLong = value;
-            std::ostringstream o;
-            o << valueLong;
-            stringValue = o.str();
-        }
-
-    }
-    return stringValue;
-
-}
-std::string convertLongToTimeFormat(std::string & timeLong) {
-    static boost::posix_time::ptime empch;
-    return "";
-}
 void custom_evhttp_find_headers(const struct evkeyvalq *headers,
         const char *key, vector<string> &values) {
     struct evkeyval *header;
