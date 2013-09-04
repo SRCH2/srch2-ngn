@@ -113,6 +113,11 @@ private:
 	//string httpServerDocumentRoot;
     string configFile;
 
+	string mongoHost;
+	string mongoPort;
+	string mongoDbName;
+	string mongoCollection;
+
 public:
     ConfigManager(std::string& configfile);
 	virtual ~ConfigManager();
@@ -217,6 +222,21 @@ public:
 	const vector<string> * getFacetGaps() const ;
 
         void loadConfigFile() ;
+
+    // Mongo related getter/setter
+    const string& getMongoDbName() const{
+    	return mongoDbName;
+    }
+    const string& getMongoCollection () const{
+    	return mongoCollection;
+    }
+    const string& getMongoServerHost() const{
+    	return mongoHost;
+    }
+    const string& getMongoServerPort() const{
+    	return mongoPort;
+    }
+
 };
 
 }

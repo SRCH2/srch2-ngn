@@ -33,7 +33,7 @@ void ConfigManager::loadConfigFile(){
     //("customer-name", po::value<string>(), "customer name") // REQUIRED
     ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
     ("index-type", po::value<int>(), "index-type") // REQUIRED
-    ("data-source-type", po::value<bool>(), "Data source type")
+    ("data-source-type", po::value<int>(), "Data source type")
 
     ("kafka-consumer-topicname", po::value<string>(),"Kafka consumer topic name") // REQUIRED
     ("kafka-broker-hostname", po::value<string>(), "Hostname of Kafka broker") // REQUIRED
@@ -117,7 +117,11 @@ void ConfigManager::loadConfigFile(){
     ("synonym-filter-file-path",po::value<string>(), "Synonym Filter file path or IGNORE")
     ("default-synonym-keep-origin-flag", po::value<int>(),"Synonym keep origin word or not")
     ("stemmer-file",po::value<string>(), "Stemmer File")
-    ("install-directory",po::value<string>(), "Install Directory");
+    ("install-directory",po::value<string>(), "Install Directory")
+    ("mongo-host", po::value<string>(), "Mongo Host")
+    ("mongo-port", po::value<string>(), "Mongo port")
+    ("mongo-db-name", po::value<string>(), "Mongo Db name")
+    ("mongo-db-collection", po::value<string>(), "Mongo collection");
 
     fstream fs(configFile.c_str(), fstream::in);
      po::variables_map vm_config_file;
@@ -650,9 +654,22 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     }
 
     if (vm.count("data-source-type")) {
-        dataSourceType =
-                vm["data-source-type"].as<bool>() == 1 ?
-                        FILEBOOTSTRAP_TRUE : FILEBOOTSTRAP_FALSE;
+        int dataSource = vm["data-source-type"].as<int>();
+        switch(dataSource)
+        {
+        case 0:
+        	this->dataSourceType = FILEBOOTSTRAP_FALSE;
+            break;
+        case 1:
+        	this->dataSourceType = FILEBOOTSTRAP_TRUE;
+        	break;
+        case 2:
+        	this->dataSourceType = MONGOBOOTSTRAP;
+        	break;
+        default:
+        	this->dataSourceType = FILEBOOTSTRAP_FALSE;
+        	break;
+        }
         if (dataSourceType == FILEBOOTSTRAP_TRUE) {
             if (vm.count("data-file-path")) {
                 filePath = vm["data-file-path"].as<string>();
@@ -966,6 +983,18 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     if (not (this->writeReadBufferInBytes > 4194304
             && this->writeReadBufferInBytes < 65536000)) {
         this->writeReadBufferInBytes = 4194304;
+    }
+    if (vm.count("mongo-host")) {
+    	mongoHost = vm["mongo-host"].as<string>();
+    }
+    if (vm.count("mongo-port")) {
+    	mongoPort = vm["mongo-port"].as<string>();
+    }
+    if (vm.count("mongo-db-name")) {
+    	mongoDbName = vm["mongo-db-name"].as<string>();
+    }
+    if (vm.count("mongo-db-collection")) {
+    	mongoCollection = vm["mongo-db-collection"].as<string>();
     }
 }
 

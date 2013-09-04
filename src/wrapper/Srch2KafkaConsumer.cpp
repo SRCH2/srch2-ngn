@@ -6,6 +6,7 @@
 #include "util/Logger.h"
 #include "util/FileOps.h"
 #include "index/IndexUtil.h"
+#include "MongodbAdapter.h"
 
 using namespace srch2::instantsearch;
 namespace srch2is = srch2::instantsearch;
@@ -82,6 +83,13 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
                     Logger::console("Creating an index from JSON file...");
 					DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
 					this->offset = this->indexer->getKafkaOffsetFromIndexSnapShot();
+					break;
+				}
+				case srch2http::MONGOBOOTSTRAP:
+				{
+					Logger::console("Creating an index from MongoDb instance...");
+					MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+					MongoDataSource::spawnUpdateListener(indexDataContainerConf);
 					break;
 				}
 				default:

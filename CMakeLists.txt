@@ -162,7 +162,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     ENDIF()
 					
     SET(Boost_USE_MULTITHREAD ON)
-    FIND_PACKAGE( Boost COMPONENTS serialization program_options regex system thread REQUIRED )
+    FIND_PACKAGE( Boost COMPONENTS serialization program_options regex system thread filesystem REQUIRED )
     
     MESSAGE(STATUS "Boost_VERSION=" ${Boost_VERSION})
     MESSAGE(STATUS "Boost_LIBRARIES=" ${Boost_LIBRARIES})

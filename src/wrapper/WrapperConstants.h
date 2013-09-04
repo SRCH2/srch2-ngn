@@ -83,7 +83,8 @@ typedef enum {
 
 typedef enum {
 	FILEBOOTSTRAP_FALSE ,
-	FILEBOOTSTRAP_TRUE
+	FILEBOOTSTRAP_TRUE,
+	MONGOBOOTSTRAP
 } DataSourceType;
 
 

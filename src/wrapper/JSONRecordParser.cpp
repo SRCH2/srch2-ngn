@@ -405,6 +405,13 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    		convertValueToString(*iter, stringValue);
 	    		stringValue += " ";
 	    	}
+	    }else if (value.isObject()){
+	    	// recursively put values of all keys
+	    	vector<string> keys = value.getMemberNames();
+	    	for (int i= 0; i < keys.size(); ++i) {
+	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
+	    		stringValue += " ";
+	    	}
 	    }
 	    else // if the type is not string, set it to the empty string
 	    	stringValue += "";
