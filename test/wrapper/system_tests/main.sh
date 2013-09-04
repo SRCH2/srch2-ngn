@@ -6,7 +6,7 @@ SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
-echo '----do exact_A1 test--------------'
+echo '----do save_shutdown_restart_test--------------'
 python ./save_shutdown_restart_test/save_shutdown_restart_test.py $SRCH2_ENGINE_DIR
 
 if [ $? -gt 0 ]; then
@@ -136,6 +136,7 @@ if [ $? -gt 0 ]; then
 fi
 
 echo '----do tests_used_for_statemedia--------------'
+rm data/tests_used_for_statemedia/ -rf
 ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
 
 #if [ $? -gt 0 ]; then
