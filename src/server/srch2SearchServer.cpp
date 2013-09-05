@@ -37,6 +37,8 @@
 #include <boost/filesystem.hpp>
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
+#include "MongodbAdapter.h"
+
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -454,6 +456,7 @@ int main(int argc, char** argv)
     //load the index from the data source
     server.init(serverConf);
     //cout << "srch2 server started." << endl;
+    srch2http::MongoDataSource::spawnUpdateListener(&server);
 
     //sleep(200);
 

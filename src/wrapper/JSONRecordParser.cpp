@@ -19,6 +19,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerFactory.h"
+#include <boost/algorithm/string.hpp>
 
 using namespace snappy;
 
@@ -66,6 +67,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
     if (primaryKeyStringValue.compare("NULL") != 0)
     {
+    	boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
         record->setPrimaryKey(primaryKey);
         if (indexDataContainerConf->getIsPrimSearchable())

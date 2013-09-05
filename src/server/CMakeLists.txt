@@ -14,6 +14,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
     ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src/
 )
 set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
@@ -23,7 +24,6 @@ ENDIF()
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
-message("**********${CMAKE_REQUIRED_LIBRARIES} **********************")
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 

@@ -89,7 +89,6 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 				{
 					Logger::console("Creating an index from MongoDb instance...");
 					MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
-					MongoDataSource::spawnUpdateListener(indexDataContainerConf);
 					break;
 				}
 				default:
