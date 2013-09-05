@@ -456,7 +456,8 @@ int main(int argc, char** argv)
     //load the index from the data source
     server.init(serverConf);
     //cout << "srch2 server started." << endl;
-    srch2http::MongoDataSource::spawnUpdateListener(&server);
+    if (serverConf->getDataSourceType() == 2)
+    	srch2http::MongoDataSource::spawnUpdateListener(&server);
 
     //sleep(200);
 

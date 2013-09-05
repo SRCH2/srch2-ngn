@@ -18,12 +18,14 @@
 
 namespace srch2is = srch2::instantsearch;
 
+namespace mongo{
+class DBClientConnection;
+}
+
 namespace srch2 {
 namespace httpwrapper {
 
 class Srch2Server;
-class mongo::DBClientConnection;
-
 class MongoDataSource {
 public:
     static void createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager);
