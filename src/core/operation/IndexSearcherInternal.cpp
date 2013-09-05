@@ -161,6 +161,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         //}
         queryResultBitmaps.at(smallestVirtualListVectorId) = heapItem->attributeBitMap;
         queryResultEditDistances.at(smallestVirtualListVectorId) = heapItem->ed;
+        queryResultTermScores.at(smallestVirtualListVectorId) = heapItem->termRecordRuntimeScore;
         
         // Do random access on the other TermVirtualLists
         if (randomAccess(virtualListVector, queryResultTermScores, queryResultMatchingKeywords, queryResultBitmaps,
@@ -174,7 +175,8 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                 queryResult->internalRecordId = internalRecordId;
                 //unsigned sumOfEditDistances = std::accumulate(queryResultEditDistances.begin(), 
                 //                          queryResultEditDistances.end(), 0);
-                queryResult->_score.setScore(fl->getForwardListNonSearchableAttributeScore(this->indexData->forwardIndex->getSchema(), query->getSortableAttributeId()));
+				queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
+                //We compute the score for this query result here. This score will be used later to sort the results.
                 //    query->getRanker()->computeResultScoreUsingAttributeScore(query, recordScore, 
                 //                                  sumOfEditDistances, 
                 //                                  queryTermsLength);

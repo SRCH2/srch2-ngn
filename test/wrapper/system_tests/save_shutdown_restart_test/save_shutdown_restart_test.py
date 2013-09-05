@@ -1,7 +1,7 @@
 #this test is used for exact A1
 #using: python exact_A1.py queriesAndResults.txt
 
-import sys, urllib2, json, time, subprocess, os, commands, signal
+import sys, urllib2, json, time, subprocess, os, commands, signal, subprocess
 
 port = '8081'
 
@@ -14,21 +14,20 @@ def pingServer():
 
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_a1/conf.ini &'
-    print 'starting engine: ' + binary
-    os.popen(binary)
+    binary= [binary_path + '/srch2-search-server', '--config-file=./save_shutdown_restart_test/conf.ini', '&']
+    print 'starting engine: '
+    proc = subprocess.Popen(binary)
 
     pingServer()
 
     #save the index
-    shutdownCommand='curl -s http://localhost:' + port + '/save -X PUT'
-    os.system(shutdownCommand)
+    saveCommand='curl -s http://localhost:' + port + '/save -X PUT'
+    os.system(saveCommand)
 
     
     #shutdown
-    shutdownCommand='curl -s http://localhost:' + port + '/shutdown -X PUT'
-    os.system(shutdownCommand)
+    subprocess.call(["kill", "-2", "%d" % proc.pid])
+    proc.wait()
 
     #search a query for checking if the server is shutdown
     try:
@@ -39,16 +38,16 @@ def testSaveShutdownRestart(binary_path):
         print 'server has been shutdown'
     else:
         print 'server is not shutdown'
-        return 1
+        exit(-1)
     #restart
-    os.popen(binary)
+    proc = subprocess.Popen(binary)
     pingServer()
     #search a query for checking if the server is shutdown
     query='http://localhost:' + port + '/search?q=good'
     response = urllib2.urlopen(query).read()
     if response == 0:
         print 'server does not start'
-        return 1
+        exit(-1)
     else:
         print 'server start'
     #get pid of srch2-search-server and kill the process
