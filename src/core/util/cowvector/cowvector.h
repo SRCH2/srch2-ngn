@@ -74,7 +74,7 @@ public:
     ~vectorview()
     {
         // only the last readview can release the array
-        if(this->isReadView())
+        if(this->isReadView() && this->getNeedToFreeOldArray())
             delete m_array;
     }
 
@@ -295,8 +295,11 @@ public:
         // if they share the same array, we need to copy a new array from the old array.
         ASSERT(m_readView.get() != m_writeView);
         if(m_readView->getArray() == m_writeView->getArray()){
-            m_writeView->forceCreateCopy();
+            m_readView->setNeedToFreeOldArray(false);
+        }else{
+            m_readView->setNeedToFreeOldArray(true);
         }
+
         // reset the readview and let it point to the writeview
         m_readView.reset(m_writeView);
 

@@ -268,7 +268,6 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         
         unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
-        this->invertedListReadViewVector.clear();
         const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
             
