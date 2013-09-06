@@ -11,6 +11,8 @@
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "DateAndTimeHandler.h"
+
 using namespace std;
 namespace po = boost::program_options;
 
@@ -438,6 +440,20 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             boost::split(attributeDefaultValues,
                     vm["non-searchable-attributes-default"].as<string>(),
                     boost::is_any_of(","));
+            {
+            	for(vector<string>::iterator defaultValue = attributeDefaultValues.begin();
+            			defaultValue != attributeDefaultValues.end() ; ++defaultValue){
+            		long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
+            		if(timeValue > 0){
+            			*defaultValue = (string)"" + timeValue;
+            		}else{
+                        parseError
+                                << "Non-searchable attribute default value is not readable..\n";
+                        configSuccess = false;
+                        return;
+            		}
+            	}
+            }
 
             {
                 vector<string> attributeTypesTmp;
@@ -552,6 +568,22 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetStarts, vm["facet-attribute-start"].as<string>(),
                     boost::is_any_of(","));
+            // now use the date/time class to parse tha values
+            for(vector<string>::iterator startTextValue =facetStarts.begin() ;
+            		startTextValue != facetStarts.end() ; ++startTextValue){
+            	if(startTextValue->compare("") == 0){
+            		continue;
+            	}
+            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
+        		if(timeValue > 0){
+        			*startTextValue = (string)"" + timeValue;
+        		}else{
+                    parseError
+                            << "Facet start value is not readable..\n";
+                    configSuccess = false;
+                    return;
+        		}
+            }
             if(facetStarts.size() != facetAttributes.size()){
                 parseError << "facet-attribute-start should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
@@ -564,6 +596,22 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetEnds, vm["facet-attribute-end"].as<string>(),
                     boost::is_any_of(","));
+            // now use the date/time class to parse tha values
+            for(vector<string>::iterator endTextValue =facetEnds.begin() ;
+            		endTextValue != facetEnds.end() ; ++endTextValue){
+            	if(endTextValue->compare("") == 0){
+            		continue;
+            	}
+            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
+        		if(timeValue > 0){
+        			*endTextValue = (string)"" + timeValue;
+        		}else{
+                    parseError
+                            << "Facet start value is not readable..\n";
+                    configSuccess = false;
+                    return;
+        		}
+            }
             if(facetEnds.size() != facetAttributes.size()){
                 parseError << "facet-attribute-end should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
@@ -576,6 +624,22 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetGaps, vm["facet-attribute-gap"].as<string>(),
                     boost::is_any_of(","));
+            // now use the date/time class to parse tha values
+            for(vector<string>::iterator gapTextValue =facetGaps.begin() ;
+            		gapTextValue != facetGaps.end() ; ++gapTextValue){
+            	if(gapTextValue->compare("") == 0){
+            		continue;
+            	}
+            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*gapTextValue);
+        		if(timeValue > 0){
+        			*gapTextValue = (string)"" + timeValue;
+        		}else{
+                    parseError
+                            << "Facet start value is not readable..\n";
+                    configSuccess = false;
+                    return;
+        		}
+            }
             if(facetGaps.size() != facetAttributes.size()){
                 parseError << "facet-attribute-gap should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
