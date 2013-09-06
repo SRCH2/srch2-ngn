@@ -351,7 +351,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                 paramContainer->messages.push_back(
                         std::make_pair(MessageWarning,
                                 "End value for field " + *field
-                                        + " is not given. No facet will be calculated on this field. "));
+                                        + " is not given. (or values are not compatible with types.) No facet will be calculated on this field. "));
                 facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
                 continue;
             }
@@ -370,7 +370,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                 paramContainer->messages.push_back(
                         std::make_pair(MessageWarning,
                                 "Gap value for field " + *field
-                                        + " is not given. No facet will be calculated on this field. "));
+                                        + " is not given. (or values are not compatible with types.) No facet will be calculated on this field. "));
                 facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
                 continue;
             }

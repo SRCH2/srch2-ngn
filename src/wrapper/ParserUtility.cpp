@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "DateAndTimeHandler.h"
 
 using boost::posix_time::time_input_facet;
 using std::locale;
@@ -69,13 +70,9 @@ bool isFloat(const std::string & s) {
 }
 
 bool isTime(const std::string & s) {
-    if (s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+')))
-        return false;
-
-    char * p;
-    int temp = strtol(s.c_str(), &p, 10);
-
-    return (*p == 0);
+	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(s);
+	if(timeValue < 0) return false;
+	return true;
 }
 
 // convert other types to string

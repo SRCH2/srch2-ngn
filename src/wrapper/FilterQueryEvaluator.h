@@ -132,11 +132,21 @@ public:
             if (!validateValueWithType(attributeType, attributeValueLower)) {
                 return false;
             }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	attributeValueLower = "";
+            	attributeValueLower += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueLower);
+            }
         }
 
         if (attributeValueUpper.compare("*") != 0) {
             if (!validateValueWithType(attributeType, attributeValueUpper)) {
                 return false;
+            }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	attributeValueUpper = "";
+            	attributeValueUpper += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueUpper);
             }
         }
         return true;
@@ -261,6 +271,11 @@ public:
         if (attributeValue.compare("*") != 0) {
             if (!validateValueWithType(attributeType, attributeValue)) {
                 return false;
+            }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	attributeValue = "";
+            	attributeValue += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValue);
             }
         }
         return true;

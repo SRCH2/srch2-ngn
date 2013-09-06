@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include "DateAndTimeHandler.h"
 
 using std::string;
 using std::vector;
@@ -365,6 +366,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeStarts.at(facetFieldIndex) = startFromConfig;
                 }
+            }else{
+            	// here we should use DateAndTimeHandler class to conver start to long representation
+            	// we assume it's a good syntax because everything is checked in query validator
+            	facetQueryContainer->rangeStarts.at(facetFieldIndex) = "" ;
+            	facetQueryContainer->rangeStarts.at(facetFieldIndex) +=
+            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeStarts.at(facetFieldIndex));
             }
 
             if (facetQueryContainer->rangeEnds.at(facetFieldIndex).compare("") == 0) {
@@ -381,6 +388,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeEnds.at(facetFieldIndex) = endFromConfig;
                 }
+            }else{
+            	// here we should use DateAndTimeHandler class to conver start to long representation
+            	// we assume it's a good syntax because everything is checked in query validator
+            	facetQueryContainer->rangeEnds.at(facetFieldIndex) = "" ;
+            	facetQueryContainer->rangeEnds.at(facetFieldIndex) +=
+            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeEnds.at(facetFieldIndex));
             }
 
             if (facetQueryContainer->rangeGaps.at(facetFieldIndex).compare("") == 0) {
@@ -397,6 +410,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeGaps.at(facetFieldIndex) = gapFromConfig;
                 }
+            }else{
+            	// here we should use DateAndTimeHandler class to conver start to long representation
+            	// we assume it's a good syntax because everything is checked in query validator
+            	facetQueryContainer->rangeGaps.at(facetFieldIndex) = "" ;
+            	facetQueryContainer->rangeGaps.at(facetFieldIndex) +=
+            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeGaps.at(facetFieldIndex));
             }
         }
 
