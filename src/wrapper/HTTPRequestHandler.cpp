@@ -552,6 +552,28 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
+    /* Yes, we are expecting a post request */
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+        std::stringstream log_str;
+        IndexWriteUtil::_exportCommand(server->indexer, log_str);
+
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                "{\"message\":\"The data have been exported to disk successfully\", \"log\":["
+                        + log_str.str() + "]}\n");
+        Logger::info("%s", log_str.str().c_str());
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+    };
+}
+
 void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
         const string &versioninfo) {
     evkeyvalq headers;

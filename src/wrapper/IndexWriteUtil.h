@@ -8,6 +8,8 @@
 #include "ConfigManager.h"
 #include "AnalyzerFactory.h"
 #include "evhttp.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
+using namespace snappy;
 
 namespace srch2
 {
@@ -234,6 +236,21 @@ struct IndexWriteUtil
     {
     	indexer->save();
 	    log_str << "{\"save\":\"success\"}";
+    }
+
+    static void _exportCommand(Indexer *indexer, std::stringstream &log_str)
+    {
+        ofstream out("exported_data.json");
+        vector<std::string> compressedInMemoryRecordStrings;
+        indexer->exportData(compressedInMemoryRecordStrings);
+        std::string uncompressedInMemoryRecordString;
+        for(unsigned i = 0; i< compressedInMemoryRecordStrings.size(); i++){
+            snappy::Uncompress(compressedInMemoryRecordStrings[i].c_str(), compressedInMemoryRecordStrings[i].size(),
+                    &uncompressedInMemoryRecordString);
+            out << uncompressedInMemoryRecordString << endl;
+        }
+        out.close();
+        log_str << "{\"export\":\"success\"}";
     }
 
     static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)

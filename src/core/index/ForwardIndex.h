@@ -425,7 +425,21 @@ public:
         //clock_gettime(CLOCK_REALTIME, &tend);
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
-    ;
+
+    static void exportData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
+    {
+        if(forwardIndex.mergeRequired)
+            forwardIndex.merge();
+        shared_ptr<vectorview<ForwardListPtr> > readView;
+        forwardIndex.forwardListDirectory->getReadView(readView);
+        for (unsigned counter = 0; counter < readView->size(); ++counter) {
+            bool valid = false;
+            const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
+            if (valid == false)
+                continue;
+            compressedInMemoryRecordStrings.push_back(fl->getInMemoryData());
+        }
+    }
 
     static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {

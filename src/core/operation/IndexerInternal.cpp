@@ -122,6 +122,18 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
     return returnValue;
 }
 
+void IndexReaderWriter::exportData(vector<std::string> &compressedInMemoryRecordStrings)
+{
+    writelock();
+
+    this->merge();
+    writesCounter_forMerge = 0;
+
+    this->index->_setKafkaOffsetOfCurrentIndexSnapshot(this->kafkaOffset_LatestReadView);
+    this->index->_exportData(compressedInMemoryRecordStrings);
+
+    writeunlock();
+}
 
 void IndexReaderWriter::save()
 {
