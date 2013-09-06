@@ -21,7 +21,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-#include "DateAndTimeHandler.h"
+#include "util/DateAndTimeHandler.h"
+#include <sstream>
 
 using std::string;
 using std::vector;
@@ -369,9 +370,10 @@ void QueryRewriter::prepareFacetFilterInfo() {
             }else{
             	// here we should use DateAndTimeHandler class to conver start to long representation
             	// we assume it's a good syntax because everything is checked in query validator
-            	facetQueryContainer->rangeStarts.at(facetFieldIndex) = "" ;
-            	facetQueryContainer->rangeStarts.at(facetFieldIndex) +=
-            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeStarts.at(facetFieldIndex));
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeStarts.at(facetFieldIndex));
+            	facetQueryContainer->rangeStarts.at(facetFieldIndex) = buffer.str() ;
+
             }
 
             if (facetQueryContainer->rangeEnds.at(facetFieldIndex).compare("") == 0) {
@@ -391,9 +393,9 @@ void QueryRewriter::prepareFacetFilterInfo() {
             }else{
             	// here we should use DateAndTimeHandler class to conver start to long representation
             	// we assume it's a good syntax because everything is checked in query validator
-            	facetQueryContainer->rangeEnds.at(facetFieldIndex) = "" ;
-            	facetQueryContainer->rangeEnds.at(facetFieldIndex) +=
-            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeEnds.at(facetFieldIndex));
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeEnds.at(facetFieldIndex));
+            	facetQueryContainer->rangeEnds.at(facetFieldIndex) = buffer.str() ;
             }
 
             if (facetQueryContainer->rangeGaps.at(facetFieldIndex).compare("") == 0) {
@@ -413,9 +415,9 @@ void QueryRewriter::prepareFacetFilterInfo() {
             }else{
             	// here we should use DateAndTimeHandler class to conver start to long representation
             	// we assume it's a good syntax because everything is checked in query validator
-            	facetQueryContainer->rangeGaps.at(facetFieldIndex) = "" ;
-            	facetQueryContainer->rangeGaps.at(facetFieldIndex) +=
-            			DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeGaps.at(facetFieldIndex));
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeGaps.at(facetFieldIndex));
+            	facetQueryContainer->rangeGaps.at(facetFieldIndex) = buffer.str() ;
             }
         }
 

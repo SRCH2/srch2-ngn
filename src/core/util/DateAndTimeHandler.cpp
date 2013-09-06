@@ -8,7 +8,7 @@
 
 
 namespace srch2 {
-namespace httpwrapper {
+namespace instantsearch {
 
 time_t DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(const string & timeString)
 {

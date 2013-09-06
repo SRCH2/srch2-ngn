@@ -169,7 +169,11 @@ typedef enum
 } TermType;
 
 ///
-
+enum DateTimeType{
+    DateTimeTypeNow,
+    DateTimeTypePointOfTime,
+    DateTimeTypeDurationOfTime
+};
 
 
 

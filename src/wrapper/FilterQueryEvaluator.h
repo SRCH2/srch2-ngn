@@ -36,6 +36,7 @@
 #include <boost/algorithm/string.hpp>
 #include "RegexConstants.h"
 #include "util/Assert.h"
+#include "util/DateAndTimeHandler.h"
 
 
 using namespace std;
@@ -134,8 +135,9 @@ public:
             }
             // now that it is validated, it should be changed to long representation.
             if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-            	attributeValueLower = "";
-            	attributeValueLower += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueLower);
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueLower);
+            	attributeValueLower = buffer.str();
             }
         }
 
@@ -145,8 +147,9 @@ public:
             }
             // now that it is validated, it should be changed to long representation.
             if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-            	attributeValueUpper = "";
-            	attributeValueUpper += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueUpper);
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueUpper);
+            	attributeValueUpper = buffer.str();
             }
         }
         return true;
@@ -274,8 +277,9 @@ public:
             }
             // now that it is validated, it should be changed to long representation.
             if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-            	attributeValue = "";
-            	attributeValue += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValue);
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValue);
+            	attributeValue = buffer.str();
             }
         }
         return true;

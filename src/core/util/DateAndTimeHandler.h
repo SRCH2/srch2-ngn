@@ -28,7 +28,7 @@
 #include <sstream>
 #include <map>
 
-#include "WrapperConstants.h"
+#include "instantsearch/Constants.h"
 
 using namespace std;
 
@@ -38,7 +38,7 @@ using std::locale;
 namespace bt = boost::posix_time;
 
 namespace srch2 {
-namespace httpwrapper {
+namespace instantsearch {
 
 class DateAndTimeHandler{
 public:

@@ -22,6 +22,7 @@
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace std;
 namespace srch2 {
@@ -69,8 +70,9 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             output->impl->facetResults[*facetField] = zeroCounts;
             for (int i=0; i<  impl->lowerBoundsOfIntervals[*facetField].size() ; i++) {
                 // pushing back zeros directly to the map entry
-                output->impl->facetResults[*facetField].push_back(
-                        make_pair(impl->lowerBoundsOfIntervals[*facetField].at(i).toString(), 0));
+            	string categoryName = "";
+            	categoryName += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(impl->lowerBoundsOfIntervals[*facetField].at(i).toString());
+                output->impl->facetResults[*facetField].push_back(make_pair(categoryName, 0));
             }
         }
     }

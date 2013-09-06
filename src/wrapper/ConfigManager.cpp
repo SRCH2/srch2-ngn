@@ -7,11 +7,12 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "DateAndTimeHandler.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -443,9 +444,11 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             {
             	for(vector<string>::iterator defaultValue = attributeDefaultValues.begin();
             			defaultValue != attributeDefaultValues.end() ; ++defaultValue){
-            		long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
+            		long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
             		if(timeValue > 0){
-            			*defaultValue = (string)"" + timeValue;
+            			std::stringstream buffer;
+            			buffer << timeValue;
+            			*defaultValue = buffer.str();
             		}else{
                         parseError
                                 << "Non-searchable attribute default value is not readable..\n";
@@ -574,9 +577,11 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             	if(startTextValue->compare("") == 0){
             		continue;
             	}
-            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
+            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
         		if(timeValue > 0){
-        			*startTextValue = (string)"" + timeValue;
+        			std::stringstream buffer;
+        			buffer << timeValue;
+        			*startTextValue = buffer.str();
         		}else{
                     parseError
                             << "Facet start value is not readable..\n";
@@ -602,9 +607,11 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             	if(endTextValue->compare("") == 0){
             		continue;
             	}
-            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
+            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
         		if(timeValue > 0){
-        			*endTextValue = (string)"" + timeValue;
+        			std::stringstream buffer;
+        			buffer << timeValue;
+        			*endTextValue = buffer.str();
         		}else{
                     parseError
                             << "Facet start value is not readable..\n";
@@ -630,9 +637,11 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             	if(gapTextValue->compare("") == 0){
             		continue;
             	}
-            	long timeValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*gapTextValue);
+            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*gapTextValue);
         		if(timeValue > 0){
-        			*gapTextValue = (string)"" + timeValue;
+        			std::stringstream buffer;
+        			buffer << timeValue;
+        			*gapTextValue = buffer.str();
         		}else{
                     parseError
                             << "Facet start value is not readable..\n";
