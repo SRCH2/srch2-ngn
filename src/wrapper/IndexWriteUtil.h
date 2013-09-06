@@ -238,17 +238,22 @@ struct IndexWriteUtil
 	    log_str << "{\"save\":\"success\"}";
     }
 
+    // save the exported data to exported_data.json
     static void _exportCommand(Indexer *indexer, std::stringstream &log_str)
     {
+        //1. output file
         ofstream out("exported_data.json");
         vector<std::string> compressedInMemoryRecordStrings;
-        indexer->exportData(compressedInMemoryRecordStrings);
+        //2. get the exportData in vector<string>
+        indexer->getExportData(compressedInMemoryRecordStrings);
+        //3. uncompress the data
         std::string uncompressedInMemoryRecordString;
         for(unsigned i = 0; i< compressedInMemoryRecordStrings.size(); i++){
             snappy::Uncompress(compressedInMemoryRecordStrings[i].c_str(), compressedInMemoryRecordStrings[i].size(),
                     &uncompressedInMemoryRecordString);
             out << uncompressedInMemoryRecordString << endl;
         }
+        //4. close file
         out.close();
         log_str << "{\"export\":\"success\"}";
     }

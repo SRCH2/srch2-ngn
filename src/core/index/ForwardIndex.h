@@ -426,17 +426,21 @@ public:
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
 
-    static void exportData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
+    static void getExportData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
     {
+        // if the forwardIndex need merge, we will merge it first
         if(forwardIndex.mergeRequired)
             forwardIndex.merge();
         shared_ptr<vectorview<ForwardListPtr> > readView;
         forwardIndex.forwardListDirectory->getReadView(readView);
+        // loop all the forwardList Index
         for (unsigned counter = 0; counter < readView->size(); ++counter) {
             bool valid = false;
             const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
+            // pass the invalid record
             if (valid == false)
                 continue;
+            // collect the data
             compressedInMemoryRecordStrings.push_back(fl->getInMemoryData());
         }
     }

@@ -552,17 +552,25 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+// exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
 void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        std::stringstream log_str;
-        IndexWriteUtil::_exportCommand(server->indexer, log_str);
+        // if search-response-format is 0 or 2
+        if (server->indexDataContainerConf->getSearchResponseFormat() == 0
+                            || server->indexDataContainerConf->getSearchResponseFormat() == 2) {
+            std::stringstream log_str;
+            IndexWriteUtil::_exportCommand(server->indexer, log_str);
 
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The data have been exported to disk successfully\", \"log\":["
-                        + log_str.str() + "]}\n");
-        Logger::info("%s", log_str.str().c_str());
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    "{\"message\":\"The data have been exported to disk successfully\", \"log\":["
+                            + log_str.str() + "]}\n");
+            Logger::info("%s", log_str.str().c_str());
+        } else{
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    "{\"message\":\"The data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+        }
         break;
     }
     default: {
