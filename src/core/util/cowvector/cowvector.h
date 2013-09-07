@@ -60,7 +60,7 @@ public:
         m_array = vv.m_array;
         this->setSize(vv.size());
         this->setWriteView();
-        this->setNeedToFreeOldArray(true);
+        this->setNeedToFreeArray(true);
     }
 
     vectorview(size_t capacity)
@@ -68,22 +68,22 @@ public:
         m_array =new array<T>(capacity);
         this->setSize(0);
         this->setWriteView();
-        this->setNeedToFreeOldArray(true);
+        this->setNeedToFreeArray(true);
     }
 
     ~vectorview()
     {
         // only the last readview can release the array
-        if(this->isReadView() && this->getNeedToFreeOldArray())
+        if(this->isReadView() && this->getNeedToFreeArray())
             delete m_array;
     }
 
-    bool getNeedToFreeOldArray()
+    bool getNeedToFreeArray()
     {
         return m_sizeAndFlags & 1 << 30;
     }
 
-    void setNeedToFreeOldArray(bool flag)
+    void setNeedToFreeArray(bool flag)
     {
         if(flag)
             m_sizeAndFlags |= 1 << 30;
@@ -122,8 +122,8 @@ public:
         size_t capacity = m_array->capacity;
         array<T>* acopy = new array<T>(capacity);
         memcpy(acopy->extent, m_array->extent, this->size()*sizeof(T));
-        if(this->getNeedToFreeOldArray() == false)
-            this->setNeedToFreeOldArray(true);
+        if(this->getNeedToFreeArray() == false)
+            this->setNeedToFreeArray(true);
         else
             delete m_array;
         m_array = acopy;
@@ -142,8 +142,8 @@ public:
             array<T>* acopy = new array<T>(capacity);
             memcpy(acopy->extent, m_array->extent, this->size()*sizeof(T));
             // If the flag is false, then this array could be used by readers, so we don't free the space. We set the flag to "true" so that next time we reallocate the space, we need to release the space.
-            if(this->getNeedToFreeOldArray() == false)
-                this->setNeedToFreeOldArray(true);
+            if(this->getNeedToFreeArray() == false)
+                this->setNeedToFreeArray(true);
             else
                 delete m_array;
             m_array = acopy;
@@ -239,7 +239,7 @@ private:
             delete m_writeView;
         ar >> this->m_readView;
         m_writeView = new vectorview<T>(*m_readView);
-        m_writeView->setNeedToFreeOldArray(false);
+        m_writeView->setNeedToFreeArray(false);
     }
 
     template<class Archive>
@@ -262,6 +262,7 @@ public:
     {
         if(m_readView.get() != m_writeView)
             delete m_writeView;
+        m_readView->setNeedToFreeArray(true);
         pthread_spin_destroy(&m_spinlock);
     }
 
@@ -285,7 +286,7 @@ public:
         // change the viewType to be readview
         m_readView->setReadView();
         m_writeView = new vectorview<T>(*m_readView);
-        m_writeView->setNeedToFreeOldArray(false);
+        m_writeView->setNeedToFreeArray(false);
     }
 
     void merge()
@@ -295,9 +296,9 @@ public:
         // if they share the same array, we need to copy a new array from the old array.
         ASSERT(m_readView.get() != m_writeView);
         if(m_readView->getArray() == m_writeView->getArray()){
-            m_readView->setNeedToFreeOldArray(false);
+            m_readView->setNeedToFreeArray(false);
         }else{
-            m_readView->setNeedToFreeOldArray(true);
+            m_readView->setNeedToFreeArray(true);
         }
 
         // reset the readview and let it point to the writeview
@@ -311,7 +312,7 @@ public:
         pthread_spin_unlock(&m_spinlock);
 
         m_writeView = new vectorview<T>(*m_readView);
-        m_writeView->setNeedToFreeOldArray(false);
+        m_writeView->setNeedToFreeArray(false);
     }
 };
 
