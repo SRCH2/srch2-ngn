@@ -44,6 +44,7 @@ class TermVirtualList;
 QueryResultsInternal::QueryResultsInternal() {
     Logger::info("Query Results internal created.");
     this->virtualListVector = NULL;
+    this->stat = NULL;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
@@ -112,7 +113,9 @@ QueryResultsInternal::~QueryResultsInternal() {
         nextKResultsHeap.pop();
     }
 
-    delete this->stat;
+    if(this->stat != NULL){
+		delete this->stat;
+    }
 }
 
 void QueryResultsInternal::setNextK(const unsigned k) {
@@ -170,8 +173,10 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
 }
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
-    bool descending = (this->query->getSortableAttributeIdSortOrder()
-            == srch2::instantsearch::SortOrderDescending);
+//    bool descending = (this->query->getSortableAttributeIdSortOrder()
+//            == srch2::instantsearch::SortOrderDescending);
+	bool descending = true; // Since we deleted order parameter in configuration but we didn't delete the usage in the code,
+								// we change this place to always use descending which means higher scores first.
 
     int numberOfSortedResults = this->sortedFinalResults.size();
 

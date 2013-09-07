@@ -26,6 +26,16 @@ startServer(){
 
 endServer(){
     kill $1
+    count=0
+    alive=$(ps -ef|grep $1| grep -v "grep" | wc -l)
+    while [ $alive == 1 ]; do
+        if [ $count -gt 10 ]; then
+            kill -9 $1
+        fi
+        sleep 1
+        alive=$(ps -ef|grep $1| grep -v "grep" | wc -l)
+        count=$[ $count + 1 ]
+    done
     rm ./high_insert_test/index -rf
     rm ./high_insert_test/log.txt
 }

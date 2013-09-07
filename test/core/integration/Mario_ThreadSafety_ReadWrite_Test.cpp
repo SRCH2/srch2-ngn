@@ -2,7 +2,6 @@
 #include "MapSearchTestHelper.h"
 
 #include <sys/types.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <iostream>
@@ -12,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include "util/mypthread.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
