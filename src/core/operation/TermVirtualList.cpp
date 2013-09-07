@@ -154,8 +154,9 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
         // This is our query-optimization logic. If the total number of leaf nodes for the term is
         // greater than a threshold, we use bitset to do the union/intersection operations.
-        if (iter.size() >= TERM_COUNT_THRESHOLD)
+        if (iter.size() >= TERM_COUNT_THRESHOLD){
             this->usingBitset = true;
+        }
         if (this->usingBitset) {// This term needs bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer leafNode;
@@ -190,8 +191,9 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         }
     } else { // case 2: Term is complete
         ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-        if (iter.size() >= TERM_COUNT_THRESHOLD)
+        if (iter.size() >= TERM_COUNT_THRESHOLD){
             this->usingBitset = true;
+        }
         if (this->usingBitset) { // if this term virtual list is merged to a Bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
