@@ -637,9 +637,9 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     }
 
     if (vm.count("search-response-format")) {
-        searchResponseFormat = vm["search-response-format"].as<int>();
+        searchResponseFormat = (ResponseType)vm["search-response-format"].as<int>();
     } else {
-        searchResponseFormat = 0; //in-memory
+        searchResponseFormat = FULL_FORMAT; //in-memory
     }
 
     if (searchResponseFormat == 2 && vm.count("attributes-to-return")
@@ -1150,7 +1150,7 @@ bool ConfigManager::getSupportAttributeBasedSearch() const {
 	return supportAttributeBasedSearch;
 }
 
-int ConfigManager::getSearchResponseFormat() const {
+ResponseType ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
 

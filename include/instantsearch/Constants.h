@@ -168,9 +168,14 @@ typedef enum
     TERM_TYPE_NOT_SPECIFIED
 } TermType;
 
-///
+/// response type
 
-
+typedef enum
+{
+    FULL_FORMAT,
+    SEARCH_ONLY_FORMAT,
+    SEARCH_EXTEND_FORMAT
+} ResponseType;
 
 
 }

@@ -128,8 +128,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     i);
             root["results"][counter]["score"] = (0
                     - queryResults->getResultScore(i).getFloatScore()); //the actual distance between the point of record and the center point of the range
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == FULL_FORMAT
+                    || indexDataContainerConf->getSearchResponseFormat() == SEARCH_EXTEND_FORMAT) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
                 std::string compressedInMemoryRecordString =
@@ -558,13 +558,13 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataContainerConf->getSearchResponseFormat() == 0
-                            || server->indexDataContainerConf->getSearchResponseFormat() == 2) {
+        if (server->indexDataContainerConf->getSearchResponseFormat() == FULL_FORMAT
+                            || server->indexDataContainerConf->getSearchResponseFormat() == SEARCH_EXTEND_FORMAT) {
             std::stringstream log_str;
             IndexWriteUtil::_exportCommand(server->indexer, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The data have been exported to disk successfully\", \"log\":["
+                    "{\"message\":\"The data has been exported to the file exported_data.json successfully.\", \"log\":["
                             + log_str.str() + "]}\n");
             Logger::info("%s", log_str.str().c_str());
         } else{

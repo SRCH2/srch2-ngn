@@ -431,10 +431,10 @@ public:
         // if the forwardIndex need merge, we will merge it first
         if(forwardIndex.mergeRequired)
             forwardIndex.merge();
-        shared_ptr<vectorview<ForwardListPtr> > readView;
-        forwardIndex.forwardListDirectory->getReadView(readView);
+        shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+        forwardIndex.forwardListDirectory->getReadView(forwardListDirectoryReadView);
         // loop all the forwardList Index
-        for (unsigned counter = 0; counter < readView->size(); ++counter) {
+        for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
             bool valid = false;
             const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
             // pass the invalid record
