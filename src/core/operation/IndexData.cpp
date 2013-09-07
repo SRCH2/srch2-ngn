@@ -607,9 +607,9 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 
 }
 
-void IndexData::_getExportData(vector<std::string> &compressedInMemoryRecordStrings) const
+void IndexData::_getExportedData(vector<std::string> &compressedInMemoryRecordStrings) const
 {
-    ForwardIndex::getExportData(*this->forwardIndex, compressedInMemoryRecordStrings);
+    ForwardIndex::getExportedData(*this->forwardIndex, compressedInMemoryRecordStrings);
 }
 
 void IndexData::_save(const string &directoryName) const

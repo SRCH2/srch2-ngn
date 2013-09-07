@@ -247,7 +247,7 @@ struct IndexWriteUtil
         ofstream out(exportedName);
         vector<std::string> compressedInMemoryRecordStrings;
         //2. get the exportData in vector<string>
-        indexer->getExportData(compressedInMemoryRecordStrings);
+        indexer->getExportedData(compressedInMemoryRecordStrings);
         //3. uncompress the data
         std::string uncompressedInMemoryRecordString;
         for(unsigned i = 0; i< compressedInMemoryRecordStrings.size(); i++){

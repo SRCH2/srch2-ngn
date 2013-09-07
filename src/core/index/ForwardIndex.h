@@ -426,7 +426,7 @@ public:
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
 
-    static void getExportData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
+    static void getExportedData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
     {
         // if the forwardIndex need merge, we will merge it first
         if(forwardIndex.mergeRequired)
@@ -437,7 +437,7 @@ public:
         for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
             bool valid = false;
             const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
-            // pass the invalid record
+            // ignore the invalid record
             if (valid == false)
                 continue;
             // collect the data
