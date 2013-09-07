@@ -9,6 +9,7 @@
 #include "AnalyzerFactory.h"
 #include "evhttp.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "URLParser.h"
 using namespace snappy;
 
 namespace srch2
@@ -239,10 +240,11 @@ struct IndexWriteUtil
     }
 
     // save the exported data to exported_data.json
-    static void _exportCommand(Indexer *indexer, std::stringstream &log_str)
+    static void _exportCommand(Indexer *indexer, const evkeyvalq &headers, std::stringstream &log_str)
     {
+        const char *exportedName = evhttp_find_header(&headers, URLParser::nameParamName);
         //1. output file
-        ofstream out("exported_data.json");
+        ofstream out(exportedName);
         vector<std::string> compressedInMemoryRecordStrings;
         //2. get the exportData in vector<string>
         indexer->getExportData(compressedInMemoryRecordStrings);

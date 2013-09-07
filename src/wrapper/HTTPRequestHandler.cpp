@@ -561,7 +561,9 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
         if (server->indexDataContainerConf->getSearchResponseFormat() == FULL_FORMAT
                             || server->indexDataContainerConf->getSearchResponseFormat() == SEARCH_EXTEND_FORMAT) {
             std::stringstream log_str;
-            IndexWriteUtil::_exportCommand(server->indexer, log_str);
+            evkeyvalq headers;
+            evhttp_parse_query(req->uri, &headers);
+            IndexWriteUtil::_exportCommand(server->indexer, headers, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                     "{\"message\":\"The data has been exported to the file exported_data.json successfully.\", \"log\":["
