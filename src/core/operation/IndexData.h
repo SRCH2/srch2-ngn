@@ -325,7 +325,7 @@ public:
 
     const bool isCommited() const { return this->commited; }
 
-    void _getExportedData(vector<std::string> &compressedInMemoryRecordStrings) const;
+    void _exportData(const string& exportedDataFileName) const;
 
     void _save() const { this->_save(this->directoryName); }
 

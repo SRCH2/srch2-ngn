@@ -141,7 +141,7 @@ public:
     virtual void save(const std::string& directoryName) = 0;
     virtual void save() = 0;
 
-    virtual void getExportedData(vector<std::string> &compressedInMemoryRecordStrings) = 0;
+    virtual void exportData(const string &exportedDataFileName) = 0;
 
     /*For testing purpose only. Do not use in wrapper code*/
     virtual void merge_ForTesting() = 0;

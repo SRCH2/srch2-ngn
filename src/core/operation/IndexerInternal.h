@@ -198,7 +198,7 @@ public:
         return this->index->getInMemoryData(internalRecordId);
     }
 
-    void getExportedData(vector<std::string> &compressedInMemoryRecordStrings);
+    void exportData(const string &exportedDataFileName);
 
     void save();
 

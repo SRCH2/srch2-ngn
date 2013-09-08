@@ -39,6 +39,7 @@
 #include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/Score.h"
 #include "util/mytime.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
 
 using std::vector;
 using std::fstream;
@@ -46,6 +47,7 @@ using std::string;
 using std::map;
 using std::pair;
 using half_float::half;
+using namespace snappy;
 
 // The upper bound of the number of keywords in a record is FFFFFF
 #define KEYWORD_THRESHOLD ((1<<24) - 1)
@@ -426,24 +428,7 @@ public:
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
 
-    static void getExportedData(ForwardIndex &forwardIndex, vector<std::string> &compressedInMemoryRecordStrings)
-    {
-        // if the forwardIndex need merge, we will merge it first
-        if(forwardIndex.mergeRequired)
-            forwardIndex.merge();
-        shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-        forwardIndex.forwardListDirectory->getReadView(forwardListDirectoryReadView);
-        // loop all the forwardList Index
-        for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
-            bool valid = false;
-            const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
-            // ignore the invalid record
-            if (valid == false)
-                continue;
-            // collect the data
-            compressedInMemoryRecordStrings.push_back(fl->getInMemoryData());
-        }
-    }
+    static void exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName);
 
     static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {

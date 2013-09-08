@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
+MESSAGE(STATUS "Srch2 source dir="  ${CMAKE_SOURCE_DIR} )
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -Wno-sign-compare")		
 
 #--Build KAFKA and other wrapper objects

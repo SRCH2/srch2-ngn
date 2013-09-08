@@ -639,7 +639,7 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     if (vm.count("search-response-format")) {
         searchResponseFormat = (ResponseType)vm["search-response-format"].as<int>();
     } else {
-        searchResponseFormat = FULL_FORMAT; //in-memory
+        searchResponseFormat = RESPONSE_WITH_RECORD; //in-memory
     }
 
     if (searchResponseFormat == 2 && vm.count("attributes-to-return")

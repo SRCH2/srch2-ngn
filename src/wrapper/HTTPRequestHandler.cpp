@@ -128,8 +128,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     i);
             root["results"][counter]["score"] = (0
                     - queryResults->getResultScore(i).getFloatScore()); //the actual distance between the point of record and the center point of the range
-            if (indexDataContainerConf->getSearchResponseFormat() == FULL_FORMAT
-                    || indexDataContainerConf->getSearchResponseFormat() == SEARCH_EXTEND_FORMAT) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
                 std::string compressedInMemoryRecordString =
@@ -179,8 +179,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                         matchingKeywords[j];
             }
 
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
                 std::string compressedInMemoryRecordString =
@@ -558,20 +558,21 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataContainerConf->getSearchResponseFormat() == FULL_FORMAT
-                            || server->indexDataContainerConf->getSearchResponseFormat() == SEARCH_EXTEND_FORMAT) {
+        if (server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                            || server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
-            IndexWriteUtil::_exportCommand(server->indexer, headers, log_str);
+            const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+            IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The data has been exported to the file exported_data.json successfully.\", \"log\":["
+                    "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
                             + log_str.str() + "]}\n");
             Logger::info("%s", log_str.str().c_str());
         } else{
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
         }
         break;
     }

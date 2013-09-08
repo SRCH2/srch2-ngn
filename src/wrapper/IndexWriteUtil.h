@@ -240,23 +240,9 @@ struct IndexWriteUtil
     }
 
     // save the exported data to exported_data.json
-    static void _exportCommand(Indexer *indexer, const evkeyvalq &headers, std::stringstream &log_str)
+    static void _exportCommand(Indexer *indexer, const char* exportedDataFileName, std::stringstream &log_str)
     {
-        const char *exportedName = evhttp_find_header(&headers, URLParser::nameParamName);
-        //1. output file
-        ofstream out(exportedName);
-        vector<std::string> compressedInMemoryRecordStrings;
-        //2. get the exportData in vector<string>
-        indexer->getExportedData(compressedInMemoryRecordStrings);
-        //3. uncompress the data
-        std::string uncompressedInMemoryRecordString;
-        for(unsigned i = 0; i< compressedInMemoryRecordStrings.size(); i++){
-            snappy::Uncompress(compressedInMemoryRecordStrings[i].c_str(), compressedInMemoryRecordStrings[i].size(),
-                    &uncompressedInMemoryRecordString);
-            out << uncompressedInMemoryRecordString << endl;
-        }
-        //4. close file
-        out.close();
+        indexer->exportData(exportedDataFileName);
         log_str << "{\"export\":\"success\"}";
     }
 

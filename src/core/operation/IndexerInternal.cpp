@@ -122,7 +122,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
     return returnValue;
 }
 
-void IndexReaderWriter::getExportedData(vector<std::string> &compressedInMemoryRecordStrings)
+void IndexReaderWriter::exportData(const string &exportedDataFileName)
 {
     // add write lock
     writelock();
@@ -133,7 +133,7 @@ void IndexReaderWriter::getExportedData(vector<std::string> &compressedInMemoryR
 
     this->index->_setKafkaOffsetOfCurrentIndexSnapshot(this->kafkaOffset_LatestReadView);
     //get the export data
-    this->index->_getExportedData(compressedInMemoryRecordStrings);
+    this->index->_exportData(exportedDataFileName);
 
     // free write lock
     writeunlock();
