@@ -42,6 +42,7 @@ class HTTPRequestHandler
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
+		static void handleException(evhttp_request *req);
 
 	private:
 
