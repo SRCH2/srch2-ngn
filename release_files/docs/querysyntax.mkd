@@ -4,9 +4,9 @@
 >   Let's start with some sample queries first, just to have an idea and then go into the details:
 >   Here are 3 sample queries
 ```
-    1) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $
-    2) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $ &sort=category,genre&orderby=asc
-    3) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $facet=true&facet.field=category
+1) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $
+2) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $ &sort=category,genre&orderby=asc
+3) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $facet=true&facet.field=category
 ```
 ###Understanding different querry components
 
@@ -38,11 +38,24 @@
 ```
     q=title:Algo AND text:Image
 ```
-if no field is provided, the engine will search on the default search field(s) as specified in the configuration file.
+>if no field is provided, the engine will search on the default search field(s) as specified in the configuration file.
 ```
     q=algorithms
 ```
 >Please Note: All the field names which are used in q must be among searchable attributes declared in the configuration file.
+####searchType
+>Srch2 engine offer's 3 different strategies for searching records. These strategies are listed below
+> * topK : topK is the fastest strategy to search records in Srch2. The results will be sorted by score of each record in descending order. You can not use 'sort' query parameter while performing topK query.
+> * getAll : You should use this strategy if you want to use facets and sort query parameters. 
+> * geo: geo is used to carry out the geo search.  Sort and facets can be used with geo search.
+> <strong>Please Note:</strong> you can not use facets and sort during topK search.
+>Example of using searchType:
+```
+    1) searchType=topK
+    2) searchType=getAll
+    3) searchType=geo
+    4) searchType=getAll&sort=author  
+```
 ####fq
 >filter query parameter. This parameter can be used to specify a filter which is used to restrict the super set of documents that can be returned, without influencing score.  In the example below, only documents which have a popularity greater then 10 and have a section equal to 0 will match.
 ```
@@ -243,8 +256,10 @@ example of invalid arguments:
 
 >   Example for a "Keyword+Geo or Geo only" (Option 2) index:
 ```
-    $ curl -i "http://localhost:8081/search?q=hosptal&start=0&rows=20&lb_lat=61.20&lb_lng=-149.90&rt_lat=61.22&rt_lng=-149.70"
+$ curl -i "http://localhost:8081/search?q=hosptal&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
 ```
+
+Have fun SRCHing!
 
 <style type="text/css">
 pre{
