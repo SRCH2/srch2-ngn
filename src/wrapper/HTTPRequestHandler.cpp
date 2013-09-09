@@ -23,6 +23,8 @@
 #include "QueryExecutor.h"
 #include "ParserUtility.h"
 #include <event2/http.h>
+#include "util/FileOps.h"
+
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
 namespace srch2is = srch2::instantsearch;
@@ -564,6 +566,9 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+            if(checkDirExistence(exportedDataFileName)){
+                exportedDataFileName = "export_data.json";
+            }
             IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
 
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",

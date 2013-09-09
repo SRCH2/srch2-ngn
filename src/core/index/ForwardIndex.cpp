@@ -951,7 +951,7 @@ unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
 void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName)
 {
     ofstream out(exportedDataFileName.c_str());
-    // if the forwardIndex need merge, we will merge it first
+    // If the forwardIndex needs to merge, we do the merge it first
     if(forwardIndex.mergeRequired)
         forwardIndex.merge();
     shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
