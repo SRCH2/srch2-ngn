@@ -192,7 +192,6 @@ void cb_bmsearch(evhttp_request *req, void *arg) {
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
     try {
-        throw 20;
         srch2http::HTTPRequestHandler::searchCommand(req, server);
     } catch (exception& e) {
         // exception caught
