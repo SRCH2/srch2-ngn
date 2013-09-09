@@ -1,0 +1,324 @@
+#<center>SRCH2 Query Syntax Documentation</center>#{id="doc" style="color:#880000" }
+###Sample queries:###
+
+>   Let's start with some sample queries first, just to have an idea and then go into the details:
+>   Here are 3 sample queries
+```
+    1) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $
+    2) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $ &sort=category,genre&orderby=asc
+    3) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND CMPLX$ discount>10 $facet=true&facet.field=category
+```
+###Understanding different querry components
+
+###Local Paramerter (LocalParams)
+
+> LocalParams stands for local parameters: they provide a way to "localize" information about a specific argument that is being sent to Srch2 server. In other words, LocalParams provide a way to add meta-data to certain argument types such as query strings.
+>To indicate a LocalParam, the argument is prefixed with curly braces and can include any number of key=valuepairs separated by whitespace. So if the original query keyword is foo, applying LocalParams would look something like {k1=v1 k2=v2 k3=v3}foo.
+>e.g., specifying default field in local parameters would be
+```
+    q={defaultSearchFields=title}Algorithms
+```
+>or specifying default field operator to AND is
+```
+    q={defaultFieldOperator=AND defaultSearchFields=author,title}Algorithms 
+```
+####Valid localParams are:
+>defaultfuzzyLevel : number between 0 and 1. e.g .8 (0.8 is not valid. '.' should not be preceded by any number.)
+>defaultBoostLevel : non negetive integer. e.g. 2
+>defaultPrefixComplete: 'PREFIX' or 'COMPLETE' (without quotes)
+>defaultSearchFields: default fields to search in. e.g. 'title'. You can specify more than one fields; use comma ',' to separate them e.g. 'title,author,price' (without quotes)
+>defaultFieldOperator : 'AND' or 'OR' (without quotes). Boolean operator to be applied between the default search fields specified by comma separated fields.
+
+###Query Parameters
+
+>searchType : search approach to be performed
+>searchType tells the engine which type of search should be done on this query. The options are geo, getAll, and topK.
+#### q
+>main query parameter. Searches on the default field. You can search any field by typing the field name followed by a colon ":" and then the term you are looking for.
+```
+    q=title:Algo AND text:Image
+```
+if no field is provided, the engine will search on the default search field(s) as specified in the configuration file.
+```
+    q=algorithms
+```
+>Please Note: All the field names which are used in q must be among searchable attributes declared in the configuration file.
+####fq
+>filter query parameter. This parameter can be used to specify a filter which is used to restrict the super set of documents that can be returned, without influencing score.  In the example below, only documents which have a popularity greater then 10 and have a section equal to 0 will match.
+```
+    fq=popularity:[10 TO *] AND section:0
+```
+>Range Queries allow one to match documents whose field(s) values are between the lower and upper bound specified by the Range Query. Range Queries are inclusive.
+```
+    price:[10 TO 100]
+```
+>This will find documents whose price fields have values between 10 and 100, inclusive. Note that Range Queries are not reserved for number fields. You could also use range queries with non-number fields:
+```
+    title:[pratap TO saini]
+```
+>This will find all documents whose titles are between 'pratap' and 'saini', 'pratap' and 'saini' inclusive.
+ 
+><strong><u>Please Note</u></strong>. Srch2, as of now, supports only one kind of boolean operator (either 'OR' or 'AND') between different filter terms. 
+examples of valid arguments:
+```
+    1) fq=popularity:[10 TO *] AND section:0 AND price:[* TO 100]
+    2) fq=popularity:[10 TO *] OR section:0 OR price:[* TO 100]
+```
+example of invalid arguments:
+```
+    fq=popularity:[10 TO *] AND section:0 OR price:[* TO 100]
+```
+>Srch2 supports specifying complex expressions in the filters. These expressions must be surrounded by CMPLX$ and $.
+```
+    fq=popularity:[10 TO *] AND section:0 AND CMPLX$price-discount>10$
+```
+>Note the term 'CMPLX$price-discount>10$'. Srch2 will evaluate the boolean expression provided between two '$' signs, which in this case is 'price-discount>10'. Here price and discounts are two fields in the schema.
+>In filter query terms, you can use '-' operator before the term to tell srch2 engine to exclude the documents from the results that match the given criteria. 
+```
+    fq=-popularity:[10 TO *] AND section:0 AND CMPLX$price-discount>10$
+```
+>The above filter query string will result in a response that will have documents where section is 0 and 'price-discount>10' is true and populatrity is not 10 and above 10.
+>Please Note. All attributes which are used in fq must be declared as non-searchable-attributes in configuration file. Also, only the attributes of type INT and FLOAT can be used in CMPLX$$ block.
+####fl
+>Filed list. Fields to return in response. ex: title,author,price . These fields must be declared as searchable attributes in the configuration file.
+```
+    fl=title,author,price
+```
+####debug
+>Provides debug info.
+>To receive debug information in the response debugQuery=true should be specified in the request. You can ask for specific information by providing another parameter 'debug'. 'debug' parameter can have following values:
+>query : Provide debug info about the query only 
+>timing : Provide debug info about timing of components, etc. only 
+>result : Provide debug info about the results (currently explains) 
+>true : If true, this is the equivalent of &debugQuery=true
+
+```
+    debugQuery=true&debug=timing
+```
+####start
+>Offset in the complete resultset. It indicates the offset in the complete result set for the queries where the set of returned documents should begin. Default is 0.
+```
+    start=10
+```
+####rows
+>It indicates the number of records to return from the complete result set. Default is 0.Default is 10.  
+```
+    rows=7
+```
+####sort
+>by default sort by score desc. User can specify to sort by other fields:  authur, price, title
+ 
+```
+    sort=authur,price,title
+```
+####orderby
+>The order in which the result set should be sorted, by default desc. This order is valid for all the fields specified in sort parameter. 
+```
+    orderby=asc
+```
+><string>Note:</strong> we do not support individual field wise ordering. The order specified in orderby parameter will be applied to all the fields mentioned in sort parameter
+###Facet Query Params
+>To request for facets, the request should include facet=true.
+####facet=true
+>that many parameters may be overridden on a per-field basis with the following syntax:  
+>facet: "false" will disable faceting. Valid values are 'true' or 'false'
+>facet.field: to specify a field which should be treated as a facet. It will iterate over each Term in the field and generate a facet count using that Term as the constraint.  
+>This parameter can be specified multiple times to indicate multiple facet fields.  
+```
+    facet=true&facet.field=category&facet.field=genre
+```
+####Facet by Range
+#####facet.range
+>This param indicates what field to create range facets for. This param allows you to specify names of fields which should be treated as range facets.  
+>Example: 
+```
+    facet.range=price&facet.range=age
+```
+#####facet.range.start
+>The lower bound of the ranges. 
+>Example: 
+```
+    f.price.facet.start=0.0&f.age.facet.start=10  
+```
+#####facet.range.end
+>The upper bound of the ranges.    
+>Example:
+```
+    f.price.facet.end=1000.0&f.age.facet.start=99
+```
+#####facet.range.gap
+>The size of each range expressed as a value to be added to the lower bound. 
+>Example:
+```
+    f.price.facet.gap=100&f.age.facet.gap=10
+```
+###Terms and Fields
+####Terms
+>A query is broken up into terms and operators. There are two types of terms: Single Terms and Phrases. A Single Term is a single word such as 'test' or 'hello' (without quotes). We do not support phrase search as of now. 
+####Field
+>When performing a search you can either specify a field, or use the default field. The field names and default field is implementation specific. You can search any field by typing the field name followed by a colon ":" and then the term you are looking for. As an example, let's assume a Srch2 index contains two fields, title and text >and text is the default field. If you want to find the document entitled "algo" which contains the text "don't go this way", you can enter:
+```
+    title:algo AND text:go
+```
+####Term Modifiers
+>Srch2 supports modifying query terms to provide a wide range of searching options.
+>prefix Searches
+>Srch2 supports prefix searches.
+>To search for test, tests or tester, you can use the search:
+```
+    test*
+```
+####Fuzzy Searches
+>Srch2 supports fuzzy searches based on the <?> algorithm. To do a fuzzy search use the tilde, "~", symbol at the end of a Single word Term. For example to search for a term similar in spelling to "roam" use the fuzzy search:
+```
+    roam~
+```
+>This search will find terms like foam and roams.
+>The value is between 0 and 1, with a value closer to 1 only terms with a higher similarity will be matched. For example:
+```
+    roam~.8
+```
+>The default that is used if the parameter is not given is <?>
+####Boosting a Term
+>Srch2 provides the relevance level of matching documents based on the terms found. To boost a term use the caret, "^", symbol with a boost factor (a number) at the end of the term you are searching. The higher the boost factor, the more relevant the term will be.
+>Boosting allows you to control the relevance of a document by boosting its term. For example, if you are searching for
+>algorithm AND science
+>and you want the term "algorithm" to be more relevant boost it using the ^ symbol along with the boost factor next to the term. You would type:
+```
+    algorithm^4 AND science
+```
+>By default, the boost factor is 1. Although the boost factor must be positive, it can be less than 1 (e.g. 0.2)
+><strong>NOTE: </strong>
+>you can specify all three modifiers to a single term, but the order of modifier should always be prefix-boost-fuzzy
+>valid query examples 
+```
+    1) algo*^4~.6 AND science^~.8
+    2) algo^4~.6 AND science^~ AND comp*
+    3) algorithm~.6 AND science^5~.8
+```
+>invalid query examples
+``` 
+    1) algorithm^4*
+    2) algorithm~.4^3*
+    3) algorithm~.6*
+```
+
+##Geo Search##{id="geo"}
+
+>   The engine can be optionally configured to support geo index. So you have two options:
+
+>   *   Keyword Search (option 1)
+
+>   *   Keyword + Geo OR Geo only (option 2)
+
+>   _Trade-offs:_ Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. It is very fast. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example).
+
+>   If it is a geo index, the query should use one of the two ways below to define a geo region to search on:
+
+>>  1-  Specify a bounding box:
+
+>>> *   "lblat": the latitude of the left bottom point of the bounding box;
+
+>>> *   "lblong": the longitude of the left bottom point of the bounding box;
+
+>>> *   "rtlat": the latitude of the top right point of the bounding box;
+
+>>> *   "rtlong": the longitude of the top right point of the bounding box.
+    
+>>  2-  Specify a center point and a radius:
+
+>>> *   "clat": the latitude of the center point;
+
+>>> *   "clong": the longitude of the center point;
+
+>>> *   "radius": the radius of the search range in degree.
+
+>   **[important]** To do a Geo Search, for each of the objects you should have latitude/longitude attribute to let the engine do the Geo search. In conf.ini file of the SRCH2 engine, to do a Geo search, you need to set the following attributes:
+>>  *   attribute-latitude=lat
+>>  *   attribute-longitude=lng
+
+>   **[important]** If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.   
+>>  *   for example:
+>>> *   {"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}
+
+>   Example for a "Keyword+Geo or Geo only" (Option 2) index:
+```
+    $ curl -i "http://localhost:8081/search?q=hosptal&start=0&rows=20&lb_lat=61.20&lb_lng=-149.90&rt_lat=61.22&rt_lng=-149.70"
+```
+
+<style type="text/css">
+pre{
+	margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+#content{
+    position:fixed;
+	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+html{
+	min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
