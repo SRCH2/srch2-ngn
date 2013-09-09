@@ -122,6 +122,7 @@ void test1()
     ASSERT ( ping(analyzer, indexSearcher, "smith" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "smythe" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "symth" , 1 , 1001) == true);
 
     ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
 
@@ -175,6 +176,9 @@ void test1()
 
     //Edit distance 0 2
     ASSERT ( ping(analyzer, indexSearcher, "padhraic+smithe" , 1 , 1001) == true);
+
+    //Edit distance 2 2
+    ASSERT ( ping(analyzer, indexSearcher, "pahdraci+smithe" , 1 , 1001) == true);
 
 
     (void)analyzer;

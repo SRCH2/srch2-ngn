@@ -122,6 +122,18 @@ void PrefixActiveNodeSet::addPANUpToDepth(const TrieNode *trieNode, PivotalActiv
 			panlocal.differ = 0;
 			panlocal.editdistanceofPrefix = pan.editdistanceofPrefix + max;
 			newActiveNodeSet->_addPAN(child, panlocal);
+			//swap operation: if there was a delete operation, and there are prefix string
+			if (pan.differ > 0 && this->prefix.size()) {
+			    // if the last character of prefix can be found in curent's child, it's swap operation, we will give it the same edit distance as its parent
+                int childPosition = child->findChildNodePosition(this->prefix.back());
+                if (childPosition >= 0) {
+                    child= child->getChild(childPosition);
+                    panlocal.transformationdistance = pan.editdistanceofPrefix + max;
+                    panlocal.differ = 0;
+                    panlocal.editdistanceofPrefix = pan.editdistanceofPrefix + max;
+                    newActiveNodeSet->_addPAN(child, panlocal);
+                }
+            }
 		}
 		if (curDepth < depthLimit) {// recursive call for each child
 			addPANUpToDepth(child, pan, curDepth+1, depthLimit, additionalChar, newActiveNodeSet);
