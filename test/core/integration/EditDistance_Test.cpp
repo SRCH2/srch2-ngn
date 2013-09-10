@@ -122,7 +122,13 @@ void test1()
     ASSERT ( ping(analyzer, indexSearcher, "smith" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "smythe" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+
+    //swap operation
+    ASSERT ( ping(analyzer, indexSearcher, "msyth" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "symth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "smtyh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "smyht" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "mxyth" , 1 , 1001) == false);
 
     ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
 
@@ -177,8 +183,12 @@ void test1()
     //Edit distance 0 2
     ASSERT ( ping(analyzer, indexSearcher, "padhraic+smithe" , 1 , 1001) == true);
 
-    //Edit distance 2 2
+    //Edit distance 2 2 swap operation
     ASSERT ( ping(analyzer, indexSearcher, "pahdraci+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "aphdraic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "pdarhaic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "pahdaric+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padrhiac+smithe" , 1 , 1001) == true);
 
 
     (void)analyzer;
