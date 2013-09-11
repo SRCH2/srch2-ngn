@@ -26,9 +26,11 @@
 #include <time.h>
 #include <limits.h>
 #include <sstream>
-#include <map>
+#include <vector>
+
 
 #include "instantsearch/Constants.h"
+#include "instantsearch/Score.h"
 
 using namespace std;
 
@@ -45,20 +47,26 @@ public:
     static time_t convertDateTimeStringToSecondsFromEpoch(const string & timeString);
     static string convertSecondsFromEpochToDateTimeString(register const time_t * secondsFromEpoch);
     static bool verifyDateTimeString(const string & timeString, DateTimeType dateTimeType);
+    static time_t convertPtimeToSecondsFromEpoch(boost::posix_time::ptime t);
+    static boost::posix_time::ptime convertSecondsFromEpochToPTime(time_t t);
+
+    static TimeDuration convertDurationTimeStringToTimeDurationObject(const string & timeString);
 
 private:
 
+    const static string regexInputsPointOfTime[];
     const static locale localeInputsPointOfTime[] ;
+    const static string regexInputsDurationOfTime[];
     const static locale localeInputsDurationOfTime[] ;
     const static size_t localeFormatsPointOfTime ;
     const static size_t localeFormatsDurationOfTime ;
 
-    const static map<string, time_t> DURATION_OF_TIME_CONSTANTS;
+    const static vector<string> DURATION_OF_TIME_CONSTANTS;
 
-    static time_t convertPtimeToTimeT(boost::posix_time::ptime t);
-    static map<string, time_t> initializeConstants();
+    static vector<string> initializeConstants();
 
 };
+
 
 }
 }
