@@ -61,6 +61,13 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 
 void QueryExecutor::executeTopK(QueryResults * finalResults) {
 
+
+    // execute post processing
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+
     if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
         return;
     }
@@ -120,11 +127,6 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
         delete fuzzyQueryResults;
     }
 
-    // execute post processing
-    // since this object is only allocated with an empty constructor, this init function needs to be called to
-    // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
-            this->queryPlan.getExactQuery());
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
     executePostProcessingPlan(this->queryPlan.getExactQuery(),
@@ -134,6 +136,14 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
 }
 
 void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
+
+    // execute post processing
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            (this->queryPlan.isFuzzy()) ?
+                    this->queryPlan.getFuzzyQuery() :
+                    this->queryPlan.getExactQuery());
 
     if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
         return;
@@ -156,13 +166,7 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
                 queryResults, 0);
     }
 
-    // execute post processing
-    // since this object is only allocated with an empty constructor, this init function needs to be called to
-    // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
-            (this->queryPlan.isFuzzy()) ?
-                    this->queryPlan.getFuzzyQuery() :
-                    this->queryPlan.getExactQuery());
+
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
     executePostProcessingPlan(
@@ -175,6 +179,12 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
 }
 
 void QueryExecutor::executeGeo(QueryResults * finalResults) {
+
+    // execute post processing
+    // since this object is only allocated with an empty constructor, this init function needs to be called to
+    // initialize the object.
+    finalResults->init(this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
 
     int idsExactFound = 0;
     // for the range query without keywords.
@@ -252,11 +262,6 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
         }
     }
 
-    // execute post processing
-    // since this object is only allocated with an empty constructor, this init function needs to be called to
-    // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
-            this->queryPlan.getExactQuery());
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
     executePostProcessingPlan(this->queryPlan.getExactQuery(),

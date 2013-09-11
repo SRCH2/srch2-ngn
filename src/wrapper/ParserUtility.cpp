@@ -125,6 +125,7 @@ bool validateValueWithType(srch2::instantsearch::FilterType type,
     case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
         return true; // TEXT does not have any criteria ?????
     case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+    case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
         return isTime(value);
     }
     // flow never reaches here

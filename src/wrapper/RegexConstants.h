@@ -36,7 +36,7 @@ const string COMPLEX_TERM_REGEX_STRING = "^CMPLX\\$";
 
 
 const string FQ_TERM_BOOL_OP_REGEX_STRING = "^(AND|OR)";
-const string FQ_RANGE_QUERY_KEYWORD_REGEX_STRING = "^.+\\]";
+const string FQ_RANGE_QUERY_KEYWORD_REGEX_STRING = "[^:]+\\]";
 const string FQ_ASSIGNMENT_KEYWORD_REGEX_STRING = "^[^\\s:]+"; // no space allowed
 const string FQ_COMPLEX_EXPRESSION_REGEX_STRING = "[^\\$]+";
 const string FQ_FIELD_KEYWORD_DELIMETER_REGEX_STRING = "\\s+TO\\s+";

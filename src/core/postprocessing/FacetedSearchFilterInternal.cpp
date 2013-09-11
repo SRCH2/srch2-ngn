@@ -95,19 +95,31 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
                     schema->getNonSearchableAttributeId(*field));
             Score start;
             start.setScore(attributeType, this->rangeStarts.at(fieldIndex));
-            rangeStartScores.push_back(start);
 
             Score end;
             end.setScore(attributeType, this->rangeEnds.at(fieldIndex));
-            rangeEndScores.push_back(end);
 
             Score gap;
             if(attributeType == ATTRIBUTE_TYPE_TIME){
-				gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");
+            	}else{
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
+            	}
             }else{
-            	gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(attributeType , "0");
+            	}else{
+            		gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            	}
             }
+
+            rangeStartScores.push_back(start);
+            rangeEndScores.push_back(end);
             rangeGapScores.push_back(gap);
+
         }
 
         //
