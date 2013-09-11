@@ -67,7 +67,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
         }else{ // range
             std::vector<std::pair<std::string, float> > zeroCounts;
             // this line inserts the entry into the map
-            output->impl->facetResults[*facetField] = zeroCounts;
+            output->impl->facetResults[*facetField] = make_pair(srch2is::FacetTypeRange , zeroCounts);
             for (int i=0; i<  impl->lowerBoundsOfIntervals[*facetField].size() ; i++) {
                 // pushing back zeros directly to the map entry
             	string categoryName = "";
@@ -77,7 +77,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             	}else{
             		categoryName = impl->lowerBoundsOfIntervals[*facetField].at(i).toString();
             	}
-                output->impl->facetResults[*facetField].push_back(make_pair(categoryName, 0));
+                output->impl->facetResults[*facetField].second.push_back(make_pair(categoryName, 0));
             }
         }
     }
@@ -120,7 +120,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             }else{ // range
                 impl->doAggregationRange(attributeValue ,
                         impl->lowerBoundsOfIntervals[*facetField] ,
-                        &(output->impl->facetResults[*facetField]) ,
+                        &(output->impl->facetResults[*facetField].second) ,
                         impl->rangeStartScores.at(std::distance(impl->fields.begin() , facetField)),
                         impl->rangeEndScores.at(std::distance(impl->fields.begin() , facetField)),
                         impl->rangeGapScores.at(std::distance(impl->fields.begin() , facetField)));
@@ -133,8 +133,8 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             category != categoricalCounts.end() ; ++category){
         std::vector<std::pair<std::string, float> > categoryVector;
         // this statement is to insert this entry to the map
-        output->impl->facetResults[category->first] = categoryVector;
-        std::vector<std::pair<std::string, float> > & resultsContainer = output->impl->facetResults[category->first];
+        output->impl->facetResults[category->first] = make_pair(srch2is::FacetTypeCategorical, categoryVector);
+        std::vector<std::pair<std::string, float> > & resultsContainer = output->impl->facetResults[category->first].second;
         for(std::map<string , float >::iterator subCategory = category->second.begin() ;
                 subCategory != category->second.end() ; ++subCategory ){
             resultsContainer.push_back(std::make_pair(subCategory->first , subCategory->second));

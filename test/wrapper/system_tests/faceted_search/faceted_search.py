@@ -90,7 +90,7 @@ def prepareQuery(queryKeywords):
 def testFacetedSearch(queriesAndResultsPath , facetResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./faceted_search/conf.ini &'
+    binary= binary+' --config-file=/home/jamshid/workspace-srch2-v4/srch2-ngn/test/wrapper/system_tests/faceted_search/conf.ini &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up
