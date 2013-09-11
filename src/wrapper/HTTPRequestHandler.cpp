@@ -724,8 +724,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 }
 void HTTPRequestHandler::handleException(evhttp_request *req) {
     const string INTERNAL_SERVER_ERROR_MSG =
-            "{\"error:\" Ooops!! The engine failed to process this request. Please check srch2 server logs for more details. If the problem persists please contact your srch2 inc.}";
-    bmhelper_evhttp_send_reply(req, HTTP_INTERNAL, "INVALID SERVER ERROR",
+            "{\"error:\" Ooops!! The engine failed to process this request. Please check srch2 server logs for more details. If the problem persists please contact srch2 inc.}";
+    bmhelper_evhttp_send_reply(req, HTTP_INTERNAL, "INTERNAL SERVER ERROR",
             INTERNAL_SERVER_ERROR_MSG);
 }
 
