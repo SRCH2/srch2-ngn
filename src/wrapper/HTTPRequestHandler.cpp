@@ -261,6 +261,9 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                 if(category == attr->second.begin() && isFloat(category->first)){
                     root["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.begin())]["category_name"] = "lessThanStart";
+                }else if(category == attr->second.begin() && isTime(category->first)){
+                    root["facets"][attributeCounter]["facet_info"][(category
+                            - attr->second.begin())]["category_name"] = "lessThanStart";
                 }else{
                     root["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.begin())]["category_name"] =
