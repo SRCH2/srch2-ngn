@@ -79,7 +79,7 @@ bool PhraseQueryFilter::matchPhrase(const ForwardList* forwardListPtr, const Phr
     bool ANDOperation = phraseInfo.attributeBitMap & 0x80000000;
     unsigned mask = 1;
     bool result = false;
-    unsigned totalAttributes = sizeof(phraseInfo.attributeBitMap) - 1;
+    unsigned totalAttributes = sizeof(phraseInfo.attributeBitMap) * 8 - 1;
     unsigned slop = phraseInfo.proximitySlop;
     for (unsigned attributeId = 0; attributeId < totalAttributes; ++attributeId) {
         mask <<= attributeId;

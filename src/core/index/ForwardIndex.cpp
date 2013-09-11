@@ -635,7 +635,7 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema,
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
                 termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,
                 tempScore)) {
-            if (tempScore > matchingKeywordRecordStaticScore) {
+            if (tempScore >= matchingKeywordRecordStaticScore) {
                 matchingKeywordRecordStaticScore = tempScore;
                 matchingKeywordAttributeBitmap = tempAttributeBitmap;
                 returnValue = true;
@@ -853,12 +853,28 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyId, unsigned attri
 			break;
 		}
 	}
-	if ( i == numberOfKeywords)
+	if ( i == numberOfKeywords){
+		Logger::warn("Keyword not found in forward indexes!!");
 		return;
+	}
+
 	unsigned keyOffset = i;
+
+	if (keywordAttributeBitmaps == 0)
+	{
+		Logger::warn("Attribute Info not found in forward indexes!!");
+		return;
+	}
+
 	unsigned currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
 	if ((currKeyattributeBitMap & (1 << attributeId)) == 0)
 		return;
+
+
+	if (positionIndex.size() == 0){
+		Logger::warn("Position Indexes not found in forward indexes!!");
+		return;
+	}
 
 	const uint8_t * piPtr = &positionIndex[0];
 	unsigned offset = 0;

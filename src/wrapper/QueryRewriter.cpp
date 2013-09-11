@@ -152,8 +152,6 @@ void QueryRewriter::applyAnalyzer() {
     std::vector<float> keywordFuzzyLevel;
     std::vector<int> keywordBoostLevel;
     std::vector<srch2is::TermType> keywordPrefixComplete;
-    std::vector<std::vector<std::string> > fieldFilter;
-    std::vector<srch2is::BooleanOperation> fieldFilterOps;
     std::vector<unsigned> fieldFilterNumbers;
     std::vector<bool> isPhraseKeywordFlags;
     std::vector<short> phraseSlops;
@@ -183,8 +181,6 @@ void QueryRewriter::applyAnalyzer() {
     paramContainer->keywordFuzzyLevel = keywordFuzzyLevel;
     paramContainer->keywordBoostLevel = keywordBoostLevel;
     paramContainer->keywordPrefixComplete = keywordPrefixComplete;
-    paramContainer->fieldFilter = fieldFilter;
-    paramContainer->fieldFilterOps = fieldFilterOps;
     paramContainer->fieldFilterNumbers = fieldFilterNumbers;
     paramContainer->isPhraseKeywordFlags = isPhraseKeywordFlags;
     paramContainer->PhraseSlops = phraseSlops;
@@ -207,8 +203,7 @@ void QueryRewriter::prepareFieldFilters() {
         // these two vectors will not be used in future. We clear them just for safety.
         paramContainer->fieldFilter.clear();
         paramContainer->fieldFilterOps.clear();
-        // no filters at all
-        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 1);
+        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 0x7fffffff);
         return;
     }
     if(paramContainer->hasParameterInQuery(FieldFilter) ){
