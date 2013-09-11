@@ -72,6 +72,15 @@ void buildLocalIndex(string INDEX_DIR)
     // add a record
     index->addRecord(record, analyzer, 0);
 
+    // create a record of 3 attributes
+    record->clear();
+    record = new Record(schema);
+    record->setPrimaryKey(1002);
+    record->setSearchableAttributeValue("article_authors", "abXXXXX XXXabXX XXXXXab");
+    record->setRecordBoost(20);
+
+    index->addRecord(record, analyzer, 0);
+
 /*
     // create another record
     record->clear();
@@ -190,6 +199,10 @@ void test1()
     ASSERT ( ping(analyzer, indexSearcher, "pahdaric+smithe" , 1 , 1001) == true);
     ASSERT ( ping(analyzer, indexSearcher, "padrhiac+smithe" , 1 , 1001) == true);
 
+    // swap operation around the repetition of the same letters
+    ASSERT ( ping(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == true);
 
     (void)analyzer;
     delete indexSearcher;
