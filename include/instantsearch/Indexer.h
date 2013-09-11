@@ -123,6 +123,8 @@ public:
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 
+    virtual srch2::instantsearch::Schema *getSchema() = 0;
+
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;
 
     /**

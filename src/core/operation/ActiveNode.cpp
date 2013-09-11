@@ -24,7 +24,7 @@ PrefixActiveNodeSet *PrefixActiveNodeSet::computeActiveNodeSetIncrementally(cons
     std::vector<CharType> newString = this->prefix;
     newString.push_back(additionalChar);
 
-    PrefixActiveNodeSet *newActiveNodeSet = new PrefixActiveNodeSet(newString, this->getEditDistanceThreshold(), this->trieRootNodeSharedPtr);
+    PrefixActiveNodeSet *newActiveNodeSet = new PrefixActiveNodeSet(newString, this->getEditDistanceThreshold(), this->trieRootNodeSharedPtr, this->supportSwap);
 
     // PAN:
     for (std::map<const TrieNode*, PivotalActiveNode >::const_iterator mapIterator = PANMap.begin();
@@ -122,16 +122,18 @@ void PrefixActiveNodeSet::addPANUpToDepth(const TrieNode *trieNode, PivotalActiv
             panlocal.differ = 0;
             panlocal.editdistanceofPrefix = pan.editdistanceofPrefix + max;
             newActiveNodeSet->_addPAN(child, panlocal);
-            //swap operation: if there was a delete operation, and there are prefix string
-            if (pan.differ > 0 && this->prefix.size()) {
-                // if the last character of prefix can be found in curent's child, it's swap operation, we will give it the same edit distance as its parent
-                int childPosition = child->findChildNodePosition(this->prefix.back());
-                if (childPosition >= 0) {
-                    child= child->getChild(childPosition);
-                    panlocal.transformationdistance = pan.editdistanceofPrefix + max;
-                    panlocal.differ = 0;
-                    panlocal.editdistanceofPrefix = pan.editdistanceofPrefix + max;
-                    newActiveNodeSet->_addPAN(child, panlocal);
+            if(supportSwap){
+                //swap operation: if there was a delete operation, and there are prefix string
+                if (pan.differ > 0 && this->prefix.size()) {
+                    // if the last character of prefix can be found in curent's child, it's swap operation, we will give it the same edit distance as its parent
+                    int childPosition = child->findChildNodePosition(this->prefix.back());
+                    if (childPosition >= 0) {
+                        child= child->getChild(childPosition);
+                        panlocal.transformationdistance = pan.editdistanceofPrefix + max;
+                        panlocal.differ = 0;
+                        panlocal.editdistanceofPrefix = pan.editdistanceofPrefix + max;
+                        newActiveNodeSet->_addPAN(child, panlocal);
+                    }
                 }
             }
         }

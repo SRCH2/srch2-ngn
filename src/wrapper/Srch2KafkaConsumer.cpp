@@ -98,6 +98,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			indexer = Indexer::load(indexMetaData);
 			// Load Analayzer data from disk
 			AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
+			indexer->getSchema()->setSupportSwap(indexDataContainerConf->getSupportSwap());
 			bool isAttributeBasedSearch = (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX);
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
 			{

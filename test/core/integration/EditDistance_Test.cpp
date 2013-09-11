@@ -120,6 +120,7 @@ void test1()
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
+    indexer->getSchema()->setSupportSwap(true);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
     const Analyzer *analyzer = getAnalyzer();
 

@@ -33,6 +33,7 @@ void ConfigManager::loadConfigFile(){
     //("customer-name", po::value<string>(), "customer name") // REQUIRED
     ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
     ("index-type", po::value<int>(), "index-type") // REQUIRED
+    ("fuzzy-type", po::value<bool>(), "fuzzy-type")
     ("data-source-type", po::value<bool>(), "Data source type")
 
     ("kafka-consumer-topicname", po::value<string>(),"Kafka consumer topic name") // REQUIRED
@@ -273,6 +274,12 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
 		configSuccess = false;
 		return;
 	}
+
+	if (vm.count("fuzzy-type")) {
+        supportSwap = vm["fuzzy-type"].as<bool>();
+    } else {
+        supportSwap = true;
+    }
 
 	if (vm.count("search-response-JSON-format")) {
 		searchResponseJsonFormat = vm["search-response-JSON-format"].as<int>();
@@ -995,6 +1002,10 @@ uint32_t ConfigManager::getMergeEveryMWrites() const {
 
 int ConfigManager::getIndexType() const {
 	return indexType;
+}
+
+bool ConfigManager::getSupportSwap() const {
+    return supportSwap;
 }
 
 const string& ConfigManager::getAttributeLatitude() const {

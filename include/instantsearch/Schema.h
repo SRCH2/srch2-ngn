@@ -161,6 +161,11 @@ public:
      */
     virtual void setScoringExpression(const std::string &scoringExpression) = 0;
     virtual const std::string getScoringExpression() const = 0;
+
+    // set if support swap operation for edit distance
+    virtual void setSupportSwap(const bool supportSwap) = 0;
+    virtual bool getSupportSwap() const = 0;
+
     /**
      * Writes the schema to a folder specified in schema::create(...) function.
      * After commit(), no more changes can be added.

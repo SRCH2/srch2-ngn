@@ -331,6 +331,8 @@ public:
     
     const Schema* getSchema() const;
 
+    Schema* getSchema();
+
     const std::string& getLicenseFileNameWithPath() const { return this->licenseFileNameWithPath; }
 
     std::string getInMemoryData(unsigned internalRecordId) const

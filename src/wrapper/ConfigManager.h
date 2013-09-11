@@ -43,6 +43,7 @@ private:
 	unsigned mergeEveryMWrites;
 
 	int indexType;
+	bool supportSwap;
 	string attributeLatitude;
 	string attributeLongitude;
 	float defaultSpatialQueryBoundingBox;
@@ -194,6 +195,7 @@ public:
 	bool isRecordBoostAttributeSet() const;
 
 	int getIndexType() const;
+	bool getSupportSwap() const;
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;

@@ -169,6 +169,14 @@ const std::string* SchemaInternal::getDefaultValueOfNonSearchableAttribute(
     return NULL;
 }
 
+void SchemaInternal::setSupportSwap(const bool supportSwap) {
+    this->supportSwap = supportSwap;
+}
+
+bool SchemaInternal::getSupportSwap() const{
+    return supportSwap;
+}
+
 void SchemaInternal::setScoringExpression(
         const std::string &scoringExpression) {
     this->scoringExpressionString = scoringExpression;
