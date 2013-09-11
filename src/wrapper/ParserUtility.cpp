@@ -70,9 +70,9 @@ bool isFloat(const std::string & s) {
 }
 
 bool isTime(const std::string & s) {
-	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(s);
-	if(timeValue < 0) return false;
-	return true;
+	return (srch2is::DateAndTimeHandler::verifyDateTimeString(s,srch2is::DateTimeTypeNow) ||
+			srch2is::DateAndTimeHandler::verifyDateTimeString(s,srch2is::DateTimeTypePointOfTime) ||
+			srch2is::DateAndTimeHandler::verifyDateTimeString(s,srch2is::DateTimeTypeDurationOfTime) );
 }
 
 // convert other types to string

@@ -449,7 +449,15 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 
 	// now check to see if it has proper date/time format
 	stringValue = "";
-	stringValue += srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
+	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
+			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
+		stringstream buffer;
+		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
+		stringValue = buffer.str();
+		if(temp.compare("01/01/1970") == 0){
+			std::cout << stringValue << std::endl;
+		}
+	}
     return;
 
 }

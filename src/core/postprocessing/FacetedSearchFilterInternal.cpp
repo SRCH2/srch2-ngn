@@ -102,7 +102,11 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
             rangeEndScores.push_back(end);
 
             Score gap;
-            gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            if(attributeType == ATTRIBUTE_TYPE_TIME){
+				gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
+            }else{
+            	gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            }
             rangeGapScores.push_back(gap);
         }
 

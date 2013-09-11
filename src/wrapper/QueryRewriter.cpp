@@ -412,13 +412,9 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeGaps.at(facetFieldIndex) = gapFromConfig;
                 }
-            }else{
-            	// here we should use DateAndTimeHandler class to conver start to long representation
-            	// we assume it's a good syntax because everything is checked in query validator
-            	std::stringstream buffer;
-            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeGaps.at(facetFieldIndex));
-            	facetQueryContainer->rangeGaps.at(facetFieldIndex) = buffer.str() ;
-            }
+            }//else{
+            	// we don't change gap, gap is translated when it's going to be used.
+            //}
         }
 
         //

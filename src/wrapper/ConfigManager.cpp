@@ -438,23 +438,19 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             vector<srch2::instantsearch::FilterType> attributeTypes;
             vector<string> attributeDefaultValues;
 
+
             boost::split(attributeDefaultValues,
                     vm["non-searchable-attributes-default"].as<string>(),
                     boost::is_any_of(","));
             {
             	for(vector<string>::iterator defaultValue = attributeDefaultValues.begin();
             			defaultValue != attributeDefaultValues.end() ; ++defaultValue){
-            		long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
-            		if(timeValue > 0){
-            			std::stringstream buffer;
-            			buffer << timeValue;
-            			*defaultValue = buffer.str();
-            		}else{
-                        parseError
-                                << "Non-searchable attribute default value is not readable..\n";
-                        configSuccess = false;
-                        return;
-            		}
+					if(srch2is::DateAndTimeHandler::verifyDateTimeString(*defaultValue , srch2is::DateTimeTypePointOfTime)){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
+						std::stringstream buffer;
+						buffer << timeValue;
+						*defaultValue = buffer.str();
+					}
             	}
             }
 
@@ -479,6 +475,7 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                                 srch2::instantsearch::ATTRIBUTE_TYPE_TIME);
                 }
             }
+
 
             if (attributeNames.size() == attributeTypes.size()
                     && attributeNames.size() == attributeDefaultValues.size()) {
@@ -571,27 +568,34 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetStarts, vm["facet-attribute-start"].as<string>(),
                     boost::is_any_of(","));
-            // now use the date/time class to parse tha values
-            for(vector<string>::iterator startTextValue =facetStarts.begin() ;
-            		startTextValue != facetStarts.end() ; ++startTextValue){
-            	if(startTextValue->compare("") == 0){
-            		continue;
-            	}
-            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
-        		if(timeValue > 0){
-        			std::stringstream buffer;
-        			buffer << timeValue;
-        			*startTextValue = buffer.str();
-        		}else{
-                    parseError
-                            << "Facet start value is not readable..\n";
-                    configSuccess = false;
-                    return;
-        		}
-            }
             if(facetStarts.size() != facetAttributes.size()){
                 parseError << "facet-attribute-start should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
+            }
+
+            // now use the date/time class to parse the values
+            for(vector<string>::iterator startTextValue =facetStarts.begin() ;
+            		startTextValue != facetStarts.end() ; ++startTextValue){
+            	string attributeName = facetAttributes.at(std::distance(facetStarts.begin() , startTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
+            	}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+					if(srch2is::DateAndTimeHandler::verifyDateTimeString(*startTextValue , srch2is::DateTimeTypePointOfTime)
+							|| srch2is::DateAndTimeHandler::verifyDateTimeString(*startTextValue , srch2is::DateTimeTypeNow) ){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
+						std::stringstream buffer;
+						buffer << timeValue;
+						*startTextValue = buffer.str();
+					}else{
+	                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
             }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
@@ -604,20 +608,27 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             // now use the date/time class to parse tha values
             for(vector<string>::iterator endTextValue =facetEnds.begin() ;
             		endTextValue != facetEnds.end() ; ++endTextValue){
-            	if(endTextValue->compare("") == 0){
-            		continue;
+            	string attributeName = facetAttributes.at(std::distance(facetEnds.begin() , endTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
             	}
-            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
-        		if(timeValue > 0){
-        			std::stringstream buffer;
-        			buffer << timeValue;
-        			*endTextValue = buffer.str();
-        		}else{
-                    parseError
-                            << "Facet start value is not readable..\n";
-                    configSuccess = false;
-                    return;
-        		}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+    				if(srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypePointOfTime)
+    						|| srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypeNow) ){
+    					long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
+            			std::stringstream buffer;
+            			buffer << timeValue;
+            			*endTextValue = buffer.str();
+            		}else{
+	                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
+
             }
             if(facetEnds.size() != facetAttributes.size()){
                 parseError << "facet-attribute-end should contain the same number of values as facet-attributes. Facet disabled.\n";
@@ -634,20 +645,21 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             // now use the date/time class to parse tha values
             for(vector<string>::iterator gapTextValue =facetGaps.begin() ;
             		gapTextValue != facetGaps.end() ; ++gapTextValue){
-            	if(gapTextValue->compare("") == 0){
-            		continue;
+            	string attributeName = facetAttributes.at(std::distance(facetGaps.begin() , gapTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
             	}
-            	long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*gapTextValue);
-        		if(timeValue > 0){
-        			std::stringstream buffer;
-        			buffer << timeValue;
-        			*gapTextValue = buffer.str();
-        		}else{
-                    parseError
-                            << "Facet start value is not readable..\n";
-                    configSuccess = false;
-                    return;
-        		}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+    				if(!srch2is::DateAndTimeHandler::verifyDateTimeString(*gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
+	                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
+
             }
             if(facetGaps.size() != facetAttributes.size()){
                 parseError << "facet-attribute-gap should contain the same number of values as facet-attributes. Facet disabled.\n";

@@ -71,7 +71,12 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             for (int i=0; i<  impl->lowerBoundsOfIntervals[*facetField].size() ; i++) {
                 // pushing back zeros directly to the map entry
             	string categoryName = "";
-            	categoryName += DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(impl->lowerBoundsOfIntervals[*facetField].at(i).toString());
+            	if(impl->lowerBoundsOfIntervals[*facetField].at(i).getType() == srch2is::ATTRIBUTE_TYPE_TIME){
+            		long timeScore = impl->lowerBoundsOfIntervals[*facetField].at(i).getTimeScore();
+            		categoryName = DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(&timeScore);
+            	}else{
+            		categoryName = impl->lowerBoundsOfIntervals[*facetField].at(i).toString();
+            	}
                 output->impl->facetResults[*facetField].push_back(make_pair(categoryName, 0));
             }
         }

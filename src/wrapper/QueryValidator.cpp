@@ -360,9 +360,13 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         if (valid && !facetQueryContainer->rangeGaps.empty()
                 && facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
-            valid = validateValueWithType(fieldType,
-                    facetQueryContainer->rangeGaps.at(
-                            facetParallelVectorsIndex));
+        	if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
+        		valid = srch2is::DateAndTimeHandler::verifyDateTimeString
+        				(facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex) , srch2is::DateTimeTypeDurationOfTime);
+        	}else{
+				valid = validateValueWithType(fieldType,
+						facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex));
+        	}
         }else{
             if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
                     this->indexDataContainerConf.getFacetAttributes()->end() ,
