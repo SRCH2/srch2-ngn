@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/src/core/
     ${CMAKE_BINARY_DIR}/include/
     ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}
 )
 
 set(GPERFTOOL_LIBS "")

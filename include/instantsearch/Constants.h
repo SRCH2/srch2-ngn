@@ -168,9 +168,14 @@ typedef enum
     TERM_TYPE_NOT_SPECIFIED
 } TermType;
 
-///
+/// response type
 
-
+typedef enum
+{
+    RESPONSE_WITH_RECORD,
+    RESPONSE_BASIC,
+    RESPONSE_WITH_SPECIFIED_ATTRIBUTES
+} ResponseType;
 
 
 }

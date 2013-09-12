@@ -318,12 +318,6 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         else
             return false;
     } else {
-        //If heapVector is empty
-        if (this->itemsHeap.size() == 0) {
-            //heapItem = NULL;
-            return false;
-        }
-
         // If partialHeap is empty
         if (this->numberOfItemsInPartialHeap == 0) {
             if (this->_addItemsToPartialHeap() == false)
@@ -345,7 +339,6 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 
             unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
             unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;
-            this->invertedListReadViewVector.clear();
             const shared_ptr<vectorview<unsigned> > &currentHeapMaxInvertedList = this->invertedListReadViewVector[currentHeapMax->cursorVectorPosition];
             unsigned currentHeapMaxInvertedListSize = currentHeapMaxInvertedList->size();
 
