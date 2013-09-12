@@ -41,11 +41,12 @@ namespace instantsearch
  */
 class TimeDuration{
 public:
-	vector<boost::gregorian::days> daysList;
-	vector<boost::gregorian::weeks> weeksList;
-	vector<boost::gregorian::months> monthsList;
-	vector<boost::gregorian::years> yearsList;
-	vector<boost::posix_time::time_duration> smallerDurationsList;
+	boost::posix_time::time_duration secondMinuteHourDuration;
+	boost::gregorian::date_duration dayWeekDuration;
+	boost::gregorian::months monthDuration;
+	boost::gregorian::years yearDuration;
+
+	TimeDuration():monthDuration(0),yearDuration(0){}
 
 	boost::posix_time::ptime operator+(const boost::posix_time::ptime & pTime) const;
 	long operator+(const long pTime) const;

@@ -454,9 +454,6 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 		stringstream buffer;
 		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
 		stringValue = buffer.str();
-		if(temp.compare("01/01/1970") == 0){
-			std::cout << stringValue << std::endl;
-		}
 	}
     return;
 

@@ -617,6 +617,7 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                     facetEnabled = false;
             	}
             	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+            		// If it's a time attribute, the input value must be compatible with our format.
     				if(srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypePointOfTime)
     						|| srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypeNow) ){
     					long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);

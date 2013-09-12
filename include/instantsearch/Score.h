@@ -69,7 +69,7 @@ namespace srch2
     	double getDoubleScore() const;
     	string getTextScore() const;
     	long getTimeScore() const;
-    	TimeDuration getDuration() const;
+    	TimeDuration getTimeDuration() const;
 
 
     	Score minimumValue();
@@ -92,7 +92,6 @@ namespace srch2
     	float floatScore;
     	string stringScore;
     	long timeScore;
-
     	TimeDuration timeDurationScore;
     };
 

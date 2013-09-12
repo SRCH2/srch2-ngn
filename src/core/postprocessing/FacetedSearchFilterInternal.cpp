@@ -101,6 +101,8 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
 
             Score gap;
             if(attributeType == ATTRIBUTE_TYPE_TIME){
+            	// For time attributes gap should not be of the same type, it should be
+            	// of type TimeDuration.
             	if(start > end){ // start should not be greater than end
             		start = end;
             		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");

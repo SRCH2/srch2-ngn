@@ -71,6 +71,7 @@ void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
             for (int i=0; i<  impl->lowerBoundsOfIntervals[*facetField].size() ; i++) {
                 // pushing back zeros directly to the map entry
             	string categoryName = "";
+            	// Attributes which are time must be translated back into string.
             	if(impl->lowerBoundsOfIntervals[*facetField].at(i).getType() == srch2is::ATTRIBUTE_TYPE_TIME){
             		long timeScore = impl->lowerBoundsOfIntervals[*facetField].at(i).getTimeScore();
             		categoryName = DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(&timeScore);

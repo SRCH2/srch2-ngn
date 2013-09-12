@@ -1,26 +1,44 @@
 
 
 
-#include <iostream>
 #include "DateAndTimeHandler.h"
 #include "instantsearch/DateTime.h"
+#include <iostream>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <cstdlib>
-
+#include <util/Assert.h>
 
 namespace srch2 {
 namespace instantsearch {
 
+/*
+ * Example:
+ * timeString = 02/03/2000
+ * output will be the number of seconds from 01/01/1970 to timeString.
+ * The format of this string must match one of the followings :
+ * 		"%H:%M:%S",
+        "%m/%d/%Y",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y%m%d%H%M%S",
+        "%Y%m%d%H%M",
+        "%Y%m%d"
+ * or
+ * 		"NOW" >> which will be interpreted as the current time.
+ */
 time_t DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(const string & timeString)
 {
     // 1. first check with the known point of time formats we have
     bt::ptime pt;
     for(size_t i=0; i<localeFormatsPointOfTime; ++i)
     {
-        boost::regex e(regexInputsPointOfTime[i]);
-        boost::smatch what;
-        if(boost::regex_match(timeString, what, e, boost::match_extra))
+        boost::regex regexEngine(regexInputsPointOfTime[i]);
+        boost::smatch whatIsMatched;
+        if(boost::regex_match(timeString, whatIsMatched, regexEngine, boost::match_extra))
         {
+        	// This piece of code is taken from :
+        	// http://stackoverflow.com/questions/2612343/basic-boost-date-time-input-format-question
         	std::istringstream is(timeString);
         	is.imbue(localeInputsPointOfTime[i]);
         	is >> pt;
@@ -36,56 +54,50 @@ time_t DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(const string 
     }
     return -1;
 }
+
+/*
+ * this function prints the date determined by secondsFromEpoch seconds from 1/1/1970
+ * in a proper human readable format.
+ */
 string DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(register const time_t * secondsFromEpoch){
 
-//    struct tm * ptm = gmtime(secondsFromEpoch);
     ostringstream oss;
-    /*
-     * 1800 is the beginning of time, for those time constants like DAY, since we don't enter any year,
-     * their year is set to 1800. This is how we determine this time should be printed as a time gap or a time point
-     *
-     * 1400 is the lower bound of boost time library. For HH:mm:ss format the year is automatically set to this. Again
-     * by using this we understand we should treat it as a time duration not a time point.
-     */
-//    if(ptm->tm_year + 1730 == 1800 || ptm->tm_year + 1730 == 1400){
-//        oss << ptm->tm_hour << ":" << ptm->tm_min << ":" << ptm->tm_sec ;
-//    }else{
-//        oss << ptm->tm_mon+1 << "/" << ptm->tm_mday << "/" <<
-//                ptm->tm_year + 1730 << " " << ptm->tm_hour << ":" << ptm->tm_min << ":" << ptm->tm_sec ;
-//    }
     boost::posix_time::ptime pTime = boost::posix_time::from_time_t(*secondsFromEpoch);
     oss << pTime;
     return oss.str() ;
 }
 
-bool DateAndTimeHandler::verifyDateTimeString(const string & timeString, DateTimeType dateTimeType){
+/*
+ * This functions verifies whether the input string is compatible with time formats that we have or not.
+ */
+bool DateAndTimeHandler::verifyDateTimeString(const string & timeStringInput, DateTimeType dateTimeType){
+	string timeString = boost::to_upper_copy(timeStringInput);
     switch (dateTimeType) {
+    	// timeString == NOW
         case DateTimeTypeNow:
-            if(timeString.compare("NOW")){
+            if(timeString.compare("NOW") == 0){
                 return true;
             }else{
                 return false;
             }
+        // timeString exmaple : 02/03/2001 12:23:34
         case DateTimeTypePointOfTime:{
-            for(size_t i=0; i<localeFormatsPointOfTime; ++i)
-            {
-                boost::regex e(regexInputsPointOfTime[i]);
-                boost::smatch what;
-                if(boost::regex_match(timeString, what, e, boost::match_extra))
-                {
+            for(size_t i=0; i<localeFormatsPointOfTime; ++i){
+                boost::regex regexEngine(regexInputsPointOfTime[i]);
+                boost::smatch whatIsMatched;
+                if(boost::regex_match(timeString, whatIsMatched, regexEngine, boost::match_extra)){
                     return true;
                 }
             }
             return false;
         }
+        // timeString example : 2YEARS or 12:01:01 (12 hours and 1 minutes and 1 seconds)
         case DateTimeTypeDurationOfTime:{
         	// 1. first see if it's a known duration format
-            for(size_t i=0; i<localeFormatsDurationOfTime; ++i)
-            {
-                boost::regex e(regexInputsDurationOfTime[i]);
-                boost::smatch what;
-                if(boost::regex_match(timeString, what, e, boost::match_extra))
-                {
+            for(size_t i=0; i<localeFormatsDurationOfTime; ++i){
+                boost::regex regexEngine(regexInputsDurationOfTime[i]);
+                boost::smatch whatIsMatched;
+                if(boost::regex_match(timeString, whatIsMatched, regexEngine, boost::match_extra)){
                     return true;
                 }
             }
@@ -95,14 +107,16 @@ bool DateAndTimeHandler::verifyDateTimeString(const string & timeString, DateTim
             }
             // 3. third, check to see if it's a combination of number and constant
             // first make the regex string
+            // The regex will be like "^(\\d*SECOND|\\d*SECONDS|\\d*MINUTE|\d*MINUTES)$"
+            // which will be matched with any string like 23DAYS
             string format = "^(";
             for(vector<string>::const_iterator cons = DURATION_OF_TIME_CONSTANTS.begin() ; cons != DURATION_OF_TIME_CONSTANTS.end() ; ++cons){
                 format+= "\\d*"+*cons + "|";
             }
             format += ")$";
-            boost::regex e2(format);
-            boost::smatch what2;
-            if(boost::regex_match(timeString, what2, e2, boost::match_extra)){ // string matches this pattern
+            boost::regex regexEngine2(format);
+            boost::smatch whatIsMatched2;
+            if(boost::regex_match(timeString, whatIsMatched2, regexEngine2, boost::match_extra)){ // string matches this pattern
                 return true;
             }
             return false;
@@ -111,11 +125,20 @@ bool DateAndTimeHandler::verifyDateTimeString(const string & timeString, DateTim
             return false;
     }
 }
+
+/*
+ * This function converts a ptime (boost date/time object) to the number of seconds
+ * from 01/01/1970.
+ */
 time_t DateAndTimeHandler::convertPtimeToSecondsFromEpoch(boost::posix_time::ptime t){
     static boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
     return (t-epoch).ticks() / boost::posix_time::time_duration::ticks_per_second();
 }
 
+/*
+ * This function converts the number of seconds from 01/01/1970 to a ptime
+ * (boost library date/time object) object.
+ */
 boost::posix_time::ptime DateAndTimeHandler::convertSecondsFromEpochToPTime(time_t t){
     return boost::posix_time::from_time_t(t);
 }
@@ -123,48 +146,13 @@ boost::posix_time::ptime DateAndTimeHandler::convertSecondsFromEpochToPTime(time
 /*
  * In this function the string should be parsed and TimeDuration object must be built
  */
-TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(const string & timeString){
+TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(const string & timeStringInput){
+	string timeString = boost::to_upper_copy(timeStringInput);
     // 1. if it is a constant, parse and save as a TimeDuration object
 	vector<string>::const_iterator constantIter = std::find(DURATION_OF_TIME_CONSTANTS.begin() , DURATION_OF_TIME_CONSTANTS.end() , timeString);
-    if(constantIter != DURATION_OF_TIME_CONSTANTS.end()){
-    	string constant = *constantIter;
-    	if(constant.compare("SECOND") == 0 || constant.compare("SECONDS") == 0  ){
-    		TimeDuration td;
-    		td.smallerDurationsList.push_back(boost::posix_time::seconds(1));
-    		return td;
-    	}
-    	if(constant.compare("MINUTE") == 0 || constant.compare("MINUTES") == 0  ){
-    		TimeDuration td;
-    		td.smallerDurationsList.push_back(boost::posix_time::minutes(1));
-    		return td;
-    	}
-    	if(constant.compare("HOUR") == 0 || constant.compare("HOURS") == 0  ){
-    		TimeDuration td;
-    		td.smallerDurationsList.push_back(boost::posix_time::hours(1));
-    		return td;
-    	}
-    	if(constant.compare("DAY") == 0 || constant.compare("DAYS") == 0  ){
-    		TimeDuration td;
-    		td.daysList.push_back(boost::gregorian::days(1));
-    		return td;
-    	}
-    	if(constant.compare("WEEK") == 0 || constant.compare("WEEKS") == 0  ){
-    		TimeDuration td;
-    		td.weeksList.push_back(boost::gregorian::weeks(1));
-    		return td;
-    	}
-    	if(constant.compare("MONTH") == 0 || constant.compare("MONTHS") == 0  ){
-    		TimeDuration td;
-    		td.monthsList.push_back(boost::gregorian::months(1));
-    		return td;
-    	}
-    	if(constant.compare("YEAR") == 0 || constant.compare("YEARS") == 0  ){
-    		TimeDuration td;
-    		td.yearsList.push_back(boost::gregorian::years(1));
-    		return td;
-    	}
-
-    }
+	if(constantIter != DURATION_OF_TIME_CONSTANTS.end()){
+		timeString = "1"+timeStringInput;
+	}
     // 2. if it's a combination of number and constant
     // first make the regex string
     string format = "^(";
@@ -172,61 +160,62 @@ TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(c
         format+= "\\d*"+*cons + "|";
     }
     format += ")$";
-    boost::regex e2(format);
-    boost::smatch what2;
-    if(boost::regex_match(timeString, what2, e2, boost::match_extra)){ // string matches this pattern
+    boost::regex regexEngine2(format);
+    boost::smatch whatIsMatched2;
+    if(boost::regex_match(timeString, whatIsMatched2, regexEngine2, boost::match_extra)){ // string matches this pattern
         for(vector<string>::const_iterator cons = DURATION_OF_TIME_CONSTANTS.begin() ; cons != DURATION_OF_TIME_CONSTANTS.end() ; ++cons){
         	string constant = *cons;
+        	/*
+        	 * Example : 12WEEKS or 1SECOND
+        	 */
             if(timeString.find(constant) != std::string::npos){
-            	// TODO: cahnge atoi
-                int numberOfThisUnit =  atoi(timeString.substr(0,timeString.size() - constant.size()).c_str());
+            	int numberOfThisUnit = boost::lexical_cast<int>(timeString.substr(0,timeString.size() - constant.size()));
             	if(constant.compare("SECOND") == 0 || constant.compare("SECONDS") == 0  ){
             		TimeDuration td;
-            		td.smallerDurationsList.push_back(boost::posix_time::seconds(numberOfThisUnit));
+            		td.secondMinuteHourDuration = boost::posix_time::seconds(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("MINUTE") == 0 || constant.compare("MINUTES") == 0  ){
             		TimeDuration td;
-            		td.smallerDurationsList.push_back(boost::posix_time::minutes(numberOfThisUnit));
+            		td.secondMinuteHourDuration = boost::posix_time::minutes(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("HOUR") == 0 || constant.compare("HOURS") == 0  ){
             		TimeDuration td;
-            		td.smallerDurationsList.push_back(boost::posix_time::hours(numberOfThisUnit));
+            		td.secondMinuteHourDuration = boost::posix_time::hours(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("DAY") == 0 || constant.compare("DAYS") == 0  ){
             		TimeDuration td;
-            		td.daysList.push_back(boost::gregorian::days(numberOfThisUnit));
+            		td.dayWeekDuration = boost::gregorian::days(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("WEEK") == 0 || constant.compare("WEEKS") == 0  ){
             		TimeDuration td;
-            		td.weeksList.push_back(boost::gregorian::weeks(numberOfThisUnit));
+            		td.dayWeekDuration = boost::gregorian::weeks(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("MONTH") == 0 || constant.compare("MONTHS") == 0  ){
             		TimeDuration td;
-            		td.monthsList.push_back(boost::gregorian::months(numberOfThisUnit));
+            		td.monthDuration = boost::gregorian::months(numberOfThisUnit);
             		return td;
             	}
             	if(constant.compare("YEAR") == 0 || constant.compare("YEARS") == 0  ){
             		TimeDuration td;
-            		td.yearsList.push_back(boost::gregorian::years(numberOfThisUnit));
+            		td.yearDuration = boost::gregorian::years(numberOfThisUnit);
             		return td;
             	}
             }
         }
     }
 	// 3. if it's a known duration format
-    for(size_t i=0; i<localeFormatsDurationOfTime; ++i)
-    {
-        boost::regex e(regexInputsDurationOfTime[i]);
-        boost::smatch what;
-        if(boost::regex_match(timeString, what, e, boost::match_extra))
-        {
+    // Example : 12:13:14 meaning a gap of 12 hours and 13 minutes and 14 seconds
+    for(size_t i=0; i<localeFormatsDurationOfTime; ++i){
+        boost::regex regexEngine(regexInputsDurationOfTime[i]);
+        boost::smatch whatIsMatched;
+        if(boost::regex_match(timeString, whatIsMatched, regexEngine, boost::match_extra)){
             TimeDuration td;
-            td.smallerDurationsList.push_back(boost::posix_time::duration_from_string(timeString));
+            td.secondMinuteHourDuration = boost::posix_time::duration_from_string(timeString);
             return td;
         }
     }
@@ -252,9 +241,10 @@ vector<string> DateAndTimeHandler::initializeConstants(){
     constants.push_back("WEEKS");
     constants.push_back("MONTHS");
     constants.push_back("YEARS");
-    // constants["MONTH"] = ???? how should we support month? Months have different lengths ...
     return constants;
 }
+// This regex array is parallel to localeInputsDurationOfTime and that variable is a good
+// explanation for this array
 const string DateAndTimeHandler::regexInputsDurationOfTime[] = {
         "^\\d{2}:\\d{2}:\\d{2}$"
 };
@@ -264,6 +254,8 @@ const locale DateAndTimeHandler::localeInputsDurationOfTime[] ={
 const size_t DateAndTimeHandler::localeFormatsDurationOfTime =
         sizeof(DateAndTimeHandler::localeInputsDurationOfTime)/sizeof(DateAndTimeHandler::localeInputsDurationOfTime[0]);
 
+// This regex array is parallel to localeInputsPointOfTime and that variable is a good
+// explanation for this array
 const string DateAndTimeHandler::regexInputsPointOfTime[] = {
 		"^\\d{2}:\\d{2}:\\d{2}$",
         "^\\d{2}/\\d{2}/\\d{4}$",
@@ -286,68 +278,51 @@ const size_t DateAndTimeHandler::localeFormatsPointOfTime =
 
 const vector<string> DateAndTimeHandler::DURATION_OF_TIME_CONSTANTS = DateAndTimeHandler::initializeConstants();
 
-
+/*
+ * This function implements operator + for (TimeDuration + ptime)
+ * This means if TimeDuration is on left and ptime is on right this function
+ * returns a ptime which is equal to input + TimeDuration
+ */
 boost::posix_time::ptime TimeDuration::operator+(const boost::posix_time::ptime & pTime) const{
 	boost::posix_time::ptime timeResult;
 	timeResult = pTime;
 
-	for(vector<boost::gregorian::days>::const_iterator day = daysList.begin();
-			day != daysList.end(); ++day){
-		timeResult = timeResult + *day;
-	}
-
-	for(vector<boost::gregorian::weeks>::const_iterator week = weeksList.begin();
-			week != weeksList.end(); ++week){
-		timeResult = timeResult + *week;
-	}
-
-	for(vector<boost::gregorian::months>::const_iterator month = monthsList.begin();
-			month != monthsList.end(); ++month){
-		timeResult = timeResult + *month;
-	}
-
-	for(vector<boost::gregorian::years>::const_iterator year = yearsList.begin();
-			year != yearsList.end(); ++year){
-		timeResult = timeResult + *year;
-	}
-
-	for(vector<boost::posix_time::time_duration>::const_iterator hour_minute_second = smallerDurationsList.begin();
-			hour_minute_second != smallerDurationsList.end(); ++hour_minute_second){
-		timeResult = timeResult + *hour_minute_second;
-	}
+	timeResult = timeResult + secondMinuteHourDuration;
+	timeResult = timeResult + dayWeekDuration;
+	timeResult = timeResult + monthDuration;
+	timeResult = timeResult + yearDuration;
 
 	return timeResult;
 }
 
+/*
+ * This function implements operator + for (TimeDuration + long)
+ * This means if TimeDuration is on left and ling (number of seconds from epoch) is on right this function
+ * returns a ptime which is equal to input + TimeDuration
+ */
 long TimeDuration::operator+(const long pTime) const{
 	boost::posix_time::ptime pTimeObj = DateAndTimeHandler::convertSecondsFromEpochToPTime(pTime);
 	return DateAndTimeHandler::convertPtimeToSecondsFromEpoch(*this + pTimeObj); // it uses the other implementation for operator +
 }
 
-
+/*
+ * This function adds two TimeDuration objects to make a larger interval.
+ */
 TimeDuration TimeDuration::operator+(const TimeDuration & timeDuration) const{
 	TimeDuration result;
 
-	result.smallerDurationsList.insert(result.smallerDurationsList.begin() , timeDuration.smallerDurationsList.begin() , timeDuration.smallerDurationsList.end());
-	result.smallerDurationsList.insert(result.smallerDurationsList.begin() , this->smallerDurationsList.begin() , this->smallerDurationsList.end());
+	result.secondMinuteHourDuration = this->secondMinuteHourDuration + timeDuration.secondMinuteHourDuration;
+	result.dayWeekDuration = this->dayWeekDuration + timeDuration.dayWeekDuration;
+	result.monthDuration = this->monthDuration + timeDuration.monthDuration;
+	result.yearDuration = this->yearDuration + timeDuration.yearDuration;
 
-	result.daysList.insert(result.daysList.begin() , timeDuration.daysList.begin() , timeDuration.daysList.end());
-	result.daysList.insert(result.daysList.begin() , this->daysList.begin() , this->daysList.end());
-
-	result.monthsList.insert(result.monthsList.begin() , timeDuration.monthsList.begin() , timeDuration.monthsList.end());
-	result.monthsList.insert(result.monthsList.begin() , this->monthsList.begin() , this->monthsList.end());
-
-	result.weeksList.insert(result.weeksList.begin() , timeDuration.weeksList.begin() , timeDuration.weeksList.end());
-	result.weeksList.insert(result.weeksList.begin() , this->weeksList.begin() , this->weeksList.end());
-
-	result.yearsList.insert(result.yearsList.begin() , timeDuration.yearsList.begin() , timeDuration.yearsList.end());
-	result.yearsList.insert(result.yearsList.begin() , this->yearsList.begin() , this->yearsList.end());
 
 	return result;
 }
 
 string TimeDuration::toString() const{
-	return "GAP"; // TODO
+	ASSERT(false);
+	return "WARNING!!!!";
 }
 
 
