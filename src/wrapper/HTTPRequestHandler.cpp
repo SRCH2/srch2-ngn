@@ -566,15 +566,22 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
-            if(checkDirExistence(exportedDataFileName)){
-                exportedDataFileName = "export_data.json";
-            }
-            IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+            if(exportedDataFileName){
+                if(checkDirExistence(exportedDataFileName)){
+                    exportedDataFileName = "export_data.json";
+                }
+                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
 
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
-                            + log_str.str() + "]}\n");
-            Logger::info("%s", log_str.str().c_str());
+                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                        "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
+                                + log_str.str() + "]}\n");
+                Logger::info("%s", log_str.str().c_str());
+            }else {
+                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+                Logger::error(
+                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+            }
         } else{
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                     "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
