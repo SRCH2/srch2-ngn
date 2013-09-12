@@ -40,6 +40,7 @@
 #include "instantsearch/Score.h"
 #include "util/mytime.h"
 #include "util/ULEB128.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
 
 using std::vector;
 using std::fstream;
@@ -47,6 +48,7 @@ using std::string;
 using std::map;
 using std::pair;
 using half_float::half;
+using namespace snappy;
 
 // The upper bound of the number of keywords in a record is FFFFFF
 #define KEYWORD_THRESHOLD ((1<<24) - 1)
@@ -433,7 +435,8 @@ public:
         //clock_gettime(CLOCK_REALTIME, &tend);
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
-    ;
+
+    static void exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName);
 
     static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {

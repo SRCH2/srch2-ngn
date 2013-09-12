@@ -134,7 +134,7 @@ private:
     static const char* const facetRangeField;
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
-        return "f.%s.facet.%s", facetField.c_str(), facetRangeProperty.c_str();
+        return "f."+facetField+".facet."+facetRangeProperty;
     }
     //searchType
     static const char* const searchType;

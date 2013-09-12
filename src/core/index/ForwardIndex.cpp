@@ -1066,5 +1066,29 @@ unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
     return forwardList->getKeywordOffset(keywordId);
 }
 
+
+void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName)
+{
+    ofstream out(exportedDataFileName.c_str());
+    // If the forwardIndex needs to merge, we do the merge it first
+    if(forwardIndex.mergeRequired)
+        forwardIndex.merge();
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex.forwardListDirectory->getReadView(forwardListDirectoryReadView);
+    string uncompressedInMemoryRecordString;
+    // loop all the forwardList Index
+    for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
+        bool valid = false;
+        const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
+        // ignore the invalid record
+        if (valid == false)
+            continue;
+        const string& compressedInMemoryRecordString = fl->getInMemoryData();
+        snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
+        out << uncompressedInMemoryRecordString << endl;
+    }
+    out.close();
+}
+
 }
 }

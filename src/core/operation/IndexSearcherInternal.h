@@ -79,8 +79,7 @@ public:
     void search(const Circle &queryCircle, QueryResults *queryResults);
 
 
-    std::string getInMemoryData(unsigned internalRecordId) const
-    {
+    std::string getInMemoryData(unsigned internalRecordId) const {
         return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
     }
 
@@ -88,16 +87,16 @@ public:
     void computeTermVirtualList(QueryResults *queryResults) const;
 
     ///Used by TermVirtualList
-    const InvertedIndex *getInvertedIndex(){
+    const InvertedIndex *getInvertedIndex() {
         return this->indexData->invertedIndex;
     }
 
-    ForwardIndex * getForwardIndex(){
-    	return this->indexData->forwardIndex;
+    ForwardIndex * getForwardIndex() {
+        return this->indexData->forwardIndex;
     }
 
-    Schema * getSchema(){
-    	return this->indexData->schemaInternal;
+    Schema * getSchema() {
+        return this->indexData->schemaInternal;
     }
 
     void cacheClear();
@@ -106,8 +105,7 @@ public:
     bool cacheHit(const Query *query);
 
     //For testing
-    const Trie* getTrie() const
-    {
+    const Trie* getTrie() const {
         return this->indexData->trie;
     }
 
@@ -124,16 +122,23 @@ private:
     int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults);
 
     int searchTopKQuery(const Query *query, const int offset,
-            const int nextK, QueryResults* queryResults);
+                        const int nextK, QueryResults* queryResults);
 
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
 
     bool randomAccess(std::vector<TermVirtualList* > *virtualListVector,std::vector<float> &queryResultTermScores,
-            std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
+                      std::vector<std::string> &queryResultMatchingKeywords, std::vector<unsigned> &queryResultBitmaps, std::vector<unsigned> &queryResultEditDistances, const Query *query, unsigned recordId, unsigned skip, unsigned start);
+
+    // This is a helper function of nextRecord. It takes a record ID from the 0-th list, and looks for the remaining lists for the next record ID by doing an intersection operation ("AND" logic).
+    int getNextMatchingRecordID(int recordID, vector<TermVirtualList* >* virtualListVector);
+
+    // return the next record that exists in all the virtual lists ("AND of these keyword lists). If there are no more records, return NO_MORE_RECORDS
+    int getNextRecordID(vector<TermVirtualList* >* virtualListVector);
 };
 
-}}
+}
+}
 
 #endif /* __INDEXSEARCHERINTERNAL_H__ */

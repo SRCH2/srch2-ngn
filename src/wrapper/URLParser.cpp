@@ -39,6 +39,7 @@ const char* const URLParser::rightTopLongitudeParamName = "rt_lng";
 const char* const URLParser::centerLatitudeParamName = "ct_lat";
 const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
+const char* const URLParser::nameParamName = "exported_data_file";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
 URLToDoubleQuery::URLToDoubleQuery(const evkeyvalq &headers, const Analyzer *analyzer, const ConfigManager *indexDataContainerConf, const Schema *schema, URLParserHelper &urlParserHelper)

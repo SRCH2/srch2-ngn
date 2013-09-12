@@ -33,7 +33,7 @@ void test1()
     cowv.commit();
     ASSERT(write->isWriteView() == true);
     ASSERT(write->isReadView() == false);
-    ASSERT(write->getNeedToFreeOldArray() == false);
+    ASSERT(write->getNeedToFreeArray() == false);
     shared_ptr<vectorview<int> > read;
     cowv.getReadView(read);
     ASSERT(read->isWriteView() == false);
@@ -41,7 +41,7 @@ void test1()
     for (int i= 0; i< 10; i++) {
         write->push_back(i);
     }
-    ASSERT(write->getNeedToFreeOldArray() == true);
+    ASSERT(write->getNeedToFreeArray() == true);
 }
 
 // single reader and single writer
