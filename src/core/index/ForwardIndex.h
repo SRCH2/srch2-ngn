@@ -255,8 +255,8 @@ public:
 
     // Position Indexes APIs
     void setPositionIndex(vector<uint8_t>& v);
-    void getKeyWordPostionsInRecordField(unsigned ki, unsigned ai, vector<unsigned>& pl) const;
-    //uint8_t * setPositionIndex() { return positionIndex; }
+    void getKeyWordPostionsInRecordField(unsigned attrId, unsigned keyId,
+    		unsigned attrBitMap, vector<unsigned>& positionList) const;
 
 private:
     friend class boost::serialization::access;

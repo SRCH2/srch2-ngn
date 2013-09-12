@@ -841,38 +841,14 @@ void ForwardList::setPositionIndex(vector<uint8_t>& v){
 	positionIndex = v;
 	ASSERT(positionIndex.size() == positionIndex.capacity());
 }
-unsigned getBitSet(unsigned v);
-unsigned getBitSetPositionOfAttr(unsigned v, unsigned c);
+unsigned getBitSet(unsigned number);
+unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 
-void ForwardList::getKeyWordPostionsInRecordField(unsigned keyId, unsigned attributeId, vector<unsigned>& pl) const{
-
-	// plain linear scan
-	unsigned i = 0;
-	for (i = 0; i < numberOfKeywords; ++i) {
-		if (keywordIds[i] == keyId) {
-			break;
-		}
-	}
-	if ( i == numberOfKeywords){
-		Logger::warn("Keyword not found in forward indexes!!");
-		return;
-	}
-
-	unsigned keyOffset = i;
-
-	if (keywordAttributeBitmaps == 0)
-	{
-		Logger::warn("Attribute Info not found in forward indexes!!");
-		return;
-	}
-
-	unsigned currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
-	if ((currKeyattributeBitMap & (1 << attributeId)) == 0)
-		return;
-
+void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
+		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
 
 	if (positionIndex.size() == 0){
-		Logger::warn("Position Indexes not found in forward indexes!!");
+		Logger::warn("Position Index not found in forward index!!");
 		return;
 	}
 

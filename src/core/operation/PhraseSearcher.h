@@ -23,10 +23,15 @@ public:
     bool exactMatch (const vector<vector<unsigned> > &positionListVector,
     				 const vector<unsigned>& keyWordPositionsInPhrase,
                       vector<unsigned>& matchedPositions);
-    bool proximityMatch(const vector<vector<unsigned> > &positionListVector,
-                        const vector<string>& keywords, unsigned editDistance,
+    bool proximityMatch(const vector<vector<unsigned> >& positionListVector,
+                        const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
                         vector<unsigned>& matchedPosition);
-    unsigned geteditDistance(const vector<string>& keywords, const vector<string>& recordToMatch);
+    /*bool proximityMatch(const vector<vector<unsigned> > &positionListVector,
+                        const vector<string>& keywords, unsigned editDistance,
+                        vector<unsigned>& matchedPosition);*/
+    signed  getPhraseSlop(const vector<unsigned>& query,
+    		const vector<unsigned>& record);
+    unsigned geteditDistance_L(const vector<string>& keywords, const vector<string>& recordToMatch);
     unsigned getEditDistance_DL(const vector<string>& src, const vector<string>& target);
 private:
     void getFuzzyRecordSnippet(const vector<vector<unsigned> > &positionListVector,

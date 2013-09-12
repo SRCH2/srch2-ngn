@@ -9,6 +9,7 @@
 #include "PhraseSearcher.h"
 #include "util/Logger.h"
 #include <iostream>
+#include <climits>
 #include <queue>
 
 using srch2::util::Logger;
@@ -132,27 +133,11 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  *  and edit distance (slop) in a positionlistVector. MatchedPosition return
  *  first occurrence of proximity match.
  *
- *  for a example record
- *  rec = {
- *          title : "Breaking Bad" ,
- *          description: "Breaking Bad is the story of Walter White, a struggling high school
- *                        chemistry teacher who is diagnosed with inoperable lung cancer. He turns
- *                        to a life of crime, producing and selling methamphetamine"
- *        }
- *  query
- *  q1 = "crime methamphetamine"~3  is a proximity match with slop 3 as "crime" and "methamphetamine"
- *  are three keywords apart. Hence it requires 3 edits to get the complete phrase present in the
- *  record.
- *  q2 = "teacher chemistry"~1 is a proximity match as it requires one swap operation to get phrase
- *  "chemistry teacher" which is present in record.
- *  q3 = "teacher high"~2 is NOT a proximity match because there is not matching phrase in record
- *  within edit distance of 2.
- *
- *  See geteditDistance function below for more detail.
+ *  See getPhraseSlop function below for more detail.
  *
  */
 bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionListVector,
-                    const vector<string>& keywords, unsigned editDistance,
+                    const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
                     vector<unsigned>& matchedPosition)
 {
     // pre-conditions
@@ -162,19 +147,27 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         return false;
     }
 
-    if (positionListVector.size() != keywords.size()) {
+    if (positionListVector.size() != offsetsInPhrase.size()) {
     	Logger::debug("proximityMatch: Position list vector size did not match" \
     				  "with query keywords");
         return false;
     }
 
-    if (editDistance == 0){
+    // make sure none of the position list is not empty
+    for (int i = 0; i < positionListVector.size(); ++i){
+    	if (positionListVector[i].size() == 0){
+    		Logger::debug("proximityMatch: Position list is empty for one of the keywords");
+    		return false;
+    	}
+    }
+
+    if (inputSlop == 0){
     	Logger::debug("proximityMatch: Edit distance cannot be 0 for proximity match");
         return false;
     }
 
-    if (editDistance > editDistanceThreshold) {
-    	Logger::debug("proximityMatch: Edit distance %d is more than threshold %d", editDistance,
+    if (inputSlop > editDistanceThreshold) {
+    	Logger::debug("proximityMatch: Edit distance %d is more than threshold %d", inputSlop,
     				editDistanceThreshold);
         return true;
     }
@@ -185,31 +178,32 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
     std::priority_queue<std::pair<unsigned, unsigned>,
                         vector<std::pair<unsigned, unsigned> >,
                         comparator > minHeap;
-    unsigned max = 0;
+   // unsigned max = 0;
     unsigned min = 0;
     unsigned totalKeyWords = positionListVector.size();
     vector<unsigned> cursors(totalKeyWords);
     // initialize cursors
     for (unsigned i = 0; i < totalKeyWords; ++i) {
         minHeap.push(make_pair(positionListVector[i].front(),i));
-        if (positionListVector[i].front() > max)
-            max = positionListVector[i].front();
+        //if (positionListVector[i].front() > max)
+        //    max = positionListVector[i].front();
     }
     while(1) {
         min = minHeap.top().first;
         matchedPosition.clear();
-        if (max - min < totalKeyWords + editDistance){
-            vector<string> record (max - min + 1);
-            for (unsigned i =0; i < positionListVector.size(); ++i){
-                unsigned pos = positionListVector[i][cursors[i]];
-                matchedPosition.push_back(pos);
-                record[pos - min] =  keywords[i];
-            }
-            //cout << "record : " ; printVector(record);
-            if (editDistance >= getEditDistance_DL(keywords, record)) {
-                return true;
-            }
+        //if (max - min < totalKeyWords + editDistance){
+        for (unsigned i =0; i < positionListVector.size(); ++i){
+        	unsigned pos = positionListVector[i][cursors[i]];
+        	matchedPosition.push_back(pos);
         }
+        if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
+        	return true;
+        }
+            //cout << "record : " ; printVector(record);
+            /*if (editDistance >= getEditDistance_DL(keywords, record)) {
+                return true;
+            }*/
+        //}
         unsigned currentListIndex = minHeap.top().second;
         const vector<unsigned>& currList = positionListVector[currentListIndex];
         ++cursors[currentListIndex];
@@ -218,13 +212,42 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         unsigned next = currList[cursors[currentListIndex]];
         minHeap.pop();
         minHeap.push(make_pair( next, currentListIndex));
-        if (next > max)
-            max = next;
     }
 
     return false;
 }
 
+/*
+ * The function calculates difference in position of keywords in record and
+ * query. Then max(difference) - min(difference) is considered as "slop".
+ *
+ * Original record =>    "new york time square hudson river"
+ * position in record =>  1   2    3    4      5      6
+ *
+ * phrase 1 = "york^1 new^2 square^3 time^4",
+ *
+ * diff("york") = 1
+ * diff("new") = -1
+ * diff("time") = -1
+ * diff("square") = 1
+ *
+ * max(diff) - min(diff) = 1 - (-1) =  2. Hence slop >= 2 should match this record.
+ *
+ */
+signed PhraseSearcher::getPhraseSlop(const vector<unsigned>& query,
+		const vector<unsigned>& record){
+
+	signed maxDiff = INT_MIN;
+	signed minDiff = INT_MAX;
+	for (int i=0; i < query.size(); ++i){
+		signed diff = record[i] - query[i];
+		if (diff > maxDiff)
+			maxDiff = diff;
+		if (diff < minDiff)
+			minDiff = diff;
+	}
+	return maxDiff - minDiff;
+}
 /*
  * The function calculates Levenshtein distance. Also known as edit distance
  * See link below for more details
@@ -241,7 +264,7 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
  * phrase 2 = "york square new time", edit distance should be 5
  *
  */
-unsigned PhraseSearcher::geteditDistance(const vector<string>& keywords,
+unsigned PhraseSearcher::geteditDistance_L(const vector<string>& keywords,
                                          const vector<string>& recordToMatch) {
 
     unsigned cost;

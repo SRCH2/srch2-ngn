@@ -16,34 +16,45 @@ void PhraseQueryFilter::doFilter(
     IndexSearcher* indexSearcher, const Query* query, QueryResults* input,
     QueryResults* output) {
 
-    IndexSearcherInternal * indexSearcherInternal =
+	unsigned resultsCount =  input->getNumberOfResults();
+
+	if (resultsCount == 0)
+	    	return;
+
+	IndexSearcherInternal * indexSearcherInternal =
             dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+
+	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
     /*
      * fetch internal keyword ids from keyword string
      */
-    {
-        boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-        indexSearcherInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 
-        for ( unsigned i = 0 ; i < phraseInfoVector.size(); ++i) {
-            PhraseInfo & pi = phraseInfoVector[i];
-            for (int j = 0; j < pi.phraseKeyWords.size(); ++j) {
-                const string& keywordString = pi.phraseKeyWords[j];
-                unsigned keyId = indexSearcherInternal->getTrie()->getTrieNodeFromUtf8String(
-                        trieRootNode_ReadView->root, keywordString)->getId();
-                pi.keywordIds.push_back(keyId);
-            }
-        }
-    }
+	{
+		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+		indexSearcherInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+
+		for ( unsigned i = 0 ; i < phraseInfoVector.size(); ++i) {
+			PhraseInfo & pi = phraseInfoVector[i];
+			for (int j = 0; j < pi.phraseKeyWords.size(); ++j) {
+				const string& keywordString = pi.phraseKeyWords[j];
+				const TrieNode *trieNode = indexSearcherInternal->getTrie()->getTrieNodeFromUtf8String(
+						trieRootNode_ReadView->root, keywordString);
+				if (trieNode == 0){
+					Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());
+					return;
+				}
+				unsigned keyId = trieNode->getId();
+				pi.keywordIds.push_back(keyId);
+			}
+		}
+	}
 
     /*
      *  Loop over the input records  and apply all the phrase filter stored
      *  in phraseInfoVector
      */
 
-    unsigned resultsCount =  input->getNumberOfResults();
     for (unsigned i = 0; i < resultsCount; ++i) {
         QueryResult * qr = input->impl->sortedFinalResults[i];
         bool isValid = false;
@@ -81,26 +92,54 @@ bool PhraseQueryFilter::matchPhrase(const ForwardList* forwardListPtr, const Phr
     bool result = false;
     unsigned totalAttributes = sizeof(phraseInfo.attributeBitMap) * 8 - 1;
     unsigned slop = phraseInfo.proximitySlop;
+
+    // store keyword offsets and their attribute bit map vector.
+    vector<unsigned> keywordsOffsetinRec;
+    vector<unsigned> keywordsAttrBitMapInRec;
+    for (int i = 0; i < phraseInfo.keywordIds.size(); ++i) {
+    	unsigned keywordOffset = forwardListPtr->getKeywordOffset(phraseInfo.keywordIds[i]);
+    	if (keywordOffset < 0 && keywordOffset > forwardListPtr->getNumberOfKeywords()){
+    		Logger::warn("Keyword %s not found in forward List !!",
+    				phraseInfo.phraseKeyWords[i].c_str());
+    		return false;  // keyword is not Forward List
+    	}
+    	keywordsOffsetinRec.push_back(keywordOffset);
+    	if (forwardListPtr->getKeywordAttributeBitmaps() == 0){
+    		Logger::warn("Attribute info not found in forward List!!");
+    		return false; // attribute info missing.
+    	}
+    	keywordsAttrBitMapInRec.push_back(forwardListPtr->getKeywordAttributeBitmap(keywordOffset));
+    }
+
+    unsigned allowedBitMap = phraseInfo.attributeBitMap;
+    for (int i = 0; i < keywordsAttrBitMapInRec.size(); ++i) {
+    	allowedBitMap &= keywordsAttrBitMapInRec[i];
+    }
+
     for (unsigned attributeId = 0; attributeId < totalAttributes; ++attributeId) {
-        mask <<= attributeId;
-        vector<vector<unsigned> > positionListVector;
-        if ((phraseInfo.attributeBitMap & mask) == 0)
+        mask = 1 << attributeId;
+        if ((allowedBitMap & mask) == 0)
             continue;
+        vector<vector<unsigned> > positionListVector;
         for (int i = 0; i < phraseInfo.keywordIds.size(); ++i) {
-            unsigned keywordId = phraseInfo.keywordIds[i];
+            unsigned keyOffset = keywordsOffsetinRec[i];
+            unsigned keyAttrBitMap = keywordsAttrBitMapInRec[i];
             vector<unsigned> positionList;
-            forwardListPtr->getKeyWordPostionsInRecordField(keywordId, attributeId, positionList);
+            forwardListPtr->getKeyWordPostionsInRecordField(keyOffset, attributeId, keyAttrBitMap,
+            		positionList);
             if (positionList.size() == 0){
-                Logger::debug("Position Indexes for keywordId = %d , attribute = %d not be found",
-                        keywordId, attributeId);
+                Logger::debug("Position Indexes for keyword = %s , attribute = %d not be found",
+                		phraseInfo.phraseKeyWords[i].c_str(), attributeId);
             }
             positionListVector.push_back(positionList);
         }
+    	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
         if (slop > 0){
-            result = phraseSearcher->proximityMatch(positionListVector, keywords, slop, matchedPosition);
+            result = phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
+            		matchedPosition);
         } else {
-        	const vector<unsigned> & pKeyPosindexRef = phraseInfo.phraseKeywordPositionIndex;
-            result = phraseSearcher->exactMatch(positionListVector, pKeyPosindexRef, matchedPosition);
+            result = phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
+            		matchedPosition);
         }
         // AND operation and we didn't find result so we should break
         if (result == false && ANDOperation)
