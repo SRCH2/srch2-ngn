@@ -169,12 +169,12 @@ const std::string* SchemaInternal::getDefaultValueOfNonSearchableAttribute(
     return NULL;
 }
 
-void SchemaInternal::setSupportSwap(const bool supportSwap) {
-    this->supportSwap = supportSwap;
+void SchemaInternal::setSupportSwapInEditDistance(const bool supportSwapInEditDistance) {
+    this->supportSwapInEditDistance = supportSwapInEditDistance;
 }
 
-bool SchemaInternal::getSupportSwap() const{
-    return supportSwap;
+bool SchemaInternal::getSupportSwapInEditDistance() const{
+    return supportSwapInEditDistance;
 }
 
 void SchemaInternal::setScoringExpression(

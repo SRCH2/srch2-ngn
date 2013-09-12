@@ -317,7 +317,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
-    schema->setSupportSwap(indexDataContainerConf->getSupportSwap());
+    schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 
     return schema;
 }

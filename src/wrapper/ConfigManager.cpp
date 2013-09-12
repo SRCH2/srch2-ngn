@@ -33,7 +33,7 @@ void ConfigManager::loadConfigFile(){
     //("customer-name", po::value<string>(), "customer name") // REQUIRED
     ("write-api-type", po::value<bool>(), "write-api-type. Kafka or http write") // REQUIRED
     ("index-type", po::value<int>(), "index-type") // REQUIRED
-    ("fuzzy-type", po::value<bool>(), "fuzzy-type")
+    ("support-swap-in-edit-distance", po::value<bool>(), "support swap in edit distance")
     ("data-source-type", po::value<bool>(), "Data source type")
 
     ("kafka-consumer-topicname", po::value<string>(),"Kafka consumer topic name") // REQUIRED
@@ -275,10 +275,10 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
 		return;
 	}
 
-	if (vm.count("fuzzy-type")) {
-        supportSwap = vm["fuzzy-type"].as<bool>();
+	if (vm.count("support-swap-in-edit-distance")) {
+	    supportSwapInEditDistance = vm["support-swap-in-edit-distance"].as<bool>();
     } else {
-        supportSwap = true;
+        supportSwapInEditDistance = true;
     }
 
 	if (vm.count("search-response-JSON-format")) {
@@ -1004,8 +1004,8 @@ int ConfigManager::getIndexType() const {
 	return indexType;
 }
 
-bool ConfigManager::getSupportSwap() const {
-    return supportSwap;
+bool ConfigManager::getSupportSwapInEditDistance() const {
+    return supportSwapInEditDistance;
 }
 
 const string& ConfigManager::getAttributeLatitude() const {

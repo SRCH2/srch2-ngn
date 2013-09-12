@@ -159,8 +159,8 @@ public:
         return 0;
     }
 
-    void setSupportSwap(const bool supportSwap);
-    bool getSupportSwap() const;
+    void setSupportSwapInEditDistance(const bool supportSwapInEditDistance);
+    bool getSupportSwapInEditDistance() const;
 
     void setScoringExpression(const std::string &scoringExpression);
     const std::string getScoringExpression() const;
@@ -212,7 +212,7 @@ private:
     srch2::instantsearch::PositionIndexType positionIndexType;
 
     std::string scoringExpressionString;
-    bool supportSwap;
+    bool supportSwapInEditDistance;
 
     bool commited;
 

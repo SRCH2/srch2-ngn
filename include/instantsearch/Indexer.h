@@ -123,6 +123,7 @@ public:
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 
+    // get schema, which can be modified without rebuilding the index
     virtual srch2::instantsearch::Schema *getSchema() = 0;
 
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;

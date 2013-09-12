@@ -163,8 +163,8 @@ public:
     virtual const std::string getScoringExpression() const = 0;
 
     // set if support swap operation for edit distance
-    virtual void setSupportSwap(const bool supportSwap) = 0;
-    virtual bool getSupportSwap() const = 0;
+    virtual void setSupportSwapInEditDistance(const bool supportSwapInEditDistance) = 0;
+    virtual bool getSupportSwapInEditDistance() const = 0;
 
     /**
      * Writes the schema to a folder specified in schema::create(...) function.

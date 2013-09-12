@@ -819,7 +819,7 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
     if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
-        initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwap());
+        initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance());
         initialPrefixActiveNodeSet->busyBit->setBusy();
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();

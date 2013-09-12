@@ -76,7 +76,7 @@ private:
     bool flagResultsCached;
 
     TrieRootNodeSharedPtr trieRootNodeSharedPtr;
-    bool supportSwap;
+    bool supportSwapInEditDistance;
 
     //PAN: A map from trie node to its pivotal active nodes
     std::map<const TrieNode*, PivotalActiveNode > PANMap;
@@ -88,7 +88,7 @@ private:
 
 public:
 
-    void init(std::vector<CharType> &prefix, const unsigned editDistanceThreshold, const TrieRootNodeSharedPtr &trieRootNodeSharedPtr, bool supportSwap) {
+    void init(std::vector<CharType> &prefix, const unsigned editDistanceThreshold, const TrieRootNodeSharedPtr &trieRootNodeSharedPtr, bool supportSwapInEditDistance) {
         this->prefix = prefix;
         this->editDistanceThreshold = editDistanceThreshold;
 
@@ -99,18 +99,18 @@ public:
         this->busyBit = new BusyBit();
 
         this->trieRootNodeSharedPtr = trieRootNodeSharedPtr;
-        this->supportSwap = supportSwap;
+        this->supportSwapInEditDistance = supportSwapInEditDistance;
     };
 
 
-    PrefixActiveNodeSet(std::vector<CharType> &prefix, const unsigned editDistanceThreshold, TrieRootNodeSharedPtr &trieRootNodeSharedPtr, bool supportSwap = true) {
-        init(prefix, editDistanceThreshold, trieRootNodeSharedPtr, supportSwap);
+    PrefixActiveNodeSet(std::vector<CharType> &prefix, const unsigned editDistanceThreshold, TrieRootNodeSharedPtr &trieRootNodeSharedPtr, bool supportSwapInEditDistance = true) {
+        init(prefix, editDistanceThreshold, trieRootNodeSharedPtr, supportSwapInEditDistance);
     };
 
     /// A set of active nodes for an empty string and an edit-distance threshold
-    PrefixActiveNodeSet(const TrieRootNodeSharedPtr &tsPtr, const unsigned editDistanceThreshold, bool supportSwap = true) {
+    PrefixActiveNodeSet(const TrieRootNodeSharedPtr &tsPtr, const unsigned editDistanceThreshold, bool supportSwapInEditDistance = true) {
         std::vector<CharType> emptyString;
-        init(emptyString, editDistanceThreshold, tsPtr, supportSwap);
+        init(emptyString, editDistanceThreshold, tsPtr, supportSwapInEditDistance);
 
         //PAN:
         // Add the trie nodes up to the given depth
@@ -127,10 +127,10 @@ public:
     };
 
     /// A set of active nodes for an empty string and an edit-distance threshold
-    PrefixActiveNodeSet(const Trie *trie, const unsigned editDistanceThreshold, bool supportSwap = true) {
+    PrefixActiveNodeSet(const Trie *trie, const unsigned editDistanceThreshold, bool supportSwapInEditDistance = true) {
         trie->getTrieRootNode_ReadView(this->trieRootNodeSharedPtr);
         std::vector<CharType> emptyString;
-        init(emptyString, editDistanceThreshold, this->trieRootNodeSharedPtr, supportSwap);
+        init(emptyString, editDistanceThreshold, this->trieRootNodeSharedPtr, supportSwapInEditDistance);
 
         //PAN:
         // Add the trie nodes up to the given depth
