@@ -231,7 +231,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
 //    }
 
-    const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults =
+    const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =
             queryResults->getFacetResults();
     // Example:
     // ["facet" : {"facet_field_name":"model" ,
@@ -252,24 +252,24 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         root["facets"].resize(facetResults->size());
 
         unsigned attributeCounter = 0;
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attr =
+        for (std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator attr =
                 facetResults->begin(); attr != facetResults->end(); ++attr) {
             root["facets"][attributeCounter]["facet_field_name"] = attr->first;
             root["facets"][attributeCounter]["facet_info"].resize(
-                    attr->second.size());
+                    attr->second.second.size());
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
-                    attr->second.begin(); category != attr->second.end();
+                    attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
-                if(category == attr->second.begin() && isFloat(category->first)){
+                if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] = "lessThanStart";
+                            - attr->second.second.begin())]["category_name"] = "lessThanStart";
                 }else{
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] =
+                            - attr->second.second.begin())]["category_name"] =
                             category->first;
                 }
                 root["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.begin())]["category_value"] =
+                        - attr->second.second.begin())]["category_value"] =
                         category->second;
             }
 

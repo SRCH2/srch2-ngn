@@ -100,11 +100,22 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
             end.setScore(attributeType, this->rangeEnds.at(fieldIndex));
 
             Score gap;
-            gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
-
-            if(start > end){ // start should not be greater than end
-            	start = end;
-            	gap.setScore(attributeType , "0");
+            if(attributeType == ATTRIBUTE_TYPE_TIME){
+            	// For time attributes gap should not be of the same type, it should be
+            	// of type TimeDuration.
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");
+            	}else{
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
+            	}
+            }else{
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(attributeType , "0");
+            	}else{
+            		gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            	}
             }
 
             rangeStartScores.push_back(start);

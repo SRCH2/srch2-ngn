@@ -27,9 +27,10 @@
 #include <cstring>
 #include <ctime>
 #include <instantsearch/Schema.h>
-
-
+#include <instantsearch/DateTime.h>
 using namespace std;
+
+using srch2::instantsearch::TimeDuration;
 
 namespace srch2
 {
@@ -55,6 +56,7 @@ namespace srch2
     	void setScore(double doubleScore);
     	void setScore(string stringScore);
     	void setScore(long timeScore);
+    	void setScore(const srch2::instantsearch::TimeDuration & duration);
     	void setScore(const Score& score);
     	void setScore(FilterType type , string value);
 
@@ -67,6 +69,7 @@ namespace srch2
     	double getDoubleScore() const;
     	string getTextScore() const;
     	long getTimeScore() const;
+    	TimeDuration getTimeDuration() const;
 
 
     	Score minimumValue();
@@ -89,6 +92,7 @@ namespace srch2
     	float floatScore;
     	string stringScore;
     	long timeScore;
+    	TimeDuration timeDurationScore;
     };
 
 
