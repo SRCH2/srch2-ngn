@@ -203,6 +203,8 @@ public:
         return this->index->getInMemoryData(internalRecordId);
     }
 
+    void exportData(const string &exportedDataFileName);
+
     void save();
 
     void save(const std::string& directoryName);

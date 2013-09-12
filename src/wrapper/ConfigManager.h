@@ -4,6 +4,7 @@
 #define __WRAPPER__SRCH2SERVERCONG_H__
 
 #include <instantsearch/Schema.h>
+#include <instantsearch/Constants.h>
 #include "WrapperConstants.h"
 #include <string>
 #include <vector>
@@ -16,11 +17,11 @@
 
 using namespace std;
 using namespace srch2::util;
+using namespace srch2::instantsearch;
 namespace po = boost::program_options;
 
 namespace srch2 {
 namespace httpwrapper {
-
 
 class ConfigManager {
 private:
@@ -49,7 +50,7 @@ private:
 	float defaultSpatialQueryBoundingBox;
 
 	string primaryKey;
-	int searchResponseFormat;
+	ResponseType searchResponseFormat;
 	vector<string> attributesToReturn;
 	int numberOfThreads;
 	string attributeStringForMySQLQuery;
@@ -171,7 +172,7 @@ public:
 	DataSourceType getDataSourceType() const;
 	WriteApiType getWriteApiType() const;
 
-	int getSearchResponseFormat() const;
+	ResponseType getSearchResponseFormat() const;
 	const std::string& getAttributeStringForMySQLQuery() const;
 	int getSearchResponseJSONFormat() const;
 

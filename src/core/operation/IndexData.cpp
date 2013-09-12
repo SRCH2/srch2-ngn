@@ -607,6 +607,11 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 
 }
 
+void IndexData::_exportData(const string &exportedDataFileName) const
+{
+    ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
+}
+
 void IndexData::_save(const string &directoryName) const
 {
     // serialize the data structures to disk
