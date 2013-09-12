@@ -176,6 +176,13 @@ enum DateTimeType{
     DateTimeTypeDurationOfTime
 };
 
+/// response type
+typedef enum
+{
+    RESPONSE_WITH_RECORD,
+    RESPONSE_BASIC,
+    RESPONSE_WITH_SPECIFIED_ATTRIBUTES
+} ResponseType;
 
 
 }

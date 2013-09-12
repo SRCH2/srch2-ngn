@@ -100,6 +100,7 @@ public:
     static const char* const centerLatitudeParamName;
     static const char* const centerLongitudeParamName;
     static const char* const radiusParamName;
+    static const char* const nameParamName;
 /*
 private:
     static char from_hex(char ch);

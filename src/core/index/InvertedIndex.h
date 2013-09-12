@@ -198,6 +198,8 @@ public:
     void getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;
     unsigned getInvertedListSize_ReadView(const unsigned invertedListId) const;
 
+    unsigned getRecordNumber() const;
+
     bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset, 
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
