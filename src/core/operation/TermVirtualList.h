@@ -32,12 +32,15 @@
 #include <queue>
 #include <set>
 #include "util/cowvector/cowvector.h"
+#include "util/BitSet.h"
+#include "util/RecordIdSetIterator.h"
 
 using std::vector;
 using std::queue;
 using std::pair;
 using std::set;
 using std::string;
+#define TERM_COUNT_THRESHOLD 350
 
 namespace srch2
 {
@@ -47,8 +50,7 @@ class InvertedIndex;
 typedef const TrieNode* TrieNodePointer;
 
 //TODO check the difference with HeapItem
-struct HeapItemForIndexSearcher
-{
+struct HeapItemForIndexSearcher {
     unsigned recordId;
     float termRecordRuntimeScore;
     unsigned attributeBitMap;
@@ -57,11 +59,10 @@ struct HeapItemForIndexSearcher
     unsigned positionIndexOffset;
 };
 
-struct HeapItem
-{
+struct HeapItem {
     //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
     unsigned invertedListId;
-    unsigned attributeBitMap;			//only used for attribute based query
+    unsigned attributeBitMap;           //only used for attribute based query
     unsigned cursorVectorPosition;
     unsigned recordId; //invertedListTop
     float termRecordRuntimeScore;
@@ -70,8 +71,7 @@ struct HeapItem
     unsigned ed;
     bool isPrefixMatch;
 
-    HeapItem()
-    {
+    HeapItem() {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
         this->recordId = 0;
@@ -83,15 +83,14 @@ struct HeapItem
         this->isPrefixMatch = false;
     }
     HeapItem(unsigned invertedListId,
-            unsigned cursorVectorPosition,
-            unsigned recordId,
-            unsigned attributeBitMap,
-            float termRecordRuntimeScore,
-            unsigned positionIndexOffset,
-            TrieNodePointer trieNode,
-            unsigned ed,
-            bool isPrefixMatch)
-    {
+             unsigned cursorVectorPosition,
+             unsigned recordId,
+             unsigned attributeBitMap,
+             float termRecordRuntimeScore,
+             unsigned positionIndexOffset,
+             TrieNodePointer trieNode,
+             unsigned ed,
+             bool isPrefixMatch) {
         this->invertedListId = invertedListId;
         this->cursorVectorPosition = cursorVectorPosition;
         this->recordId = recordId;
@@ -102,8 +101,7 @@ struct HeapItem
         this->ed = ed;
         this->isPrefixMatch = isPrefixMatch;
     }
-    ~HeapItem()
-    {
+    ~HeapItem() {
         trieNode = NULL;
     }
 };
@@ -111,20 +109,16 @@ struct HeapItem
 class TermVirtualList
 {
 public:
-
-    struct HeapItemCmp
-    {
+    struct HeapItemCmp {
         unsigned termLength; // length of the query term
 
-        HeapItemCmp()
-    {
+        HeapItemCmp() {
         }
 
         // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
-        bool operator() (const HeapItem *lhs, const HeapItem *rhs) const
-        {
-        return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
-                                     rhs->termRecordRuntimeScore, rhs->recordId);
+        bool operator() (const HeapItem *lhs, const HeapItem *rhs) const {
+            return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
+                    rhs->termRecordRuntimeScore, rhs->recordId);
 
         }
     };
@@ -133,18 +127,18 @@ public:
     // in 3 places: this function, BimaleServeConf.cpp, and Query.cpp.
     // Unify them.
     TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-            Term *term, float prefixMatchPenalty = 0.95);
+                    Term *term, float prefixMatchPenalty = 0.95);
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
-    void depthInitialiseTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
     bool getNext(HeapItemForIndexSearcher *heapItem);
     void getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
     void setCursors(vector<unsigned> *invertedListCursors);
     void getCursors(vector<unsigned>* &invertedListCursors);
     virtual ~TermVirtualList();
 
-    inline srch2::instantsearch::TermType getTermType() const
-    {
+    inline srch2::instantsearch::TermType getTermType() const {
         return term->getTermType();
     }
     bool getMaxScore(float & score);
@@ -160,12 +154,26 @@ public:
         return totalLen;
     }*/
 
-    inline unsigned getTermSearchableAttributeIdToFilterTermHits() const
-    {
+    inline unsigned getTermSearchableAttributeIdToFilterTermHits() const {
         return this->term->getAttributeToFilterTermHits();
     }
 
     void print_test() const;
+
+    // if the similar terms are too many, we will merge them in this bitset
+    BitSet bitSet;
+    // the current recordId, initial value is -1
+    int currentRecordID;
+    // The Iterator of bitset
+    RecordIdSetIterator* bitSetIter;
+    // current inverted list Readview
+    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    //int numberOfLeafNodes;
+    //int totalInveretListLength ;
+    // a flag indicating whether we need to use a bitset
+    bool usingBitset;
+    // the number of records in the bitset, which is the total number of records in the data set
+    int bitSetSize;
 
 private:
 
@@ -191,6 +199,7 @@ private:
     bool _addItemsToPartialHeap();
 };
 
-}}
+}
+}
 
 #endif //__TERMVIRTUALLIST_H__
