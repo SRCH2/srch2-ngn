@@ -109,8 +109,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const string & message, const unsigned ts1,
-        struct timespec &tstart, struct timespec &tend) {
+        const unsigned retrievedResults, const string & message,
+        const unsigned ts1, struct timespec &tstart, struct timespec &tend) {
     Json::FastWriter writer;
     Json::Value root;
 
@@ -134,8 +134,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
-                std::string compressedInMemoryRecordString =
-                        indexer->getInMemoryData(internalRecordId);
+                std::string compressedInMemoryRecordString = indexer
+                        ->getInMemoryData(internalRecordId);
 
                 std::string uncompressedInMemoryRecordString;
 
@@ -158,8 +158,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
             root["results"][counter]["record_id"] = queryResults->getRecordId(
                     i);
-            root["results"][counter]["score"] =
-                    queryResults->getResultScore(i).getFloatScore();
+            root["results"][counter]["score"] = queryResults->getResultScore(i)
+                    .getFloatScore();
 
             // print edit distance vector
             vector<unsigned> editDistances;
@@ -185,8 +185,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
-                std::string compressedInMemoryRecordString =
-                        indexer->getInMemoryData(internalRecordId);
+                std::string compressedInMemoryRecordString = indexer
+                        ->getInMemoryData(internalRecordId);
 
                 std::string uncompressedInMemoryRecordString;
 
@@ -227,7 +227,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //    if (queryPlan.getSearchType() == GetAllResultsSearchType
 //            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
 //                    {
-        root["results_found"] = retrievedResults;
+    root["results_found"] = retrievedResults;
 
 //    }
 
@@ -260,6 +260,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
                     attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
+
                 if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
                     root["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.second.begin())]["category_name"] = "lessThanStart";
@@ -614,8 +615,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const ConfigManager *indexDataContainerConf =
-            server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
@@ -663,8 +663,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const ConfigManager *indexDataContainerConf =
-            server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
 
     ParsedParameterContainer paramContainer;
 
@@ -676,7 +675,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryParser qp(headers, &paramContainer);
     bool isSyntaxValid = qp.parse();
     if (!isSyntaxValid) {
-         // if the query is not valid print the error message to the response
+        // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
         return;
@@ -689,7 +688,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     bool valid = qv.validate();
 
     if (!valid) {
-         // if the query is not valid, print the error message to the response
+        // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
         return;
@@ -697,7 +696,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataContainerConf,
-            *(server->indexer->getSchema()), *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
+            *(server->indexer->getSchema()),
+            *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     qr.rewrite();
 
@@ -730,25 +730,30 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
                 server->indexer, queryPlan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(),paramContainer.getMessageString() , ts1, tstart, tend);
+                finalResults->getNumberOfResults(),
+                paramContainer.getMessageString(), ts1, tstart, tend);
         break;
 
     case GetAllResultsSearchType:
     case GeoSearchType:
         finalResults->printStats();
-        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve() > finalResults->getNumberOfResults()) {
+        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve()
+                > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
             HTTPRequestHandler::printResults(req, headers, queryPlan,
-                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
-                    server->indexer, queryPlan.getOffset(),
+                    indexDataContainerConf, finalResults,
+                    queryPlan.getExactQuery(), server->indexer,
+                    queryPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
-        } else {// Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+                    paramContainer.getMessageString(), ts1, tstart, tend);
+        } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, queryPlan,
-                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
-                    server->indexer, queryPlan.getOffset(),
+                    indexDataContainerConf, finalResults,
+                    queryPlan.getExactQuery(), server->indexer,
+                    queryPlan.getOffset(),
                     queryPlan.getOffset() + queryPlan.getResultsToRetrieve(),
-                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
+                    finalResults->getNumberOfResults(),
+                    paramContainer.getMessageString(), ts1, tstart, tend);
         }
         break;
     default:
@@ -760,6 +765,12 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
+}
+void HTTPRequestHandler::handleException(evhttp_request *req) {
+    const string INTERNAL_SERVER_ERROR_MSG =
+            "{\"error:\" Ooops!! The engine failed to process this request. Please check srch2 server logs for more details. If the problem persists please contact srch2 inc.}";
+    bmhelper_evhttp_send_reply(req, HTTP_INTERNAL, "INTERNAL SERVER ERROR",
+            INTERNAL_SERVER_ERROR_MSG);
 }
 
 }

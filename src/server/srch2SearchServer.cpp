@@ -59,142 +59,145 @@ srch2http::Srch2Server server;
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
  * Thanks Redis */
-void bytesToHuman(char *s, unsigned long long n)
-{
+void bytesToHuman(char *s, unsigned long long n) {
     double d;
 
     if (n < 1024) {
         /* Bytes */
-        sprintf(s,"%lluB",n);
+        sprintf(s, "%lluB", n);
         return;
-    } else if (n < (1024*1024)) {
-        d = (double)n/(1024);
-        sprintf(s,"%.2fK",d);
-    } else if (n < (1024LL*1024*1024)) {
-        d = (double)n/(1024*1024);
-        sprintf(s,"%.2fM",d);
-    } else if (n < (1024LL*1024*1024*1024)) {
-        d = (double)n/(1024LL*1024*1024);
-        sprintf(s,"%.2fG",d);
+    } else if (n < (1024 * 1024)) {
+        d = (double) n / (1024);
+        sprintf(s, "%.2fK", d);
+    } else if (n < (1024LL * 1024 * 1024)) {
+        d = (double) n / (1024 * 1024);
+        sprintf(s, "%.2fM", d);
+    } else if (n < (1024LL * 1024 * 1024 * 1024)) {
+        d = (double) n / (1024LL * 1024 * 1024);
+        sprintf(s, "%.2fG", d);
     }
 }
 
 // Uses spinlock and volatile to increment count.
 #define PREFIX_SIZE (sizeof(size_t))
 /*
-static size_t used_memory = 0;
-pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER;
+ static size_t used_memory = 0;
+ pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-struct MemCounter
-{
-    static void increment(size_t size)
-    {
-        pthread_mutex_lock(&used_memory_mutex);
-        used_memory += size;
-        pthread_mutex_unlock(&used_memory_mutex);
-    }
+ struct MemCounter
+ {
+ static void increment(size_t size)
+ {
+ pthread_mutex_lock(&used_memory_mutex);
+ used_memory += size;
+ pthread_mutex_unlock(&used_memory_mutex);
+ }
 
-    static void decrement(size_t size)
-    {
-        pthread_mutex_lock(&used_memory_mutex);
-        used_memory -= size;
-        pthread_mutex_unlock(&used_memory_mutex);
-    }
+ static void decrement(size_t size)
+ {
+ pthread_mutex_lock(&used_memory_mutex);
+ used_memory -= size;
+ pthread_mutex_unlock(&used_memory_mutex);
+ }
 
-    static size_t getUsedMemory()
-    {
-        return used_memory;
-    }
-};*/
+ static size_t getUsedMemory()
+ {
+ return used_memory;
+ }
+ };*/
 
 // http://stackoverflow.com/questions/852072/simple-c-implementation-to-track-memory-malloc-free
 // http://eli.thegreenplace.net/2011/02/17/the-many-faces-of-operator-new-in-c/
 /*void* operator new(size_t size) throw (std::bad_alloc)
-{
-    //cerr << "allocating " << sz << " bytes\n";
-    void *ptr = malloc(size+PREFIX_SIZE);
+ {
+ //cerr << "allocating " << sz << " bytes\n";
+ void *ptr = malloc(size+PREFIX_SIZE);
 
-    *((size_t*)ptr) = size;
-    MemCounter::increment(size + PREFIX_SIZE);
+ *((size_t*)ptr) = size;
+ MemCounter::increment(size + PREFIX_SIZE);
 
 
-    if (ptr)
-        return (char*)ptr+PREFIX_SIZE;
-    else
-        throw std::bad_alloc();
-}
+ if (ptr)
+ return (char*)ptr+PREFIX_SIZE;
+ else
+ throw std::bad_alloc();
+ }
 
-void operator delete(void* ptr) throw()
-{
-    void *realptr;
-    size_t oldsize;
+ void operator delete(void* ptr) throw()
+ {
+ void *realptr;
+ size_t oldsize;
 
-    if (ptr == NULL) return;
+ if (ptr == NULL) return;
 
-    realptr = (char*)ptr-PREFIX_SIZE;
-    oldsize = *((size_t*)realptr);
+ realptr = (char*)ptr-PREFIX_SIZE;
+ oldsize = *((size_t*)realptr);
 
-    MemCounter::decrement(oldsize+PREFIX_SIZE);
+ MemCounter::decrement(oldsize+PREFIX_SIZE);
 
-    free(realptr);
-}*/
+ free(realptr);
+ }*/
 /*
-void getMemoryInfo(std::string &meminfo)
-{
-    char hmem[64];
-    //char peak_hmem[64];
+ void getMemoryInfo(std::string &meminfo)
+ {
+ char hmem[64];
+ //char peak_hmem[64];
 
-    bytesToHuman(hmem, MemCounter::getUsedMemory());
-    //bytesToHuman(peak_hmem,server.stat_peak_memory);
+ bytesToHuman(hmem, MemCounter::getUsedMemory());
+ //bytesToHuman(peak_hmem,server.stat_peak_memory);
 
-    //if (sections++) info = sdscat(info,"\r\n");
-    stringstream mem_info;
-    mem_info
-        << "{" << "\"used_memory\":" << MemCounter::getUsedMemory()
-        << ",\"used_memory_human\":\"" << hmem << "\"}";
+ //if (sections++) info = sdscat(info,"\r\n");
+ stringstream mem_info;
+ mem_info
+ << "{" << "\"used_memory\":" << MemCounter::getUsedMemory()
+ << ",\"used_memory_human\":\"" << hmem << "\"}";
 
-    meminfo = mem_info.str();
-}*/
+ meminfo = mem_info.str();
+ }*/
 
-std::string getCurrentVersion()
-{
+std::string getCurrentVersion() {
     return Version::getCurrentVersion();
 }
 
 /*
-// A handler for the ajax get message endpoint.
-static void ajax_search_command(struct mg_connection *conn,
-                                const struct mg_request_info *request_info,
-                                Srch2Server *server)
-{
-	HTTPRequestHandler::searchCommand(conn, request_info, server);
-}
-*/
+ // A handler for the ajax get message endpoint.
+ static void ajax_search_command(struct mg_connection *conn,
+ const struct mg_request_info *request_info,
+ Srch2Server *server)
+ {
+ HTTPRequestHandler::searchCommand(conn, request_info, server);
+ }
+ */
 
 /*// A handler for the /ajax/send_message endpoint.
-static void ajax_health_command(struct mg_connection *conn,
-                              const struct mg_request_info *request_info,
-                              Srch2Server *server)
-{
-    std::stringstream str;
-    str << HTTPServerEndpoints::ajax_search_pass
-        << server->indexer->getIndexHealth()
-        << "Memory usage:"
-        << get_memory_usage(getpid())/1024;
-    mg_write(conn, str.str().c_str(), str.str().length() );
-}*/
+ static void ajax_health_command(struct mg_connection *conn,
+ const struct mg_request_info *request_info,
+ Srch2Server *server)
+ {
+ std::stringstream str;
+ str << HTTPServerEndpoints::ajax_search_pass
+ << server->indexer->getIndexHealth()
+ << "Memory usage:"
+ << get_memory_usage(getpid())/1024;
+ mg_write(conn, str.str().c_str(), str.str().length() );
+ }*/
 
 /**
  * 'search' callback function
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmsearch(evhttp_request *req, void *arg)
-{
+void cb_bmsearch(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    srch2http::HTTPRequestHandler::searchCommand(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        srch2http::HTTPRequestHandler::searchCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
 }
 
 /**
@@ -202,12 +205,18 @@ void cb_bmsearch(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmlookup(evhttp_request *req, void *arg)
-{
+void cb_bmlookup(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    srch2http::HTTPRequestHandler::lookupCommand(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        srch2http::HTTPRequestHandler::lookupCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -215,15 +224,21 @@ void cb_bmlookup(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bminfo(evhttp_request *req, void *arg)
-{
+void cb_bminfo(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
+            "application/json; charset=UTF-8");
     /*string meminfo;
-    getMemoryInfo(meminfo);*/
+     getMemoryInfo(meminfo);*/
     string versioninfo = getCurrentVersion();
-    HTTPRequestHandler::infoCommand(req, server, versioninfo);
+    try {
+        HTTPRequestHandler::infoCommand(req, server, versioninfo);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -231,28 +246,46 @@ void cb_bminfo(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmwrite_v0(evhttp_request *req, void *arg)
-{
+void cb_bmwrite_v0(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPRequestHandler::writeCommand_v0(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        HTTPRequestHandler::writeCommand_v0(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
-void cb_bmupdate(evhttp_request *req, void *arg)
-{
+void cb_bmupdate(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPRequestHandler::updateCommand(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        HTTPRequestHandler::updateCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
-void cb_bmsave(evhttp_request *req, void *arg)
-{
+void cb_bmsave(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPRequestHandler::saveCommand(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        HTTPRequestHandler::saveCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 void cb_bmexport(evhttp_request *req, void *arg)
@@ -268,12 +301,18 @@ void cb_bmexport(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmwrite_v1(evhttp_request *req, void *arg)
-{
+void cb_bmwrite_v1(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPRequestHandler::writeCommand_v1(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        HTTPRequestHandler::writeCommand_v1(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -281,12 +320,18 @@ void cb_bmwrite_v1(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmactivate(evhttp_request *req, void *arg)
-{
+void cb_bmactivate(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    HTTPRequestHandler::activateCommand(req, server);
+            "application/json; charset=UTF-8");
+    try {
+        HTTPRequestHandler::activateCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -294,11 +339,16 @@ void cb_bmactivate(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_notfound(evhttp_request *req, void *arg)
-{
+void cb_notfound(evhttp_request *req, void *arg) {
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    evhttp_send_reply(req, HTTP_NOTFOUND, "Not found", NULL);
+            "application/json; charset=UTF-8");
+    try {
+        evhttp_send_reply(req, HTTP_NOTFOUND, "Not found", NULL);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
 }
 
 /**
@@ -306,43 +356,50 @@ void cb_notfound(evhttp_request *req, void *arg)
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_busy_indexing(evhttp_request *req, void *arg)
-{
+void cb_busy_indexing(evhttp_request *req, void *arg) {
     evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-    evhttp_send_reply(req, 409, "Indexer busy", NULL);
+            "application/json; charset=UTF-8");
+    try {
+        evhttp_send_reply(req, 409, "Indexer busy", NULL);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
 }
 
-void printVersion()
-{
+void printVersion() {
     std::cout << "SRCH2 server version:" << getCurrentVersion() << std::endl;
 }
 
-int bindSocket(const char * hostname , int port)
-{
+int bindSocket(const char * hostname, int port) {
     int r;
     int nfd;
     nfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (nfd < 0) return -1;
+    if (nfd < 0)
+        return -1;
 
     int one = 1;
-    r = setsockopt(nfd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int));
+    r = setsockopt(nfd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int));
 
     struct sockaddr_in addr;
     struct hostent * host = gethostbyname(hostname);
-    if (host == NULL) return -1;
+    if (host == NULL)
+        return -1;
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    bcopy((char *)host->h_addr,
-          (char *)&addr.sin_addr.s_addr,
-          host->h_length);
+    bcopy((char *) host->h_addr,
+    (char *)&addr.sin_addr.s_addr,
+    host->h_length);
     addr.sin_port = htons(port);
 
-    r = bind(nfd, (struct sockaddr*)&addr, sizeof(addr));
-    if (r < 0) return -1;
+    r = bind(nfd, (struct sockaddr*) &addr, sizeof(addr));
+    if (r < 0)
+        return -1;
     r = listen(nfd, 10240);
-    if (r < 0) return -1;
+    if (r < 0)
+        return -1;
 
     int flags;
     if ((flags = fcntl(nfd, F_GETFL, 0)) < 0
@@ -352,24 +409,24 @@ int bindSocket(const char * hostname , int port)
     return nfd;
 }
 
-void* dispatch(void *arg)
-{
-    event_base_dispatch((struct event_base*)arg);
+void* dispatch(void *arg) {
+    event_base_dispatch((struct event_base*) arg);
     return NULL;
 }
 
-void parseProgramArguments(int argc, char** argv, po::options_description& description, po::variables_map& vm_command_line_args)
-{
-    description.add_options()
-    ("help", "Prints help message")
-    ("version", "Prints version number of the engine")
-    ("config-file", po::value<string>(), "Path to the config file")
-    ;
+void parseProgramArguments(int argc, char** argv,
+        po::options_description& description,
+        po::variables_map& vm_command_line_args) {
+    description.add_options()("help", "Prints help message")("version",
+            "Prints version number of the engine")("config-file",
+            po::value<string>(), "Path to the config file");
     try {
-        po::store(po::parse_command_line(argc, argv, description), vm_command_line_args);
+        po::store(po::parse_command_line(argc, argv, description),
+                vm_command_line_args);
         po::notify(vm_command_line_args);
     } catch (exception &ex) {
-        cout << "error while parsing the arguments : " << endl <<  ex.what() << endl;
+        cout << "error while parsing the arguments : " << endl << ex.what()
+                << endl;
         cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
         cout << description << endl;
         exit(-1);
@@ -384,14 +441,13 @@ int MAX_THREADS;
 
 static void killServer(int signal) {
     Logger::console("Stopping server.");
-    for(int i = 0; i< MAX_THREADS; i++){
+    for (int i = 0; i < MAX_THREADS; i++) {
         pthread_cancel(threads[i]);
         Logger::console("Thread = <%u> stopped", threads[i]);
     }
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     if (argc > 1) {
         if (strcmp(argv[1], "--version") == 0) {
             printVersion();
@@ -410,7 +466,7 @@ int main(int argc, char** argv)
     }
 
     std::string srch2HomePath = "";
-    char * srch2HomePathCStr= getenv("SRCH2_HOME");
+    char * srch2HomePathCStr = getenv("SRCH2_HOME");
     if (srch2HomePathCStr != NULL)
         srch2HomePath = srch2HomePathCStr;
 
@@ -419,7 +475,8 @@ int main(int argc, char** argv)
         srch2_config_file = vm_command_line_args["config-file"].as<string>();
         int status = ::access(srch2_config_file.c_str(), F_OK);
         if (status != 0) {
-            std::cout << "config file = '"<< srch2_config_file <<"' not found or could not be read" << std::endl;
+            std::cout << "config file = '" << srch2_config_file
+                    << "' not found or could not be read" << std::endl;
             return -1;
         }
     } else {
@@ -427,17 +484,19 @@ int main(int argc, char** argv)
             srch2_config_file = srch2HomePath + "/conf/srch2_config.ini";
             int status = ::access(srch2_config_file.c_str(), F_OK);
             if (status != 0) {
-                std::cout << "config file = '"<< srch2_config_file <<"' not found or could not be read" << std::endl;
-                std::cout << "Please check whether SRCH2_HOME is set correctly" << std::endl;
+                std::cout << "config file = '" << srch2_config_file
+                        << "' not found or could not be read" << std::endl;
+                std::cout << "Please check whether SRCH2_HOME is set correctly"
+                        << std::endl;
                 return -1;
             }
         } else {
-            std::cout << "Environment variable SRCH2_HOME is not set " << std::endl;
+            std::cout << "Environment variable SRCH2_HOME is not set "
+                    << std::endl;
             std::cout << "Please read README file " << std::endl;
             return -1;
         }
     }
-
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
 
@@ -451,10 +510,12 @@ int main(int argc, char** argv)
             exit(1);
         }
     }
-    FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(), "a");
+    FILE *logFile = fopen(serverConf->getHTTPServerAccessLogFile().c_str(),
+            "a");
     if (logFile == NULL) {
         Logger::setOutputFile(stdout);
-        Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
+        Logger::error("Open Log file %s failed.",
+                serverConf->getHTTPServerAccessLogFile().c_str());
     } else
         Logger::setOutputFile(logFile);
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
@@ -466,7 +527,8 @@ int main(int argc, char** argv)
     //sleep(200);
 
     short http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
-    const char *http_addr = serverConf->getHTTPServerListeningHostname().c_str();//"127.0.0.1";
+    const char *http_addr =
+            serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
     struct evhttp *http_server = NULL;
     struct event_base *evbase = NULL;
 
@@ -493,7 +555,8 @@ int main(int argc, char** argv)
     /* 3). set general callback of http request */
     evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
 
-    if (server.indexDataContainerConf->getWriteApiType() == srch2http::HTTPWRITEAPI) {
+    if (server.indexDataContainerConf->getWriteApiType()
+            == srch2http::HTTPWRITEAPI) {
         //std::cout << "HTTPWRITEAPI:ON" << std::endl;
         //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
         //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
@@ -524,7 +587,7 @@ int main(int argc, char** argv)
      * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
      * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
      * */
-    while ( not server.indexer->isCommited()) {
+    while (not server.indexer->isCommited()) {
         /* This schedules an exit ten seconds from now. */
         event_base_loopexit(evbase, &ten_sec);
         event_base_dispatch(evbase);
@@ -536,7 +599,8 @@ int main(int argc, char** argv)
 
     MAX_THREADS = serverConf->getNumberOfThreads();
 
-    Logger::console("Starting Srch2 server with %d serving threads at %s:%d", MAX_THREADS, http_addr, http_port);
+    Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
+            MAX_THREADS, http_addr, http_port);
 
     //string meminfo;
     //getMemoryInfo(meminfo);
@@ -570,7 +634,8 @@ int main(int argc, char** argv)
         //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, &server);
         evhttp_set_cb(http_server, "/info", cb_bminfo, &server);
 
-        if (server.indexDataContainerConf->getWriteApiType() == srch2http::HTTPWRITEAPI) {
+        if (server.indexDataContainerConf->getWriteApiType()
+                == srch2http::HTTPWRITEAPI) {
             // std::cout << "HTTPWRITEAPI:ON" << std::endl;
             //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
             //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
@@ -625,7 +690,7 @@ int main(int argc, char** argv)
     Logger::console("Saving Indexes ...");
     server.indexer->save();
 // free resources before we exit
-    for(int i = 0; i < MAX_THREADS; i++){
+    for (int i = 0; i < MAX_THREADS; i++) {
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
