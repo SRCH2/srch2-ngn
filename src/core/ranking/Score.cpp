@@ -26,7 +26,7 @@
 #include "util/Assert.h"
 #include <limits>
 #include <cmath>
-
+#include "util/DateAndTimeHandler.h"
 
 namespace srch2
 {
@@ -46,6 +46,9 @@ namespace srch2
 				return stringScore == score.stringScore;
 			case ATTRIBUTE_TYPE_TIME:
 				return timeScore == score.timeScore;
+			case ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
 		}
     	return false;
 	}
@@ -65,6 +68,9 @@ namespace srch2
 				return stringScore < score.stringScore;
 			case ATTRIBUTE_TYPE_TIME:
 				return timeScore < score.timeScore;
+			case ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
 		}
     	return false;
 	}
@@ -84,8 +90,18 @@ namespace srch2
 		return !(*this < score);
 	}
 	Score Score::operator+(const Score& a){
-		ASSERT(a.valueType == this->valueType);
     	Score result;
+    	// Since order of operands is important for operator +, these two if-statements are needed to
+    	// enable both orders of time + duration and duration + time
+		if(a.valueType == ATTRIBUTE_TYPE_TIME && this->valueType == ATTRIBUTE_TYPE_DURATION){
+			result.setScore(this->getTimeDuration() + a.getTimeScore());
+			return result;
+		}
+		if(this->valueType == ATTRIBUTE_TYPE_TIME && a.valueType == ATTRIBUTE_TYPE_DURATION){
+			result.setScore(a.getTimeDuration() + this->getTimeScore());
+			return result;
+		}
+		ASSERT(a.valueType == this->valueType);
     	switch (this->valueType) {
 			case ATTRIBUTE_TYPE_UNSIGNED:
 				result.setScore(a.getIntScore() + this->getIntScore());
@@ -98,6 +114,9 @@ namespace srch2
 				break;
 			case ATTRIBUTE_TYPE_TIME:
 				result.setScore(a.getTimeScore() + this->getTimeScore());
+				break;
+			case ATTRIBUTE_TYPE_DURATION:
+				result.setScore(a.getTimeDuration() + this->getTimeDuration());
 				break;
 		}
 
@@ -127,6 +146,11 @@ namespace srch2
 		this->timeScore = timeScore;
 	}
 
+	void Score::setScore(const TimeDuration & duration){
+		valueType = ATTRIBUTE_TYPE_DURATION;
+		this->timeDurationScore = duration;
+	}
+
 	void Score::setScore(const Score& score){
     	valueType = score.valueType;
     	switch (valueType) {
@@ -141,6 +165,9 @@ namespace srch2
 				break;
 			case ATTRIBUTE_TYPE_TIME:
 				timeScore = score.timeScore;
+				break;
+			case ATTRIBUTE_TYPE_DURATION:
+				timeDurationScore = score.timeDurationScore;
 				break;
 		}
 	}
@@ -160,8 +187,10 @@ namespace srch2
 				this->setScore(value);
 				break;
 			case ATTRIBUTE_TYPE_TIME:
-
 				this->setScore(atol(value.c_str()));
+				break;
+			case ATTRIBUTE_TYPE_DURATION:
+				this->setScore(DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(value));
 				break;
 		}
 	}
@@ -181,6 +210,10 @@ namespace srch2
 	long Score::getTimeScore() const{
 		return timeScore;
 	}
+	TimeDuration Score::getTimeDuration() const{
+		return timeDurationScore;
+	}
+
 	Score Score::minimumValue(){
 		Score result ;
 		switch (valueType) {
@@ -194,7 +227,11 @@ namespace srch2
 					result.setScore("NO_MINIMUM_FOR_TEXT");
 					break;
 				case ATTRIBUTE_TYPE_TIME:
-					result.setScore((long)std::numeric_limits<long>::min());
+					result.setScore((long)-1893456000); // This number is the number of seconds from Jan-1st, 1910
+					break;
+				case ATTRIBUTE_TYPE_DURATION:
+					TimeDuration tD;
+					result.setScore(tD);
 					break;
 			}
 
@@ -216,6 +253,11 @@ namespace srch2
 					break;
 				case ATTRIBUTE_TYPE_TIME:
 					result = (float) getTimeScore();
+					break;
+				case ATTRIBUTE_TYPE_DURATION:
+					// it returns the value as the number of seconds in this duration
+					result = getTimeDuration() + (long)0 ;
+					ASSERT(false);
 					break;
 			}
 
@@ -253,6 +295,29 @@ namespace srch2
                 endScore = end.getFloatScore();
                 gapScore = gap.getFloatScore();
                 break;
+            case ATTRIBUTE_TYPE_TIME:
+            {
+            	// Since time is represented in the system as long but
+            	// time duration is a class and used for gap, we can't use math to calculate the
+            	// index so we add gap until the result is bigger than data point
+            	ASSERT(gap.getType() == ATTRIBUTE_TYPE_DURATION && start.getType() == ATTRIBUTE_TYPE_TIME &&  end.getType() == ATTRIBUTE_TYPE_TIME);
+                // first bucket which covers less-than-start values is zero
+            	if(this->getTimeScore() < start.getTimeScore()){
+            		return 0;
+            	}
+            	long currentLowerBound = start.getTimeScore();
+            	unsigned indexToReturn = 1;
+            	while(true){
+            		currentLowerBound = gap.getTimeDuration() + currentLowerBound;
+            		if(this->getTimeScore() < currentLowerBound || currentLowerBound >= end.getTimeScore()){
+            			break;
+            		}
+            		//
+            		indexToReturn ++;
+            	}
+            	return indexToReturn;
+            	break;
+            }
             default:
                 ASSERT(false);
                 return -1; // invalid group id
@@ -281,6 +346,9 @@ namespace srch2
 			case ATTRIBUTE_TYPE_TIME:
 
 				ss << timeScore ;
+				break;
+			case ATTRIBUTE_TYPE_DURATION:
+				ss << this->getTimeDuration().toString();
 				break;
 			default:
 				ss << "";

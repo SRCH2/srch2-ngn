@@ -21,6 +21,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include "util/DateAndTimeHandler.h"
+#include <sstream>
 
 using std::string;
 using std::vector;
@@ -365,6 +367,13 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeStarts.at(facetFieldIndex) = startFromConfig;
                 }
+            }else{
+            	// here we should use DateAndTimeHandler class to conver start to long representation
+            	// we assume it's a good syntax because everything is checked in query validator
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeStarts.at(facetFieldIndex));
+            	facetQueryContainer->rangeStarts.at(facetFieldIndex) = buffer.str() ;
+
             }
 
             if (facetQueryContainer->rangeEnds.at(facetFieldIndex).compare("") == 0) {
@@ -381,6 +390,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeEnds.at(facetFieldIndex) = endFromConfig;
                 }
+            }else{
+            	// here we should use DateAndTimeHandler class to conver start to long representation
+            	// we assume it's a good syntax because everything is checked in query validator
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(facetQueryContainer->rangeEnds.at(facetFieldIndex));
+            	facetQueryContainer->rangeEnds.at(facetFieldIndex) = buffer.str() ;
             }
 
             if (facetQueryContainer->rangeGaps.at(facetFieldIndex).compare("") == 0) {
@@ -397,7 +412,9 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeGaps.at(facetFieldIndex) = gapFromConfig;
                 }
-            }
+            }//else{
+            	// we don't change gap, gap is translated when it's going to be used.
+            //}
         }
 
         //

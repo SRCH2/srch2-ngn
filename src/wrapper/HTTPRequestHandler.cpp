@@ -23,6 +23,8 @@
 #include "QueryExecutor.h"
 #include "ParserUtility.h"
 #include <event2/http.h>
+#include "util/FileOps.h"
+
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
 namespace srch2is = srch2::instantsearch;
@@ -107,8 +109,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const string & message, const unsigned ts1,
-        struct timespec &tstart, struct timespec &tend) {
+        const unsigned retrievedResults, const string & message,
+        const unsigned ts1, struct timespec &tstart, struct timespec &tend) {
     Json::FastWriter writer;
     Json::Value root;
 
@@ -128,12 +130,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     i);
             root["results"][counter]["score"] = (0
                     - queryResults->getResultScore(i).getFloatScore()); //the actual distance between the point of record and the center point of the range
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
-                std::string compressedInMemoryRecordString =
-                        indexer->getInMemoryData(internalRecordId);
+                std::string compressedInMemoryRecordString = indexer
+                        ->getInMemoryData(internalRecordId);
 
                 std::string uncompressedInMemoryRecordString;
 
@@ -156,8 +158,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
             root["results"][counter]["record_id"] = queryResults->getRecordId(
                     i);
-            root["results"][counter]["score"] =
-                    queryResults->getResultScore(i).getFloatScore();
+            root["results"][counter]["score"] = queryResults->getResultScore(i)
+                    .getFloatScore();
 
             // print edit distance vector
             vector<unsigned> editDistances;
@@ -179,12 +181,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                         matchingKeywords[j];
             }
 
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
-                std::string compressedInMemoryRecordString =
-                        indexer->getInMemoryData(internalRecordId);
+                std::string compressedInMemoryRecordString = indexer
+                        ->getInMemoryData(internalRecordId);
 
                 std::string uncompressedInMemoryRecordString;
 
@@ -225,11 +227,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //    if (queryPlan.getSearchType() == GetAllResultsSearchType
 //            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
 //                    {
-        root["results_found"] = retrievedResults;
+    root["results_found"] = retrievedResults;
 
 //    }
 
-    const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults =
+    const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =
             queryResults->getFacetResults();
     // Example:
     // ["facet" : {"facet_field_name":"model" ,
@@ -250,24 +252,25 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         root["facets"].resize(facetResults->size());
 
         unsigned attributeCounter = 0;
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attr =
+        for (std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator attr =
                 facetResults->begin(); attr != facetResults->end(); ++attr) {
             root["facets"][attributeCounter]["facet_field_name"] = attr->first;
             root["facets"][attributeCounter]["facet_info"].resize(
-                    attr->second.size());
+                    attr->second.second.size());
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
-                    attr->second.begin(); category != attr->second.end();
+                    attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
-                if(category == attr->second.begin() && isFloat(category->first)){
+
+                if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] = "lessThanStart";
+                            - attr->second.second.begin())]["category_name"] = "lessThanStart";
                 }else{
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] =
+                            - attr->second.second.begin())]["category_name"] =
                             category->first;
                 }
                 root["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.begin())]["category_value"] =
+                        - attr->second.second.begin())]["category_value"] =
                         category->second;
             }
 
@@ -552,6 +555,49 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+// exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
+void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
+    /* Yes, we are expecting a post request */
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+        // if search-response-format is 0 or 2
+        if (server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                            || server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+            std::stringstream log_str;
+            evkeyvalq headers;
+            evhttp_parse_query(req->uri, &headers);
+            const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+            if(exportedDataFileName){
+                if(checkDirExistence(exportedDataFileName)){
+                    exportedDataFileName = "export_data.json";
+                }
+                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+
+                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                        "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
+                                + log_str.str() + "]}\n");
+                Logger::info("%s", log_str.str().c_str());
+            }else {
+                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+                Logger::error(
+                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+            }
+        } else{
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+        }
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+    };
+}
+
 void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
         const string &versioninfo) {
     evkeyvalq headers;
@@ -569,8 +615,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const ConfigManager *indexDataContainerConf =
-            server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
@@ -618,8 +663,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const ConfigManager *indexDataContainerConf =
-            server->indexDataContainerConf;
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
 
     ParsedParameterContainer paramContainer;
 
@@ -631,7 +675,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryParser qp(headers, &paramContainer);
     bool isSyntaxValid = qp.parse();
     if (!isSyntaxValid) {
-         // if the query is not valid print the error message to the response
+        // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
         return;
@@ -644,7 +688,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     bool valid = qv.validate();
 
     if (!valid) {
-         // if the query is not valid, print the error message to the response
+        // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
         return;
@@ -652,7 +696,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataContainerConf,
-            *(server->indexer->getSchema()), *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
+            *(server->indexer->getSchema()),
+            *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     qr.rewrite();
 
@@ -685,25 +730,30 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
                 server->indexer, queryPlan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(),paramContainer.getMessageString() , ts1, tstart, tend);
+                finalResults->getNumberOfResults(),
+                paramContainer.getMessageString(), ts1, tstart, tend);
         break;
 
     case GetAllResultsSearchType:
     case GeoSearchType:
         finalResults->printStats();
-        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve() > finalResults->getNumberOfResults()) {
+        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve()
+                > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
             HTTPRequestHandler::printResults(req, headers, queryPlan,
-                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
-                    server->indexer, queryPlan.getOffset(),
+                    indexDataContainerConf, finalResults,
+                    queryPlan.getExactQuery(), server->indexer,
+                    queryPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
-        } else {// Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+                    paramContainer.getMessageString(), ts1, tstart, tend);
+        } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, queryPlan,
-                    indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
-                    server->indexer, queryPlan.getOffset(),
+                    indexDataContainerConf, finalResults,
+                    queryPlan.getExactQuery(), server->indexer,
+                    queryPlan.getOffset(),
                     queryPlan.getOffset() + queryPlan.getResultsToRetrieve(),
-                    finalResults->getNumberOfResults(),paramContainer.getMessageString(), ts1, tstart, tend);
+                    finalResults->getNumberOfResults(),
+                    paramContainer.getMessageString(), ts1, tstart, tend);
         }
         break;
     default:
@@ -715,6 +765,12 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
+}
+void HTTPRequestHandler::handleException(evhttp_request *req) {
+    const string INTERNAL_SERVER_ERROR_MSG =
+            "{\"error:\" Ooops!! The engine failed to process this request. Please check srch2 server logs for more details. If the problem persists please contact srch2 inc.}";
+    bmhelper_evhttp_send_reply(req, HTTP_INTERNAL, "INTERNAL SERVER ERROR",
+            INTERNAL_SERVER_ERROR_MSG);
 }
 
 }

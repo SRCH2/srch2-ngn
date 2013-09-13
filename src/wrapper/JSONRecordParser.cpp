@@ -19,6 +19,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerFactory.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace snappy;
 
@@ -447,8 +448,13 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	convertValueToString(value, temp);
 
 	// now check to see if it has proper date/time format
-
-	stringValue = convertTimeFormatToLong(temp);
+	stringValue = "";
+	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
+			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
+		stringstream buffer;
+		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
+		stringValue = buffer.str();
+	}
     return;
 
 }
