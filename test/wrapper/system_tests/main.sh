@@ -9,7 +9,7 @@ cd $SYSTEM_TEST_DIR
 # We remove the old indexes, if any, before doing the test.
 rm data/ -rf 
 echo '----do save_shutdown_restart_test--------------'
-python ./save_shutdown_restart_test/save_shutdown_restart_test.py $SRCH2_ENGINE_DIR
+python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE_DIR
 
 if [ $? -gt 0 ]; then
     echo " --- error ---"
@@ -112,6 +112,13 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do date and time implementation test--------------'
+python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE_DIR ./date_time_new_features_test/queriesAndResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
 
 echo '----do geo test--------------'
 python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt

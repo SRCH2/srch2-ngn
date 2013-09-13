@@ -288,6 +288,14 @@ void cb_bmsave(evhttp_request *req, void *arg) {
 
 }
 
+void cb_bmexport(evhttp_request *req, void *arg)
+{
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+                      "application/json; charset=UTF-8");
+    HTTPRequestHandler::exportCommand(req, server);
+}
+
 /**
  * 'write/v2/' callback function
  * @param req evhttp request object
@@ -559,6 +567,8 @@ int main(int argc, char** argv) {
 
         evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
 
+        evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
+
         evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
     }
 
@@ -634,6 +644,8 @@ int main(int argc, char** argv) {
             evhttp_set_cb(http_server, "/update", cb_bmupdate, &server);
 
             evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
+
+            evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
 
             evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
         }

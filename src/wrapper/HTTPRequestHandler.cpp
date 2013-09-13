@@ -23,6 +23,8 @@
 #include "QueryExecutor.h"
 #include "ParserUtility.h"
 #include <event2/http.h>
+#include "util/FileOps.h"
+
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
 namespace srch2is = srch2::instantsearch;
@@ -128,8 +130,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     i);
             root["results"][counter]["score"] = (0
                     - queryResults->getResultScore(i).getFloatScore()); //the actual distance between the point of record and the center point of the range
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
                 std::string compressedInMemoryRecordString = indexer
@@ -179,8 +181,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                         matchingKeywords[j];
             }
 
-            if (indexDataContainerConf->getSearchResponseFormat() == 0
-                    || indexDataContainerConf->getSearchResponseFormat() == 2) {
+            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
                         i);
                 std::string compressedInMemoryRecordString = indexer
@@ -229,7 +231,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
 //    }
 
-    const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults =
+    const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =
             queryResults->getFacetResults();
     // Example:
     // ["facet" : {"facet_field_name":"model" ,
@@ -250,27 +252,26 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         root["facets"].resize(facetResults->size());
 
         unsigned attributeCounter = 0;
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attr =
+        for (std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator attr =
                 facetResults->begin(); attr != facetResults->end(); ++attr) {
             root["facets"][attributeCounter]["facet_field_name"] = attr->first;
             root["facets"][attributeCounter]["facet_info"].resize(
-                    attr->second.size());
+                    attr->second.second.size());
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
-                    attr->second.begin(); category != attr->second.end();
+                    attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
-                if (category == attr->second.begin()
-                        && isFloat(category->first)) {
+
+                if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] =
-                            "lessThanStart";
-                } else {
+                            - attr->second.second.begin())]["category_name"] = "lessThanStart";
+                }else{
                     root["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.begin())]["category_name"] = category
-                            ->first;
+                            - attr->second.second.begin())]["category_name"] =
+                            category->first;
                 }
                 root["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.begin())]["category_value"] = category
-                        ->second;
+                        - attr->second.second.begin())]["category_value"] =
+                        category->second;
             }
 
             //
@@ -543,6 +544,49 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
                 "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
                         + log_str.str() + "]}\n");
         Logger::info("%s", log_str.str().c_str());
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+    };
+}
+
+// exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
+void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
+    /* Yes, we are expecting a post request */
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+        // if search-response-format is 0 or 2
+        if (server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                            || server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+            std::stringstream log_str;
+            evkeyvalq headers;
+            evhttp_parse_query(req->uri, &headers);
+            const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+            if(exportedDataFileName){
+                if(checkDirExistence(exportedDataFileName)){
+                    exportedDataFileName = "export_data.json";
+                }
+                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+
+                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                        "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
+                                + log_str.str() + "]}\n");
+                Logger::info("%s", log_str.str().c_str());
+            }else {
+                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+                Logger::error(
+                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+            }
+        } else{
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+        }
         break;
     }
     default: {

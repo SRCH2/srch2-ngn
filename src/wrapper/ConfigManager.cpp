@@ -7,9 +7,12 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include "util/DateAndTimeHandler.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -435,9 +438,21 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
             vector<srch2::instantsearch::FilterType> attributeTypes;
             vector<string> attributeDefaultValues;
 
+
             boost::split(attributeDefaultValues,
                     vm["non-searchable-attributes-default"].as<string>(),
                     boost::is_any_of(","));
+            {
+            	for(vector<string>::iterator defaultValue = attributeDefaultValues.begin();
+            			defaultValue != attributeDefaultValues.end() ; ++defaultValue){
+					if(srch2is::DateAndTimeHandler::verifyDateTimeString(*defaultValue , srch2is::DateTimeTypePointOfTime)){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValue);
+						std::stringstream buffer;
+						buffer << timeValue;
+						*defaultValue = buffer.str();
+					}
+            	}
+            }
 
             {
                 vector<string> attributeTypesTmp;
@@ -460,6 +475,7 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                                 srch2::instantsearch::ATTRIBUTE_TYPE_TIME);
                 }
             }
+
 
             if (attributeNames.size() == attributeTypes.size()
                     && attributeNames.size() == attributeDefaultValues.size()) {
@@ -556,6 +572,31 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 parseError << "facet-attribute-start should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
             }
+
+            // now use the date/time class to parse the values
+            for(vector<string>::iterator startTextValue =facetStarts.begin() ;
+            		startTextValue != facetStarts.end() ; ++startTextValue){
+            	string attributeName = facetAttributes.at(std::distance(facetStarts.begin() , startTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
+            	}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+					if(srch2is::DateAndTimeHandler::verifyDateTimeString(*startTextValue , srch2is::DateTimeTypePointOfTime)
+							|| srch2is::DateAndTimeHandler::verifyDateTimeString(*startTextValue , srch2is::DateTimeTypeNow) ){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*startTextValue);
+						std::stringstream buffer;
+						buffer << timeValue;
+						*startTextValue = buffer.str();
+					}else{
+	                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
+            }
         } else {
             parseError << "Not enough information for facet. Facet disabled.\n";
             facetEnabled = false;
@@ -564,6 +605,32 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetEnds, vm["facet-attribute-end"].as<string>(),
                     boost::is_any_of(","));
+            // now use the date/time class to parse tha values
+            for(vector<string>::iterator endTextValue =facetEnds.begin() ;
+            		endTextValue != facetEnds.end() ; ++endTextValue){
+            	string attributeName = facetAttributes.at(std::distance(facetEnds.begin() , endTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
+            	}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+            		// If it's a time attribute, the input value must be compatible with our format.
+    				if(srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypePointOfTime)
+    						|| srch2is::DateAndTimeHandler::verifyDateTimeString(*endTextValue , srch2is::DateTimeTypeNow) ){
+    					long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*endTextValue);
+            			std::stringstream buffer;
+            			buffer << timeValue;
+            			*endTextValue = buffer.str();
+            		}else{
+	                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
+
+            }
             if(facetEnds.size() != facetAttributes.size()){
                 parseError << "facet-attribute-end should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
@@ -576,6 +643,25 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
                 ignoreOption) != 0)) {
             boost::split(facetGaps, vm["facet-attribute-gap"].as<string>(),
                     boost::is_any_of(","));
+            // now use the date/time class to parse tha values
+            for(vector<string>::iterator gapTextValue =facetGaps.begin() ;
+            		gapTextValue != facetGaps.end() ; ++gapTextValue){
+            	string attributeName = facetAttributes.at(std::distance(facetGaps.begin() , gapTextValue));
+            	srch2::instantsearch::FilterType attributeType ;
+            	if(nonSearchableAttributesInfo.find(attributeName) != nonSearchableAttributesInfo.end()){
+            		attributeType = nonSearchableAttributesInfo.find(attributeName)->second.first;
+            	}else{
+                    parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                    facetEnabled = false;
+            	}
+            	if(attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+    				if(!srch2is::DateAndTimeHandler::verifyDateTimeString(*gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
+	                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+	                    facetEnabled = false;
+					}
+            	}
+
+            }
             if(facetGaps.size() != facetAttributes.size()){
                 parseError << "facet-attribute-gap should contain the same number of values as facet-attributes. Facet disabled.\n";
                 facetEnabled = false;
@@ -637,9 +723,9 @@ void ConfigManager::parse(const po::variables_map &vm, bool &configSuccess,
     }
 
     if (vm.count("search-response-format")) {
-        searchResponseFormat = vm["search-response-format"].as<int>();
+        searchResponseFormat = (ResponseType)vm["search-response-format"].as<int>();
     } else {
-        searchResponseFormat = 0; //in-memory
+        searchResponseFormat = RESPONSE_WITH_RECORD; //in-memory
     }
 
     if (searchResponseFormat == 2 && vm.count("attributes-to-return")
@@ -1150,7 +1236,7 @@ bool ConfigManager::getSupportAttributeBasedSearch() const {
 	return supportAttributeBasedSearch;
 }
 
-int ConfigManager::getSearchResponseFormat() const {
+ResponseType ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
 
