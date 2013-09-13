@@ -1,7 +1,7 @@
 
 <config>
     <!-- SRCH2 Home directory -->
-    <srch2Home>${CMAKE_BINARY_DIR}/../test/wrapper/data/test_data/</srch2Home> 
+    <srch2Home>./</srch2Home> 
     
 
 
@@ -11,7 +11,7 @@
         # REQUIRED
         license-file=${CMAKE_SOURCE_DIR}/test/Developer_License/srch2_license_key.txt
     -->
-    <licenseFile>srch2_license_key.txt</licenseFile>
+    <licenseFile>${srch2home}/srch2_license_key.txt</licenseFile>
     
     <!-- srch2
         # ports to listen. Make sure these are open. To access over internet, these 
@@ -39,7 +39,7 @@
         # Deprecated. Changed to /home/findr/custmrID/index/ for standardizing 
         srch2: index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
     -->
-    <dataDir>./</dataDir>
+    <dataDir>${srch2home}/</dataDir>
     
     
     <!-- srch2
@@ -49,7 +49,7 @@
         
         NOTE: you need to write a program to post the docs
     -->
-    <dataFile>/sample-data.json</dataFile>
+    <dataFile>${srch2home}/sample-data.json</dataFile>
         
     
     
@@ -371,7 +371,7 @@
         <!-- SOLR
             SOLR: <config><updateHandler>#</updateHandler></config>  
                 <updateLog>
-                    <str name="dir">solr.ulog.dir:</str>
+                    <str name="dir">${solr.ulog.dir:}</str>
                 </updateLog>
         
         1-
@@ -396,8 +396,8 @@
 
         <updateLog>
             <logLevel>3</logLevel>
-            <errorLogFile>/srch2_Error_log</errorLogFile> //It is not used.
-            <accessLogFile>/srch2_log</accessLogFile>
+            <errorLogFile>${srch2home}/srch2_Error_log</errorLogFile> //It is not used.
+            <accessLogFile>${srch2home}/srch2_log</accessLogFile>
         </updateLog>
     
     </updatehandler>
