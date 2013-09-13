@@ -28,39 +28,39 @@
 
 >   The section describes the query syntax of the SRCH2 search engine. Let's start with sample queries to have an idea about the query syntax:
 ```
-1) curl -i "http://localhost:8081/search?q=hospital
+f1) curl -i "http://localhost:8081/search?q=hospital
 ```
 >In this query, we are interested in searching all the records that have the word "hospital" in them. The word "hospital" will be searched in all the searchable fields. We define searchable fields in the configuration file.
 ```
-2) curl -i "http://localhost:8081/search?q=title:algorithm AND  author:gnuth
+f2) curl -i "http://localhost:8081/search?q=title:algorithm AND author:gnuth
 ```
 >In this query, we are interested in the records that have the word "algorithm" in the record's <i>title</i> field and the word "gnuth" in the record's <i>author</i> field.
 ```
-3) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100]
+f3) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100]
 ```
-> This query is similar to the previous query. The only differece between the two is that in this case, we are filtering the results based on the <i>price</i> field. So a resultset will contain all the records that have the word "algorithm" in the record's <i>title</i> field and the word "gnuth" in the record's <i>author</i> field and have <i>price</i> between 10 and 100 (both inclusive).
+> This query is similar to <i>f2</i>. The only differece between the two is that in <i>f3</i>, we are filtering the results based on the <i>price</i> field. So a resultset will contain all the records that have the word "algorithm" in the record's <i>title</i> field and the word "gnuth" in the record's <i>author</i> field and have <i>price</i> between 10 and 100 (both inclusive).
 ```
-4) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $
+f4) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $
 ```
->We can filter records using boolean expressions too. In this query, we want to further filter the records where the record's field <i>discount</i> has a value greater than 10. 
+><i>f4</i> shows that we can filter records using boolean expressions too. In <i>f4</i>, we want to filter the records where the record's field <i>discount</i> has a value greater than 10. 
 ```
-5) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $ &sort=category&orderby=asc
+f5) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $ &sort=category&orderby=asc
 ```
-> This query is similar to the one above it. In this query we are sorting the resultset based on record's <i>category</i> field in ascending order.
+> This query is similar to <i>f4</i>. In <i>f5</i> we are sorting the resultset based on record's <i>category</i> field in the ascending order.
 ```
-6) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $&facet=true&facet.field=category
+f6) curl -i "http://localhost:8081/search?q={defaultSearchFields=title}Algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $&facet=true&facet.field=category
 ```
-> This query  is similar to the sample query "4". It also requests the engine to return faceted information for record's <i>category</i> field.
+> This query  is similar to the sample query <i>f4</i>. <i>f6</i>, in addition to requesting what <i>f4</i> is requesting, is also requesting the engine to return faceted information for record's <i>category</i> field.
 ###Understanding different querry components{id="queryComponents"}
-> Query components can be broken down into two major components. These components and their sub-components are shown in Figure 1.
+> The components and the sub-components of a query are shown in Figure 1.
 >>> *  Local Parameters : Query related meta data can be specified using local parameters.
->>> *  Query Parameters : Main Query,filterquery, sort, facets and other parameters are specified using query parameters.
+>>> *  Query Parameters : Main Query, filterquery, sort, facets and other parameters are specified using query parameters.
 <br>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100%" src="images/Srch2-querysyntax.png" /></a></span>
-<center>Figure 1</center>
+<center>Figure 1: Query Components</center>
 ###Local Paramerter (LocalParams) {id="localParams"}
 
-> LocalParams stands for local parameters: they provide a way to "localize" information about a specific argument that is being sent to Srch2 server. In other words, LocalParams provide a way to add meta-data to certain argument types such as query strings.
+> LocalParams stands for local parameters: It provides a way to "localize" information about a specific argument that is being sent to Srch2 server. In other words, LocalParams provide a way to add meta-data to certain argument types such as query strings.
 >To indicate a LocalParam, the argument is prefixed with curly braces and can include any number of key=value pairs separated by whitespace. So if the original query keyword is foo, applying LocalParams would look something like {k1=v1 k2=v2 k3=v3}foo.
 >e.g., specifying default field in local parameters would be
 ```
