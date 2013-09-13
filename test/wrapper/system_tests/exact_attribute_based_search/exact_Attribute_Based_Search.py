@@ -73,7 +73,7 @@ def prepareQuery(queryKeywords):
 def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_attribute_based_search/conf.ini &'
+    binary= binary+' --config-file=./exact_attribute_based_search/conf.xml &'
     os.popen(binary)
 
     #make sure that start the engine up

@@ -63,7 +63,7 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
             query=query+fieldFilter+keyword+'~'+'%20AND%20'
 
     ################# fuzzy parameter
-    query = query + '&fuzzy=false'
+    query = query + '&fuzzy=true'
     ################# GEO parameters
     query = query + '&radius=' + ct_radius
     query = query + '&clat=' + ct_lat
@@ -77,7 +77,7 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
 def testFuzzyAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./exact_attribute_based_search_geo/conf.ini &'
+    binary=binary+' --config-file=./exact_attribute_based_search_geo/conf.xml &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()
