@@ -1080,9 +1080,8 @@ bool QueryParser::termParser(string &input) {
     }
     // check for boost modifier, i.e. '^'
     string boostModifier = "";
-    hasParsedParameter = parseBoostModifier(input, boostModifier,
-            isPhraseKeyword);
-    this->populateBoostInfo(hasParsedParameter, boostModifier, isPhraseKeyword);
+    hasParsedParameter = parseBoostModifier(input, boostModifier);
+    this->populateBoostInfo(hasParsedParameter, boostModifier);
     // check for fuzzy modifier. i.e. '~'
     string fuzzyModifier = "";
     if (!isPhraseKeyword) {
@@ -1608,47 +1607,32 @@ bool QueryParser::parsePrefixModifier(string &input, string &output) {
     boost::regex re(PREFIX_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
-bool QueryParser::parseBoostModifier(string &input, string &output,
-        const bool isPhraseKeyword) {
-    bool hasParsed = false;
-    if (isPhraseKeyword) {
-        boost::regex re(PHRASE_BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
-        hasParsed = doParse(input, re, output);
-    } else {
-        boost::regex re(BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
-        hasParsed = doParse(input, re, output);
-    }
-    return hasParsed;
+bool QueryParser::parseBoostModifier(string &input, string &output) {
+    boost::regex re(BOOST_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    return doParse(input, re, output);
+
 }
-void QueryParser::populateBoostInfo(bool isParsed, string &input,
-        const bool isPhraseKeyword) {
+void QueryParser::populateBoostInfo(bool isParsed, string &input) {
     if (isParsed) {
-        this->setInQueryParametersIfNotSet(KeywordBoostLevel);
         Logger::debug("boost modifier used in query");
-        boost::smatch numMatches;
-        if (isPhraseKeyword) {
+        boost::smatch matches;
+        this->setInQueryParametersIfNotSet(KeywordBoostLevel);
+        this->checkForBoostNums(input, matches); // check if boost value is present
+        if (matches[0].matched) {
+            // get the boost value;
             Logger::debug("boost value is specified, extracting it.");
-            this->extractNumbers(input, numMatches);
+            boost::smatch numMatches;
+            this->extractNumbers(matches[0].str(), numMatches);
+            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
+            Logger::debug("boost value is %d", boostNum);
+            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
         } else {
-            boost::smatch matches;
-            this->checkForBoostNums(input, matches); // check if boost value is present eg. '^4'
-            if (matches[0].matched) {
-                // get the boost value;
-                Logger::debug("boost value is specified, extracting it.");
-                this->extractNumbers(matches[0].str(), numMatches); // extract '4' from '^4'
-            } else {
-                // there is no value specified
-                Logger::debug(
-                        "boost value is not specified, using the lp value or -1");
-                this->container->keywordBoostLevel.push_back(
-                        this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
-                return;
-            }
+            // there is no value specified
+            Logger::debug(
+                    "boost value is not specified, using the lp value or -1");
+            this->container->keywordBoostLevel.push_back(
+                    this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
         }
-        // if execution reaches here, no need to check 'numMatches[0].matches' condition.
-        unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
-        Logger::debug("boost value is %d", boostNum);
-        this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
     } else {
         Logger::debug("boost value is not specified, using the lp value or -1");
         this->container->keywordBoostLevel.push_back(this->lpKeywordBoostLevel); // selts the localParameter specified value

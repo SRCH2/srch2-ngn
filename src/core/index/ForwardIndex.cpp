@@ -270,7 +270,7 @@ void ForwardIndex::merge()
 }
 
 void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
-        KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
+        KeywordIdKeywordStringInvertedListIdTriple &uniqueKeywordIdList,
         map<string, TokenAttributeHits> &tokenAttributeHitsMap) {
     ASSERT(recordId == this->getTotalNumberOfForwardLists_WriteView());
 
@@ -284,16 +284,16 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
      recordOrder.push_back(recordId);
      }*/
     // We consider KEYWORD_THRESHOLD keywords at most, skip the extra ones
-    if (keywordIdList.size() >= KEYWORD_THRESHOLD)
-        keywordIdList.resize(KEYWORD_THRESHOLD);
+    if (uniqueKeywordIdList.size() >= KEYWORD_THRESHOLD)
+        uniqueKeywordIdList.resize(KEYWORD_THRESHOLD);
 
-    unsigned keywordListCapacity = keywordIdList.size();
+    unsigned keywordListCapacity = uniqueKeywordIdList.size();
 
     ForwardList *forwardList = new ForwardList(keywordListCapacity);
     forwardList->setExternalRecordId(record->getPrimaryKey());
     forwardList->setRecordBoost(record->getRecordBoost());
     forwardList->setInMemoryData(record->getInMemoryData());
-    forwardList->setNumberOfKeywords(keywordIdList.size());
+    forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
     //Adding Non searchable Attribute list
     vector<string> nonSearchableAttributeValues;
@@ -308,16 +308,15 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
 
     // Add KeywordId List
-    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
-        forwardList->setKeywordId(iter, keywordIdList[iter].first);
-        //cout <<  keywordIdList[iter].first << "' : '" << keywordIdList[iter].second.first << "'" << endl;
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
     }
 
     //Add Score List
-    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
 
         map<string, TokenAttributeHits>::const_iterator mapIterator =
-                tokenAttributeHitsMap.find(keywordIdList[iter].second.first);
+                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
         forwardList->setKeywordRecordStaticScore(iter,
                 forwardList->computeFieldBoostSummation(this->schemaInternal,
@@ -332,10 +331,10 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setKeywordAttributeBitmaps(
     		new unsigned[keywordListCapacity]);
 
-    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
     	map<string, TokenAttributeHits>::const_iterator mapIterator =
     			tokenAttributeHitsMap.find(
-    					keywordIdList[iter].second.first);
+    					uniqueKeywordIdList[iter].second.first);
     	ASSERT(mapIterator != tokenAttributeHitsMap.end());
     	unsigned bitVector = 0;
     	for (unsigned i = 0; i < mapIterator->second.attributeList.size();
@@ -350,34 +349,44 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     // Add position indexes in forward list
     typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
     vector<uint8_t> grandBuffer;
-    // To avoid frequent resizing, reserve space for vector
-    grandBuffer.reserve(keywordIdList.size() * 50);
+    // To avoid frequent resizing, reserve space for vector. 10 is random number
+    grandBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
-    for (unsigned int i = 0; i < keywordIdList.size(); ++i) {
-    	 string keyWord = keywordIdList[i].second.first;
-    	 TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyWord);
+    for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
+
+    	string keyword = uniqueKeywordIdList[i].second.first;
+    	 TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyword);
     	 ASSERT(iterator != tokenAttributeHitsMap.end());
-    	 unsigned prevAttributeId = 0;
-		 vector<unsigned> positionListVector;
-		 for (unsigned i = 0; i < iterator->second.attributeList.size(); ++i)
-		 {
-			 unsigned attributeId = (iterator->second.attributeList[i] >> 24) - 1; // 0th based
-			 unsigned position =  (iterator->second.attributeList[i] & 0xFFFFFF);  // Non Zero
 
-			 // create position list for the token in a given attribute
-			 if (i == 0 || prevAttributeId == attributeId) {
-				 positionListVector.push_back(position);
-			 } else {
-				 convertToVarLengthArray(positionListVector, grandBuffer);
-				 positionListVector.clear();
-				 positionListVector.push_back(position);
-			 }
-			 prevAttributeId = attributeId;
-		 }
-		 // convert the remaining
+    	 unsigned prevAttributeId = 0;
+    	 vector<unsigned> positionListVector;
+
+    	 for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
+    		 unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
+    		 unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
+
+    		 // if it is a first element or current attribute is same as
+    		 // previous attribute id. then continue to push the position
+    		 // in position list vector
+    		 if (j == 0 || prevAttributeId == attributeId) {
+    			 positionListVector.push_back(position);
+    		 } else {
+    			 // if the previous attribute is not same as current attribute
+    			 // then convert the position list vector to variable length byte
+    			 // array and APPPEND to grand buffer.
+    			 convertToVarLengthArray(positionListVector, grandBuffer);
+    			 positionListVector.clear();
+    			 positionListVector.push_back(position);
+    		 }
+    		 prevAttributeId = attributeId;
+    	 }
+
+		 // convert the position list vector of last attribute to variable
+    	 // length byte array
 		 convertToVarLengthArray(positionListVector, grandBuffer);
 		 positionListVector.clear();
     }
+    // set grand buffer to position index of current forward list.
     forwardList->setPositionIndex(grandBuffer);
 
     ForwardListPtr managedForwardListPtr;
@@ -387,18 +396,31 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     this->mergeRequired = true;
 }
-
+/*
+ *  This function converts position list vector to variable length byte array and
+ *  append it to grand buffer after adding the size of byte array first.
+ */
 void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListVector,
-										   vector<uint8_t>& grandBuffer) {
+		vector<uint8_t>& grandBuffer) {
 
 	uint8_t * buffer = 0;
-	unsigned size = ULEB128::uInt32VectorToVarLenArray(positionListVector, &buffer);
-	uint8_t vlb[4];
-	short len;
-	ULEB128::uInt32ToVarLengthBytes(size , vlb, &len);
-	for (int k =0; k < len; ++k)
+	// convert to vector to variable length byte array
+	unsigned lengthOfDeltas = ULEB128::uInt32VectorToVarLenArray(positionListVector, &buffer);
+
+	if (buffer == NULL)
+		return;
+
+	uint8_t vlb[5];
+	short numberOfBytesForLength;
+	// now convert the deltaSize to varable length byte (vlb)
+	ULEB128::uInt32ToVarLengthBytes(lengthOfDeltas , vlb, &numberOfBytesForLength);
+
+	// append vlb of deltaSize to grand buffer first
+	for (int k =0; k < numberOfBytesForLength; ++k)
 		grandBuffer.push_back(vlb[k]);
-	for (int k =0; k < size; ++k)
+
+	// append vlb of delta stored in buffer.
+	for (int k =0; k < lengthOfDeltas; ++k)
 		grandBuffer.push_back(buffer[k]);
 
 	if (buffer)
@@ -852,56 +874,66 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		return;
 	}
 
-	const uint8_t * piPtr = &positionIndex[0];
-	unsigned offset = 0;
+	const uint8_t * piPtr = &positionIndex[0];  // pointer to position index for the record
+	unsigned piOffset = 0;
+
+	if (*(piPtr + positionIndex.size() - 1) & 0x80)
+	{
+		 Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
+		 return;
+	}
 
 	// get the correct byte array position for current keyword + attribute combination
-	unsigned j;
-	for (j = 0; j < keyOffset ; ++j) {
+
+	for (unsigned j = 0; j < keyOffset ; ++j) {
 		currKeyattributeBitMap = keywordAttributeBitmaps[j];
-		unsigned cnt = getBitSet(currKeyattributeBitMap);
-		for (unsigned k = 0; k < cnt; ++k){
+		unsigned count = getBitSet(currKeyattributeBitMap);
+		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
 			short byteRead;
-			ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
-			offset += byteRead + value;
+			ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+			piOffset += byteRead + value;
 		}
 	}
 	currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
 	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
 	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
 
-	ASSERT(totalBitSet >= attrBitPosition);
+	ASSERT(totalBitSet > attrBitPosition);
 	for (int i = 0; i < totalBitSet; ++i){
 		unsigned value;
 		short byteRead;
-		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
-		if (i == attrBitPosition - 1){
-			ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + offset + byteRead), value, pl);
+		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+		if (i == attrBitPosition){
+			ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
 			break;
 		}else {
-			offset += byteRead + value;
+			piOffset += byteRead + value;
 		}
 	}
 }
-unsigned getBitSet(unsigned v) {
-	unsigned int c; // c accumulates the total bits set in v
-	for (c = 0; v; c++)
+// get the count of set bits in he number
+// Brian Kernighan's method
+// Published in 1988, the C Programming Language 2nd Ed
+unsigned getBitSet(unsigned number) {
+	unsigned int count; // c accumulates the total bits set in v
+	for (count = 0; number; count++)
 	{
-	  v &= v - 1; // clear the least significant bit set
+		number &= number - 1; // clear the least significant bit set
 	}
-	return c;
+	return count;
 }
 
-unsigned getBitSetPositionOfAttr(unsigned v, unsigned c) {
+// get the count of bit set before the bit position of attributeId
+unsigned getBitSetPositionOfAttr(unsigned attrBitMap, unsigned attributeId) {
 	unsigned shift = 0;
-	unsigned cnt = 1;
-	while(shift < c) {
-		if ((v & (1 << shift)) == 1)
-			++cnt;
+	unsigned count = 0;
+	while(shift < attributeId) {
+		if ((attrBitMap & (1 << shift)) == 1)
+			++count;
 		++shift;
 	}
-	return cnt;
+	return count;
 }
 
 

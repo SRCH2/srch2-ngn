@@ -1,4 +1,4 @@
-// $Id: $
+// $Id$
 /*
  * PhraseSearch.cpp
  *
@@ -20,7 +20,7 @@ template <class T>
 void printVector(const vector<T>& v);
 
 PhraseSearcher::PhraseSearcher() {
-    editDistanceThreshold = 100;
+    slopThreshold = 100;
 }
 /*
  *  The function determines whether it is an exact match for the given phrase. The function
@@ -68,66 +68,72 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
 
     vector<unsigned> cursorPosition(positionListVector.size());
 
-    while(!searchDone) {
+    while(1) {
 
         prevKeyWordPosition = positionListVector[0][cursorPosition[0]];
-        unsigned i;
-        for (i = 1; i < positionListVector.size(); ++i) {
+        unsigned listIndex;
+        // with first list positions as baseline , probe the subsequent lists to
+        // identify a possible match
+        for (listIndex = 1; listIndex < positionListVector.size();
+        		++listIndex) {
 
-            const vector<unsigned>& currList =  positionListVector[i];
+            const vector<unsigned>& currList =  positionListVector[listIndex];
             unsigned currKeyWordPosition = 0;
-            unsigned j = 0;
-            for (j = cursorPosition[i]; j < currList.size(); ++j)
+            unsigned cursorIndex = 0;
+
+            // Loop over the position list to find a position which is greater
+            // than the previous position.
+            for (cursorIndex = cursorPosition[listIndex]; cursorIndex < currList.size(); ++cursorIndex)
             {
-                if (currList[j] > prevKeyWordPosition)
+                if (currList[cursorIndex] > prevKeyWordPosition)
                 {
-                    currKeyWordPosition = currList[j];
+                    currKeyWordPosition = currList[cursorIndex];
                     break;
                 }
             }
-            cursorPosition[i] = j;
 
-            // we have reached at end of one of the list. Hence this should be
-            // the final while loop.
-            if (j == currList.size())
+            // store the cursor position of current List
+            cursorPosition[listIndex] = cursorIndex;
+
+            // we have reached at the end of one of the list. continue probing the
+            // subsequent lists but do not start over again from 1st list( i.e do not
+            // repeat the while loop).
+            if (cursorIndex == currList.size())
                 searchDone = true;
-            unsigned relativeDistance = keyWordPositionsInPhrase[i] - keyWordPositionsInPhrase[i-1];
-            if (currKeyWordPosition - prevKeyWordPosition  != relativeDistance)
-                break;
-            else
-                prevKeyWordPosition = currKeyWordPosition;
-        }
 
-        if (i == positionListVector.size()){
-            // we found the match, break from outer while loop
-            matchFound = true;
-            break;
-        }
+            unsigned keywordsDiffInPhrase = keyWordPositionsInPhrase[listIndex] -
+            							   keyWordPositionsInPhrase[listIndex-1];
+            unsigned keywordsDiffInRecord = currKeyWordPosition - prevKeyWordPosition;
 
-        while(true) {
-            ++cursorPosition[0];
-            if (cursorPosition[0] >= positionListVector[0].size())
-            {
-                searchDone = true;
+            // if keywordsDiffInRecord != keywordsDiffInPhrase , then we do not want
+            // to probe the list further. Otherwise probe the next list
+
+            if (keywordsDiffInPhrase != keywordsDiffInRecord){
                 break;
             }
-            signed diff = positionListVector[0][cursorPosition[0]] -
-                          positionListVector[1][cursorPosition[1]];
-            signed relativeDistance = keyWordPositionsInPhrase[0] - keyWordPositionsInPhrase[1];
-            if (diff == relativeDistance || diff > 0)
-                break;
-        }
-    }
 
-    if(matchFound)
-    {
-        for (unsigned i =0; i < cursorPosition.size(); ++i)
+            prevKeyWordPosition = currKeyWordPosition;
+        }
+
+        if (listIndex == positionListVector.size()){
+            // we found the match, break from while loop
+            for (unsigned i =0; i < cursorPosition.size(); ++i)
+            {
+                matchedPosition.push_back(positionListVector[i][cursorPosition[i]]);
+            }
+            return true;  // match found
+        }
+
+        ++cursorPosition[0];
+        if (cursorPosition[0] >= positionListVector[0].size() || searchDone)
         {
-            matchedPosition.push_back(positionListVector[i][cursorPosition[i]]);
+        	return false; // match not found
         }
     }
-    return matchFound;
+    // We should not reach here...This statement is to avoid compiler warning
+    return false;
 }
+
 /*
  *  The function determines whether it is proximity match for a given keyword
  *  and edit distance (slop) in a positionlistVector. MatchedPosition return
@@ -161,37 +167,37 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
     	}
     }
 
+    if (positionListVector.size() == 1 ) { // only 1 keyword in phrase!
+        return true;
+    }
+
     if (inputSlop == 0){
     	Logger::debug("proximityMatch: Edit distance cannot be 0 for proximity match");
         return false;
     }
 
-    if (inputSlop > editDistanceThreshold) {
+    if (inputSlop > slopThreshold) {
     	Logger::debug("proximityMatch: Edit distance %d is more than threshold %d", inputSlop,
-    				editDistanceThreshold);
+    				slopThreshold);
         return true;
     }
 
     // Now go over the position list and get the the vector string that could
-    // possible match with keyword list for a give edit distance
+    // possible match with keyword list for a given slop
 
     std::priority_queue<std::pair<unsigned, unsigned>,
                         vector<std::pair<unsigned, unsigned> >,
                         comparator > minHeap;
-   // unsigned max = 0;
-    unsigned min = 0;
+
     unsigned totalKeyWords = positionListVector.size();
     vector<unsigned> cursors(totalKeyWords);
     // initialize cursors
     for (unsigned i = 0; i < totalKeyWords; ++i) {
         minHeap.push(make_pair(positionListVector[i].front(),i));
-        //if (positionListVector[i].front() > max)
-        //    max = positionListVector[i].front();
     }
     while(1) {
-        min = minHeap.top().first;
+    	// clear the matchedPosition vector in case we loop back
         matchedPosition.clear();
-        //if (max - min < totalKeyWords + editDistance){
         for (unsigned i =0; i < positionListVector.size(); ++i){
         	unsigned pos = positionListVector[i][cursors[i]];
         	matchedPosition.push_back(pos);
@@ -199,16 +205,14 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
         	return true;
         }
-            //cout << "record : " ; printVector(record);
-            /*if (editDistance >= getEditDistance_DL(keywords, record)) {
-                return true;
-            }*/
-        //}
+
         unsigned currentListIndex = minHeap.top().second;
         const vector<unsigned>& currList = positionListVector[currentListIndex];
         ++cursors[currentListIndex];
-        if (cursors[currentListIndex] >= currList.size())
+        // If we reached the end of the list then stop and return false
+        if (cursors[currentListIndex] >= currList.size()){
             break;
+        }
         unsigned next = currList[cursors[currentListIndex]];
         minHeap.pop();
         minHeap.push(make_pair( next, currentListIndex));
@@ -249,6 +253,8 @@ signed PhraseSearcher::getPhraseSlop(const vector<unsigned>& query,
 	return maxDiff - minDiff;
 }
 /*
+ * +++ NOTE: THIS CODE IS NOT IN USE +++
+ *
  * The function calculates Levenshtein distance. Also known as edit distance
  * See link below for more details
  * http://en.wikipedia.org/wiki/Levenshtein_distance
@@ -287,6 +293,8 @@ unsigned PhraseSearcher::geteditDistance_L(const vector<string>& keywords,
 }
 
 /*
+ * +++ NOTE: THIS CODE IS NOT IN USE +++
+ *
  * The function calculates Damerau–Levenshtein distance.The algorithm improves
  * the regular edit distance by also taking swaps into account. Each swap is
  * considered as one edit. See link below for more details
@@ -360,6 +368,12 @@ unsigned PhraseSearcher::getEditDistance_DL(const vector<string>& src,
     delete costTable;
     return editDistance;
 }
+
+/*
+ *    BELOW CODE IS ONLY A HELPER FUNCTION FOR DEBUGGING.
+ *    +++ THE CODE IS NOT IN USE +++
+ */
+
 void PhraseSearcher::printMap(const map<string, short>& m){
     cout << "-----------------------" << endl;
     for (map<string, short>::const_iterator i = m.begin(); i != m.end(); ++i) {
@@ -367,6 +381,10 @@ void PhraseSearcher::printMap(const map<string, short>& m){
     }
     cout << "-----------------------" << endl;
 }
+/*
+ *    BELOW CODE IS ONLY A HELPER FUNCTION FOR DEBUGGING.
+ *    +++ THE CODE IS NOT IN USE +++
+ */
 void PhraseSearcher::printCostTable(short *t, int r, int c){
     cout << endl;
     for (int i =0; i < r; ++i){
@@ -375,6 +393,10 @@ void PhraseSearcher::printCostTable(short *t, int r, int c){
         cout << endl;
     }
 }
+/*
+ *    BELOW CODE IS ONLY A HELPER FUNCTION FOR DEBUGGING.
+ *    +++ THE CODE IS NOT IN USE +++
+ */
 template <class T>
 void printVector(const vector<T>& v){
     for (unsigned i = 0; i < v.size(); ++i)

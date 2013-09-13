@@ -146,6 +146,11 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 
 
 ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/VariableLengthAttributeContainer_Test "--verbose")
+ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
+
+ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
+SET_TESTS_PROPERTIES(PhraseSearch_Test PROPERTIES ENVIRONMENT "positionIndexFile=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/phraseSearch/positionIndex.txt")
+
 
 
 #wrapper related tests should be added below this line

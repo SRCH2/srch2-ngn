@@ -124,14 +124,14 @@ void QueryRewriter::applyAnalyzer() {
         // keyword. In future we should handle synonyms TODO
     	string keywordAfterAnalyzer = "";
     	if (paramContainer->isPhraseKeywordFlags[keywordIndex]){
-    		std::vector<TokensInfo> analyzedQueryKeywords;
+    		std::vector<PositionalTerm> analyzedQueryKeywords;
     		analyzerNotConst.tokenizeQuery(*keyword, analyzedQueryKeywords);
     		keywordAfterAnalyzer.clear();
     		vector<unsigned> positionIndexes;
     		for (int i=0; i < analyzedQueryKeywords.size(); ++i){
     			if (i)
     				keywordAfterAnalyzer.append(" ");
-    			keywordAfterAnalyzer.append(analyzedQueryKeywords[i].token);
+    			keywordAfterAnalyzer.append(analyzedQueryKeywords[i].term);
     			positionIndexes.push_back(analyzedQueryKeywords[i].position);
     		}
     		if (positionIndexes.size() > 0)

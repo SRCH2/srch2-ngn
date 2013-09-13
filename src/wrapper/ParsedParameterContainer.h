@@ -272,7 +272,10 @@ public:
     BooleanOperation termFQBooleanOperator; // boolean operator between different filterQuery terms. fq=field:[10 TO 20] AND field2:keyword
     // parsed error?
     bool isFqBooleanOperatorSet;
-    //TODO: move it close to the messages.
+
+    // the map whose key is analyzed phrase and value is keyword offsets in phrase
+    // "into the wild" becomes "into wild" after applying stop word filter.
+    // the map stores key = "into wild" and value = "1, 3".
     std::map<string, vector<unsigned> > PhraseKeyWordsPositionMap;
 };
 

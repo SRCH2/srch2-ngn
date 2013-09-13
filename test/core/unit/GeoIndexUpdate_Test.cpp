@@ -151,7 +151,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
 {
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
 
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
 
     // go through each record to verify
     for (unsigned i = 0; i < recordsToSearch.size(); i++)
@@ -159,12 +159,12 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         analyzer->tokenizeQuery(recordsToSearch[i].first, queryKeywords);
 
         // for each prefix of the first keyword
-        for(unsigned j = 1; j <= queryKeywords[0].size(); j++)
+        for(unsigned j = 1; j <= queryKeywords[0].term.size(); j++)
         {
             Query *query = new Query(SearchTypeMapQuery);
 
             // gernerate a term for the prefix, add it to the query
-            string prefix = queryKeywords[0].substr(0, j);
+            string prefix = queryKeywords[0].term.substr(0, j);
             generateTermAddToQuery(prefix, query, isFuzzy);
 
             //cout << prefix << " ";
@@ -172,7 +172,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
             for (unsigned k = 1; k < queryKeywords.size(); k++)
             {
                 //cout << queryKeywords[k] << " ";
-                generateTermAddToQuery(queryKeywords[k], query, isFuzzy);
+                generateTermAddToQuery(queryKeywords[k].term, query, isFuzzy);
             }
             //cout << endl;
 

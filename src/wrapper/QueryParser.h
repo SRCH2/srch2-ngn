@@ -446,8 +446,7 @@ private:
      * output will be '^4'
      * input will be changed to ~.8
      */
-    bool parseBoostModifier(string &input, string &output,
-            const bool isPhraseKeyword);
+    bool parseBoostModifier(string &input, string &output);
     /*
      * populate boost info
      * Example: '^4'
@@ -457,8 +456,7 @@ private:
      *  with the  lPdefaultBoostLevel value as specified in
      * local Parameters.
      */
-    void populateBoostInfo(bool isParsed, string &input,
-            const bool isPhraseKeyword);
+    void populateBoostInfo(bool isParsed, string &input);
     /*
      * populate fuzzy info
      * Example: '~.4'

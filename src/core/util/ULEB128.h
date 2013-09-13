@@ -1,4 +1,4 @@
-//$Id: $
+//$Id$
 /*
  * ULEB128.h
  *
@@ -17,13 +17,13 @@ namespace util {
 
 class ULEB128 {
 public:
-    static int uInt32VectorToVarLenArray(const std::vector<unsigned>& positionList,
+    static int uInt32VectorToVarLenArray(const std::vector<unsigned>& uInt32Array,
     		uint8_t** buffer);
     static void varLenByteArrayToInt32Vector(uint8_t* buffer, unsigned size,
-    		vector<unsigned>& positionList);
-    static int uInt32ToVarLengthBytes(unsigned position, uint8_t* varLenByteBuffer,
+    		vector<unsigned>& uInt32Array);
+    static bool uInt32ToVarLengthBytes(unsigned uInt32, uint8_t* varLenByteBuffer,
     		short * length);
-    static int varLengthBytesToUInt32(const uint8_t* varLenByteBuffer, unsigned* position,
+    static bool varLengthBytesToUInt32(const uint8_t* varLenByteBuffer, unsigned* uInt32,
     		short* byteRead);
 private:
     ULEB128();

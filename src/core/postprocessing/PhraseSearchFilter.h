@@ -1,3 +1,4 @@
+//$ID$
 /*
  * PhraseSearchFilter.h
  *
@@ -34,7 +35,7 @@ public:
                  QueryResults * input , QueryResults * output);
     void addPhrase(const vector<string>& keywordsInPhrase,
                    const vector<unsigned>& queryKeywordsPositionIndex,
-                   unsigned fuzzyValue, unsigned fieldVector);
+                   unsigned slopValue, unsigned fieldVector);
 private:
 
     bool matchPhrase(const ForwardList * forwardListPtr, const PhraseInfo& phraseInfo);

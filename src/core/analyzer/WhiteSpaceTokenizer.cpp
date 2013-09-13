@@ -35,8 +35,12 @@ bool WhiteSpaceTokenizer::incrementToken() {
                 break;
             }
         } else {
-        	tokenStreamContainer->currentTokenPosition++;
-            return (!(tokenStreamContainer->currentToken).empty()) ? true : false;
+            if (tokenStreamContainer->currentToken.empty()) {
+            	return false;
+            } else {
+            	tokenStreamContainer->currentTokenPosition++;
+            	return true;
+            }
         }
     }
     ASSERT(false);
