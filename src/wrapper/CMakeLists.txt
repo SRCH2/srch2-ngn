@@ -6,7 +6,7 @@ FILE(GLOB SRCH2_KAFKA_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 					"../../thirdparty/kafka/producer/*.cpp"
 					)
 					
-FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" 
+FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/xmlParser/*.cpp"
 					"../../thirdparty/snappy-1.0.4/*.cc"
 					)
 					

@@ -2,7 +2,7 @@
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
-
+#include "util/xmlParser/pugixml.hpp"
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
 #include "WrapperConstants.h"
@@ -19,6 +19,7 @@ using namespace std;
 using namespace srch2::util;
 using namespace srch2::instantsearch;
 namespace po = boost::program_options;
+using namespace pugi;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -26,32 +27,90 @@ namespace httpwrapper {
 class ConfigManager {
 private:
 
-	// Argument file options
+	// <config>
 	string licenseKeyFile;
-	string trieBootstrapDictFile;
-	uint32_t documentLimit;
-	uint64_t memoryLimit;
 	string httpServerListeningHostname;
 	string httpServerListeningPort;
+	string srch2Home;
+	string indexPath;
+	string filePath;
+
+
+	// <confgi><indexConfig>
+	bool recordBoostFieldFlag;
+	string recordBoostField;
+	unsigned queryTermBoost;
+	IndexCreateOrLoad indexCreateOrLoad;
+
+
+	// <config><query><rankingAlgorithm>
+	string scoringExpressionString;
+
+
+	// <config><query>
+	float queryTermSimilarityBoost;
+	float queryTermLengthBoost;
+	float prefixMatchPenalty;
+	vector<string> sortableAttributes;
+	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
+	vector<string> sortableAttributesDefaultValue;
+	unsigned cacheSizeInBytes;
+	int resultsToRetrieve;
+	int numberOfThreads;
+	int searchType;
+	bool exactFuzzy;
+	bool queryTermType;
+
+
+	// <config><query><queryResponseWriter>
+	int searchResponseJsonFormat;
+	vector<string> attributesToReturn;
+
+
+	// <config><query>
+	DataSourceType dataSourceType;
+	WriteApiType writeApiType;
+
+
+	// <config><updatehandler>
+	uint64_t memoryLimit;
+	uint32_t documentLimit;
+
+	// <config><updatehandler><mergePolicy>
+	unsigned mergeEveryNSeconds;
+	unsigned mergeEveryMWrites;
+
+	// <config><updatehandler><updateLog>
+	Logger::LogLevel loglevel;
+    string httpServerAccessLogFile;
+    string httpServerErrorLogFile;
+
+    // <schema><fields>
+	string fieldLatitude;
+	string fieldLongitude;
+	int indexType;
+
+	// <schema>
+	string primaryKey;
+
+	// <schema><types><fieldType><analyzer><filter>
+	bool stemmerFlag;
+	std::string stemmerFile;
+	std::string synonymFilterFilePath;
+	bool synonymKeepOrigFlag;
+	std::string stopFilterFilePath;
+
+	string trieBootstrapDictFile;
 	string kafkaBrokerHostName;
 	uint16_t kafkaBrokerPort;
 	string kafkaConsumerTopicName; //Customer name
 	uint32_t kafkaConsumerPartitionId;
 	uint32_t pingKafkaBrokerEveryNSeconds;
 	uint32_t writeReadBufferInBytes;
-	unsigned cacheSizeInBytes;
-	unsigned mergeEveryNSeconds;
-	unsigned mergeEveryMWrites;
 
-	int indexType;
-	string attributeLatitude;
-	string attributeLongitude;
 	float defaultSpatialQueryBoundingBox;
 
-	string primaryKey;
-	ResponseType searchResponseFormat;
-	vector<string> attributesToReturn;
-	int numberOfThreads;
+	srch2::instantsearch::ResponseType searchResponseFormat;
 	string attributeStringForMySQLQuery;
 
 	//vector<string> searchableAttributes;
@@ -60,7 +119,6 @@ private:
     map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
 
 	string attributeRecordBoost;
-	string scoringExpressionString;
 
 
 	// < name, <type, <default, isSortable>>>
@@ -76,52 +134,70 @@ private:
 	vector<string> facetEnds;
 	vector<string> facetGaps;
 
+
 	//vector<unsigned> attributesBoosts;
 
-	// This is the directory that will be set during installation.
-	std::string installDir;
-
 	std::string allowedRecordTokenizerCharacters;
-	int searchType;
 	int isPrimSearchable;
-	bool exactFuzzy;
-	bool queryTermType;
-	unsigned queryTermBoost;
-	float queryTermSimilarityBoost;
-	float queryTermLengthBoost;
-	float prefixMatchPenalty;
 	bool supportAttributeBasedSearch;
-	bool stemmerFlag;
-	std::string stemmerFile;
-	std::string synonymFilterFilePath;
-	bool synonymKeepOrigFlag;
-	std::string stopFilterFilePath;
-	DataSourceType dataSourceType;
-	WriteApiType writeApiType;
 
 
-	int resultsToRetrieve;
 	int attributeToSort;
 	int ordering;
-	int searchResponseJsonFormat;
-	bool recordBoostAttributeSet;
-
-	string indexPath;
-	string filePath;
-	string httpServerAccessLogFile;
-	Logger::LogLevel loglevel;
-	string httpServerErrorLogFile;
 	//string httpServerDocumentRoot;
     string configFile;
 
+
+    void splitString(string str, const string& delimiter, vector<string>& result);
+    void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
+
+    bool isOnlyDigits(string& str);
+    bool isFloat(string str);
+    //Validate Functions
+    bool isValidFieldType(string& fieldType, bool isSearchable);
+    bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType);
+    bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
+    bool isValidBool(string& fieldType);
+    bool isValidBoostFields(map <string, unsigned>& boosts);
+    bool isValidQueryTermBoost(string& quertTermBoost);
+    bool isValidIndexCreateOrLoad(string& indexCreateLoad);
+    bool isValidRecordScoreExpession(string& recordScoreExpression);
+    bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
+    bool isValidPrefixMatch(string& prefixmatch);
+    bool isValidCacheSize(string& cacheSize);
+    bool isValidRows(string& rows);
+    bool isValidMaxSearchThreads(string& maxSearchThreads);
+    bool isValidFieldBasedSearch(string& fieldBasedSearch);
+
+    bool isValidQueryTermMatchType(string& queryTermMatchType);
+    bool isValidQueryTermType(string& queryTermType);
+    bool isValidResponseFormat(string& responseFormat);
+    bool isValidResponseContentType(string responseContentType);
+    bool isValidMaxDoc(string& maxDoc);
+    bool isValidMaxMemory(string& maxMemory);
+    bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
+    bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
+    bool isValidLogLevel(string& logLevel);
+    bool isValidIndexType(string& indexType);
+    bool isValidSearcherType(string& searcherType);
+
+    srch2::instantsearch::FilterType parseFieldType(string& fieldType);
+    int parseFacetType(string& facetType);
+
+
 public:
-    ConfigManager(std::string& configfile);
+    ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
 
-	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
-	void parse(const boost::program_options::variables_map &vm, bool &configSuccess, std::stringstream &parseError);
+//	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,			std::stringstream &parseError);
+	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
+//	void parse(const boost::program_options::variables_map &vm,
+//			bool &configSuccess, std::stringstream &parseError);
 
-	const std::string& getCustomerName() const;
+	void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+	const std::string& getCustomerName() const; //XXX: REMOVE?
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
 
@@ -152,7 +228,7 @@ public:
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
 	string getStopFilePath() const; // StopFilter File Path
 	string getStemmerFile() const; // stemmer file
-	string getInstallDir() const; // install Directory
+	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
 	float getQueryTermLengthBoost() const;
@@ -171,7 +247,7 @@ public:
 	DataSourceType getDataSourceType() const;
 	WriteApiType getWriteApiType() const;
 
-	ResponseType getSearchResponseFormat() const;
+	srch2::instantsearch::ResponseType getSearchResponseFormat() const;
 	const std::string& getAttributeStringForMySQLQuery() const;
 	int getSearchResponseJSONFormat() const;
 
@@ -180,8 +256,6 @@ public:
 
 	const std::string& getHTTPServerAccessLogFile() const;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
-	const std::string& getHTTPServerErrorLogFile() const;
-	const std::string& getHTTPServerDocumentRoot() const;
 	const std::string& getHTTPServerListeningHostname() const;
 	const std::string& getHTTPServerListeningPort() const;
 
@@ -218,6 +292,10 @@ public:
 	const vector<string> * getFacetGaps() const ;
 
         void loadConfigFile() ;
+
+    // THIS FUNCTION IS JUST FOR WRAPPER TEST
+    void setFilePath(const string& dataFile);
+
 };
 
 }
