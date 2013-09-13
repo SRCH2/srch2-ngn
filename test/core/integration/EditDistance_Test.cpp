@@ -109,6 +109,7 @@ void buildLocalIndex(string INDEX_DIR)
     delete schema;
 }
 
+// test with swap operation
 void test1()
 {
     string INDEX_DIR = getenv("index_dir");
@@ -134,11 +135,11 @@ void test1()
     ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
 
     //swap operation
-    ASSERT ( ping(analyzer, indexSearcher, "msyth" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "symth" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smtyh" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smyht" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "mxyth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "msyth" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "symth" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "smtyh" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "smyht" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "mxyth" , 1 , 1001) == false);
 
     ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
 
@@ -201,9 +202,105 @@ void test1()
     ASSERT ( ping(analyzer, indexSearcher, "padrhiac+smithe" , 1 , 1001) == true);
 
     // swap operation around the repetition of the same letters
-    ASSERT ( ping(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == true);
+
+    (void)analyzer;
+    delete indexSearcher;
+    delete indexer;
+    delete cache;
+    delete analyzer;
+}
+
+// test without swap operation
+void test2()
+{
+    string INDEX_DIR = getenv("index_dir");
+    buildLocalIndex(INDEX_DIR);
+
+    //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
+    Cache *cache = new Cache();// create an index writer
+    unsigned mergeEveryNSeconds = 3;
+    unsigned mergeEveryMWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    Indexer *indexer = Indexer::load(indexMetaData);
+    indexer->getSchema()->setSupportSwapInEditDistance(false);
+    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    const Analyzer *analyzer = getAnalyzer();
+
+    //Edit distance 0
+    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+
+    //Edit distance 1
+    ASSERT ( ping(analyzer, indexSearcher, "smth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "smythe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+
+    //swap operation
+    ASSERT ( pingEd(analyzer, indexSearcher, "msyth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "symth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "smtyh" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "smyht" , 1 , 1001) == false);
+
+    ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
+
+    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyth" , 1 , 1001) == true);
+
+
+    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smi" , 0 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smit" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
+    ping(analyzer, indexSearcher, "padraic" , 1 , 1001);
+
+    //Edit distance 0 0
+    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padrai" , 1 , 1001) == true);
+
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyth" , 1 , 1001) == true);
+
+    //Edit distance 1
+    ASSERT ( ping(analyzer, indexSearcher, "padraic" , 1 , 1001 ) == true);
+
+    //Edit distance 1 1
+    ASSERT ( ping(analyzer, indexSearcher, "padraic+smith" , 1 , 1001) == true);
+
+    //Edit distance 0 1
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
+
+    //Edit distance 0 2
+    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smithe" , 1 , 1001) == true);
+
+    // swap operation around the repetition of the same letters
+    ASSERT ( pingEd(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == false);
+    ASSERT ( pingEd(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == false);
 
     (void)analyzer;
     delete indexSearcher;
@@ -220,6 +317,7 @@ int main(int argc, char **argv)
     //buildUCIIndex();
     //buildIndex();
     test1();
+    test2();
 
     cout<<"Edit Distance tests Succesful!!"<<endl;
 
