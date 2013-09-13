@@ -584,7 +584,7 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema,
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
                 termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,
                 tempScore)) {
-            if (tempScore >= matchingKeywordRecordStaticScore) {
+            if (tempScore > matchingKeywordRecordStaticScore) {
                 matchingKeywordRecordStaticScore = tempScore;
                 matchingKeywordAttributeBitmap = tempAttributeBitmap;
                 returnValue = true;
