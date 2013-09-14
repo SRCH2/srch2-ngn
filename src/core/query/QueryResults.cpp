@@ -195,7 +195,7 @@ double QueryResults::getPhysicalDistance(const unsigned position) const {
     return impl->sortedFinalResults.at(position)->physicalDistance;
 }
 
-const std::map<std::string, std::vector<std::pair<std::string, float> > > * QueryResults::getFacetResults() const{
+const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * QueryResults::getFacetResults() const{
 	return &impl->facetResults;
 }
 

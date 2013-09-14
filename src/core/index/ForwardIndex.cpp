@@ -237,6 +237,9 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
 			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+			ASSERT(false);
+			break;
 	}
 
     return score;
