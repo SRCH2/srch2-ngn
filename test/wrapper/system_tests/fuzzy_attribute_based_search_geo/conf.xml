@@ -95,7 +95,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -122,9 +122,9 @@
             #record-score-expression=doc_boost+(1/(doc_length+1))
             record-score-expression=idf_score*doc_boost
         -->
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <!--
             Query Term Similarity Boost
@@ -186,7 +186,7 @@
                 1 - Enable
             Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
         -->
-        <fieldBasedSearch>0</fieldBasedSearch>
+        <fieldBasedSearch>1</fieldBasedSearch>
          
          
         <!-- 

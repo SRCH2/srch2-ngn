@@ -85,7 +85,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost>category^2 name^2</fieldBoost>
+        <fieldBoost>category^2 name^1</fieldBoost>
          
          
         <!-- 
@@ -95,7 +95,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -122,9 +122,9 @@
             #record-score-expression=doc_boost+(1/(doc_length+1))
             record-score-expression=idf_score*doc_boost
         -->
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <!--
             Query Term Similarity Boost

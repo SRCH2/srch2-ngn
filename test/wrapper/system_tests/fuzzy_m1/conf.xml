@@ -122,9 +122,9 @@
             #record-score-expression=doc_boost+(1/(doc_length+1))
             record-score-expression=idf_score*doc_boost
         -->
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <!--
             Query Term Similarity Boost
