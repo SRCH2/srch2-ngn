@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>documentation</title>
 </head>
 <body>
@@ -58,7 +58,9 @@
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Documentation</a></h3></div>
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#install">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="configuration.html"/>Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#restfulapi"/>RESTful API</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="querysyntax.html"/>Query Syntax</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a></br><br>
 </td></tr></tbody></table>
@@ -355,6 +357,8 @@ function InformtionShow(isDropDownList,attibuteArray,resultDivId)
     this.resultDivId=resultDivId;
 }
 
+
+
 /*
    When someone types in the input box, it calls a JavaScript function called 
  *  check(), 
@@ -383,6 +387,7 @@ function check(value,InfoShow,InfoUrl) {
         document.getElementById(InfoShow.resultDivId).innerHTML = &quot;&quot;;
     }
 }
+
 
 function query(value,InfoShow,InfoUrl) {
 
@@ -490,6 +495,7 @@ function display(response,InfoShow) {
         }
 
 }
+
 
 function display_dropdown(responseJSON,InfoShow) {
     busy = false;
@@ -896,8 +902,7 @@ WSGIScriptAlias /apptest /var/www/test/apptest.wsgi
 <li>attribute-longitude=lng</li>
 </ul>
 </blockquote>
-<p><strong>[important]</strong> If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude. <br>
-</p>
+<p><strong>[important]</strong> If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.   </p>
 <blockquote>
 <ul>
 <li>for example:<blockquote>

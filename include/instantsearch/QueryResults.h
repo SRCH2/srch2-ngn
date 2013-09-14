@@ -25,7 +25,7 @@
 #include <map>
 
 #include <instantsearch/platform.h>
-
+#include <instantsearch/Constants.h>
 namespace srch2
 {
 namespace instantsearch
@@ -158,7 +158,7 @@ public:
      */
     double getPhysicalDistance(const unsigned position) const ;
 
-    const std::map<std::string , std::vector<std::pair<std::string, float> > > * getFacetResults() const;
+    const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * getFacetResults() const;
 
     void copyForPostProcessing(QueryResults * sourceQueryResults) const ;
 

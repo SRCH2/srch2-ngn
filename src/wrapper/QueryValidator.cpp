@@ -351,7 +351,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                 paramContainer->messages.push_back(
                         std::make_pair(MessageWarning,
                                 "End value for field " + *field
-                                        + " is not given. No facet will be calculated on this field. "));
+                                        + " is not given. (or values are not compatible with types.) No facet will be calculated on this field. "));
                 facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
                 continue;
             }
@@ -360,9 +360,13 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         if (valid && !facetQueryContainer->rangeGaps.empty()
                 && facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex).compare(
                         "") != 0) {
-            valid = validateValueWithType(fieldType,
-                    facetQueryContainer->rangeGaps.at(
-                            facetParallelVectorsIndex));
+        	if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
+        		valid = srch2is::DateAndTimeHandler::verifyDateTimeString
+        				(facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex) , srch2is::DateTimeTypeDurationOfTime);
+        	}else{
+				valid = validateValueWithType(fieldType,
+						facetQueryContainer->rangeGaps.at(facetParallelVectorsIndex));
+        	}
         }else{
             if(std::find(this->indexDataContainerConf.getFacetAttributes()->begin() ,
                     this->indexDataContainerConf.getFacetAttributes()->end() ,
@@ -370,7 +374,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
                 paramContainer->messages.push_back(
                         std::make_pair(MessageWarning,
                                 "Gap value for field " + *field
-                                        + " is not given. No facet will be calculated on this field. "));
+                                        + " is not given. (or values are not compatible with types.) No facet will be calculated on this field. "));
                 facetParallelVectorsIndexesToErase.push_back(facetParallelVectorsIndex);
                 continue;
             }
