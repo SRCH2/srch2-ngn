@@ -96,8 +96,7 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
     algorithm^4 AND science
 ```
 >By default, the boost factor is 1. The boost value must be a positive integer.
-><strong>NOTE: </strong>
->You can specify all three modifiers to a single term, but the order of modifier should always be first prefix then boost and then fuzzy.
+><strong>Please note,</strong> you can specify all three modifiers to a single term, but the order of modifier should always be first prefix then boost and then fuzzy.
 >Valid query examples 
 ```
     1) algo*^4~.6 AND science^~.8
