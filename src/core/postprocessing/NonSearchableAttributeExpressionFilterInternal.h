@@ -32,7 +32,7 @@ namespace instantsearch
 
 
 // Example:
-// fq=price:[* TO 100] AND model:JEEP AND CMPLX$price - discount < 100$
+// fq=price:[* TO 100] AND model:JEEP AND boolexp$price - discount < 100$
 // This class checks to see if a result passes these criteria or not ...
 class NonSearchableAttributeExpressionFilterInternal
 {
