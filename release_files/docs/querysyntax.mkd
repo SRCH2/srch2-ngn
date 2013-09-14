@@ -31,7 +31,7 @@
 #<center>SRCH2 Query Syntax Documentation</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 15, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ###Overview:###{id="overview"}
-
+>Welcome to Srch2 query documentation page. The documentation starts by introducing some sample queries and then it explains the basic concepts followed by the sections related to query components and syntaxes.
 ###Sample queries:###{id="sampleQueries"}
 
 >   The section describes the query syntax of the SRCH2 search engine. Let's start with sample queries to have an idea about the query syntax:
@@ -82,7 +82,7 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
     schwarzeneger~
 ```
 >This search will find records with matching words like "schwarzenegger".
->You can also specify the fuzyyness level. Its value is between 0 and 1, with a value closer to 1 only terms with a higher similarity will be matched. For example:
+>You can also specify the fuzyyness level. Its value is between 0 and 1, with a value closer to 1 only terms with a higher similarity will be matched. Following example shows how you can specify the fuzzy level:
 ```
     schwarzeneger~0.8
 ```
@@ -140,7 +140,7 @@ awesome engine"~10
     q={defaultFieldOperator=OR defaultSearchFields=author,title}algorithms 
 ``` 
 ####Valid localParams are: 
->>> * defaultfuzzyLevel : number between 0 and 1. For Example .8 is a valid fuzzy level. (<strong>pleae note,</strong> 0.8 is not valid. '.' should not be preceded by any number.)
+>>> * defaultfuzzyLevel : number between 0 and 1. For Example 0.8 is a valid fuzzy level.
 >>> * defaultBoostLevel : non negetive integer. e.g. 2
 >>> * defaultPrefixComplete: 'PREFIX' or 'COMPLETE' (without quotes)
 >>> * defaultSearchFields: default fields to search in. e.g. '<i>title</i>'. You can specify more than one fields; use comma ',' to separate them e.g. '<i>title</i>,author,price' (without quotes)
