@@ -4,12 +4,18 @@
 <div id="content">
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sampleQueries">Sample Queries</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#basicConcepts">Basic Concepts</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryComponents">Query Components</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#localParams"/>Local Parameters</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryParams">Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">Facets</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#termsAndModifiers">Terms and Modifiers</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mainQuery">q (Main Query)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#filterQuery">fq (Filter Query)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldList">fl (Field List)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searchType">Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sort">Sort</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
 </td></tr></tbody></table>
 
@@ -24,6 +30,8 @@
 </td></tr></tbody></table></div>
 #<center>SRCH2 Query Syntax Documentation</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 15, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+###Overview:###{id="overview"}
+
 ###Sample queries:###{id="sampleQueries"}
 
 >   The section describes the query syntax of the SRCH2 search engine. Let's start with sample queries to have an idea about the query syntax:
@@ -51,7 +59,7 @@ f5) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
 f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $&facet=true&facet.field=category
 ```
 > This query  is similar to the sample query <i>f4</i>. The difference between <i>f4</i> and <i>f6</i> is that in <i>f6</i> we are also requesting the engine to return faceted information for record's <i>category</i> field.
-###Terms and Fields
+###Basic Concepts{id="basicConcepts"}
 >Before going into the query and it's components, let's first understand the elements of query, <i>terms</i> and <i>fields</i>
 ####Terms
 >A query is broken up into terms and operators. There are two types of terms: Single Terms and Phrases. A Single Term is a single word such as <i>test</i> or <i>hello</i>. A Phrase is a group of words surrounded by double quotes such as <i>"srch2 is awesome"</i>.
@@ -140,7 +148,7 @@ awesome engine"~10
 
 ###Query Parameters {id="queryParams"}
 
-#### q
+#### q{id="mainQuery"}
 >Main query parameter. You can search any field by typing the field name followed by a colon ":" and then the term you are looking for. For example consider the query written below.
 ```
     q=title:algorithm
@@ -152,19 +160,7 @@ awesome engine"~10
 ```
 >The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration file.<br>
 ><strong>Please note,</strong> all the field names which are used in q must be among searchable attributes declared in the configuration file.
-####searchType
->The engine offers three different strategies for searching records. These strategies are listed below
->>> * topK : The results will be sorted by the score of each record in descending order. This score is calculated for each record.<br> <strong>Please note,</strong> you can not use facets and sort during topK search. <br>
->>> * getAll : You should use this strategy if you want to use facets and sort query parameters. 
->>> * geo: It is used to carry out the geo search.  Sort and facets can be used with geo search. <br>
->Example of using searchType:
-```
-    1) searchType=topK
-    2) searchType=getAll
-    3) searchType=geo
-    4) searchType=getAll&sort=author  
-```
-####fq
+####fq{id="filterQuery"}
 >Filter query parameter. This parameter can be used to specify a filter which is used to restrict the super set of records that can be returned, without influencing score.  In the example below, only records that have a section equal to 0 will match.
 ```
     fq=section:0
@@ -198,33 +194,11 @@ awesome engine"~10
 ```
 >The above filter query will result in a response that will have records where section is 0 and 'price-discount>10' is true and populatrity is below 10 ( not 10 and not above 10).
 ><Strong>Please note,</strong> the attributes which are used in fq must be declared as non-searchable-attributes in the configuration file. Also, only the attributes of type INT and FLOAT can be used in boolexp$$ block.
-####fl
+####fl{id="fieldList"}
 >Fieldlist. This parameter can be used to specify a set of fields to return, limiting the amount of information in the response. When returning the results to the client, only fields in this list will be included. These fields must be declared as searchable attributes in the configuration file.
 ```
     fl=title,author,price
 ```
-####start
->Offset in the complete resultset. It indicates the offset in the complete result set for the queries where the set of returned records should begin. The default value is 0.
-```
-    start=10
-```
-####rows
->It indicates the number of records to return from the complete result set. The default value is 0.
-```
-    rows=7
-```
-####sort
->The engine's default behaviour is to sort the records by their score attribute in descending order. The user can specify to sort by other fields:  <i>authur, price, title</i>. Example
- 
-```
-    sort=authur,price,title
-```
-####orderby
->The order in which the result set should be sorted, by default desc. This order is valid for all the fields specified in the sort parameter. 
-```
-    orderby=asc
-```
-><string>Please note,</strong> the order specified in <i>orderby</i> parameter will be applied to all the fields mentioned in sort parameter. Currently there is no way to specify different <i>orderby</i> values for different fields.
 ###Facet Query Params {id="facetParams"}
 >To request for facets, the request should include <i>facet=true</i>.
 ####facet
@@ -265,7 +239,40 @@ awesome engine"~10
     f.price.facet.gap=100&f.age.facet.gap=10
 ```
 >The above query defines the gap between each consequtive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.
-
+####searchType{id="searchType"}
+>The engine offers three different strategies for searching records. These strategies are listed below
+>>> * topK : The results will be sorted by the score of each record in descending order. This score is calculated for each record.<br> <strong>Please note,</strong> you can not use facets and sort during topK search. <br>
+>>> * getAll : You should use this strategy if you want to use facets and sort query parameters. 
+>>> * geo: It is used to carry out the geo search.  Sort and facets can be used with geo search. <br>
+>Example of using searchType:
+```
+    1) searchType=topK
+    2) searchType=getAll
+    3) searchType=geo
+    4) searchType=getAll&sort=author  
+```
+####sort{id="sort"}
+>The engine's default behaviour is to sort the records by their score attribute in descending order. The user can specify to sort by other fields:  <i>authur, price, title</i>. Example
+ 
+```
+    sort=authur,price,title
+```
+####orderby
+>The order in which the result set should be sorted, by default desc. This order is valid for all the fields specified in the sort parameter. 
+```
+    orderby=asc
+```
+><string>Please note,</strong> the order specified in <i>orderby</i> parameter will be applied to all the fields mentioned in sort parameter. Currently there is no way to specify different <i>orderby</i> values for different fields.
+####start
+>Offset in the complete resultset. It indicates the offset in the complete result set for the queries where the set of returned records should begin. The default value is 0.
+```
+    start=10
+```
+####rows
+>It indicates the number of records to return from the complete result set. The default value is 0.
+```
+    rows=7
+```
 ##Geo Search##{id="geo"}
 
 >   The engine can be optionally configured to support geo index. So you have two options:
