@@ -48,3 +48,21 @@
 2013-08-16 18:09:37 INFO	Indexed 1000 records.
 2013-08-16 18:09:37 INFO	Saving Index.....
 2013-08-16 18:09:37 INFO	Index saved.
+2013-09-14 11:22:46 ERROR	The stop word file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/lang/stopwords_en.txt is not valid. Please provide a valid file path.
+2013-09-14 11:22:46 ERROR	The synonym file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/synonyms.txt is not valid. Please provide a valid file path.
+2013-09-14 11:22:46 ERROR	The stemmer file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data///home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/StemmerHeadwords.txt is not valid. Please provide a valid file path.
+2013-09-14 11:22:46 INFO	Indexed 1000 records.
+2013-09-14 11:22:46 INFO	Saving Index.....
+2013-09-14 11:22:47 INFO	Index saved.
+2013-09-14 11:25:04 ERROR	The stop word file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/lang/stopwords_en.txt is not valid. Please provide a valid file path.
+2013-09-14 11:25:04 ERROR	The synonym file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/synonyms.txt is not valid. Please provide a valid file path.
+2013-09-14 11:25:04 ERROR	The stemmer file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data///home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/StemmerHeadwords.txt is not valid. Please provide a valid file path.
+2013-09-14 11:25:04 INFO	Indexed 1000 records.
+2013-09-14 11:25:04 INFO	Saving Index.....
+2013-09-14 11:25:04 INFO	Index saved.
+2013-09-14 11:32:05 ERROR	The stop word file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/lang/stopwords_en.txt is not valid. Please provide a valid file path.
+2013-09-14 11:32:05 ERROR	The synonym file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/synonyms.txt is not valid. Please provide a valid file path.
+2013-09-14 11:32:05 ERROR	The stemmer file /home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data///home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data//./srch2_data/StemmerHeadwords.txt is not valid. Please provide a valid file path.
+2013-09-14 11:32:05 INFO	Indexed 1000 records.
+2013-09-14 11:32:05 INFO	Saving Index.....
+2013-09-14 11:32:05 INFO	Index saved.
