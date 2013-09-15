@@ -1,0 +1,566 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="generator" content="ReText 4.0.1">
+<title>querysyntax</title>
+</head>
+<body>
+<table><tr>
+
+<td style="width:14%"> 
+<div id="content">
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sampleQueries">Sample Queries</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#basicConcepts">Basic Concepts</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryComponents">Query Components</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#localParams"/>Local Parameters</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryParams">Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mainQuery">q (Main Query)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#filterQuery">fq (Filter Query)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldList">fl (Field List)</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searchType">Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sort">Sort</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
+</td></tr></tbody></table>
+
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div>
+</td>
+<td style="width:86%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table>
+
+</div>
+
+<h1 id="doc" style="color:#880000"><center>SRCH2 Query Syntax Documentation</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 15, 2013</center></h6>
+<h3 id="overview">Overview:</h3>
+<blockquote>
+<p>Welcome to Srch2 query documentation page. The documentation starts by introducing some sample queries and then it explains the basic concepts followed by the sections related to query components and syntaxes.</p>
+</blockquote>
+<h3 id="sampleQueries">Sample queries:</h3>
+<blockquote>
+<p>The section describes the query syntax of the SRCH2 search engine. Let's start with sample queries to have an idea about the query syntax:</p>
+</blockquote>
+<pre><code>f1) curl -i &quot;http://localhost:8081/search?q=hospital
+</code></pre>
+
+<blockquote>
+<p>In this query, we are interested in searching all the records that have the word "hospital" in them. The word "hospital" will be searched in all the searchable fields. Searchable fields are declared in the configuration file.</p>
+</blockquote>
+<pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth
+</code></pre>
+
+<blockquote>
+<p>In this query, we are interested in the records that have the word "algorithm" in the record's <i>title</i> field and the word "gnuth" in the record's <i>author</i> field.</p>
+</blockquote>
+<pre><code>f3) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100]
+</code></pre>
+
+<blockquote>
+<p>This query is similar to <i>f2</i>. The only differece between the two is that in <i>f3</i>, we are filtering the results based on the <i>price</i> field. So a resultset will contain all the records that have the word "algorithm" in theirs <i>title</i> field, the word "gnuth" in their <i>author</i> field and have <i>price</i> between 10 and 100 (both inclusive).</p>
+</blockquote>
+<pre><code>f4) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $
+</code></pre>
+
+<blockquote>
+<p><i>f4</i> shows that we can filter records using boolean expressions too. In <i>f4</i>, we want to filter the records where the record's field <i>discount</i> has a value greater than 10. </p>
+</blockquote>
+<pre><code>f5) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $ &amp;sort=category&amp;orderby=asc
+</code></pre>
+
+<blockquote>
+<p>This query is similar to <i>f4</i>. In <i>f5</i> we are sorting the resultset based on record's <i>category</i> field in the ascending order.</p>
+</blockquote>
+<pre><code>f6) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $&amp;facet=true&amp;facet.field=category
+</code></pre>
+
+<blockquote>
+<p>This query  is similar to the sample query <i>f4</i>. The difference between <i>f4</i> and <i>f6</i> is that in <i>f6</i> we are also requesting the engine to return faceted information for record's <i>category</i> field.</p>
+</blockquote>
+<h3 id="basicConcepts">Basic Concepts</h3>
+<blockquote>
+<p>Before going into the query and it's components, let's first understand the elements of query, <i>terms</i> and <i>fields</i></p>
+</blockquote>
+<h4>Terms</h4>
+<blockquote>
+<p>A query is broken up into terms and operators. There are two types of terms: Single Terms and Phrases. A Single Term is a single word such as <i>test</i> or <i>hello</i>. A Phrase is a group of words surrounded by double quotes such as <i>"SRCH2 Software Inc."</i>.</p>
+</blockquote>
+<h4>Field</h4>
+<blockquote>
+<p>When performing a search you can either specify a field, or use the default field. The field names and default field is implementation specific. You can search any indexed field by typing the field name followed by a colon ":" and then the term you are looking for. As an example, let's assume the index contains two fields, <i>title</i> and <i>text</i> and <i>text</i> is the default field. If you want to find the record entitled "algo" which contains the text "don't go this way", you can use the following query.</p>
+</blockquote>
+<pre><code>    title:algo AND text:go
+</code></pre>
+
+<h4 id="termsAndModifiers">Term Modifiers</h4>
+<blockquote>
+<p>The engine supports modifying query terms to provide a wide range of searching options.</p>
+</blockquote>
+<h5>Prefix Searches</h5>
+<blockquote>
+<p>The engine supports prefix searches.
+To search for schwarz, schwarzeneg or schwarzenegger, you can use the search:</p>
+</blockquote>
+<pre><code>    schwar*
+</code></pre>
+
+<h5>Fuzzy Searches</h5>
+<blockquote>
+<p>The engine supports fuzzy searches based on the <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">levenshtein distance</a> method. To do a fuzzy search you can use the tilde symbol (<i>~</i>)at the end of a single word term. For example to search for a word which is difficult to spell you can use the fuzzy search:</p>
+</blockquote>
+<pre><code>    schwarzeneger~
+</code></pre>
+
+<blockquote>
+<p>This search will find records with matching words like "schwarzenegger".
+You can also specify the fuzyyness level. Its value is between 0 and 1, with a value closer to 1 only terms with a higher similarity will be matched. Following example shows how you can specify the fuzzy level:</p>
+</blockquote>
+<pre><code>    schwarzeneger~0.8
+</code></pre>
+
+<blockquote>
+<p>if no fuzzyness level is provided in the query, the engine will use the fuzzylevel as specified in the cofiguration file.</p>
+</blockquote>
+<h5>Boosting a Term</h5>
+<blockquote>
+<p>The engine provides the relevance level of matching records based on the terms found. To boost a term you can use the caret symbol (<i>^</i>) with a boost factor (a number) at the end of the term you are searching. The higher the boost factor, the more relevant the term will be.
+Boosting allows you to control the relevance of a record by boosting its term. For example, if you are searching for
+algorithm AND science
+and you want the term "algorithm" to be more relevant, you can boost it using the <i>^</i> symbol along with the boost factor next to the term. You would type:</p>
+</blockquote>
+<pre><code>    algorithm^4 AND science
+</code></pre>
+
+<blockquote>
+<p>By default, the boost factor is 1. The boost value must be a positive integer.
+<strong>Please note,</strong> you can specify all three modifiers to a single term, but the order of modifier should always be first prefix then boost and then fuzzy.
+Valid query examples </p>
+</blockquote>
+<pre><code>    1) algo*^4~.6 AND science^~.8
+    2) algo^4~.6 AND science^~ AND comp*
+    3) algorithm~.6 AND science^5~.8
+</code></pre>
+
+<blockquote>
+<p>Invalid query examples</p>
+</blockquote>
+<pre><code>    Invalid query 1) algorithm^4*
+    Invalid query 2) algorithm~.4^3*
+    Invalid query 3) algorithm~.6*
+</code></pre>
+
+<h5>Proximity Searches</h5>
+<blockquote>
+<p>The engine supports finding words which are within a specified edit distance. To do a proximity search use the tilde, "~", symbol at the end of a Phrase. For example to search for a "cool" and "engine" within 10 words of each other in a document use the search:</p>
+</blockquote>
+<pre><code>&quot;cool engine&quot;~10
+</code></pre>
+
+<h3 id="queryComponents">Understanding different querry components</h3>
+<blockquote>
+<p>The components and the sub-components of a query are shown in Figure 1.</p>
+<blockquote>
+<blockquote>
+<ul>
+<li>Local Parameters : Query related meta data can be specified using local parameters.</li>
+<li>Query Parameters : Main Query, filterquery, sort, facets and other parameters are specified using query parameters.
+<br>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100%" src="images/Srch2-querysyntax.png" /></a></span>
+<center>Figure 1: Query Components</center></li>
+</ul>
+</blockquote>
+</blockquote>
+</blockquote>
+<h3 id="localParams">Local Paramerter (LocalParams)</h3>
+<blockquote>
+<p><i>LocalParams</i> stands for local parameters: It provides a way to "localize" information about a specific argument that is being sent to the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.
+To indicate a LocalParam, the argument is prefixed with curly braces and can include any number of <i>key=value</i> pairs separated by whitespace. So if the original query keyword is foo, applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}foo.</i>
+e.g., specifying default field in local parameters would be</p>
+</blockquote>
+<pre><code>    q={defaultSearchFields=title}algorithms
+</code></pre>
+
+<blockquote>
+<p>The above query will search for the word "algorithms" in the field <i>title</i>.
+We can specify more than one defaultSearch fields. We can also specify what logical operator to use between these fields. </p>
+</blockquote>
+<pre><code>    q={defaultFieldOperator=AND defaultSearchFields=author,title}algorithms 
+</code></pre>
+
+<blockquote>
+<p>The above query will return records that have the word "algorithms" in both <i>author</i> and <i>title</i> fields. If "algorithms" is present only in one of the specified defaultSearchFields, the engine will not return that record. If we want the engine to return the record if the word "algorithms" is present in any of the given defaultSrearchFields then we need to modify the value of defaultFieldOperator to OR. The modified query is shown below.</p>
+</blockquote>
+<pre><code>    q={defaultFieldOperator=OR defaultSearchFields=author,title}algorithms 
+</code></pre>
+
+<h4>Valid localParams are:</h4>
+<blockquote>
+<blockquote>
+<blockquote>
+<ul>
+<li>defaultfuzzyLevel : number between 0 and 1. For Example 0.8 is a valid fuzzy level.</li>
+<li>defaultBoostLevel : non negetive integer. e.g. 2</li>
+<li>defaultPrefixComplete: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive)</li>
+<li>defaultSearchFields: default fields to search in. e.g. '<i>title</i>'. You can specify more than one fields; use comma ',' to separate them e.g. 'defaultSearchFields=title,author,price' (without quotes)</li>
+<li>defaultFieldOperator : 'AND' or 'OR' (without quotes). Boolean operator to be applied between the default search fields specified by comma separated fields.</li>
+</ul>
+</blockquote>
+</blockquote>
+</blockquote>
+<h3 id="queryParams">Query Parameters</h3>
+<h4 id="mainQuery">q</h4>
+<blockquote>
+<p>Main query parameter. You can search any field by typing the field name followed by a colon ":" and then the term you are looking for. For example consider the query written below.</p>
+</blockquote>
+<pre><code>    q=title:algorithm
+</code></pre>
+
+<blockquote>
+<p>The above query searches for the keyword "algorithm" in the field <i>title</i> of each record. 
+If no field is provided, the engine will search on the 'indexed' field(s) as specified in the configuration file.</p>
+</blockquote>
+<pre><code>    q=algorithm
+</code></pre>
+
+<blockquote>
+<p>The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration file by setting indexed property to true.<br>
+<strong>Please note,</strong> all the field names which are used in q must be among those attributes that their indexed property is true in configuration file.</p>
+</blockquote>
+<h4 id="filterQuery">fq</h4>
+<blockquote>
+<p>Filter query parameter. This parameter can be used to specify a filter which is used to restrict the super set of records that can be returned, without influencing score.  In the example below, only records that have a section equal to 0 will match.</p>
+</blockquote>
+<pre><code>    fq=section:0
+</code></pre>
+
+<blockquote>
+<p>A range Query allows one to match records whose field values are between the lower and upper bound (both inclusive) specified by the Range Query. Example:</p>
+</blockquote>
+<pre><code>    price:[10 TO 100]
+</code></pre>
+
+<blockquote>
+<p>The above query finds records whose <i>price</i> field has a value between 10 and 100 (both inclusive). <br>
+<strong>Please note,</strong> range Queries are not just for numerical fields. You could also use range queries with non-numerical fields:</p>
+</blockquote>
+<pre><code>    title:[pratap TO saini]
+</code></pre>
+
+<blockquote>
+<p>This will find all records whose <i>title</i>s are between 'pratap' and 'saini', 'pratap' and 'saini' both inclusive.</p>
+<p><strong>Please note,</strong> the engine, as of now, supports only one kind of boolean operator (either 'OR' or 'AND') between different filter terms. 
+examples of valid arguments:</p>
+</blockquote>
+<pre><code>    1) fq=popularity:[10 TO *] AND section:0 AND price:[* TO 100]
+    2) fq=popularity:[10 TO *] OR section:0 OR price:[* TO 100]
+</code></pre>
+
+<blockquote>
+<p>The first query returns the records with popularity greater than or equal to 10 and a <i>price</i> less than or equal to 100.
+The engine supports specifying boolean expressions in the filters. These expressions must be surrounded by "boolexp$" and "$".</p>
+</blockquote>
+<pre><code>    fq=popularity:[10 TO *] AND section:0 AND boolexp$ price - discount &gt; 10 $
+</code></pre>
+
+<blockquote>
+<p><strong>Please note,</strong> the term 'boolexp$ price - discount &gt; 10 $'. The engine will evaluate the boolean expression provided between two '$' signs, which in this case is 'price-discount&gt;10' (read: price minus discount greater than ten). Here <i>price</i> and <i>discount</i>s are two fields defined in the schema.
+In filter query terms, you can use '-' operator before the term to tell the engine to exclude the records from the results that match the given criterion. </p>
+</blockquote>
+<pre><code>    fq=-popularity:[10 TO *] AND section:0 AND boolexp$price-discount&gt;10$
+</code></pre>
+
+<blockquote>
+<p>The above filter query will result in a response that will have records where section is 0 and 'price-discount&gt;10' is true and populatrity is below 10 ( not 10 and not above 10).
+<Strong>Please note,</strong> the attributes which are used in fq must have 'indexed' property set to false in the configuration file. Also, only the attributes of type INT and FLOAT can be used in boolexp$$ block.</p>
+</blockquote>
+<h4 id="fieldList">fl</h4>
+<blockquote>
+<p>Fieldlist. This parameter can be used to specify a set of fields to return, limiting the amount of information in the response. When returning the results to the client, only fields in this list will be included. These fields must be declared as searchable attributes in the configuration file.</p>
+</blockquote>
+<pre><code>    fl=title,author,price
+</code></pre>
+
+<h3 id="facetParams">Facet Query Params</h3>
+<blockquote>
+<p>To request for facets, the request should include <i>facet=true</i>.</p>
+</blockquote>
+<h4>facet</h4>
+<blockquote>
+<p><i>facet: "false"</i> will disable faceting. Valid values are 'true' or 'false'. To turn faceting on, you need to include the following</p>
+</blockquote>
+<pre><code>    facet=true
+</code></pre>
+
+<blockquote>
+<p><Strong>Please note,</strong> facet must also be enabled from configuration file by setting facetEnabled tag (under schema) to value true.</p>
+</blockquote>
+<h4>facet.field</h4>
+<blockquote>
+<p>To specify a field which should be treated as a categorical facet. It finds the number of different values of the specified field and returns the number of documents that match each value.<br>
+This parameter can be specified multiple times to indicate multiple facet fields.</p>
+</blockquote>
+<pre><code>    facet=true&amp;facet.field=category&amp;facet.field=genre
+</code></pre>
+
+<blockquote>
+<p><strong>Please note,</strong> the query includes <i>"facet=true"</i> to turn on the faceting. The paramter <i>facet.field</i> requests the engine to inlcude the facet response for the field <i>genre</i> in the response</p>
+</blockquote>
+<h4>Facet by Range</h4>
+<h5>facet.range</h5>
+<blockquote>
+<p>To specify a field which should be treated as a range facet. This param allows you to specify names of fields which should be treated as range facets. Example: </p>
+</blockquote>
+<pre><code>    facet.range=price&amp;facet.range=age
+</code></pre>
+
+<blockquote>
+<p>The response for above query will include faceting information for <i>price</i> and <i>age</i> fields. <br>
+<strong>Please note,</strong> the configuration file should define the default <i>facet.start, facet.end and facet.gap</i> values.</p>
+</blockquote>
+<h5>facet.range.start</h5>
+<blockquote>
+<p>The lower bound of the ranges. Example: </p>
+</blockquote>
+<pre><code>    f.price.facet.start=0.0&amp;f.age.facet.start=10  
+</code></pre>
+
+<blockquote>
+<p>The above query defines the lower bound of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
+</blockquote>
+<h5>facet.range.end</h5>
+<blockquote>
+<p>The upper bound of the ranges. Example:</p>
+</blockquote>
+<pre><code>    f.price.facet.end=1000.0&amp;f.age.facet.end=99
+</code></pre>
+
+<blockquote>
+<p>The above query defines the upper bound of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
+</blockquote>
+<h5>facet.range.gap</h5>
+<blockquote>
+<p>The size of each range expressed as a value to be added to the lower bound. Example:</p>
+</blockquote>
+<pre><code>    f.price.facet.gap=100&amp;f.age.facet.gap=10
+</code></pre>
+
+<blockquote>
+<p>The above query defines the gap between each consequtive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.
+<strong>Please note,</strong> that all start,end and gap values, if given in the query, will overwrite corresponding values from configuration file.</p>
+</blockquote>
+<h4 id="searchType">searchType</h4>
+<blockquote>
+<p>The engine offers three different strategies for searching records. These strategies are listed below</p>
+<blockquote>
+<blockquote>
+<ul>
+<li>topK : The results will be sorted by the score of each record in descending order. This score is calculated for each record.<br> <strong>Please note,</strong> this approach has a very high performance but you can not use facet and sort during topK search. <br></li>
+<li>getAll : You should use this strategy if you want to use facets and sort query parameters but this approach is slower than topK. </li>
+<li>geo: It is used to carry out the geo search.  Sort and facets can be used with geo search. <br>
+Example of using searchType:</li>
+</ul>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>    1) searchType=topK
+    2) searchType=getAll
+    3) searchType=geo
+    4) searchType=getAll&amp;sort=author  
+</code></pre>
+
+<blockquote>
+<p><string>Please note,</strong> if searchType is not included in the query, it is set to topK by default. However if any facet or sort parameter is included in the query, search type will be getAll.</p>
+</blockquote>
+<h4 id="sort">sort</h4>
+<blockquote>
+<p>The engine's default behaviour is to sort the records by their score attribute in descending order. The user can specify to sort by other fields:  <i>authur, price, title</i>. Example</p>
+</blockquote>
+<pre><code>    sort=authur,price,title
+</code></pre>
+
+<blockquote>
+<p><string>Please note,</strong> if a sort request is included in the query, the returning scores are still the calculated scores by the engine, but the order is based on the fields which are given by the user.</p>
+</blockquote>
+<h4>orderby</h4>
+<blockquote>
+<p>The order in which the result set should be sorted, by default desc. This order is valid for all the fields specified in the sort parameter. </p>
+</blockquote>
+<pre><code>    orderby=asc
+</code></pre>
+
+<blockquote>
+<p><string>Please note,</strong> the order specified in <i>orderby</i> parameter will be applied to all the fields mentioned in sort parameter. Currently, specifying different <i>orderby</i> values for different fields is not supported.</p>
+</blockquote>
+<h4>start</h4>
+<blockquote>
+<p>Offset in the complete resultset. It indicates the offset in the complete result set for the queries where the set of returned records should begin. The default value is 0.</p>
+</blockquote>
+<pre><code>    start=10
+</code></pre>
+
+<h4>rows</h4>
+<blockquote>
+<p>It indicates the number of records to return from the complete result set. The default value is 0.</p>
+</blockquote>
+<pre><code>    rows=7
+</code></pre>
+
+<blockquote>
+<p><string>Please note,</strong> that this parameter and <i>start</i> can be used to implement pagination.</p>
+</blockquote>
+<h2 id="geo">Geo Search</h2>
+<blockquote>
+<p>The engine can be optionally configured to support geo index. There are two options:</p>
+<ul>
+<li>
+<p>Keyword Search (option 1)</p>
+</li>
+<li>
+<p>Keyword + Geo OR Geo only (option 2)</p>
+</li>
+</ul>
+<p><em>Trade-offs:</em> Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example).</p>
+<p>If it is a geo index, the query should use one of the two ways below to define a geo region to search on:</p>
+<blockquote>
+<p>1-  Specify a bounding box:</p>
+<blockquote>
+<ul>
+<li>
+<p>"lblat": the latitude of the left bottom point of the bounding box;</p>
+</li>
+<li>
+<p>"lblong": the longitude of the left bottom point of the bounding box;</p>
+</li>
+<li>
+<p>"rtlat": the latitude of the top right point of the bounding box;</p>
+</li>
+<li>
+<p>"rtlong": the longitude of the top right point of the bounding box.</p>
+</li>
+</ul>
+</blockquote>
+<p>2-  Specify a center point and a radius:</p>
+<blockquote>
+<ul>
+<li>
+<p>"clat": the latitude of the center point;</p>
+</li>
+<li>
+<p>"clong": the longitude of the center point;</p>
+</li>
+<li>
+<p>"radius": the radius of the search range in degree.</p>
+</li>
+</ul>
+</blockquote>
+</blockquote>
+<p>To do a Geo Search, for each of the objects you should have latitude/longitude attribute to let the engine do the Geo search. In conf.ini file of the SRCH2 engine, to do a Geo search, you need to set the following attributes:</p>
+<blockquote>
+<ul>
+<li>attribute-latitude=lat</li>
+<li>attribute-longitude=lng</li>
+</ul>
+</blockquote>
+<p>If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.   </p>
+<blockquote>
+<ul>
+<li>for example:<blockquote>
+<ul>
+<li>{"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+<p>Example for a "Keyword+Geo or Geo only" (Option 2) index:</p>
+</blockquote>
+<pre><code>$ curl -i &quot;http://localhost:8081/search?q=hosptal&amp;start=0&amp;rows=20&amp;lblat=61.20&amp;lblong=-149.90&amp;rtlat=61.22&amp;rtlong=-149.70&quot;
+</code></pre>
+
+<p>Have fun SRCHing!</p>
+<style type="text/css">
+pre{
+    margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+#content{
+    position:fixed;
+    left:10px;
+    top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+html{
+    min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+</body>
+</html>

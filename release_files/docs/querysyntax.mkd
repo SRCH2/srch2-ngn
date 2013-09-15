@@ -38,7 +38,7 @@
 ```
 f1) curl -i "http://localhost:8081/search?q=hospital
 ```
->In this query, we are interested in searching all the records that have the word "hospital" in them. The word "hospital" will be searched in all the searchable fields. We define searchable fields in the configuration file.
+>In this query, we are interested in searching all the records that have the word "hospital" in them. The word "hospital" will be searched in all the searchable fields. Searchable fields are declared in the configuration file.
 ```
 f2) curl -i "http://localhost:8081/search?q=title:algorithm AND author:gnuth
 ```
@@ -46,7 +46,7 @@ f2) curl -i "http://localhost:8081/search?q=title:algorithm AND author:gnuth
 ```
 f3) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq=price:[10 TO 100]
 ```
-> This query is similar to <i>f2</i>. The only differece between the two is that in <i>f3</i>, we are filtering the results based on the <i>price</i> field. So a resultset will contain all the records that have the word "algorithm" in the record's <i>title</i> field and the word "gnuth" in the record's <i>author</i> field and have <i>price</i> between 10 and 100 (both inclusive).
+> This query is similar to <i>f2</i>. The only differece between the two is that in <i>f3</i>, we are filtering the results based on the <i>price</i> field. So a resultset will contain all the records that have the word "algorithm" in theirs <i>title</i> field, the word "gnuth" in their <i>author</i> field and have <i>price</i> between 10 and 100 (both inclusive).
 ```
 f4) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq=price:[10 TO 100] AND boolexp$ discount>10 $
 ```
@@ -62,21 +62,21 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
 ###Basic Concepts{id="basicConcepts"}
 >Before going into the query and it's components, let's first understand the elements of query, <i>terms</i> and <i>fields</i>
 ####Terms
->A query is broken up into terms and operators. There are two types of terms: Single Terms and Phrases. A Single Term is a single word such as <i>test</i> or <i>hello</i>. A Phrase is a group of words surrounded by double quotes such as <i>"srch2 is awesome"</i>.
+>A query is broken up into terms and operators. There are two types of terms: Single Terms and Phrases. A Single Term is a single word such as <i>test</i> or <i>hello</i>. A Phrase is a group of words surrounded by double quotes such as <i>"SRCH2 Software Inc."</i>.
 ####Field
->When performing a search you can either specify a field, or use the default field. The field names and default field is implementation specific. You can search any field by typing the field name followed by a colon ":" and then the term you are looking for. As an example, let's assume a The index contains two fields, <i>title</i> and <i>text</i> >and <i>text</i> is the default field. If you want to find the record entitled "algo" which contains the text "don't go this way", you can use the following query.
+>When performing a search you can either specify a field, or use the default field. The field names and default field is implementation specific. You can search any indexed field by typing the field name followed by a colon ":" and then the term you are looking for. As an example, let's assume the index contains two fields, <i>title</i> and <i>text</i> and <i>text</i> is the default field. If you want to find the record entitled "algo" which contains the text "don't go this way", you can use the following query.
 ```
     title:algo AND text:go
 ```
 ####Term Modifiers {id="termsAndModifiers"}
 >The engine supports modifying query terms to provide a wide range of searching options.
-####Prefix Searches
+#####Prefix Searches
 >The engine supports prefix searches.
 >To search for schwarz, schwarzeneg or schwarzenegger, you can use the search:
 ```
     schwar*
 ```
-####Fuzzy Searches
+#####Fuzzy Searches
 >The engine supports fuzzy searches based on the <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">levenshtein distance</a> method. To do a fuzzy search you can use the tilde symbol (<i>~</i>)at the end of a single word term. For example to search for a word which is difficult to spell you can use the fuzzy search:
 ```
     schwarzeneger~
@@ -87,7 +87,7 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
     schwarzeneger~0.8
 ```
 > if no fuzzyness level is provided in the query, the engine will use the fuzzylevel as specified in the cofiguration file.
-####Boosting a Term
+#####Boosting a Term
 >The engine provides the relevance level of matching records based on the terms found. To boost a term you can use the caret symbol (<i>^</i>) with a boost factor (a number) at the end of the term you are searching. The higher the boost factor, the more relevant the term will be.
 >Boosting allows you to control the relevance of a record by boosting its term. For example, if you are searching for
 >algorithm AND science
@@ -109,10 +109,10 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
     Invalid query 2) algorithm~.4^3*
     Invalid query 3) algorithm~.6*
 ```
-####Proximity Searches
->The engine supports finding words which are within a specified edit distance. To do a proximity search use the tilde, "~", symbol at the end of a Phrase. For example to search for a "awesome" and "engine" within 10 words of each other in a document use the search:
+#####Proximity Searches
+>The engine supports finding words which are within a specified edit distance. To do a proximity search use the tilde, "~", symbol at the end of a Phrase. For example to search for a "cool" and "engine" within 10 words of each other in a document use the search:
 ```
-awesome engine"~10
+"cool engine"~10
 ```
 ###Understanding different querry components{id="queryComponents"}
 > The components and the sub-components of a query are shown in Figure 1.
@@ -123,7 +123,7 @@ awesome engine"~10
 <center>Figure 1: Query Components</center>
 ###Local Paramerter (LocalParams) {id="localParams"}
 
-> <i>LocalParams</i> stands for local parameters: It provides a way to "localize" information about a specific argument that is being sent to The engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.
+> <i>LocalParams</i> stands for local parameters: It provides a way to "localize" information about a specific argument that is being sent to the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.
 >To indicate a LocalParam, the argument is prefixed with curly braces and can include any number of <i>key=value</i> pairs separated by whitespace. So if the original query keyword is foo, applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}foo.</i>
 >e.g., specifying default field in local parameters would be
 ```
@@ -141,8 +141,8 @@ awesome engine"~10
 ####Valid localParams are: 
 >>> * defaultfuzzyLevel : number between 0 and 1. For Example 0.8 is a valid fuzzy level.
 >>> * defaultBoostLevel : non negetive integer. e.g. 2
->>> * defaultPrefixComplete: 'PREFIX' or 'COMPLETE' (without quotes)
->>> * defaultSearchFields: default fields to search in. e.g. '<i>title</i>'. You can specify more than one fields; use comma ',' to separate them e.g. '<i>title</i>,author,price' (without quotes)
+>>> * defaultPrefixComplete: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive)
+>>> * defaultSearchFields: default fields to search in. e.g. '<i>title</i>'. You can specify more than one fields; use comma ',' to separate them e.g. 'defaultSearchFields=title,author,price' (without quotes)
 >>> * defaultFieldOperator : 'AND' or 'OR' (without quotes). Boolean operator to be applied between the default search fields specified by comma separated fields.
 
 ###Query Parameters {id="queryParams"}
@@ -153,12 +153,12 @@ awesome engine"~10
     q=title:algorithm
 ```
 >The above query searches for the keyword "algorithm" in the field <i>title</i> of each record. 
->If no field is provided, the engine will search on the search field(s) as specified in the configuration file.
+>If no field is provided, the engine will search on the 'indexed' field(s) as specified in the configuration file.
 ```
     q=algorithm
 ```
->The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration file.<br>
-><strong>Please note,</strong> all the field names which are used in q must be among searchable attributes declared in the configuration file.
+>The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration file by setting indexed property to true.<br>
+><strong>Please note,</strong> all the field names which are used in q must be among those attributes that their indexed property is true in configuration file.
 ####fq{id="filterQuery"}
 >Filter query parameter. This parameter can be used to specify a filter which is used to restrict the super set of records that can be returned, without influencing score.  In the example below, only records that have a section equal to 0 will match.
 ```
@@ -192,7 +192,7 @@ awesome engine"~10
     fq=-popularity:[10 TO *] AND section:0 AND boolexp$price-discount>10$
 ```
 >The above filter query will result in a response that will have records where section is 0 and 'price-discount>10' is true and populatrity is below 10 ( not 10 and not above 10).
-><Strong>Please note,</strong> the attributes which are used in fq must be declared as non-searchable-attributes in the configuration file. Also, only the attributes of type INT and FLOAT can be used in boolexp$$ block.
+><Strong>Please note,</strong> the attributes which are used in fq must have 'indexed' property set to false in the configuration file. Also, only the attributes of type INT and FLOAT can be used in boolexp$$ block.
 ####fl{id="fieldList"}
 >Fieldlist. This parameter can be used to specify a set of fields to return, limiting the amount of information in the response. When returning the results to the client, only fields in this list will be included. These fields must be declared as searchable attributes in the configuration file.
 ```
@@ -205,8 +205,9 @@ awesome engine"~10
 ```
     facet=true
 ```
+><Strong>Please note,</strong> facet must also be enabled from configuration file by setting facetEnabled tag (under schema) to value true.
 ####facet.field
->To specify a field which should be treated as a facet. It will iterate over each term in the field and generates a facet count using that term as the constraint.  
+>To specify a field which should be treated as a categorical facet. It finds the number of different values of the specified field and returns the number of documents that match each value.  
 >This parameter can be specified multiple times to indicate multiple facet fields.
 ```
     facet=true&facet.field=category&facet.field=genre
@@ -214,7 +215,7 @@ awesome engine"~10
 ><strong>Please note,</strong> the query includes <i>"facet=true"</i> to turn on the faceting. The paramter <i>facet.field</i> requests the engine to inlcude the facet response for the field <i>genre</i> in the response
 ####Facet by Range
 #####facet.range
->This param indicates what field to create range facets for. This param allows you to specify names of fields which should be treated as range facets. Example: 
+>To specify a field which should be treated as a range facet. This param allows you to specify names of fields which should be treated as range facets. Example: 
 ```
     facet.range=price&facet.range=age
 ```
@@ -238,10 +239,11 @@ awesome engine"~10
     f.price.facet.gap=100&f.age.facet.gap=10
 ```
 >The above query defines the gap between each consequtive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.
+><strong>Please note,</strong> that all start,end and gap values, if given in the query, will overwrite corresponding values from configuration file.
 ####searchType{id="searchType"}
 >The engine offers three different strategies for searching records. These strategies are listed below
->>> * topK : The results will be sorted by the score of each record in descending order. This score is calculated for each record.<br> <strong>Please note,</strong> you can not use facets and sort during topK search. <br>
->>> * getAll : You should use this strategy if you want to use facets and sort query parameters. 
+>>> * topK : The results will be sorted by the score of each record in descending order. This score is calculated for each record.<br> <strong>Please note,</strong> this approach has a very high performance but you can not use facet and sort during topK search. <br>
+>>> * getAll : You should use this strategy if you want to use facets and sort query parameters but this approach is slower than topK. 
 >>> * geo: It is used to carry out the geo search.  Sort and facets can be used with geo search. <br>
 >Example of using searchType:
 ```
@@ -250,18 +252,20 @@ awesome engine"~10
     3) searchType=geo
     4) searchType=getAll&sort=author  
 ```
+><string>Please note,</strong> if searchType is not included in the query, it is set to topK by default. However if any facet or sort parameter is included in the query, search type will be getAll.
 ####sort{id="sort"}
 >The engine's default behaviour is to sort the records by their score attribute in descending order. The user can specify to sort by other fields:  <i>authur, price, title</i>. Example
  
 ```
     sort=authur,price,title
 ```
+><string>Please note,</strong> if a sort request is included in the query, the returning scores are still the calculated scores by the engine, but the order is based on the fields which are given by the user.
 ####orderby
 >The order in which the result set should be sorted, by default desc. This order is valid for all the fields specified in the sort parameter. 
 ```
     orderby=asc
 ```
-><string>Please note,</strong> the order specified in <i>orderby</i> parameter will be applied to all the fields mentioned in sort parameter. Currently there is no way to specify different <i>orderby</i> values for different fields.
+><string>Please note,</strong> the order specified in <i>orderby</i> parameter will be applied to all the fields mentioned in sort parameter. Currently, specifying different <i>orderby</i> values for different fields is not supported.
 ####start
 >Offset in the complete resultset. It indicates the offset in the complete result set for the queries where the set of returned records should begin. The default value is 0.
 ```
@@ -272,15 +276,16 @@ awesome engine"~10
 ```
     rows=7
 ```
+><string>Please note,</strong> that this parameter and <i>start</i> can be used to implement pagination.
 ##Geo Search##{id="geo"}
 
->   The engine can be optionally configured to support geo index. So you have two options:
+>   The engine can be optionally configured to support geo index. There are two options:
 
 >   *   Keyword Search (option 1)
 
 >   *   Keyword + Geo OR Geo only (option 2)
 
->   _Trade-offs:_ Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example).
+>   _Trade-offs:_ Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example and also the configuration file).
 
 >   If it is a geo index, the query should use one of the two ways below to define a geo region to search on:
 
