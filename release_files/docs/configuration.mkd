@@ -1,38 +1,536 @@
 <table><tr>
 	
-<td style="width:14%"> 
+<td style="width:20%"> 
 <div id="content">
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#foo">Foo</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#bar">Bar</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#majorComponents">Major Components</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configTag">config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">SRCH2HOME</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">License File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">Hostname & Port</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">Data Directory</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">Index Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">Index Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">Field Boosts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">Record Boost Field</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">Query Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Query Term Similarity Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Query Term Length Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">Default for Rows</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">Max Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">Enable Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">Query Term Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">Response Writer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseFormat">Response Format</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseContent">Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">schema</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">Primary Key</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">Enable Facets</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">Facet Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">Analyzer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">Stemmer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">Stop Words</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#SynonymFilter">Synonyms</a></br><br>
 </td></tr></tbody></table>
 
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div>
 </td>
-<td style="width:86%">
+<td style="width:80%">
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-
-#<center>SRCH2 Engine Configuration</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Configuration File Documentation</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 15, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
-###Sample queries:###{id="sampleQueries"}
+###Overview:###{id="overview"}
+>Welcome to Srch2 conf file documentation page. SRCH2 configuration file uses XML format. In this documentation XML tags which must be used in this file are introduced. The documentation starts by two major components of SRCH2 configuration file, <i>config</i> and <i>schema</i>. This brief introduction is followed by a detailed explanation of each one.
+###Major components: config vs. schema:###{id="majorComponents"}
 
->   The section describes how to configure the SRCH2 search engine.
+>   SRCH2 configuration file contains two top level XML tags; <i>config</i> and <i>schema</i>. Any tag which is to tune a part of engine is under 'config' while any tag which is used to describe data (or query) is placed under schema. For example, 'srch2home' tag which is used to specify the installation directory of SRCH2 engine is under 'config' while 'fields' which is used to declare data fields is under 'schema'.
 
-###Foo {id="foo"}
+###Config:{id="configTag"}
+> In the following lines, each part explains each tag which can be provided under <i>config</i>.
 
-Foo content.
+####SRCH2HOME:{id="srch2Home"}
+> SRCH2 Home directory <br>
+> **Required**  <br>
+> This directory is going to be your srch2 home's directory. All other paths HAVE to be reletive to this path. <br>
+> For Example: <br>
+>> To have "/usr/share/srch2/" as srch2 home directory, you should have the following line <srch2Home>/usr/share/srch2/</srch2Home> All other paths in this conif file have to be relative to this path. <br>
+> For Example: <br>
+>> If your data file is inside srch2 home directory, having the following absolute path "/usr/share/srch2/data/sample-data.json" In this config file it should be as "data/sample-data.json" <br>
+```
+    <srch2Home>/path/to/srch2/home/directory</srch2Home>
+```
+####License File:{id="licenseFile"}
+> License Key File <br>
+> **Required** <br>
+> Email contact@srch2.com to get a key file. <br>
+> Make sure to set the variable to the SRCH2 license key file.<br>
+```
+    <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
+```
+
+####Listening Hostname and Port:{id="listeningHostname"}
+> Hostname and Port Number<br>
+> **Required** <br>
+> Hostname and port number of the server. Make sure the port is open.<br>
+```
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8081</listeningPort>
+```
+####Data Directory:{id="dataDir"}
+> Index Directoy Path<br>
+> **Required** <br>
+> The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br>
+```
+    <dataDir>/path/to/data</dataDir>
+```
+
+####Data File:{id="dataFile"}
+
+> Data File<br>
+> **Required** if "indexLoadCreate" is set to 0<br>
+> Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br>
+```
+    <dataFile>/path/to/data.json</dataFile>
+```
+
+####Index Config:{id="indexConfig"}
+> All configuration tags related to configuring the index.
+```
+    <indexConfig>
+    ...
+    </indexConfig>
+```
+#####Index Type:{id="indexType"}
+> Index Type <br>
+> **Required** <br>
+> 0: Text Index <br>
+> 1: Geo+Text Index <br>
+```    
+    <indexType>0</indexType>
+```      
+
+#####Field Boosts:{id="fieldBoost"}         
+> Boost Values <br>
+> **Optional** <br>
+         
+> Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
+> For Example, the boosts for three searchable attributes can be specified as  <br>
+```
+    <fieldBoost>relevance^10 name^7 title</fieldBoost>
+```
+>> - fields are sparated by one space <br>
+>> - if you do not provide any value for a field, it will be considered as 1 <br>
+
+```
+    <fieldBoost></fieldBoost>
+```      
+    
+#####Record Boost Field:{id="recordBoostField"}     
+> Record Boost Field <br>
+> **Optional** <br>
+> Attribute used as the boost value of a record. Need to be float type in the json objects in the data file.
+```
+    <recordBoostField>relevance</recordBoostField>
+```      
+   
+#####Query Term Boost:{id="defaultQueryTermBoost"}       
+> Default Query Term Boost <br>
+> **Optional** <br>
+> Default query term boost <br>
+> Defaults to 1 <br>
+```
+    <defaultQueryTermBoost>1</defaultQueryTermBoost>
+```
+
+####Query Config:{id="queryConfig"}
+> All configuration tags related to configuring the query.
+```
+    <query>
+    ...
+    </query>
+```
+#####Ranknig:{id="rankingalgorithm"} 
+> Ranking Algorithm <br>
+
+> The following comments and parameters are related to ranking. <br>
+> Please see http://www.srch2.com/download.html for ranking-related information <br>
+> record-score-expression=idf_score*doc_boost <br>
+```
+    <rankingalgorithm>
+        <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+    </rankingalgorithm>
+```
+
+#####Query Term Similarity Boost:{id="queryTermSimilarityBoost"} 
+> Query Term Similarity Boost <br>
+> **Optional** <br>
+> Defaults to 0.5 <br>
+```
+    <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
+```
+
+#####Query Term Length Boost:{id="queryTermLengthBoost"}      
+> Query Term Length Boost <br>
+> **Optional** <br>
+> Defaults to 0.5 <br>
+```
+    <queryTermLengthBoost></queryTermLengthBoost>
+```
+
+#####Prefix Match Penalty:{id="prefixMatchPenalty"}
+> Prefix Match Penalty <br>
+> **Optional** <br>
+             
+> Penalty for a prefix match.  This value is used to multiply the score of record for a term. <br>
+> The value should be in the range of 0 to 1 <br>
+> Defaults to 0.95 <br>
+```
+    <prefixMatchPenalty>0.95</prefixMatchPenalty>
+```
+
+#####Cache Size:{id="cacheSize"}
+> Cache Size <br>
+> **Optional** <br>
+             
+> Number of bytes in the cache. It should be in the range [50MB, 500MB]. <br>
+> Its default value is 50MB. <br>
+```
+    <cacheSize>65536000</cacheSize>
+```
+   
+#####Default Value for Rows:{id="rows"}
+> Rows <br>
+> **Optional** <br>
+             
+> Number of results to retrieve <br>
+> Defaults to 10. <br>
+```
+    <rows>10</rows>
+```
+#####Maximum number of threads:{id="maxSearchThreads"}
+> Maximum Number of Searcher Threads <br>
+> **Optional** <br>
+             
+> Number of threads that serve the requests. <br>
+> Defaults to 1 <br>
+```
+    <maxSearchThreads>2</maxSearchThreads>
+```
+#####Field Based Search Enabled:{id="fieldBasedSearch"}
+> Flag to enable/disable field based search <br>
+> **Optional** <br>
+             
+> Flag to indicate whether the attribute-based search is supported. <br>
+>> 0 - Disable <br>
+>> 1 - Enable <br>
+>> Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
+```
+    <fieldBasedSearch>0</fieldBasedSearch>
+```
+
+#####Search Type:{id="searcherType"}         
+> Searcher Type <br>
+> **Optional** <br>
+         
+> in the query result <br>
+>> 0 if topk, <br>
+>> 1 if advanced <br>
+             
+>> Defaults to 0 <br>
+```
+    <searcherType>0</searcherType>
+```
+#####Query Term Match Type:{id="queryTermMatchType"}   
+> Query Term Match Type <br>
+> **Optional** <br>
+             
+>> 0: exact match <br>
+>> 1: fuzzy match <br>
+>> Defaults to 0
+```
+    <queryTermMatchType>1</queryTermMatchType>
+```  
+#####Query Term Type:{id="queryTermType"}
+> Query Term Type <br>
+> **Optional** <br>
+             
+>> 0: a term is treated as a prefix; <br>
+>> 1: a term is treated as a complete term; <br>
+>> Defaults to 0
+```
+    <queryTermType>0</queryTermType>
+```
+
+#####Query Term Type:{id="queryResponseWriter"}  
+> All tags related to configuring the response.
+```
+    <queryResponseWriter>
+    ...
+    </queryResponseWriter>
+```  
+ 
+######Response Format:{id="responseFormat"}  
+> Response Format <br>
+> **Optional** <br>
+>> 0: JSON <br>
+>> 1: JSONP <br>          
+>> Defaults to 0 <br>
+```
+    <responseFormat>0</responseFormat>
+```
+######Response Content:{id="responseContent"}      
+> Response Content <br>
+> **Optional** <br>
+              
+> Format of each json search response. <br>
+> You should set the type by one of the following options: <br>
+>> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
+>> 1: format "rid,edit_dist,matching_prefix". <br>
+>> 2: format "rid,edit_dist,matching_prefix,feilds_to_return". <br>
+>> Defaults to 0 <br>
+>> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
+>> These are attributes returned to the user. <br>
+>> For Example: <br>
+```
+    <responseContent type="2">lat,lng</responseContent>
+```
+or
+
+```
+    <responseContent type="0"></responseContent>
+```
 
 
-###Bar {id="bar"}
+####Update Handler:{id="updatehandler"}   
+> All tags related to configurin data updater thread.
+```   
+    <updatehandler>
+    ...
+    </updatehandler>
+```
+#####Max Docs:{id="maxDocs"}  
+> Maximum Number of Documents <br>
+> **Required** <br>
+             
+> Maximum number of records that can be inserted into the engine. <br>
+> The number depends on the size of each record and the available memory <br>
+```
+    <maxDocs>15000000</maxDocs>
+```
+#####Max Memory:{id="maxMemory"}  
+> Maximum Number of Documents <br>
+> **Required** <br>
+             
+> Maximum size of memory that can be used. <br>
+```
+    <maxMemory>100000</maxMemory>
+```
+   
+#####Merge Policy:{id="mergePolicy"}            
+> Merge Policies <br>
+> **Required** <br>
+             
+> mergeEveryNSeconds: <br>
+>> The number of seconds after which newly inserted/deleted records are merged into the indexes. <br>
+>> Its minimum value is 10 (seconds). <br>
+> mergeEveryMWrites: <br>
+>> The number of write operations after which newly inserted/deleted records are merged into the indexes. <br>
+```
+    <mergePolicy>
+        <mergeEveryNSeconds>10</mergeEveryNSeconds>
+        <mergeEveryMWrites>100</mergeEveryMWrites>
+    </mergePolicy>
+```
+   
+#####Update Log:{id="updateLog"}
+> Tags related to log file and logging.
+```     
+    <updateLog>
+    ...
+    </updateLog>
+```
+######Log Level:{id="logLevel"}
+> Log Level <br>
+> **Optional** <br>
+                 
+> Log level <br>
+>> 0 SILENT <br>
+>> 1 ERROR <br>
+>> 2 WARN <br>
+>> 3 INFO <br>
+> Defaults to 3 INFO
+```
+    <logLevel>3</logLevel>
+```
+######Log File:{id="accessLogFile"}                      
+> Access Log File <br>
+> **Required** <br>
+                 
+> Path to Access Log File <br>
+```
+    <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+```
 
-Bar content.
+
+###Schema:{id="schemaTag"}
+> In the following lines, each part explains each tag which can be provided under <i>config</i>.
+```
+    <schema name="SRCH2" version="3">
+    ...
+    </schema>
+```
+
+####Fields:{id="fields"}
+> This tag contains all 'field' tags.
+```
+    <fields>
+    ...
+    </fields>
+```
+> Fields <br>
+> **Required** <br>
+> Fields we want to search on in addition to the primary key.<br>
+     
+> "name" : is the name of the field<br>
+> "type" : is the type of the field. Supported types are:<br>
+>> - Text<br>
+>> - location_longtitude (For Geo search)<br>
+>> - location_latitude (For Geo search)<br>
+>> - integer<br>
+>> - float<br>
+>> - time<br>
+             
+> "indexed" : If you want to search on a field, indexed should be true. A field can only be used for sort, filtering and facet if its 'indexed' property is false. If you need a field to be used in keyword search AND also for sort,filter and facet, you should include two instances of the field one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
+> "default" : The default value which is used if this field is empty.<br>
+> "required": The flag which indicates whether this field can be empty or not. It is false by default.<br>
+         
+> Note:<br>
+>> - If you want to have geo search, you should have two fields with the types of ocation_latitude and location_longtitude. Make sure to set both latitude and longitude.<br>
+>> - The values of these geo fields should be float in the JSON (input) file.<br>
+>> - Primary key is optional to be included here. It can be included here to set its indexed property to true.<br>
+>> - Type is always text for primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br>
+
+```
+    <field name="category" type="text" indexed="true" />
+    <field name="name" type="text" indexed="true" />
+    <field name="model" default="benz" required="true" type="text" indexed="false"/>
+    <field name="price" default="200" required="true" type="float" indexed="false"/>
+    <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+```
+
+####Primary Key:{id="uniqueKey"}
+> Primary Key
+> **Required** <br>
+         
+> Primary key attribute of the data <br>
+> - If the "indexed" value of your primary key field is true, it will be a searchable field too. <br>
+```
+    <uniqueKey>id</uniqueKey>
+```
+     
+####Enable Facet:{id="facetEnabled"}
+> Facet enabled flag <br>
+> **Optional** <br>
+> Indicates whether faceted search is allowed or not.<br>
+  		
+> Note:<br>
+> - values are false (disabled) and true (enabled)<br>
+> - By default it is disabled.<br>
+```
+    <facetEnabled>true</facetEnabled>start
+```
+
+####Facet Fields:{id="facetFields"}
+> This tag contains all 'facetField' tags.
+```
+    <facetFields>
+    ...
+    </facetFields>
+```
+> Facet fields <br>
+> **Required** if facet is enabled. <br>
+	  		
+>> name: The name of the field which is used for this facet. <br>
+>> facetType: Facet type which is Categorical or Range. Enter "cateorical" or "range" <br>
+>> facetStart: The start point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
+>> facetEnd: The end point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
+>> facetGap: The gap used for making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>  		
+> Note: <br>
+>> - All facetFields must be declared in fields tag as well (with indexed="false") <br>
+```
+    <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
+    <facetField name="model" facetType="categorical" />
+    <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+```
+  
+####Analyzer:{id="analyzer"}
+> Analyzer information are under types, fieldType, analyzer. <br>
+```
+    <types>
+        <fieldType name="text_en">
+            <analyzer>
+            ...
+            </analyzer>
+        </fieldType>                
+    </types>
+```
+#####Stemmer:{id="PorterStemFilter"}
+> Stemmer <br>
+> **Optional** <br>
+                 
+> Enable/Disabling the stemmer By providing "dictionary" file. <br>
+>> For Example: <br>
+>> Disable Stemmer:  <br>
+```
+    <filter name="PorterStemFilter" dictionary="" />
+```
+> Exmaple: <br>
+```
+    <filter name="PorterStemFilter" dictionary="" />
+```          
+#####Stop Words:{id="StopFilter"}
+> Stop Word Filter <br>
+> **Optional** <br>
+>> Enable/Disabling the Stop Word Filter By providing "words" file. <br>
+>> For Example: <br>
+>> Disable Stop Word Filter:  <br>
+```
+    <filter name="StopFilter" words="" />
+```
+> Example: <br>
+```
+    <filter name="StopFilter" words="" />
+```
+             
+#####Synonym Filter:{id="SynonymFilter"}
+> Synonym Filter
+> **Optional** <br>
+                 
+>> Enable/Disabling the Synonym Filter By providing "synonym" file.  <br>
+>> For Example:  <br>
+>> Disable Synonym Filter:   <br>
+```
+    <filter name="SynonymFilter" synonyms=""  expand="true"/>
+```
+>> To keep the original word in this filter, set the "expand" attribute as "True" Otherwise set it as "False".  <br>
+```
+    <filter name="SynonymFilter" synonyms=""  expand="true"/>      
+```
 
 Have fun SRCHing!
 
