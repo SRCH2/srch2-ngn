@@ -563,6 +563,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         	this->dataSourceType = DATA_SOURCE_JSON_FILE;
         	break;
         }
+    } else {
+    	this->dataSourceType = DATA_SOURCE_JSON_FILE;
     }
     if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
     	// dataFile is a required field only if JSON file is specified as data source.
