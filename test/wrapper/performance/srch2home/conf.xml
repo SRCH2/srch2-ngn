@@ -320,6 +320,7 @@
         <collection>performance</collection>
         <port></port>
     </mongodb>
+    <dataSourceType>2</dataSourceType>
 </config>
  
 <schema name="SRCH2" version="3">

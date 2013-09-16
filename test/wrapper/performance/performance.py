@@ -79,26 +79,26 @@ class PerformanceTest():
             if code == 200:
                 response = connection.read()
                 response_json = json.loads(response)
-                if 'result' in response_json:
+                if 'results' in response_json:
                     result = response_json['results']
                     if len(result) > 0:
                         return CONST_PASS_STRING, "{0}: ,{1}".format(code, preparedQuery)
                     else:
-                        return CONST_FAIL_STRING, "{0}: ,{1}".format(code, preparedQuery)
+                        return CONST_FAIL_STRING, "{0}: ,{1}".format(code, "empty results or no results")
                 else:
-                    return CONST_FAIL_STRING, "{0}: ,{1}".format(code, preparedQuery)
+                    return CONST_FAIL_STRING, "{0}: ,{1}".format(code, "no key as result ")
             else:
-                return CONST_FAIL_STRING, "{0}: ,{1}".format(code, preparedQuery)
+                return CONST_FAIL_STRING, "{0}: ,{1}".format(code, "error returned")
         except urllib2.HTTPError, error:
             self.debugToConsole("urllib2.HTTPError cought")
-            return CONST_FAIL_STRING, "{0}: ,{1}".format(error.code, preparedQuery)
+            return CONST_FAIL_STRING, "{0}: ,{1}".format(error.code, error)
         except urllib2.URLError, error:
             self.debugToConsole("urllib2.URLError cought")
-            return CONST_FAIL_STRING, preparedQuery
+            return CONST_FAIL_STRING, error
         except httplib.BadStatusLine, error:
             self.debugToConsole("httplib.BadStatusLine error cought")
             self.restartServer();
-            return CONST_FAIL_STRING, "{0}: {1}".format("server crashed for query", preparedQuery)
+            return CONST_FAIL_STRING, "{0}: {1}".format("server crashed for query", error)
 
     def prepareQuery(self, record):
         """
@@ -106,7 +106,7 @@ class PerformanceTest():
         url encodes the query
         """
         #q="record["body"]"
-        query = 'q="{}"'.format(record['body'])
+        query = 'q={0}'.format(record['body'])
         query = self.quote_url(query, "~*&$=,") # encode the uri
         preparedQuery = '{0}:{1}/search?{2}'.format(self.host, self.port, query)
         return preparedQuery
@@ -114,7 +114,7 @@ class PerformanceTest():
         """
         returns a dict
         """
-        content = "{0}{1} {2}{1}".format("cool", self.counter, "engine");
+        content = "{0}{1}{2}{1}".format("cool", self.counter, "engine");
         obj = {"body":content}
         return obj
         
@@ -137,13 +137,12 @@ class PerformanceTest():
                 timeTaken = datetime.now() - startTime
                 if status == CONST_FAIL_STRING:
                     # failed 
-                    self.debugToConsole("MSG: ", msg)
+                    self.debugToConsole("MSG is {0}".format(msg))
                     time.sleep(1)
                     continue
-                    failed.append("{0}. {1}".format(lineNum, msg))
                 elif status == CONST_PASS_STRING:
                     # passed on this attempt
-                    text = "{0},{1},{2},{3}".format(self.counter, query, timeTaken.microseconds, attempt)
+                    text = "{0},{1},{2},{3}\n".format(self.counter, query, timeTaken.microseconds, attempt)
                     self.writeToFile(status, text)
                     break
                 else:
@@ -152,7 +151,7 @@ class PerformanceTest():
                 print "query was", query
                 print "Unexpected error:", sys.exc_info()[0]
         if attempt == 10:
-            text = "{0},{1},{2},{3}".format(self.counter, query, timeTaken.microseconds, attempt)
+            text = "{0},{1},{2},{3}\n".format(self.counter, query, timeTaken.microseconds, attempt)
             self.writeToFile(CONST_FAIL_STRING, text)
         self.counter += 1
 
@@ -231,10 +230,9 @@ if __name__ == '__main__':
     try:
         #kill any existing instance of server
         tester.rebootServer()
-        
         decoration = 40
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
-        for num in range(10):
+        for num in range(2):
             results = tester.doTest()
         #print the test results
         print "*"*decoration, "TESTING ENDS", "*"*decoration
