@@ -136,6 +136,14 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do analyzer end to end test--------------'
+python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE_DIR ./analyzer_exact_a1/queriesAndResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 echo '----do top_k test--------------'
 python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE_DIR food 10 20
 
