@@ -141,8 +141,9 @@ typedef enum
     ATTRIBUTE_TYPE_UNSIGNED,
     ATTRIBUTE_TYPE_FLOAT ,
     ATTRIBUTE_TYPE_TEXT ,
-    ATTRIBUTE_TYPE_TIME // Time is kept as a long integer in the core.
+    ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
          // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    ATTRIBUTE_TYPE_DURATION
 } FilterType;
 
 /*typedef enum
@@ -168,8 +169,14 @@ typedef enum
     TERM_TYPE_NOT_SPECIFIED
 } TermType;
 
-/// response type
+///
+enum DateTimeType{
+    DateTimeTypeNow,
+    DateTimeTypePointOfTime,
+    DateTimeTypeDurationOfTime
+};
 
+/// response type
 typedef enum
 {
     RESPONSE_WITH_RECORD,

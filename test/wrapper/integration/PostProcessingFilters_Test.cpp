@@ -244,20 +244,20 @@ bool checkResults(QueryResults *queryResults, vector<unsigned> *resultSet)
     return true;
 }
 bool checkFacetResultsHelper(
-        const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults,
-        const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResultsForTest) {
+        const std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > > * facetResults,
+        const std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > > * facetResultsForTest) {
 
     if (facetResultsForTest->size() != facetResults->size()) {
 
         return false;
     }
-    for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+    for (std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
             facetResults->begin(); attrIter != facetResults->end();
             ++attrIter) {
         const std::vector<std::pair<std::string, float> > & toTest =
-                facetResultsForTest->at(attrIter->first);
+                facetResultsForTest->at(attrIter->first).second;
         const std::vector<std::pair<std::string, float> > & correct =
-                facetResults->at(attrIter->first);
+                facetResults->at(attrIter->first).second;
 
         bool flag = true;
         for (std::vector<std::pair<std::string, float> >::const_iterator correctPair =
@@ -289,15 +289,15 @@ bool checkFacetResultsHelper(
 }
 
 void printFacetResults(
-        const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults) {
+        const std::map<std::string, std::pair<FacetType , std::vector<std::pair<std::string, float> > > > * facetResults) {
     Logger::info("Facet results : \n");
-    for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+    for (std::map<std::string, std::pair<FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
             facetResults->begin(); attrIter != facetResults->end();
             ++attrIter) {
         Logger::info("Attribute : %s\n", attrIter->first.c_str());
         for (std::vector<std::pair<std::string, float> >::const_iterator aggregationResult =
-                attrIter->second.begin();
-                aggregationResult != attrIter->second.end();
+                attrIter->second.second.begin();
+                aggregationResult != attrIter->second.second.end();
                 ++aggregationResult) {
             Logger::info("\t%s : %.3f \n", aggregationResult->first.c_str(),
                     aggregationResult->second);
@@ -307,21 +307,21 @@ void printFacetResults(
 }
 
 bool checkFacetedFilterResults(QueryResults * queryResults,
-        const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResults) {
-    const std::map<std::string, std::vector<std::pair<std::string, float> > > * facetResultsForTest =
+        const std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > > * facetResults) {
+    const std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > > * facetResultsForTest =
             queryResults->getFacetResults();
 
     bool match = checkFacetResultsHelper(facetResults, facetResultsForTest);
 
     if (!match) {
         Logger::info("Facet results : \n");
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+        for (std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
                 facetResultsForTest->begin();
                 attrIter != facetResultsForTest->end(); ++attrIter) {
             Logger::info("Attribute : %s\n", attrIter->first.c_str());
             for (std::vector<std::pair<std::string, float> >::const_iterator aggregationResult =
-                    attrIter->second.begin();
-                    aggregationResult != attrIter->second.end();
+                    attrIter->second.second.begin();
+                    aggregationResult != attrIter->second.second.end();
                     ++aggregationResult) {
                 Logger::info("\t%s : %.3f \n", aggregationResult->first.c_str(),
                         aggregationResult->second);
@@ -329,13 +329,13 @@ bool checkFacetedFilterResults(QueryResults * queryResults,
             Logger::info("\n ======================================= \n");
         }
         Logger::info("Correct Facet results : \n");
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+        for (std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
                 facetResults->begin(); attrIter != facetResults->end();
                 ++attrIter) {
             Logger::info("Attribute : %s\n", attrIter->first.c_str());
             for (std::vector<std::pair<std::string, float> >::const_iterator aggregationResult =
-                    attrIter->second.begin();
-                    aggregationResult != attrIter->second.end();
+                    attrIter->second.second.begin();
+                    aggregationResult != attrIter->second.second.end();
                     ++aggregationResult) {
                 Logger::info("\t%s : %.3f \n", aggregationResult->first.c_str(),
                         aggregationResult->second);
@@ -349,13 +349,13 @@ bool checkFacetedFilterResults(QueryResults * queryResults,
 
     if (!match) {
         Logger::info("Facet results : \n");
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+        for (std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
                 facetResultsForTest->begin();
                 attrIter != facetResultsForTest->end(); ++attrIter) {
             Logger::info("Attribute : %s\n", attrIter->first.c_str());
             for (std::vector<std::pair<std::string, float> >::const_iterator aggregationResult =
-                    attrIter->second.begin();
-                    aggregationResult != attrIter->second.end();
+                    attrIter->second.second.begin();
+                    aggregationResult != attrIter->second.second.end();
                     ++aggregationResult) {
                 Logger::info("\t%s : %.3f \n", aggregationResult->first.c_str(),
                         aggregationResult->second);
@@ -363,13 +363,13 @@ bool checkFacetedFilterResults(QueryResults * queryResults,
             Logger::info("\n ======================================= \n");
         }
         Logger::info("Correct Facet results : \n");
-        for (std::map<std::string, std::vector<std::pair<std::string, float> > >::const_iterator attrIter =
+        for (std::map<std::string, std::pair<FacetType ,  std::vector<std::pair<std::string, float> > > >::const_iterator attrIter =
                 facetResults->begin(); attrIter != facetResults->end();
                 ++attrIter) {
             Logger::info("Attribute : %s\n", attrIter->first.c_str());
             for (std::vector<std::pair<std::string, float> >::const_iterator aggregationResult =
-                    attrIter->second.begin();
-                    aggregationResult != attrIter->second.end();
+                    attrIter->second.second.begin();
+                    aggregationResult != attrIter->second.second.end();
                     ++aggregationResult) {
                 Logger::info("\t%s : %.3f \n", aggregationResult->first.c_str(),
                         aggregationResult->second);
@@ -727,49 +727,49 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     resultSet0.push_back(1007);
     resultSet0.push_back(1008);
 
-    std::map<std::string, std::vector<std::pair<std::string, float> > > facetResults; // class , simple
+    std::map<std::string, std::pair<FacetType , std::vector<std::pair<std::string, float> > > > facetResults; // class , simple
     std::vector<std::pair<std::string, float> > classFacetResults;
     classFacetResults.push_back(std::make_pair("A", 2));
     classFacetResults.push_back(std::make_pair("B", 2));
     classFacetResults.push_back(std::make_pair("C", 2));
     classFacetResults.push_back(std::make_pair("D", 1));
     classFacetResults.push_back(std::make_pair("E", 1));
-    facetResults["class"] = classFacetResults;
+    facetResults["class"] = std::make_pair(FacetTypeCategorical , classFacetResults);
     //////////////////////////////////
 
-    std::map<std::string, std::vector<std::pair<std::string, float> > > facetResults2; //class , simple & citation : 1,5 range
+    std::map<std::string, std::pair<FacetType , std::vector<std::pair<std::string, float> > > > facetResults2; //class , simple & citation : 1,5 range
     std::vector<std::pair<std::string, float> > classFacetResults2;
     classFacetResults2.push_back(std::make_pair("A", 2));
     classFacetResults2.push_back(std::make_pair("B", 2));
     classFacetResults2.push_back(std::make_pair("C", 2));
     classFacetResults2.push_back(std::make_pair("D", 1));
     classFacetResults2.push_back(std::make_pair("E", 1));
-    facetResults2["class"] = classFacetResults2;
+    facetResults2["class"] = std::make_pair(FacetTypeCategorical , classFacetResults2);
 
     std::vector<std::pair<std::string, float> > citationFacetResults2;
     citationFacetResults2.push_back(std::make_pair("0", 0));
     citationFacetResults2.push_back(std::make_pair("1", 4));
     citationFacetResults2.push_back(std::make_pair("5", 4));
-    facetResults2["citation"] = citationFacetResults2;
+    facetResults2["citation"] = std::make_pair(FacetTypeRange , citationFacetResults2);
     //////////////////////////////////
 
-    std::map<std::string, std::vector<std::pair<std::string, float> > > facetResults3; //price : 5,7 , range & class , simple & citation : 1 , range
+    std::map<std::string, std::pair<FacetType , std::vector<std::pair<std::string, float> > > > facetResults3; //price : 5,7 , range & class , simple & citation : 1 , range
     std::vector<std::pair<std::string, float> > priceFacetResults3;
     priceFacetResults3.push_back(std::make_pair("0", 2)); // < 5 : 3.34,4.34
     priceFacetResults3.push_back(std::make_pair("5", 2)); // >=5 : 5.34,6.34
     priceFacetResults3.push_back(std::make_pair("7", 4)); // >=7 : 7.34,8.34,9.34,10.34
-    facetResults3["price"] = priceFacetResults3;
+    facetResults3["price"] = std::make_pair(FacetTypeRange , priceFacetResults3);
     std::vector<std::pair<std::string, float> > classFacetResults3;
     classFacetResults3.push_back(std::make_pair("A", 2));
     classFacetResults3.push_back(std::make_pair("B", 2));
     classFacetResults3.push_back(std::make_pair("C", 2));
     classFacetResults3.push_back(std::make_pair("D", 1));
     classFacetResults3.push_back(std::make_pair("E", 1));
-    facetResults3["class"] = classFacetResults3;
+    facetResults3["class"] = std::make_pair(FacetTypeCategorical , classFacetResults3);
     std::vector<std::pair<std::string, float> > citationFacetResults3;
     citationFacetResults3.push_back(std::make_pair("0", 0));
     citationFacetResults3.push_back(std::make_pair("1", 8));
-    facetResults3["citation"] = citationFacetResults3;
+    facetResults3["citation"] = std::make_pair(FacetTypeRange , citationFacetResults3);
     //////////////////////////////////
 
     int resultCount = 10;

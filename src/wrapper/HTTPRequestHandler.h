@@ -20,7 +20,6 @@
 #include "QueryPlan.h"
 
 #include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change
-
 #include <sys/queue.h>
 #include <event.h>
 #include <evhttp.h>
@@ -42,6 +41,7 @@ class HTTPRequestHandler
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
+		static void handleException(evhttp_request *req);
 
 	private:
 
@@ -59,6 +59,7 @@ class HTTPRequestHandler
 				struct timespec &tstart, struct timespec &tend);
 };
 
-}}
+}
+}
 
 #endif // _WRAPPER_HTTPREQUESTHANDLER_H_

@@ -644,6 +644,11 @@ const Schema* IndexData::getSchema() const
     return dynamic_cast<const Schema *>(this->schemaInternal);
 }
 
+Schema* IndexData::getSchema()
+{
+    return dynamic_cast<const Schema *>(this->schemaInternal);
+}
+
 IndexData::~IndexData()
 {
     delete this->trie;

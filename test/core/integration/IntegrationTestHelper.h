@@ -1118,6 +1118,52 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     return returnvalue;
 }
 
+void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1, unsigned ed = 1)
+{
+    vector<string> queryKeywords;
+    analyzer->tokenizeQuery(queryString,queryKeywords);
+    // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
+    //cout<<"Query:";
+    for (unsigned i = 0; i < queryKeywords.size(); ++i)
+    {
+        //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
+        TermType termType = TERM_TYPE_COMPLETE;
+        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        //query->setPrefixMatchPenalty(0.95);
+        query->add(term);
+    }
+    //cout << endl;
+    queryKeywords.clear();
+}
+
+bool pingEd(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+{
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseEdQuery(analyzer, query, queryString, attributeIdToFilter);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+
+    indexSearcher->search(query, queryResults, resultCount);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
+bool pingEd(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+{
+    vector<unsigned> rIDList;
+    rIDList.push_back(recordID);
+    return pingEd(analyzer,indexSearcher,queryString,numberofHits,rIDList,attributeIdToFilter);
+}
+
 // fuzzy query by default
 float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString)
 {

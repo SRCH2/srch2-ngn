@@ -40,7 +40,7 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 	}
 
 	// append the stemmer file to the install directory
-	std::string stemmerFilterFilePath = configMgr->getInstallDir() + configMgr->getStemmerFile();
+	std::string stemmerFilterFilePath = configMgr->getSrch2Home() + configMgr->getStemmerFile();
 	// gets the path of stopFilter
 	std::string stopFilterFilePath = configMgr->getStopFilePath();
 	// gets the path of stopFilter

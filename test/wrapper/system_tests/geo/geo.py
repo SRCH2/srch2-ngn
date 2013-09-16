@@ -56,7 +56,7 @@ def prepareQuery(ct_lat,ct_long,ct_radius):
 def testGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./geo/conf.ini &'
+    binary=binary+' --config-file=./geo/conf.xml &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()

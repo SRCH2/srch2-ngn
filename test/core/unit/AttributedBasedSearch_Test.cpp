@@ -147,14 +147,14 @@ void test(string index_dir, string data_file)
     // case 1
     filter = 2; // set the second bit to 1, meaning the keyword need to appear in the second searchable attribute
     
+    resultIds.push_back("4");
     resultIds.push_back("2");
     resultIds.push_back("3");
-    resultIds.push_back("4");
     numOfResults = 3;
     resultAttributeBitmap.resize(3);
-    resultAttributeBitmap[0].push_back(2);
+    resultAttributeBitmap[0].push_back(3);
     resultAttributeBitmap[1].push_back(2);
-    resultAttributeBitmap[2].push_back(3);
+    resultAttributeBitmap[2].push_back(2);
 
     fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
@@ -166,12 +166,12 @@ void test(string index_dir, string data_file)
     // case 2
     filter = 1; // set the first bit to 1, meaning the keyword need to appear in the first searchable attribute
 
-    resultIds.push_back("1");
     resultIds.push_back("4");
+    resultIds.push_back("1");
     numOfResults = 2;
     resultAttributeBitmap.resize(2);
-    resultAttributeBitmap[0].push_back(1);
-    resultAttributeBitmap[1].push_back(3);
+    resultAttributeBitmap[0].push_back(3);
+    resultAttributeBitmap[1].push_back(1);
 
     fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
@@ -183,16 +183,16 @@ void test(string index_dir, string data_file)
     // case 3
     filter = 3; // set both the first bit and second bit to 1, meaning the keyword need to appear either in the first searchable attribute or the second
 
+    resultIds.push_back("4");
     resultIds.push_back("1");
     resultIds.push_back("2");
     resultIds.push_back("3");
-    resultIds.push_back("4");
     numOfResults = 4;
     resultAttributeBitmap.resize(4);
-    resultAttributeBitmap[0].push_back(1);
-    resultAttributeBitmap[1].push_back(2);
+    resultAttributeBitmap[0].push_back(3);
+    resultAttributeBitmap[1].push_back(1);
     resultAttributeBitmap[2].push_back(2);
-    resultAttributeBitmap[3].push_back(3);
+    resultAttributeBitmap[3].push_back(2);
 
     fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
@@ -220,16 +220,16 @@ void test(string index_dir, string data_file)
     // case 5
     filter = 0x7fffffff; // no filter
 
+    resultIds.push_back("4");
     resultIds.push_back("1");
     resultIds.push_back("2");
     resultIds.push_back("3");
-    resultIds.push_back("4");
     numOfResults = 4;
     resultAttributeBitmap.resize(4);
-    resultAttributeBitmap[0].push_back(1);
-    resultAttributeBitmap[1].push_back(2);
+    resultAttributeBitmap[0].push_back(3);
+    resultAttributeBitmap[1].push_back(1);
     resultAttributeBitmap[2].push_back(2);
-    resultAttributeBitmap[3].push_back(3);
+    resultAttributeBitmap[3].push_back(2);
 
     fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 

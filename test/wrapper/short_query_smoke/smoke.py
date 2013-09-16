@@ -242,11 +242,11 @@ if __name__ == '__main__':
                 'queriesPath': './queries.txt',
                 'server_port':8081,
                 'server_host': 'http://localhost',
-                'server_confg_file_path':'./conf.ini',
+                'server_confg_file_path':'./conf.xml',
                 'debug' : True,
                 'server_binary_name':'srch2-search-server',
                 'geoqueriesPath':'./geoqueries.txt',
-                'server_geoconfig_file_path': './geoconf.ini'
+                'server_geoconfig_file_path': './geoconf.xml'
     }
     smoke = SmokeTest(config)
     try:
