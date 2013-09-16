@@ -17,7 +17,7 @@ pingServer(){
 }
 
 startServer(){
-    $binary --config-file=high_insert_test/conf.ini &
+    $binary --config-file=high_insert_test/conf.xml &
     PID=$!
     pingServer
 

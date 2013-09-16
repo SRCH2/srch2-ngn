@@ -72,7 +72,7 @@ def prepareQuery(queryKeywords):
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./fuzzy_attribute_based_search/conf.ini &'
+    binary=binary+' --config-file=./fuzzy_attribute_based_search/conf.xml &'
     os.popen(binary)
     #make sure that start the engine up
     pingServer()
