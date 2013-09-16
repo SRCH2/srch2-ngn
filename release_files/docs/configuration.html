@@ -95,41 +95,48 @@ For Example: <br></p>
 <h4 id="licenseFile">License File:</h4>
 <blockquote>
 <p>License Key File <br>
-<strong>Required</strong> <br>
-Email contact@srch2.com to get a key file. <br>
-Make sure to set the variable to the SRCH2 license key file.<br></p>
+<strong>Required</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
 
+<blockquote>
+<p>Email contact@srch2.com to get a key file. <br></p>
+</blockquote>
 <h4 id="listeningHostname">Listening Hostname and Port:</h4>
 <blockquote>
 <p>Hostname and Port Number<br>
-<strong>Required</strong> <br>
-Hostname and port number of the server. Make sure the port is open.<br></p>
+<strong>Required</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
     &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
 
+<blockquote>
+<p>Hostname and port number of the server. Make sure the port is open.<br></p>
+</blockquote>
 <h4 id="dataDir">Data Directory:</h4>
 <blockquote>
 <p>Index Directoy Path<br>
-<strong>Required</strong> <br>
-The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br></p>
+<strong>Required</strong> if "indexLoadCreate" set to 1 <br></p>
 </blockquote>
 <pre><code>    &lt;dataDir&gt;/path/to/data&lt;/dataDir&gt;
 </code></pre>
 
+<blockquote>
+<p>The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br></p>
+</blockquote>
 <h4 id="dataFile">Data File:</h4>
 <blockquote>
 <p>Data File<br>
-<strong>Required</strong> if "indexLoadCreate" is set to 0<br>
-Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br></p>
+<strong>Required</strong> if "indexLoadCreate" set to 0<br></p>
 </blockquote>
 <pre><code>    &lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
 </code></pre>
 
+<blockquote>
+<p>Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br></p>
+</blockquote>
 <h4 id="indexConfig">Index Config:</h4>
 <blockquote>
 <p>All configuration tags related to configuring the index.</p>
@@ -142,17 +149,24 @@ Path for a data file to be loaded. The file must be in the json format. REQUIRED
 <h5 id="indexType">Index Type:</h5>
 <blockquote>
 <p>Index Type <br>
-<strong>Required</strong> <br>
-0: Text Index <br>
-1: Geo+Text Index <br></p>
+<strong>Required</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;indexType&gt;0&lt;/indexType&gt;
 </code></pre>
 
+<blockquote>
+<p>0: Text Index <br>
+1: Geo+Text Index <br></p>
+</blockquote>
 <h5 id="fieldBoost">Field Boosts:</h5>
 <blockquote>
 <p>Boost Values <br>
 <strong>Optional</strong> <br></p>
+</blockquote>
+<pre><code>    &lt;fieldBoost&gt;&lt;/fieldBoost&gt;
+</code></pre>
+
+<blockquote>
 <p>Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
 For Example, the boosts for three searchable attributes can be specified as  <br></p>
 </blockquote>
@@ -167,28 +181,29 @@ For Example, the boosts for three searchable attributes can be specified as  <br
 </ul>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;fieldBoost&gt;&lt;/fieldBoost&gt;
-</code></pre>
-
 <h5 id="recordBoostField">Record Boost Field:</h5>
 <blockquote>
 <p>Record Boost Field <br>
-<strong>Optional</strong> <br>
-Attribute used as the boost value of a record. Need to be float type in the json objects in the data file.</p>
+<strong>Optional</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
+<blockquote>
+<p>Attribute used as the boost value of a record. Need to be float type in the json objects in the data file.</p>
+</blockquote>
 <h5 id="defaultQueryTermBoost">Query Term Boost:</h5>
 <blockquote>
 <p>Default Query Term Boost <br>
-<strong>Optional</strong> <br>
-Default query term boost <br>
-Defaults to 1 <br></p>
+<strong>Optional</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
+<blockquote>
+<p>Default query term boost <br>
+Defaults to 1 <br></p>
+</blockquote>
 <h4 id="queryConfig">Query Config:</h4>
 <blockquote>
 <p>All configuration tags related to configuring the query.</p>
@@ -198,7 +213,7 @@ Defaults to 1 <br></p>
     &lt;/query&gt;
 </code></pre>
 
-<h5 id="rankingalgorithm">Ranknig:</h5>
+<h5 id="rankingalgorithm">Ranking:</h5>
 <blockquote>
 <p>Ranking Algorithm <br></p>
 <p>The following comments and parameters are related to ranking. <br>
@@ -213,76 +228,90 @@ record-score-expression=idf_score*doc_boost <br></p>
 <h5 id="queryTermSimilarityBoost">Query Term Similarity Boost:</h5>
 <blockquote>
 <p>Query Term Similarity Boost <br>
-<strong>Optional</strong> <br>
-Defaults to 0.5 <br></p>
+<strong>Optional</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
 </code></pre>
 
+<blockquote>
+<p>Defaults to 0.5 <br></p>
+</blockquote>
 <h5 id="queryTermLengthBoost">Query Term Length Boost:</h5>
 <blockquote>
 <p>Query Term Length Boost <br>
-<strong>Optional</strong> <br>
-Defaults to 0.5 <br></p>
+<strong>Optional</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
 
+<blockquote>
+<p>Defaults to 0.5 <br></p>
+</blockquote>
 <h5 id="prefixMatchPenalty">Prefix Match Penalty:</h5>
 <blockquote>
 <p>Prefix Match Penalty <br>
 <strong>Optional</strong> <br></p>
-<p>Penalty for a prefix match.  This value is used to multiply the score of record for a term. <br>
-The value should be in the range of 0 to 1 <br>
-Defaults to 0.95 <br></p>
 </blockquote>
 <pre><code>    &lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
+<blockquote>
+<p>Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+The value should be in the range of 0 to 1 <br>
+Defaults to 0.95 <br></p>
+</blockquote>
 <h5 id="cacheSize">Cache Size:</h5>
 <blockquote>
 <p>Cache Size <br>
 <strong>Optional</strong> <br></p>
-<p>Number of bytes in the cache. It should be in the range [50MB, 500MB]. <br>
-Its default value is 50MB. <br></p>
 </blockquote>
 <pre><code>    &lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
+<blockquote>
+<p>Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
+Its default value is 50MB. <br></p>
+</blockquote>
 <h5 id="rows">Default Value for Rows:</h5>
 <blockquote>
 <p>Rows <br>
 <strong>Optional</strong> <br></p>
-<p>Number of results to retrieve <br>
-Defaults to 10. <br></p>
 </blockquote>
 <pre><code>    &lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
 
+<blockquote>
+<p>Number of results retrieved <br>
+Defaults to 10. <br></p>
+</blockquote>
 <h5 id="maxSearchThreads">Maximum number of threads:</h5>
 <blockquote>
 <p>Maximum Number of Searcher Threads <br>
 <strong>Optional</strong> <br></p>
-<p>Number of threads that serve the requests. <br>
-Defaults to 1 <br></p>
 </blockquote>
 <pre><code>    &lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
 
+<blockquote>
+<p>Number of threads that serve the requests. <br>
+Defaults to 1 <br></p>
+</blockquote>
 <h5 id="fieldBasedSearch">Field Based Search Enabled:</h5>
 <blockquote>
 <p>Flag to enable/disable field based search <br>
 <strong>Optional</strong> <br></p>
-<p>Flag to indicate whether the attribute-based search is supported. <br></p>
+</blockquote>
+<pre><code>    &lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
+</code></pre>
+
+<blockquote>
+<p>Flag to toggle attribute-based search <br></p>
 <blockquote>
 <p>0 - Disable <br>
 1 - Enable <br>
 Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.</p>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
-</code></pre>
-
 <h5 id="searcherType">Search Type:</h5>
 <blockquote>
 <p>Searcher Type <br>
@@ -479,7 +508,21 @@ Fields we want to search on in addition to the primary key.<br></p>
 <li>location_latitude (For Geo search)<br></li>
 <li>integer<br></li>
 <li>float<br></li>
-<li>time<br></li>
+<li>time<br><blockquote>
+<p>NOTE: The time formats which are accepted by SRCH2 engine are: <br>
+      The formats for date and time points are:<br>
+      HH:MM:SS<br>
+      mm/DD/YY<br>
+      YY-mm-DD HH:MM::SS<br>
+      YYmmDDHHMMSS<br>
+      YYmmDDHHMM<br>
+      YYmmDD<br>
+      And the format for duration of time is:<br>
+      {An integer}{A date/time constant}, in which date and time constants are: <br>
+      SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
+      Examples are: DAY (meaning 1 day duration) or 34WEEKS (meaning 34 weeks).<br></p>
+</blockquote>
+</li>
 </ul>
 </blockquote>
 <p>"indexed" : If you want to search on a field, indexed should be true. A field can only be used for sort, filtering and facet if its 'indexed' property is false. If you need a field to be used in keyword search AND also for sort,filter and facet, you should include two instances of the field one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>

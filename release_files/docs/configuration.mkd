@@ -421,6 +421,19 @@ or
 >> - integer<br>
 >> - float<br>
 >> - time<br>
+>>> NOTE: The time formats which are accepted by SRCH2 engine are: <br>
+>>>       The formats for date and time points are:<br>
+>>>       HH:MM:SS<br>
+>>>       mm/DD/YY<br>
+>>>       YY-mm-DD HH:MM::SS<br>
+>>>       YYmmDDHHMMSS<br>
+>>>       YYmmDDHHMM<br>
+>>>       YYmmDD<br>
+>>>       And the format for duration of time is:<br>
+>>>       {An integer}{A date/time constant}, in which date and time constants are: <br>
+>>>       SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
+>>>       Examples are: DAY (meaning 1 day duration) or 34WEEKS (meaning 34 weeks).<br>
+
              
 > "indexed" : If you want to search on a field, indexed should be true. A field can only be used for sort, filtering and facet if its 'indexed' property is false. If you need a field to be used in keyword search AND also for sort,filter and facet, you should include two instances of the field one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
 > "default" : The default value which is used if this field is empty.<br>
