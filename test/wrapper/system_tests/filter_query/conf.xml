@@ -72,7 +72,13 @@
         -->
         <indexType>0</indexType>
          
-         
+		<!--
+            0: don't support swap operation in edit distance
+            1: support swap operation in edit distance
+            default value is true
+        -->
+        <supportSwapInEditDistance>false</supportSwapInEditDistance>         
+ 
         <!--
             Boost Values
             Optional

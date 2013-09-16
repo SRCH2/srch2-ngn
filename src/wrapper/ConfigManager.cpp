@@ -88,7 +88,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-
+    this->supportSwapInEditDistance = true; // by default it is true
+    configAttribute = configDoc.child("config").child("indexConfig").child("supportSwapInEditDistance");
+    if (configAttribute && configAttribute.text()) {
+        string qtmt = configAttribute.text().get();
+        if (this->isValidBool(qtmt)) {
+            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+        } else {
+            parseError << "The supportAttributeBasedSearch that is provided is not valid";
+            configSuccess = false;
+            return;
+        }
+    }
 
     // uniqueKey is required
     configAttribute = configDoc.child("schema").child("uniqueKey");
@@ -1046,6 +1057,10 @@ uint32_t ConfigManager::getMergeEveryMWrites() const {
 
 int ConfigManager::getIndexType() const {
     return indexType;
+}
+
+bool ConfigManager::getSupportSwapInEditDistance() const {
+    return supportSwapInEditDistance;
 }
 
 const string& ConfigManager::getAttributeLatitude() const {

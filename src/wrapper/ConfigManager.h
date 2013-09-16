@@ -108,6 +108,7 @@ private:
 	uint32_t pingKafkaBrokerEveryNSeconds;
 	uint32_t writeReadBufferInBytes;
 
+    bool supportSwapInEditDistance;
 	float defaultSpatialQueryBoundingBox;
 
 	srch2::instantsearch::ResponseType searchResponseFormat;
@@ -269,6 +270,7 @@ public:
 	bool isRecordBoostAttributeSet() const;
 
 	int getIndexType() const;
+	bool getSupportSwapInEditDistance() const;
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
