@@ -175,13 +175,13 @@ float InvertedIndex::getIdf(const unsigned totalNumberOfDocuments, const unsigne
     float idf = 0.0;
     if ( this->commited_WriteView == false) {
         ASSERT(keywordId < this->invertedListSizeDirectory.size());
-        idf = log (totalNumberOfDocuments / ((float)(this->invertedListSizeDirectory.at(keywordId) )));
+        idf = 1 + log (totalNumberOfDocuments / ((float)(this->invertedListSizeDirectory.at(keywordId)+1)));
     } else {
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
 
         ASSERT(keywordId < writeView->size());
 
-        idf = log (totalNumberOfDocuments / ((float)(writeView->getElement(keywordId)->getWriteViewSize())) );
+        idf = 1 + log (totalNumberOfDocuments / ((float)(writeView->getElement(keywordId)->getWriteViewSize())+1) );
     }
     return idf;
 }

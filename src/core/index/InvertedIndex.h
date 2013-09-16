@@ -85,7 +85,7 @@ struct InvertedListElement {
 
 struct InvertedListIdAndScore {
     unsigned recordId;
-    unsigned score;
+    float score;
 };
 
 

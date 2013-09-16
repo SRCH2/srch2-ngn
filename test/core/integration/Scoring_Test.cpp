@@ -191,82 +191,82 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     // test 1: exact search, complete match, single term
     //         query: "fargen"
     //         function: idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 2/3) * ln(1000/2)
-    //                             = 10.35768016404
+    //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
+    //                             = 11.34857165
     //                   total_score = idf_score * doc_boost
-    //                               = 66.08437301971
+    //                               = 72.40648777351
     float score1 = pingToGetTopScore(analyzer, indexSearcher, "fargen");
     cout << "Score: " << score1 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score1 > 66.0843-0.1 && score1 < 66.0844+0.1);
+    ASSERT(score1 > 72.4065-0.1 && score1 < 72.4065+0.1);
     // test 2: exact search, prefix match, single term
     //         query: "farge"
     //         function: idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 2/3) * ln(1000/2)
-    //                             = 10.35768016404
+    //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
+    //                             = 11.34857165
     //                   prefixMatchPenalty = 0.95
     //                   total_score = idf_score * doc_boost * prefixMatchPenalty
-    //                               = 62.78015436872
+    //                               = 68.78616338483
     float score2 = pingToGetTopScore(analyzer, indexSearcher, "farge");
     cout << "Score: " << score2 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score2 > 62.7801-0.1 && score2 < 62.7802+0.1);
+    ASSERT(score2 > 68.7862-0.1 && score2 < 68.7862+0.1);
 
     // test 3: fuzzy search, complete match, single term
     //         query: "faugen"
     //         function: idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 2/3) * ln(1000/2)
-    //                             = 10.35768016404
+    //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
+    //                             = 11.34857165
     //                   NormalizedEdSimilarity = 1 - ed/query_term_length
     //                                          = 1 - 1/6 = 5/6
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity
-    //                               = 55.07031084976
+    //                               = 60.33873981126
     float score3 = pingToGetTopScore(analyzer, indexSearcher, "faugen");
     cout << "Score: " << score3 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score3 > 55.0703-0.1 && score3 < 55.0704+0.1);
+    ASSERT(score3 > 60.3387-0.1 && score3 < 60.3387+0.1);
 
     // test 4: fuzzy search, prefix match, single term
     //         query: "fauge"
     //         function: idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 2/3) * ln(1000/2)
-    //                             = 10.35768016404
+    //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
+    //                             = 11.34857165
     //                   prefixMatchPenalty = 0.95
     //                   NormalizedEdSimilarity = 1 - ed/query_term_length
     //                                          = 1 - 1/5 = 4/5
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
-    //                               = 50.22412349498
+    //                               = 55.02893070786
     float score4 = pingToGetTopScore(analyzer, indexSearcher, "fauge");
     cout << "Score: " << score4 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score4 > 50.2241-0.1 && score4 < 50.2242+0.1);
+    ASSERT(score4 > 55.0289-0.1 && score4 < 55.0289+0.1);
 
     // test 5: fuzzy search, prefix match, double terms
     //         query: "fauge+medican"
     //         function: Term1:
     //                   idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 2/3) * ln(1000/2)
-    //                             = 10.35768016404
+    //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
+    //                             = 11.34857165
     //                   prefixMatchPenalty = 0.95
     //                   NormalizedEdSimilarity = 1 - ed/query_term_length
     //                                          = 1 - 1/5 = 4/5
     //                   term1_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = 50.22412349498
+    //                                     = 55.02893070786
     //                   Term2:
     //                   idf_score = sumOfFieldBoost * idf
-    //                             = (1 + 1/3) * ln(1000/118)
-    //                             = 2.84942753936
+    //                             = (1 + 1/3) * (1+ln(1000/(118+1))
+    //                             = 4.1715090478
     //                   prefixMatchPenalty = 0.95
     //                   NormalizedEdSimilarity = 1 - ed/query_term_length
     //                                          = 1 - 1/7 = 6/7
     //                   term2_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = 14.80371483772
+    //                                     = 21.67236384
     //
     //                   total_score = term1_total_score + term2_total_score
-    //                               = 65.0278383327
+    //                               = 76.701294554
     float score5 = pingToGetTopScore(analyzer, indexSearcher, "fauge+medican");
     cout << "Score: " << score5 << endl;
-    ASSERT(score5 > 65.0278-0.1 && score5 < 65.0279+0.1);
+    ASSERT(score5 > 76.7013-0.1 && score5 < 76.7013+0.1);
 
 }
 
