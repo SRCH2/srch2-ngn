@@ -57,7 +57,7 @@ void SynonymContainer::initSynonymContainer (const std::string synonymFilePath) 
 
 	if (!input.good())
 	{
-		Logger::error("The synonym file = \"%s\" could not be opened.", synonymFilePath.c_str());
+		Logger::warn("The synonym file = \"%s\" could not be opened.", synonymFilePath.c_str());
 		return;
 	}
 	this->synonymMap.clear();
@@ -175,7 +175,7 @@ void StemmerContainer::initStemmerContainer( const std::string stemmerFilePath) 
 	std::ifstream input(stemmerFilePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-        Logger::error("The stemmer file = \"%s\" could not be opened.", stemmerFilePath.c_str());
+        Logger::warn("The stemmer file = \"%s\" could not be opened.", stemmerFilePath.c_str());
  		return;
 	}
 	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
@@ -225,7 +225,7 @@ void StopWordContainer::initStopWordContainer(const std::string stopWordsFilePat
 	std::ifstream input(stopWordsFilePath.c_str());
 		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-	    Logger::error("The stop words list file = \"%s\" could not be opened.", stopWordsFilePath.c_str());
+	    Logger::warn("The stop words file = \"%s\" could not be opened.", stopWordsFilePath.c_str());
 		return;
 	}
 	//	Reads the stop word files line by line and fills the vector
