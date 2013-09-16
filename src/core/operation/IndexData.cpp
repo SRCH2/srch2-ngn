@@ -607,6 +607,11 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 
 }
 
+void IndexData::_exportData(const string &exportedDataFileName) const
+{
+    ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
+}
+
 void IndexData::_save(const string &directoryName) const
 {
     // serialize the data structures to disk
@@ -636,6 +641,11 @@ void IndexData::printNumberOfBytes() const
 const Schema* IndexData::getSchema() const
 {
     return dynamic_cast<const Schema *>(this->schemaInternal);
+}
+
+Schema* IndexData::getSchema()
+{
+    return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
 IndexData::~IndexData()

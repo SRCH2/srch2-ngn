@@ -9,7 +9,7 @@
 #include <map>
 #include <cstring>
 #include <cstdlib>
-
+#include <boost/algorithm/string.hpp>
 #include "JSONRecordParser.h"
 #include <instantsearch/GlobalCache.h>
 
@@ -19,7 +19,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerFactory.h"
-#include <boost/algorithm/string.hpp>
+#include "util/DateAndTimeHandler.h"
 
 using namespace snappy;
 
@@ -67,6 +67,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
     if (primaryKeyStringValue.compare("NULL") != 0)
     {
+    	// trim to avoid any mismatch due to leading and trailing white space
     	boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
         record->setPrimaryKey(primaryKey);
@@ -319,6 +320,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
+    schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 
     return schema;
 }
@@ -337,7 +339,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-
+    unsigned indexedCounter = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
@@ -353,6 +355,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
                 indexer->addRecord(record, analyzer, 0);
+                indexedCounter++;
             }
             else
             {
@@ -361,15 +364,15 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             }
             record->clear();
             int reportFreq = 10000;
+            ++lineCounter;
             if (lineCounter % reportFreq == 0)
             {
               std::cout << "Indexing first " << lineCounter << " records" << "\r";
             }
-            ++lineCounter;
         }
     }
     std::cout<<"                                                     \r";
-    Logger::console("Indexed %d records.", lineCounter);
+    Logger::console("Indexed %d / %d records.", indexedCounter, lineCounter);
 
     in.close();
 
@@ -377,9 +380,11 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     // be added
     indexer->commit();
 
-    Logger::console("Saving Index.....");
-    indexer->save();
-    Logger::console("Index saved.");
+    if (indexedCounter > 0) {
+    	Logger::console("Saving Index.....");
+    	indexer->save();
+    	Logger::console("Index saved.");
+    }
     delete analyzer;
 }
 
@@ -408,7 +413,9 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    		stringValue += " ";
 	    	}
 	    }else if (value.isObject()){
-	    	// recursively put values of all keys
+	    	// for certain data sources such as mongo db, the field value may be
+	    	// JSON object ( e.g mongo db primary key "_id")
+	    	// For JSON object, recursively concatenate all keys' value
 	    	vector<string> keys = value.getMemberNames();
 	    	for (int i= 0; i < keys.size(); ++i) {
 	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
@@ -456,8 +463,13 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	convertValueToString(value, temp);
 
 	// now check to see if it has proper date/time format
-
-	stringValue = convertTimeFormatToLong(temp);
+	stringValue = "";
+	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
+			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
+		stringstream buffer;
+		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
+		stringValue = buffer.str();
+	}
     return;
 
 }

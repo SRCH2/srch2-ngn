@@ -44,24 +44,13 @@ bool isFloat(const std::string & s);
 
 bool isTime(const std::string & s);
 
-const locale localeInputs[] = { locale(locale::classic(),
-        new time_input_facet("%m/%d/%Y")), locale(locale::classic(),
-        new time_input_facet("%Y-%m-%d %H:%M:%S")), locale(locale::classic(),
-        new time_input_facet("%Y%m%d%H%M%S")), locale(locale::classic(),
-        new time_input_facet("%Y%m%d%H%M")), locale(locale::classic(),
-        new time_input_facet("%Y%m%d")) };
-const size_t localeFormats = sizeof(localeInputs) / sizeof(localeInputs[0]);
 
-time_t convertPtimeToTimeT(boost::posix_time::ptime t);
 void custom_evhttp_find_headers(const struct evkeyvalq *headers,
         const char *key, vector<string> &values);
 /*
  * parses using the given regex
  */
 bool doParse(string &input, const boost::regex &re, string &output);
-
-std::string convertTimeFormatToLong(std::string & timeString);
-std::string convertLongToTimeFormat(std::string & timeLong);
 
 void custom_evhttp_find_headers(const struct evkeyvalq *headers,
         const char *key, vector<string> &values);

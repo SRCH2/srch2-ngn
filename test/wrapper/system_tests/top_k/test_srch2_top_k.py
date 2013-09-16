@@ -76,7 +76,7 @@ if __name__ == "__main__":
     #Start the engine server
     binary_path = sys.argv[1]
     binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./top_k/conf.ini &'
+    binary=binary+' --config-file=./top_k/conf.xml &'
     os.popen(binary)
 
     pingServer()

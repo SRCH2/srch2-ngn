@@ -8,6 +8,9 @@
 #include "ConfigManager.h"
 #include "AnalyzerFactory.h"
 #include "evhttp.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
+#include "URLParser.h"
+using namespace snappy;
 
 namespace srch2
 {
@@ -234,6 +237,13 @@ struct IndexWriteUtil
     {
     	indexer->save();
 	    log_str << "{\"save\":\"success\"}";
+    }
+
+    // save the exported data to exported_data.json
+    static void _exportCommand(Indexer *indexer, const char* exportedDataFileName, std::stringstream &log_str)
+    {
+        indexer->exportData(exportedDataFileName);
+        log_str << "{\"export\":\"success\"}";
     }
 
     static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)

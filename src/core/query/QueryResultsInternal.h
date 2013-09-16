@@ -169,7 +169,7 @@ public:
  *     Price =>
  *              <less than 10,14>,<10,80>,<15,24>,<20,30>
      */
-	std::map<std::string , std::vector<std::pair<std::string, float> > > facetResults;
+	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
     Stat *stat;
     
  private:

@@ -77,7 +77,7 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			delete analyzer;
 			switch(indexDataContainerConf->getDataSourceType())
 			{
-				case srch2http::FILEBOOTSTRAP_TRUE:
+				case srch2http::DATA_SOURCE_JSON_FILE:
 				{
 					// Create from JSON and save to index-dir
                     Logger::console("Creating an index from JSON file...");
@@ -85,9 +85,9 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 					this->offset = this->indexer->getKafkaOffsetFromIndexSnapShot();
 					break;
 				}
-				case srch2http::MONGOBOOTSTRAP:
+				case srch2http::DATA_SOURCE_MONGO_DB:
 				{
-					Logger::console("Creating an index from MongoDb instance...");
+					Logger::console("Creating an index from a MongoDb instance...");
 					MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
 					break;
 				}
@@ -105,10 +105,10 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			indexer = Indexer::load(indexMetaData);
 			// Load Analayzer data from disk
 			AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
+			indexer->getSchema()->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 			bool isAttributeBasedSearch = (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX);
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
 			{
-				cout << indexer->getSchema()->getPositionIndexType() << " " << indexDataContainerConf->getSupportAttributeBasedSearch() <<endl;
 				cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
 			}
 			break;
