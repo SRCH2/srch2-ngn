@@ -1,7 +1,7 @@
 
 <config>
     <!-- SRCH2 Home directory -->
-    <srch2Home>/home/dar/lichen/newtest/srch2-ngn/debug/../test/wrapper/data/test_data/</srch2Home> 
+    <srch2Home>${CMAKE_BINARY_DIR}/../test/wrapper/data/test_data/</srch2Home> 
     
 
 
