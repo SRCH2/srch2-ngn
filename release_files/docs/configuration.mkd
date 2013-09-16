@@ -55,58 +55,60 @@
 #<center>SRCH2 Configuration File Documentation</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 15, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ###Overview:###{id="overview"}
->Welcome to Srch2 conf file documentation page. SRCH2 configuration file uses XML format. In this documentation XML tags which must be used in this file are introduced. The documentation starts by two major components of SRCH2 configuration file, <i>config</i> and <i>schema</i>. This brief introduction is followed by a detailed explanation of each one.
+>Welcome to Srch2 conf file documentation page. SRCH2 configuration file uses XML format. This documentation introduces the valid XML tags hierarchy for Srch2 engine configuration. The documentation, first, introduces the two major components of SRCH2 configuration file, <i>config</i> and <i>schema</i>. This brief introduction is followed by a detailed explanation of each one.
 ###Major components: config vs. schema:###{id="majorComponents"}
 
->   SRCH2 configuration file contains two top level XML tags; <i>config</i> and <i>schema</i>. Any tag which is to tune a part of engine is under 'config' while any tag which is used to describe data (or query) is placed under schema. For example, 'srch2home' tag which is used to specify the installation directory of SRCH2 engine is under 'config' while 'fields' which is used to declare data fields is under 'schema'.
+>   SRCH2 configuration file contains two top level XML tags; <i>config</i> and <i>schema</i>. Any valid specification tuning a part of the Srch2 engine is a child tag of 'config'; while children of 'schema' tag describe data (or query dynamics). For example, 'srch2home' tag specifying the installation directory of SRCH2 engine is under 'config', while 'fields' tag declaring the data fields of index records is under 'schema'.
 
 ###Config:{id="configTag"}
-> In the following lines, each part explains each tag which can be provided under <i>config</i>.
+> The following is a breakdown of the subtag provided under <i>config</i>.
 
 ####SRCH2HOME:{id="srch2Home"}
 > SRCH2 Home directory <br>
 > **Required**  <br>
-> This directory is going to be your srch2 home's directory. All other paths HAVE to be reletive to this path. <br>
-> For Example: <br>
->> To have "/usr/share/srch2/" as srch2 home directory, you should have the following line <srch2Home>/usr/share/srch2/</srch2Home> All other paths in this conif file have to be relative to this path. <br>
-> For Example: <br>
->> If your data file is inside srch2 home directory, having the following absolute path "/usr/share/srch2/data/sample-data.json" In this config file it should be as "data/sample-data.json" <br>
 ```
     <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
+> This directory is your srch2 home's directory. All other paths, specificed in this config, HAVE to be relative to this path. <br>
+> For Example: <br>
+>> If your data file is inside Srch2 home directory, having the following absolute path "/usr/share/srch2/data/sample-data.json" In this config file it should be referenced "data/sample-data.json" <br>
+
 ####License File:{id="licenseFile"}
 > License Key File <br>
 > **Required** <br>
-> Email contact@srch2.com to get a key file. <br>
-> Make sure to set the variable to the SRCH2 license key file.<br>
 ```
     <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
+> Email contact@srch2.com to get a key file. <br>
+
 
 ####Listening Hostname and Port:{id="listeningHostname"}
 > Hostname and Port Number<br>
 > **Required** <br>
-> Hostname and port number of the server. Make sure the port is open.<br>
 ```
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8081</listeningPort>
 ```
+> Hostname and port number of the server. Make sure the port is open.<br>
+
 ####Data Directory:{id="dataDir"}
 > Index Directoy Path<br>
-> **Required** <br>
-> The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br>
+> **Required** if "indexLoadCreate" set to 1 <br>
 ```
     <dataDir>/path/to/data</dataDir>
 ```
+> The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br>
+
 
 ####Data File:{id="dataFile"}
 
 > Data File<br>
-> **Required** if "indexLoadCreate" is set to 0<br>
-> Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br>
+> **Required** if "indexLoadCreate" set to 0<br>
 ```
     <dataFile>/path/to/data.json</dataFile>
 ```
+> Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br>
+
 
 ####Index Config:{id="indexConfig"}
 > All configuration tags related to configuring the index.
@@ -118,16 +120,19 @@
 #####Index Type:{id="indexType"}
 > Index Type <br>
 > **Required** <br>
-> 0: Text Index <br>
-> 1: Geo+Text Index <br>
 ```    
     <indexType>0</indexType>
-```      
+```     
+> 0: Text Index <br>
+> 1: Geo+Text Index <br>
+ 
 
 #####Field Boosts:{id="fieldBoost"}         
 > Boost Values <br>
 > **Optional** <br>
-         
+```
+    <fieldBoost></fieldBoost>
+```               
 > Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
 > For Example, the boosts for three searchable attributes can be specified as  <br>
 ```
@@ -136,26 +141,26 @@
 >> - fields are sparated by one space <br>
 >> - if you do not provide any value for a field, it will be considered as 1 <br>
 
-```
-    <fieldBoost></fieldBoost>
-```      
+
     
 #####Record Boost Field:{id="recordBoostField"}     
 > Record Boost Field <br>
 > **Optional** <br>
-> Attribute used as the boost value of a record. Need to be float type in the json objects in the data file.
 ```
     <recordBoostField>relevance</recordBoostField>
-```      
+``` 
+> Attribute used as the boost value of a record. Need to be float type in the json objects in the data file.
+     
    
 #####Query Term Boost:{id="defaultQueryTermBoost"}       
 > Default Query Term Boost <br>
 > **Optional** <br>
-> Default query term boost <br>
-> Defaults to 1 <br>
 ```
     <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
+> Default query term boost <br>
+> Defaults to 1 <br>
+
 
 ####Query Config:{id="queryConfig"}
 > All configuration tags related to configuring the query.
@@ -164,7 +169,7 @@
     ...
     </query>
 ```
-#####Ranknig:{id="rankingalgorithm"} 
+#####Ranking:{id="rankingalgorithm"} 
 > Ranking Algorithm <br>
 
 > The following comments and parameters are related to ranking. <br>
@@ -179,69 +184,71 @@
 #####Query Term Similarity Boost:{id="queryTermSimilarityBoost"} 
 > Query Term Similarity Boost <br>
 > **Optional** <br>
-> Defaults to 0.5 <br>
 ```
     <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
+> Defaults to 0.5 <br>
+
 
 #####Query Term Length Boost:{id="queryTermLengthBoost"}      
 > Query Term Length Boost <br>
 > **Optional** <br>
-> Defaults to 0.5 <br>
 ```
     <queryTermLengthBoost></queryTermLengthBoost>
 ```
+> Defaults to 0.5 <br>
+
 
 #####Prefix Match Penalty:{id="prefixMatchPenalty"}
 > Prefix Match Penalty <br>
 > **Optional** <br>
-             
-> Penalty for a prefix match.  This value is used to multiply the score of record for a term. <br>
-> The value should be in the range of 0 to 1 <br>
-> Defaults to 0.95 <br>
 ```
     <prefixMatchPenalty>0.95</prefixMatchPenalty>
-```
+```             
+> Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+> The value should be in the range of 0 to 1 <br>
+> Defaults to 0.95 <br>
+
 
 #####Cache Size:{id="cacheSize"}
 > Cache Size <br>
 > **Optional** <br>
-             
-> Number of bytes in the cache. It should be in the range [50MB, 500MB]. <br>
-> Its default value is 50MB. <br>
 ```
     <cacheSize>65536000</cacheSize>
-```
+```             
+> Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
+> Its default value is 50MB. <br>
+
    
 #####Default Value for Rows:{id="rows"}
 > Rows <br>
 > **Optional** <br>
-             
-> Number of results to retrieve <br>
-> Defaults to 10. <br>
 ```
     <rows>10</rows>
-```
+```             
+> Number of results retrieved <br>
+> Defaults to 10. <br>
+
 #####Maximum number of threads:{id="maxSearchThreads"}
 > Maximum Number of Searcher Threads <br>
 > **Optional** <br>
-             
-> Number of threads that serve the requests. <br>
-> Defaults to 1 <br>
 ```
     <maxSearchThreads>2</maxSearchThreads>
-```
+```             
+> Number of threads that serve the requests. <br>
+> Defaults to 1 <br>
+
 #####Field Based Search Enabled:{id="fieldBasedSearch"}
 > Flag to enable/disable field based search <br>
 > **Optional** <br>
-             
-> Flag to indicate whether the attribute-based search is supported. <br>
+```
+    <fieldBasedSearch>0</fieldBasedSearch>
+```             
+> Flag to toggle attribute-based search <br>
 >> 0 - Disable <br>
 >> 1 - Enable <br>
 >> Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
-```
-    <fieldBasedSearch>0</fieldBasedSearch>
-```
+
 
 #####Search Type:{id="searcherType"}         
 > Searcher Type <br>
