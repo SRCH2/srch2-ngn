@@ -38,6 +38,7 @@
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
+#include "WrapperConstants.h"
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -525,8 +526,9 @@ int main(int argc, char** argv) {
     //load the index from the data source
     server.init(serverConf);
     //cout << "srch2 server started." << endl;
-    if (serverConf->getDataSourceType() == 2)
+    if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
     	srch2http::MongoDataSource::spawnUpdateListener(&server);
+    }
 
     //sleep(200);
 

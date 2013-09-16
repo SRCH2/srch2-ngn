@@ -564,17 +564,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         	break;
         }
     }
-    if (this->dataSourceType == DATA_SOURCE_JSON_FILE && this->filePath.empty()) {
-    	parseError
-    	<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
-    	configSuccess = false;
-    	return;
-    }
-
-    // dataFile is a required field only if JSON file is specified.
-    configAttribute = configDoc.child("config").child("dataFile");
-    if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
-        this->filePath = this->srch2Home + string(configAttribute.text().get());
+    if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
+    	// dataFile is a required field only if JSON file is specified as data source.
+    	configAttribute = configDoc.child("config").child("dataFile");
+    	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
+    		this->filePath = this->srch2Home + string(configAttribute.text().get());
+    	}else {
+    		parseError
+    		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+    		configSuccess = false;
+    		return;
+    	}
     }
 
     // <config>
