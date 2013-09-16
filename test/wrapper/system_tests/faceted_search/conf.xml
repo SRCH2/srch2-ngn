@@ -76,7 +76,7 @@
         <!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
-            default value is 1
+            default value is true
         -->
         <supportSwapInEditDistance>false</supportSwapInEditDistance>
         <!--
