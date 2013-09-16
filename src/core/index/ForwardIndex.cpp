@@ -326,71 +326,74 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
                         mapIterator->second));
     }
 
+    PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     // support attribute-based search
-    if (this->schemaInternal->getPositionIndexType()
-            == srch2::instantsearch::FIELDBITINDEX) {
-        ForwardList::isAttributeBasedSearch = true;
-    }
-    forwardList->setKeywordAttributeBitmaps(
-    		new unsigned[keywordListCapacity]);
+    if (positionIndexType == FIELDBITINDEX || positionIndexType == FULLPOSITIONINDEX) {
+    	ForwardList::isAttributeBasedSearch = true;
 
-    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-    	map<string, TokenAttributeHits>::const_iterator mapIterator =
-    			tokenAttributeHitsMap.find(
-    					uniqueKeywordIdList[iter].second.first);
-    	ASSERT(mapIterator != tokenAttributeHitsMap.end());
-    	unsigned bitVector = 0;
-    	for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-    			i++) {
-    		int attributeId = ((mapIterator->second.attributeList.at(i))
-    				>> 24) - 1;
-    		bitVector |= (1 << attributeId);
+    	forwardList->setKeywordAttributeBitmaps(
+    			new unsigned[keywordListCapacity]);
+
+    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+    		map<string, TokenAttributeHits>::const_iterator mapIterator =
+    				tokenAttributeHitsMap.find(
+    						uniqueKeywordIdList[iter].second.first);
+    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    		unsigned bitVector = 0;
+    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+    				i++) {
+    			int attributeId = ((mapIterator->second.attributeList.at(i))
+    					>> 24) - 1;
+    			bitVector |= (1 << attributeId);
+    		}
+    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
     	}
-    	forwardList->setKeywordAttributeBitmap(iter, bitVector);
     }
 
-    // Add position indexes in forward list
-    typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
-    vector<uint8_t> grandBuffer;
-    // To avoid frequent resizing, reserve space for vector. 10 is random number
-    grandBuffer.reserve(uniqueKeywordIdList.size() * 10);
+    if (this->schemaInternal->getPositionIndexType() == FULLPOSITIONINDEX) {
+    	// Add position indexes in forward list
+    	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
+    	vector<uint8_t> grandBuffer;
+    	// To avoid frequent resizing, reserve space for vector. 10 is random number
+    	grandBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
-    for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
+    	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
 
-    	string keyword = uniqueKeywordIdList[i].second.first;
-    	 TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyword);
-    	 ASSERT(iterator != tokenAttributeHitsMap.end());
+    		string keyword = uniqueKeywordIdList[i].second.first;
+    		TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyword);
+    		ASSERT(iterator != tokenAttributeHitsMap.end());
 
-    	 unsigned prevAttributeId = 0;
-    	 vector<unsigned> positionListVector;
+    		unsigned prevAttributeId = 0;
+    		vector<unsigned> positionListVector;
 
-    	 for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
-    		 unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
-    		 unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
+    		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
+    			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
+    			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
 
-    		 // if it is a first element or current attribute is same as
-    		 // previous attribute id. then continue to push the position
-    		 // in position list vector
-    		 if (j == 0 || prevAttributeId == attributeId) {
-    			 positionListVector.push_back(position);
-    		 } else {
-    			 // if the previous attribute is not same as current attribute
-    			 // then convert the position list vector to variable length byte
-    			 // array and APPPEND to grand buffer.
-    			 convertToVarLengthArray(positionListVector, grandBuffer);
-    			 positionListVector.clear();
-    			 positionListVector.push_back(position);
-    		 }
-    		 prevAttributeId = attributeId;
-    	 }
+    			// if it is a first element or current attribute is same as
+    			// previous attribute id. then continue to push the position
+    			// in position list vector
+    			if (j == 0 || prevAttributeId == attributeId) {
+    				positionListVector.push_back(position);
+    			} else {
+    				// if the previous attribute is not same as current attribute
+    				// then convert the position list vector to variable length byte
+    				// array and APPPEND to grand buffer.
+    				convertToVarLengthArray(positionListVector, grandBuffer);
+    				positionListVector.clear();
+    				positionListVector.push_back(position);
+    			}
+    			prevAttributeId = attributeId;
+    		}
 
-		 // convert the position list vector of last attribute to variable
-    	 // length byte array
-		 convertToVarLengthArray(positionListVector, grandBuffer);
-		 positionListVector.clear();
+    		// convert the position list vector of last attribute to variable
+    		// length byte array
+    		convertToVarLengthArray(positionListVector, grandBuffer);
+    		positionListVector.clear();
+    	}
+    	// set grand buffer to position index of current forward list.
+    	forwardList->setPositionIndex(grandBuffer);
     }
-    // set grand buffer to position index of current forward list.
-    forwardList->setPositionIndex(grandBuffer);
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;

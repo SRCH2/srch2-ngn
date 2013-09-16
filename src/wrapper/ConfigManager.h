@@ -142,7 +142,7 @@ private:
 	int isPrimSearchable;
 	bool supportAttributeBasedSearch;
 
-
+	bool enablePositionIndex;
 	int attributeToSort;
 	int ordering;
 	//string httpServerDocumentRoot;
@@ -169,7 +169,7 @@ private:
     bool isValidCacheSize(string& cacheSize);
     bool isValidRows(string& rows);
     bool isValidMaxSearchThreads(string& maxSearchThreads);
-    bool isValidFieldBasedSearch(string& fieldBasedSearch);
+    bool isValidBooleanValue(string& fieldBasedSearch);
 
     bool isValidQueryTermMatchType(string& queryTermMatchType);
     bool isValidQueryTermType(string& queryTermType);
@@ -297,6 +297,8 @@ public:
 
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
+
+    bool isPositionIndexEnabled() const;
 
 };
 

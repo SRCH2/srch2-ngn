@@ -110,7 +110,9 @@ IndexData::IndexData(const string& directoryName)
         this->invertedIndex =new  InvertedIndex(this->forwardIndex);
 
     // set if it's a attributeBasedSearch
-    if(this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
+    PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
+    if(positionIndexType == srch2::instantsearch::FIELDBITINDEX ||
+    		positionIndexType == srch2::instantsearch::FULLPOSITIONINDEX)
     	ForwardList::isAttributeBasedSearch = true;
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);

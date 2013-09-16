@@ -1120,7 +1120,7 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
 
 void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1, unsigned ed = 1)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -1128,7 +1128,7 @@ void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, in
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
-        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+        Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         //query->setPrefixMatchPenalty(0.95);
         query->add(term);
