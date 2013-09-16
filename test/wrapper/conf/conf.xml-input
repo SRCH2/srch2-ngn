@@ -9,7 +9,7 @@
         # License Key file. Make sure to set the path to the srch2 license key
         # file provided with the package change
         # REQUIRED
-        license-file=${CMAKE_SOURCE_DIR}/test/Developer_License/srch2_license_key.txt
+        license-file=/home/dar/lichen/newtest/srch2-ngn/test/Developer_License/srch2_license_key.txt
     -->
     <licenseFile>srch2_license_key.txt</licenseFile>
     
@@ -37,7 +37,7 @@
     
     <!--  SOLR
         # Deprecated. Changed to /home/findr/custmrID/index/ for standardizing 
-        srch2: index-dir-path=${CMAKE_SOURCE_DIR}/test/wrapper/
+        srch2: index-dir-path=/home/dar/lichen/newtest/srch2-ngn/test/wrapper/
     -->
     <dataDir>./</dataDir>
     
@@ -45,7 +45,7 @@
     <!-- srch2
         # The file path for file import. File must be line json file.
         # REQUIRED, if data-source-type is set to 0.
-        data-file-path=${CMAKE_SOURCE_DIR}/test/wrapper/data/sample-data.json
+        data-file-path=/home/dar/lichen/newtest/srch2-ngn/test/wrapper/data/sample-data.json
         
         NOTE: you need to write a program to post the docs
     -->
@@ -75,7 +75,7 @@
             # OPTIONAL.  
             attribute-boosts=2,1
         -->
-        <fieldBoost>id^10 relevance^7</fieldBoost>
+        <fieldBoost></fieldBoost>
         
         <!-- Srch2: I could not find it for solr. TODO: need to find it in SOLR.
             # Attribute used as the boost value of a record

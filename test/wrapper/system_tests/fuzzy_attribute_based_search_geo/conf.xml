@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/faceted_search/data</dataDir>
+    <dataDir>./data/fuzzy_attribute_based_search_geo/</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./faceted_search/newData.json</dataFile>
+    <dataFile>./fuzzy_attribute_based_search_geo/data.json</dataFile>
      
      
          
@@ -70,7 +70,7 @@
                 0: Text Index
                 1: Geo+Text Index
         -->
-        <indexType>0</indexType>
+        <indexType>1</indexType>
          
          
         <!--
@@ -85,7 +85,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost></fieldBoost>
+        <fieldBoost>category^2 name^1</fieldBoost>
          
          
         <!-- 
@@ -95,7 +95,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -132,7 +132,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
+        <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
          
         <!--
             Query Term Length Boost
@@ -140,7 +140,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermLengthBoost></queryTermLengthBoost>
+        <queryTermLengthBoost>0.5</queryTermLengthBoost>
          
          
         <!--
@@ -186,7 +186,7 @@
                 1 - Enable
             Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
         -->
-        <fieldBasedSearch>0</fieldBasedSearch>
+        <fieldBasedSearch>1</fieldBasedSearch>
          
          
         <!-- 
@@ -207,7 +207,7 @@
              
             0: exact match
             1: fuzzy match
-            Defaults to 0
+            Defaults to 
         -->
         <queryTermMatchType>1</queryTermMatchType>
          
@@ -251,9 +251,9 @@
                 It is REQUIRED to set fields_to_return if search-response-format=2
                 These are attributes returned to the user.
                 For Example:
-                    <responseContent type="2">lat,lng</responseContent>
+                    
             -->
-            <responseContent type="0"></responseContent>
+           <responseContent type="0"></responseContent>
              
         </queryResponseWriter>
     </query>
@@ -312,7 +312,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_attribute_based_search_geo/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -354,9 +354,9 @@
    -->
    <field name="category" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="model" default="benz" required="true" type="text" indexed="false"/>
-   <field name="price" default="200" required="true" type="float" indexed="false"/>
-   <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+   <field name="lng" type="location_longitude" indexed="true"  />
+   <field name="lat" type="location_latitude" indexed="true"   />
+    
  </fields>
  
  <!--
@@ -378,7 +378,7 @@
   		- values are false (disabled) and true (enabled)
   		- By default it is disabled.
   -->
-  <facetEnabled>true</facetEnabled>start
+  <facetEnabled>false</facetEnabled>
   
   <facetFields>
 	  <!--

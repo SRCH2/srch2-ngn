@@ -14,7 +14,7 @@ def pingServer():
 
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= [binary_path + '/srch2-search-server', '--config-file=./save_shutdown_restart_export_test/conf.ini', '&']
+    binary= [binary_path + '/srch2-search-server', '--config-file=./save_shutdown_restart_export_test/conf.xml', '&']
     print 'starting engine: '
     proc = subprocess.Popen(binary)
 
@@ -52,7 +52,7 @@ def testSaveShutdownRestart(binary_path):
         print 'server start'
 
     #export data to json
-    exportCommand='curl -i http://localhost:' + port + '/export?name=exportData.json -X PUT'
+    exportCommand='curl -i http://localhost:' + port + '/export?exported_data_file=exportData.json -X PUT'
     os.system(exportCommand)
 
     #get pid of srch2-search-server and kill the process

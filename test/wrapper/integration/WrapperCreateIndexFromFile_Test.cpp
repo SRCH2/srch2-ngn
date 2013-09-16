@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 #include <iostream>
-
+#include <boost/program_options.hpp>
 #include <instantsearch/Indexer.h>
 #include "wrapper/JSONRecordParser.h"
 #include "wrapper/Srch2KafkaConsumer.h"
@@ -12,6 +12,7 @@
 #include <map>
 #include <vector>
 
+namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
 
@@ -146,8 +147,39 @@ using namespace std;
  return returnvalue;
  }*/
 
+void parseProgramArguments(int argc, char** argv,
+        po::options_description& description,
+        po::variables_map& vm_command_line_args) {
+    description.add_options()("help", "Prints help message")("version",
+            "Prints version number of the engine")("config-file",
+            po::value<string>(), "Path to the config file");
+    try {
+        po::store(po::parse_command_line(argc, argv, description),
+                vm_command_line_args);
+        po::notify(vm_command_line_args);
+    } catch (exception &ex) {
+        cout << "error while parsing the arguments : " << endl << ex.what()
+                << endl;
+        cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
+        cout << description << endl;
+        exit(-1);
+    }
+}
+
 void test1(int argc, char** argv) {
-    string srch2_config_file(getenv("configFile"));
+    // Parse command line arguments
+    po::options_description description("Optional Arguments");
+    po::variables_map vm_command_line_args;
+    parseProgramArguments(argc, argv, description, vm_command_line_args);
+
+    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
+    int status = ::access(srch2_config_file.c_str(), F_OK);
+    if (status != 0) {
+        std::cout << "config file = '" << srch2_config_file
+                << "' not found or could not be read" << std::endl;
+        return ;
+    }
+
     cout << "##############################################" << endl;
     cout << "Test 1 Started:" << endl;
     cout << "Config File: " << srch2_config_file << endl;
@@ -237,10 +269,20 @@ void test1(int argc, char** argv) {
 }
 
 bool test2(int argc, char** argv) {
+    // Parse command line arguments
+    po::options_description description("Optional Arguments");
+    po::variables_map vm_command_line_args;
+    parseProgramArguments(argc, argv, description, vm_command_line_args);
+
+    std::string srch2_config_file = vm_command_line_args["config-file"].as<string>();
+    int status = ::access(srch2_config_file.c_str(), F_OK);
+    if (status != 0) {
+        std::cout << "config file = '" << srch2_config_file
+               << "' not found or could not be read" << std::endl;
+        return -1;
+    }
     cout << "##############################################" << endl;
     cout << "Test 2 Started:" << endl;
-
-    string srch2_config_file(getenv("configFile"));
 
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();

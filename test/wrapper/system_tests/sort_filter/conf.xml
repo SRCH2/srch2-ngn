@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/faceted_search/data</dataDir>
+    <dataDir>./data/sort_filter/data</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./faceted_search/newData.json</dataFile>
+    <dataFile>./sort_filter/data.json</dataFile>
      
      
          
@@ -312,7 +312,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+            <accessLogFile>./data/sort_filter/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
