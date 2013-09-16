@@ -381,9 +381,9 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     indexer->commit();
 
     if (indexedCounter > 0) {
-    	Logger::console("Saving Index.....");
+    	Logger::console("Saving Indexes.....");
     	indexer->save();
-    	Logger::console("Index saved.");
+    	Logger::console("Indexes saved.");
     }
     delete analyzer;
 }

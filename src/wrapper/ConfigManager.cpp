@@ -552,7 +552,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         	this->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
         	break;
         case 1:
-        	this->dataSourceType = DATA_SOURCE_MONGO_DB;
+        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
         	break;
         case 2:
         	this->dataSourceType = DATA_SOURCE_MONGO_DB;
