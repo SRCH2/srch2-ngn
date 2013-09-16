@@ -428,17 +428,6 @@
             -->
             <filter name="StopFilter" words="" />
              
-            <!--
-                Synonym Filter
-                Optional
-                 
-                Enable/Disabling the Synonym Filter By providing "synonym" file.
-                For Example:
-                    Disable Synonym Filter: <filter name="SynonymFilter" synonyms=""  expand="true"/>
-                To keep the original word in this filter, set the "expand" attribute as "True"
-                Otherwise set it as "False"
-            -->
-            <filter name="SynonymFilter" synonyms=""  expand="true"/>      
         </analyzer>
     </fieldType>
  </types>
