@@ -38,8 +38,8 @@
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-    <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8082</listeningPort>
  
     <!--
         Index Directoy Path
@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/faceted_search/data</dataDir>
+    <dataDir>./high_insert_test/index</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./faceted_search/newData.json</dataFile>
+    <dataFile>./high_insert_test/data-all/index-500.json</dataFile>
      
      
          
@@ -72,13 +72,13 @@
         -->
         <indexType>0</indexType>
          
-
-        <!--
+		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>false</supportSwapInEditDistance>
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+         
         <!--
             Boost Values
             Optional
@@ -138,7 +138,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
+        <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
          
         <!--
             Query Term Length Boost
@@ -146,7 +146,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermLengthBoost></queryTermLengthBoost>
+        <queryTermLengthBoost>0.5</queryTermLengthBoost>
          
          
         <!--
@@ -215,7 +215,7 @@
             1: fuzzy match
             Defaults to 0
         -->
-        <queryTermMatchType>1</queryTermMatchType>
+        <queryTermMatchType>0</queryTermMatchType>
          
                      
              
@@ -318,7 +318,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+            <accessLogFile>./high_insert_test/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -358,11 +358,8 @@
             here and indexed="false" it will be also used for sort,filtering and facet.
             - 
    -->
-   <field name="category" type="text" indexed="true" />
-   <field name="name" type="text" indexed="true" />
-   <field name="model" default="benz" required="true" type="text" indexed="false"/>
-   <field name="price" default="200" required="true" type="float" indexed="false"/>
-   <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+   <field name="attr" type="text" indexed="true" />
+
  </fields>
  
  <!--
@@ -384,7 +381,7 @@
   		- values are false (disabled) and true (enabled)
   		- By default it is disabled.
   -->
-  <facetEnabled>true</facetEnabled>start
+  <facetEnabled>false</facetEnabled>
   
   <facetFields>
 	  <!--

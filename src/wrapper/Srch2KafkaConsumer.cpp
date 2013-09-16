@@ -98,10 +98,10 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			indexer = Indexer::load(indexMetaData);
 			// Load Analayzer data from disk
 			AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
+			indexer->getSchema()->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 			bool isAttributeBasedSearch = (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX);
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
 			{
-				cout << indexer->getSchema()->getPositionIndexType() << " " << indexDataContainerConf->getSupportAttributeBasedSearch() <<endl;
 				cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
 			}
 			break;

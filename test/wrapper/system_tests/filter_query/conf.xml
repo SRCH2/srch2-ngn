@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/faceted_search/data</dataDir>
+    <dataDir>./data/filter_query/data</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./faceted_search/newData.json</dataFile>
+    <dataFile>./filter_query/data.json</dataFile>
      
      
          
@@ -72,13 +72,13 @@
         -->
         <indexType>0</indexType>
          
-
-        <!--
+		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>false</supportSwapInEditDistance>
+        <supportSwapInEditDistance>false</supportSwapInEditDistance>         
+ 
         <!--
             Boost Values
             Optional
@@ -318,7 +318,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+            <accessLogFile>./data/filter_query/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>

@@ -116,7 +116,7 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]    
     queriesAndResultsPath = sys.argv[2]  
   
-    testTermType(queriesAndResultsPath, './term_type/conf.ini', binary_path)
+    testTermType(queriesAndResultsPath, './term_type/conf.xml', binary_path)
     print '--------Term type test  for attribute_based_search--------------'  
-    testTermType(queriesAndResultsPath, './term_type/conf_for_attribute_based_search.ini', binary_path)
+    testTermType(queriesAndResultsPath, './term_type/conf_for_attribute_based_search.xml', binary_path)
 

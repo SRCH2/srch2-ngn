@@ -69,7 +69,7 @@ def prepareQuery(queryKeywords):
 def testSortFilter(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./sort_filter/conf.ini &'
+    binary= binary+' --config-file=./sort_filter/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up
