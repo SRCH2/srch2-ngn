@@ -80,14 +80,14 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 				case srch2http::DATA_SOURCE_JSON_FILE:
 				{
 					// Create from JSON and save to index-dir
-                    Logger::console("Creating an index from JSON file...");
+					Logger::console("Creating indexes from JSON file...");
 					DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
 					this->offset = this->indexer->getKafkaOffsetFromIndexSnapShot();
 					break;
 				}
 				case srch2http::DATA_SOURCE_MONGO_DB:
 				{
-					Logger::console("Creating an index from a MongoDb instance...");
+					Logger::console("Creating indexes from a MongoDb instance...");
 					MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
 					break;
 				}
