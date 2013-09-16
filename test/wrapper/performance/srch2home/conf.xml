@@ -93,7 +93,6 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
          
          
         <!--
@@ -357,8 +356,7 @@
             here and indexed="false" it will be also used for sort,filtering and facet.
             - 
    -->
-   <field name="category" type="text" indexed="true" />
-   <field name="name" type="text" indexed="true" />
+   <field name="body" type="text" indexed="true" />
  </fields>
  
  <!--
@@ -370,7 +368,7 @@
         Note:
         - If the "indexed" value of your primary key field is true, it will be a searchable field too.
  -->
- <uniqueKey>id</uniqueKey>
+ <uniqueKey>_id</uniqueKey>
      
   <!--
   		Facet enabled flag
@@ -380,7 +378,7 @@
   		- values are false (disabled) and true (enabled)
   		- By default it is disabled.
   -->
-  <facetEnabled>true</facetEnabled>
+  <facetEnabled>false</facetEnabled>
   
   <facetFields>
 	  <!--
@@ -398,9 +396,6 @@
 	  		Note:
 	  		- All facetFields must be declared in fields tag as well (with indexed="false")
 	  -->
-  	  <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
-	  <facetField name="model" facetType="categorical" />
-	  <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
   </facetFields>
   
   
