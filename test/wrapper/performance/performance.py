@@ -130,7 +130,8 @@ class PerformanceTest():
         record = self.prepareRecord() # prepare and get the record 
         query = self.prepareQuery(record) # preapare a query
         self.pushDataToMongo("performance", record)
-        for attempt in range(1, 11):
+        attempts = 13
+        for attempt in range(1, attempts):
             try:
                 startTime = datetime.now()
                 status, msg = self.fireQuery(query)
@@ -150,7 +151,7 @@ class PerformanceTest():
             except:
                 print "query was", query
                 print "Unexpected error:", sys.exc_info()[0]
-        if attempt == 10:
+        if attempt == attempts-1:
             text = "{0},{1},{2},{3}\n".format(self.counter, query, timeTaken.microseconds, attempt)
             self.writeToFile(CONST_FAIL_STRING, text)
         self.counter += 1
