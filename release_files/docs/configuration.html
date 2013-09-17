@@ -28,6 +28,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">Query Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Query Term Similarity Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#
+queryTermSimilarityThreshold">Query Term Similarity Threshold</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Query Term Length Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">Prefix Match Penalty</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">Cache Size</a></br><br>
@@ -73,11 +75,10 @@
 <blockquote>
 <p>SRCH2 configuration file contains two top level XML tags; <i>config</i> and <i>schema</i>. Any valid specification tuning a part of the Srch2 engine is a child tag of 'config'; while children of 'schema' tag describe data (or query dynamics). For example, 'srch2home' tag specifying the installation directory of SRCH2 engine is under 'config', while 'fields' tag declaring the data fields of index records is under 'schema'.</p>
 </blockquote>
-<h3 id="configTag">Config:</h3>
-<blockquote>
-<p>The following is a breakdown of the subtag provided under <i>config</i>.</p>
-</blockquote>
-<h4 id="srch2Home">SRCH2HOME:</h4>
+<h3 id="configTag">1.Config:</h3>
+<pre><code>&gt; The following is a breakdown of the subtag provided under &lt;i&gt;config&lt;/i&gt;.
+</code></pre>
+<h4 id="srch2Home">1.SRCH2HOME:</h4>
 <blockquote>
 <p>SRCH2 Home directory <br>
 <strong>Required</strong>  <br></p>
@@ -92,7 +93,7 @@ For Example: <br></p>
 <p>If your data file is inside Srch2 home directory, having the following absolute path "/usr/share/srch2/data/sample-data.json" In this config file it should be referenced "data/sample-data.json" <br></p>
 </blockquote>
 </blockquote>
-<h4 id="licenseFile">License File:</h4>
+<h4 id="licenseFile">*License File:</h4>
 <blockquote>
 <p>License Key File <br>
 <strong>Required</strong> <br></p>
@@ -201,8 +202,12 @@ For Example, the boosts for three searchable attributes can be specified as  <br
 </code></pre>
 
 <blockquote>
-<p>Default query term boost <br>
-Defaults to 1 <br></p>
+<p>Default <a href="configuration.html##Boosting%20a%20term">query term boost</a><br></p>
+<blockquote>
+<ul>
+<li>Defaults to 1 <br></li>
+</ul>
+</blockquote>
 </blockquote>
 <h4 id="queryConfig">Query Config:</h4>
 <blockquote>
@@ -234,7 +239,25 @@ record-score-expression=idf_score*doc_boost <br></p>
 </code></pre>
 
 <blockquote>
+<p>Weights the score of neigbouring <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> by a given multiple</p>
+<blockquote>
 <p>Defaults to 0.5 <br></p>
+</blockquote>
+</blockquote>
+<h4 id="queryTermSimilarityThreshold">Query Term Similarity Threshold :</h4>
+<blockquote>
+<p>Query Term Similarity Threshold 
+<strong>Optional</strong>  </p>
+</blockquote>
+<pre><code>   &lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
+</code></pre>
+
+<blockquote>
+<p>Modifies the default behaviour of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>.  </p>
+<blockquote>
+<p>-Values must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.<br>
+-Defaults to 0.5  </p>
+</blockquote>
 </blockquote>
 <h5 id="queryTermLengthBoost">Query Term Length Boost:</h5>
 <blockquote>
@@ -293,7 +316,7 @@ Defaults to 10. <br></p>
 </code></pre>
 
 <blockquote>
-<p>Number of threads that serve the requests. <br>
+<p>Number of threads that serve all incoming search requests. <br>
 Defaults to 1 <br></p>
 </blockquote>
 <h5 id="fieldBasedSearch">Field Based Search Enabled:</h5>
@@ -309,49 +332,59 @@ Defaults to 1 <br></p>
 <blockquote>
 <p>0 - Disable <br>
 1 - Enable <br>
-Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.</p>
+Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.</p>
 </blockquote>
 </blockquote>
 <h5 id="searcherType">Search Type:</h5>
 <blockquote>
 <p>Searcher Type <br>
 <strong>Optional</strong> <br></p>
-<p>in the query result <br></p>
+</blockquote>
+<pre><code>    &lt;searcherType&gt;0&lt;/searcherType&gt;
+</code></pre>
+
+<blockquote>
+<p>Modifies the default search algorithm of the Srch2 engine <br></p>
 <blockquote>
 <p>0 if topk, <br>
 1 if advanced <br></p>
 <p>Defaults to 0 <br></p>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;searcherType&gt;0&lt;/searcherType&gt;
-</code></pre>
-
 <h5 id="queryTermMatchType">Query Term Match Type:</h5>
 <blockquote>
 <p>Query Term Match Type <br>
 <strong>Optional</strong> <br></p>
-<blockquote>
-<p>0: exact match <br>
-1: fuzzy match <br>
-Defaults to 0</p>
-</blockquote>
 </blockquote>
 <pre><code>    &lt;queryTermMatchType&gt;1&lt;/queryTermMatchType&gt;
 </code></pre>
 
+<blockquote>
+<p>Modifies the default search behaviour of the Srch2 engine              </p>
+<blockquote>
+<p>0: exact match search<br>
+1: fuzzy match search<br>
+Defaults to 0</p>
+</blockquote>
+</blockquote>
 <h5 id="queryTermType">Query Term Type:</h5>
 <blockquote>
 <p>Query Term Type <br>
 <strong>Optional</strong> <br></p>
-<blockquote>
-<p>0: a term is treated as a prefix; <br>
-1: a term is treated as a complete term; <br>
-Defaults to 0</p>
-</blockquote>
 </blockquote>
 <pre><code>    &lt;queryTermType&gt;0&lt;/queryTermType&gt;
 </code></pre>
 
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Modifies the default treatment of search query's trailing keyword
+0: trailing term is treated as a prefix; <br>
+1: trailing term is treated as a complete term; <br>
+Defaults to 0</p>
+</blockquote>
+</blockquote>
+</blockquote>
 <h5 id="queryResponseWriter">Query Term Type:</h5>
 <blockquote>
 <p>All tags related to configuring the response.</p>
@@ -365,30 +398,22 @@ Defaults to 0</p>
 <blockquote>
 <p>Response Format <br>
 <strong>Optional</strong> <br></p>
+</blockquote>
+<pre><code>    &lt;responseFormat&gt;0&lt;/responseFormat&gt;
+</code></pre>
+
+<blockquote>
+<p>Format of query results</p>
 <blockquote>
 <p>0: JSON <br>
 1: JSONP <br>        <br>
 Defaults to 0 <br></p>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;responseFormat&gt;0&lt;/responseFormat&gt;
-</code></pre>
-
 <h6 id="responseContent">Response Content:</h6>
 <blockquote>
 <p>Response Content <br>
 <strong>Optional</strong> <br></p>
-<p>Format of each json search response. <br>
-You should set the type by one of the following options: <br></p>
-<blockquote>
-<p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
-1: format "rid,edit_dist,matching_prefix". <br>
-2: format "rid,edit_dist,matching_prefix,feilds_to_return". <br>
-Defaults to 0 <br>
-It is REQUIRED to set fields_to_return if search-response-format=2 <br>
-These are attributes returned to the user. <br>
-For Example: <br></p>
-</blockquote>
 </blockquote>
 <pre><code>    &lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
 </code></pre>
@@ -397,9 +422,21 @@ For Example: <br></p>
 <pre><code>    &lt;responseContent type=&quot;0&quot;&gt;&lt;/responseContent&gt;
 </code></pre>
 
+<blockquote>
+<p>Format of each json search response. <br>
+You should set the type by one of the following options: <br></p>
+<blockquote>
+<p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
+1: format "rid,edit_dist,matching_prefix". <br>
+2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
+Defaults to 0 <br>
+It is REQUIRED to set fields_to_return if search-response-format=2 <br>
+These are attributes returned to the user. <br></p>
+</blockquote>
+</blockquote>
 <h4 id="updatehandler">Update Handler:</h4>
 <blockquote>
-<p>All tags related to configurin data updater thread.</p>
+<p>All tags related to configuring srch2 handling of update requests.</p>
 </blockquote>
 <pre><code>    &lt;updatehandler&gt;
     ...
@@ -410,32 +447,23 @@ For Example: <br></p>
 <blockquote>
 <p>Maximum Number of Documents <br>
 <strong>Required</strong> <br></p>
-<p>Maximum number of records that can be inserted into the engine. <br>
-The number depends on the size of each record and the available memory <br></p>
 </blockquote>
 <pre><code>    &lt;maxDocs&gt;15000000&lt;/maxDocs&gt;
 </code></pre>
 
-<h5 id="maxMemory">Max Memory:</h5>
 <blockquote>
-<p>Maximum Number of Documents <br>
-<strong>Required</strong> <br></p>
-<p>Maximum size of memory that can be used. <br></p>
+<p>Maximum number of records indexable by the srch2 engine. <br>
+This number should reflect the size of each record and the available memory <br></p>
+<blockquote>
+<p>Remember this is a hard cap on the number of records indexable by the srch2 engine.
+Inserting more records than the specified here will cause the srch2 indexer to throw an error.
+It exists to bound the memory footprint of the srch2 indexer which grows in proporsion to the number of records.</p>
 </blockquote>
-<pre><code>    &lt;maxMemory&gt;100000&lt;/maxMemory&gt;
-</code></pre>
-
+</blockquote>
 <h5 id="mergePolicy">Merge Policy:</h5>
 <blockquote>
 <p>Merge Policies <br>
 <strong>Required</strong> <br></p>
-<p>mergeEveryNSeconds: <br></p>
-<blockquote>
-<p>The number of seconds after which newly inserted/deleted records are merged into the indexes. <br>
-Its minimum value is 10 (seconds). <br>
-mergeEveryMWrites: <br>
-The number of write operations after which newly inserted/deleted records are merged into the indexes. <br></p>
-</blockquote>
 </blockquote>
 <pre><code>    &lt;mergePolicy&gt;
         &lt;mergeEveryNSeconds&gt;10&lt;/mergeEveryNSeconds&gt;
@@ -443,9 +471,19 @@ The number of write operations after which newly inserted/deleted records are me
     &lt;/mergePolicy&gt;
 </code></pre>
 
+<blockquote>
+<p>mergeEveryNSeconds: <br></p>
+<blockquote>
+<p>The maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
+Its minimum value is 10 (seconds). <br>
+Note: Decreasing this number will increase latency in the srch2 engine's response time.
+mergeEveryMWrites: <br>
+The number of write operations after which newly inserted/deleted records are merged into the indexes. <br></p>
+</blockquote>
+</blockquote>
 <h5 id="updateLog">Update Log:</h5>
 <blockquote>
-<p>Tags related to log file and logging.</p>
+<p>Tags customizing Srch2's log file and logging functions.</p>
 </blockquote>
 <pre><code>    &lt;updateLog&gt;
     ...
@@ -456,7 +494,12 @@ The number of write operations after which newly inserted/deleted records are me
 <blockquote>
 <p>Log Level <br>
 <strong>Optional</strong> <br></p>
-<p>Log level <br></p>
+</blockquote>
+<pre><code>    &lt;logLevel&gt;3&lt;/logLevel&gt;
+</code></pre>
+
+<blockquote>
+<p>Amount of feedback information of the Srch2 engines state recorded in its logs. <br></p>
 <blockquote>
 <p>0 SILENT <br>
 1 ERROR <br>
@@ -465,21 +508,20 @@ The number of write operations after which newly inserted/deleted records are me
 Defaults to 3 INFO</p>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;logLevel&gt;3&lt;/logLevel&gt;
-</code></pre>
-
 <h6 id="accessLogFile">Log File:</h6>
 <blockquote>
 <p>Access Log File <br>
 <strong>Required</strong> <br></p>
-<p>Path to Access Log File <br></p>
 </blockquote>
 <pre><code>    &lt;accessLogFile&gt;./data/faceted_search/log.txt&lt;/accessLogFile&gt;
 </code></pre>
 
+<blockquote>
+<p>Path to file where the srch2 engine will write logging information.<br></p>
+</blockquote>
 <h3 id="schemaTag">Schema:</h3>
 <blockquote>
-<p>In the following lines, each part explains each tag which can be provided under <i>config</i>.</p>
+<p>The following sections explain each subtag under <i>schema</i>.</p>
 </blockquote>
 <pre><code>    &lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
     ...
@@ -488,7 +530,8 @@ Defaults to 3 INFO</p>
 
 <h4 id="fields">Fields:</h4>
 <blockquote>
-<p>This tag contains all 'field' tags.</p>
+<p>Fields <br>
+<strong>Required</strong> <br></p>
 </blockquote>
 <pre><code>    &lt;fields&gt;
     ...
@@ -496,19 +539,31 @@ Defaults to 3 INFO</p>
 </code></pre>
 
 <blockquote>
-<p>Fields <br>
-<strong>Required</strong> <br>
-Fields we want to search on in addition to the primary key.<br></p>
-<p>"name" : is the name of the field<br>
-"type" : is the type of the field. Supported types are:<br></p>
+<p>This tag is a container of all 'field' tags.  </p>
+<p>Field<br>
+<strong>Require</strong> at least one searchable   </p>
+</blockquote>
+<pre><code>    &lt;field name=&quot;category&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
+    &lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
+    &lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; indexed=&quot;false&quot;/&gt;
+    &lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; indexed=&quot;false&quot;/&gt;
+    &lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; indexed=&quot;false&quot;/&gt;
+</code></pre>
+
 <blockquote>
-<ul>
-<li>Text<br></li>
-<li>location_longtitude (For Geo search)<br></li>
-<li>location_latitude (For Geo search)<br></li>
-<li>integer<br></li>
-<li>float<br></li>
-<li>time<br><blockquote>
+<p>Definition of each fields the srch2 engine keeps information on. <br></p>
+<p>Attributes:</p>
+<blockquote>
+<p><strong>required</strong> attributes: name, type, indexed     <br>
+"name" : is the name of the field<br>
+"type" : is the type of the field. Supported types are:<br>
+- Text<br>
+- location_longtitude (For Geo search)<br>
+- location_latitude (For Geo search)<br>
+- integer<br>
+- float<br>
+- time<br></p>
+<blockquote>
 <p>NOTE: The time formats which are accepted by SRCH2 engine are: <br>
       The formats for date and time points are:<br>
       HH:MM:SS<br>
@@ -522,51 +577,53 @@ Fields we want to search on in addition to the primary key.<br></p>
       SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
       Examples are: DAY (meaning 1 day duration) or 34WEEKS (meaning 34 weeks).<br></p>
 </blockquote>
-</li>
-</ul>
 </blockquote>
-<p>"indexed" : If you want to search on a field, indexed should be true. A field can only be used for sort, filtering and facet if its 'indexed' property is false. If you need a field to be used in keyword search AND also for sort,filter and facet, you should include two instances of the field one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
-"default" : The default value which is used if this field is empty.<br>
-"required": The flag which indicates whether this field can be empty or not. It is false by default.<br></p>
+<p>"indexed" : For field to be searchable indexed should be true. A field can only be sorted, filtered and faceted if its 'indexed' property is false. To both perform a keyword search AND also sort,filter or facet on a single field, two instances of the field are need to be defined: one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
+"required": The flag indicating whether this field can be empty or not. It is false by default.<br>
+"default" : The value attributed to empty instances of this field.<br></p>
+<blockquote>
+<p>A record { id=1x232, fruit: apple, status: } with status default="rotten" will be indexed as {id=1x232, fruit: apple, status: rotten}</p>
+</blockquote>
 <p>Note:<br></p>
 <blockquote>
 <ul>
-<li>If you want to have geo search, you should have two fields with the types of ocation_latitude and location_longtitude. Make sure to set both latitude and longitude.<br></li>
+<li>For Geo search two fields are required with the types location_latitude and location_longtitude, respectively.
+Make sure to set both latitude and longitude.<br></li>
 <li>The values of these geo fields should be float in the JSON (input) file.<br></li>
 <li>Primary key is optional to be included here. It can be included here to set its indexed property to true.<br></li>
 <li>Type is always text for primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br></li>
 </ul>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;field name=&quot;category&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
-    &lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
-    &lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; indexed=&quot;false&quot;/&gt;
-    &lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; indexed=&quot;false&quot;/&gt;
-    &lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; indexed=&quot;false&quot;/&gt;
-</code></pre>
-
 <h4 id="uniqueKey">Primary Key:</h4>
 <blockquote>
-<p>Primary Key
+<p>Primary Key<br>
 <strong>Required</strong> <br></p>
-<p>Primary key attribute of the data <br>
-- If the "indexed" value of your primary key field is true, it will be a searchable field too. <br></p>
 </blockquote>
 <pre><code>    &lt;uniqueKey&gt;id&lt;/uniqueKey&gt;
 </code></pre>
 
+<blockquote>
+<p>The attribute used as a primary key to reference each record in the data.
+If a inserted record primary key conflicts with an existing record it is rejected.  <br>
+- The id contained in the uniqueKey tag corresponds to the name attribute of the field specified in the <a href=#fields>fields tag</a>.
+- If the "indexed" value of your primary key field, in the <a href=#fields>fields tag</a>, is true, it will be a searchable field too. </p>
+</blockquote>
 <h4 id="facetEnabled">Enable Facet:</h4>
 <blockquote>
 <p>Facet enabled flag <br>
 <strong>Optional</strong> <br>
-Indicates whether faceted search is allowed or not.<br></p>
-<p>Note:<br>
-- values are false (disabled) and true (enabled)<br>
-- By default it is disabled.<br></p>
+Toggles faceted search feature.<br></p>
 </blockquote>
 <pre><code>    &lt;facetEnabled&gt;true&lt;/facetEnabled&gt;start
 </code></pre>
 
+<blockquote>
+<ul>
+<li>values are false (disabled) and true (enabled)<br></li>
+<li>By default it is disabled.<br></li>
+</ul>
+</blockquote>
 <h4 id="facetFields">Facet Fields:</h4>
 <blockquote>
 <p>This tag contains all 'facetField' tags.</p>
@@ -579,24 +636,32 @@ Indicates whether faceted search is allowed or not.<br></p>
 <blockquote>
 <p>Facet fields <br>
 <strong>Required</strong> if facet is enabled. <br></p>
-<blockquote>
-<p>name: The name of the field which is used for this facet. <br>
-facetType: Facet type which is Categorical or Range. Enter "cateorical" or "range" <br>
-facetStart: The start point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
-facetEnd: The end point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
-facetGap: The gap used for making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>      <br>
-Note: <br>
-- All facetFields must be declared in fields tag as well (with indexed="false") <br></p>
-</blockquote>
 </blockquote>
 <pre><code>    &lt;facetField name=&quot;likes&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;50&quot; facetGap=&quot;10&quot; /&gt;
     &lt;facetField name=&quot;model&quot; facetType=&quot;categorical&quot; /&gt;
     &lt;facetField name=&quot;price&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;100&quot; facetGap=&quot;10&quot; /&gt;
 </code></pre>
 
+<blockquote>
+<blockquote>
+<p>name: The name of the field which is used for this facet, must correspond with a non-indexed field,
+specified in the <a href=#fields>field tag</a>. <br>
+facetType: Facet type either Categorical or Range. Enter "categorical" or "range" <br>
+facetStart: The start point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
+facetEnd: The end point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
+facetGap: The increment amount used for making demarking range facets. REQUIRED for range facets.
+The value will be ignored for categorical facets. <br></p>
+<blockquote>
+<p>Note:  fact ranges are created in correspondance with the facetStart value, not the facetEnd; thus, the final range may not stretch
+the entire facetGap.      <br>
+Note: <br>
+- All facetFields must be declared in <a href=#fields>fields tag</a> as well (with indexed="false") <br></p>
+</blockquote>
+</blockquote>
+</blockquote>
 <h4 id="analyzer">Analyzer:</h4>
 <blockquote>
-<p>Analyzer information are under types, fieldType, analyzer. <br></p>
+<p>Specification of srch2's Analyzer fall under types :: fieldType :: analyzer. <br></p>
 </blockquote>
 <pre><code>    &lt;types&gt;
         &lt;fieldType name=&quot;text_en&quot;&gt;
@@ -611,29 +676,30 @@ Note: <br>
 <blockquote>
 <p>Stemmer <br>
 <strong>Optional</strong> <br></p>
-<p>Enable/Disabling the stemmer By providing "dictionary" file. <br></p>
 <blockquote>
-<p>For Example: <br>
-Disable Stemmer:  <br></p>
+<p>Disable Stemmer:  <br></p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;&quot; /&gt;
 </code></pre>
 
+<blockquote>
 <blockquote>
 <p>Exmaple: <br></p>
 </blockquote>
+</blockquote>
 <pre><code>    &lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;&quot; /&gt;
 </code></pre>
 
+<blockquote>
+<p>Enable/Disabling the stemmer by providing "dictionary" file. <br></p>
+</blockquote>
 <h5 id="StopFilter">Stop Words:</h5>
 <blockquote>
 <p>Stop Word Filter <br>
 <strong>Optional</strong> <br></p>
 <blockquote>
-<p>Enable/Disabling the Stop Word Filter By providing "words" file. <br>
-For Example: <br>
-Disable Stop Word Filter:  <br></p>
+<p>Disable Stop Word Filter:  <br></p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;filter name=&quot;StopFilter&quot; words=&quot;&quot; /&gt;
@@ -645,27 +711,11 @@ Disable Stop Word Filter:  <br></p>
 <pre><code>    &lt;filter name=&quot;StopFilter&quot; words=&quot;&quot; /&gt;
 </code></pre>
 
-<h5 id="SynonymFilter">Synonym Filter:</h5>
-<blockquote>
-<p>Synonym Filter
-<strong>Optional</strong> <br></p>
-<blockquote>
-<p>Enable/Disabling the Synonym Filter By providing "synonym" file.  <br>
-For Example:  <br>
-Disable Synonym Filter:   <br></p>
-</blockquote>
-</blockquote>
-<pre><code>    &lt;filter name=&quot;SynonymFilter&quot; synonyms=&quot;&quot;  expand=&quot;true&quot;/&gt;
-</code></pre>
-
 <blockquote>
 <blockquote>
-<p>To keep the original word in this filter, set the "expand" attribute as "True" Otherwise set it as "False".  <br></p>
+<p>Enable/Disabling the Stop Word Filter By providing "words" file. <br></p>
 </blockquote>
 </blockquote>
-<pre><code>    &lt;filter name=&quot;SynonymFilter&quot; synonyms=&quot;&quot;  expand=&quot;true&quot;/&gt;      
-</code></pre>
-
 <p>Have fun SRCHing!</p>
 <style type="text/css">
 pre{
