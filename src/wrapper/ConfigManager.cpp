@@ -93,12 +93,27 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+            this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
-            parseError << "The supportAttributeBasedSearch that is provided is not valid";
+            parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
             return;
         }
+    }
+
+    this->enablePositionIndex = false; // by default it is false
+    configAttribute = configDoc.child("config").child("indexConfig").child("enablePositionIndex");
+    if (configAttribute && configAttribute.text()) {
+    	string configValue = configAttribute.text().get();
+    	if (this->isValidBooleanValue(configValue)) {
+    		this->enablePositionIndex = configAttribute.text().as_bool();
+    	} else {
+    		parseError << "enablePositionIndex should be either 0 or 1.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	Logger::info("turning on attribute based search because position index is enabled");
+    	this->supportAttributeBasedSearch = true;
     }
 
     // uniqueKey is required
@@ -447,7 +462,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
 
-    // Analyzer flags : default values.(everything is disable)
+    // Analyzer flags : Everything is disabled by default.
     this->stemmerFlag = false;
     this->stemmerFile = "";
     this->stopFilterFilePath = "";
@@ -473,7 +488,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     this->stopFilterFilePath = this->srch2Home
                                             + string(field.attribute("words").value());
                                 }
-                            } else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
+                            } /*else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
                                 if (string(field.attribute("synonyms").value()).compare("") != 0) { // the dictionary file for synonyms is set
                                     this->synonymFilterFilePath = this->srch2Home
                                             + string(field.attribute("synonyms").value());
@@ -487,8 +502,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                         configSuccess = false;
                                         return;
                                     }
-                                }
-                            }
+                              }
+                            }*/
                         }
                     }
                 }
@@ -655,20 +670,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
-    this->indexCreateOrLoad = INDEXCREATE; // By default it is INDEXCREATE
-    configAttribute = configDoc.child("config").child("indexConfig").child("indexLoadCreate");
-    if (configAttribute && configAttribute.text()) {
-        string ioc = configAttribute.text().get();
-        if (this->isValidIndexCreateOrLoad(ioc)) {
-            this->indexCreateOrLoad = configAttribute.text().as_bool() == 0 ? INDEXCREATE : INDEXLOAD;
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for indexCreateOrLoad is not a valid. It should be 0 or 1.";
-            return;
-        }
-    }
-
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("rankingAlgorithm").child("recordScoreExpression");
@@ -684,7 +685,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
+    // queryTermSimilarityBoost is an optional field
     this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
     configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
     if (configAttribute && configAttribute.text()) {
@@ -694,6 +695,25 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermSimilarityBoost is not a valid.";
+            return;
+        }
+    }
+
+    // queryTermSimilarityThreshold is an optional field
+    //By default it is 0.5.
+    this->queryTermSimilarityThreshold = 0.5;
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
+    if (configAttribute && configAttribute.text()) {
+        string qtsb = configAttribute.text().get();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
+            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
+            	this->queryTermSimilarityThreshold = 0.5;
+                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
+            }
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
             return;
         }
     }
@@ -770,17 +790,22 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // fieldBasedSearch is an optional field
-    this->supportAttributeBasedSearch = false; // by default it is false
-    configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
-    if (configAttribute && configAttribute.text()) {
-        string fbs = configAttribute.text().get();
-        if (this->isValidFieldBasedSearch(fbs)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
-        } else {
-            parseError << "supportAttributeBasedSearch is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
+    if (this->enablePositionIndex == false) {
+    	this->supportAttributeBasedSearch = false; // by default it is false
+    	configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
+    	if (configAttribute && configAttribute.text()) {
+    		string configValue = configAttribute.text().get();
+    		if (this->isValidBooleanValue(configValue)) {
+    			this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+    		} else {
+    			parseError << "fieldBasedSearch is not set correctly.\n";
+    			configSuccess = false;
+    			return;
+    		}
+    	}
+    } else {
+    	// attribute based search is enabled if positional index is enabled
+    	this->supportAttributeBasedSearch = true;
     }
 
     // queryTermMatchType is an optional field
@@ -819,7 +844,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidResponseFormat(rf)) {
             this->searchResponseJsonFormat = configAttribute.text().as_int();
         } else {
-            parseError << "The responseFormat provided is not valid";
+            parseError << "The provided responseFormat is not valid";
             configSuccess = false;
             return;
         }
@@ -936,7 +961,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // logLevel is optional or required? XXX
+    // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("logLevel");
     bool llflag = true;
@@ -954,27 +979,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // accessLogFile is optional or required? XXX
-    // TODO: do we need it? or we should remove it
+    // accessLogFile is required
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("accessLogFile");
     if (configAttribute && configAttribute.text()) {
-        // TODO: What is the defualt value for it?!
         this->httpServerAccessLogFile = this->srch2Home + string(configAttribute.text().get());
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
         return;
     }
-
-    // errorLogFile is optional or required? XXX
-//    configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("errorLogFile");
-//    if (configAttribute && configAttribute.text()) {
-//        this->httpServerErrorLogFile = this->srch2Home + string(configAttribute.text().get());
-//    } else {
-//        parseError << "httpServerErrorLogFile is not set.\n";
-//        configSuccess = false;
-//        return;
-//    }
 
     /*
      * query: END
@@ -993,43 +1006,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->trieBootstrapDictFile = "";
     this->attributeToSort = 0;
 
-//
-//    if (vm.count("trie-bootstrap-dict-file")) {
-//        trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
-//    } else {
-//        trieBootstrapDictFile = std::string("");
-//    }
-//
-//    if (vm.count("allowed-record-special-characters")) {
-//        allowedRecordTokenizerCharacters =
-//                vm["allowed-record-special-characters"].as<string>();
-//        if (allowedRecordTokenizerCharacters.empty())
-//            std::cerr
-//                    << "[Warning] There are no characters in the value allowedRecordTokenizerCharacters. To set it properly, those characters should be included in double quotes such as \"@'\""
-//                    << std::endl;
-//    } else {
-//        allowedRecordTokenizerCharacters = string("");
-//        //parseError << "allowed-record-special-characters is not set.\n";
-//    }
-//
-//    if (vm.count("default-attribute-to-sort")) {
-//        attributeToSort = vm["default-attribute-to-sort"].as<int>();
-//    } else {
-//        attributeToSort = 0;
-//        //parseError << "attributeToSort is not set.\n";
-//    }
-//
-//    if (vm.count("sortOrder")) {
-//        ordering = vm["sortOrder"].as<int>();
-//    } else {
-//        ordering = 0;
-//        //parseError << "ordering is not set.\n";
-//    }
-//
-//    if (not (this->writeReadBufferInBytes > 4194304
-//            && this->writeReadBufferInBytes < 65536000)) {
-//        this->writeReadBufferInBytes = 4194304;
-//    }
     if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
     	configAttribute = configDoc.child("config").child("mongodb").child("host");
     	if (configAttribute && configAttribute.text()) {
@@ -1075,7 +1051,6 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &s
         searchableAttributesInfo[searchableAttributesVector[iter]] =
         		pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
         				pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
-        		//    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
     }
 }
 
@@ -1178,10 +1153,6 @@ const vector<string> * ConfigManager::getFacetGaps() const {
     return &facetGaps;
 }
 
-/*const vector<unsigned> * ConfigManager::getAttributesBoosts() const
- {
- return &attributesBoosts;
- }*/
 
 string ConfigManager::getSrch2Home() const {
     return this->srch2Home;
@@ -1252,6 +1223,10 @@ float ConfigManager::getQueryTermSimilarityBoost() const {
     return queryTermSimilarityBoost;
 }
 
+float ConfigManager::getQueryTermSimilarityThreshold() const {
+	return queryTermSimilarityThreshold;
+}
+
 float ConfigManager::getQueryTermLengthBoost() const {
     return queryTermLengthBoost;
 }
@@ -1267,10 +1242,6 @@ bool ConfigManager::getSupportAttributeBasedSearch() const {
 ResponseType ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
-
-//const string& ConfigManager::getAttributeStringForMySQLQuery() const {
-//    return attributeStringForMySQLQuery;
-//}
 
 const string& ConfigManager::getLicenseKeyFileName() const {
     return licenseKeyFile;
@@ -1464,6 +1435,10 @@ bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityB
     return this->isFloat(queryTermSimilarityBoost);
 }
 
+bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarityThreshold){
+	return this->isFloat(qTermSimilarityThreshold);
+}
+
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
     if (this->isFloat(queryTermLengthBoost)) {
         float val = ::atof(queryTermLengthBoost.c_str());
@@ -1506,8 +1481,8 @@ bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
     return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
 }
 
-bool ConfigManager::isValidFieldBasedSearch(string& fieldBasedSearch) {
-    if (fieldBasedSearch.compare("0") == 0 || fieldBasedSearch.compare("1") == 0) {
+bool ConfigManager::isValidBooleanValue(string& fieldValue) {
+    if (fieldValue.compare("0") == 0 || fieldValue.compare("1") == 0) {
         return true;
     }
     return false;
@@ -1601,6 +1576,7 @@ srch2::instantsearch::FilterType ConfigManager::parseFieldType(string& fieldType
 		return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
 
 	ASSERT(false);
+	return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
 }
 
 int ConfigManager::parseFacetType(string& facetType){
@@ -1620,6 +1596,9 @@ void ConfigManager::setFilePath(const string& dataFile) {
 }
 
 
+bool ConfigManager::isPositionIndexEnabled() const{
+	return this->enablePositionIndex;
+}
 
 }
 }

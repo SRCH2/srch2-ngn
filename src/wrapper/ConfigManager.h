@@ -49,6 +49,7 @@ private:
 
 	// <config><query>
 	float queryTermSimilarityBoost;
+	float queryTermSimilarityThreshold;
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
 	vector<string> sortableAttributes;
@@ -142,7 +143,7 @@ private:
 	int isPrimSearchable;
 	bool supportAttributeBasedSearch;
 
-
+	bool enablePositionIndex;
 	int attributeToSort;
 	int ordering;
 	//string httpServerDocumentRoot;
@@ -171,12 +172,13 @@ private:
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
     bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidQueryTermSimilarityThreshold(string & qTermEditDistanceNormFactor);
     bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
     bool isValidPrefixMatch(string& prefixmatch);
     bool isValidCacheSize(string& cacheSize);
     bool isValidRows(string& rows);
     bool isValidMaxSearchThreads(string& maxSearchThreads);
-    bool isValidFieldBasedSearch(string& fieldBasedSearch);
+    bool isValidBooleanValue(string& fieldBasedSearch);
 
     bool isValidQueryTermMatchType(string& queryTermMatchType);
     bool isValidQueryTermType(string& queryTermType);
@@ -238,6 +240,7 @@ public:
 	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
+	float getQueryTermSimilarityThreshold() const ;
 	float getQueryTermLengthBoost() const;
 	float getPrefixMatchPenalty() const;
 	bool getSupportAttributeBasedSearch() const;
@@ -319,6 +322,8 @@ public:
     }
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
+
+    bool isPositionIndexEnabled() const;
 
 };
 
