@@ -1,6 +1,6 @@
 <table><tr>
 	
-<td style="width:20%"> 
+<td> 
 <div id="content">
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
@@ -13,42 +13,40 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">Data Directory</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">Data File</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">Index Config</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">Index Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">Field Boosts</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">Record Boost Field</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">Index Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">Field Boosts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">Record Boost Field</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">Query Config</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Term Similarity Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#
-queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Term Length Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">Prefix Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">Cache Size</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">Default for Rows</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">Max Searcher Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">Enable Field Based Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">Term Match Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">Query Term Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">Response Writer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseFormat">Response Format</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseContent">Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Term Similarity Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Term Length Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">Default for Rows</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">Max Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">Enable Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">Query Term Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">Response Writer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseFormat">Response Format</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reponseContent">Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">schema</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">Primary Key</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">Enable Facets</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">Facet Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">Analyzer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">Stemmer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">Stop Words</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#SynonymFilter">Synonyms</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">Primary Key</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">Enable Facets</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">Facet Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">Analyzer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">Stemmer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">Stop Words</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#SynonymFilter">Synonyms</a></br><br>
 </td></tr></tbody></table>
 
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div>
 </td>
-<td style="width:80%">
+<td style="width:75%">
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
@@ -75,7 +73,6 @@ queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
 
 ####License Key File, Required{id="licenseFile"}
     <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
-```
 > Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
 
 
@@ -112,50 +109,50 @@ queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
     ...
     </indexConfig>
 ```
-#####Index Type:{id="indexType"}
-> Index Type <br>
-> **Required** <br>
+>####Index Type:{id="indexType"}
+>> Index Type <br>
+>> **Required** <br>
 ```    
     <indexType>0</indexType>
 ```     
-> 0: Text Index <br>
-> 1: Geo+Text Index <br>
+>> 0: Text Index <br>
+>> 1: Geo+Text Index <br>
  
 
-#####Field Boosts:{id="fieldBoost"}         
-> Boost Values <br>
-> **Optional** <br>
+>####Field Boosts:{id="fieldBoost"}         
+>> Boost Values <br>
+>> **Optional** <br>
 ```
     <fieldBoost></fieldBoost>
 ```               
-> Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
-> For Example, the boosts for three searchable attributes can be specified as  <br>
+>> Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
+>> For Example, the boosts for three searchable attributes can be specified as  <br>
 ```
     <fieldBoost>relevance^10 name^7 title</fieldBoost>
 ```
->> - fields are sparated by one space <br>
->> - if value is not provide for a field, it is considered to be 1 <br>
+>>> - fields are sparated by one space <br>
+>>> - if value is not provide for a field, it is considered to be 1 <br>
 
 
     
-#####Record Boost Field:{id="recordBoostField"}     
-> Record Boost Field <br>
-> **Optional** <br>
+>####Record Boost Field:{id="recordBoostField"}     
+>> Record Boost Field <br>
+>> **Optional** <br>
 ```
     <recordBoostField>relevance</recordBoostField>
 ``` 
-> The Attribute used as the boost value of a record's score.
->> It needs to be of float type in the json structure encapsulating the data input file.
+>> The Attribute used as the boost value of a record's score.
+>>> It needs to be of float type in the json structure encapsulating the data input file.
      
    
-#####Query Term Boost:{id="defaultQueryTermBoost"}       
-> Default Query Term Boost <br>
-> **Optional** <br>
+>####Query Term Boost:{id="defaultQueryTermBoost"}       
+>> Default Query Term Boost <br>
+>> **Optional** <br>
 ```
     <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
-> Default [query term boost](configuration.html##Boosting a term)<br>
->> - Defaults to 1 <br>
+>> Default [query term boost](configuration.html##Boosting a term)<br>
+>>> - Defaults to 1 <br>
 
 
 ####Query Config:{id="queryConfig"}
@@ -165,171 +162,171 @@ queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
     ...
     </query>
 ```
-#####Ranking:{id="rankingalgorithm"} 
-> Ranking Algorithm <br>
+>####Ranking:{id="rankingalgorithm"} 
+>> Ranking Algorithm <br>
 
-> The following comments and parameters are related to ranking. <br>
-> Please see http://www.srch2.com/download.html for ranking-related information <br>
-> record-score-expression=idf_score*doc_boost <br>
+>> The following comments and parameters are related to ranking. <br>
+>> Please see http://www.srch2.com/download.html for ranking-related information <br>
+>> record-score-expression=idf_score*doc_boost <br>
 ```
     <rankingalgorithm>
         <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
     </rankingalgorithm>
 ```
 
-#####Term Similarity Boost:{id="queryTermSimilarityBoost"} 
-> Term Similarity Boost <br>
-> **Optional** <br>
+>####Term Similarity Boost:{id="queryTermSimilarityBoost"} 
+>> Term Similarity Boost <br>
+>> **Optional** <br>
 ```
     <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
-> Weights the score of neigbouring [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) by a given multiple
->> Defaults to 0.5 <br>
+>> Weights the score of neigbouring [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) by a given multiple
+>>> Defaults to 0.5 <br>
 
-####Term Similarity Threshold :{id="queryTermSimilarityThreshold"}
-> Term Similarity Threshold 
-> **Optional**  
+>####Term Similarity Threshold :{id="queryTermSimilarityThreshold"}
+>> Term Similarity Threshold 
+>> **Optional**  
 ```
    <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
-> Modifies the default behaviour of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches).  
->> -Values must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  
->> -Defaults to 0.5  
+>> Modifies the default behaviour of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches).  
+>>> -Values must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  
+>>> -Defaults to 0.5  
 
 
-#####Query Term Length Boost:{id="queryTermLengthBoost"}      
-> Query Term Length Boost <br>
-> **Optional** <br>
+>####Query Term Length Boost:{id="queryTermLengthBoost"}      
+>> Query Term Length Boost <br>
+>> **Optional** <br>
 ```
     <queryTermLengthBoost></queryTermLengthBoost>
 ```
-> Defaults to 0.5 <br>
+>> Defaults to 0.5 <br>
 
 
-#####Prefix Match Penalty:{id="prefixMatchPenalty"}
-> Prefix Match Penalty <br>
-> **Optional** <br>
+>####Prefix Match Penalty:{id="prefixMatchPenalty"}
+>> Prefix Match Penalty <br>
+>> **Optional** <br>
 ```
     <prefixMatchPenalty>0.95</prefixMatchPenalty>
 ```             
-> Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
-> The value should be in the range of 0 to 1 <br>
-> Defaults to 0.95 <br>
+>> Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+>> The value should be in the range of 0 to 1 <br>
+>> Defaults to 0.95 <br>
 
 
-#####Cache Size:{id="cacheSize"}
-> Cache Size <br>
-> **Optional** <br>
+>####Cache Size:{id="cacheSize"}
+>> Cache Size <br>
+>> **Optional** <br>
 ```
     <cacheSize>65536000</cacheSize>
 ```             
-> Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
-> Its default value is 50MB. <br>
+>> Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
+>> Its default value is 50MB. <br>
 
    
-#####Default Value for Rows:{id="rows"}
-> Rows <br>
-> **Optional** <br>
+>####Default Value for Rows:{id="rows"}
+>> Rows <br>
+>> **Optional** <br>
 ```
     <rows>10</rows>
 ```             
-> Number of results retrieved <br>
-> Defaults to 10. <br>
+>> Number of results retrieved <br>
+>> Defaults to 10. <br>
 
-#####Maximum number of threads:{id="maxSearchThreads"}
-> Maximum Number of Searcher Threads <br>
-> **Optional** <br>
+>####Maximum number of threads:{id="maxSearchThreads"}
+>> Maximum Number of Searcher Threads <br>
+>> **Optional** <br>
 ```
     <maxSearchThreads>2</maxSearchThreads>
 ```             
-> Number of threads that serve all incoming search requests. <br>
-> Defaults to 1 <br>
+>> Number of threads that serve all incoming search requests. <br>
+>> Defaults to 1 <br>
 
-#####Field Based Search Enabled:{id="fieldBasedSearch"}
-> Flag to enable/disable field based search <br>
-> **Optional** <br>
+>####Field Based Search Enabled:{id="fieldBasedSearch"}
+>>> Flag to enable/disable field based search <br>
+>>> **Optional** <br>
 ```
     <fieldBasedSearch>0</fieldBasedSearch>
 ```             
-> Flag to toggle attribute-based search <br>
->> 0 - Disable <br>
->> 1 - Enable <br>
->> Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.
+>>> Flag to toggle attribute-based search <br>
+>>>> 0 - Disable <br>
+>>>> 1 - Enable <br>
+>>>> Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.
 
 
-#####Search Type:{id="searcherType"}         
-> Searcher Type <br>
-> **Optional** <br>
+>####Search Type:{id="searcherType"}         
+>> Searcher Type <br>
+>> **Optional** <br>
 ```
     <searcherType>0</searcherType>
 ```       
-> Modifies the default search algorithm of the Srch2 engine <br>
->> 0 if topk, <br>
->> 1 if advanced <br>
+>> Modifies the default search algorithm of the Srch2 engine <br>
+>>> 0 if topk, <br>
+>>> 1 if advanced <br>
              
->> Defaults to 0 <br>
+>>> Defaults to 0 <br>
 
-#####Query Term Match Type:{id="queryTermMatchType"}   
-> Query Term Match Type <br>
-> **Optional** <br>
+>####Query Term Match Type:{id="queryTermMatchType"}   
+>> Query Term Match Type <br>
+>> **Optional** <br>
 ```
     <queryTermMatchType>1</queryTermMatchType>
 ```
-> Modifies the default search behaviour of the Srch2 engine              
->> 0: exact match search<br>
->> 1: fuzzy match search<br>
->> Defaults to 0
+>> Modifies the default search behaviour of the Srch2 engine              
+>>> 0: exact match search<br>
+>>> 1: fuzzy match search<br>
+>>> Defaults to 0
 
-#####Query Term Type:{id="queryTermType"}
-> Query Term Type <br>
-> **Optional** <br>
+>####Query Term Type:{id="queryTermType"}
+>> Query Term Type <br>
+>> **Optional** <br>
 ```
     <queryTermType>0</queryTermType>
 ```             
->>> Modifies the default treatment of search query's trailing keyword
->> 0: trailing term is treated as a prefix; <br>
->> 1: trailing term is treated as a complete term; <br>
->> Defaults to 0
+>>>> Modifies the default treatment of search query's trailing keyword
+>>> 0: trailing term is treated as a prefix; <br>
+>>> 1: trailing term is treated as a complete term; <br>
+>>> Defaults to 0
 
 
-#####Query Term Type:{id="queryResponseWriter"}  
-> All tags related to configuring the response.
+>####Query Term Type:{id="queryResponseWriter"}  
+>> All tags related to configuring the response.
 ```
     <queryResponseWriter>
     ...
     </queryResponseWriter>
 ```  
  
-######Response Format:{id="responseFormat"}  
-> Response Format <br>
-> **Optional** <br>
+>>####Response Format:{id="responseFormat"}  
+>>> Response Format <br>
+>>> **Optional** <br>
 ```
     <responseFormat>0</responseFormat>
 ```
-> Format of query results
->> 0: JSON <br>
->> 1: JSONP <br>          
->> Defaults to 0 <br>
+>>> Format of query results
+>>>> 0: JSON <br>
+>>>> 1: JSONP <br>          
+>>>> Defaults to 0 <br>
 
-######Response Content:{id="responseContent"}      
-> Response Content <br>
-> **Optional** <br>
+>>####Response Content:{id="responseContent"}      
+>>> Response Content <br>
+>>> **Optional** <br>
 ```
     <responseContent type="2">lat,lng</responseContent>
 ```
-or
+>>>or
 
 ```
     <responseContent type="0"></responseContent>
 ```              
-> Format of each json search response. <br>
-> You should set the type by one of the following options: <br>
->> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
->> 1: format "rid,edit_dist,matching_prefix". <br>
->> 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
->> Defaults to 0 <br>
->> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
->> These are attributes returned to the user. <br>
+>>> Format of each json search response. <br>
+>>> You should set the type by one of the following options: <br>
+>>>> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
+>>>> 1: format "rid,edit_dist,matching_prefix". <br>
+>>>> 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
+>>>> Defaults to 0 <br>
+>>>> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
+>>>> These are attributes returned to the user. <br>
 
 
 
@@ -340,63 +337,63 @@ or
     ...
     </updatehandler>
 ```
-#####Max Docs:{id="maxDocs"}  
-> Maximum Number of Documents <br>
-> **Required** <br>
+>####Max Docs:{id="maxDocs"}  
+>> Maximum Number of Documents <br>
+>> **Required** <br>
 ```
     <maxDocs>15000000</maxDocs>
 ```             
-> Maximum number of records indexable by the srch2 engine. <br>
-> This number should reflect the size of each record and the available memory <br>
->> Remember this is a hard cap on the number of records indexable by the srch2 engine.
->> Inserting more records than the specified here will cause the srch2 indexer to throw an error.
->> It exists to bound the memory footprint of the srch2 indexer which grows in proporsion to the number of records.
+>> Maximum number of records indexable by the srch2 engine. <br>
+>> This number should reflect the size of each record and the available memory <br>
+>>> Remember this is a hard cap on the number of records indexable by the srch2 engine.
+>>> Inserting more records than the specified here will cause the srch2 indexer to throw an error.
+>>> It exists to bound the memory footprint of the srch2 indexer which grows in proporsion to the number of records.
 
   
-#####Merge Policy:{id="mergePolicy"}            
-> Merge Policies <br>
-> **Required** <br>
+>####Merge Policy:{id="mergePolicy"}            
+>> Merge Policies <br>
+>> **Required** <br>
 ```
     <mergePolicy>
         <mergeEveryNSeconds>10</mergeEveryNSeconds>
         <mergeEveryMWrites>100</mergeEveryMWrites>
     </mergePolicy>
 ```             
-> mergeEveryNSeconds: <br>
->> The maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
->> Its minimum value is 10 (seconds). <br>
->> Note: Decreasing this number will increase latency in the srch2 engine's response time.
-> mergeEveryMWrites: <br>
+>> mergeEveryNSeconds: <br>
+>>> The maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
+>>> Its minimum value is 10 (seconds). <br>
+>>> Note: Decreasing this number will increase latency in the srch2 engine's response time.
+>> mergeEveryMWrites: <br>
 >> The number of write operations after which newly inserted/deleted records are merged into the indexes. <br>
 
    
-#####Update Log:{id="updateLog"}
-> Tags customizing Srch2's log file and logging functions.
+>####Update Log:{id="updateLog"}
+>> Tags customizing Srch2's log file and logging functions.
 ```     
     <updateLog>
     ...
     </updateLog>
 ```
-######Log Level:{id="logLevel"}
-> Log Level <br>
-> **Optional** <br>
+>>####Log Level:{id="logLevel"}
+>>> Log Level <br>
+>>> **Optional** <br>
 ```
     <logLevel>3</logLevel>
 ```                 
-> Amount of feedback information of the Srch2 engines state recorded in its logs. <br>
->> 0 SILENT <br>
->> 1 ERROR <br>
->> 2 WARN <br>
->> 3 INFO <br>
-> Defaults to 3 INFO
+>>> Amount of feedback information of the Srch2 engines state recorded in its logs. <br>
+>>>> 0 SILENT <br>
+>>>> 1 ERROR <br>
+>>>> 2 WARN <br>
+>>>> 3 INFO <br>
+>>> Defaults to 3 INFO
 
-######Log File:{id="accessLogFile"}                      
-> Access Log File <br>
-> **Required** <br>
+>>####Log File:{id="accessLogFile"}                      
+>>> Access Log File <br>
+>>> **Required** <br>
 ```
     <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
 ```                 
-> Path to file where the srch2 engine will write logging information.<br>
+>>> Path to file where the srch2 engine will write logging information.<br>
 
 
 
@@ -529,33 +526,33 @@ or
         </fieldType>                
     </types>
 ```
-#####Stemmer:{id="PorterStemFilter"}
-> Stemmer <br>
-> **Optional** <br>
->> Disable Stemmer:  <br>
+>####Stemmer:{id="PorterStemFilter"}
+>> Stemmer <br>
+>> **Optional** <br>
+>>> Disable Stemmer:  <br>
 ```
     <filter name="PorterStemFilter" dictionary="" />
 ```
->> Exmaple: <br>
+>>> Exmaple: <br>
 ```
     <filter name="PorterStemFilter" dictionary="" />
 ```               
-> Enable/Disabling the stemmer by providing "dictionary" file. <br>
+>> Enable/Disabling the stemmer by providing "dictionary" file. <br>
 
 
           
-#####Stop Words:{id="StopFilter"}
-> Stop Word Filter <br>
-> **Optional** <br>
->> Disable Stop Word Filter:  <br>
+>####Stop Words:{id="StopFilter"}
+>> Stop Word Filter <br>
+>> **Optional** <br>
+>>> Disable Stop Word Filter:  <br>
 ```
     <filter name="StopFilter" words="" />
 ```
-> Example: <br>
+>> Example: <br>
 ```
     <filter name="StopFilter" words="" />
 ```
->> Enable/Disabling the Stop Word Filter By providing "words" file. <br>
+>>> Enable/Disabling the Stop Word Filter By providing "words" file. <br>
 
 
 Have fun SRCHing!
@@ -636,3 +633,26 @@ html{
 }
 
 </style>
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-10)+'px;overflow:auto;width:20%');
+}
+alertSize();
+</script>
