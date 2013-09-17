@@ -664,7 +664,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
+    // queryTermSimilarityBoost is an optional field
     this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
     configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
     if (configAttribute && configAttribute.text()) {
@@ -674,6 +674,20 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermSimilarityBoost is not a valid.";
+            return;
+        }
+    }
+
+    // queryTermNormalizationFactor is an optional field
+    this->queryTermEditDistanceNormFactor = 0.5; // By default it is 0.5
+    configAttribute = configDoc.child("config").child("query").child("queryTermEditDistanceNormFactor");
+    if (configAttribute && configAttribute.text()) {
+        string qtsb = configAttribute.text().get();
+        if (this->isValidQueryTermEditDistanceNormFactor(qtsb)) {
+            this->queryTermEditDistanceNormFactor = configAttribute.text().as_float();
+        } else {
+            configSuccess = false;
+            parseError << "The expression provided for queryTermEditDistanceNormFactor is not a valid.";
             return;
         }
     }
@@ -1204,6 +1218,10 @@ float ConfigManager::getQueryTermSimilarityBoost() const {
     return queryTermSimilarityBoost;
 }
 
+float ConfigManager::getQueryTermExitDistanceNormFactor() const {
+	return queryTermEditDistanceNormFactor;
+}
+
 float ConfigManager::getQueryTermLengthBoost() const {
     return queryTermLengthBoost;
 }
@@ -1414,6 +1432,10 @@ bool ConfigManager::isValidRecordScoreExpession(string& recordScoreExpression) {
 
 bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost) {
     return this->isFloat(queryTermSimilarityBoost);
+}
+
+bool ConfigManager::isValidQueryTermEditDistanceNormFactor(string & qTermEditDistanceNormFactor){
+	return this->isFloat(qTermEditDistanceNormFactor);
 }
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {

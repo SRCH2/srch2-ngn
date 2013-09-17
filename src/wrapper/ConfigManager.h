@@ -49,6 +49,7 @@ private:
 
 	// <config><query>
 	float queryTermSimilarityBoost;
+	float queryTermEditDistanceNormFactor;
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
 	vector<string> sortableAttributes;
@@ -164,6 +165,7 @@ private:
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
     bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidQueryTermEditDistanceNormFactor(string & qTermEditDistanceNormFactor);
     bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
     bool isValidPrefixMatch(string& prefixmatch);
     bool isValidCacheSize(string& cacheSize);
@@ -232,6 +234,7 @@ public:
 	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
+	float getQueryTermExitDistanceNormFactor() const ;
 	float getQueryTermLengthBoost() const;
 	float getPrefixMatchPenalty() const;
 	bool getSupportAttributeBasedSearch() const;

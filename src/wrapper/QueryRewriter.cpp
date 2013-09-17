@@ -89,7 +89,7 @@ void QueryRewriter::prepareKeywordInfo() {
         if (paramContainer->hasParameterInQuery(KeywordFuzzyLevel)
                 && paramContainer->keywordFuzzyLevel.at(k) < 0) {
             paramContainer->keywordFuzzyLevel.at(k) =
-                    indexDataContainerConf->getQueryTermSimilarityBoost();
+                    indexDataContainerConf->getQueryTermExitDistanceNormFactor();
         }
 
         if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)

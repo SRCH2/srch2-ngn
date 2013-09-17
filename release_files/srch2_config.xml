@@ -140,6 +140,16 @@
         -->
         <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
          
+         
+        <!--
+            Query Term Edit Distance Normalization Factor
+            Optional
+             
+            Defaults to 0.5
+        -->
+        <queryTermEditDistanceNormFactor>0.5</queryTermEditDistanceNormFactor>
+        
+        
         <!--
             Query Term Length Boost
             Optional

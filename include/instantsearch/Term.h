@@ -25,6 +25,7 @@
 #include <string>
 #include <stdint.h>
 #include "util/encoding.h"
+#include "util/Assert.h"
 
 namespace srch2
 {
@@ -107,6 +108,19 @@ public:
         else if (keywordLength <= 7)
             return 1;
         return 2;
+    }
+
+    /*
+     * This function computer the edit-distance based on the length of the keyword and a normalizationFactor
+     * which must be between 0 and 1.
+     * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword)
+     */
+    static uint8_t getNormalizedThreshold(unsigned keywordLength , float normalizationFactor){
+    	if(normalizationFactor < 0 || normalizationFactor > 1){
+    		ASSERT(false);
+    		return 0;
+    	}
+    	return keywordLength * (1 - normalizationFactor);
     }
 
     Term(const std::string &keyword, TermType type,
