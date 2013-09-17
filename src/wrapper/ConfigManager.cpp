@@ -679,7 +679,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
+    // queryTermSimilarityBoost is an optional field
     this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
     configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
     if (configAttribute && configAttribute.text()) {
@@ -689,6 +689,24 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermSimilarityBoost is not a valid.";
+            return;
+        }
+    }
+
+    // parse, line 682:  this->queryTermSimilarityThreshold = 0.5; // By default it is 0.5 is an optional field
+    this->queryTermSimilarityThreshold = 0.5; // By default it is 0.5
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
+    if (configAttribute && configAttribute.text()) {
+        string qtsb = configAttribute.text().get();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
+            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
+            	this->queryTermSimilarityThreshold = 0.5;
+                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
+            }
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
             return;
         }
     }
@@ -1225,6 +1243,10 @@ float ConfigManager::getQueryTermSimilarityBoost() const {
     return queryTermSimilarityBoost;
 }
 
+float ConfigManager::getQueryTermSimilarityThreshold() const {
+	return queryTermSimilarityThreshold;
+}
+
 float ConfigManager::getQueryTermLengthBoost() const {
     return queryTermLengthBoost;
 }
@@ -1435,6 +1457,10 @@ bool ConfigManager::isValidRecordScoreExpession(string& recordScoreExpression) {
 
 bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost) {
     return this->isFloat(queryTermSimilarityBoost);
+}
+
+bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarityThreshold){
+	return this->isFloat(qTermSimilarityThreshold);
 }
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
