@@ -232,7 +232,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
             keywordFuzzyLevel.push_back(
-                    indexDataContainerConf->getQueryTermExitDistanceNormFactor());
+                    indexDataContainerConf->getQueryTermSimilarityThreshold());
         }
     }
 
@@ -290,7 +290,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
             fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
                     keywordPrefixComplete[i], keywordBoostLevel[i],
                     indexDataContainerConf->getQueryTermSimilarityBoost(),
-                    srch2is::Term::getNormalizedThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i]) , keywordFuzzyLevel[i]));
+                    srch2is::Term::getEditDistanceThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i]) , keywordFuzzyLevel[i]));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
             fuzzyTerm->addAttributeToFilterTermHits(fieldFilter[i]);

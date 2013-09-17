@@ -679,12 +679,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // queryTermNormalizationFactor is an optional field
-    this->queryTermEditDistanceNormFactor = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child("queryTermEditDistanceNormFactor");
+    this->queryTermSimilarityThreshold = 0.5; // By default it is 0.5
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
-        if (this->isValidQueryTermEditDistanceNormFactor(qtsb)) {
-            this->queryTermEditDistanceNormFactor = configAttribute.text().as_float();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermEditDistanceNormFactor is not a valid.";
@@ -1218,8 +1218,8 @@ float ConfigManager::getQueryTermSimilarityBoost() const {
     return queryTermSimilarityBoost;
 }
 
-float ConfigManager::getQueryTermExitDistanceNormFactor() const {
-	return queryTermEditDistanceNormFactor;
+float ConfigManager::getQueryTermSimilarityThreshold() const {
+	return queryTermSimilarityThreshold;
 }
 
 float ConfigManager::getQueryTermLengthBoost() const {
@@ -1434,8 +1434,8 @@ bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityB
     return this->isFloat(queryTermSimilarityBoost);
 }
 
-bool ConfigManager::isValidQueryTermEditDistanceNormFactor(string & qTermEditDistanceNormFactor){
-	return this->isFloat(qTermEditDistanceNormFactor);
+bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarityThreshold){
+	return this->isFloat(qTermSimilarityThreshold);
 }
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {

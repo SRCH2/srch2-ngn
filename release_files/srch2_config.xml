@@ -147,7 +147,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermEditDistanceNormFactor>0.5</queryTermEditDistanceNormFactor>
+        <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
         
         
         <!--
