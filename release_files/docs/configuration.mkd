@@ -19,10 +19,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">Query Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Query Term Similarity Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">Term Similarity Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#
-queryTermSimilarityThreshold">Query Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Query Term Length Boost</a></br><br>
+queryTermSimilarityThreshold">Term Similarity Threshold</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">Term Length Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">Prefix Match Penalty</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">Cache Size</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">Default for Rows</a></br><br>
@@ -55,41 +55,31 @@ queryTermSimilarityThreshold">Query Term Similarity Threshold</a></br><br>
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Configuration File Documentation</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, Date: September 15, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0, Date: September 17, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ###Overview:###{id="overview"}
->Welcome to Srch2 conf file documentation page. SRCH2 configuration file uses XML format. This documentation introduces the valid XML tags hierarchy for Srch2 engine configuration. The documentation, first, introduces the two major components of SRCH2 configuration file, <i>config</i> and <i>schema</i>. This brief introduction is followed by a detailed explanation.
-###Major components: config vs. schema:###{id="majorComponents"}
+>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. We first introduce the two major components of  the configuration file, then give the details of each of them. Each of them can have one of the following two labels: (1) "Required": it means this tag has to be present in the configuration file; and (2) "Optional": it means this tag does not need to be present in the file.
 
->   A SRCH2 configuration file contains two top level XML tags; <i>config</i> and <i>schema</i>. Any valid specification tuning a part of the Srch2 engine is a child tag of 'config'; while children of the 'schema' tag describe data (or query dynamics). For example, 'srch2home' tag specifying the root directory of SRCH2 engine is under 'config', while 'fields' tag declaring the data fields of index records is under 'schema'.
+###Major components: "config" and"schema"###{id="majorComponents"}
 
+>A SRCH2 configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data. 
 
 ###Config:{id="configTag"}
-> The following is a breakdown of the <i>config</i> element's subtags: 
+> The following is a breakdown of the subtags of <i>config</i>: 
 
 
-####SRCH2HOME:{id="srch2Home"}
-> SRCH2 Home directory <br>
-> **Required**  <br>
+####SRCH2 Home Directory, Required{id="srch2Home"}
 ```
     <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
-> This directory is root of all Srch2 files on a given machine.
-> All other paths, specificed in this config, HAVE to be relative to this path. <br>
-> For Example: <br>
->> If a data file has the following absolute path "/usr/share/srch2/data/sample-data.json"; and, the Srch2 home directory is set to "/usr/share/srch2". The config file should reference the data file's location as "data/sample-data.json" <br>
+> This directory is the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if a data file has the following absolute path "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
 
-####License File:{id="licenseFile"}
-> License Key File <br>
-> **Required** <br>
-```
+####License Key File, Required{id="licenseFile"}
     <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
-> Email contact@srch2.com to get a key file. <br>
+> Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
 
 
-####Listening Hostname and Port:{id="listeningHostname"}
-> Hostname and Port Number<br>
-> **Required** <br>
+####Hostname and Port, Required{id="listeningHostname"}
 ```
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8081</listeningPort>
@@ -187,8 +177,8 @@ queryTermSimilarityThreshold">Query Term Similarity Threshold</a></br><br>
     </rankingalgorithm>
 ```
 
-#####Query Term Similarity Boost:{id="queryTermSimilarityBoost"} 
-> Query Term Similarity Boost <br>
+#####Term Similarity Boost:{id="queryTermSimilarityBoost"} 
+> Term Similarity Boost <br>
 > **Optional** <br>
 ```
     <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
@@ -196,8 +186,8 @@ queryTermSimilarityThreshold">Query Term Similarity Threshold</a></br><br>
 > Weights the score of neigbouring [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) by a given multiple
 >> Defaults to 0.5 <br>
 
-####Query Term Similarity Threshold :{id="queryTermSimilarityThreshold"}
-> Query Term Similarity Threshold 
+####Term Similarity Threshold :{id="queryTermSimilarityThreshold"}
+> Term Similarity Threshold 
 > **Optional**  
 ```
    <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
