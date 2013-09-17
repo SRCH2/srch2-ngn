@@ -389,7 +389,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     int cacheResponse = this->cacheManager->getCachedConjunctionResult(query->getQueryTerms(),
                         conjunctionCacheResultsEntry);
     */
-    // disabling conjunction cache for now.
+    // disabling conjunction cache for now. TODO
     ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry = NULL;
     int cacheResponse = 0;
 

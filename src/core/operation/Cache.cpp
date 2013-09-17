@@ -302,6 +302,7 @@ void ConjunctionCache::_conjunctionCacheMapCleanUp()
                 && mapIterator->first != this->conjunctionCacheDirectory.at(mapIterator->second).hashedQuery)
         {
             Logger::debug("cachedConjunctionResultsMap.erase");
+            // We increment the iterator before we call erase.
             this->cachedConjunctionResultsMap.erase(mapIterator++);
         } else {
             ++mapIterator;
