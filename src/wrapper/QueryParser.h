@@ -139,7 +139,7 @@ private:
     //searchType
     static const char* const searchType;
     /*
-     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
+     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()
      * 2. calls the keywordParser();
      */
@@ -158,7 +158,7 @@ private:
 
     /*
      * parses the pmp parameter and fills up the container
-     * example: 'pmp=.8'
+     * example: 'pmp=0.8'
      */
     void prefixMatchPenaltyParser();
 
@@ -241,7 +241,7 @@ private:
     /*
      * this function parses the local parameters section of all parts
      * input:
-     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=.7}'
+     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=0.7}'
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
@@ -293,12 +293,12 @@ private:
     void checkForBoostNums(const string &input, boost::smatch &matches);
     /*
      * extracts the numbers from the input string
-     * example:  it will extract '8' from '~.8'.
+     * example:  it will extract '8' from '~0.8'.
      */
     void extractNumbers(const string &input, boost::smatch &matches);
     /*
      * checks if the SimilarityThreshold is present in the input string
-     * example: 'gnuth~.8' has SimilarityThreshold as '.8'. 'gnuth~' has no SimilarityThreshold specified.
+     * example: 'gnuth~0.8' has SimilarityThreshold as '0.8'. 'gnuth~' has no SimilarityThreshold specified.
      */
     void checkForFuzzyNums(const string &input, boost::smatch &matches);
     /*
@@ -442,9 +442,9 @@ private:
     bool parsePrefixModifier(string &input, string &output);
     /*
      * parses the boost modifier
-     * eample: '^4~.8'
+     * eample: '^4~0.8'
      * output will be '^4'
-     * input will be changed to ~.8
+     * input will be changed to ~0.8
      */
     bool parseBoostModifier(string &input, string &output);
     /*
@@ -478,10 +478,10 @@ private:
      */
     void populateProximityInfo(bool isParsed, string &input);
     /*
-     * example: input : '~.8 AND Author:gnuth'
+     * example: input : '~0.8 AND Author:gnuth'
      * parses the fuzzy modifier.
      * input will be changed to 'AND Author:gnuth'
-     * output will be '~.8'
+     * output will be '~0.8'
      */
     bool parseFuzzyModifier(string &input, string &output);
     /*

@@ -144,7 +144,7 @@ bool QueryParser::parse() {
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs
     /*
-     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
+     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()
      * 2. calls the termParser();
      */
@@ -161,18 +161,18 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         // so it is ok to pass the mainQueryStr and no need to make a copy of this string
         if (this->localParameterParser(mainQueryStr)) {
             // the mainQueryStr now doesn't have the lopcalparameter part.
-            // mainQueryStr modified to 'title:algo* AND publisher:mac* AND lang:engl*^2~.8'
+            // mainQueryStr modified to 'title:algo* AND publisher:mac* AND lang:engl*^2~0.8'
             // 3. call the termParser().
             bool parseNextTerm = true;
             while (parseNextTerm) {
                 if (this->termParser(mainQueryStr)) {
                     // this comment is only valid for first iteration in this while loop
-                    // mainQueryStr modified to 'AND publisher:mac* AND lang:engl*^2~.8'
+                    // mainQueryStr modified to 'AND publisher:mac* AND lang:engl*^2~0.8'
                     string boolOperator = "";
                     bool hasBoolOperator = parseTermBoolOperator(mainQueryStr,
                             boolOperator);
                     //// this comment is only valid for first iteration in this while loop
-                    // mainQueryStr modified to 'publisher:mac* AND lang:engl*^2~.8'
+                    // mainQueryStr modified to 'publisher:mac* AND lang:engl*^2~0.8'
                     if (hasBoolOperator) {
                         string msgStr = "boolean operator is " + boolOperator;
                         Logger::debug(msgStr.c_str());
@@ -185,7 +185,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                         parseNextTerm = false;
                         if (mainQueryStr.length() > 0) {
                             // this can happen if the initial query was like
-                            // 'q={defaultSearchFields=Author defaultSimilarityThreshold=.8}title:algo* publisher:mac* AND lang:engl*^2~.8'
+                            // 'q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* publisher:mac* AND lang:engl*^2~0.8'
                             // notice that there is no Boolean operator specified betwwen 'title:algo*' and 'publisher:mac*'
                             // raise error message
                             Logger::info(
@@ -367,7 +367,7 @@ void QueryParser::lengthBoostParser() {
 void QueryParser::prefixMatchPenaltyParser() {
     /*
      * parses the pmp parameter and fills up the container
-     * example: pmp=.8
+     * example: pmp=0.8
      */
     Logger::debug("inside prefixMatchPenaltyParser function");
     const char * prefixMatchPenaltyTmp = evhttp_find_header(&headers,
@@ -801,7 +801,7 @@ bool QueryParser::localParameterParser(string &input) {
     /*
      * this function parses the local parameters section of all parts
      * input:
-     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=.7}gnuth'
+     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=0.7}gnuth'
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
@@ -810,7 +810,7 @@ bool QueryParser::localParameterParser(string &input) {
             input.c_str());
     if (input.at(0) == '{') {
         Logger::debug("localparamter string found, extracting it.");
-        input = input.substr(1); // input is modifed to 'defaultSearchFields=Author defaultSimilarityThreshold=.7}gnuth'
+        input = input.substr(1); // input is modifed to 'defaultSearchFields=Author defaultSimilarityThreshold=0.7}gnuth'
         // TODO: do a memory profiling to see if substr is cpu costly. Yes? use unsigned as a cursor over the input string.
         string lpField = "";
         while (parseLpKey(input, lpField)) {
@@ -1159,8 +1159,8 @@ void QueryParser::checkForFuzzyNums(const string &input,
         boost::smatch &matches) {
     /*
      * checks if the SimilarityThreshold is present in the input string
-     * example: keyword~.8 has SimilarityThreshold as .8. keyword~ has no SimilarityThreshold specified.
-     * input is ~.8 or ~
+     * example: keyword~0.8 has SimilarityThreshold as 0.8. keyword~ has no SimilarityThreshold specified.
+     * input is ~0.8 or ~
      */
     Logger::debug("inside checkForFuzzyNums");
     boost::regex re(CHECK_FUZZY_NUMBER_REGEX_STRING);
@@ -1170,7 +1170,7 @@ void QueryParser::checkForFuzzyNums(const string &input,
 void QueryParser::extractNumbers(const string &input, boost::smatch& matches) {
     /*
      * extracts the numbers from the input string
-     * example:  it will extract '8' from '~.8'.
+     * example:  it will extract '8' from '~0.8'.
      */
     Logger::debug("inside extractNumbers");
     boost::regex re(NUMBERS_REGEX_STRING);
