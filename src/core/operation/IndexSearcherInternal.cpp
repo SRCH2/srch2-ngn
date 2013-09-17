@@ -383,10 +383,15 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
     /********Step 1**********/
     // Cache lookup, assume a query with the first k terms found in the cache
+    /*
     queryResults->addMessage("Conjunction Cache Get");
     ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
     int cacheResponse = this->cacheManager->getCachedConjunctionResult(query->getQueryTerms(),
                         conjunctionCacheResultsEntry);
+    */
+    // disabling conjunction cache for now. TODO
+    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry = NULL;
+    int cacheResponse = 0;
 
     // Case 1: Cache hit and "k" results are in cache. No need to compute termVirtualList.
     if (conjunctionCacheResultsEntry != NULL
@@ -661,6 +666,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
         queryResults->addMessage("Finalised the results.");
 
+        /*
         // cache the candidateList and the cursors with the query terms
         // construct the cursors vector
         std::vector<std::vector<unsigned>* >* virtualListCursorsVector = new std::vector<std::vector<unsigned>* >();
@@ -688,6 +694,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                                                  candidateList,
                                                  virtualListCursorsVector));
         queryResults->addMessage("Cache Set end");
+        */
     }
 
     return queryResults->getNumberOfResults() - offset;
