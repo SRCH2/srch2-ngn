@@ -473,7 +473,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     this->stopFilterFilePath = this->srch2Home
                                             + string(field.attribute("words").value());
                                 }
-                            } else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
+                            } /*else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
                                 if (string(field.attribute("synonyms").value()).compare("") != 0) { // the dictionary file for synonyms is set
                                     this->synonymFilterFilePath = this->srch2Home
                                             + string(field.attribute("synonyms").value());
@@ -487,8 +487,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                         configSuccess = false;
                                         return;
                                     }
-                                }
-                            }
+                              }
+                            }*/
                         }
                     }
                 }
