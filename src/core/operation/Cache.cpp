@@ -290,19 +290,21 @@ void ActiveNodeCache::_prefixActiveNodeCacheMapCleanUp()
             this->cachedActiveNodeSetMap.erase(mapIterator);
         }
     }
-    //this->cachedActiveNodeSetDirectory.clear();
 }
 
 void ConjunctionCache::_conjunctionCacheMapCleanUp()
 {
     for ( map<unsigned,unsigned>::iterator mapIterator = this->cachedConjunctionResultsMap.begin();
             mapIterator != this->cachedConjunctionResultsMap.end();
-            mapIterator++)
+            )
     {
         if ( mapIterator->second < this->conjunctionCacheDirectory.size()
                 && mapIterator->first != this->conjunctionCacheDirectory.at(mapIterator->second).hashedQuery)
         {
-            this->cachedConjunctionResultsMap.erase(mapIterator);
+            Logger::debug("cachedConjunctionResultsMap.erase");
+            this->cachedConjunctionResultsMap.erase(mapIterator++);
+        } else {
+            ++mapIterator;
         }
     }
 }
