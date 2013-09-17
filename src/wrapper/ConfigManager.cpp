@@ -93,7 +93,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+            this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
             parseError << "The supportAttributeBasedSearch that is provided is not valid";
             configSuccess = false;
