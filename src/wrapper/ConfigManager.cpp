@@ -95,7 +95,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidBool(qtmt)) {
             this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
-            parseError << "The supportSwapInEditDistance that is provided is not valid";
+            parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
             return;
         }
@@ -824,7 +824,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidResponseFormat(rf)) {
             this->searchResponseJsonFormat = configAttribute.text().as_int();
         } else {
-            parseError << "The responseFormat which is provided is not valid";
+            parseError << "The provided responseFormat is not valid";
             configSuccess = false;
             return;
         }
