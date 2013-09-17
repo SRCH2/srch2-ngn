@@ -95,7 +95,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidBool(qtmt)) {
             this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
-            parseError << "The supportAttributeBasedSearch that is provided is not valid";
+            parseError << "The supportSwapInEditDistance that is provided is not valid";
             configSuccess = false;
             return;
         }
@@ -462,7 +462,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
 
-    // Analyzer flags : default values.(everything is disable)
+    // Analyzer flags : Everything is disabled by default.
     this->stemmerFlag = false;
     this->stemmerFile = "";
     this->stopFilterFilePath = "";
@@ -650,20 +650,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
-    this->indexCreateOrLoad = INDEXCREATE; // By default it is INDEXCREATE
-    configAttribute = configDoc.child("config").child("indexConfig").child("indexLoadCreate");
-    if (configAttribute && configAttribute.text()) {
-        string ioc = configAttribute.text().get();
-        if (this->isValidIndexCreateOrLoad(ioc)) {
-            this->indexCreateOrLoad = configAttribute.text().as_bool() == 0 ? INDEXCREATE : INDEXLOAD;
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for indexCreateOrLoad is not a valid. It should be 0 or 1.";
-            return;
-        }
-    }
-
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("rankingAlgorithm").child("recordScoreExpression");
@@ -693,8 +679,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // parse, line 682:  this->queryTermSimilarityThreshold = 0.5; // By default it is 0.5 is an optional field
-    this->queryTermSimilarityThreshold = 0.5; // By default it is 0.5
+    // queryTermSimilarityThreshold is an optional field
+    //By default it is 0.5.
+    this->queryTermSimilarityThreshold = 0.5;
     configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
@@ -791,7 +778,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     		if (this->isValidBooleanValue(configValue)) {
     			this->supportAttributeBasedSearch = configAttribute.text().as_bool();
     		} else {
-    			parseError << "supportAttributeBasedSearch is not set correctly.\n";
+    			parseError << "fieldBasedSearch is not set correctly.\n";
     			configSuccess = false;
     			return;
     		}
@@ -837,7 +824,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidResponseFormat(rf)) {
             this->searchResponseJsonFormat = configAttribute.text().as_int();
         } else {
-            parseError << "The responseFormat provided is not valid";
+            parseError << "The responseFormat which is provided is not valid";
             configSuccess = false;
             return;
         }
@@ -963,7 +950,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // logLevel is optional or required? XXX
+    // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("logLevel");
     bool llflag = true;
@@ -981,27 +968,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // accessLogFile is optional or required? XXX
-    // TODO: do we need it? or we should remove it
+    // accessLogFile is required
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("accessLogFile");
     if (configAttribute && configAttribute.text()) {
-        // TODO: What is the defualt value for it?!
         this->httpServerAccessLogFile = this->srch2Home + string(configAttribute.text().get());
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
         return;
     }
-
-    // errorLogFile is optional or required? XXX
-//    configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("errorLogFile");
-//    if (configAttribute && configAttribute.text()) {
-//        this->httpServerErrorLogFile = this->srch2Home + string(configAttribute.text().get());
-//    } else {
-//        parseError << "httpServerErrorLogFile is not set.\n";
-//        configSuccess = false;
-//        return;
-//    }
 
     /*
      * query: END
@@ -1020,45 +995,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->trieBootstrapDictFile = "";
     this->attributeToSort = 0;
 
-//
-//    if (vm.count("trie-bootstrap-dict-file")) {
-//        trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
-//    } else {
-//        trieBootstrapDictFile = std::string("");
-//    }
-//
-//    if (vm.count("allowed-record-special-characters")) {
-//        allowedRecordTokenizerCharacters =
-//                vm["allowed-record-special-characters"].as<string>();
-//        if (allowedRecordTokenizerCharacters.empty())
-//            std::cerr
-//                    << "[Warning] There are no characters in the value allowedRecordTokenizerCharacters. To set it properly, those characters should be included in double quotes such as \"@'\""
-//                    << std::endl;
-//    } else {
-//        allowedRecordTokenizerCharacters = string("");
-//        //parseError << "allowed-record-special-characters is not set.\n";
-//    }
-//
-//    if (vm.count("default-attribute-to-sort")) {
-//        attributeToSort = vm["default-attribute-to-sort"].as<int>();
-//    } else {
-//        attributeToSort = 0;
-//        //parseError << "attributeToSort is not set.\n";
-//    }
-//
-//    if (vm.count("sortOrder")) {
-//        ordering = vm["sortOrder"].as<int>();
-//    } else {
-//        ordering = 0;
-//        //parseError << "ordering is not set.\n";
-//    }
-//
-//    if (not (this->writeReadBufferInBytes > 4194304
-//            && this->writeReadBufferInBytes < 65536000)) {
-//        this->writeReadBufferInBytes = 4194304;
-//    }
-
-    // fieldBasedSearch is an optional field
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
@@ -1066,7 +1002,6 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &s
         searchableAttributesInfo[searchableAttributesVector[iter]] =
         		pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
         				pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
-        		//    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
     }
 }
 
@@ -1169,10 +1104,6 @@ const vector<string> * ConfigManager::getFacetGaps() const {
     return &facetGaps;
 }
 
-/*const vector<unsigned> * ConfigManager::getAttributesBoosts() const
- {
- return &attributesBoosts;
- }*/
 
 string ConfigManager::getSrch2Home() const {
     return this->srch2Home;
@@ -1262,10 +1193,6 @@ bool ConfigManager::getSupportAttributeBasedSearch() const {
 ResponseType ConfigManager::getSearchResponseFormat() const {
 	return searchResponseFormat;
 }
-
-//const string& ConfigManager::getAttributeStringForMySQLQuery() const {
-//    return attributeStringForMySQLQuery;
-//}
 
 const string& ConfigManager::getLicenseKeyFileName() const {
     return licenseKeyFile;
@@ -1600,6 +1527,7 @@ srch2::instantsearch::FilterType ConfigManager::parseFieldType(string& fieldType
 		return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
 
 	ASSERT(false);
+	return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
 }
 
 int ConfigManager::parseFacetType(string& facetType){
