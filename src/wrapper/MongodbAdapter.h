@@ -31,12 +31,11 @@ class MongoDataSource {
 public:
     static void createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager);
     static void spawnUpdateListener( Srch2Server * server);
+    static time_t bulkLoadEndTime;
 private:
-    static void parseOpLogObject(mongo::BSONObj& bobj,string , Srch2Server * server);
+    static void parseOpLogObject(mongo::BSONObj& bobj,string , Srch2Server * server, mongo::DBClientBase& connection);
     static void * runUpdateListener(void *cm);
     static pthread_t * mongoListenerThread;
-    static time_t bulkLoadEndTime;
-    static mongo::DBClientConnection * pooledConnection; // This is not actual pooling ..TODO
 };
 
 class BSONParser {

@@ -28,7 +28,6 @@ namespace httpwrapper {
 
 pthread_t * MongoDataSource::mongoListenerThread = new pthread_t;
 time_t MongoDataSource::bulkLoadEndTime = 0;
-mongo::DBClientConnection * MongoDataSource::pooledConnection = NULL;
 
 void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager) {
 
@@ -38,13 +37,14 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
     string port = configManager->getMongoServerPort();
     boost::algorithm::trim(host);
     try {
-        mongo::DBClientConnection mongoConnector;
         string hostAndport = host;
         if (port.size())
             hostAndport.append(":").append(port);  // std::string is mutable unlike java
-        mongoConnector.connect(hostAndport);
+        mongo::ScopedDbConnection * mongoConnector =
+        		mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
         Logger::console("connected to Mongo Db Instance %s-%s", host.c_str(), port.c_str());
-        unsigned collectionCount = mongoConnector.count(dbNameWithCollection);
+
+        unsigned collectionCount = mongoConnector->conn().count(dbNameWithCollection);
         // We fetch data from mongo db only if there are some records to be processed
         unsigned indexCnt = 0;
         if (collectionCount > 0) {
@@ -53,7 +53,7 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
             srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(configManager);
             // query the mongo database for all the objects in collection. mongo::BSONObj() means get
             // all records from mongo db
-            auto_ptr<mongo::DBClientCursor> cursor = mongoConnector.query(dbNameWithCollection, mongo::BSONObj());
+            auto_ptr<mongo::DBClientCursor> cursor = mongoConnector->conn().query(dbNameWithCollection, mongo::BSONObj());
             // get data from cursor
             while (cursor->more()) {
                 mongo::BSONObj bsonObj = cursor->next();
@@ -77,14 +77,13 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
         } else {
             Logger::console("No data found in the collection %s", dbNameWithCollection.c_str());
         }
-        bulkLoadEndTime = time(NULL);  // set current time as bulk load end time.
         indexer->commit();
         if (indexCnt > 0) {
             Logger::console("Saving Indexes.....");
             indexer->save();
             Logger::console("Indexes saved.");
         }
-
+        mongoConnector->done();
     } catch( const mongo::DBException &e ) {
         Logger::console("MongoDb Exception : %s", e.what());
         exit(-1);
@@ -96,7 +95,8 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
 
 void MongoDataSource::spawnUpdateListener(Srch2Server * server){
 
-    int res = pthread_create(MongoDataSource::mongoListenerThread, NULL, MongoDataSource::runUpdateListener, (void *)server);
+    int res = pthread_create(MongoDataSource::mongoListenerThread, NULL,
+    		MongoDataSource::runUpdateListener, (void *)server);
     if (res != 0)
         Logger::console("Could not create mongo oplog reader thread: error = %d", res);
     else
@@ -113,33 +113,29 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     string host = configManager->getMongoServerHost();
     string port = configManager->getMongoServerPort();
 
-    // create a pooled connect for update / delete operations...
-    pooledConnection = new mongo::DBClientConnection(true);
-
-    // True argument allows connector to reconnect on connection loss
-    mongo::DBClientConnection connector(true);
+    try {
     string hostAndport = host;
-    if (port.size())
+    if (port.size()) {
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
-    connector.connect(hostAndport);
-
-    pooledConnection->connect(hostAndport);
+    }
+    Logger::console("MOGNOLISTENER: thread started ...");
+    mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
+    mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 
     mongo::BSONElement _lastValue = mongo::minKey.firstElement();
     bool printOnce = true;
     time_t opLogTime = 0;
-    while(1)
-    {
+    time_t threadSpecificCutOffTime = bulkLoadEndTime;
+    while(1) {
         // open the tail cursor on the capped collection oplog.rs
         // the cursor will wait for more data when it reaches at
         // the end of the collection. For more info please see
         // following link.
         // http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/
-        //
         mongo::Query query = QUERY("_id" << mongo::GT << _lastValue).hint( BSON( "$natural" << 1 ) );
-        auto_ptr<mongo::DBClientCursor> tailCursor = connector.query(mongoNamespace, query, 0, 0, 0,
+        auto_ptr<mongo::DBClientCursor> tailCursor = oplogConnection.query(mongoNamespace, query, 0, 0, 0,
                 mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
-        while (1){
+        while (1) {
             if (tailCursor->more()){
                 mongo::BSONObj obj = tailCursor->next();
                 string recNS = obj.getStringField("ns");
@@ -147,8 +143,8 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
                     mongo::BSONElement timestampElement = obj.getField("ts");
                     opLogTime = timestampElement.timestampTime().toTimeT();
                     //time_t curRecTime = obj.getField("ts");
-                    if ( opLogTime > bulkLoadEndTime) {
-                        parseOpLogObject(obj, filterNamespace, server);
+                    if ( opLogTime > threadSpecificCutOffTime) {
+                        parseOpLogObject(obj, filterNamespace, server, oplogConnection);
                     }
                 }
                 _lastValue = obj["_id"];
@@ -158,7 +154,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
                 // store the timestamp of the last record processed, so that
                 // when the cursor fetches more data we can filter out any
                 // records processed earlier. Alternative is to store current time.
-                bulkLoadEndTime = opLogTime;
+            	threadSpecificCutOffTime = opLogTime;
                 if (tailCursor->isDead())
                     break;
                 if (printOnce){
@@ -169,7 +165,11 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
             }
         }
     }
-    delete pooledConnection;
+    }catch( const mongo::DBException &e ) {
+    	Logger::console("MongoDb Exception : %s", e.what());
+    } catch (const exception& ex){
+    	Logger::console("Unknown exception : %s", ex.what());
+    }
     return NULL;  // if we ever return
 }
 
@@ -200,7 +200,7 @@ bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, 
 // for op == 'u' : Only primary key of a record is present in oplog. In order to fetch
 // the updated record, we query mongo db using the primary key found in oplog.
 //
-void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, Srch2Server * server){
+void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, Srch2Server * server, mongo::DBClientBase& oplogConnection){
 
     Logger::info("MONGO LISTENER PROCESSING : %s", bobj.jsonString().c_str());
     string operation =  bobj.getField("op").valuestrsafe();
@@ -288,8 +288,10 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             break;
         }
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
-        auto_ptr<mongo::DBClientCursor> cursor = pooledConnection->query(currentNS, _internalMongoId);
+        auto_ptr<mongo::DBClientCursor> cursor = oplogConnection.query(currentNS, _internalMongoId);
         mongo::BSONObj updateRecord = cursor->next();  // should return only one
+        //mongoConnector->done();
+
         if( string(updateRecord.firstElementFieldName()).compare("$err") == 0 ) {
             Logger::error("MONGO_LISTENER:UPDATE: updated record could not be found in db!! ..Cannot update engine");
             break;
@@ -303,10 +305,12 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         else{
             primaryKeyStringValue = pk.valuestrsafe();
         }
-        Logger::debug("MONGO_LISTENER:UPDATE: pk = %s  val =  %s ", configManager->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
+        Logger::debug("MONGO_LISTENER:UPDATE: pk = %s  val =  %s ",
+        		configManager->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
         unsigned deletedInternalRecordId;
         if (primaryKeyStringValue.size()) {
-            srch2is::INDEXWRITE_RETVAL ret = server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId);
+            srch2is::INDEXWRITE_RETVAL ret =
+            		server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId);
             if (ret == srch2is::OP_FAIL)
             {
                 errorMsg << "failed\",\"reason\":\"no record with given primary key\"}";
@@ -334,16 +338,17 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             }
             else
             {
-                errorMsg << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
+                errorMsg << "failed\",\"reason\":\"insert: Document limit reached." << endl;
                 /// reaching here means the insert failed, need to resume the deleted old record
-                srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->recoverRecord(primaryKeyStringValue, 0, deletedInternalRecordId);
+                srch2::instantsearch::INDEXWRITE_RETVAL ret =
+                		server->indexer->recoverRecord(primaryKeyStringValue, 0, deletedInternalRecordId);
             }
         }
         break;
     }
     default:
         break;
-        //ignore
+        Logger::warn("The mongodb operation (ops='%c') is not supported by engine", operation[0]);
     }
     Logger::debug(errorMsg.str().c_str());
 }
