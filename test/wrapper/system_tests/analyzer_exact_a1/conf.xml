@@ -30,7 +30,7 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>srch2_license_key.txt</licenseFile>
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./</dataDir>
+    <dataDir>./data/analyzer_exact_a1/</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>sample-data.json</dataFile>
+    <dataFile>./analyzer_exact_a1/data.json</dataFile>
      
      
          
@@ -71,14 +71,14 @@
                 1: Geo+Text Index
         -->
         <indexType>0</indexType>
-         
-        <!--
+        
+		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>true</supportSwapInEditDistance>
-
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+         
         <!--
             Boost Values
             Optional
@@ -91,7 +91,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost>category^2 name^1</fieldBoost>
+        <fieldBoost></fieldBoost>
          
          
         <!-- 
@@ -128,9 +128,9 @@
             #record-score-expression=doc_boost+(1/(doc_length+1))
             record-score-expression=idf_score*doc_boost
         -->
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <!--
             Query Term Similarity Boost
@@ -140,16 +140,6 @@
         -->
         <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
          
-         
-        <!--
-            Query Term Similarity Threshold
-            Optional
-             
-            Defaults to 0.5
-        -->
-        <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
-        
-        
         <!--
             Query Term Length Boost
             Optional
@@ -328,7 +318,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+            <accessLogFile>./data/analyzer_exact_a1/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -391,7 +381,7 @@
   		- values are false (disabled) and true (enabled)
   		- By default it is disabled.
   -->
-  <facetEnabled>false</facetEnabled>
+  <facetEnabled>true</facetEnabled>
   
   <facetFields>
 	  <!--
@@ -426,7 +416,7 @@
                 For Example:
                     Disable Stemmer: <filter name="PorterStemFilter" dictionary="" />
             -->
-            <filter name="PorterStemFilter" dictionary="" />
+            <filter name="PorterStemFilter" dictionary="./analyzer_exact_a1/srch2_stemmer_words.txt" />
              
             <!--
                 Stop Word Filter
@@ -436,7 +426,7 @@
                 For Example:
                     Disable Stop Word Filter: <filter name="StopFilter" words="" />
             -->
-            <filter name="StopFilter" words="" />
+            <filter name="StopFilter" words="./analyzer_exact_a1/srch2_stop_words.txt" />
              
         </analyzer>
     </fieldType>
