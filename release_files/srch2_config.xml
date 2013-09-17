@@ -142,7 +142,7 @@
          
          
         <!--
-            Query Term Edit Distance Normalization Factor
+            Query Term Similarity Threshold
             Optional
              
             Defaults to 0.5
