@@ -47,7 +47,7 @@ void QueryRewriter::rewrite() {
      * for example a user can provide a query like : foo~0.5 AND bar
      * for this query:
      * rawQueryKeyword vector is <foo , bar>
-     * fuzzyLevel vector is <0.5,-1> // should rewrite -1 to what's comming from configuration file
+     * SimilarityThreshold vector is <0.5,-1> // should rewrite -1 to what's comming from configuration file
      * boostLevel vector is <> , no rewrite, planGen understands empty vector
      * prefixComplete vector <>
      */
@@ -86,9 +86,9 @@ void QueryRewriter::prepareKeywordInfo() {
                     indexDataContainerConf->getQueryTermBoost();
         }
 
-        if (paramContainer->hasParameterInQuery(KeywordFuzzyLevel)
-                && paramContainer->keywordFuzzyLevel.at(k) < 0) {
-            paramContainer->keywordFuzzyLevel.at(k) =
+        if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)
+                && paramContainer->keywordSimilarityThreshold.at(k) < 0) {
+            paramContainer->keywordSimilarityThreshold.at(k) =
                     indexDataContainerConf->getQueryTermSimilarityThreshold();
         }
 
@@ -151,7 +151,7 @@ void QueryRewriter::applyAnalyzer() {
     }
     // now erase the data of erased keywords
     std::vector<std::string> rawQueryKeywords;
-    std::vector<float> keywordFuzzyLevel;
+    std::vector<float> keywordSimilarityThreshold;
     std::vector<int> keywordBoostLevel;
     std::vector<srch2is::TermType> keywordPrefixComplete;
     std::vector<unsigned> fieldFilterNumbers;
@@ -165,8 +165,8 @@ void QueryRewriter::applyAnalyzer() {
             if(paramContainer->hasParameterInQuery(KeywordBoostLevel)){
                 keywordBoostLevel.push_back(paramContainer->keywordBoostLevel.at(i));
             }
-            if(paramContainer->hasParameterInQuery(KeywordFuzzyLevel)){
-                keywordFuzzyLevel.push_back(paramContainer->keywordFuzzyLevel.at(i));
+            if(paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)){
+                keywordSimilarityThreshold.push_back(paramContainer->keywordSimilarityThreshold.at(i));
             }
             if(paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)){
                 keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
@@ -180,7 +180,7 @@ void QueryRewriter::applyAnalyzer() {
     }
     // then copy back
     paramContainer->rawQueryKeywords = rawQueryKeywords;
-    paramContainer->keywordFuzzyLevel = keywordFuzzyLevel;
+    paramContainer->keywordSimilarityThreshold = keywordSimilarityThreshold;
     paramContainer->keywordBoostLevel = keywordBoostLevel;
     paramContainer->keywordPrefixComplete = keywordPrefixComplete;
     paramContainer->fieldFilterNumbers = fieldFilterNumbers;

@@ -35,7 +35,7 @@ typedef enum {
     IsFuzzyFlag,
     LengthBoostFlag,
     PrefixMatchPenaltyFlag,
-    KeywordFuzzyLevel,
+    KeywordSimilarityThreshold,
     KeywordBoostLevel,
     FieldFilter,
     QueryPrefixCompleteFlag,
