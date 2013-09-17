@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <sstream>
 #include "util/Assert.h"
+#include "postprocessing/PhraseSearchFilter.h"
 
 using namespace std;
 
@@ -72,6 +73,24 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         filterQuery->evaluator =
                 paramsContainer.filterQueryContainer->evaluator;
         plan->getPostProcessingPlan()->addFilterToPlan(filterQuery);
+    }
+
+    if (paramsContainer.hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...
+    	srch2is::PhraseQueryFilter * pqFilter = new srch2is::PhraseQueryFilter();
+    	for (int i = 0; i < paramsContainer.rawQueryKeywords.size(); ++i) {
+    		if (paramsContainer.isPhraseKeywordFlags[i] == false)
+    			continue;
+    		vector<string> phraseKeywords;
+    		boost::algorithm::split(phraseKeywords, paramsContainer.rawQueryKeywords[i],
+                                    boost::is_any_of("\t "));
+    		std::map<string, vector<unsigned> >::const_iterator iter =
+    		 paramsContainer.PhraseKeyWordsPositionMap.find(paramsContainer.rawQueryKeywords[i]);
+    		ASSERT(iter != paramsContainer.PhraseKeyWordsPositionMap.end());
+    		ASSERT(iter->second.size() == phraseKeywords.size());
+    		pqFilter->addPhrase(phraseKeywords,iter->second, paramsContainer.PhraseSlops[i],
+    							paramsContainer.fieldFilterNumbers[i]);
+    	}
+        plan->getPostProcessingPlan()->addFilterToPlan(pqFilter);
     }
 
     // 3. If the search type is GetAllResults or Geo, look for Sort and Facet
@@ -272,20 +291,47 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     }
 
+    vector<bool> phraseFlagVector;
+    if (!paramsContainer.isPhraseKeywordFlags.empty()) {
+        phraseFlagVector = paramsContainer.isPhraseKeywordFlags;
+        ASSERT(phraseFlagVector.size() == rawQueryKeywords.size());
+    } else {
+    	for (unsigned i = 0; i < rawQueryKeywords.size(); i++)
+    		phraseFlagVector.push_back(false);
+    }
+
     // 3. Fill up query objects
     // exact query
     for (int i = 0; i < rawQueryKeywords.size(); i++) {
         srch2is::Term *exactTerm;
-        exactTerm = new srch2is::Term(rawQueryKeywords[i],
+        if (phraseFlagVector[i] == false){
+
+         exactTerm = new srch2is::Term(rawQueryKeywords[i],
                 keywordPrefixComplete[i], keywordBoostLevel[i],
                 indexDataContainerConf->getQueryTermSimilarityBoost(), 0);
         exactTerm->addAttributeToFilterTermHits(fieldFilter[i]);
 
         plan->getExactQuery()->add(exactTerm);
+
+        } else {
+
+        	vector<string> phraseKeyWords;
+        	boost::algorithm::split(phraseKeyWords, rawQueryKeywords[i], boost::is_any_of("\t "));
+        	// keywords in phrase are considered to be complete and no fuzziness is allowed
+        	for (int pIndx =0; pIndx < phraseKeyWords.size(); ++pIndx){
+        		exactTerm = new srch2is::Term(phraseKeyWords[pIndx],
+        				srch2is::TERM_TYPE_COMPLETE, keywordBoostLevel[i],
+        				indexDataContainerConf->getQueryTermSimilarityBoost(), 0);
+        		exactTerm->addAttributeToFilterTermHits(fieldFilter[i]);
+        		plan->getExactQuery()->add(exactTerm);
+        	}
+        }
     }
     // fuzzy query
     if (plan->isFuzzy()) {
         for (int i = 0; i < rawQueryKeywords.size(); i++) {
+        	if (phraseFlagVector[i] == true)
+        		continue;                   // No fuzzy for phrase search
             srch2is::Term *fuzzyTerm;
             fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
                     keywordPrefixComplete[i], keywordBoostLevel[i],

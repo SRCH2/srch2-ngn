@@ -101,6 +101,21 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
+    this->enablePositionIndex = false; // by default it is false
+    configAttribute = configDoc.child("config").child("indexConfig").child("enablePositionIndex");
+    if (configAttribute && configAttribute.text()) {
+    	string configValue = configAttribute.text().get();
+    	if (this->isValidBooleanValue(configValue)) {
+    		this->enablePositionIndex = configAttribute.text().as_bool();
+    	} else {
+    		parseError << "enablePositionIndex should be either 0 or 1.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	Logger::info("turning on attribute based search because position index is enabled");
+    	this->supportAttributeBasedSearch = true;
+    }
+
     // uniqueKey is required
     configAttribute = configDoc.child("schema").child("uniqueKey");
     if (configAttribute && configAttribute.text()) {
@@ -768,17 +783,22 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // fieldBasedSearch is an optional field
-    this->supportAttributeBasedSearch = false; // by default it is false
-    configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
-    if (configAttribute && configAttribute.text()) {
-        string fbs = configAttribute.text().get();
-        if (this->isValidFieldBasedSearch(fbs)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
-        } else {
-            parseError << "supportAttributeBasedSearch is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
+    if (this->enablePositionIndex == false) {
+    	this->supportAttributeBasedSearch = false; // by default it is false
+    	configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
+    	if (configAttribute && configAttribute.text()) {
+    		string configValue = configAttribute.text().get();
+    		if (this->isValidBooleanValue(configValue)) {
+    			this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+    		} else {
+    			parseError << "supportAttributeBasedSearch is not set correctly.\n";
+    			configSuccess = false;
+    			return;
+    		}
+    	}
+    } else {
+    	// attribute based search is enabled if positional index is enabled
+    	this->supportAttributeBasedSearch = true;
     }
 
     // queryTermMatchType is an optional field
@@ -1038,6 +1058,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 //        this->writeReadBufferInBytes = 4194304;
 //    }
 
+    // fieldBasedSearch is an optional field
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
@@ -1484,8 +1505,8 @@ bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
     return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
 }
 
-bool ConfigManager::isValidFieldBasedSearch(string& fieldBasedSearch) {
-    if (fieldBasedSearch.compare("0") == 0 || fieldBasedSearch.compare("1") == 0) {
+bool ConfigManager::isValidBooleanValue(string& fieldValue) {
+    if (fieldValue.compare("0") == 0 || fieldValue.compare("1") == 0) {
         return true;
     }
     return false;
@@ -1598,6 +1619,9 @@ void ConfigManager::setFilePath(const string& dataFile) {
 }
 
 
+bool ConfigManager::isPositionIndexEnabled() const{
+	return this->enablePositionIndex;
+}
 
 }
 }

@@ -24,7 +24,7 @@ using namespace srch2is;
 Indexer *buildIndex(string data_file, string index_dir, string expression)
 {
     /// Set up the Schema
-    Schema *schema = Schema::create(srch2is::DefaultIndex, srch2::instantsearch::FIELDBITINDEX);
+    Schema *schema = Schema::create(srch2is::DefaultIndex, srch2::instantsearch::POSITION_INDEX_FIELDBIT);
     schema->setPrimaryKey("id");
     schema->setSearchableAttribute("name", 2);
     schema->setSearchableAttribute("category", 1);
