@@ -70,7 +70,7 @@
 {"category": "attorney Professional Services Lawyer & Legal Services", "name": "Ame W Ivanov", "relevance": 2.9052245322526038, "lat": 61.181967, "lng": -149.83437799999999, "id": "70"}
 {"category": "towing Marine Transportation", "name": "Island Provider Transportation", "relevance": 3.1267734337967257, "lat": 57.788266, "lng": -152.40792200000001, "id": "71"}
 {"category": " Communications Services", "name": "Alaska Communications Systems", "relevance": 2.4878710209541777, "lat": 55.349715000000003, "lng": -131.66967500000001, "id": "72"}
-{"category": "sharpening Retail Services Repair Shop", "name": "Precision Carbide", "relevance": 0.37887143373863008, "lat": 61.143791, "lng": -149.84652500000001, "id": "73"}
+{"category": "sharpening Retail Services Repair Shop or Store", "name": "Precision Carbide", "relevance": 0.37887143373863008, "lat": 61.143791, "lng": -149.84652500000001, "id": "73"}
 {"category": "accountant Professional Services Accounting & Tax Preparation", "name": "Penn Cal & Assoc", "relevance": 1.9579037921875719, "lat": 64.814570000000003, "lng": -147.75208900000001, "id": "74"}
 {"category": "car dealer Autos & Motor Vehicles Retail Goods Automobile Sales", "name": "Seekins Ford Lincoln Mercury", "relevance": 6.9756194775925975, "lat": 64.858525, "lng": -147.67953700000001, "id": "75"}
 {"category": " Insurance Services Insurance Agent", "name": "AFLAC", "relevance": 4.8701894813087971, "lat": 58.362752, "lng": -134.581121, "id": "76"}
@@ -84,7 +84,7 @@
 {"category": " Insurance Services Insurance Agent", "name": "Prescription Service Of Alaska", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "84"}
 {"category": "baker Food & Beverages Retail Goods Bakery", "name": "Bear Claw Bakery", "relevance": 5.1210648509528669, "lat": 59.645589999999999, "lng": -151.54322999999999, "id": "85"}
 {"category": "kindergarten academic school Social Services Services Child Care", "name": "Garden Montessori", "relevance": 5.3888513463129604, "lat": 61.111776999999996, "lng": -149.86153999999999, "id": "86"}
-{"category": "pet shop Shopping Retail Goods", "name": "Pet Palace", "relevance": 7.9831757526536551, "lat": 64.851077000000004, "lng": -147.705657, "id": "87"}
+{"category": "pet shop Shopping Retail Goods or something else", "name": "Pet Palace", "relevance": 7.9831757526536551, "lat": 64.851077000000004, "lng": -147.705657, "id": "87"}
 {"category": "equipment moving supply Retail Services Auto Rental", "name": "Fleenor Paper Co", "relevance": 3.8512030538546749, "lat": 61.221077000000001, "lng": -149.831715, "id": "88"}
 {"category": "automobile parts Autos & Motor Vehicles Retail Goods Auto Supplies", "name": "NAPA Auto Parts", "relevance": 1.5344502015314232, "lat": 60.794860999999997, "lng": -161.75558899999999, "id": "89"}
 {"category": "mfg made custom Manufacturing Manufacturing & Wholesale Goods Watercraft", "name": "Airboats R US Inc", "relevance": 5.731112323135811, "lat": 61.334643, "lng": -149.55678800000001, "id": "90"}
