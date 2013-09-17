@@ -277,15 +277,15 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     // if position index is ebabled then attribute based search is also enabled
     // so check whether position index is enabled first
     if (indexDataContainerConf->isPositionIndexEnabled()){
-    	positionIndexType = srch2::instantsearch::FULLPOSITIONINDEX ;
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
     }
     else if (indexDataContainerConf->getSupportAttributeBasedSearch())
     {
-        positionIndexType = srch2::instantsearch::FIELDBITINDEX;
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
     }
     else
     {
-        positionIndexType = srch2::instantsearch::NOPOSITIONINDEX;
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
     }
 
     srch2is::Schema* schema = srch2is::Schema::create(indexType, positionIndexType);

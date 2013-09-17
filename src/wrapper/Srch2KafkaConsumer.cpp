@@ -100,8 +100,8 @@ void Srch2KafkaConsumer::createAndBootStrapIndexer()
 			AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
 			indexer->getSchema()->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 			bool isAttributeBasedSearch = false;
-			if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX ||
-			    indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::FULLPOSITIONINDEX) {
+			if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+			    indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FULL) {
 				isAttributeBasedSearch =true;
 			}
 			if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())

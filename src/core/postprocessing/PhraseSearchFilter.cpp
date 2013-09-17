@@ -112,8 +112,14 @@ bool PhraseQueryFilter::matchPhrase(const ForwardList* forwardListPtr, const Phr
     // check whether it is AND or OR boolean operator for multiple fields.
     bool ANDOperation = phraseInfo.attributeBitMap & 0x80000000;
 
-    //special check for and operation ...if the set bits of query bit map does not match with all
+    //special check for AND operation ...if the set bits of query bit map does not match with all
     // the keywords bitmap then we should return false because AND condition will not be satisfied.
+    // The below code goes over all keyword in phrase and check whether it has all the attribute
+    // mentioned in the query ( i.e specified by phraseInfo.attributeBitMap)
+    // e.g for a given record, if "new" is present in "title" and "description" field
+    // and "york" is present only in "title" field and
+    // if query is title.description:"new york" then there should skip this record.
+    //
     if (ANDOperation && phraseInfo.attributeBitMap != 0xFFFFFFFF) {
     	for (int i = 0; i < keywordsAttrBitMapInForwardList.size(); ++i) {
     		unsigned resultBitMap = phraseInfo.attributeBitMap & keywordsAttrBitMapInForwardList[i];

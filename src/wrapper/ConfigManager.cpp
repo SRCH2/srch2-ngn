@@ -1479,8 +1479,8 @@ bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
     return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
 }
 
-bool ConfigManager::isValidBooleanValue(string& fieldBasedSearch) {
-    if (fieldBasedSearch.compare("0") == 0 || fieldBasedSearch.compare("1") == 0) {
+bool ConfigManager::isValidBooleanValue(string& fieldValue) {
+    if (fieldValue.compare("0") == 0 || fieldValue.compare("1") == 0) {
         return true;
     }
     return false;

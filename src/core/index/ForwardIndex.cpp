@@ -328,7 +328,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     // support attribute-based search
-    if (positionIndexType == FIELDBITINDEX || positionIndexType == FULLPOSITIONINDEX) {
+    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
     	ForwardList::isAttributeBasedSearch = true;
 
     	forwardList->setKeywordAttributeBitmaps(
@@ -350,12 +350,14 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     	}
     }
 
-    if (this->schemaInternal->getPositionIndexType() == FULLPOSITIONINDEX) {
+    if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
     	// Add position indexes in forward list
     	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
-    	vector<uint8_t> grandBuffer;
+    	// this buffer is temporary storage of variable length byte array, since its
+    	// size is not known in advance.
+    	vector<uint8_t> tempVarLenByteBuffer;
     	// To avoid frequent resizing, reserve space for vector. 10 is random number
-    	grandBuffer.reserve(uniqueKeywordIdList.size() * 10);
+    	tempVarLenByteBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
     	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
 
@@ -379,7 +381,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
-    				convertToVarLengthArray(positionListVector, grandBuffer);
+    				convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
     				positionListVector.clear();
     				positionListVector.push_back(position);
     			}
@@ -388,11 +390,11 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		// convert the position list vector of last attribute to variable
     		// length byte array
-    		convertToVarLengthArray(positionListVector, grandBuffer);
+    		convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
     		positionListVector.clear();
     	}
     	// set grand buffer to position index of current forward list.
-    	forwardList->setPositionIndex(grandBuffer);
+    	forwardList->setPositionIndex(tempVarLenByteBuffer);
     }
 
     ForwardListPtr managedForwardListPtr;
@@ -515,7 +517,9 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         // support attribute-based search
         if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::FIELDBITINDEX)
+                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+                this->schemaInternal->getPositionIndexType()
+                                == srch2::instantsearch::POSITION_INDEX_FULL)
             keywordRichInformationList[keywordOffset].keywordAttribute =
                     forwardList->getKeywordAttributeBitmap(keywordOffset);
     }
@@ -541,7 +545,9 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         //copy attribute
         // support attribute-based search
         if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::FIELDBITINDEX) {
+                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+                this->schemaInternal->getPositionIndexType()
+                                == srch2::instantsearch::POSITION_INDEX_FULL) {
             forwardList->setKeywordAttributeBitmap(keywordOffset,
                     iter->keywordAttribute);
         }
@@ -767,7 +773,7 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
     // support attribute-based search
     if (searchableAttributeId == 0
             || (schema->getPositionIndexType()
-                    != srch2::instantsearch::FIELDBITINDEX)) {
+                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)) {
         return true;
     } else {
         ASSERT(
