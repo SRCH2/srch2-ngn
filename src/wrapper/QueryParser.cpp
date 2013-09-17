@@ -38,7 +38,7 @@ const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
         "defaultFieldOperator"; //srch2
 const char* const QueryParser::lpKeywordFuzzyLevelParamName =
-        "defaultfuzzyLevel"; // srch2
+        "defaultSimilarityThreshold"; // srch2
 const char* const QueryParser::lpKeywordBoostLevelParamName =
         "defaultBoostLevel"; // srch2
 const char* const QueryParser::lpKeywordPrefixCompleteParamName =
