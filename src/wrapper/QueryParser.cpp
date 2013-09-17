@@ -37,7 +37,7 @@ const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
 const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
         "defaultFieldOperator"; //srch2
-const char* const QueryParser::lpKeywordFuzzyLevelParamName =
+const char* const QueryParser::lpKeywordSimilarityThresholdParamName =
         "defaultSimilarityThreshold"; // srch2
 const char* const QueryParser::lpKeywordBoostLevelParamName =
         "defaultBoostLevel"; // srch2
@@ -70,7 +70,7 @@ QueryParser::QueryParser(const evkeyvalq &headers,
     this->container = container;
     this->isParsedError = false;
     this->isLpFieldFilterBooleanOperatorAssigned = false;
-    this->lpKeywordFuzzyLevel = -1.0;
+    this->lpKeywordSimilarityThreshold = -1.0;
     this->lpKeywordBoostLevel = -1;
     this->lpKeywordPrefixComplete =
             srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
@@ -144,7 +144,7 @@ bool QueryParser::parse() {
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs
     /*
-     * example: q={defaultSearchFields=Author defaultFuzzyLevel=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
+     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
      * 1. calls localParameterParser()
      * 2. calls the termParser();
      */
@@ -185,7 +185,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                         parseNextTerm = false;
                         if (mainQueryStr.length() > 0) {
                             // this can happen if the initial query was like
-                            // 'q={defaultSearchFields=Author defaultFuzzyLevel=.8}title:algo* publisher:mac* AND lang:engl*^2~.8'
+                            // 'q={defaultSearchFields=Author defaultSimilarityThreshold=.8}title:algo* publisher:mac* AND lang:engl*^2~.8'
                             // notice that there is no Boolean operator specified betwwen 'title:algo*' and 'publisher:mac*'
                             // raise error message
                             Logger::info(
@@ -200,9 +200,9 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
                     parseNextTerm = false;
                 }
             }
-            // check if keywordFuzzyLevel was set by parseTerms
+            // check if keywordSimilarityThreshold was set by parseTerms
             // true? set the isFuzzyFlag.
-            // else , empty the keywordFuzzyLevel vector
+            // else , empty the keywordSimilarityThreshold vector
             this->clearMainQueryParallelVectorsIfNeeded();
         }
     } else {
@@ -801,7 +801,7 @@ bool QueryParser::localParameterParser(string &input) {
     /*
      * this function parses the local parameters section of all parts
      * input:
-     *      1. local parameters string : '{defaultSearchFields=Author defaultFuzzyLevel=.7}gnuth'
+     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=.7}gnuth'
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
@@ -810,7 +810,7 @@ bool QueryParser::localParameterParser(string &input) {
             input.c_str());
     if (input.at(0) == '{') {
         Logger::debug("localparamter string found, extracting it.");
-        input = input.substr(1); // input is modifed to 'defaultSearchFields=Author defaultFuzzyLevel=.7}gnuth'
+        input = input.substr(1); // input is modifed to 'defaultSearchFields=Author defaultSimilarityThreshold=.7}gnuth'
         // TODO: do a memory profiling to see if substr is cpu costly. Yes? use unsigned as a cursor over the input string.
         string lpField = "";
         while (parseLpKey(input, lpField)) {
@@ -869,7 +869,7 @@ bool QueryParser::localParameterParser(string &input) {
  * else, it raises warning and ignores the lpKey and lpVal
  * We support following lpKeys
  * 1) "defaultFieldOperator"
- * 2) "defaultfuzzyLevel"
+ * 2) "defaultSimilarityThreshold"
  * 3) "defaultBoostLevel"
  * 4) "defaultPrefixComplete"
  * 5) "defaultSearchFields"
@@ -895,15 +895,15 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
                     srch2::instantsearch::BooleanOperatorAND;
         }
         this->isLpFieldFilterBooleanOperatorAssigned = true;
-    } else if (0 == lpKey.compare(lpKeywordFuzzyLevelParamName)) {
+    } else if (0 == lpKey.compare(lpKeywordSimilarityThresholdParamName)) {
         if (isFloat(lpVal)) {
             float f = atof(lpVal.c_str()); //TODO: add the validation
-            this->lpKeywordFuzzyLevel = f;
+            this->lpKeywordSimilarityThreshold = f;
         } else {
             //warning
             this->container->messages.push_back(
                     make_pair(MessageWarning,
-                            string(lpKeywordFuzzyLevelParamName)
+                            string(lpKeywordSimilarityThresholdParamName)
                                     + " should be a valid float number. Ignoring it."));
         }
     } else if (0 == lpKey.compare(lpKeywordBoostLevelParamName)) {
@@ -1091,7 +1091,7 @@ bool QueryParser::termParser(string &input) {
     } else {
         hasParsedParameter = parseProximityModifier(input, fuzzyModifier);
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
-        this->container->keywordFuzzyLevel.push_back(0.0f);
+        this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
     Logger::info("returning from  termParser.");
     return true;
@@ -1158,8 +1158,8 @@ void QueryParser::checkForBoostNums(const string &input,
 void QueryParser::checkForFuzzyNums(const string &input,
         boost::smatch &matches) {
     /*
-     * checks if the fuzzylevel is present in the input string
-     * example: keyword~.8 has fuzzylevel as .8. keyword~ has no fuzzylevel specified.
+     * checks if the SimilarityThreshold is present in the input string
+     * example: keyword~.8 has SimilarityThreshold as .8. keyword~ has no SimilarityThreshold specified.
      * input is ~.8 or ~
      */
     Logger::debug("inside checkForFuzzyNums");
@@ -1543,23 +1543,23 @@ void QueryParser::setInQueryParametersIfNotSet(ParameterName param) {
     }
     Logger::debug("returning from setInQueryParametersIfNotSet");
 }
-void QueryParser::setFuzzyLevelInContainer(const float f) {
+void QueryParser::setSimilarityThresholdInContainer(const float f) {
     /*
-     * sets the fuzzylevel in the container->keywordFuzzyLevel variable.
+     * sets the SimilarityThreshold in the container->keywordSimilarityThreshold variable.
      *  check isFuzzy
-     *            true -> use the fuzzylevel as specified
-     *            else -> set 0.0 as fuzzylevel
+     *            true -> use the SimilarityThreshold as specified
+     *            else -> set 0.0 as SimilarityThreshold
      */
-    Logger::debug("inside setFuzzyLevelInContainer");
+    Logger::debug("inside setSimilarityThresholdInContainer");
 // this is set, fuzzyFlag came from  query parameter.
     if (this->container->isFuzzy) {
-        // use the fuzzylevel provided with keyword
-        this->container->keywordFuzzyLevel.push_back(f);
+        // use the SimilarityThreshold provided with keyword
+        this->container->keywordSimilarityThreshold.push_back(f);
     } else {
         // set fuzzy level to 0
-        this->container->keywordFuzzyLevel.push_back(0.0f);
+        this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
-    Logger::debug("returning from setFuzzyLevelInContainer");
+    Logger::debug("returning from setSimilarityThresholdInContainer");
 }
 /*
  * parses the localparameter key from input string. It changes input string and populates the field
@@ -1649,7 +1649,7 @@ bool QueryParser::parseProximityModifier(string &input, string &output) {
 void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     if (isParsed) {
         Logger::debug("fuzzy modifier used in query");
-        this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
+        this->setInQueryParametersIfNotSet(KeywordSimilarityThreshold);
         boost::smatch matches;
         this->checkForFuzzyNums(input, matches); // check if fuzzy value is present
         if (matches[0].matched) {
@@ -1659,23 +1659,23 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
             this->extractNumbers(matches[0].str(), numMatches);
             float fuzzyNum = atof(("." + numMatches[0].str()).c_str()); // convert to float
             Logger::debug("fuzzy value is %f", fuzzyNum);
-            this->setFuzzyLevelInContainer(fuzzyNum);
+            this->setSimilarityThresholdInContainer(fuzzyNum);
         } else {
             // there is no value specified
             Logger::debug(
                     "fuzzy value is not specified, using the lp value or -1.0");
-            this->setFuzzyLevelInContainer(this->lpKeywordFuzzyLevel); // selts the localParameter specified value
+            this->setSimilarityThresholdInContainer(this->lpKeywordSimilarityThreshold); // selts the localParameter specified value
         }
     } else {
         Logger::debug("fuzzy value is not specified, use 0");
-        this->setFuzzyLevelInContainer(0.0f);
+        this->setSimilarityThresholdInContainer(0.0f);
     }
 }
 
 void QueryParser::populateProximityInfo(bool isParsed, string &input) {
     if (isParsed) {
         Logger::debug("Proximity slop used in query");
-        //this->setInQueryParametersIfNotSet(KeywordFuzzyLevel);
+        //this->setInQueryParametersIfNotSet(KeywordSimilarityThreshold);
         // get the fuzzy value;
         Logger::debug("fuzzy value is specified extracting it");
         boost::smatch numMatches;
@@ -1690,12 +1690,12 @@ void QueryParser::populateProximityInfo(bool isParsed, string &input) {
 
 void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
     Logger::debug("inside clearMainQueryParallelVectorsIfNeeded().");
-    if (this->container->hasParameterInQuery(KeywordFuzzyLevel)) {
+    if (this->container->hasParameterInQuery(KeywordSimilarityThreshold)) {
         this->setInQueryParametersIfNotSet(IsFuzzyFlag);
         this->container->isFuzzy = true;
     } else {
-        this->container->keywordFuzzyLevel.clear();
-        Logger::debug("keywordFuzzyLevel paralel vector cleared.");
+        this->container->keywordSimilarityThreshold.clear();
+        Logger::debug("keywordSimilarityThreshold paralel vector cleared.");
     }
 // check if KeywordBoostLevel was set
     if (!this->container->hasParameterInQuery(KeywordBoostLevel)) {
