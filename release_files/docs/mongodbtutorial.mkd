@@ -61,7 +61,7 @@ mongodb> db.movies.find().count()
 ```
 > There should be 243 movies in the movies collections.
 ##2.1. Configure SRCH2###{id="configureSrch2"}
->Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package.
+>Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package. Download a sample <a href="srch-tutorials/srch2-config.xml">config.xml</a>.
 ```
     <mongodb>
         <db>demo</db>
