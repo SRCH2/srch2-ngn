@@ -68,7 +68,7 @@
 
 ####License Key File, Required{id="licenseFile"}
 <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
->It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
+>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a [form](http://srch2.com/try.php) to get a free trial key. <br>
 
 
 ####Hostname and Port, Required{id="listeningHostname"}
@@ -82,7 +82,7 @@
 ```
 <dataDir>/path/to/data.json</dataDir>
 ```
-> The path of a folder where the engine stores serialized index files. <br>
+> It specifies the path of a folder where the engine stores serialized index files. <br>
 
 
 ####Data File, Required if DATA_SOURCE = 2 (TODO):{id="dataFile"}
@@ -94,7 +94,7 @@
 
 
 ####Index Config:{id="indexConfig"}
-> The tag includes parameters related to customizing the record indexes.
+> This tag includes parameters related to customizing the indexes.
 ```
 <indexConfig>
 ...
@@ -156,7 +156,6 @@
 >> It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) section about how this parameter is used. Its default value is 0.5.
 
 >####Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
-****
 ```
 <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
