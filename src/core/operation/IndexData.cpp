@@ -405,6 +405,8 @@ INDEXWRITE_RETVAL IndexData::_commit()
          */
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
+        // Note: we should commit even if totalNumberofDocuments = 0
+
         this->forwardIndex->commit();
         this->trie->commit();
         //this->trie->print_Trie();
