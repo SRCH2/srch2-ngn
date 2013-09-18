@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="generator" content="ReText 4.0.0">
+<title>mongotutorial</title>
+</head>
+<body>
+<table ><tr>
+
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">RESTful API</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#loadData">2. Load Data</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configureSrch2">2.1. Configure Srch2</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#startSrch2">2.2. Start Srch2 Engine</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insertData">2.3. Insert Record: MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#search">2.4. Search</a></br><br>
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table>
+
+</div>
+
+<h1 id="doc" style="color:#880000"><center>Tutorial: MongoDB with Srch2</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 18, 2013</center></h6>
+<h2 id="overview">1. Overview</h2>
+<blockquote>
+<p>This is a tutorial on how to configure mongodb to use srch2. We assume that you have already downloaded the mongodb and it is working fine on your system. We will refer to the mongodb install directory where <i>bin</i> folder is present as MONGO_HOME.</p>
+</blockquote>
+<h2 id="loadData">2. Load Data</h2>
+<blockquote>
+<p>Let us first load some data into our mondogb. Download this <a href=mongotutorial/movies.json>sample data file</a> into your MONGO_HOME directory. Now, run the following command from your MONGO_HOME directory. </p>
+</blockquote>
+<pre><code>./bin/mongoimport --db demo --collection movies --type json --file movies.json 
+</code></pre>
+
+<blockquote>
+<p>Let's check if the data has been loaded. Start your mongo client and run following commands</p>
+</blockquote>
+<pre><code>mongodb&gt; use demo
+mongodb&gt; db.movies.find().count()
+</code></pre>
+
+<blockquote>
+<p>There should be 243 movies in the movies collections.</p>
+</blockquote>
+<h2 id="configureSrch2">2.1 Configure Srch2</h2>
+<blockquote>
+<p>Add following lines inside the <i>config</i> element of the conf.xml that comes with your srch2 package.</p>
+</blockquote>
+<pre><code>    &lt;mongodb&gt;
+        &lt;db&gt;demo&lt;/db&gt;
+        &lt;host&gt;localhost&lt;/host&gt;
+        &lt;collection&gt;movies&lt;/collection&gt;
+        &lt;port&gt;27017&lt;/port&gt;
+    &lt;/mongodb&gt;
+    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
+</code></pre>
+
+<h2 id="startSrch2">2.2 Start Srch2 Engine</h2>
+<blockquote>
+<p>Start the srch2 server. </p>
+</blockquote>
+<pre><code>./srch2-search-server --config=./srch2-conf.ini 
+</code></pre>
+
+<blockquote>
+<p>The engine should read the data, build indexes, and wait for the updates from mongodb.</p>
+</blockquote>
+<h2 id="insertData">2.3 Insert A Record Into MongoDB</h2>
+<blockquote>
+<p>Let's insert some records into mondoDB. In the mongo client. paste following code.</p>
+</blockquote>
+<pre><code>db.movies.insert(
+{
+    &quot;trailer_url&quot; : &quot;http://www.youtube.com/watch?v=68I3j2luW64&quot;,
+    &quot;title&quot; : &quot;The Terminator&quot;,
+    &quot;director&quot; : &quot;James Cameron&quot;,
+    &quot;year&quot; : NumberLong(1984),
+    &quot;banner_url&quot; : &quot;http://ia.media-imdb.com/images/M/MV5BODE1MDczNTUxOV5BMl5BanBnXkFtZTcwMTA0NDQyNA@@._V1_SX214_.jpg&quot;,
+    &quot;id&quot; : NumberLong(764006),
+    &quot;genre&quot; : &quot;action&quot;
+}
+);
+</code></pre>
+
+<h2 id="search">2.4 Search</h2>
+<blockquote>
+<p>Now that we have inserted a record into mongoDB, let's search it using srch2 engine. In the terminal enter the following command. Make sure to change the host and port in the command according to your system.</p>
+</blockquote>
+<pre><code>curl &quot;http://localhost:8081/search?q=terminator&quot;
+</code></pre>
+
+<blockquote>
+<p>You should see the above record as one of the records in the response.
+<hr/>
+Have fun SRCHing!</p>
+</blockquote>
+<style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+        left:10px;
+    top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+pre{
+    margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+
+html{
+    min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>
+</body>
+</html>
