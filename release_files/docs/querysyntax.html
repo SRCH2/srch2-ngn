@@ -2,45 +2,87 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>querysyntax</title>
 </head>
 <body>
-<table><tr>
-<td style="width:14%">
-<div id="content">
+<table ><tr>
+
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">RESTful API</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sampleQueries">Sample Queries</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#basicConcepts">Basic Concepts</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryComponents">Query Components</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#localParams"/>Local Parameters</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryParams">Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mainQuery">Main Query ("q")</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#filterQuery">Filter Query ("fq")</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldList">Field List ("fl")</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">Facet</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searchType">Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sort">Sort</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sampleQueries">2. Sample Queries</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#basicConcepts">3. Basic Concepts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">3.1. Fields</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#terms">3.2. Terms</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#termModifiers">3.3. Term Modifiers</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixSearch">3.3.1 Prefix Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzySearch">3.3.2 Fuzzy Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#boostingTerm">3.3.3 Boosting A Term</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#phraseSearch">3.3.5 Phrase Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryComponents">4. Query Components</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#localParams"/>5. Local Parameters</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryParams">6. Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mainQuery">6.1. Main Query ("q")</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#filterQuery">6.2. Filter Query ("fq")</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldList">6.3. Field List ("fl")</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">7. Facet Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">7.1. Enabling Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetField">7.2. Categorical Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetByRange">7.3. Range Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetStart">7.3.1 Facet Range Start</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnd">7.3.2 Facet Range End</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetGap">7.3.3 Facet Range Gap</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searchType">8. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sort">9. Sort</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#orderby">10. Order by</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#start">11. Start</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">12. Rows</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">13. Geo Search</a></br><br>
 </td></tr></tbody></table>
 
-<p><span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
-</div>
+</div> <!-- Table of content, id=content-->
+
+</div> <!-- Sidebar -->
+
 </td>
-<td style="width:86%">
+
+<td style="width:75%">
 </br>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div></p>
-<p></td></tr></tbody></table></div></p>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table>
+
+</div>
+
 <h1 id="doc" style="color:#880000"><center>SRCH2 Query Syntax Documentation</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 18, 2013</center></h6>
-<h3 id="overview">Overview</h3>
+<h2 id="overview">1. Overview</h2>
 <blockquote>
 <p>Welcome to the Srch2 query syntax documentation page. This documentation begins with a sample set of queries to get a flavor for the query language. It then dives further into the language with an explanation of the basic concepts behind it. This is followed by a detailed breaking down of the structural components of a query with emphasis on their syntax specifications.</p>
 </blockquote>
-<h3 id="sampleQueries">Sample queries</h3>
+<h2 id="sampleQueries">2. Sample queries</h2>
 <blockquote>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
 </blockquote>
@@ -80,63 +122,81 @@
 <blockquote>
 <p>This query, again, is similar to query <i>f4</i>. The difference between <i>f4</i> and <i>f6</i> is, in <i>f6</i>, we request the engine to return faceted information for the record's <i>category</i> field.</p>
 </blockquote>
-<h3 id="basicConcepts">Basic Concepts</h3>
+<h2 id="basicConcepts">3. Basic Concepts</h2>
 <blockquote>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>terms</i> and <i>fields</i>.</p>
-</blockquote>
-<h4>Fields</h4>
+<h3 id="fields">3.1. Fields</h3>
 <blockquote>
 <p>When performing a search, we can either specify a field or use the <a href="##localParams">default</a>. Any <a href="configuration.html##fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For an example, assume that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" which contain the text "don't go this way", the following syntax is used:</p>
+</blockquote>
 </blockquote>
 <pre><code>title:algo AND go
 </code></pre>
 
-<h4>Terms</h4>
+<blockquote>
+<h3 id="terms">3.2. Terms</h3>
 <blockquote>
 <p>There are two types of terms: "Single Terms" and "Phrases." A single term is a single word such as <i>algorithm</i> or <i>gnuth</i>. A phrase is a group of words surrounded by double quotes such as <i>"new york city"</i>.</p>
 </blockquote>
-<h4 id="termsAndModifiers">Term Modifiers</h4>
+<h3 id="termModifiers">3.3. Term Modifiers</h3>
 <blockquote>
 <p>The engine supports modifying query terms to provide a wide range of search options.</p>
-</blockquote>
-<h5>Prefix Searches</h5>
+<h3 id="prefixSearch">3.3.1. Prefix Searches</h3>
 <blockquote>
 <p>The engine supports prefix searches. For instance, the following query searches for records with a keyword that has the prefix, "schwar":</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>q=schwar*
 </code></pre>
 
-<h5>Fuzzy Searches</h5>
+<blockquote>
+<blockquote>
+<h3 id="fuzzySearch">3.3.2. Fuzzy Searches</h3>
 <blockquote>
 <p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The Srch2 engine triggers a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the neighbourhood of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>q=schwarzeneger~0.8
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The internal edit-distance threshold is floor((1-0.8) * length(schwarzeneger)) = floor(2.6) = 2. So the engine will find records with a keyword whose edit distance to the term "schwarzeneger" is at most two.</p>
 <p>The engine allows each fuzzy search term to specify its own similarity value.</p>
 <p>If a term doesn't have a similarity value, e.g.,</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>schwarzeneger~
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>the engine will use the similarity threshold specified in the <a href="configuration.html##queryTermSimilarityThreshold">configuration file</a></p>
 </blockquote>
-<h5>Boosting a Term</h5>
+<h3 id="boostingTerm">3.3.3. Boosting a Term</h3>
 <blockquote>
 <p>The engine provides the relevance level of matching records based on its matching terms. To boost the importance of a given term, we can use the caret symbol (<i>^</i>) with a boost factor (a number) at the end of the given term. The higher the boost factor, the more relevant the term will be.
 Boosting allows control over the relevance of a record by boosting the significance of its terms.
 For example, if we are searching for two terms
 "algorithm" and "science", and we want the term "algorithm" to be more relevant, we can boost it using the <i>^</i> symbol along with the boost factor next to the term. We would type:</p>
 </blockquote>
+</blockquote>
+</blockquote>
 <pre><code>algorithm^4 AND science
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>By default, the boost factor is 1. The boost value must be a positive integer.
 <em>Note:</em> we can specify all three modifiers to a single term, but the order of modifier must always be prefix, boost, and then fuzzy. The following are valid query examples:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>1) q=algo*^4~.6 AND science^~.8
 2) q=algo^4~.6 AND science^~ AND comp*
@@ -144,21 +204,29 @@ For example, if we are searching for two terms
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The following are invalid query examples:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>Invalid query 1) q=algorithm^4*
 Invalid query 2) q=algorithm~.4^3*
 Invalid query 3) q=algorithm~.6*
 </code></pre>
 
-<h5>Proximity Search</h5>
+<blockquote>
+<blockquote>
+<h3 id="phraseSearch">3.3.4. Proximity Search</h3>
 <blockquote>
 <p>The engine supports finding words which are within a specified proximity. To do a proximity search , we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for a record with the keywords "algorithm" and "data" within 10 words of each other in a document:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>q=&quot;algorithm data&quot;~10
 </code></pre>
 
-<h3 id="queryComponents">Understanding different query components</h3>
+<h2 id="queryComponents">4. Understanding different query components</h2>
 <blockquote>
 <p>The components and the sub-components of a query are shown in Figure 1. They are:</p>
 <blockquote>
@@ -173,7 +241,7 @@ Invalid query 3) q=algorithm~.6*
 </blockquote>
 </blockquote>
 </blockquote>
-<h3 id="localParams">Local Paramerter (LocalParams)</h3>
+<h2 id="localParams">5. Local Paramerter (LocalParams)</h2>
 <blockquote>
 <p><i>LocalParams</i> stands for "local parameters." It provides a way to "localize" query behavior by specifying modifiers for the Srch2 engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.
 To indicate a LocalParam, prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by whitespace. So if the original query keyword is "algorithm", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}algorithm</i>. For example, e.g., we can specify a default field in local parameters as follows:</p>
@@ -208,36 +276,44 @@ indicating whether the term is treated as a prefix or a complete term.</li>
 </blockquote>
 </blockquote>
 </blockquote>
-<h3 id="queryParams">Query Parameters</h3>
-<h4 id="mainQuery">q: Main query parameter</h4>
+<h2 id="queryParams">6. Query Parameters</h2>
+<blockquote>
+<h3 id="mainQuery">6.1. q: Main query parameter</h3>
 <blockquote>
 <p>A search over a searchable field is denoted by its name and the search term separated with a colon ":". For example, consider the query below.</p>
+</blockquote>
 </blockquote>
 <pre><code>q=title:algorithm
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>It searches for the keyword "algorithm" in the field <i>title</i> of a record.
 If no field is provided, the engine will search on the ['indexed' field(s)](configuration.html##fields] as specified in the configuration file. For example,</p>
+</blockquote>
 </blockquote>
 <pre><code>q=algorithm
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration.<br>
 <em>Note:</em> all the field names used in "q" must have their indexed property set to be true in the configuration file.</p>
 </blockquote>
-<h4 id="filterQuery">fq: Filter query parameter</h4>
+<h3 id="filterQuery">6.2. fq: Filter query parameter</h3>
 <blockquote>
 <p>This parameter is used to specify a filter restricting the set of records returned, without influencing their scores. In the example below, only records having year equal to 2012 will return.</p>
+</blockquote>
 </blockquote>
 <pre><code>fq=year:2012
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>A range query allows us to match records whose field values are between a specified lower bound and an upper bound (both inclusive).</p>
 <blockquote>
 <p>For example:</p>
+</blockquote>
 </blockquote>
 </blockquote>
 <pre><code>price:[10 TO 100]
@@ -251,106 +327,136 @@ Please note: range queries are not just for numerical fields. We could also use 
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>This will find all records whose <i>title</i> value is alphabetically between 'pratap' and 'saini' (both inclusive).
 <em>Note:</em> the engine supports only one kind of boolean operator (either 'OR' or 'AND') between all filter terms. The following are examples of valid arguments:</p>
+</blockquote>
 </blockquote>
 <pre><code>1) fq=popularity:[10 TO *] AND section:0 AND price:[* TO 100]
 2) fq=popularity:[10 TO *] OR section:0 OR price:[* TO 100]
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>The first query returns the records with popularity greater than or equal to 10 and <i>price</i> less than or equal to 100.
 The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".</p>
+</blockquote>
 </blockquote>
 <pre><code>fq=popularity:[10 TO *] AND section:0 AND boolexp$ price - discount &gt; 10 $
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>Please note: for the predicate 'boolexp$ price - discount &gt; 10 $', the engine will evaluate the boolean expression between the two '$' signs, which in this case is 'price-discount &gt; 10'. Here <i>price</i> and <i>discount</i> are two fields defined in the schema.
 In filter query terms, we can use the '-' operator before a field:term binding to tell the engine to exclude the records from the results that match the given binding criterion.</p>
+</blockquote>
 </blockquote>
 <pre><code>fq=-popularity:[10 TO *] AND year:2012 AND boolexp$price-discount &gt; 10$
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>The above filter query will find records where year is 2012, 'price-discount &gt; 10' is true, and popularity is at LEAST 10.
 Please note: the attributes used in "fq" must have the 'indexed' property set to false in the configuration file. Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.</p>
 </blockquote>
-<h4 id="fieldList">fl: Fieldlist</h4>
-<blockquote>
+<h3 id="fieldList">6.3. fl: Fieldlist</h3>
 <p>This parameter specifies a set of fields to return to the client. These fields must be declared as searchable attributes in the configuration file. For example, the following query indicates that the attributes <i>title</i>, <i>author</i>, and <i>price</i> will be returned in the results:</p>
 </blockquote>
 <pre><code>fl=title,author,price
 </code></pre>
 
-<h3 id="facetParams">Facet Query Params</h3>
-<h4>facet</h4>
+<h2 id="facetParams">7. Facet Query Params</h2>
+<blockquote>
+<h3 id="facetEnabled">7.1. facet</h3>
 <blockquote>
 <p><i>facet: "false"</i> will disable faceting. Valid values are 'true' or 'false'. To turn faceting on, we need to include the following</p>
+</blockquote>
 </blockquote>
 <pre><code>facet=true
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>Please note: facet must also be enabled from the configuration file by setting the
 <a href="configuration.html##facetEnabled">"facetEnabled"</a> tag to true.</p>
 </blockquote>
-<h4>facet.field</h4>
+<h3 id="facetField">7.2. facet.field</h3>
 <blockquote>
 <p>This parameter specifies a field to be treated as a categorical facet. It finds the number of distinct values in the specified field and returns the number of documents that match each value.
 This parameter can be specified multiple times to indicate multiple facet fields.</p>
+</blockquote>
 </blockquote>
 <pre><code>facet=true&amp;facet.field=category&amp;facet.field=genre
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response.</p>
 </blockquote>
-<h4>Facet by Range</h4>
-<h5>facet.range</h5>
+<h3 id="facetByRange">7.3. Facet by Range</h3>
+<blockquote>
+<h3 id="facetRange">7.3.1 facet.range</h3>
 <blockquote>
 <p>This parameter can be used to specify a field that should be treated as a range facet. This parameter allows us to specify names of fields treated as range facets. Example:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>facet.range=price&amp;facet.range=age
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The response of the above query includes faceting information for <i>price</i> and <i>age</i> fields. <br>
 Please note: the configuration file should define the default
 <a href="configuration.html##facetFields"><i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i></a> values.</p>
 </blockquote>
-<h5>facet.range.start</h5>
+<h3 id="facetStart">7.3.2. facet.range.start</h3>
 <blockquote>
 <p>It is the lower bound of the ranges. Example:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>f.price.facet.start=0.0&amp;f.age.facet.start=10
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The above query defines the lower bound of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
 </blockquote>
-<h5>facet.range.end</h5>
+<h3 id="facetEnd">7.3.3. facet.range.end</h3>
 <blockquote>
 <p>The upper bound of the ranges. Example:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>f.price.facet.end=1000.0&amp;f.age.facet.end=99
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The above query defines the upper bound of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
 </blockquote>
-<h5>facet.range.gap</h5>
+<h3 id="facetGap">7.3.4. facet.range.gap</h3>
 <blockquote>
 <p>It is the size of each range starting from the lower bound. Example:</p>
+</blockquote>
+</blockquote>
 </blockquote>
 <pre><code>f.price.facet.gap=100&amp;f.age.facet.gap=10
 </code></pre>
 
 <blockquote>
+<blockquote>
+<blockquote>
 <p>The above query defines the gap between each consecutive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.
 <em>note:</em> all start, end, and gap values, if given in the query, will override the corresponding values from configuration file.</p>
 </blockquote>
-<h4 id="searchType">searchType</h4>
+</blockquote>
+</blockquote>
+<h2 id="searchType">8. searchType</h2>
 <blockquote>
 <p>The engine offers three different strategies for searching records:</p>
 <blockquote>
@@ -374,7 +480,7 @@ Example of using searchType:</li>
 <blockquote>
 <p><em>Note:</em> if searchType is not included in the query, it is set to topK by default. However if any facet or sort parameter is included in the query, search type will be getAll.</p>
 </blockquote>
-<h4 id="sort">sort</h4>
+<h2 id="sort">9. sort</h2>
 <blockquote>
 <p>The engine's default behavior is to sort the results using a descending order by score attribute. The user can specify sorting by other fields. For example:</p>
 </blockquote>
@@ -385,7 +491,7 @@ Example of using searchType:</li>
 <p><em>Note:</em> if a sort request is included in the query, the returned record's scores are still those calculated scores by the engine,
 but the order of the results corresponds to the user specification.</p>
 </blockquote>
-<h4>orderby</h4>
+<h2 id="orderby">10. orderby</h2>
 <blockquote>
 <p>It specifies the order in which the result set should be sorted. Its default value is "desc" (descending). This order is valid for all the fields specified in the sort parameter.</p>
 </blockquote>
@@ -395,14 +501,14 @@ but the order of the results corresponds to the user specification.</p>
 <blockquote>
 <p><em>Note:</em> the order specified in the <i>orderby</i> parameter will be applied to all the fields mentioned in the sort parameter. Currently, specifying different <i>orderby</i> values for different fields is not supported.</p>
 </blockquote>
-<h4>start</h4>
+<h2 id="start">11. start</h2>
 <blockquote>
 <p>The offset in the complete result set returnable by the query, where the set of returned records should begin. The default value is 0.</p>
 </blockquote>
 <pre><code>start=10
 </code></pre>
 
-<h4>rows</h4>
+<h2 id="rows">12. rows</h2>
 <blockquote>
 <p>It indicates the number of records to return from the complete result set. The default value is 0.</p>
 </blockquote>
@@ -412,7 +518,7 @@ but the order of the results corresponds to the user specification.</p>
 <blockquote>
 <p>Please note: this parameter and <i>start</i> can be used to implement pagination.</p>
 </blockquote>
-<h2 id="geo">Geo Search</h2>
+<h2 id="geo">13. Geo Search</h2>
 <blockquote>
 <p>The engine can be optionally configured to support geo index. There are two options:</p>
 <ul>
@@ -481,82 +587,109 @@ but the order of the results corresponds to the user specification.</p>
 <pre><code>$ curl -i &quot;http://localhost:8081/search?q=hosptal&amp;start=0&amp;rows=20&amp;lblat=61.20&amp;lblong=-149.90&amp;rtlat=61.22&amp;rtlong=-149.70&quot;
 </code></pre>
 
-<p>Have fun SRCHing!</p>
+<p><hr/>
+Have fun SRCHing!</p>
 <style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+        left:10px;
+    top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
 pre{
-margin: auto;
-width:80%;
-display: block;
-padding: 9.5px;
-font-size: 13px;
-line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-overflow:auto;
-max-height:600px;
+    margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
 }
-#content{
-position:fixed;
-left:10px;
-top:20px;
-padding: 5.5px;
-font-size: 13px;
-//line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-text-align:center;
-}
+
 html{
-min-width:1100px;
+    min-width:1100px;
 }
 #indexTable{
-padding: 5.5px;
-font-size: 13px;
-//line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-text-align:center;
-display: inline-block
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
 }
 #bigBox{
-padding: 10px;
-font-size: 13px;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-//text-align:center;
-display: inline-block
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
 }
 
 </style>
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>
 </body>
 </html>
