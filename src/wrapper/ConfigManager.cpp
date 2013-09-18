@@ -162,18 +162,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 			     *       if(searchable == true) => attribute is searchable
 				 *       else => attribute is not searchable
 				 *
-				 *       if(supporting == true) => attribute is used for post-processing
+				 *       if(refining == true) => attribute is used for post-processing
 				 *       else => attribute is not used for post processing
 			     * }
             	 */
                 bool isSearchable = false;
-                bool isSupporting = false;
+                bool isRefining = false;
                 if(string(field.attribute("indexed").value()).compare("") != 0){
                     tempUse = string(field.attribute("indexed").value());
                     if(isValidBool(tempUse)){
                         if(field.attribute("indexed").as_bool()){ // indexed = true
                             isSearchable = true;
-                            isSupporting = true;
+                            isRefining = true;
                         }else{ // indexed = false
                             if(string(field.attribute("searchable").value()).compare("") != 0){
                                 tempUse = string(field.attribute("searchable").value());
@@ -190,16 +190,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 }
                             }
 
-                            if(string(field.attribute("supporting").value()).compare("") != 0){
-                                tempUse = string(field.attribute("supporting").value());
+                            if(string(field.attribute("refining").value()).compare("") != 0){
+                                tempUse = string(field.attribute("refining").value());
                                 if(isValidBool(tempUse)){
-                                    if(field.attribute("supporting").as_bool()){
-                                        isSupporting = true;
+                                    if(field.attribute("refining").as_bool()){
+                                        isRefining = true;
                                     }else{
-                                        isSupporting = false;
+                                        isRefining = false;
                                     }
                                 }else{
-                                    parseError << "Config File Error: Unknown value for property 'supporting'.\n";
+                                    parseError << "Config File Error: Unknown value for property 'refining'.\n";
                                     configSuccess = false;
                                     return;
                                 }
@@ -226,16 +226,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }
                     }
 
-                    if(string(field.attribute("supporting").value()).compare("") != 0){
-                        tempUse = string(field.attribute("supporting").value());
+                    if(string(field.attribute("refining").value()).compare("") != 0){
+                        tempUse = string(field.attribute("refining").value());
                         if(isValidBool(tempUse)){
-                            if(field.attribute("supporting").as_bool()){
-                                isSupporting = true;
+                            if(field.attribute("refining").as_bool()){
+                                isRefining = true;
                             }else{
-                                isSupporting = false;
+                                isRefining = false;
                             }
                         }else{
-                            parseError << "Config File Error: Unknown value for property 'supporting'.\n";
+                            parseError << "Config File Error: Unknown value for property 'refining'.\n";
                             configSuccess = false;
                             return;
                         }
@@ -251,7 +251,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         this->isPrimSearchable = 1;
                     }
 
-                    if(isSupporting){
+                    if(isRefining){
                         nonSearchableFieldsVector.push_back(this->primaryKey);
                         nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
                         nonSearchableAttributesDefaultVector.push_back("");
@@ -290,7 +290,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }
                     }
 
-                    if(isSupporting){ // it is a supporting field
+                    if(isRefining){ // it is a refining field
                         nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
                         searchableFieldIndexsVector.push_back(false);
 
@@ -299,7 +299,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         if (this->isValidFieldType(tempUse , false)) {
                             nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
                         } else {
-                            parseError << "Config File Error: " << tempUse << " is an unknown field type for supporting fields.\n";
+                            parseError << "Config File Error: " << tempUse << " is an unknown field type for refining fields.\n";
                             configSuccess = false;
                             return;
                         }

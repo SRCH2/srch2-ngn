@@ -354,10 +354,10 @@
    -->
    <field name="category" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="model" default="benz" required="true" type="text" indexed="false" supporting="true"/>
-   <field name="price" default="200" required="true" type="float" indexed="false" supporting="true"/>
-   <field name="likes" default="0" required="true" type="integer" indexed="false" supporting="true"/>
-   <field name="expiration" default="01/01/2013" required="true" type="time" indexed="false" supporting="true"/>
+   <field name="model" default="benz" required="true" type="text" indexed="false" refining="true"/>
+   <field name="price" default="200" required="true" type="float" indexed="false" refining="true"/>
+   <field name="likes" default="0" required="true" type="integer" indexed="false" refining="true"/>
+   <field name="expiration" default="01/01/2013" required="true" type="time" indexed="false" refining="true"/>
 
  </fields>
  
