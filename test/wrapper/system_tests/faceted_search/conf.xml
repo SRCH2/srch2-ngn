@@ -72,7 +72,13 @@
         -->
         <indexType>0</indexType>
          
-         
+
+        <!--
+            0: don't support swap operation in edit distance
+            1: support swap operation in edit distance
+            default value is true
+        -->
+        <supportSwapInEditDistance>false</supportSwapInEditDistance>
         <!--
             Boost Values
             Optional
@@ -122,9 +128,9 @@
             #record-score-expression=doc_boost+(1/(doc_length+1))
             record-score-expression=idf_score*doc_boost
         -->
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <!--
             Query Term Similarity Boost
@@ -354,9 +360,9 @@
    -->
    <field name="category" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="model" default="benz" required="true" type="text" indexed="false"/>
-   <field name="price" default="200" required="true" type="float" indexed="false"/>
-   <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+   <field name="model" default="benz" required="true" type="text" indexed="false" refining="true"/>
+   <field name="price" default="200" required="true" type="float" indexed="false" refining="true"/>
+   <field name="likes" default="0" required="true" type="integer" indexed="false" refining="true"/>
  </fields>
  
  <!--

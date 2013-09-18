@@ -28,9 +28,10 @@ const string MAIN_QUERY_ASTERIC_KEYWORD_REGEX_STRING = "^\\*\\s*";
 const string PREFIX_MODIFIER_REGEX_STRING = "^\\*";
 const string BOOST_MODIFIER_REGEX_STRING = "^\\^\\d*";
 const string FUZZE_MODIFIER_REGEX_STRING = "^(~0?\\.\\d){0,1}";
+const string PHRASE_BOOST_MODIFIER_REGEX_STRING = "^\\^\\d+";
+const string PROXIMITY_MODIFIER_REGEX_STRING = "^~\\d+";
 const string FQ_FIELD_REGEX_STRING = "^-{0,1}[\\w_]+\\s*:";
 const string COMPLEX_TERM_REGEX_STRING = "^boolexp\\$";
-
 
 // filter query regex strings
 

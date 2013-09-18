@@ -4,7 +4,6 @@
 #define __WRAPPER_HTTPREQUESTHANDLER_H__
 
 #include "ConfigManager.h"
-#include "URLParser.h"
 #include "json/json.h"
 #include "Srch2Server.h"
 

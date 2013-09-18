@@ -30,7 +30,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 		if(stat(this->stopWordFilePath.c_str(), &stResult) == 0) {
 		    tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
 		} else {
-		    Logger::error("The stop word file %s is not valid. Please provide a valid file path.", this->stopWordFilePath.c_str() );
+		    Logger::warn("The stop word file %s is not valid. Please provide a valid file path.", this->stopWordFilePath.c_str() );
 		}
 	}
 
@@ -39,7 +39,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 		if(stat(this->synonymFilePath.c_str(), &stResult) == 0) {
 		    tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
 		} else {
-            Logger::error("The synonym file %s is not valid. Please provide a valid file path.", this->synonymFilePath.c_str());
+            Logger::warn("The synonym file %s is not valid. Please provide a valid file path.", this->synonymFilePath.c_str());
 		}
 	}
 
@@ -49,7 +49,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 		    tokenStream = new StemmerFilter(tokenStream, this->stemmerFilePath);
 		} else {
 			this->stemmerFlag = DISABLE_STEMMER_NORMALIZER;
-            Logger::error("The stemmer file %s is not valid. Please provide a valid file path.", this->stemmerFilePath.c_str());
+            Logger::warn("The stemmer file %s is not valid. Please provide a valid file path.", this->stemmerFilePath.c_str());
 		}
 	}
 

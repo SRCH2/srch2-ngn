@@ -35,10 +35,11 @@ typedef enum {
     IsFuzzyFlag,
     LengthBoostFlag,
     PrefixMatchPenaltyFlag,
-    KeywordFuzzyLevel,
+    KeywordSimilarityThreshold,
     KeywordBoostLevel,
     FieldFilter,
     QueryPrefixCompleteFlag,
+    IsPhraseKeyword,
     IsDebugEnabled,
     ReponseAttributesList,
     ResultsStartOffset,
@@ -82,8 +83,9 @@ typedef enum {
 } IndexCreateOrLoad;
 
 typedef enum {
-	FILEBOOTSTRAP_FALSE ,
-	FILEBOOTSTRAP_TRUE
+	DATA_SOURCE_NOT_SPECIFIED,
+	DATA_SOURCE_JSON_FILE,
+	DATA_SOURCE_MONGO_DB
 } DataSourceType;
 
 

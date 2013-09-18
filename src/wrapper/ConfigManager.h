@@ -49,6 +49,7 @@ private:
 
 	// <config><query>
 	float queryTermSimilarityBoost;
+	float queryTermSimilarityThreshold;
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
 	vector<string> sortableAttributes;
@@ -108,6 +109,7 @@ private:
 	uint32_t pingKafkaBrokerEveryNSeconds;
 	uint32_t writeReadBufferInBytes;
 
+    bool supportSwapInEditDistance;
 	float defaultSpatialQueryBoundingBox;
 
 	srch2::instantsearch::ResponseType searchResponseFormat;
@@ -141,11 +143,18 @@ private:
 	int isPrimSearchable;
 	bool supportAttributeBasedSearch;
 
-
+	bool enablePositionIndex;
 	int attributeToSort;
 	int ordering;
 	//string httpServerDocumentRoot;
     string configFile;
+
+    // mongo db related settings
+	string mongoHost;
+	string mongoPort;
+	string mongoDbName;
+	string mongoCollection;
+	unsigned mongoListenerWaitTime;
 
 
     void splitString(string str, const string& delimiter, vector<string>& result);
@@ -163,12 +172,13 @@ private:
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
     bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidQueryTermSimilarityThreshold(string & qTermEditDistanceNormFactor);
     bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
     bool isValidPrefixMatch(string& prefixmatch);
     bool isValidCacheSize(string& cacheSize);
     bool isValidRows(string& rows);
     bool isValidMaxSearchThreads(string& maxSearchThreads);
-    bool isValidFieldBasedSearch(string& fieldBasedSearch);
+    bool isValidBooleanValue(string& fieldBasedSearch);
 
     bool isValidQueryTermMatchType(string& queryTermMatchType);
     bool isValidQueryTermType(string& queryTermType);
@@ -184,7 +194,6 @@ private:
 
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
-
 
 public:
     ConfigManager(const string& configfile);
@@ -231,6 +240,7 @@ public:
 	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
 	float getQueryTermSimilarityBoost() const;
+	float getQueryTermSimilarityThreshold() const ;
 	float getQueryTermLengthBoost() const;
 	float getPrefixMatchPenalty() const;
 	bool getSupportAttributeBasedSearch() const;
@@ -269,6 +279,7 @@ public:
 	bool isRecordBoostAttributeSet() const;
 
 	int getIndexType() const;
+	bool getSupportSwapInEditDistance() const;
 	const std::string& getAttributeLatitude() const;
 	const std::string& getAttributeLongitude() const;
 	float getDefaultSpatialQueryBoundingBox() const;
@@ -291,10 +302,28 @@ public:
 
 	const vector<string> * getFacetGaps() const ;
 
-        void loadConfigFile() ;
+	void loadConfigFile() ;
 
+	// Mongo related getter/setter
+	const string& getMongoServerHost() const{
+		return mongoHost;
+	}
+	const string& getMongoServerPort() const{
+		return mongoPort;
+	}
+    const string& getMongoDbName() const{
+    	return mongoDbName;
+    }
+    const string& getMongoCollection () const{
+    	return mongoCollection;
+    }
+    const unsigned getMongoListenerWaitTime () const{
+    	return mongoListenerWaitTime;
+    }
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
+
+    bool isPositionIndexEnabled() const;
 
 };
 

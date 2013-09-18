@@ -193,6 +193,11 @@ public:
         return this->index->getSchema();
     }
 
+    srch2::instantsearch::Schema *getSchema()
+    {
+        return this->index->getSchema();
+    }
+
     std::string getInMemoryData(unsigned internalRecordId) const
     {
         return this->index->getInMemoryData(internalRecordId);

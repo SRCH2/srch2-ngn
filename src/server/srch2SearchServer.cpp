@@ -37,6 +37,9 @@
 #include <boost/filesystem.hpp>
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
+#include "MongodbAdapter.h"
+#include "WrapperConstants.h"
+
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -523,6 +526,12 @@ int main(int argc, char** argv) {
     //load the index from the data source
     server.init(serverConf);
     //cout << "srch2 server started." << endl;
+    if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+    	// set current time as cut off time for further updates
+    	// this is a temporary solution. TODO
+    	srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+    	srch2http::MongoDataSource::spawnUpdateListener(&server);
+    }
 
     //sleep(200);
 

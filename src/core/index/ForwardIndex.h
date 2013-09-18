@@ -39,6 +39,7 @@
 #include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/Score.h"
 #include "util/mytime.h"
+#include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 
 using std::vector;
@@ -254,6 +255,11 @@ public:
 
     //void mapOldIdsToNewIds();
 
+    // Position Indexes APIs
+    void setPositionIndex(vector<uint8_t>& v);
+    void getKeyWordPostionsInRecordField(unsigned keywordId, unsigned attributeId,
+    		unsigned attributeBitMap, vector<unsigned>& positionList) const;
+
 private:
     friend class boost::serialization::access;
 
@@ -290,6 +296,7 @@ private:
         ar & this->externalRecordId;
         ar & this->inMemoryData;
         ar & this->nonSearchableAttributeValues;
+        ar & this->positionIndex;
     }
 
     // members
@@ -303,6 +310,7 @@ private:
     VariableLengthAttributeContainer nonSearchableAttributeValues;
 
     unsigned* keywordAttributeBitmaps;
+    vector<uint8_t> positionIndex;
 
 };
 
@@ -564,6 +572,10 @@ public:
      * Access the InMemoryData of a record using InternalRecordId
      */
     std::string getInMemoryData(unsigned internalRecordId) const;
+
+    void convertToVarLengthArray(const vector<unsigned>& positionListVector,
+    							 vector<uint8_t>& grandBuffer);
+
 };
 
 }

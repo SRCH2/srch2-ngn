@@ -129,10 +129,8 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     tokenAttributeHitsMap.clear();
     const Schema *schema = record->getSchema();
     // token string to vector<CharType>
-    vector<string> tokens;
-    vector<string>::iterator tokenIterator;
-    unsigned positionIterator;
-    unsigned size;
+    vector<PositionalTerm> tokens;
+
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
@@ -146,25 +144,16 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
             {
                 vector<CharType> charVector;
                 charVector = tokenStream->getProcessedToken();
+                unsigned position = tokenStream->getProcessedTokenPosition();
                 charTypeVectorToUtf8String(charVector, currentToken);
-                tokens.push_back(currentToken);
-                //cout<<currentToken<<endl;
+                tokens.push_back({currentToken, position});
             }
-            size = tokens.size();
 
-            positionIterator = 1;
-            for (tokenIterator = tokens.begin(); tokenIterator != tokens.end();
-                    ++tokenIterator, ++positionIterator) {
-
-                ///TODO OPT: Remove this comparison and make sure, split returns no empty strings.
-                if (tokenIterator->size()) {
-                    //Convert to lowercase
-                    std::transform(tokenIterator->begin(), tokenIterator->end(),
-                            tokenIterator->begin(), ::tolower);
-
-                    tokenAttributeHitsMap[*tokenIterator].attributeList.push_back(
+            for (unsigned i = 0; i< tokens.size(); ++i) {
+                if (tokens[i].term.size()) {
+                    tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
                             setAttributePositionBitVector(attributeIterator,
-                                    positionIterator));
+                            		tokens[i].position));
                 }
             }
 
@@ -174,7 +163,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 
 //token utf-8 string to vector<vector<CharType> >
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
-        vector<string> &queryKeywords) const {
+        vector<PositionalTerm> &queryKeywords) const {
     queryKeywords.clear();
     this->tokenStream->fillInCharacters(queryString);
     string currentToken = "";
@@ -182,12 +171,13 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
     {
         vector<CharType> charVector;
         charVector = this->tokenStream->getProcessedToken();
+        unsigned position = this->tokenStream->getProcessedTokenPosition();
         charTypeVectorToUtf8String(charVector, currentToken);
-        queryKeywords.push_back(currentToken);
+        queryKeywords.push_back({currentToken, position});
         //cout<<currentToken<<endl;
     }
 
-    if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0]))
+    if (queryKeywords.size() == 1 && isEmpty(queryKeywords[0].term))
         queryKeywords.clear();
 }
 
@@ -196,7 +186,7 @@ bool queryIsEmpty(string str) {
 }
 
 void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
-        vector<string> &queryKeywords, const char &delimiterCharacter,
+        vector<PositionalTerm> &queryKeywords, const char &delimiterCharacter,
         const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
         const char &fieldsOrCharacter,
         const std::map<string, unsigned> &searchableAttributesNameToId,
@@ -244,7 +234,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
         }
 
         const string cleanString = this->cleanString(one_pair[0]);
-        queryKeywords.push_back(cleanString);
+        queryKeywords.push_back({cleanString, i + 1});  // i + 1 because i is 0 based whereas position starts with 1
 
         if (one_pair.size() == 1) {        // have no filter information
             filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
@@ -288,7 +278,7 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
             filters.push_back(filter);
     }
 
-    if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0])))
+    if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0].term)))
         queryKeywords.clear();
 }
 
