@@ -27,7 +27,7 @@
          
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-        <fieldBoost>title^2 trailer_url^1</fieldBoost>
+        <fieldBoost>title^2 director^1</fieldBoost>
 
         <!--
         <recordBoostField>trailer_url</recordBoostField>
