@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>configuration</title>
 </head>
 <body>
@@ -13,7 +13,6 @@
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#majorComponents">Major Components</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configTag">config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">SRCH2HOME</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">License File</a></br><br>
@@ -64,31 +63,28 @@
 </div>
 
 <h1 id="doc" style="color:#880000"><center>SRCH2 Configuration File Documentation</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 17, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 18, 2013</center></h6>
 <h3 id="overview">Overview:</h3>
 <blockquote>
-<p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. We first introduce the two major components of  the configuration file, then give the details of each of them. Each of them can have one of the following two labels: (1) "Required": it means this tag has to be present in the configuration file; and (2) "Optional": it means this tag does not need to be present in the file.</p>
+<p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. </p>
+<p>The configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data.  Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and  "Optional" means this tag does not need to be present.</p>
 </blockquote>
-<h3 id="majorComponents">Major components: "config" and"schema"</h3>
+<h3 id="configTag">"Config" Component:</h3>
 <blockquote>
-<p>A SRCH2 configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data. </p>
-</blockquote>
-<h3 id="configTag">Config:</h3>
-<blockquote>
-<p>The following is a breakdown of the subtags of <i>config</i>: </p>
+<p>The following is a breakdown of the subtags of the <i>config</i> component.</p>
 </blockquote>
 <h4 id="srch2Home">SRCH2 Home Directory, Required</h4>
 <pre><code>    &lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
 
 <blockquote>
-<p>This directory is the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if a data file has the following absolute path "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".</p>
+<p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".</p>
 </blockquote>
 <h4 id="licenseFile">License Key File, Required</h4>
 <pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
 <blockquote>
-<p>Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br></p>
+<p>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br></p>
 </blockquote>
 <h4 id="listeningHostname">Hostname and Port, Required</h4>
 <pre><code>    &lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
@@ -96,33 +92,25 @@
 </code></pre>
 
 <blockquote>
-<p>Hostname and port number of the server. Make sure the port is open.<br></p>
+<p>They specify the hostname and port number of the server. Make sure the port is open to outside requests.<br></p>
 </blockquote>
-<h4 id="dataDir">Data Directory:</h4>
-<blockquote>
-<p>Index Directoy Path<br>
-<strong>Required</strong> if "indexLoadCreate" set to 1 <br></p>
-</blockquote>
-<pre><code>    &lt;dataDir&gt;/path/to/data&lt;/dataDir&gt;
+<h4 id="dataDir">Data Directory, Required</h4>
+<pre><code>    &lt;dataDir&gt;/path/to/data.json&lt;/dataDir&gt;
 </code></pre>
 
 <blockquote>
-<p>The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br></p>
+<p>The path of a folder where the engine stores serialized index files. <br></p>
 </blockquote>
-<h4 id="dataFile">Data File:</h4>
-<blockquote>
-<p>Data File<br>
-<strong>Required</strong> if "indexLoadCreate" set to 0<br></p>
-</blockquote>
+<h4 id="dataFile">Data File, Required if DATA_SOURCE = 2 (TODO):</h4>
 <pre><code>    &lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
 </code></pre>
 
 <blockquote>
-<p>Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br></p>
+<p>It specifies a JSON data file to be loaded by the engine.<br></p>
 </blockquote>
 <h4 id="indexConfig">Index Config:</h4>
 <blockquote>
-<p>All configuration tags related to customizing the record index.</p>
+<p>The tag includes parameters related to customizing the record indexes.</p>
 </blockquote>
 <pre><code>    &lt;indexConfig&gt;
     ...
@@ -130,33 +118,24 @@
 </code></pre>
 
 <blockquote>
-<h4 id="indexType">Index Type:</h4>
-<blockquote>
-<p>Index Type <br>
-<strong>Required</strong> <br></p>
-</blockquote>
+<h4 id="indexType">Index Type, Required</h4>
 </blockquote>
 <pre><code>    &lt;indexType&gt;0&lt;/indexType&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>0: Text Index <br>
-1: Geo+Text Index <br></p>
+<p>0: Text Indexes; <br>
+1: Text + Geo Indexes, which support location-based search. <br></p>
 </blockquote>
-<h4 id="fieldBoost">Field Boosts:</h4>
-<blockquote>
-<p>Boost Values <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="fieldBoost">Field Boosts, Optional</h4>
 </blockquote>
 <pre><code>    &lt;fieldBoost&gt;&lt;/fieldBoost&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
-For Example, the boosts for three searchable attributes can be specified as  <br></p>
+<p>It specifies boost values for the searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. (TODO: WHAT'S THE DEFAULT VALUE?) We specify the boost values as comma-separated entries.  For example, the boost values for three searchable attributes can be specified as: <br></p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;fieldBoost&gt;relevance^10 name^7 title&lt;/fieldBoost&gt;
@@ -165,50 +144,31 @@ For Example, the boosts for three searchable attributes can be specified as  <br
 <blockquote>
 <blockquote>
 <blockquote>
-<ul>
-<li>fields are sparated by one space <br></li>
-<li>if value is not provide for a field, it is considered to be 1 <br></li>
-</ul>
+<p>Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1. (TODO: WHAT'S THE DEFAULT VALUE?)<br></p>
 </blockquote>
 </blockquote>
-<h4 id="recordBoostField">Record Boost Field:</h4>
-<blockquote>
-<p>Record Boost Field <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="recordBoostField">Record Boost Field, Optional</h4>
 </blockquote>
 <pre><code>    &lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>The Attribute used as the boost value of a record's score.</p>
-<blockquote>
-<p>It needs to be of float type in the json structure encapsulating the data input file.</p>
+<p>It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.</p>
 </blockquote>
-</blockquote>
-<h4 id="defaultQueryTermBoost">Query Term Boost:</h4>
-<blockquote>
-<p>Default Query Term Boost <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="defaultQueryTermBoost">Default Query Term Boost, Optional</h4>
 </blockquote>
 <pre><code>    &lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Default <a href="configuration.html##Boosting%20a%20term">query term boost</a><br></p>
+<p>It specifies a default <a href="configuration.html##Boosting%20a%20term">query term boost</a>. If the parameter is not given, the engine uses 1 as the default value.<br></p>
+</blockquote>
+</blockquote>
+<h4 id="queryConfig">Query parameters:</h4>
 <blockquote>
-<ul>
-<li>Defaults to 1 <br></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
-<h4 id="queryConfig">Query Config:</h4>
-<blockquote>
-<p>All configuration tags related to configuring the query.</p>
+<p>The following tag includes paramters related to queries.</p>
 </blockquote>
 <pre><code>    &lt;query&gt;
     ...
@@ -218,10 +178,7 @@ For Example, the boosts for three searchable attributes can be specified as  <br
 <blockquote>
 <h4 id="rankingalgorithm">Ranking:</h4>
 <blockquote>
-<p>Ranking Algorithm <br></p>
-<p>The following comments and parameters are related to ranking. <br>
-Please see http://www.srch2.com/download.html for ranking-related information <br>
-record-score-expression=idf_score*doc_boost <br></p>
+<p>The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information</p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;rankingalgorithm&gt;
@@ -230,21 +187,14 @@ record-score-expression=idf_score*doc_boost <br></p>
 </code></pre>
 
 <blockquote>
-<h4 id="queryTermSimilarityBoost">Term Similarity Boost:</h4>
-<blockquote>
-<p>Term Similarity Boost <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="queryTermSimilarityBoost">Term Similarity Boost, Optional</h4>
 </blockquote>
 <pre><code>    &lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Weights the score of neigbouring <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> by a given multiple</p>
-<blockquote>
-<p>Defaults to 0.5 <br></p>
-</blockquote>
+<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords.</a> about how this parameter is used. Its default value is 0.5.</p>
 </blockquote>
 <h4 id="queryTermSimilarityThreshold">Term Similarity Threshold :</h4>
 <blockquote>

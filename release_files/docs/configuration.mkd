@@ -5,7 +5,6 @@
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">Overview</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#majorComponents">Major Components</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configTag">config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">SRCH2HOME</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">License File</a></br><br>
@@ -53,27 +52,24 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Configuration File Documentation</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, Date: September 17, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0, Date: September 18, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ###Overview:###{id="overview"}
->The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. We first introduce the two major components of  the configuration file, then give the details of each of them. Each of them can have one of the following two labels: (1) "Required": it means this tag has to be present in the configuration file; and (2) "Optional": it means this tag does not need to be present in the file.
+>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. 
 
-###Major components: "config" and"schema"###{id="majorComponents"}
+>The configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data.  Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and  "Optional" means this tag does not need to be present.
 
->A SRCH2 configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data. 
-
-###Config:{id="configTag"}
-> The following is a breakdown of the subtags of <i>config</i>: 
-
+###"Config" Component:{id="configTag"}
+> The following is a breakdown of the subtags of the <i>config</i> component.
 
 ####SRCH2 Home Directory, Required{id="srch2Home"}
 ```
     <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
-> This directory is the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if a data file has the following absolute path "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
+> This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
 
 ####License Key File, Required{id="licenseFile"}
     <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
-> Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
+>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
 
 
 ####Hostname and Port, Required{id="listeningHostname"}
@@ -81,137 +77,109 @@
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8081</listeningPort>
 ```
-> Hostname and port number of the server. Make sure the port is open.<br>
+> They specify the hostname and port number of the server. Make sure the port is open to outside requests.<br>
 
-####Data Directory:{id="dataDir"}
-> Index Directoy Path<br>
-> **Required** if "indexLoadCreate" set to 1 <br>
+####Data Directory, Required{id="dataDir"}
 ```
-    <dataDir>/path/to/data</dataDir>
+    <dataDir>/path/to/data.json</dataDir>
 ```
-> The file path to the folder where we store serialized index files. REQUIRED, when "index-load-or-create" is set to 1. <br>
+> The path of a folder where the engine stores serialized index files. <br>
 
 
-####Data File:{id="dataFile"}
+####Data File, Required if DATA_SOURCE = 2 (TODO):{id="dataFile"}
 
-> Data File<br>
-> **Required** if "indexLoadCreate" set to 0<br>
 ```
     <dataFile>/path/to/data.json</dataFile>
 ```
-> Path for a data file to be loaded. The file must be in the json format. REQUIRED, when "index-load-or-create" is set to 0.<br>
+> It specifies a JSON data file to be loaded by the engine.<br>
 
 
 ####Index Config:{id="indexConfig"}
-> All configuration tags related to customizing the record index.
+> The tag includes parameters related to customizing the record indexes.
 ```
     <indexConfig>
     ...
     </indexConfig>
 ```
->####Index Type:{id="indexType"}
->> Index Type <br>
->> **Required** <br>
+>####Index Type, Required{id="indexType"}
 ```    
     <indexType>0</indexType>
 ```     
->> 0: Text Index <br>
->> 1: Geo+Text Index <br>
- 
+>> 0: Text Indexes; <br>
+>> 1: Text + Geo Indexes, which support location-based search. <br>
 
->####Field Boosts:{id="fieldBoost"}         
->> Boost Values <br>
->> **Optional** <br>
+
+>####Field Boosts, Optional{id="fieldBoost"}         
 ```
     <fieldBoost></fieldBoost>
 ```               
->> Boost values for searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. Specify the boost values as comma separated entries. <br>
->> For Example, the boosts for three searchable attributes can be specified as  <br>
+>> It specifies boost values for the searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. (TODO: WHAT'S THE DEFAULT VALUE?) We specify the boost values as comma-separated entries.  For example, the boost values for three searchable attributes can be specified as: <br>
 ```
     <fieldBoost>relevance^10 name^7 title</fieldBoost>
 ```
->>> - fields are sparated by one space <br>
->>> - if value is not provide for a field, it is considered to be 1 <br>
+>>> Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1. (TODO: WHAT'S THE DEFAULT VALUE?)<br>
 
 
-    
->####Record Boost Field:{id="recordBoostField"}     
->> Record Boost Field <br>
->> **Optional** <br>
+>####Record Boost Field, Optional{id="recordBoostField"}     
 ```
     <recordBoostField>relevance</recordBoostField>
 ``` 
->> The Attribute used as the boost value of a record's score.
->>> It needs to be of float type in the json structure encapsulating the data input file.
+>> It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.
      
    
->####Query Term Boost:{id="defaultQueryTermBoost"}       
->> Default Query Term Boost <br>
->> **Optional** <br>
+>####Default Query Term Boost, Optional{id="defaultQueryTermBoost"}       
 ```
     <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
->> Default [query term boost](configuration.html##Boosting a term)<br>
->>> - Defaults to 1 <br>
+>>  It specifies a default [query term boost](configuration.html##Boosting a term). If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
-####Query Config:{id="queryConfig"}
-> All configuration tags related to configuring the query.
+####Query parameters:{id="queryConfig"}
+> The following tag includes paramters related to queries.
 ```
     <query>
     ...
     </query>
 ```
 >####Ranking:{id="rankingalgorithm"} 
->> Ranking Algorithm <br>
 
->> The following comments and parameters are related to ranking. <br>
->> Please see http://www.srch2.com/download.html for ranking-related information <br>
->> record-score-expression=idf_score*doc_boost <br>
+>> The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.
+
 ```
     <rankingalgorithm>
         <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
     </rankingalgorithm>
 ```
 
->####Term Similarity Boost:{id="queryTermSimilarityBoost"} 
->> Term Similarity Boost <br>
->> **Optional** <br>
+>####Term Similarity Boost, Optional{id="queryTermSimilarityBoost"} 
+
 ```
     <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
->> Weights the score of neigbouring [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) by a given multiple
->>> Defaults to 0.5 <br>
+>> It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) section about how this parameter is used. Its default value is 0.5.
 
->####Term Similarity Threshold :{id="queryTermSimilarityThreshold"}
->> Term Similarity Threshold 
->> **Optional**  
+>####Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
+****  
 ```
    <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
->> Modifies the default behaviour of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches).  
->>> -Values must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  
->>> -Defaults to 0.5  
+>> It modifies the default behavior of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches).  (TODO: CLARIFY) Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  Its default value is 0.5.  
 
 
->####Query Term Length Boost:{id="queryTermLengthBoost"}      
->> Query Term Length Boost <br>
->> **Optional** <br>
+>####Query Term Length Boost, Optional{id="queryTermLengthBoost"}      
 ```
     <queryTermLengthBoost></queryTermLengthBoost>
 ```
->> Defaults to 0.5 <br>
+>>Check the ranking section to see how this value is used in the ranking function. Its default value is 0.5. (TODO) <br>
 
 
->####Prefix Match Penalty:{id="prefixMatchPenalty"}
->> Prefix Match Penalty <br>
->> **Optional** <br>
+>####Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
+
 ```
     <prefixMatchPenalty>0.95</prefixMatchPenalty>
 ```             
->> Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
->> The value should be in the range of 0 to 1 <br>
->> Defaults to 0.95 <br>
+>> It specifies the penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+>> The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <br>
 
 
 >####Cache Size:{id="cacheSize"}
@@ -220,97 +188,79 @@
 ```
     <cacheSize>65536000</cacheSize>
 ```             
->> Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
->> Its default value is 50MB. <br>
+>> It specifies the size of cache in bytes. It should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br>
 
    
->####Default Value for Rows:{id="rows"}
->> Rows <br>
->> **Optional** <br>
+>####Default Value for number of returned results, Optional:{id="rows"}
 ```
     <rows>10</rows>
 ```             
->> Number of results retrieved <br>
->> Defaults to 10. <br>
+>> It specifies the number of results retrieved. Its defaults value is 10. <br>
 
->####Maximum number of threads:{id="maxSearchThreads"}
->> Maximum Number of Searcher Threads <br>
->> **Optional** <br>
+>####Maximum number of search threads, Optional:{id="maxSearchThreads"}
 ```
     <maxSearchThreads>2</maxSearchThreads>
 ```             
->> Number of threads that serve all incoming search requests. <br>
->> Defaults to 1 <br>
+>> It specifies the number of threads that serve incoming search requests. Its default value is 1. <br>
 
->####Field Based Search Enabled:{id="fieldBasedSearch"}
->>> Flag to enable/disable field based search <br>
->>> **Optional** <br>
+>####Field Based Search Enabled, Optional{id="fieldBasedSearch"}
 ```
     <fieldBasedSearch>0</fieldBasedSearch>
 ```             
->>> Flag to toggle attribute-based search <br>
+>>> It is a flag to toggle attribute-based search.  <br>
 >>>> 0 - Disable <br>
 >>>> 1 - Enable <br>
 >>>> Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.
 
 
->####Search Type:{id="searcherType"}         
->> Searcher Type <br>
->> **Optional** <br>
+>####Search Type, Optional{id="searcherType"}         
 ```
     <searcherType>0</searcherType>
 ```       
->> Modifies the default search algorithm of the Srch2 engine <br>
->>> 0 if topk, <br>
->>> 1 if advanced <br>
+>> It sets the default search type of a query to the engine. <br>
+>>> 0: finding the top relevant results; <br>
+>>> 1: finding all matching results. <br>
              
->>> Defaults to 0 <br>
+>Its default value is 0.<br>
 
->####Query Term Match Type:{id="queryTermMatchType"}   
->> Query Term Match Type <br>
->> **Optional** <br>
+>####Query Term Match Type, Optional{id="queryTermMatchType"}   
 ```
     <queryTermMatchType>1</queryTermMatchType>
 ```
->> Modifies the default search behaviour of the Srch2 engine              
->>> 0: exact match search<br>
->>> 1: fuzzy match search<br>
->>> Defaults to 0
+>> It modifies the default search behavior of the  engine              
+>>> 0: exact match search;<br>
+>>> 1: fuzzy match search.<br>
+>>> Its default value is 0.
 
->####Query Term Type:{id="queryTermType"}
->> Query Term Type <br>
->> **Optional** <br>
+>####Query Term Type, Optional{id="queryTermType"}
+
 ```
     <queryTermType>0</queryTermType>
 ```             
->>>> Modifies the default treatment of search query's trailing keyword
->>> 0: trailing term is treated as a prefix; <br>
->>> 1: trailing term is treated as a complete term; <br>
->>> Defaults to 0
+>>>> It modifies the default treatment of search query's last keyword (TODO):
+>>> 0: the trailing term is treated as a prefix; <br>
+>>> 1: the trailing term is treated as a complete term; <br>
+>>> Its default value is 0.
 
 
 >####Query Term Type:{id="queryResponseWriter"}  
->> All tags related to configuring the response.
+>> Ths tag has parameters related to configuring the response of a query.
 ```
     <queryResponseWriter>
     ...
     </queryResponseWriter>
 ```  
  
->>####Response Format:{id="responseFormat"}  
->>> Response Format <br>
->>> **Optional** <br>
+>>####Response Format, Optional{id="responseFormat"}  
 ```
     <responseFormat>0</responseFormat>
 ```
->>> Format of query results
+>>> It specifies the format of query results:
 >>>> 0: JSON <br>
 >>>> 1: JSONP <br>          
->>>> Defaults to 0 <br>
+>>>> Its default value is 0. (TODO) <br>
 
->>####Response Content:{id="responseContent"}      
->>> Response Content <br>
->>> **Optional** <br>
+>>####Response Content, Optional{id="responseContent"}      
 ```
     <responseContent type="2">lat,lng</responseContent>
 ```
@@ -319,40 +269,31 @@
 ```
     <responseContent type="0"></responseContent>
 ```              
->>> Format of each json search response. <br>
->>> You should set the type by one of the following options: <br>
+>>> It specifies the format of each json search response. You should set the type by one of the following options: (TODO) <br>
 >>>> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 >>>> 1: format "rid,edit_dist,matching_prefix". <br>
 >>>> 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
->>>> Defaults to 0 <br>
+>>>> Its default value is 0. <br>
 >>>> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
->>>> These are attributes returned to the user. <br>
+>>>> These are attributes returned to the user. (TODO)<br>
 
 
 
 ####Update Handler:{id="updatehandler"}   
-> All tags related to configuring srch2 handling of update requests.
+> This tag includes tags related to configuring the engine to handle update requests.
 ```   
     <updatehandler>
     ...
     </updatehandler>
 ```
->####Max Docs:{id="maxDocs"}  
->> Maximum Number of Documents <br>
->> **Required** <br>
+>####,Maximum Number of Documents, Required{id="maxDocs"}  
 ```
     <maxDocs>15000000</maxDocs>
 ```             
->> Maximum number of records indexable by the srch2 engine. <br>
->> This number should reflect the size of each record and the available memory <br>
->>> Remember this is a hard cap on the number of records indexable by the srch2 engine.
->>> Inserting more records than the specified here will cause the srch2 indexer to throw an error.
->>> It exists to bound the memory footprint of the srch2 indexer which grows in proporsion to the number of records.
-
+>> It specifies the maximum number of records indexable by the engine. Inserting more records than the specified here will cause the insertions to fail.
   
->####Merge Policy:{id="mergePolicy"}            
->> Merge Policies <br>
->> **Required** <br>
+>####Merge Policy, Required{id="mergePolicy"}            
+
 ```
     <mergePolicy>
         <mergeEveryNSeconds>10</mergeEveryNSeconds>
@@ -360,9 +301,8 @@
     </mergePolicy>
 ```             
 >> mergeEveryNSeconds: <br>
->>> The maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
->>> Its minimum value is 10 (seconds). <br>
->>> Note: Decreasing this number will increase latency in the srch2 engine's response time.
+>>> It sets the maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
+>>> Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
 >> mergeEveryMWrites: <br>
 >> The number of write operations after which newly inserted/deleted records are merged into the indexes. <br>
 
