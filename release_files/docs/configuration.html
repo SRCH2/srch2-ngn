@@ -178,7 +178,7 @@
 <blockquote>
 <h4 id="rankingalgorithm">Ranking:</h4>
 <blockquote>
-<p>The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information</p>
+<p>The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.</p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;rankingalgorithm&gt;
@@ -194,102 +194,66 @@
 
 <blockquote>
 <blockquote>
-<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords.</a> about how this parameter is used. Its default value is 0.5.</p>
+<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> section about how this parameter is used. Its default value is 0.5.</p>
 </blockquote>
-<h4 id="queryTermSimilarityThreshold">Term Similarity Threshold :</h4>
-<blockquote>
-<p>Term Similarity Threshold 
-<strong>Optional</strong>  </p>
+<h4 id="queryTermSimilarityThreshold">Term Similarity Threshold, Optional</h4>
 </blockquote>
-</blockquote>
+<hr>
 <pre><code>   &lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Modifies the default behaviour of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>.  </p>
-<blockquote>
-<p>-Values must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.<br>
--Defaults to 0.5  </p>
+<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>.  (TODO: CLARIFY) Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  Its default value is 0.5.  </p>
 </blockquote>
-</blockquote>
-<h4 id="queryTermLengthBoost">Query Term Length Boost:</h4>
-<blockquote>
-<p>Query Term Length Boost <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="queryTermLengthBoost">Query Term Length Boost, Optional</h4>
 </blockquote>
 <pre><code>    &lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Defaults to 0.5 <br></p>
+<p>Check the ranking section to see how this value is used in the ranking function. Its default value is 0.5. (TODO) <br></p>
 </blockquote>
-<h4 id="prefixMatchPenalty">Prefix Match Penalty:</h4>
-<blockquote>
-<p>Prefix Match Penalty <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="prefixMatchPenalty">Prefix Match Penalty, Optional</h4>
 </blockquote>
 <pre><code>    &lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
-The value should be in the range of 0 to 1 <br>
-Defaults to 0.95 <br></p>
+<p>It specifies the penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <br></p>
 </blockquote>
-<h4 id="cacheSize">Cache Size:</h4>
-<blockquote>
-<p>Cache Size <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="cacheSize">Cache Size, Optional</h4>
+<p>*** <br></p>
 </blockquote>
 <pre><code>    &lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Size of cache in bytes. It should be in the range [50MB, 500MB]. <br>
-Its default value is 50MB. <br></p>
+<p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br></p>
 </blockquote>
-<h4 id="rows">Default Value for Rows:</h4>
-<blockquote>
-<p>Rows <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="rows">Default value for number of returned results, Optional</h4>
 </blockquote>
 <pre><code>    &lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Number of results retrieved <br>
-Defaults to 10. <br></p>
+<p>It specifies the number of results retrieved. Its defaults value is 10. <br></p>
 </blockquote>
-<h4 id="maxSearchThreads">Maximum number of threads:</h4>
-<blockquote>
-<p>Maximum Number of Searcher Threads <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="maxSearchThreads">Maximum number of search threads, Optional:</h4>
 </blockquote>
 <pre><code>    &lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Number of threads that serve all incoming search requests. <br>
-Defaults to 1 <br></p>
+<p>It specifies the number of threads that serve search requests. Its default value is 1. <br></p>
 </blockquote>
-<h4 id="fieldBasedSearch">Field Based Search Enabled:</h4>
-<blockquote>
-<blockquote>
-<p>Flag to enable/disable field based search <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
-</blockquote>
+<h4 id="fieldBasedSearch">Field Based Search Enabled, Optional</h4>
 </blockquote>
 <pre><code>    &lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
 </code></pre>
@@ -297,73 +261,59 @@ Defaults to 1 <br></p>
 <blockquote>
 <blockquote>
 <blockquote>
-<p>Flag to toggle attribute-based search <br></p>
+<p>It is a flag to toggle attribute-based search. An attribute-based search has conditions on which attributes a keyword needs to appear in.<br></p>
 <blockquote>
-<p>0 - Disable <br>
-1 - Enable <br>
-Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.</p>
+<p>0 - Disabled <br>
+1 - Enabled <br>
+Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4 id="searcherType">Search Type:</h4>
-<blockquote>
-<p>Searcher Type <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="searcherType">Search Type, Optional</h4>
 </blockquote>
 <pre><code>    &lt;searcherType&gt;0&lt;/searcherType&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Modifies the default search algorithm of the Srch2 engine <br></p>
+<p>It sets the default search type of a query to the engine. <br></p>
 <blockquote>
-<p>0 if topk, <br>
-1 if advanced <br></p>
-<p>Defaults to 0 <br></p>
+<p>0: finding the top relevant results; <br>
+1: finding all matching results. <br></p>
 </blockquote>
 </blockquote>
-<h4 id="queryTermMatchType">Query Term Match Type:</h4>
-<blockquote>
-<p>Query Term Match Type <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<p>Its default value is 0.<br></p>
+<h4 id="queryTermMatchType">Query Term Match Type, Optional</h4>
 </blockquote>
 <pre><code>    &lt;queryTermMatchType&gt;1&lt;/queryTermMatchType&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Modifies the default search behaviour of the Srch2 engine              </p>
+<p>It modifies the default search behavior of the  engine              </p>
 <blockquote>
-<p>0: exact match search<br>
-1: fuzzy match search<br>
-Defaults to 0</p>
+<p>0: exact match search;<br>
+1: fuzzy match search.<br>
+Its default value is 0.</p>
 </blockquote>
 </blockquote>
-<h4 id="queryTermType">Query Term Type:</h4>
-<blockquote>
-<p>Query Term Type <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="queryTermType">Query Term Type, Optional</h4>
 </blockquote>
 <pre><code>    &lt;queryTermType&gt;0&lt;/queryTermType&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
+<p>It modifies the default treatment of search query's last keyword (TODO):<br></p>
 <blockquote>
-<blockquote>
-<p>Modifies the default treatment of search query's trailing keyword
-0: trailing term is treated as a prefix; <br>
-1: trailing term is treated as a complete term; <br>
-Defaults to 0</p>
-</blockquote>
+<p>0: the trailing term is treated as a prefix; <br>
+1: the trailing term is treated as a complete term; <br>
+Its default value is 0.</p>
 </blockquote>
 </blockquote>
 <h4 id="queryResponseWriter">Query Term Type:</h4>
 <blockquote>
-<p>All tags related to configuring the response.</p>
+<p>This tag has parameters related to configuring the response of a query.</p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;queryResponseWriter&gt;
@@ -373,11 +323,7 @@ Defaults to 0</p>
 
 <blockquote>
 <blockquote>
-<h4 id="responseFormat">Response Format:</h4>
-<blockquote>
-<p>Response Format <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="responseFormat">Response Format, Optional</h4>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;responseFormat&gt;0&lt;/responseFormat&gt;
@@ -386,18 +332,14 @@ Defaults to 0</p>
 <blockquote>
 <blockquote>
 <blockquote>
-<p>Format of query results</p>
+<p>It specifies the format of query results:</p>
 <blockquote>
 <p>0: JSON <br>
 1: JSONP <br>        <br>
-Defaults to 0 <br></p>
+Its default value is 0. (TODO) <br></p>
 </blockquote>
 </blockquote>
-<h4 id="responseContent">Response Content:</h4>
-<blockquote>
-<p>Response Content <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="responseContent">Response Content, Optional</h4>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
@@ -416,22 +358,21 @@ Defaults to 0 <br></p>
 <blockquote>
 <blockquote>
 <blockquote>
-<p>Format of each json search response. <br>
-You should set the type by one of the following options: <br></p>
+<p>It specifies the format of each json search response. You should set the type to one of the following options: (TODO) <br></p>
 <blockquote>
 <p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 1: format "rid,edit_dist,matching_prefix". <br>
 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
-Defaults to 0 <br>
+Its default value is 0. <br>
 It is REQUIRED to set fields_to_return if search-response-format=2 <br>
-These are attributes returned to the user. <br></p>
+These are attributes returned to the user. (TODO)<br></p>
 </blockquote>
 </blockquote>
 </blockquote>
 </blockquote>
 <h4 id="updatehandler">Update Handler:</h4>
 <blockquote>
-<p>All tags related to configuring srch2 handling of update requests.</p>
+<p>This tag includes tags related to configuring the engine to handle update requests.</p>
 </blockquote>
 <pre><code>    &lt;updatehandler&gt;
     ...
@@ -439,30 +380,16 @@ These are attributes returned to the user. <br></p>
 </code></pre>
 
 <blockquote>
-<h4 id="maxDocs">Max Docs:</h4>
-<blockquote>
-<p>Maximum Number of Documents <br>
-<strong>Required</strong> <br></p>
-</blockquote>
+<h4 id="maxDocs">Maximum Number of Documents, Required</h4>
 </blockquote>
 <pre><code>    &lt;maxDocs&gt;15000000&lt;/maxDocs&gt;
 </code></pre>
 
 <blockquote>
 <blockquote>
-<p>Maximum number of records indexable by the srch2 engine. <br>
-This number should reflect the size of each record and the available memory <br></p>
-<blockquote>
-<p>Remember this is a hard cap on the number of records indexable by the srch2 engine.
-Inserting more records than the specified here will cause the srch2 indexer to throw an error.
-It exists to bound the memory footprint of the srch2 indexer which grows in proporsion to the number of records.</p>
+<p>It specifies the maximum number of records indexable by the engine. Inserting more records than the specified here will cause the insertions to fail.</p>
 </blockquote>
-</blockquote>
-<h4 id="mergePolicy">Merge Policy:</h4>
-<blockquote>
-<p>Merge Policies <br>
-<strong>Required</strong> <br></p>
-</blockquote>
+<h4 id="mergePolicy">Merge Policy, Required</h4>
 </blockquote>
 <pre><code>    &lt;mergePolicy&gt;
         &lt;mergeEveryNSeconds&gt;10&lt;/mergeEveryNSeconds&gt;
@@ -472,18 +399,13 @@ It exists to bound the memory footprint of the srch2 indexer which grows in prop
 
 <blockquote>
 <blockquote>
-<p>mergeEveryNSeconds: <br></p>
-<blockquote>
-<p>The maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
-Its minimum value is 10 (seconds). <br>
-Note: Decreasing this number will increase latency in the srch2 engine's response time.
+<p>"mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
 mergeEveryMWrites: <br>
-The number of write operations after which newly inserted/deleted records are merged into the indexes. <br></p>
+"mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
 </blockquote>
-</blockquote>
-<h4 id="updateLog">Update Log:</h4>
+<h4 id="updateLog">Logging:</h4>
 <blockquote>
-<p>Tags customizing Srch2's log file and logging functions.</p>
+<p>The following tag includes parameters related to logging in SRCH2.</p>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;updateLog&gt;
@@ -493,11 +415,7 @@ The number of write operations after which newly inserted/deleted records are me
 
 <blockquote>
 <blockquote>
-<h4 id="logLevel">Log Level:</h4>
-<blockquote>
-<p>Log Level <br>
-<strong>Optional</strong> <br></p>
-</blockquote>
+<h4 id="logLevel">Log Level, Optional</h4>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;logLevel&gt;3&lt;/logLevel&gt;
@@ -506,20 +424,16 @@ The number of write operations after which newly inserted/deleted records are me
 <blockquote>
 <blockquote>
 <blockquote>
-<p>Amount of feedback information of the Srch2 engines state recorded in its logs. <br></p>
+<p>The parameter decides the tmount of feedback information the engine wil report in its log. <br></p>
 <blockquote>
-<p>0 SILENT <br>
-1 ERROR <br>
-2 WARN <br>
-3 INFO <br>
-Defaults to 3 INFO</p>
+<p>0: SILENT <br>
+1: ERROR <br>
+2: WARNING <br>
+3: INFO <br>
+Its default value is 3.</p>
 </blockquote>
 </blockquote>
-<h4 id="accessLogFile">Log File:</h4>
-<blockquote>
-<p>Access Log File <br>
-<strong>Required</strong> <br></p>
-</blockquote>
+<h4 id="accessLogFile">Log File, Required:</h4>
 </blockquote>
 </blockquote>
 <pre><code>    &lt;accessLogFile&gt;./data/faceted_search/log.txt&lt;/accessLogFile&gt;
@@ -528,33 +442,28 @@ Defaults to 3 INFO</p>
 <blockquote>
 <blockquote>
 <blockquote>
-<p>Path to file where the srch2 engine will write logging information.<br></p>
+<p>It specifies the file to which the engine writes logging information.<br></p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h3 id="schemaTag">Schema:</h3>
+<h3 id="schemaTag">Schema Component:</h3>
 <blockquote>
-<p>The following sections explain each subtag under <i>schema</i>.</p>
+<p>The following sections explain each subtag under the <i>schema</i> component.</p>
 </blockquote>
 <pre><code>    &lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
     ...
     &lt;/schema&gt;
 </code></pre>
 
-<h4 id="fields">Fields:</h4>
-<blockquote>
-<p>Fields <br>
-<strong>Required</strong> <br></p>
-</blockquote>
+<h4 id="fields">Fields, Required</h4>
 <pre><code>    &lt;fields&gt;
     ...
     &lt;/fields&gt;
 </code></pre>
 
 <blockquote>
-<p>This tag is a container of all 'field' tags.  </p>
-<p>Field<br>
-<strong>Require</strong> at least one searchable   </p>
+<p>This tag is a container of all field-related tags.  </p>
+<p>Field: at least one field is searchable (TODO)</p>
 </blockquote>
 <pre><code>    &lt;field name=&quot;category&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
     &lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
@@ -564,47 +473,47 @@ Defaults to 3 INFO</p>
 </code></pre>
 
 <blockquote>
-<p>Definition of each fields the srch2 engine keeps information on. <br></p>
-<p>Attributes:</p>
+<p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
+<p>"name" : the name of the field<br>
+"type" : the type of the field. Supported types are:<br></p>
 <blockquote>
-<p><strong>required</strong> attributes: name, type, indexed     <br>
-"name" : is the name of the field<br>
-"type" : is the type of the field. Supported types are:<br>
-- Text<br>
-- location_longtitude (For Geo search)<br>
-- location_latitude (For Geo search)<br>
-- integer<br>
-- float<br>
-- time<br></p>
+<ul>
+<li>Text<br></li>
+<li>integer<br></li>
+<li>float<br></li>
+<li>time<br></li>
+<li>location_longtitude (For Geo search)<br></li>
+<li>location_latitude (For Geo search)<br></li>
+</ul>
+<p>The engine supports the following formats of time and date: <br></p>
 <blockquote>
-<p>NOTE: The time formats which are accepted by SRCH2 engine are: <br>
-      The formats for date and time points are:<br>
-      HH:MM:SS<br>
-      mm/DD/YY<br>
-      YY-mm-DD HH:MM::SS<br>
-      YYmmDDHHMMSS<br>
-      YYmmDDHHMM<br>
-      YYmmDD<br>
-      And the format for duration of time is:<br>
+<pre><code>  HH:MM:SS&lt;br&gt;
+  MM/DD/YY&lt;br&gt;
+  YY-MM-DD HH:MM::SS&lt;br&gt;
+  YYMMDDHHMMSS&lt;br&gt;
+  YYMMDDHHMM&lt;br&gt;
+  YYMMDD&lt;br&gt;
+</code></pre>
+<p>The engine supports the following formats of time duration: <br>
       {An integer}{A date/time constant}, in which date and time constants are: <br>
       SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
-      Examples are: DAY (meaning 1 day duration) or 34WEEKS (meaning 34 weeks).<br></p>
+      Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO SPACE?)<br></p>
 </blockquote>
 </blockquote>
-<p>"indexed" : For field to be searchable indexed should be true. A field can only be sorted, filtered and faceted if its 'indexed' property is false. To both perform a keyword search AND also sort,filter or facet on a single field, two instances of the field are need to be defined: one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
-"required": The flag indicating whether this field can be empty or not. It is false by default.<br>
-"default" : The value attributed to empty instances of this field.<br></p>
+<p>Each field has certain properties:<br></p>
 <blockquote>
-<p>A record { id=1x232, fruit: apple, status: } with status default="rotten" will be indexed as {id=1x232, fruit: apple, status: rotten}</p>
+<p>"required": The flag indicates whether this field can be empty or not. It is false by default.<br>
+"default" : It gives the default value of this field if the value is missing.<br>
+"searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
+"refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br>
+ "indexed": If this flag is true, then the engine will treat it as both a searchable and refining attribute. <br></p>
 </blockquote>
 <p>Note:<br></p>
 <blockquote>
 <ul>
-<li>For Geo search two fields are required with the types location_latitude and location_longtitude, respectively.
-Make sure to set both latitude and longitude.<br></li>
-<li>The values of these geo fields should be float in the JSON (input) file.<br></li>
-<li>Primary key is optional to be included here. It can be included here to set its indexed property to true.<br></li>
-<li>Type is always text for primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br></li>
+<li>For geo search, two fields are required with the types location_latitude and location_longtitude, respectively.  The values of these geo fields should be float in the data file.<br></li>
+<li>The primary key is optional to be included here.<br></li>
+<li>The engine assumes the primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br></li>
 </ul>
 </blockquote>
 </blockquote>

@@ -182,16 +182,15 @@
 >> The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <br>
 
 
->####Cache Size:{id="cacheSize"}
->> Cache Size <br>
->> **Optional** <br>
+>####Cache Size, Optional{id="cacheSize"}
+*** <br>
 ```
     <cacheSize>65536000</cacheSize>
 ```             
->> It specifies the size of cache in bytes. It should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br>
+>> It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br>
 
    
->####Default Value for number of returned results, Optional:{id="rows"}
+>####Default value for number of returned results, Optional{id="rows"}
 ```
     <rows>10</rows>
 ```             
@@ -201,16 +200,16 @@
 ```
     <maxSearchThreads>2</maxSearchThreads>
 ```             
->> It specifies the number of threads that serve incoming search requests. Its default value is 1. <br>
+>> It specifies the number of threads that serve search requests. Its default value is 1. <br>
 
 >####Field Based Search Enabled, Optional{id="fieldBasedSearch"}
 ```
     <fieldBasedSearch>0</fieldBasedSearch>
 ```             
->>> It is a flag to toggle attribute-based search.  <br>
->>>> 0 - Disable <br>
->>>> 1 - Enable <br>
->>>> Note: if field-based search is enabled, the number of searchable attributes, specified in the <a href='#fields'>fields</a>, is limited to 31.
+>>> It is a flag to toggle attribute-based search. An attribute-based search has conditions on which attributes a keyword needs to appear in.<br>
+>>>> 0 - Disabled <br>
+>>>> 1 - Enabled <br>
+>>>> Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 
 >####Search Type, Optional{id="searcherType"}         
@@ -237,14 +236,14 @@
 ```
     <queryTermType>0</queryTermType>
 ```             
->>>> It modifies the default treatment of search query's last keyword (TODO):
+>> It modifies the default treatment of search query's last keyword (TODO):<br>
 >>> 0: the trailing term is treated as a prefix; <br>
 >>> 1: the trailing term is treated as a complete term; <br>
->>> Its default value is 0.
+>> Its default value is 0.
 
 
 >####Query Term Type:{id="queryResponseWriter"}  
->> Ths tag has parameters related to configuring the response of a query.
+>> This tag has parameters related to configuring the response of a query.
 ```
     <queryResponseWriter>
     ...
@@ -269,15 +268,13 @@
 ```
     <responseContent type="0"></responseContent>
 ```              
->>> It specifies the format of each json search response. You should set the type by one of the following options: (TODO) <br>
+>>> It specifies the format of each json search response. You should set the type to one of the following options: (TODO) <br>
 >>>> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 >>>> 1: format "rid,edit_dist,matching_prefix". <br>
 >>>> 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
 >>>> Its default value is 0. <br>
 >>>> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
 >>>> These are attributes returned to the user. (TODO)<br>
-
-
 
 ####Update Handler:{id="updatehandler"}   
 > This tag includes tags related to configuring the engine to handle update requests.
@@ -286,7 +283,7 @@
     ...
     </updatehandler>
 ```
->####,Maximum Number of Documents, Required{id="maxDocs"}  
+>####Maximum Number of Documents, Required{id="maxDocs"}  
 ```
     <maxDocs>15000000</maxDocs>
 ```             
@@ -300,63 +297,53 @@
         <mergeEveryMWrites>100</mergeEveryMWrites>
     </mergePolicy>
 ```             
->> mergeEveryNSeconds: <br>
->>> It sets the maximum number of seconds before newly inserted/deleted records become fully visible to users. <br>
->>> Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
+>> "mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
 >> mergeEveryMWrites: <br>
->> The number of write operations after which newly inserted/deleted records are merged into the indexes. <br>
+>> "mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
 
    
->####Update Log:{id="updateLog"}
->> Tags customizing Srch2's log file and logging functions.
+>####Logging:{id="updateLog"}
+>> The following tag includes parameters related to logging in SRCH2.
 ```     
     <updateLog>
     ...
     </updateLog>
 ```
->>####Log Level:{id="logLevel"}
->>> Log Level <br>
->>> **Optional** <br>
+>>####Log Level, Optional{id="logLevel"}
 ```
     <logLevel>3</logLevel>
 ```                 
->>> Amount of feedback information of the Srch2 engines state recorded in its logs. <br>
->>>> 0 SILENT <br>
->>>> 1 ERROR <br>
->>>> 2 WARN <br>
->>>> 3 INFO <br>
->>> Defaults to 3 INFO
+>>> The parameter decides the tmount of feedback information the engine wil report in its log. <br>
+>>>> 0: SILENT <br>
+>>>> 1: ERROR <br>
+>>>> 2: WARNING <br>
+>>>> 3: INFO <br>
+>>> Its default value is 3.
 
->>####Log File:{id="accessLogFile"}                      
->>> Access Log File <br>
->>> **Required** <br>
+>>####Log File, Required:{id="accessLogFile"}                      
 ```
     <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
 ```                 
->>> Path to file where the srch2 engine will write logging information.<br>
+>>> It specifies the file to which the engine writes logging information.<br>
 
 
-
-###Schema:{id="schemaTag"}
-> The following sections explain each subtag under <i>schema</i>.
+###Schema Component:{id="schemaTag"}
+> The following sections explain each subtag under the <i>schema</i> component.
 ```
     <schema name="SRCH2" version="3">
     ...
     </schema>
 ```
 
-####Fields:{id="fields"}
-> Fields <br>
-> **Required** <br>
+####Fields, Required{id="fields"}
 ```
     <fields>
     ...
     </fields>
 ```
-> This tag is a container of all 'field' tags.  
+> This tag is a container of all field-related tags.  
 
->Field  
-> **Require** at least one searchable   
+>Field: at least one field is searchable (TODO)
 ```
     <field name="category" type="text" indexed="true" />
     <field name="name" type="text" indexed="true" />
@@ -364,44 +351,41 @@
     <field name="price" default="200" required="true" type="float" indexed="false"/>
     <field name="likes" default="0" required="true" type="integer" indexed="false"/>
 ```
-> Definition of each fields the srch2 engine keeps information on. <br>
+> These parameters give information about each field, including its name, type, and certain properties. <br>
 
-> Attributes:
->> **required** attributes: name, type, indexed       
-> "name" : is the name of the field<br>
-> "type" : is the type of the field. Supported types are:<br>
+> "name" : the name of the field<br>
+> "type" : the type of the field. Supported types are:<br>
 >> - Text<br>
->> - location_longtitude (For Geo search)<br>
->> - location_latitude (For Geo search)<br>
 >> - integer<br>
 >> - float<br>
 >> - time<br>
->>> NOTE: The time formats which are accepted by SRCH2 engine are: <br>
->>>       The formats for date and time points are:<br>
+>> - location_longtitude (For Geo search)<br>
+>> - location_latitude (For Geo search)<br>
+
+>> The engine supports the following formats of time and date: <br>
 >>>       HH:MM:SS<br>
->>>       mm/DD/YY<br>
->>>       YY-mm-DD HH:MM::SS<br>
->>>       YYmmDDHHMMSS<br>
->>>       YYmmDDHHMM<br>
->>>       YYmmDD<br>
->>>       And the format for duration of time is:<br>
+>>>       MM/DD/YY<br>
+>>>       YY-MM-DD HH:MM::SS<br>
+>>>       YYMMDDHHMMSS<br>
+>>>       YYMMDDHHMM<br>
+>>>       YYMMDD<br>
+
+>>> The engine supports the following formats of time duration: <br>
 >>>       {An integer}{A date/time constant}, in which date and time constants are: <br>
 >>>       SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
->>>       Examples are: DAY (meaning 1 day duration) or 34WEEKS (meaning 34 weeks).<br>
+>>>       Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO SPACE?)<br>
 
-             
-> "indexed" : For field to be searchable indexed should be true. A field can only be sorted, filtered and faceted if its 'indexed' property is false. To both perform a keyword search AND also sort,filter or facet on a single field, two instances of the field are need to be defined: one with indexed="true" (for keyword search) and one with indexed="false" (for sort and facet). <br>
-> "required": The flag indicating whether this field can be empty or not. It is false by default.<br>
-> "default" : The value attributed to empty instances of this field.<br>
->> A record { id=1x232, fruit: apple, status: } with status default="rotten" will be indexed as {id=1x232, fruit: apple, status: rotten}
-
+> Each field has certain properties:<br>
+>> "required": The flag indicates whether this field can be empty or not. It is false by default.<br>
+>> "default" : It gives the default value of this field if the value is missing.<br>
+>> "searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
+>> "refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
+>>  "indexed": If this flag is true, then the engine will treat it as both a searchable and refining attribute. <br>
          
 > Note:<br>
->> - For Geo search two fields are required with the types location_latitude and location_longtitude, respectively.
->> Make sure to set both latitude and longitude.<br>
->> - The values of these geo fields should be float in the JSON (input) file.<br>
->> - Primary key is optional to be included here. It can be included here to set its indexed property to true.<br>
->> - Type is always text for primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br>
+>>  - For geo search, two fields are required with the types location_latitude and location_longtitude, respectively.  The values of these geo fields should be float in the data file.<br>
+>> - The primary key is optional to be included here.<br>
+>> - The engine assumes the primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br>
 
 
 
