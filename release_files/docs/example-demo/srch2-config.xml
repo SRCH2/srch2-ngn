@@ -27,9 +27,10 @@
          
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-        <!-- 
-        <fieldBoost>category^2 name^1</fieldBoost>
-        <recordBoostField>relevance</recordBoostField>
+        <fieldBoost>title^2 trailer_url^1</fieldBoost>
+
+        <!--
+        <recordBoostField>trailer_url</recordBoostField>
         -->
          
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
