@@ -648,7 +648,7 @@ const Schema* IndexData::getSchema() const
 
 Schema* IndexData::getSchema()
 {
-    return dynamic_cast<const Schema *>(this->schemaInternal);
+    return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
 IndexData::~IndexData()

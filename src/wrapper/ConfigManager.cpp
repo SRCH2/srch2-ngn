@@ -548,8 +548,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         configSuccess = false;
         return;
     }
-
-
     // dataDir is a required field
     configAttribute = configDoc.child("config").child("dataDir");
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
@@ -561,17 +559,39 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-
-    // dataFile is a required field
-    configAttribute = configDoc.child("config").child("dataFile");
-    if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
-        this->filePath = this->srch2Home + string(configAttribute.text().get());
+    configAttribute = configDoc.child("config").child("dataSourceType");
+    if (configAttribute && configAttribute.text()) {
+        int datasourceValue = configAttribute.text().as_int(DATA_SOURCE_JSON_FILE);
+        switch(datasourceValue) {
+        case 0:
+        	this->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
+        	break;
+        case 1:
+        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+        	break;
+        case 2:
+        	this->dataSourceType = DATA_SOURCE_MONGO_DB;
+        	break;
+        default:
+        	// if user forgets to specify this option, we will assume data soruce is
+        	// JSON file
+        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+        	break;
+        }
     } else {
-        parseError
-                << "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
-        configSuccess = false;
-        //TODO:  dataSourceType = FILEBOOTSTRAP_FALSE;
-        return;
+    	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+    }
+    if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
+    	// dataFile is a required field only if JSON file is specified as data source.
+    	configAttribute = configDoc.child("config").child("dataFile");
+    	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
+    		this->filePath = this->srch2Home + string(configAttribute.text().get());
+    	}else {
+    		parseError
+    		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+    		configSuccess = false;
+    		return;
+    	}
     }
 
     // <config>
@@ -855,16 +875,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     }
 
-//    //TODO: it should be removed.
-//    // dataSourceType is an optional field
-//    this->dataSourceType = FILEBOOTSTRAP_TRUE; // by default it is FILEBOOTSTRAP_TRUE
-//    configAttribute = configDoc.child("config").child("query").child("dataSourceType");
-//    if (configAttribute && configAttribute.text()) {
-//        this->dataSourceType = configAttribute.text().as_int(FILEBOOTSTRAP_TRUE) ? FILEBOOTSTRAP_TRUE : FILEBOOTSTRAP_FALSE;
-//        // if the value of dataSourceType is TRUE, the JSON data file should be provided.
-//        // TODO: should we check it here again? because we want to remove this.
-//    }
-    this->dataSourceType = FILEBOOTSTRAP_TRUE; // Should it be as default
+
 
 //    // TODO: it should be removed.
 //    configAttribute = configDoc.child("config").child("query").child("writeApiType");
@@ -995,6 +1006,44 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->trieBootstrapDictFile = "";
     this->attributeToSort = 0;
 
+    if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
+    	configAttribute = configDoc.child("config").child("mongodb").child("host");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoHost = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo host is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("port");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoPort = string(configAttribute.text().get());
+    	}else {
+    		this->mongoPort = ""; // use default port
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("db");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoDbName = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo data base name is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("collection");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoCollection = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo collection name is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("listenerWaitTime");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoListenerWaitTime = configAttribute.text().as_uint(1);
+    	}else {
+    		this->mongoListenerWaitTime = 1;
+    	}
+    }
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {

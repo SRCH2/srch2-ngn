@@ -149,6 +149,13 @@ private:
 	//string httpServerDocumentRoot;
     string configFile;
 
+    // mongo db related settings
+	string mongoHost;
+	string mongoPort;
+	string mongoDbName;
+	string mongoCollection;
+	unsigned mongoListenerWaitTime;
+
 
     void splitString(string str, const string& delimiter, vector<string>& result);
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
@@ -187,7 +194,6 @@ private:
 
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
-
 
 public:
     ConfigManager(const string& configfile);
@@ -296,8 +302,24 @@ public:
 
 	const vector<string> * getFacetGaps() const ;
 
-        void loadConfigFile() ;
+	void loadConfigFile() ;
 
+	// Mongo related getter/setter
+	const string& getMongoServerHost() const{
+		return mongoHost;
+	}
+	const string& getMongoServerPort() const{
+		return mongoPort;
+	}
+    const string& getMongoDbName() const{
+    	return mongoDbName;
+    }
+    const string& getMongoCollection () const{
+    	return mongoCollection;
+    }
+    const unsigned getMongoListenerWaitTime () const{
+    	return mongoListenerWaitTime;
+    }
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
 
