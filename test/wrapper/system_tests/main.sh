@@ -23,6 +23,14 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do empty_index_test--------------'
+python ./empty_index/empty_index.py $SRCH2_ENGINE_DIR
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 echo '----do high_insert_test--------------'
 ./high_insert_test/autotest.sh $SRCH2_ENGINE_DIR
 
