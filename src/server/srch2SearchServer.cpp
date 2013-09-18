@@ -528,7 +528,7 @@ int main(int argc, char** argv) {
     //cout << "srch2 server started." << endl;
     if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
     	// set current time as cut off time for further updates
-    	// this is a temporary solution.
+    	// this is a temporary solution. TODO
     	srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
     	srch2http::MongoDataSource::spawnUpdateListener(&server);
     }

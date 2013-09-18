@@ -290,7 +290,6 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
         auto_ptr<mongo::DBClientCursor> cursor = oplogConnection.query(currentNS, _internalMongoId);
         mongo::BSONObj updateRecord = cursor->next();  // should return only one
-        //mongoConnector->done();
 
         if( string(updateRecord.firstElementFieldName()).compare("$err") == 0 ) {
             Logger::error("MONGO_LISTENER:UPDATE: updated record could not be found in db!! ..Cannot update engine");
@@ -348,7 +347,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
     }
     default:
         break;
-        Logger::warn("The mongodb operation (ops='%c') is not supported by engine", operation[0]);
+        Logger::warn("The mongodb operation (ops='%c') is not supported by the engine", operation[0]);
     }
     Logger::debug(errorMsg.str().c_str());
 }
