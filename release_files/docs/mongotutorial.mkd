@@ -32,7 +32,6 @@
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
-
 </div> <!-- Sidebar -->
 
 </td>
