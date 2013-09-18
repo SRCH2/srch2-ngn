@@ -321,7 +321,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         	for (int pIndx =0; pIndx < phraseKeyWords.size(); ++pIndx){
         		exactTerm = new srch2is::Term(phraseKeyWords[pIndx],
         				srch2is::TERM_TYPE_COMPLETE, keywordBoostLevel[i],
-        				indexDataContainerConf->getQueryTermSimilarityBoost(), 0);
+        				1 , 0);
         		exactTerm->addAttributeToFilterTermHits(fieldFilter[i]);
         		plan->getExactQuery()->add(exactTerm);
         	}
