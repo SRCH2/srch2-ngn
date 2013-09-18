@@ -153,121 +153,182 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare("field") == 0) {
 
-            	// if it's primary key we only need the value for indexed.
-            	if(string(field.attribute("name").value()).compare(this->primaryKey) == 0
-            			&& string(field.attribute("indexed").value()).compare("") != 0){
+    			bool isSearchable = false;
+    			bool isSupporting = false;
+    			if(string(field.attribute("indexed").value()).compare("") != 0){
             		tempUse = string(field.attribute("indexed").value());
             		if(isValidBool(tempUse)){
-            			if(field.attribute("indexed").as_bool()){ // primary key is searchable
-            				this->isPrimSearchable = 1;
-            			}else{ // primary key is non-searchable
-            				nonSearchableFieldsVector.push_back(this->primaryKey);
-            				nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-            				nonSearchableAttributesDefaultVector.push_back("");
-            				nonSearchableAttributesRequiredFlagVector.push_back(true);
-            			}
+            			if(field.attribute("indexed").as_bool()){ // indexed = true
+            				isSearchable = true;
+            				isSupporting = true;
+            			}else{ // indexed = false
+            				if(string(field.attribute("searchable").value()).compare("") != 0){
+            					tempUse = string(field.attribute("searchable").value());
+            					if(isValidBool(tempUse)){
+            						if(field.attribute("searchable").as_bool()){
+            							isSearchable = true;
+            						}else{
+            							isSearchable = false;
+            						}
+            					}else{
+                                    parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+                                    configSuccess = false;
+                                    return;
+            					}
+            				}
 
+            				if(string(field.attribute("supporting").value()).compare("") != 0){
+            					tempUse = string(field.attribute("supporting").value());
+            					if(isValidBool(tempUse)){
+            						if(field.attribute("supporting").as_bool()){
+            							isSupporting = true;
+            						}else{
+            							isSupporting = false;
+            						}
+            					}else{
+                                    parseError << "Config File Error: Unknown value for property 'supporting'.\n";
+                                    configSuccess = false;
+                                    return;
+            					}
+            				}
+            			}
             		}else{
                         parseError << "Config File Error: Unknown value for property 'indexed'.\n";
                         configSuccess = false;
                         return;
             		}
+    			}else{ // indexed property is not there ...
+    				if(string(field.attribute("searchable").value()).compare("") != 0){
+    					tempUse = string(field.attribute("searchable").value());
+    					if(isValidBool(tempUse)){
+    						if(field.attribute("searchable").as_bool()){
+    							isSearchable = true;
+    						}else{
+    							isSearchable = false;
+    						}
+    					}else{
+                            parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+                            configSuccess = false;
+                            return;
+    					}
+    				}
+
+    				if(string(field.attribute("supporting").value()).compare("") != 0){
+    					tempUse = string(field.attribute("supporting").value());
+    					if(isValidBool(tempUse)){
+    						if(field.attribute("supporting").as_bool()){
+    							isSupporting = true;
+    						}else{
+    							isSupporting = false;
+    						}
+    					}else{
+                            parseError << "Config File Error: Unknown value for property 'supporting'.\n";
+                            configSuccess = false;
+                            return;
+    					}
+    				}
+    			}
+
+            	// if it's primary key we only need the value for indexed.
+            	if(string(field.attribute("name").value()).compare(this->primaryKey) == 0){
+            		if(isSearchable){
+            			this->isPrimSearchable = 1;
+            		}
+
+            		if(isSupporting){
+        				nonSearchableFieldsVector.push_back(this->primaryKey);
+        				nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
+        				nonSearchableAttributesDefaultVector.push_back("");
+        				nonSearchableAttributesRequiredFlagVector.push_back(true);
+            		}
             		continue;
             	}
                 // Checking if the values are empty or not
                 if (string(field.attribute("name").value()).compare("") != 0
-                        && string(field.attribute("type").value()).compare("") != 0
-                        && string(field.attribute("indexed").value()).compare("") != 0) {
-                    tempUse = field.attribute("indexed").value();
-                    if (isValidBool(tempUse)) {
-                    	if(field.attribute("indexed").as_bool()){ // a searchable attribute
+                        && string(field.attribute("type").value()).compare("") != 0) {
+                	if(isSearchable){ // it is a searchable field
+                        searchableFieldsVector.push_back(string(field.attribute("name").value()));
+                		searchableFieldIndexsVector.push_back(true);
 
-                            searchableFieldsVector.push_back(string(field.attribute("name").value()));
-                    		searchableFieldIndexsVector.push_back(true);
+                        // Checking the validity of field type
+                        tempUse = string(field.attribute("type").value());
+                        if (this->isValidFieldType(tempUse , true)) {
+                            searchableFieldTypesVector.push_back(tempUse);
+                        } else {
+                            parseError << "Config File Error: " << tempUse << " is an unknown field type.\n";
+                            configSuccess = false;
+                            return;
+                        }
 
-                            // Checking the validity of field type
-                            tempUse = string(field.attribute("type").value());
-                            if (this->isValidFieldType(tempUse , true)) {
-                                searchableFieldTypesVector.push_back(tempUse);
-                            } else {
-                                parseError << "Config File Error: " << tempUse << " is an unknown field type.\n";
-                                configSuccess = false;
-                                return;
-                            }
+                        if (string(field.attribute("default").value()).compare("") != 0){
+                        	searchableAttributesDefaultVector.push_back(string(field.attribute("default").value()));
+                        }else{
+                        	searchableAttributesDefaultVector.push_back("");
+                        }
 
-                            // Checks for geo types. location_latitude and location_longitude are geo types
-                            if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
-                                hasLatitude = true;
-                                this->fieldLatitude = string(field.attribute("name").value());
-                            }
-                            if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
-                                hasLongitude = true;
-                                this->fieldLongitude = string(field.attribute("name").value());
-                            }
+                        tempUse = string(field.attribute("required").value());
+                        if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
+                        	searchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                        }else{
+                        	searchableAttributesRequiredFlagVector.push_back(false);
+                        }
+                	}
 
-                            if (string(field.attribute("default").value()).compare("") != 0){
-                            	searchableAttributesDefaultVector.push_back(string(field.attribute("default").value()));
-                            }else{
-                            	searchableAttributesDefaultVector.push_back("");
-                            }
+                	if(isSupporting){ // it is a supporting field
+                		nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
+                		searchableFieldIndexsVector.push_back(false);
 
-                            if (string(field.attribute("required").value()).compare("") != 0){
-                            	searchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-                            }else{
-                            	searchableAttributesRequiredFlagVector.push_back(false);
-                            }
+                		// Checking the validity of field type
+                		tempUse = string(field.attribute("type").value());
+                		if (this->isValidFieldType(tempUse , false)) {
+                			nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
+                		} else {
+                			parseError << "Config File Error: " << tempUse << " is an unknown field type for supporting fields.\n";
+                			configSuccess = false;
+                			return;
+                		}
 
+                		// Check the validity of field default value based on it's type
+                		if (string(field.attribute("default").value()).compare("") != 0){
+                			tempUse = string(field.attribute("default").value());
+                			if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
 
+                				if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+                					long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+                					std::stringstream buffer;
+                					buffer << timeValue;
+                					tempUse = buffer.str();
+                				}
+                			}else{
+                				parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
+                				tempUse = "";
+                			}
+                			nonSearchableAttributesDefaultVector.push_back(tempUse);
+                		}else{
+                			nonSearchableAttributesDefaultVector.push_back("");
+                		}
 
-                    	}else{ // non-searchable attribute
-                            nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
-                    		searchableFieldIndexsVector.push_back(false);
+                        tempUse = string(field.attribute("required").value());
+                		if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
+                			nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                		}else{
+                			nonSearchableAttributesRequiredFlagVector.push_back(false);
+                		}
+                	}
 
-                            // Checking the validity of field type
-                            tempUse = string(field.attribute("type").value());
-                            if (this->isValidFieldType(tempUse , false)) {
-                                nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
-                            } else {
-                                parseError << "Config File Error: " << tempUse << " is an unknown field type for indexed=false.\n";
-                                configSuccess = false;
-                                return;
-                            }
-
-                            // Check the validity of field default value based on it's type
-                            if (string(field.attribute("default").value()).compare("") != 0){
-                            	tempUse = string(field.attribute("default").value());
-                            	if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
-
-									if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-										long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-										std::stringstream buffer;
-										buffer << timeValue;
-										tempUse = buffer.str();
-									}
-                            	}else{
-                                    parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
-                                    tempUse = "";
-                            	}
-                            	nonSearchableAttributesDefaultVector.push_back(tempUse);
-                            }else{
-                            	nonSearchableAttributesDefaultVector.push_back("");
-                            }
-
-                            if (string(field.attribute("required").value()).compare("") != 0){
-                            	nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-                            }else{
-                            	nonSearchableAttributesRequiredFlagVector.push_back(false);
-                            }
-                    	}
-                    }else{
-                        parseError << "Config File Error: can not convert " << tempUse << " to boolean type.\n";
-                        configSuccess = false;
-                        return;
+                    // Checks for geo types. location_latitude and location_longitude are geo types
+                    if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
+                        hasLatitude = true;
+                        this->fieldLatitude = string(field.attribute("name").value());
+                    }
+                    if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
+                        hasLongitude = true;
+                        this->fieldLongitude = string(field.attribute("name").value());
                     }
 
                 } else { // if one of the values of name, type or indexed is empty
                     parseError << "For the searchable fields, "
-                            << "providing values for'name', 'type' and 'indexed' is required\n ";
+                            << "providing values for'name' and 'type' is required\n ";
                     configSuccess = false;
                     return;
                 }
@@ -275,7 +336,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
         }
     } else { // No searchable fields provided.
-        parseError << "No searchable fields are provided.\n";
+        parseError << "No fields are provided.\n";
         configSuccess = false;
         return;
     }

@@ -360,9 +360,9 @@
    -->
    <field name="category" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="model" default="benz" required="true" type="text" indexed="false"/>
-   <field name="price" default="200" required="true" type="float" indexed="false"/>
-   <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+   <field name="model" default="benz" required="true" type="text" indexed="false" supporting="true"/>
+   <field name="price" default="200" required="true" type="float" indexed="false" supporting="true"/>
+   <field name="likes" default="0" required="true" type="integer" indexed="false" supporting="true"/>
  </fields>
  
  <!--

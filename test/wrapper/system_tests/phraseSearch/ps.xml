@@ -337,7 +337,7 @@
         "type" : is the type of the field. Supported types are:
             - Text
             - location_longtitude (For Geo search)
-            - location_latitude (For Geo search)
+            - location_atitude (For Geo search)
             - integer
             - float
             - time
