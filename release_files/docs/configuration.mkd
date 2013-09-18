@@ -1,6 +1,5 @@
 <table><tr>
-	
-<td> 
+<td>
 <div id="content">
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
@@ -51,37 +50,37 @@
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Configuration File Documentation</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Engine Configuration</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 18, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ###Overview:###{id="overview"}
->The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration. 
+>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.
 
->The configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data.  Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and  "Optional" means this tag does not need to be present.
+>The configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
 
 ###"Config" Component:{id="configTag"}
 > The following is a breakdown of the subtags of the <i>config</i> component.
 
 ####SRCH2 Home Directory, Required{id="srch2Home"}
 ```
-    <srch2Home>/path/to/srch2/home/directory</srch2Home>
+<srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
-> This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path.  For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
+> This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
 
 ####License Key File, Required{id="licenseFile"}
-    <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
->It specifies a license key file required by the engine. Email contact@srch2.com to get a key file.  You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
+<licenseFile>/path/to/srch2_license_key.txt</licenseFile>
+>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a form at http://srch2.com/try.php to get a free trial key. <br>
 
 
 ####Hostname and Port, Required{id="listeningHostname"}
 ```
-    <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+<listeningHostname>127.0.0.1</listeningHostname>
+<listeningPort>8081</listeningPort>
 ```
 > They specify the hostname and port number of the server. Make sure the port is open to outside requests.<br>
 
 ####Data Directory, Required{id="dataDir"}
 ```
-    <dataDir>/path/to/data.json</dataDir>
+<dataDir>/path/to/data.json</dataDir>
 ```
 > The path of a folder where the engine stores serialized index files. <br>
 
@@ -89,7 +88,7 @@
 ####Data File, Required if DATA_SOURCE = 2 (TODO):{id="dataFile"}
 
 ```
-    <dataFile>/path/to/data.json</dataFile>
+<dataFile>/path/to/data.json</dataFile>
 ```
 > It specifies a JSON data file to be loaded by the engine.<br>
 
@@ -97,78 +96,76 @@
 ####Index Config:{id="indexConfig"}
 > The tag includes parameters related to customizing the record indexes.
 ```
-    <indexConfig>
-    ...
-    </indexConfig>
+<indexConfig>
+...
+</indexConfig>
 ```
 >####Index Type, Required{id="indexType"}
-```    
-    <indexType>0</indexType>
-```     
+```
+<indexType>0</indexType>
+```
 >> 0: Text Indexes; <br>
 >> 1: Text + Geo Indexes, which support location-based search. <br>
 
 
->####Field Boosts, Optional{id="fieldBoost"}         
+>####Field Boosts, Optional{id="fieldBoost"}
 ```
-    <fieldBoost></fieldBoost>
-```               
->> It specifies boost values for the searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. (TODO: WHAT'S THE DEFAULT VALUE?) We specify the boost values as comma-separated entries.  For example, the boost values for three searchable attributes can be specified as: <br>
+<fieldBoost></fieldBoost>
 ```
-    <fieldBoost>relevance^10 name^7 title</fieldBoost>
+>> It specifies boost values for the searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. (TODO: WHAT'S THE DEFAULT VALUE?) We specify the boost values as comma-separated entries. For example, the boost values for three searchable attributes can be specified as: <br>
+```
+<fieldBoost>relevance^10 name^7 title</fieldBoost>
 ```
 >>> Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1. (TODO: WHAT'S THE DEFAULT VALUE?)<br>
 
 
->####Record Boost Field, Optional{id="recordBoostField"}     
+>####Record Boost Field, Optional{id="recordBoostField"}
 ```
-    <recordBoostField>relevance</recordBoostField>
-``` 
+<recordBoostField>relevance</recordBoostField>
+```
 >> It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.
-     
-   
->####Default Query Term Boost, Optional{id="defaultQueryTermBoost"}       
+>####Default Query Term Boost, Optional{id="defaultQueryTermBoost"}
 ```
-    <defaultQueryTermBoost>1</defaultQueryTermBoost>
+<defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
->>  It specifies a default [query term boost](configuration.html##Boosting a term). If the parameter is not given, the engine uses 1 as the default value.<br>
+>> It specifies a default [query term boost](configuration.html##Boosting a term). If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
 ####Query parameters:{id="queryConfig"}
-> The following tag includes paramters related to queries.
+> The following tag includes parameters related to queries.
 ```
-    <query>
-    ...
-    </query>
+<query>
+...
+</query>
 ```
->####Ranking:{id="rankingalgorithm"} 
+>####Ranking:{id="rankingalgorithm"}
 
 >> The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.
 
 ```
-    <rankingalgorithm>
-        <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-    </rankingalgorithm>
+<rankingalgorithm>
+<recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+</rankingalgorithm>
 ```
 
->####Term Similarity Boost, Optional{id="queryTermSimilarityBoost"} 
+>####Term Similarity Boost, Optional{id="queryTermSimilarityBoost"}
 
 ```
-    <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
+<queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
 >> It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) section about how this parameter is used. Its default value is 0.5.
 
 >####Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
-****  
+****
 ```
-   <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
->> It modifies the default behavior of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches).  (TODO: CLARIFY) Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood.  Its default value is 0.5.  
+>> It modifies the default behavior of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches). (TODO: CLARIFY) Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.
 
 
->####Query Term Length Boost, Optional{id="queryTermLengthBoost"}      
+>####Query Term Length Boost, Optional{id="queryTermLengthBoost"}
 ```
-    <queryTermLengthBoost></queryTermLengthBoost>
+<queryTermLengthBoost></queryTermLengthBoost>
 ```
 >>Check the ranking section to see how this value is used in the ranking function. Its default value is 0.5. (TODO) <br>
 
@@ -176,57 +173,55 @@
 >####Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
 
 ```
-    <prefixMatchPenalty>0.95</prefixMatchPenalty>
-```             
->> It specifies the penalty for a prefix match.  This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+<prefixMatchPenalty>0.95</prefixMatchPenalty>
+```
+>> It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
 >> The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <br>
 
 
 >####Cache Size, Optional{id="cacheSize"}
 *** <br>
 ```
-    <cacheSize>65536000</cacheSize>
-```             
+<cacheSize>65536000</cacheSize>
+```
 >> It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br>
 
-   
 >####Default value for number of returned results, Optional{id="rows"}
 ```
-    <rows>10</rows>
-```             
+<rows>10</rows>
+```
 >> It specifies the number of results retrieved. Its defaults value is 10. <br>
 
 >####Maximum number of search threads, Optional:{id="maxSearchThreads"}
 ```
-    <maxSearchThreads>2</maxSearchThreads>
-```             
+<maxSearchThreads>2</maxSearchThreads>
+```
 >> It specifies the number of threads that serve search requests. Its default value is 1. <br>
 
 >####Field Based Search Enabled, Optional{id="fieldBasedSearch"}
 ```
-    <fieldBasedSearch>0</fieldBasedSearch>
-```             
+<fieldBasedSearch>0</fieldBasedSearch>
+```
 >>> It is a flag to toggle attribute-based search. An attribute-based search has conditions on which attributes a keyword needs to appear in.<br>
 >>>> 0 - Disabled <br>
 >>>> 1 - Enabled <br>
 >>>> Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 
->####Search Type, Optional{id="searcherType"}         
+>####Search Type, Optional{id="searcherType"}
 ```
-    <searcherType>0</searcherType>
-```       
+<searcherType>0</searcherType>
+```
 >> It sets the default search type of a query to the engine. <br>
 >>> 0: finding the top relevant results; <br>
 >>> 1: finding all matching results. <br>
-             
 >Its default value is 0.<br>
 
->####Query Term Match Type, Optional{id="queryTermMatchType"}   
+>####Query Term Match Type, Optional{id="queryTermMatchType"}
 ```
-    <queryTermMatchType>1</queryTermMatchType>
+<queryTermMatchType>1</queryTermMatchType>
 ```
->> It modifies the default search behavior of the  engine              
+>> It modifies the default search behavior of the engine
 >>> 0: exact match search;<br>
 >>> 1: fuzzy match search.<br>
 >>> Its default value is 0.
@@ -234,40 +229,39 @@
 >####Query Term Type, Optional{id="queryTermType"}
 
 ```
-    <queryTermType>0</queryTermType>
-```             
+<queryTermType>0</queryTermType>
+```
 >> It modifies the default treatment of search query's last keyword (TODO):<br>
 >>> 0: the trailing term is treated as a prefix; <br>
 >>> 1: the trailing term is treated as a complete term; <br>
 >> Its default value is 0.
 
 
->####Query Term Type:{id="queryResponseWriter"}  
+>####Query Term Type:{id="queryResponseWriter"}
 >> This tag has parameters related to configuring the response of a query.
 ```
-    <queryResponseWriter>
-    ...
-    </queryResponseWriter>
-```  
- 
->>####Response Format, Optional{id="responseFormat"}  
+<queryResponseWriter>
+...
+</queryResponseWriter>
 ```
-    <responseFormat>0</responseFormat>
+>>####Response Format, Optional{id="responseFormat"}
+```
+<responseFormat>0</responseFormat>
 ```
 >>> It specifies the format of query results:
 >>>> 0: JSON <br>
->>>> 1: JSONP <br>          
+>>>> 1: JSONP <br>
 >>>> Its default value is 0. (TODO) <br>
 
->>####Response Content, Optional{id="responseContent"}      
+>>####Response Content, Optional{id="responseContent"}
 ```
-    <responseContent type="2">lat,lng</responseContent>
+<responseContent type="2">lat,lng</responseContent>
 ```
 >>>or
 
 ```
-    <responseContent type="0"></responseContent>
-```              
+<responseContent type="0"></responseContent>
+```
 >>> It specifies the format of each json search response. You should set the type to one of the following options: (TODO) <br>
 >>>> 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 >>>> 1: format "rid,edit_dist,matching_prefix". <br>
@@ -276,80 +270,85 @@
 >>>> It is REQUIRED to set fields_to_return if search-response-format=2 <br>
 >>>> These are attributes returned to the user. (TODO)<br>
 
-####Update Handler:{id="updatehandler"}   
+####Update Handler:{id="updatehandler"}
 > This tag includes tags related to configuring the engine to handle update requests.
-```   
-    <updatehandler>
-    ...
-    </updatehandler>
 ```
->####Maximum Number of Documents, Required{id="maxDocs"}  
+<updatehandler>
+...
+</updatehandler>
 ```
-    <maxDocs>15000000</maxDocs>
-```             
+>####Maximum Number of Documents, Required{id="maxDocs"}
+```
+<maxDocs>15000000</maxDocs>
+```
 >> It specifies the maximum number of records indexable by the engine. Inserting more records than the specified here will cause the insertions to fail.
-  
->####Merge Policy, Required{id="mergePolicy"}            
+>####Merge Policy, Required{id="mergePolicy"}
 
 ```
-    <mergePolicy>
-        <mergeEveryNSeconds>10</mergeEveryNSeconds>
-        <mergeEveryMWrites>100</mergeEveryMWrites>
-    </mergePolicy>
-```             
+<mergePolicy>
+<mergeEveryNSeconds>10</mergeEveryNSeconds>
+<mergeEveryMWrites>100</mergeEveryMWrites>
+</mergePolicy>
+```
 >> "mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
 >> mergeEveryMWrites: <br>
 >> "mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
 
-   
 >####Logging:{id="updateLog"}
 >> The following tag includes parameters related to logging in SRCH2.
-```     
-    <updateLog>
-    ...
-    </updateLog>
+```
+<updateLog>
+...
+</updateLog>
 ```
 >>####Log Level, Optional{id="logLevel"}
 ```
-    <logLevel>3</logLevel>
-```                 
->>> The parameter decides the tmount of feedback information the engine wil report in its log. <br>
+<logLevel>3</logLevel>
+```
+>>> The parameter decides the amount of feedback information the engine will report in its log. <br>
 >>>> 0: SILENT <br>
 >>>> 1: ERROR <br>
 >>>> 2: WARNING <br>
 >>>> 3: INFO <br>
 >>> Its default value is 3.
 
->>####Log File, Required:{id="accessLogFile"}                      
+>>####Log File, Required:{id="accessLogFile"}
 ```
-    <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
-```                 
+<accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+```
 >>> It specifies the file to which the engine writes logging information.<br>
 
 
 ###Schema Component:{id="schemaTag"}
 > The following sections explain each subtag under the <i>schema</i> component.
 ```
-    <schema name="SRCH2" version="3">
-    ...
-    </schema>
+<schema name="SRCH2" version="3">
+...
+</schema>
 ```
+
+####Primary Key:{id="uniqueKey"}
+> Primary Key: Required
+```
+<uniqueKey>id</uniqueKey>
+```
+> It specifies the attribute used as the primary key to reference each record in the data. If a inserted record has a primary key conflicting with an existing record, the new record will be rejected by the engine. The attribute needs to be of text type.<br>
 
 ####Fields, Required{id="fields"}
 ```
-    <fields>
-    ...
-    </fields>
+<fields>
+...
+</fields>
 ```
-> This tag is a container of all field-related tags.  
+> This tag is a container of all field-related tags.
 
 >Field: at least one field is searchable (TODO)
 ```
-    <field name="category" type="text" indexed="true" />
-    <field name="name" type="text" indexed="true" />
-    <field name="model" default="benz" required="true" type="text" indexed="false"/>
-    <field name="price" default="200" required="true" type="float" indexed="false"/>
-    <field name="likes" default="0" required="true" type="integer" indexed="false"/>
+<field name="category" type="text" indexed="true" />
+<field name="name" type="text" indexed="true" />
+<field name="model" default="benz" required="true" type="text" indexed="false"/>
+<field name="price" default="200" required="true" type="float" indexed="false"/>
+<field name="likes" default="0" required="true" type="integer" indexed="false"/>
 ```
 > These parameters give information about each field, including its name, type, and certain properties. <br>
 
@@ -363,220 +362,179 @@
 >> - location_latitude (For Geo search)<br>
 
 >> The engine supports the following formats of time and date: <br>
->>>       HH:MM:SS<br>
->>>       MM/DD/YY<br>
->>>       YY-MM-DD HH:MM::SS<br>
->>>       YYMMDDHHMMSS<br>
->>>       YYMMDDHHMM<br>
->>>       YYMMDD<br>
+>>> HH:MM:SS<br>
+>>> MM/DD/YY<br>
+>>> YY-MM-DD HH:MM::SS<br>
+>>> YYMMDDHHMMSS<br>
+>>> YYMMDDHHMM<br>
+>>> YYMMDD<br>
 
 >>> The engine supports the following formats of time duration: <br>
->>>       {An integer}{A date/time constant}, in which date and time constants are: <br>
->>>       SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
->>>       Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO SPACE?)<br>
+>>> {An integer}{A date/time constant}, in which date and time constants are: <br>
+>>> SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
+>>> Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO SPACE?)<br>
 
 > Each field has certain properties:<br>
 >> "required": The flag indicates whether this field can be empty or not. It is false by default.<br>
 >> "default" : It gives the default value of this field if the value is missing.<br>
 >> "searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
 >> "refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
->>  "indexed": If this flag is true, then the engine will treat it as both a searchable and refining attribute. <br>
-         
+>> "indexed": If this flag is true, then the engine will treat it as both a searchable and refining attribute. <br>
 > Note:<br>
->>  - For geo search, two fields are required with the types location_latitude and location_longtitude, respectively.  The values of these geo fields should be float in the data file.<br>
->> - The primary key is optional to be included here.<br>
->> - The engine assumes the primary key, it is required and there is no need for default value. If primary key is included here and indexed="false" it will be also used for sort,filtering and facet.<br>
+>> - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be float in the data file.<br>
+>> - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
 
-
-
-####Primary Key:{id="uniqueKey"}
-> Primary Key  
-> **Required** <br>
-```
-    <uniqueKey>id</uniqueKey>
-```         
-> The attribute used as a primary key to reference each record in the data.
-> If a inserted record primary key conflicts with an existing record it is rejected.  <br>
-> - The id contained in the uniqueKey tag corresponds to the name attribute of the field specified in the <a href=#fields>fields tag</a>.
-> - If the "indexed" value of your primary key field, in the <a href=#fields>fields tag</a>, is true, it will be a searchable field too. 
-
-     
 ####Enable Facet:{id="facetEnabled"}
 > Facet enabled flag <br>
 > **Optional** <br>
 > Toggles faceted search feature.<br>
 ```
-    <facetEnabled>true</facetEnabled>start
-```  		
+<facetEnabled>true</facetEnabled>start
+```
 > - values are false (disabled) and true (enabled)<br>
 > - By default it is disabled.<br>
 
 
 ####Facet Fields:{id="facetFields"}
-> This tag contains all 'facetField' tags.
+> This tag contains all facet-related tags.
 ```
-    <facetFields>
-    ...
-    </facetFields>
+<facetFields>
+...
+</facetFields>
 ```
-> Facet fields <br>
-> **Required** if facet is enabled. <br>
+> Facet fields: Required if facet is enabled <br>
 ```
-    <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
-    <facetField name="model" facetType="categorical" />
-    <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
-```	  		
->> name: The name of the field which is used for this facet, must correspond with a non-indexed field,
->> specified in the <a href=#fields>field tag</a>. <br>
->> facetType: Facet type either Categorical or Range. Enter "categorical" or "range" <br>
->> facetStart: The start point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
->> facetEnd: The end point of making range facets. REQUIRED for range facets. The value will be ignored for categorical facets. <br>
->> facetGap: The increment amount used for making demarking range facets. REQUIRED for range facets.
->> The value will be ignored for categorical facets. <br>
->>> Note:  fact ranges are created in correspondance with the facetStart value, not the facetEnd; thus, the final range may not stretch
->>> the entire facetGap.  		
-> Note: <br>
->> - All facetFields must be declared in <a href=#fields>fields tag</a> as well (with indexed="false") <br>
+<facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
+<facetField name="model" facetType="categorical" />
+<facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+```
+>> - name: The name of the field used for this facet. It must correspond with a refining field specified in the <a href=#fields>field tag</a>. <br>
+>> - facetType: Facet type, which is either categorical or range. <br>
+>> - facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br>
+>> - facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
+>> - facetGap: The increment amount used for making demarking a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
+>>> Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
 
-  
 ####Analyzer:{id="analyzer"}
-> Specification of srch2's Analyzer fall under types :: fieldType :: analyzer. <br>
+> It specifies the analyzer used by the engine. <br>
 ```
-    <types>
-        <fieldType name="text_en">
-            <analyzer>
-            ...
-            </analyzer>
-        </fieldType>                
-    </types>
+<types>
+<fieldType name="text_en">
+<analyzer>
+...
+</analyzer>
+</fieldType>
+</types>
 ```
->####Stemmer:{id="PorterStemFilter"}
->> Stemmer <br>
->> **Optional** <br>
->>> Disable Stemmer:  <br>
+>####Stemmer, Optional{id="PorterStemFilter"}
+>The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). It uses a dictionary file with keywords that should be ignored by the stemmer. If no file if provided, the stemmer is disabled.
 ```
-    <filter name="PorterStemFilter" dictionary="" />
+<filter name="PorterStemFilter" dictionary="stemmer-dictionary.txt" />
 ```
->>> Exmaple: <br>
+>####Stop Words, Optional{id="StopFilter"}
+> It specifies a file of stop words that can be ignored by the engine. (TODO: words -> stopwords?) Providing an empty file name can disable this filter.
 ```
-    <filter name="PorterStemFilter" dictionary="" />
-```               
->> Enable/Disabling the stemmer by providing "dictionary" file. <br>
-
-
-          
->####Stop Words:{id="StopFilter"}
->> Stop Word Filter <br>
->> **Optional** <br>
->>> Disable Stop Word Filter:  <br>
+<filter name="StopFilter" words="stop-words.txt" />
 ```
-    <filter name="StopFilter" words="" />
-```
->> Example: <br>
-```
-    <filter name="StopFilter" words="" />
-```
->>> Enable/Disabling the Stop Word Filter By providing "words" file. <br>
-
 
 Have fun SRCHing!
 
 <style type="text/css">
 pre{
-	margin: auto;
-    width:80%;
-    display: block;
-    padding: 9.5px;
-    font-size: 13px;
-    line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    overflow:auto;
-    max-height:600px;
+margin: auto;
+width:80%;
+display: block;
+padding: 9.5px;
+font-size: 13px;
+line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+overflow:auto;
+max-height:600px;
 }
 #content{
-    position:fixed;
-	left:10px;
-	top:20px;
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
+position:fixed;
+left:10px;
+top:20px;
+padding: 5.5px;
+font-size: 13px;
+//line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+text-align:center;
 }
 html{
-	min-width:1100px;
+min-width:1100px;
 }
 #indexTable{
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-    display: inline-block
+padding: 5.5px;
+font-size: 13px;
+//line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+text-align:center;
+display: inline-block
 }
 #bigBox{
-    padding: 10px;
-    font-size: 13px;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    //text-align:center;
-    display: inline-block
+padding: 10px;
+font-size: 13px;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+//text-align:center;
+display: inline-block
 }
 
 </style>
 
 <script>
 function alertSize() {
-  var myWidth = 0, myHeight = 0;
-  if( typeof( window.innerWidth ) == 'number' ) {
-    //Non-IE
-    myWidth = window.innerWidth;
-    myHeight = window.innerHeight;
-  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-    //IE 6+ in 'standards compliant mode'
-    myWidth = document.documentElement.clientWidth;
-    myHeight = document.documentElement.clientHeight;
-  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
-    //IE 4 compatible
-    myWidth = document.body.clientWidth;
-    myHeight = document.body.clientHeight;
-  }
-  //window.alert( 'Width = ' + myWidth );
-  //window.alert( 'Height = ' + myHeight );
-  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-10)+'px;overflow:auto;width:20%');
+var myWidth = 0, myHeight = 0;
+if( typeof( window.innerWidth ) == 'number' ) {
+//Non-IE
+myWidth = window.innerWidth;
+myHeight = window.innerHeight;
+} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+//IE 6+ in 'standards compliant mode'
+myWidth = document.documentElement.clientWidth;
+myHeight = document.documentElement.clientHeight;
+} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+//IE 4 compatible
+myWidth = document.body.clientWidth;
+myHeight = document.body.clientHeight;
+}
+//window.alert( 'Width = ' + myWidth );
+//window.alert( 'Height = ' + myHeight );
+document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-10)+'px;overflow:auto;width:20%');
 }
 alertSize();
 </script>
