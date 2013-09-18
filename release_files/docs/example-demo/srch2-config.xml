@@ -30,7 +30,7 @@
         <fieldBoost>title^2 director^1</fieldBoost>
 
         <!--
-        <recordBoostField>trailer_url</recordBoostField>
+        <recordBoostField>director</recordBoostField>
         -->
          
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
