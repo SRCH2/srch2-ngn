@@ -878,8 +878,8 @@ void test11()
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
-    // This commit fails. As there are no records in the index.
-    ASSERT(index->commit() == 0);
+    // This commit should not fail even if there is no records in the index.
+    ASSERT(index->commit() != 0);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -894,7 +894,9 @@ void test11()
     record->setRecordBoost(90);
     index->addRecord(record, analyzer,  0);
 
-    ASSERT(index->commit() == 1);
+    // any commit henceforth should fail because engine allows only one commit
+    // which actually means bulk load done.
+    ASSERT(index->commit() == 0);
 
     record->clear();
     record->setPrimaryKey(1003);
