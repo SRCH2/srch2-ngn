@@ -27,13 +27,10 @@
          
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-        <fieldBoost>category^2 name^1</fieldBoost>
-         
-         
         <!-- 
+        <fieldBoost>category^2 name^1</fieldBoost>
         <recordBoostField>relevance</recordBoostField>
         -->
-         
          
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
         
