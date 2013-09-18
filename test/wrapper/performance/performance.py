@@ -38,6 +38,8 @@ class PerformanceTest():
         self.counter = 1
         self.successFile=config['successFile']
         self.failureFile=config['failureFile']
+        self.sfile = open(self.successFile, 'a')
+        self.wfile = open(self.failureFile, 'a')
 
     def startServer(self):
         """
@@ -127,45 +129,54 @@ class PerformanceTest():
         -     fire query to search ending to search the above record
         """
         self.debugToConsole("inside doTest")
-        record = self.prepareRecord() # prepare and get the record 
-        query = self.prepareQuery(record) # preapare a query
-        self.pushDataToMongo("performance", record)
-        attempts = 13
-        for attempt in range(1, attempts):
-            try:
-                startTime = datetime.now()
-                status, msg = self.fireQuery(query)
-                timeTaken = datetime.now() - startTime
-                if status == CONST_FAIL_STRING:
-                    # failed 
-                    self.debugToConsole("MSG is {0}".format(msg))
-                    time.sleep(1)
-                    continue
-                elif status == CONST_PASS_STRING:
-                    # passed on this attempt
-                    text = "{0},{1},{2},{3}\n".format(self.counter, query, timeTaken.microseconds, attempt)
-                    self.writeToFile(status, text)
-                    break
-                else:
-                    print "UNKNOWN STATUS", status
-            except:
-                print "query was", query
-                print "Unexpected error:", sys.exc_info()[0]
-        if attempt == attempts-1:
-            text = "{0},{1},{2},{3}\n".format(self.counter, query, timeTaken.microseconds, attempt)
-            self.writeToFile(CONST_FAIL_STRING, text)
-        self.counter += 1
+        queryList = []
+        for i in range(0, 1000):
+            record = self.prepareRecord() # prepare and get the record 
+            self.counter += 1
+            self.pushDataToMongo("performance", record)
+            query = self.prepareQuery(record) # preapare a query
+            queryList.append(query)
+
+        baseQueryList = queryList
+        failedQueryList = []
+        attempts = 2
+        for attempt in range(0, attempts):
+            failedQueryList = []
+            for i in range(0, len(baseQueryList)):
+                try:
+                    startTime = datetime.now()
+                    status, msg = self.fireQuery(baseQueryList[i])
+                    timeTaken = datetime.now() - startTime
+                    if status == CONST_FAIL_STRING:
+                        # failed 
+                        self.debugToConsole("MSG is {0}".format(msg))
+                        failedQueryList.append(baseQueryList[i])
+                        continue
+                    elif status == CONST_PASS_STRING:
+                        # passed on this attempt
+                        text = "{0},{1},{2},{3}\n".format(i+1, baseQueryList[i], timeTaken.microseconds, attempt)
+                        self.writeToFile(status, text)                        
+                    else:
+                        print "UNKNOWN STATUS", status
+                except:
+                    print "query was", baseQueryList[i]
+                    print "Unexpected error:", sys.exc_info()[0]
+            # only re attempt the failed query
+            baseQueryList = failedQueryList            
+        
+        for i in range(0, len(failedQueryList)):
+            text = "{0},{1},{2},{3}\n".format(self.counter, failedQueryList[i], timeTaken.microseconds, 2)
+            self.writeToFile(CONST_FAIL_STRING, text)        
 
     def writeToFile(self, status, text):
-        try:
-            file = ""
             if status == CONST_PASS_STRING:
-                file = open(self.successFile, 'a')
+                self.sfile.write(text)
             else:
-                file = open(self.failureFile, 'a')
-            file.write(text)
-        finally:
-            file.close()
+                self.wfile.write(text)
+            
+    def closeFiles(self):
+        self.sfile.close()
+        self.wfile.close()
             
     def quote_url(self, url, safe):
         """URL-encodes a string (either str (i.e. ASCII) or unicode);
@@ -230,15 +241,17 @@ if __name__ == '__main__':
     tester = PerformanceTest(config)
     try:
         #kill any existing instance of server
-        tester.rebootServer()
+        #tester.rebootServer()
         decoration = 40
         print "*"*decoration, "TESTING BEGINS", "*"*decoration
         for num in range(2):
             results = tester.doTest()
         #print the test results
         print "*"*decoration, "TESTING ENDS", "*"*decoration
+        tester.closeFiles()
         #tester.killServer();
     except:
         #exception caught, kill the server
         print "sys.exc_info:", sys.exc_info()[0]
-        tester.killServer();
+        #tester.killServer();
+        tester.closeFiles()
