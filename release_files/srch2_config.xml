@@ -141,6 +141,16 @@
         <queryTermFuzzyPenalty>1</queryTermFuzzyPenalty>
          
          
+         
+        <!--
+            Query Term Similarity Threshold
+            Optional
+             
+            Defaults to 0.5
+        -->
+        <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+        
+        
         <!--
             Query Term Similarity Threshold
             Optional

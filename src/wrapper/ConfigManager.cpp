@@ -795,6 +795,25 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
+    // queryTermSimilarityThreshold is an optional field
+    //By default it is 0.5.
+    this->queryTermSimilarityThreshold = 0.5;
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
+    if (configAttribute && configAttribute.text()) {
+        string qtsb = configAttribute.text().get();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
+            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
+                this->queryTermSimilarityThreshold = 0.5;
+                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
+            }
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
+            return;
+        }
+    }
+
     // queryTermLengthBoost is an optional field
     this->queryTermLengthBoost = 0.5; // By default it is 0.5
     configAttribute = configDoc.child("config").child("query").child("queryTermLengthBoost");
