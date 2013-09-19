@@ -16,6 +16,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">GEO Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
@@ -23,14 +24,8 @@
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#loadData">2. Load Data</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configureSrch2">2.1. Configure Srch2</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#startSrch2">2.2. Start Srch2 Engine</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#search">2.3. Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insertData">2.4. Insert Record: MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateRecord">2.5. Update Record: MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#deleteRecord">2.6. Delete Record: MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a><br><br>
+
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -46,74 +41,51 @@
 </td></tr></tbody></table></div>
 #<center>Tutorial: MongoDB with SRCH2</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
-##1. Overview###{id="overview"}
->This is a tutorial on how to configure mongodb to use SRCH2. We assume that you have already downloaded mongodb and it is working fine on your system. We will refer to the mongodb install directory where the <i>bin</i> folder is present as MONGO_HOME.
-##2. Load Data###{id="loadData"}
 
->Let us first load some data into mondogb. Download this <a href=srch2-tutorials/sample-data.json>sample data file</a> into your MONGO_HOME directory. Now, run the following command from your MONGO_HOME directory. 
-```
-./bin/mongoimport --db demo --collection movies --type json --file sample-data.json 
-```
->Let's check if the data has been loaded. Start your mongo client and run following commands
-```
-mongodb> use demo
-mongodb> db.movies.find().count()
-```
-> There should be 243 movies in the movies collections.
-##2.1. Configure SRCH2###{id="configureSrch2"}
->Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package. Download a sample <a href="srch-tutorials/srch2-config.xml">config.xml</a>.
-```
-    <mongodb>
-        <db>demo</db>
-        <host>localhost</host>
-        <collection>movies</collection>
-        <port>27017</port>
-    </mongodb>
-    <dataSourceType>2</dataSourceType>
-```
-##2.2. Start SRCH2 Engine###{id="startSrch2"}
->Start the SRCH2 server. 
-```
-./srch2-search-server --config=./srch2-conf.xml 
-```
-> The engine should read the data, build indexes, and wait for the updates from mongodb.
-##2.3. Search###{id="search"}
->In the terminal enter the following command. Make sure to change the host and port in the command according to your system.
-```
-curl "http://localhost:8081/search?q=terminator"
-```
->You should see the records for terminator in the response.
-##2.4. Insert A Record Into MongoDB###{id="insertData"}
->Let's insert some records into mondoDB. In the mongo client. paste following code.
-```
-db.movies.insert(
-{
-	"trailer_url" : "http://www.youtube.com/watch?v=68I3j2luW64",
-	"title" : "The Terminator",
-	"director" : "James Cameron",
-	"year" : NumberLong(1984),
-	"banner_url" : "http://ia.media-imdb.com/images/M/MV5BODE1MDczNTUxOV5BMl5BanBnXkFtZTcwMTA0NDQyNA@@._V1_SX214_.jpg",
-	"id" : NumberLong(764006),
-	"genre" : "action"
-}
-);
-```
->search for the above record, you should see the above record in the response.
-##2.5. Update A Record###{id="updateRecord"}
->Let's update the record we just inserted into the mongoDB.
-```
-db.movies.update( { id: 764006 },
-{
-       $set: { director: "mel gibson" },
-} );
-```
->Search for the above record in SRCH2 engine. The corresponding record in the response should show that the <i>director</i> has been modified to "mel gibson".
-##2.6. Delete A Record###{id="deleteRecord"}
->Let's delete A record in mongoDB.
-```
-db.movies.remove({"id" :764006 });
-```
->Search for the above record in SRCH2 engine. You should not see the record that you just deleted in the response.
+##Ranking##{id="ranking"}
+
+>   Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results. 
+
+>   Formally, let Q be a query with terms (keywords) t_1, t_2, ..., t_k. Let r be a record. We compute the score of r for Q as follows: 
+
+>   *   score(r, Q) = TermScore(r, t_1) + TermScore(r, t_2) + ... + TermScore(r, t_k).
+
+>   For each term t_i, let w_i be a keyword in r that matches t_i (exactly or fuzzily). The TermScore(r, t_i) is computed as follows: 
+
+>   TermScore(r, t_i) = TermRecordStaticScore(r, t_i) * NormalizedEdSimilarity(w_i, t_i) * PrefixMatchingNormalizer.
+
+>   where
+
+>   *   NormalizedEdSimilarity(w_i, t_i): 
+
+>>  NormalizedEdSimilarity(w_i, t_i) = 1 - EditDistance(w_i, t_i)/length(t_i). 
+>>  The upper bound of EditDistance(w_i, t_i) is length(t_i).
+
+>   *   PrefixMatchingNormalizer: 
+
+>>  It is 1 if term t_i is a complete keyword. If term t_i is a prefix, then PrefixMatchingNormalizer takes the value of the parameter "prefix-match-penalty" specified in the configuration file.
+
+>   *   TermRecordStaticScore(r, t_i): 
+
+>>  It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters: 
+
+>>  *   idf_score: internal IDF score;
+>>  *   doc_boost: the boost value of the record as specified in an attribute;
+>>  *   doc_length: number of unique keywords in the record.
+>>  The expression allows operators such as +, -, /, *, (, ), 0-9, etc. 
+
+>>  The "idf_score" uses the following formula:
+
+>>  *   idf_score(r, t_i) = (1.0 + sumOfFieldBoosts(r, t_i) / sumOfAllFieldBoosts ) * idf(t_i);
+
+>>  sumOfFieldBoosts(r, t_i) is the summation of the boosts of the attributes in which this keyword t_i appears in r, and sumOfAllFieldBoosts is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking. 
+
+>>  idf(t_i) is the inversed document frequency:
+
+>>  *   idf(t_i) = log_e (total # of documents/ # of documents having term t_i).
+
+>>  In the case where the record r has multiple keywords w_i's that match term t_i, TermScore(r, t_i) is the largest value among them.
+
 <hr/>
 Have fun SRCHing!
 

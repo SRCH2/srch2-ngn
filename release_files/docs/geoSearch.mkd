@@ -16,6 +16,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">GEO Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
@@ -23,14 +24,8 @@
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#loadData">2. Load Data</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configureSrch2">2.1. Configure Srch2</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#startSrch2">2.2. Start Srch2 Engine</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#search">2.3. Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insertData">2.4. Insert Record: MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateRecord">2.5. Update Record: MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#deleteRecord">2.6. Delete Record: MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
+
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -46,74 +41,48 @@
 </td></tr></tbody></table></div>
 #<center>Tutorial: MongoDB with SRCH2</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
-##1. Overview###{id="overview"}
->This is a tutorial on how to configure mongodb to use SRCH2. We assume that you have already downloaded mongodb and it is working fine on your system. We will refer to the mongodb install directory where the <i>bin</i> folder is present as MONGO_HOME.
-##2. Load Data###{id="loadData"}
 
->Let us first load some data into mondogb. Download this <a href=srch2-tutorials/sample-data.json>sample data file</a> into your MONGO_HOME directory. Now, run the following command from your MONGO_HOME directory. 
+## 13. Geo Search##{id="geo"}
+
+> The engine can be optionally configured to support geo index. There are two options:
+
+> * Keyword Search (option 1)
+
+> * Keyword + Geo Search (option 2): location-based search.
+
+>We need to choose one option before we start the engine, since the engine will index the data differently depending on the option. For Keyword+Geo, the latitude and longitude need to be of float type in the data.
+
+> If geo indexing is used, queries should use one of the following two ways to define a geo region to search on:
+
+> - Specify a bounding box:
+
+>>> * "lblat": the latitude of the left-bottom point of the bounding box;
+
+>>> * "lblong": the longitude of the left-bottom point of the bounding box;
+
+>>> * "rtlat": the latitude of the top-right point of the bounding box;
+
+>>> * "rtlong": the longitude of the top-right point of the bounding box.
+
+> - Specify a center point and a radius:
+
+>>> * "clat": the latitude of the center point;
+
+>>> * "clong": the longitude of the center point;
+
+>>> * "radius": the radius of the search range in degree.
+
+> For geo search, each record should have a location_latitude field and a location_longitude field to allow the engine to calculate its proximity.
+
+> If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude. For example:
 ```
-./bin/mongoimport --db demo --collection movies --type json --file sample-data.json 
+{"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}
 ```
->Let's check if the data has been loaded. Start your mongo client and run following commands
+
+> Example for a geo query:
 ```
-mongodb> use demo
-mongodb> db.movies.find().count()
+$ curl -i "http://localhost:8081/search?q=hosptal&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
 ```
-> There should be 243 movies in the movies collections.
-##2.1. Configure SRCH2###{id="configureSrch2"}
->Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package. Download a sample <a href="srch-tutorials/srch2-config.xml">config.xml</a>.
-```
-    <mongodb>
-        <db>demo</db>
-        <host>localhost</host>
-        <collection>movies</collection>
-        <port>27017</port>
-    </mongodb>
-    <dataSourceType>2</dataSourceType>
-```
-##2.2. Start SRCH2 Engine###{id="startSrch2"}
->Start the SRCH2 server. 
-```
-./srch2-search-server --config=./srch2-conf.xml 
-```
-> The engine should read the data, build indexes, and wait for the updates from mongodb.
-##2.3. Search###{id="search"}
->In the terminal enter the following command. Make sure to change the host and port in the command according to your system.
-```
-curl "http://localhost:8081/search?q=terminator"
-```
->You should see the records for terminator in the response.
-##2.4. Insert A Record Into MongoDB###{id="insertData"}
->Let's insert some records into mondoDB. In the mongo client. paste following code.
-```
-db.movies.insert(
-{
-	"trailer_url" : "http://www.youtube.com/watch?v=68I3j2luW64",
-	"title" : "The Terminator",
-	"director" : "James Cameron",
-	"year" : NumberLong(1984),
-	"banner_url" : "http://ia.media-imdb.com/images/M/MV5BODE1MDczNTUxOV5BMl5BanBnXkFtZTcwMTA0NDQyNA@@._V1_SX214_.jpg",
-	"id" : NumberLong(764006),
-	"genre" : "action"
-}
-);
-```
->search for the above record, you should see the above record in the response.
-##2.5. Update A Record###{id="updateRecord"}
->Let's update the record we just inserted into the mongoDB.
-```
-db.movies.update( { id: 764006 },
-{
-       $set: { director: "mel gibson" },
-} );
-```
->Search for the above record in SRCH2 engine. The corresponding record in the response should show that the <i>director</i> has been modified to "mel gibson".
-##2.6. Delete A Record###{id="deleteRecord"}
->Let's delete A record in mongoDB.
-```
-db.movies.remove({"id" :764006 });
-```
->Search for the above record in SRCH2 engine. You should not see the record that you just deleted in the response.
 <hr/>
 Have fun SRCHing!
 
