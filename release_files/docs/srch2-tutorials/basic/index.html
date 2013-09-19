@@ -44,14 +44,14 @@
                 logType : "console", // console or alert. Note: console.log might not work on IE.
                 jsonPsrc : "http://192.168.0.119:8081/search?", //http://calvin.calit2.uci.edu/srch2demo/search?
                 inputElementId : "input",
-                // getQueryString : _srch2_this.getQueryString,
+                // getQueryString : _srch2_this.getQueryString, // should be a function, not string
                 debug : true, // true /false
                 evenNameToBindInputElement : "keyup",
                 searchType : "topK",
                 isFuzzy : true,
                 resultContainer : 'results',
-                responseHandler : 'srch2service.responseHandlerDefault',
-                //cleanup : _srch2_this.cleanup,
+                responseHandler : 'srch2service.responseHandlerDefault', // should a string
+                //cleanup : _srch2_this.cleanup, // should be a function, not string
             };
             srch2service.init(config);
         </script>
