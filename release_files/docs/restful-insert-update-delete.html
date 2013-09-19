@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>restful-insert-update-delete</title>
 </head>
 <body>
@@ -20,7 +20,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
@@ -30,10 +30,9 @@
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiinsert">1. API related to insert/delete/update</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#insert">1.1. Insert</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#update">1.2. Update</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#delete">1.3. Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insert">1. Insert</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#delete">2. Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#update">3. Update</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -49,62 +48,38 @@
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: RESTful API - Insert/Update/Delete</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
-<h2 id="apiinsert">1. API related to insert/delete/update</h2>
-<blockquote>
-<p>Documents can be inserted into and deleted from the index. A unique identifier must be provided for each document. This identifier will be used in the search results to reference the matching document. Every field defined in the indexed document will be searchable.</p>
-<p>The engine has a background thread to periodically merge the inserted/deleted/updated documents into the index, based on parameters (time interval or number of requests) specified in the "config.ini" file.</p>
-</blockquote>
-<h3 id="insert">1.1. Insert</h3>
-<blockquote>
-<p>This request adds a document to the index. The request body should contain a JSON object, which should meet the following requirements:</p>
+<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: RESTful API - Insert/Delete/Update</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<p>Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of requests) .</p>
+<h3 id="insert">1. Insert</h3>
+<p>This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:</p>
 <ul>
-<li>The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
-<li>The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;</li>
-<li>If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.</li>
+<li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
+<li>The JSON object should include searchable fields defined in the configuration file and their corresponding values;</li>
+<li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
 <li>The sum of the length of each field value cannot be greater than 100 kilobytes.</li>
 </ul>
-<p>Example for a "Keyword search" (Option 1) index: </p>
-</blockquote>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot;:&quot;1234&quot;, &quot;name&quot;:&quot;Toy Story&quot;, &quot;category&quot;:&quot;shop&quot;}'
+<p>Here is an example:</p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot; : &quot;1234&quot;, &quot;name&quot; : &quot;Toy Story&quot;, &quot;category&quot; : &quot;shop&quot;}'
 </code></pre>
 
-<blockquote>
-<p>Example for a "Keyword+Geo" (Option 2) index: </p>
-</blockquote>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot;:&quot;1234&quot;, &quot;name&quot;:&quot;Toy Story&quot;, &quot;category&quot;:&quot;shop&quot;, &quot;lat&quot;: 43.22, &quot;lng&quot;: -80.22}'
-</code></pre>
-
-<h3 id="update">1.2. Update</h3>
-<blockquote>
-<p>This request updates a document in the index. It needs to provide the "id" of the document to be updated. The request body should contain a JSON object, which should meet the following requirements:</p>
-<ul>
-<li>The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
-<li>The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;</li>
-<li>If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude;</li>
-<li>The sum of the length of each field value cannot be greater than 100 kilobytes;</li>
-<li>The "id" in the query url needs to be consistent with the "id" in the JSON object.</li>
-</ul>
-<p>Example for a "Keyword search" (Option 1) index: </p>
-</blockquote>
-<pre><code class="python">$ curl &quot;http://localhost:8081/update?id=123&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;}'
-</code></pre>
-
-<blockquote>
-<p>Example for a "Keyword+Geo" (Option 2) index:</p>
-</blockquote>
-<pre><code class="python">$ curl &quot;http://localhost:8081/update?id=123&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;, &quot;latitude&quot;: 43.22, &quot;longitude&quot;:
- -80.22}'
-</code></pre>
-
-<h3 id="delete">1.3. Delete</h3>
-<blockquote>
-<p>This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
-  For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.</p>
-<p>Example: </p>
-</blockquote>
+<h3 id="delete">2. Delete</h3>
+<p>This request deletes a record from the indexes. It needs to provide the "id" of the record to be deleted. For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per record.</p>
+<p>Here is an example: </p>
 <pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
+</code></pre>
+
+<h3 id="update">3. Update</h3>
+<p>This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:</p>
+<ul>
+<li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
+<li>The JSON object should include searchable fields defined in the configuration file and their corresponding values;</li>
+<li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
+<li>The sum of the length of each field value cannot be greater than 100 kilobytes;</li>
+<li>The "id" in the query URL needs to be consistent with the "id" in the JSON object.</li>
+</ul>
+<p>Here is an example query: </p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/update?id=123&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;}'
 </code></pre>
 
 <p><hr/>

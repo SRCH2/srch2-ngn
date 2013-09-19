@@ -13,7 +13,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
@@ -23,10 +23,9 @@
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiinsert">1. API related to insert/delete/update</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#insert">1.1. Insert</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#update">1.2. Update</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#delete">1.3. Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insert">1. Insert</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#delete">2. Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#update">3. Update</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -41,68 +40,51 @@
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Documentation: RESTful API - Insert/Update/Delete</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-##1. API related to insert/delete/update##{id="apiinsert"}
->   Documents can be inserted into and deleted from the index. A unique identifier must be provided for each document. This identifier will be used in the search results to reference the matching document. Every field defined in the indexed document will be searchable.
+#<center>SRCH2 Documentation: RESTful API - Insert/Delete/Update</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
+Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of requests) .
 
->   The engine has a background thread to periodically merge the inserted/deleted/updated documents into the index, based on parameters (time interval or number of requests) specified in the "config.ini" file.
+###1. Insert### {id="insert"}
 
-###1.1. Insert### {id="insert"}
->   This request adds a document to the index. The request body should contain a JSON object, which should meet the following requirements:
+This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:
 
->   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
->   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
->   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.
->   *   The sum of the length of each field value cannot be greater than 100 kilobytes.
+ - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
+ - The JSON object should include searchable fields defined in the configuration file and their corresponding values;
+ - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
+ - The sum of the length of each field value cannot be greater than 100 kilobytes.
 
+Here is an example:
 
->   Example for a "Keyword search" (Option 1) index: 
 ```python
-$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop"}'
+$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "1234", "name" : "Toy Story", "category" : "shop"}'
 ```
 
->  Example for a "Keyword+Geo" (Option 2) index: 
-```python
-$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}'
-```
+###2. Delete### {id="delete"}
 
-###1.2. Update### {id="update"}
->   This request updates a document in the index. It needs to provide the "id" of the document to be updated. The request body should contain a JSON object, which should meet the following requirements:
+This request deletes a record from the indexes. It needs to provide the "id" of the record to be deleted. For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per record.
 
->   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
->   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
->   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude;
->   *   The sum of the length of each field value cannot be greater than 100 kilobytes;
->   *   The "id" in the query url needs to be consistent with the "id" in the JSON object.
-
->   Example for a "Keyword search" (Option 1) index: 
-```python
-$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
-```
-
->   Example for a "Keyword+Geo" (Option 2) index:
-```python
-$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop", "latitude": 43.22, "longitude":
- -80.22}'
-```
-
-
-###1.3. Delete### {id="delete"}
->   This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
->   For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.
-
->   Example: 
+Here is an example: 
 ```python
 $ curl "http://localhost:8081/docs?id=1234" -i -X DELETE
 ```
 
+###3. Update### {id="update"}
 
+This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:
 
+ - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
+ - The JSON object should include searchable fields defined in the configuration file and their corresponding values;
+ - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
+ - The sum of the length of each field value cannot be greater than 100 kilobytes;
+ - The "id" in the query URL needs to be consistent with the "id" in the JSON object.
 
+Here is an example query: 
 
+```python
+$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
+```
 <hr/>
 Have fun SRCHing!
 
