@@ -1,3 +1,4 @@
+<schema name="SRCH2" version="3">
 <!--
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
@@ -356,9 +357,6 @@
      
     </updatehandler>
 </config>
- 
-<schema name="SRCH2" version="3">
-  
  <fields>
    <!--
         Fields
