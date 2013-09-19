@@ -2,13 +2,12 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>ranking</title>
 </head>
 <body>
 <table ><tr>
-
-<td > 
+<td >
 
 <div id="sidebar"> <!-- Sidebar -->
 
@@ -20,181 +19,157 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
-<hr/>
-<div id="content" > <!-- Table of content, id=content-->
-<table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a><br><br>
-
-</td></tr></tbody></table>
-
-<p></div> <!-- Table of content, id=content-->
-</div> <!-- Sidebar --></p>
-</td>
 
 <td style="width:75%">
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
-</td>
+</td></tr></tbody></table>
 
-<p></tr></tbody></table></div></p>
+</div>
+
 <h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Ranking</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
-<h2 id="ranking">Ranking</h2>
-<blockquote>
-<p>Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results. </p>
-<p>Formally, let Q be a query with terms (keywords) t_1, t_2, ..., t_k. Let r be a record. We compute the score of r for Q as follows: </p>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<h3>Overview</h3>
+
+<p>The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:</p>
 <ul>
-<li>score(r, Q) = TermScore(r, t_1) + TermScore(r, t_2) + ... + TermScore(r, t_k).</li>
+<li>How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "TermFuzzyPenalty"; and</li>
+<li>How much penalty we want give to partial matches (e.g., "candy" vs "can" ) compared to complete-keyword matches (e.g., "can" vs "can), using the parameter "PrefixMatchPenalty";</li>
 </ul>
-<p>For each term t_i, let w_i be a keyword in r that matches t_i (exactly or fuzzily). The TermScore(r, t_i) is computed as follows: </p>
-<p>TermScore(r, t_i) = TermRecordStaticScore(r, t_i) * NormalizedEdSimilarity(w_i, t_i) * PrefixMatchingNormalizer.</p>
-<p>where</p>
+<h3>Ranking Formula</h3>
+
+<p>Now we give the details of the ranking function. Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results.</p>
+<p>Formally, let <i>Q</i> be a query with terms (keywords) <i>t_1</i>, <i>t_2</i>, ..., <i>t_k</i>. Let <i>r</i> be a record. We compute the score of <i>r</i> for <i>Q</i> as follows:</p>
+<p><center> score(<i>r</i>, <i>Q</i>) = TermScore(<i>r</i>, <i>t_1</i>) + TermScore(<i>r</i>, <i>t_2</i>) + ... + TermScore(<i>r</i>, <i>t_k</i>).</center></p>
+<p>For each term <i>t_i</i>, let <i>w_i</i> be a keyword in <i>r</i> that matches <i>t_i</i> (exactly or fuzzily). The TermScore(<i>r</i>, <i>t_i</i>) is computed as follows:</p>
+<p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * PrefixMatchPenalty.</center></p>
+<p>The formula uses the following parameters:</p>
+<p><b>1. NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It's calculated as follows:</p>
+<p><center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * TermFuzzyPenalty^ed. </center></p>
+<p>In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "TermFuzzyPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.</p>
+<p><b>2. PrefixMatchPenalty</b>: It is 1 if term <i>t_i</i> is a complete keyword. If term <i>t_i</i> is a prefix, then PrefixMatchPenalty takes the value of the parameter "prefix-match-penalty" specified in the configuration file.</p>
+<p><b>3. TermRecordStaticScore(r, t_i)</b>: It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters:</p>
 <ul>
-<li>NormalizedEdSimilarity(w_i, t_i): </li>
+<li><b>idf_score</b>: internal IDF score;</li>
+<li><b>doc_boost</b>: the boost value of the record as specified in an attribute;</li>
+<li><b>doc_length</b>: number of unique keywords in the record.</li>
 </ul>
-<blockquote>
-<p>NormalizedEdSimilarity(w_i, t_i) = 1 - EditDistance(w_i, t_i)/length(t_i). 
- The upper bound of EditDistance(w_i, t_i) is length(t_i).</p>
-</blockquote>
-<ul>
-<li>PrefixMatchingNormalizer: </li>
-</ul>
-<blockquote>
-<p>It is 1 if term t_i is a complete keyword. If term t_i is a prefix, then PrefixMatchingNormalizer takes the value of the parameter "prefix-match-penalty" specified in the configuration file.</p>
-</blockquote>
-<ul>
-<li>TermRecordStaticScore(r, t_i): </li>
-</ul>
-<blockquote>
-<p>It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters: </p>
-<ul>
-<li>idf_score: internal IDF score;</li>
-<li>doc_boost: the boost value of the record as specified in an attribute;</li>
-<li>doc_length: number of unique keywords in the record.
- The expression allows operators such as +, -, /, *, (, ), 0-9, etc. </li>
-</ul>
+<p>The expression allows operators such as +, -, /, *, (, ), 0-9, etc.</p>
 <p>The "idf_score" uses the following formula:</p>
-<ul>
-<li>idf_score(r, t_i) = (1.0 + sumOfFieldBoosts(r, t_i) / sumOfAllFieldBoosts ) * idf(t_i);</li>
-</ul>
-<p>sumOfFieldBoosts(r, t_i) is the summation of the boosts of the attributes in which this keyword t_i appears in r, and sumOfAllFieldBoosts is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking. </p>
-<p>idf(t_i) is the inversed document frequency:</p>
-<ul>
-<li>idf(t_i) = log_e (total # of documents/ # of documents having term t_i).</li>
-</ul>
-<p>In the case where the record r has multiple keywords w_i's that match term t_i, TermScore(r, t_i) is the largest value among them.</p>
-</blockquote>
-</blockquote>
+<p><center> idf_score(<i>r</i>, <i>t_i</i>) = (1.0 + sumOfFieldBoosts(r, <i>t_i</i>) / sumOfAllFieldBoosts ) * idf(<i>t_i</i>).</center></p>
+<p>The value "sumOfFieldBoosts(<i>r</i>, <i>t_i</i>)" is the summation of the boosts of the attributes in which this keyword <i>t_i</i> appears in <i>r</i>, and "sumOfAllFieldBoosts" is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking.</p>
+<p>The value "idf(<i>t_i</i>)" is the inversed document frequency, calculated as follows:</p>
+<p><center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center></p>
+<p>In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.</p>
 <p><hr/>
 Have fun SRCHing!</p>
 <style type="text/css">
 #sidebar{
-    position:fixed;
-    width:20%;
-        left:10px;
-    top:20px;
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
+position:fixed;
+width:20%;
+left:10px;
+top:20px;
+padding: 5.5px;
+font-size: 13px;
+//line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+text-align:center;
 }
 pre{
-    margin: auto;
-    width:80%;
-    display: block;
-    padding: 9.5px;
-    font-size: 13px;
-    line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    overflow:auto;
-    max-height:600px;
+margin: auto;
+width:80%;
+display: block;
+padding: 9.5px;
+font-size: 13px;
+line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+overflow:auto;
+max-height:600px;
 }
 
 html{
-    min-width:1100px;
+min-width:1100px;
 }
 #indexTable{
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-    display: inline-block
+padding: 5.5px;
+font-size: 13px;
+//line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+text-align:center;
+display: inline-block
 }
 #bigBox{
-    padding: 10px;
-    font-size: 13px;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    //text-align:center;
-    display: inline-block
+padding: 10px;
+font-size: 13px;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+//text-align:center;
+display: inline-block
 }
 
 </style>
 
 <script>
 function alertSize() {
-  var myWidth = 0, myHeight = 0;
-  if( typeof( window.innerWidth ) == 'number' ) {
-    //Non-IE
-    myWidth = window.innerWidth;
-    myHeight = window.innerHeight;
-  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-    //IE 6+ in 'standards compliant mode'
-    myWidth = document.documentElement.clientWidth;
-    myHeight = document.documentElement.clientHeight;
-  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
-    //IE 4 compatible
-    myWidth = document.body.clientWidth;
-    myHeight = document.body.clientHeight;
-  }
-  //window.alert( 'Width = ' + myWidth );
-  //window.alert( 'Height = ' + myHeight );
-  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
-  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+var myWidth = 0, myHeight = 0;
+if( typeof( window.innerWidth ) == 'number' ) {
+//Non-IE
+myWidth = window.innerWidth;
+myHeight = window.innerHeight;
+} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+//IE 6+ in 'standards compliant mode'
+myWidth = document.documentElement.clientWidth;
+myHeight = document.documentElement.clientHeight;
+} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+//IE 4 compatible
+myWidth = document.body.clientWidth;
+myHeight = document.body.clientHeight;
+}
+//window.alert( 'Width = ' + myWidth );
+//window.alert( 'Height = ' + myHeight );
+var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
 }
 alertSize();
 </script>
