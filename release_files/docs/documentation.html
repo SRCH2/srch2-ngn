@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>documentation</title>
 </head>
 <body>
@@ -120,34 +120,13 @@
 <p><strong>Step 1:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Download the SRCH2 Engine from <a href="http://www.srch2.com/files/srch2-engine-v3.0.tgz" style="text-decoration:none">here</a>. Then extract it and put all of the files where you want to have the engine. There are four files there as below:</p>
 <ul>
 <li><em>srch2-engine</em> (Binary file of the engine)</li>
-<li><em>conf.ini</em> (The configuration file)</li>
+<li><em>conf.xml</em> (The configuration file)</li>
 <li><em>readme.txt</em> </li>
 <li><em>sample-data.json</em> (It is a sample data having <a href="http://www.json.org/" style="text-decoration:none" target="_blank">JSON</a> format to test the engine with)</li>
 </ul>
-<p><strong>Step 2:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally, such as <em>“srch2_license_key.txt”</em>.</p>
-<p><strong>Step 3:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Open the <em>conf.ini</em> file that you downloaded  and set the <em>“license-file”</em> option to the path of the key, such as</p>
-</blockquote>
-<pre><code class="python">license-file=/path/to/the/srch2_license_key.txt
-</code></pre>
-
-<blockquote>
-<p><strong>Step 4:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Open the <em>conf.ini</em> file and set the <em>“data-file-path”</em> option to the path of the data. For this example it is already set, you can find it like</p>
-</blockquote>
-<pre><code class="python">data-file-path=sample-data.json
-</code></pre>
-
-<blockquote>
-<p><strong>Step 5:</strong>&nbsp;&nbsp;&nbsp;&nbsp;(Optional) The engine can be optionally configured to support geo index. So you have two options:</p>
-<ul>
-<li>
-<p>Keyword Search (option 1)</p>
-</li>
-<li>
-<p>Keyword + Geo OR Geo only (option 2)</p>
-</li>
-</ul>
-<p><em>Trade-offs:</em> Keyword search (Option 1) alone is very powerful, and analogous to many widely-used full-text search solutions. It is very fast. Keyword+Geo (Option 2) offers a new hybrid indexing approach. You need to pick one option at the start, because SRCH2 will index your data differently depending on your choice (For Keyword+Geo, the lat and lng need to be a float type in the json objects in the data file. See the sample-data.json in the package for an example). To get more information about Geo search, go to the end of this documentation. </p>
-<p><strong>Step 6:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded</p>
+<p><strong>Step 2:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally in a file called <em>“srch2_license_key.txt”</em>.</p>
+<p><strong>Step 3:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Place the license key and downloaded files into a single directory.</p>
+<p><strong>Step 4:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded</p>
 </blockquote>
 <pre><code class="python">&gt; cd path/to/the/engine/directory
 </code></pre>
@@ -155,465 +134,34 @@
 <blockquote>
 <p>Run the engine now.</p>
 </blockquote>
-<pre><code class="python">&gt; ./srch2-engine --config-file=conf.ini
+<pre><code class="python">&gt; ./srch2-engine --config-file=/path/to/conf.xml
 </code></pre>
 
 <blockquote>
-<p><em>conf.ini</em> is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. </p>
+<p><em>conf.xml</em> is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. </p>
 <p>You should see 
 <center>
   <img alt="Engine is running" src="./images/engine_running.png">
 </center></p>
-<p><strong>Step 7:</strong>&nbsp;&nbsp;&nbsp;&nbsp;(Optional) If you don't have <em>curl</em> installed on your machine, you need to install it to test the engine through terminal</p>
+<p><strong>Step 5:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Download the demo display and extract it.</p>
+<p><strong>Step 6:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Open index.html in your favourite browser</p>
+<p><strong>Step 7:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Do a search and see the results. You should be able to see:   </p>
 </blockquote>
-<pre><code class="python">&gt; sudo apt-get install curl
-</code></pre>
-
+<h3 id="uiFeatures">Description of Features</h3>
 <blockquote>
-<p><strong>Step 8:</strong>&nbsp;&nbsp;&nbsp;&nbsp;To test the engine, open a new terminal use the following command. For example you want to search for the keyword <em>“properties”</em> you should write</p>
-</blockquote>
-<pre><code class="python">&gt; curl -i  http://localhost:8081/search?q=properties
-</code></pre>
-
-<blockquote>
-<p>This query is doing a search for a "keyword search" index. Now you should see the results as following</p>
-</blockquote>
-<p><center></p>
-<blockquote>
-<p><img alt="Engine is running" src="./images/results.png">
-</center>
-</br></p>
-</blockquote>
-<h3 id="wsgi">Install Apache and mod_wsgi</h3>
-<blockquote>
-<p>This section shows how to install apache and the mod_wsgi on Ubuntu and CentOs. If you have already installed the Apache and mod_wsgi on your machine, you can skip this part. </p>
-<p><strong>Step 1:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Install Apache2</p>
-</blockquote>
-<pre><code class="python">&gt; sudo apt-get install apache2
-</code></pre>
-
-<blockquote>
-<p><strong>Step 2:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Install the mod_wsgi</p>
-</blockquote>
-<pre><code class="python">&gt; sudo aptitude install libapache2-mod-wsgi
-</code></pre>
-
-<blockquote>
-<p>WSGI is a Web Server Gateway Interface and is for communications between web servers and web applications for Python programming language.</p>
-<p><strong>Step 3:</strong>&nbsp;&nbsp;&nbsp;&nbsp;<em>mod_wsgi</em> needs to have python installed on your machine. If you don't have python, install it using the following command, else skip this step.</p>
-</blockquote>
-<pre><code class="python">&gt; sudo apt-get install python
-</code></pre>
-
-<blockquote>
-<p><strong>Step 4:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Install simplejson python package, which is an extensible JSON encoder and decoder</p>
-</blockquote>
-<pre><code class="python">&gt; sudo apt-get install python-setuptools
-</code></pre>
-
-<pre><code class="python">&gt; sudo easy_install simplejson
-</code></pre>
-
-<blockquote>
-<p><strong>Step 5:</strong>&nbsp;&nbsp;&nbsp;&nbsp;So far you have installed Apache, mod_wsgi and python. A WSGI script will forward the request from Apache to the SRCH2 engine, which is running on the same machine, and will get the search results and sends them back. A simple WSGI script is as following</p>
-</blockquote>
-<pre><code>import cgi
-import simplejson
-import urllib2
-
-def application(environ, start_response):
-
-        #Parse the request
-        d = cgi.parse_qs(environ['QUERY_STRING'])
-        query = d.get('q', [''])[0]
-        callback = d.get('callback', [''])[0]
-        query = &quot;+&quot;.join(query.split(&quot; &quot;))
-
-        #Forward the request to the engine and get the results
-        query_url = &quot;http://127.0.0.1:8081/search?q=&quot; + query + &quot;&amp;fuzzy=1&quot;
-        request = urllib2.Request(query_url)
-        resp = urllib2.urlopen(request).read()
-
-        #Configure response content and wrap the output into the &quot;callback&quot;
-        status = '200 OK'
-
-        output = callback+'('+resp+');'
-        response_headers = [('Content-type', 'text/plain'),
-                        ('Content-Length', str(len(output)))]
-        start_response(status, response_headers)
-        return [output]
-</code></pre>
-
-<blockquote>
-<p>This script makes the query and sends it to the engine. You can see the query in "query_url" variable. If you want to do a fuzzy search, you should keep "&amp;fuzzy=1" and if you don't want to do it, you should remove the part "+ &amp;fuzzy=1" from the end of query_url</p>
-</blockquote>
-<h3 id="UI">Design a Simple User Interface</h3>
-<blockquote>
-<p>This part will show how to design a simple user interface and connect it to the engine. The overall process is first, you need to have a html page that has an input box for the search keywords. Then you have to send the query to the search engine using Ajax. Then you have to get the respond and show the results. </p>
-<p><strong>Step 1:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Design a html page for searching and then connect it to your engine. The simplest way is to have a <em>input box</em> to write the keywords in it. Here is a simple html page. To download this file, right click on <a href="./example-demo/index.html" style="text-decoration:none" target="_blank">index.html</a> and click on "Save Link as".</p>
-</blockquote>
-<pre><code>&lt;!--DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;--&gt;
-&lt;html&gt;&lt;head&gt;
-&lt;title&gt;SRCH2&lt;/title&gt;
-&lt;script type=&quot;text/javascript&quot; src=&quot;acunit.js&quot;&gt;&lt;/script&gt;
-&lt;script type=&quot;text/javascript&quot; src=&quot;srch2.js&quot;&gt;&lt;/script&gt;
-&lt;script type=&quot;text/javascript&quot; src=&quot;jquery-1.7.1.min.js&quot;&gt;&lt;/script&gt;
-&lt;link rel='stylesheet' href='acunit.css' type='text/css' /&gt;
-
-&lt;/head&gt;
-&lt;body onload=&quot;document.getElementById('input').focus();&quot;&gt;
-&lt;center&gt;&lt;div&gt;&lt;h1&gt;SRCH2 Engine&lt;/h1&gt;&lt;/div&gt;
-&lt;div&gt;&lt;table&gt;
-        &lt;tr &gt;
-                &lt;td colspan=3&gt;
-                        &lt;input type='text' style=&quot;height:40px; width:400px; font-size:25px;&quot; class='inputTextfield' autocomplete='off' id='input'&gt;
-                        &lt;script&gt;
-                        var isFuzzy=true;//set the query is fuzzy or not.
-                        var isDropDownList=false; //show the results with DropDownList or not
-                        var attibuteArray = new Array(&quot;name&quot;); //the attributes that you want to show
-                        //if you show the results on the page, please give the div id, like  div id =&quot;results&quot;
-                        var InfoShow=new InformtionShow(isDropDownList,attibuteArray,&quot;results&quot;);
-                        //set you search engine application test, like &quot;apptest&quot;
-                        var InfoUrl=new InformtionUrl(isFuzzy,&quot;apptest&quot;);
-
-                        var ac = new ACUnit(&quot;input&quot;, &quot;acunit&quot;, &quot;item1&quot;,&quot;item2&quot;, &quot;sitem&quot;, 
-                        function (value) {//this is onchange event
-                         check(value,InfoShow,InfoUrl);
-                         var regex=/\+|\s/gi;
-                        if(value.replace(regex, &quot;&quot;).length &lt; 3) {
-                         ac.showList(false);//clear the dropdownlist
-
-                        }
-                        }, function (current,value) //this is the onclick event.
-                        {
-                            if(current &gt;= 0)
-                            {
-                                if(current &lt; data.length)
-                                {
-                                    window.open(&quot;http://stackoverflow.com/questions/&quot;+data[current].record.id)
-                                }
-                                else
-                                {
-                                    window.open(&quot;http://stackoverflow.com/search?q=&quot;+document.getElementById(&quot;input&quot;).value)
-                                }       
-                            }
-                            ac.showList(false);
-                        });
-                ac.input.focus();        &lt;/script&gt;
-                &lt;/td&gt;
-        &lt;/tr&gt;
-&lt;/table&gt;&lt;/div&gt;
-&lt;/center&gt;&lt;div id='results'&gt;&lt;/div&gt;&lt;hr&gt;
-&lt;center&gt;Powered by SRCH2&lt;/center&gt;
-&lt;style type=&quot;text/css&quot;&gt;
-span.fuzzy {
-        color: #ff00ff;
-        font-weight: bold;
-}
-span.exact {
-        color: red;
-        font-weight: bold;
-}&lt;/style&gt;&lt;/body&gt;&lt;/html&gt;
-</code></pre>
-
-<blockquote>
-<p>Notes:</p>
+<p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png"></p>
 <blockquote>
 <ol>
-<li>When someone types in the input box, it calls a JavaScript function called <code>check()</code>, which gets the search keywords and calls other functions to do the Ajax and show the results. To check it look at "onkeyup='check(this.value)'" inside the code. 'this.value' is the search keyword that are typed so far.</li>
-<li>index.html is using two other files for showing the results in a drop-down format. To download these files, right click on the following links and click on "Save Link as": <a href="./example-demo/acunit.js" style="text-decoration:none" target="_blank">acunit.js</a> and <a href="./example-demo/acunit.css" style="text-decoration:none" target="_blank">acunit.css</a></li>
+<li>Gets movie records with descriptions related to typed in value, key by key</li>
+<li>Specify attribute:value pair or range to restrict results</li>
+<li>Specify start,end,and gap value of facet year to get counts of movie from each defined era</li>
+<li>Sort the results by Year released in specified ordering or if unspecified return
+results in order of relevance  </li>
+<li>Displays top movie matching the given critera<br>
+6.Displays counts of facets on year and Genre</li>
 </ol>
 </blockquote>
-<p><strong>Step 2:</strong>&nbsp;&nbsp;&nbsp;&nbsp;“srch2.js” has a function named <code>check()</code> which will be called whenever you type a character to search. Then it calls another function named <code>query()</code> to construct the query and uses Ajax to send it to the server. Then it shows the results by calling a function named <code>display()</code>. There are some other functions that are used by the mentioned functions and For more details about this functions, read the comments provided in the code. To download this file, right click on <a href="./example-demo/srch2.js" style="text-decoration:none" target="_blank">srch2.js</a> and click on "Save Link as".</p>
 </blockquote>
-<pre><code>var pending = false;
-var old_q = &quot;&quot;;
-var busy=false;
-var data;
-var response;
-var busy = false;
-var pending = false;
-var page = 0;
-var m = 20;
-var filter = 1;
-var inf = 0;
-
-/*
- * the information of  search url
- */
-function InformtionUrl(isFuzzy,testAppName)
-{
-    this.isFuzzy=isFuzzy;
-    this.testAppName=testAppName;// search engine application name
-}
-
-/*
- * the information of showing
- */
-function InformtionShow(isDropDownList,attibuteArray,resultDivId)
-{
-    this.isDropDownList=isDropDownList;
-    this.attibuteArray=attibuteArray;
-    this.resultDivId=resultDivId;
-}
-
-
-
-/*
-   When someone types in the input box, it calls a JavaScript function called 
- *  check(), 
- *    | if the keyword is ok, do the query,
- *  query() 
- *    | contrust the query and do the Ajax to get the json result
- *  display()
- *    | show the results
- *  prepareRegex()
- *   | prepare the Regex with edit-distance ed for matching prefix keys
- *  highlight()
- *   | highlight the matching prefix keys and show the results  
- */
-
-//check whether query value is null or  its length &gt;= 3
-function check(value,InfoShow,InfoUrl) {
-    var regex=/\+|\s/gi;
-
-    if(value.replace(regex, &quot;&quot;).length &gt;= 3) {
-        if(busy)pending = true;
-        else query(value,InfoShow,InfoUrl);
-    }
-    else
-    {
-        busy = false;
-        document.getElementById(InfoShow.resultDivId).innerHTML = &quot;&quot;;
-    }
-}
-
-
-function query(value,InfoShow,InfoUrl) {
-
-    if(value.length &gt;= 2){
-        var regex=/\+/gi;
-        value = value.replace(regex,&quot;&quot;);
-        value = value.replace(/ +(?= )/g,'');
-        var valuestmp = value.split(' ');
-        var values = valuestmp;
-        for (var i = 0; i &lt; valuestmp.length; i++ )
-        {
-            if (valuestmp[i] == &quot;&quot;)
-            values.splice(i,i+1);
-        }
-        //set the url for query
-        var url = &quot;http://localhost/&quot;;
-        url+=InfoUrl.testAppName;
-        url+=&quot;?q=&quot;;
-        var first = 1;
-        var q = &quot;&quot;;
-        for(var i = 0; i &lt; values.length; i++) {
-            if(values[i]!=''){
-            if(!first)q += &quot;+&quot;;//use &quot;+&quot; to  the keywords
-            q += values[i].toLowerCase();//transform value int lowercase
-                    first = 0;
-            }
-        }
-        url += q;//create the url
-
-        //  so you can set the parameters of the query
-        if(InfoUrl.isFuzzy)
-        {
-         url += &quot;&amp;fuzzy=1&quot;;
-        }
-        else
-        {
-         url += &quot;&amp;fuzzy=0&quot;;
-        }
-        busy = true;
-        self.scrollTo(0, 0);
-        url += &quot;&amp;callback=?&quot;;
-        $.getJSON(url, function(data) {
-            if(!InfoShow.isDropDownList)
-              display(data,InfoShow);//show the results directly
-            else
-             display_dropdown(data,InfoShow);//show the results using dropdownlist
-
-            });
-   }
-
-}
-//display json data
-function display(response,InfoShow) {
-        busy = false;
-        var time = response.searcher_time;
-        var data = response.results;
-        html = &quot;Searcher Time: &quot;+time+&quot; ms&lt;br&gt;&quot;;
-        html += &quot;&lt;hr&gt;&quot;;
-        for(var i = 0; i &lt; data.length; i++) {
-                var regex = prepareRegex(data[i].matching_prefix, data[i].edit_dist);
-                if(data[i].record){
-                        //so in here you can set different attributes in the record
-                        //display the arrtributes that you give
-                        for(var j=0;j&lt;InfoShow.attibuteArray.length;j++)
-                        {
-                            var attribute=InfoShow.attibuteArray[j];
-                            if(data[i].record[attribute] != null)
-                            {
-                                html +=attribute;
-                                html += highlight(&quot;: \&quot;&quot;+data[i].record[attribute]+&quot;\&quot;&quot;, regex, &quot;exact&quot;, &quot;fuzzy&quot;)+&quot;&lt;br&gt;&quot;
-                            }
-                        }
-                         //in here you can set css style:exact or fuzzy and
-                        // set the color and size font in css file like
-                        //&lt;style type=&quot;text/css&quot;&gt;
-                        //  span.fuzzy {
-                        //          color: #ff00ff;
-                        //          font-weight: bold;
-                        //  }
-                        //  span.exact {
-                        //          color: red;
-                        //          font-weight: bold;
-                        //  }&lt;/style&gt;
-                        html += highlight(JSON.stringify(data[i].record), regex, &quot;exact&quot;, &quot;fuzzy&quot;);
-                        html += &quot;&lt;br&gt;&quot;;
-                        html += &quot;&lt;i&gt;Overall Score:&quot;+data[i].score+&quot;&lt;/i&gt;&lt;hr&gt;&quot;;
-                }
-                else{
-                        html += &quot;Record Id: &quot;
-                        html += highlight(data[i].record_id.toString(), regex, &quot;exact&quot;, &quot;fuzzy&quot;)+&quot;&lt;br&gt;&quot;;
-                        html += &quot;Score: &quot;
-                        html += highlight(data[i].score.toString(), regex, &quot;exact&quot;, &quot;fuzzy&quot;)+&quot;&lt;br&gt;&quot;;
-                        html += &quot;Edit Distances: &quot;
-                        html += highlight(data[i].edit_dist.toString(), regex, &quot;exact&quot;, &quot;fuzzy&quot;)+&quot;&lt;br&gt;&quot;;
-                        html += &quot;Matching Prefixes: &quot;
-                        html += highlight(data[i].matching_prefix.toString(), regex, &quot;exact&quot;, &quot;fuzzy&quot;)+&quot;&lt;br&gt;&quot;;
-                }
-                html += &quot;&lt;br&gt;&quot;;
-        }
-
-        document.getElementById(InfoShow.resultDivId).innerHTML=html;
-        if(pending) {//for the next query,set the pending=false
-                pending = false;
-                query(document.getElementById('input').value);
-        }
-
-}
-
-
-function display_dropdown(responseJSON,InfoShow) {
-    busy = false;
-
-    data = responseJSON.results;
-    time = responseJSON.payload_access_time+ responseJSON.searcher_time;
-
-    var html = &quot;&lt;div id='tbody' align='left'&gt;&quot;;
-    for(var i = 0; i &lt; data.length; i++) {
-
-            var regex = prepareRegex(data[i].matching_prefix, data[i].edit_dist);
-            html += &quot;&lt;div &quot;+(i%2?&quot;class=item1&quot;:&quot;class='item2'&quot;)+&quot;&gt;&quot;;
-            for(var j=0;j&lt;InfoShow.attibuteArray.length;j++)
-            {
-                var attribute=InfoShow.attibuteArray[j];
-                html += &quot;&lt;div &quot;+(j%2?&quot;class=entry0&quot;:&quot;class='entry1'&quot;)+&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&quot;;
-                if(data[i].record[attribute] != null)
-                    html += highlight(data[i].record[attribute].replace(/\uFFFD/gi,&quot; &quot;), regex, &quot;highlight1&quot;, &quot;highlight2&quot;);
-                html += &quot;&lt;/div&gt;&quot;;
-            }
-            html += &quot;&lt;/div&gt;&quot;;
-        }
-    html+=&quot;&lt;div class='entry0'&gt;&lt;Font color='blue'&gt; Full Text search for \&quot;&quot;+document.getElementById(&quot;input&quot;).value+&quot;\&quot;&lt;/font&gt;&lt;/div&gt;&quot;;
-    html += &quot;&lt;/div&gt;&lt;div class='static'&gt;&quot;        
-
-    html += &quot;&lt;div style='width:60%;float:left;text-align:left;'&gt;&lt;font color='#333'&gt;(&lt;b&gt;&quot;+time+&quot;&lt;/b&gt; milliseconds) Results &lt;b&gt;&quot;
-        +(page*m+1)+&quot;&lt;/b&gt; - &lt;b&gt;&quot;+(page*m+data.length)+&quot;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&quot;;
-
-    html+=&quot;&lt;div style='width:40%;text-align:right;float:right;'&gt;&lt;a href = \&quot;http://www.srch2.com\&quot; style=\&quot;text-decoration:none\&quot;&gt; &lt;font color='#333'&gt;&amp;nbsp;&amp;nbsp;powered&amp;nbsp;by&amp;nbsp;&lt;/font&gt;&lt;font face=\&quot;Times New Roman\&quot; color=\&quot;#ff0000\&quot;&gt;SRCH2&lt;/font&gt;&lt;/a&gt;&lt;/div&gt;&quot;;
-    html += &quot;&lt;/div&gt;&quot;;
-
-    ac.clearItems();
-        ac.list.innerHTML = html;
-    ac.addItems(ac.list.childNodes[0]);
-    ac.showList();
-    if(pending) {
-        pending = false;
-        query();
-    }
-                           }
-//prepare the Regex with edit-distance ed for matching prefix keys
-function prepareRegex(keys, ed) {
-    var regex1 = &quot;(&quot;;
-    var regex2 = &quot;(&quot;;
-    var j1 = 0;
-    var j2 = 0;
-    for(var k = 0; k &lt; keys.length; k++){
-        if(keys[k].length){
-            if(ed[k] == 0) { //if the edit-distance is 0
-                if(j1)regex1 += &quot;|&quot;;
-                regex1 += keys[k].replace(/\W/g, 
-                    function(sub) {return &quot;\\&quot; + sub;});
-                j1++; 
-            }
-            else {
-                if(j2)regex2 += &quot;|&quot;;
-                regex2 += keys[k].replace(/\W/g, 
-                    function(sub) {return &quot;\\&quot; + sub;});
-                j2++;
-            }
-        }
-    }
-
-    regex1 += &quot;)&quot;;
-    regex2 += &quot;)&quot;;
-    return [ (j1)?new RegExp(regex1, &quot;gi&quot;):null, (j2)?new RegExp(regex2, &quot;gi&quot;):null ];
-}
-
-//highlight the matching characters in string using css style: stylec1 or stylec2.
-function highlight(string, regexp, stylec1, stylec2) {
-    var str = &quot; &quot; + string.replace(/&lt;/g, &quot;&amp;lt;&quot;); 
-    if(regexp == null)
-        return str;
-    if(regexp[0] != null)//for the edit-distance is 0
-        str = str.replace(regexp[0], function(sub, m1, m2) {
-            //m1  is the matching keyword, m2 is the positon of starting matching character
-            var previousChar = str.charAt(m2-1);//get the previous char of starting matching char
-            //check the previous char is null or is not English letter or number
-            if(previousChar == null || previousChar.match(/^[a-zA-Z0-9_&amp;]+$/) == null)
-               return &quot;&lt;span class='&quot; + stylec1 + &quot;'&gt;&quot; + m1 + &quot;&lt;/span&gt;&quot;;
-            else return m1;
-            });
-    if(regexp[1] != null)//for the edit-distance is not 0
-        str = str.replace(regexp[1], function(sub, m1, m2) {
-            var previousChar = str.charAt(m2-1);
-            if(previousChar == null || previousChar.match(/^[a-zA-Z0-9_&amp;]+$/) == null)
-               return &quot;&lt;span class='&quot; + stylec2 + &quot;'&gt;&quot; + m1 + &quot;&lt;/span&gt;&quot;;
-            else return m1;
-        });
-    return str.replace(/^\s+/, '');;
-}
-
-</code></pre>
-
-<blockquote>
-<p><strong>Step 3:</strong>&nbsp;&nbsp;&nbsp;&nbsp;You need to keep the “jquery-1.7.1.min.js” along with other files that are mentioned in previous steps. Jquery is a cross-browser JavaScript library designed to simplify the client-side scripting of HTML. To download the file, right click on <a href="./example-demo/jquery-1.7.1.min.js" style="text-decoration:none" target="_blank">jquery-1.7.1.min.js</a> and click on "Save Link as".</p>
-<p><strong>Step 4:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Move index.html, srch2.js, jquery-1.7.1.min.js and apptest.wsgi into the Apache root directory such as “/var/www/test/”.</p>
-<p><strong>Step 5:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Add the following lines to /etc/apache2/apache2.conf </p>
-</blockquote>
-<pre><code># load the mod_wsgi module. If you don't have it, you can put it the modules directory and load it
-LoadModule wsgi_module /usr/lib/apache2/modules/mod_wsgi.so
-
-#forward the request sent to doman.com/apptest the corresponding WSGI script
-#WSGIScriptAlias /apptest /path/to/the/apptest.wsgi, For example:
-WSGIScriptAlias /apptest /var/www/test/apptest.wsgi
-</code></pre>
-
-<blockquote>
-<p><strong>Step 6:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Restart the Apache</p>
-</blockquote>
-<pre><code class="python">&gt; sudo /etc/init.d/apache2 restart
-</code></pre>
-
-<blockquote>
-<p><strong>Step 7:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Open your browser and put "http://localhost/test" to do the search and see the results. You should be able to see <a href="http://example.srch2.com" style="text-decoration:none" target="_blank">this</a> on your machine.</p>
-</blockquote>
-<p></br>
-</br></p>
 <h2 id="restfulapi">RESTful API</h2>
 <p><div id="indexTable"><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Contents</a></h3></div></p>
