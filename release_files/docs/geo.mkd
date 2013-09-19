@@ -41,9 +41,7 @@
 #<center>SRCH2 Documentation: Geo Search</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-## 13. Geo Search##{id="geo"}
-
-> The engine can be optionally configured to support geo index. There are two options:
+> The SRCH2 engine has two indexing options:
 
 > * Keyword Search (option 1)
 
