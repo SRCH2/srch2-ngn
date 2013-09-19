@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="generator" content="ReText 4.0.1">
+<title>restful-control</title>
+</head>
+<body>
+<table ><tr>
+
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#statusInfo">1. API to retrieve system status information</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiInfo">1.1. Info</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiserialize">2. API to serialize the index</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiSave">2.1. Save</a><br><br>
+
+</td></tr></tbody></table>
+
+<p></div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar --></p>
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td>
+
+<p></tr></tbody></table></div></p>
+<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: RESTful API - Control</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
+<h2 id="statusInfo">1. API to retrieve system status information</h2>
+<blockquote>
+<p>This API returns information about the status of the system. </p>
+</blockquote>
+<h3 id="apiInfo">1.1 Info</h3>
+<blockquote>
+<ul>
+<li>It returns the information about the system status. The response body will contain a JSON map with these fields:</li>
+<li>"search_requests": number of queries received by the server so far;</li>
+<li>"write_requests": number of insert/delete requests received by the server so far;</li>
+<li>"docs_in_index": number of documents in the indexes;</li>
+<li>"last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;</li>
+<li>"last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;</li>
+<li>"version": version of this engine.
+  Example: </li>
+</ul>
+</blockquote>
+<pre><code class="python">$ curl -i &quot;http://localhost:8081/info&quot;
+</code></pre>
+
+<h2 id="apiserialize">2. API to serialize the index</h2>
+<blockquote>
+<p>This API serializes the index to the disk. </p>
+</blockquote>
+<h3 id="apiSave">2.1. Save</h3>
+<blockquote>
+<p>It saves the index with all the changes that have been made so far to the path on the disk specified by the option "index-dir-path" in the configuration file. So when the engine is restarted with the option "index-load-or-create" set to 1 in the configuration file, it can be brought back to the state right before it was shut down last time. </p>
+<p>Example: </p>
+</blockquote>
+<pre><code class="python">$ curl -i &quot;http://localhost:8081/save&quot; -X PUT
+</code></pre>
+
+<p><hr/>
+Have fun SRCHing!</p>
+<style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+        left:10px;
+    top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+pre{
+    margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+
+html{
+    min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>
+</body>
+</html>
