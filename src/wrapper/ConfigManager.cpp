@@ -665,7 +665,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // indexCreateOrLoad is an optional field
-    this->queryTermSimilarityBoost = 1; // By default it is 0.5
+    this->queryTermSimilarityBoost = 1; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
