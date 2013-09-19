@@ -1,65 +1,51 @@
-<link rel="stylesheet" href="highlight/styles/default.css">
-<script src="highlight/highlight.pack.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
-<link rel="shortcut icon" href="images/tab_icon.png" >
 
-<script>
-    function display(value){
-		//<p id='InstantTypeForward'><div style="width:500px" id="bigBox"><div style="float:left;  max-width:200px;"><p id="InstantTypeForward_exp" style="face:arial; font-size:15">Is your instant search instant? If not, it's costing you. Each keystroke adds strain to your servers. Slow or low relevance means people don't find what they are looking for. Inefficient search is expensive.</p></div><div style="float:right; vertical-align:middle" id="InstantTypeForward_img"><img src="./images/InstantTypeForward.png"></div></div></p>
-		var TEXT = document.getElementById(value + "_text").innerHTML;
-		html = "";
-		html += "<div style='width:500px' id='bigBox'>"
-		html += "<div style='float:left;  max-width:200px;'><p id='InstantTypeForward_exp' style='face:arial; font-size:15'>"
-		html += TEXT; 		
-		html += "</p></div>";
-		html +=	"<div style='float:right; vertical-align:middle' id='InstantTypeForward_img'>";
-		html += "<img src='images/" + value + ".png' ></div>";
-		html += "</div>";
-        document.getElementById(value).innerHTML = html;
-
-        html = "";
-        html += "<span onclick=hide('"+value+"');> [hide]</span>";
-        document.getElementById(value+"_main").innerHTML = html;
-    }
-
-    function hide(value){
-        document.getElementById(value).innerHTML = "";
-        html = "<span onclick=display('"+value+"');> [show]</span>";
-        document.getElementById(value + "_main").innerHTML = html;
-    }
-</script>
-<body onload="display('InstantTypeForward');">
-<font face="Arial">
-
-<p id="InstantTypeForward_text" hidden>Is your instant search instant? If not, it's costing you. Each keystroke adds strain to your servers. Slow or low relevance means people don't find what they are looking for. Inefficient search is expensive.</p>
-<p id="fuzzySearch_text" hidden>Ever make a typo when you've searched? Ever guess how to spell a name? We can help you. Fuzzy techniques find what you want, even if you make a mistake.</p>
-<p id="geoSearch_text" hidden>SRCH2's patented indexing methods enable to rapidly find locations as you type.</p>
-<p id="fullTextSearch_text" hidden>Try this. Search for "paint products" at a major home improvement retailer. No instant recommendations. Why? Relevance requires a full-text search. Other Search tools don't do this. They rely on search patterns, rather than a true search of every word in your database.</p>
-<p id="realTimeUpdates_text" hidden>How long does it take after a database is updated before those new items appear in search results? How about no time at all?</p>
-<p id="customRankings_text" hidden>Results can be configured so that you show what's important. Prioritize by conversion, or inventory, or timeliness. It's your search, so you choose.</p>
-
-
-<table><tr>
+<table ><tr>
 	
-<td style="width:14%"> 
-<div id="content">
-<table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Documentation</a></h3></div>
+<td > 
 
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#intro">Introdcution</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#install">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="configuration.html"/>Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#restfulapi"/>RESTful API</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="querysyntax.html"/>Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apisearch"/>API rela</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a></br><br>
+
 </td></tr></tbody></table>
 
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
-</div>
-</td>
-<td style="width:86%">
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
 
-#SRCH2 Engine Documentation#{id="doc" style="color:#880000" }
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+
+#<center>SRCH2 Documentation</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ####[Note: SRCH2 runs on 64-bit Linux with a kernel version >= 2.6.]####
 ###Introduction###{id="intro"}
@@ -239,12 +225,27 @@ $ curl -i "http://localhost:8081/search?q=hosptal:title,description&start=0&limi
 
 
 
-
-
-</td></tr></table>
-</font></body>
-
 <style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+    	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
 pre{
 	margin: auto;
     width:80%;
@@ -265,25 +266,7 @@ pre{
     overflow:auto;
     max-height:600px;
 }
-#content{
-    position:fixed;
-	left:10px;
-	top:20px;
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-}
+
 html{
 	min-width:1100px;
 }
@@ -320,3 +303,28 @@ html{
 }
 
 </style>
+
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>

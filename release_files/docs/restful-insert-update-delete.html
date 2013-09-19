@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="generator" content="ReText 4.0.1">
-<title>restful-control</title>
+<title>restful-insert-update-delete</title>
 </head>
 <body>
 <table ><tr>
@@ -15,15 +15,14 @@
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">RESTful API</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query Syntax</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query Syntax</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">GEO Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">MongoDB Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
@@ -33,12 +32,8 @@
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiinsert">1. API related to insert/delete/update</a><br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#insert">1.1. Insert</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#delete">1.2. Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#update">1.3. Update</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#statusInfo">2. API to retrieve system status information</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiInfo">2.1. Info</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiserialize">3. API to serialize the index</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiSave">3.1. Save</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#update">1.2. Update</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#delete">1.3. Delete</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -54,7 +49,7 @@
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#880000"><center>Tutorial: MongoDB with SRCH2</center></h1>
+<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: RESTful API - Insert/Update/Delete</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
 <h2 id="apiinsert">1. API related to insert/delete/update</h2>
 <blockquote>
@@ -81,16 +76,7 @@
 <pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot;:&quot;1234&quot;, &quot;name&quot;:&quot;Toy Story&quot;, &quot;category&quot;:&quot;shop&quot;, &quot;lat&quot;: 43.22, &quot;lng&quot;: -80.22}'
 </code></pre>
 
-<h3 id="delete">1.2. Delete</h3>
-<blockquote>
-<p>This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
-  For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.</p>
-<p>Example: </p>
-</blockquote>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
-</code></pre>
-
-<h3 id="update">1.3. Update</h3>
+<h3 id="update">1.2. Update</h3>
 <blockquote>
 <p>This request updates a document in the index. It needs to provide the "id" of the document to be updated. The request body should contain a JSON object, which should meet the following requirements:</p>
 <ul>
@@ -112,36 +98,13 @@
  -80.22}'
 </code></pre>
 
-<h2 id="statusInfo">2. API to retrieve system status information</h2>
+<h3 id="delete">1.3. Delete</h3>
 <blockquote>
-<p>This API returns information about the status of the system. </p>
-</blockquote>
-<h3 id="apiInfo">2.1 Info</h3>
-<blockquote>
-<ul>
-<li>It returns the information about the system status. The response body will contain a JSON map with these fields:</li>
-<li>"search_requests": number of queries received by the server so far;</li>
-<li>"write_requests": number of insert/delete requests received by the server so far;</li>
-<li>"docs_in_index": number of documents in the indexes;</li>
-<li>"last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;</li>
-<li>"last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;</li>
-<li>"version": version of this engine.
-  Example: </li>
-</ul>
-</blockquote>
-<pre><code class="python">$ curl -i &quot;http://localhost:8081/info&quot;
-</code></pre>
-
-<h2 id="apiserialize">3. API to serialize the index</h2>
-<blockquote>
-<p>This API serializes the index to the disk. </p>
-</blockquote>
-<h3 id="apiSave">3.1. Save</h3>
-<blockquote>
-<p>It saves the index with all the changes that have been made so far to the path on the disk specified by the option "index-dir-path" in the configuration file. So when the engine is restarted with the option "index-load-or-create" set to 1 in the configuration file, it can be brought back to the state right before it was shut down last time. </p>
+<p>This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
+  For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.</p>
 <p>Example: </p>
 </blockquote>
-<pre><code class="python">$ curl -i &quot;http://localhost:8081/save&quot; -X PUT
+<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
 </code></pre>
 
 <p><hr/>

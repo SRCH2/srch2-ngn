@@ -7,14 +7,14 @@
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main Pages</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">RESTful API</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
@@ -65,8 +65,8 @@
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Documentation: Query Syntax</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, September 18, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+#<center>SRCH2 Documentation: RESTful API - Search</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0, September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ##1. Overview###{id="overview"}
 >Welcome to the Srch2 query syntax documentation page. This documentation begins with a set of sample queries to get a flavor of the query language. It then dives further into the language with an explanation of the basic concepts behind it. Then we give details of the structural components of a query with emphasis on their syntax specifications.
 
@@ -317,91 +317,6 @@ rows=7
 ```
 >Please note: this parameter and <i>start</i> can be used to implement pagination.
 
-
-
-###API related to insert/delete/update###{id="apiinsert"}
->   Documents can be inserted into and deleted from the index. A unique identifier must be provided for each document. This identifier will be used in the search results to reference the matching document. Every field defined in the indexed document will be searchable.
-
-
->   The engine has a background thread to periodically merge the inserted/deleted/updated documents into the index, based on parameters (time interval or number of requests) specified in the "config.ini" file.
-
-####Insert####
->   This request adds a document to the index. The request body should contain a JSON object, which should meet the following requirements:
-
->   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
->   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
->   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.
->   *   The sum of the length of each field value cannot be greater than 100 kilobytes.
-
-
->   Example for a "Keyword search" (Option 1) index: 
-```python
-$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop"}'
-```
-
->  Example for a "Keyword+Geo" (Option 2) index: 
-```python
-$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}'
-```
-
-
-####Delete####
->   This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
->   For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.
-
->   Example: 
-```python
-$ curl "http://localhost:8081/docs?id=1234" -i -X DELETE
-```
-
-
-
-####Update####
->   This request updates a document in the index. It needs to provide the "id" of the document to be updated. The request body should contain a JSON object, which should meet the following requirements:
-
->   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
->   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
->   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude;
->   *   The sum of the length of each field value cannot be greater than 100 kilobytes;
->   *   The "id" in the query url needs to be consistent with the "id" in the JSON object.
-
->   Example for a "Keyword search" (Option 1) index: 
-```python
-$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
-```
-
->   Example for a "Keyword+Geo" (Option 2) index:
-```python
-$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop", "latitude": 43.22, "longitude":
- -80.22}'
-```
-
-###API to retrieve system status information###
->   This API returns information about the status of the system. 
-
-####Info####
->   *   It returns the information about the system status. The response body will contain a JSON map with these fields:
->   *   "search_requests": number of queries received by the server so far;
->   *   "write_requests": number of insert/delete requests received by the server so far;
->   *   "docs_in_index": number of documents in the indexes;
->   *   "last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;
->   *   "last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;
->   *   "version": version of this engine.
->   Example: 
-```python
-$ curl -i "http://localhost:8081/info"
-```
-
-###API to serialize the index###{id="apiserialize"}
->   This API serializes the index to the disk. 
-
-####Save####
->   It saves the index with all the changes that have been made so far to the path on the disk specified by the option "index-dir-path" in the configuration file. So when the engine is restarted with the option "index-load-or-create" set to 1 in the configuration file, it can be brought back to the state right before it was shut down last time. 
-
->   Example: 
-```python
-$ curl -i "http://localhost:8081/save" -X PUT
-```
 
 
 
