@@ -665,15 +665,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // indexCreateOrLoad is an optional field
-    this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
+    this->queryTermSimilarityBoost = 1; // By default it is 0.5
+    configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidQueryTermSimilarityBoost(qtsb)) {
             this->queryTermSimilarityBoost = configAttribute.text().as_float();
         } else {
             configSuccess = false;
-            parseError << "The expression provided for queryTermSimilarityBoost is not a valid.";
+            parseError << "The expression provided for queryTermFuzzyPenalty is not a valid.";
             return;
         }
     }

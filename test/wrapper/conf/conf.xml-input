@@ -137,11 +137,10 @@
 
 
         <!--srch2           
-            # Default query term similarity boost
-            # OPTIONAL. Defaults to 0.5
-            #default-query-term-similarity-boost=0.9
+            # Default query term fuzzy penalty
+            # OPTIONAL. Defaults to 1
         -->
-        <queryTermSimilarityBoost></queryTermSimilarityBoost>
+        <queryTermFuzzyPenalty></queryTermFuzzyPenalty>
         
         <!--srch2           
             # Default query term similarity boost
