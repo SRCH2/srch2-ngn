@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Simple Passage
+Description: A three-column, fixed-width blog design.
+Version    : 1.0
+Released   : 20090327
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>SRCH2 Demo Dashboard</title>
+<meta name="keywords" content="" />
+<meta name="Simple Passage" content="" />
+<link href="default.css" rel="stylesheet" type="text/css" media="screen" />
+<script>
+function removeHistory()
+{
+  localStorage.setItem('facetFilter' , "NULL");
+}
+window.onload = removeHistory();
+</script>
+<script type="text/javascript" src="srch2service.js"></script>
+<script language="javascript" src="index.js"></script>
+</head>
+<body>
+<!-- start header -->
+<div id="header">
+	<div id="logo" >
+		<div style="margin-top:20px"><a href="#"><img style="width:50%" src="images/LogoTitle.png"></img></a></div>
+	</div>
+
+	
+</div>
+<!-- end header -->
+<div id="wrapper" style="margin-top:-20px">
+	<!-- start page -->
+	<div id="page">
+	<div id="page-bgtop">
+	<div id="page-bgbtm">
+		<div id="sidebar1" class="sidebar">
+			<ul>
+				<li>
+					<h2>Sort The Results</h2>
+					<ul>
+						<div style="overflow:auto;padding:10px"> <!-- Sort -->
+						<b> Year</b>
+						<form action="" method="get">
+						<input type="radio" name="sort_filter_order" value="asc" /> Ascending<br />
+						<input type="radio" name="sort_filter_order" value="desc" /> Descending<br />
+						<input type="radio" name="sort_filter_order" value="none" /> None<br />
+						</form>
+						
+
+						<div id="sort_model" style="float:left;width:30%">
+
+						<form action="" method="get">
+						<!--input type="radio" name="sort_model_priority" value="ignore" checked/> Ignore<br /-->
+						</form>
+						</div>
+					</ul>
+				</li>
+				<li>
+					<h2>Filter the results</h2>
+					<ul>
+						<div style="overflow:auto;padding:5px"> <!-- Filter Query -->
+						<form action="" method="get">
+						<input type="radio" name="filter_op" value="AND" checked /> AND
+						<input type="radio" name="filter_op" value="OR" /> OR<br />
+						<span style="font-size:70%">Example: name : john</span><br/>
+						<input type="text" size="10" id="filter_assignment_field" />:
+						<input type="text" size="10" id="filter_assignment_value" />
+						<br/>
+						<span style="font-size:70%">Example: price : [10 TO *]</span><br/>
+						<input type="text" size="10" id="filter_range_field" />:[
+						<input type="text" size="2" id="filter_range_start" /> TO
+						<input type="text" size="2" id="filter_range_end" />]
+						<br/>
+						<span style="font-size:70%">Example: CMPLX$ (price - discount)*rate < 100 $</span><br/>
+						CMPLX$<input type="text" size="15" id="filter_complex" />$
+						</form>
+						</div> <!-- Filter Query -->
+					</ul>
+				</li>
+<!--				<li>
+					<h2>Categories</h2>
+					<ul>
+						<li><a href="#">Aliquam libero</a></li>
+						<li><a href="#">Consectetuer adipiscing elit</a></li>
+						<li><a href="#">Metus aliquam pellentesque</a></li>
+						<li><a href="#">Suspendisse iaculis mauris</a></li>
+						<li><a href="#">Urnanet non molestie semper</a></li>
+						<li><a href="#">Proin gravida orci porttitor</a></li>
+					</ul>
+				</li>
+				<li>
+					<h2>Archives</h2>
+					<ul>
+						<li><a href="#">September</a> (23)</li>
+						<li><a href="#">August</a> (31)</li>
+						<li><a href="#">July</a> (31)</li>
+						<li><a href="#">June</a> (30)</li>
+						<li><a href="#">May</a> (31)</li>
+					</ul>
+				</li>
+-->
+			</ul>
+		</div>
+		<!-- start content -->
+		<div id="content">
+			<div class="flower"></div>
+			<div class="post">
+				<h1 class="title"><a href="#">Srch2 Demo | September 5th, 2013</a></h1>
+				<div class="entry">
+					<div><!-- Search box -->
+					<h3>Search</h3>
+					<form>
+					<input type="text" id="query_box" size="55"  />
+					</form> 
+					<hr/>
+					<div id="resultContainer"> <!-- Results Container -->
+
+					</div>
+
+					</div><!-- Search box -->
+				</div>
+			</div>
+		</div>
+		<!-- end content -->
+		<!-- start sidebars -->
+		<div id="sidebar2" class="sidebar" style="width:320px">
+			<ul>
+				<li>
+					<h2>Facets</h2>
+
+						<div style="overflow:auto;padding:5px"> <!-- Facets -->
+						<form action="" method="get">
+						<b>Year</b><br/>
+						From<input type="text" size="3" id="facet_year_start" />
+						TO<input type="text" size="3" id="facet_year_end" />,
+						GAP<input type="text" size="3" id="facet_year_gap" />
+						<br/>
+						</form>
+						<hr/>
+						<div  style="float:left;width:40%">
+							<b>Genre</b><br/>
+
+						</div>
+
+						<div style="float:right;width:40%">
+							<b>Year</b><br/>
+
+						</div>
+						<br/>
+						<div id="facet_genre" style="float:left;width:40%">
+
+						</div>
+
+						<div id="facet_year" style="float:right;width:40%">
+
+						</div>
+						</div> <!-- Facets -->
+						<hr/>
+						<div id="facet_remove_filter"></div>
+				</li>
+				
+			</ul>
+		</div>
+		<!-- end sidebars -->
+		<div style="clear: both;">&nbsp;</div>
+	</div>
+	</div>
+	</div>
+	<!-- end page -->
+</div>
+<div id="footer">
+	<p class="copyright">&copy;&nbsp;&nbsp;2013 All Rights Reserved &nbsp;&bull;&nbsp;<br /></p>
+</div>
+<script type="text/javascript">
+srch2service.init();
+</script>
+</body>
+</html>
