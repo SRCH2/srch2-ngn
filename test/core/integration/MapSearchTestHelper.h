@@ -245,7 +245,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -253,7 +253,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
-        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].size()));
+        Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].term.size()));
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -279,7 +279,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -291,9 +291,9 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
             termType = TERM_TYPE_PREFIX;
         }
         if (ed>0)
-            term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+            term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
         else
-            term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+            term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -320,13 +320,13 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
     {
         TermType termType = TERM_TYPE_PREFIX;
-        Term *term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+        Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);

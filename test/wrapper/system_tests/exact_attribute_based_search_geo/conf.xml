@@ -360,8 +360,8 @@
    -->
    <field name="category" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="lng" type="location_longitude" indexed="true"  />
-   <field name="lat" type="location_latitude" indexed="true"   />
+   <field name="lng" type="location_longitude" indexed="false"  />
+   <field name="lat" type="location_latitude" indexed="false"   />
     
  </fields>
  

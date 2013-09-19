@@ -418,11 +418,11 @@
     - Currently the only default type that we support is "text", "location_longtitude" and "location_latitude". 
         Later in future we can support other types such as "int", "float" and etc
    -->
-   <field name="id" type="text" indexed="false" /> 
+   <field name="id" type="text" indexed="false" supporting="true" /> 
    <field name="relevance" type="text" indexed="true" />
    <field name="name" type="text" indexed="true" />
-   <field name="lat" type="location_latitude" indexed="true" />
-   <field name="lng" type="location_longitude" indexed="true" />
+   <field name="lat" type="location_latitude"  indexed="false" />
+   <field name="lng" type="location_longitude"  indexed="false" />
 
    
    

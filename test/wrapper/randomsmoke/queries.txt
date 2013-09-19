@@ -1,5 +1,10 @@
 @pass
 q=Personal^3 AND Services
+q="Personal AND Services"
+q="Personal Services"
+q="Personal Services"^4
+q="Personal Services"~2
+q="Personal Services"^3~2
 q=category.name:Personal^3 AND Services
 q=category.name+category:Personal^3 AND Services
 q=category:Personal^3 AND Services
@@ -77,3 +82,11 @@ q={defaultBoostLevel=2}personal AND
 q=Ser六书六書daجمشیدsd AND as六书六書daجمشید*~.
 q=q=Ser六书六書daجمشیدsd AND as六书六書daجمشید*~अँधेरीसुन्दर
 q=q=Sँधेरीसुन्दरer六书六書daجمشیدsd^ँधेरीसुन्दर AND as六书六書daجمشید*~
+q="Personal AND Services
+q="Personal AND Services*
+q="Personal AND Services^
+q="Personal AND Services~
+q="Personal^4 AND Services
+q="Personal*~.3 AND Services
+q="Personal*^3~3 AND Services
+q=Personal*~.3 AND "Services~

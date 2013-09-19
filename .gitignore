@@ -79,3 +79,5 @@ cscope.files
 .ycm*
 # test logs
 log.txt
+# ignore mongo files
+thirdparty/mongo-cxx-driver-v2.4/*

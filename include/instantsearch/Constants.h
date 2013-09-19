@@ -155,9 +155,9 @@ typedef enum
 
 typedef enum
 {
-    FULLPOSITIONINDEX , // the index of keyword in the record
-    FIELDBITINDEX ,// keeps the attribute in which a keyword appears in
-    NOPOSITIONINDEX // For stemmer to work, positionIndex must be enabled.
+    POSITION_INDEX_FULL , // the index of keyword in the record
+    POSITION_INDEX_FIELDBIT ,// keeps the attribute in which a keyword appears in
+    POSITION_INDEX_NONE // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
 /// Term constants

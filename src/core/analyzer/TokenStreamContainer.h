@@ -18,6 +18,7 @@ namespace instantsearch
 
 class TokenStreamContainer {
 public:
+	TokenStreamContainer():offset(0), currentTokenPosition(0){}
     void fillInCharacters(const std::vector<CharType> &charVector){
         currentToken.clear();
         completeCharVector = charVector;
@@ -32,6 +33,7 @@ public:
 	std::vector<CharType> currentToken;			//current token
 	std::vector<CharType> completeCharVector; 	//complete char vector of a string
 	int offset;									//the offset of current position to process
+	unsigned currentTokenPosition;
 };
 }}
 #endif /* __CORE_ANALYZER__TOKENSTREAMCONTAINER_H__ */

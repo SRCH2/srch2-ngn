@@ -93,12 +93,27 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+            this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
-            parseError << "The supportAttributeBasedSearch that is provided is not valid";
+            parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
             return;
         }
+    }
+
+    this->enablePositionIndex = false; // by default it is false
+    configAttribute = configDoc.child("config").child("indexConfig").child("enablePositionIndex");
+    if (configAttribute && configAttribute.text()) {
+        string configValue = configAttribute.text().get();
+        if (this->isValidBooleanValue(configValue)) {
+            this->enablePositionIndex = configAttribute.text().as_bool();
+        } else {
+            parseError << "enablePositionIndex should be either 0 or 1.\n";
+            configSuccess = false;
+            return;
+        }
+        Logger::info("turning on attribute based search because position index is enabled");
+        this->supportAttributeBasedSearch = true;
     }
 
     // uniqueKey is required
@@ -138,121 +153,198 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare("field") == 0) {
 
-            	// if it's primary key we only need the value for indexed.
-            	if(string(field.attribute("name").value()).compare(this->primaryKey) == 0
-            			&& string(field.attribute("indexed").value()).compare("") != 0){
-            		tempUse = string(field.attribute("indexed").value());
-            		if(isValidBool(tempUse)){
-            			if(field.attribute("indexed").as_bool()){ // primary key is searchable
-            				this->isPrimSearchable = 1;
-            			}else{ // primary key is non-searchable
-            				nonSearchableFieldsVector.push_back(this->primaryKey);
-            				nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-            				nonSearchableAttributesDefaultVector.push_back("");
-            				nonSearchableAttributesRequiredFlagVector.push_back(true);
-            			}
+            	/*
+            	 * The following code decides whether this field is searchable/refining or not.
+            	 * It uses this logic:
+            	 * if ( indexed == true ) {
+				 *		  => attribute is both searchable and used for post processing
+				 * } else {
+			     *       if(searchable == true) => attribute is searchable
+				 *       else => attribute is not searchable
+				 *
+				 *       if(refining == true) => attribute is used for post-processing
+				 *       else => attribute is not used for post processing
+			     * }
+            	 */
+                bool isSearchable = false;
+                bool isRefining = false;
+                if(string(field.attribute("indexed").value()).compare("") != 0){
+                    tempUse = string(field.attribute("indexed").value());
+                    if(isValidBool(tempUse)){
+                        if(field.attribute("indexed").as_bool()){ // indexed = true
+                            isSearchable = true;
+                            isRefining = true;
+                        }else{ // indexed = false
+                            if(string(field.attribute("searchable").value()).compare("") != 0){
+                                tempUse = string(field.attribute("searchable").value());
+                                if(isValidBool(tempUse)){
+                                    if(field.attribute("searchable").as_bool()){
+                                        isSearchable = true;
+                                    }else{
+                                        isSearchable = false;
+                                    }
+                                }else{
+                                    parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+                                    configSuccess = false;
+                                    return;
+                                }
+                            }
 
-            		}else{
+                            if(string(field.attribute("refining").value()).compare("") != 0){
+                                tempUse = string(field.attribute("refining").value());
+                                if(isValidBool(tempUse)){
+                                    if(field.attribute("refining").as_bool()){
+                                        isRefining = true;
+                                    }else{
+                                        isRefining = false;
+                                    }
+                                }else{
+                                    parseError << "Config File Error: Unknown value for property 'refining'.\n";
+                                    configSuccess = false;
+                                    return;
+                                }
+                            }
+                        }
+                    }else{
                         parseError << "Config File Error: Unknown value for property 'indexed'.\n";
                         configSuccess = false;
                         return;
-            		}
-            		continue;
-            	}
+                    }
+                }else{ // indexed property is not there ...
+                    if(string(field.attribute("searchable").value()).compare("") != 0){
+                        tempUse = string(field.attribute("searchable").value());
+                        if(isValidBool(tempUse)){
+                            if(field.attribute("searchable").as_bool()){
+                                isSearchable = true;
+                            }else{
+                                isSearchable = false;
+                            }
+                        }else{
+                            parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+                            configSuccess = false;
+                            return;
+                        }
+                    }
+
+                    if(string(field.attribute("refining").value()).compare("") != 0){
+                        tempUse = string(field.attribute("refining").value());
+                        if(isValidBool(tempUse)){
+                            if(field.attribute("refining").as_bool()){
+                                isRefining = true;
+                            }else{
+                                isRefining = false;
+                            }
+                        }else{
+                            parseError << "Config File Error: Unknown value for property 'refining'.\n";
+                            configSuccess = false;
+                            return;
+                        }
+                    }
+                }
+
+                // If this field is the primary key, we only care about searchable and/or refining options.
+                // We want to set primaryKey as a searchable and/or refining field
+                // We assume the primary key is text, we don't get any type from user.
+                // And no default value is accepted from user.
+                if(string(field.attribute("name").value()).compare(this->primaryKey) == 0){
+                    if(isSearchable){
+                        this->isPrimSearchable = 1;
+                    }
+
+                    if(isRefining){
+                        nonSearchableFieldsVector.push_back(this->primaryKey);
+                        nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
+                        nonSearchableAttributesDefaultVector.push_back("");
+                        nonSearchableAttributesRequiredFlagVector.push_back(true);
+                    }
+                    continue;
+                }
                 // Checking if the values are empty or not
                 if (string(field.attribute("name").value()).compare("") != 0
-                        && string(field.attribute("type").value()).compare("") != 0
-                        && string(field.attribute("indexed").value()).compare("") != 0) {
-                    tempUse = field.attribute("indexed").value();
-                    if (isValidBool(tempUse)) {
-                    	if(field.attribute("indexed").as_bool()){ // a searchable attribute
+                        && string(field.attribute("type").value()).compare("") != 0) {
+                    if(isSearchable){ // it is a searchable field
+                        searchableFieldsVector.push_back(string(field.attribute("name").value()));
+                        searchableFieldIndexsVector.push_back(true);
 
-                            searchableFieldsVector.push_back(string(field.attribute("name").value()));
-                    		searchableFieldIndexsVector.push_back(true);
+                        // Checking the validity of field type
+                        tempUse = string(field.attribute("type").value());
+                        if (this->isValidFieldType(tempUse , true)) {
+                            searchableFieldTypesVector.push_back(tempUse);
+                        } else {
+                            parseError << "Config File Error: " << tempUse << " is an unknown field type.\n";
+                            configSuccess = false;
+                            return;
+                        }
 
-                            // Checking the validity of field type
-                            tempUse = string(field.attribute("type").value());
-                            if (this->isValidFieldType(tempUse , true)) {
-                                searchableFieldTypesVector.push_back(tempUse);
-                            } else {
-                                parseError << "Config File Error: " << tempUse << " is an unknown field type.\n";
-                                configSuccess = false;
-                                return;
-                            }
+                        if (string(field.attribute("default").value()).compare("") != 0){
+                            searchableAttributesDefaultVector.push_back(string(field.attribute("default").value()));
+                        }else{
+                            searchableAttributesDefaultVector.push_back("");
+                        }
 
-                            // Checks for geo types. location_latitude and location_longitude are geo types
-                            if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
-                                hasLatitude = true;
-                                this->fieldLatitude = string(field.attribute("name").value());
-                            }
-                            if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
-                                hasLongitude = true;
-                                this->fieldLongitude = string(field.attribute("name").value());
-                            }
+                        tempUse = string(field.attribute("required").value());
+                        if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
+                            searchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                        }else{
+                            searchableAttributesRequiredFlagVector.push_back(false);
+                        }
+                    }
 
-                            if (string(field.attribute("default").value()).compare("") != 0){
-                            	searchableAttributesDefaultVector.push_back(string(field.attribute("default").value()));
+                    if(isRefining){ // it is a refining field
+                        nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
+                        searchableFieldIndexsVector.push_back(false);
+
+                        // Checking the validity of field type
+                        tempUse = string(field.attribute("type").value());
+                        if (this->isValidFieldType(tempUse , false)) {
+                            nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
+                        } else {
+                            parseError << "Config File Error: " << tempUse << " is an unknown field type for refining fields.\n";
+                            configSuccess = false;
+                            return;
+                        }
+
+                        // Check the validity of field default value based on it's type
+                        if (string(field.attribute("default").value()).compare("") != 0){
+                            tempUse = string(field.attribute("default").value());
+                            if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
+
+                                if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+                                    std::stringstream buffer;
+                                    buffer << timeValue;
+                                    tempUse = buffer.str();
+                                }
                             }else{
-                            	searchableAttributesDefaultVector.push_back("");
+                                parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
+                                tempUse = "";
                             }
+                            nonSearchableAttributesDefaultVector.push_back(tempUse);
+                        }else{
+                            nonSearchableAttributesDefaultVector.push_back("");
+                        }
 
-                            if (string(field.attribute("required").value()).compare("") != 0){
-                            	searchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-                            }else{
-                            	searchableAttributesRequiredFlagVector.push_back(false);
-                            }
+                        tempUse = string(field.attribute("required").value());
+                        if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
+                            nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                        }else{
+                            nonSearchableAttributesRequiredFlagVector.push_back(false);
+                        }
+                    }
 
-
-
-                    	}else{ // non-searchable attribute
-                            nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
-                    		searchableFieldIndexsVector.push_back(false);
-
-                            // Checking the validity of field type
-                            tempUse = string(field.attribute("type").value());
-                            if (this->isValidFieldType(tempUse , false)) {
-                                nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
-                            } else {
-                                parseError << "Config File Error: " << tempUse << " is an unknown field type for indexed=false.\n";
-                                configSuccess = false;
-                                return;
-                            }
-
-                            // Check the validity of field default value based on it's type
-                            if (string(field.attribute("default").value()).compare("") != 0){
-                            	tempUse = string(field.attribute("default").value());
-                            	if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
-
-									if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-										long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-										std::stringstream buffer;
-										buffer << timeValue;
-										tempUse = buffer.str();
-									}
-                            	}else{
-                                    parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
-                                    tempUse = "";
-                            	}
-                            	nonSearchableAttributesDefaultVector.push_back(tempUse);
-                            }else{
-                            	nonSearchableAttributesDefaultVector.push_back("");
-                            }
-
-                            if (string(field.attribute("required").value()).compare("") != 0){
-                            	nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-                            }else{
-                            	nonSearchableAttributesRequiredFlagVector.push_back(false);
-                            }
-                    	}
-                    }else{
-                        parseError << "Config File Error: can not convert " << tempUse << " to boolean type.\n";
-                        configSuccess = false;
-                        return;
+                    // Checks for geo types. location_latitude and location_longitude are geo types
+                    if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
+                        hasLatitude = true;
+                        this->fieldLatitude = string(field.attribute("name").value());
+                    }
+                    if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
+                        hasLongitude = true;
+                        this->fieldLongitude = string(field.attribute("name").value());
                     }
 
                 } else { // if one of the values of name, type or indexed is empty
                     parseError << "For the searchable fields, "
-                            << "providing values for'name', 'type' and 'indexed' is required\n ";
+                            << "providing values for 'name' and 'type' is required\n ";
                     configSuccess = false;
                     return;
                 }
@@ -260,7 +352,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
         }
     } else { // No searchable fields provided.
-        parseError << "No searchable fields are provided.\n";
+        parseError << "No fields are provided.\n";
         configSuccess = false;
         return;
     }
@@ -272,16 +364,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     if(nonSearchableFieldsVector.size() != 0){
-		for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
+        for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
 
-			/// map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >
-			nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
-					pair<srch2::instantsearch::FilterType,
-							pair<string, bool> >(nonSearchableFieldTypesVector[iter],
-							pair<string, bool>(
-									nonSearchableAttributesDefaultVector[iter],
-									nonSearchableAttributesRequiredFlagVector[iter]));
-		}
+            /// map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >
+            nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
+                    pair<srch2::instantsearch::FilterType,
+                            pair<string, bool> >(nonSearchableFieldTypesVector[iter],
+                            pair<string, bool>(
+                                    nonSearchableAttributesDefaultVector[iter],
+                                    nonSearchableAttributesRequiredFlagVector[iter]));
+        }
     }
 
 
@@ -315,110 +407,110 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      */
 
     if(this->facetEnabled){
-		configAttribute = configDoc.child("schema").child("facetFields");
-		if (configAttribute) {
-			for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
-				if (string(field.name()).compare("facetField") == 0) {
-					if (string(field.attribute("name").value()).compare("") != 0
-							&& string(field.attribute("facetType").value()).compare("") != 0){
-						// insert the name of the facet
-						this->facetAttributes.push_back(string(field.attribute("name").value()));
-						// insert the type of the facet
-						tempUse = string(field.attribute("facetType").value());
-						int facetType = parseFacetType(tempUse);
-						if(facetType == 0){ // categorical
-							this->facetTypes.push_back(facetType);
-							// insert place holders for start,end and gap
-							this->facetStarts.push_back("");
-							this->facetEnds.push_back("");
-							this->facetGaps.push_back("");
-						}else if(facetType == 1){ // range
-							this->facetTypes.push_back(facetType);
-							// insert start
-							string startTextValue = string(field.attribute("facetStart").value());
-							string facetAttributeName = string(field.attribute("name").value());
-							srch2::instantsearch::FilterType facetAttributeType ;
-							if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-								facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
-							}else{
-								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-								facetEnabled = false;
-								break;
-							}
-							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-								if(srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypePointOfTime)
-										|| srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypeNow) ){
-									long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(startTextValue);
-									std::stringstream buffer;
-									buffer << timeValue;
-									startTextValue = buffer.str();
-								}else{
-									parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-									facetEnabled = false;
-									break;
-								}
-							}
-							this->facetStarts.push_back(startTextValue);
+        configAttribute = configDoc.child("schema").child("facetFields");
+        if (configAttribute) {
+            for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
+                if (string(field.name()).compare("facetField") == 0) {
+                    if (string(field.attribute("name").value()).compare("") != 0
+                            && string(field.attribute("facetType").value()).compare("") != 0){
+                        // insert the name of the facet
+                        this->facetAttributes.push_back(string(field.attribute("name").value()));
+                        // insert the type of the facet
+                        tempUse = string(field.attribute("facetType").value());
+                        int facetType = parseFacetType(tempUse);
+                        if(facetType == 0){ // categorical
+                            this->facetTypes.push_back(facetType);
+                            // insert place holders for start,end and gap
+                            this->facetStarts.push_back("");
+                            this->facetEnds.push_back("");
+                            this->facetGaps.push_back("");
+                        }else if(facetType == 1){ // range
+                            this->facetTypes.push_back(facetType);
+                            // insert start
+                            string startTextValue = string(field.attribute("facetStart").value());
+                            string facetAttributeName = string(field.attribute("name").value());
+                            srch2::instantsearch::FilterType facetAttributeType ;
+                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            }else{
+                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                                facetEnabled = false;
+                                break;
+                            }
+                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+                                if(srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypePointOfTime)
+                                        || srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypeNow) ){
+                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(startTextValue);
+                                    std::stringstream buffer;
+                                    buffer << timeValue;
+                                    startTextValue = buffer.str();
+                                }else{
+                                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+                                    facetEnabled = false;
+                                    break;
+                                }
+                            }
+                            this->facetStarts.push_back(startTextValue);
 
-							// insert end
-							string endTextValue = string(field.attribute("facetEnd").value());
-							if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-								facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
-							}else{
-								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-								facetEnabled = false;
-								break;
-							}
-							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-								if(srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypePointOfTime)
-										|| srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypeNow) ){
-									long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(endTextValue);
-									std::stringstream buffer;
-									buffer << timeValue;
-									endTextValue = buffer.str();
-								}else{
-									parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-									facetEnabled = false;
-									break;
-								}
-							}
-							this->facetEnds.push_back(endTextValue);
+                            // insert end
+                            string endTextValue = string(field.attribute("facetEnd").value());
+                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            }else{
+                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                                facetEnabled = false;
+                                break;
+                            }
+                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+                                if(srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypePointOfTime)
+                                        || srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypeNow) ){
+                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(endTextValue);
+                                    std::stringstream buffer;
+                                    buffer << timeValue;
+                                    endTextValue = buffer.str();
+                                }else{
+                                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+                                    facetEnabled = false;
+                                    break;
+                                }
+                            }
+                            this->facetEnds.push_back(endTextValue);
 
-							// insert gap
-							string gapTextValue = string(field.attribute("facetGap").value());
-							if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-								facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
-							}else{
-								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-								facetEnabled = false;
-								break;
-							}
-							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-								if(!srch2is::DateAndTimeHandler::verifyDateTimeString(gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
-									parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
-									facetEnabled = false;
-									break;
-								}
-							}
-							this->facetGaps.push_back(gapTextValue);
-						}else{
-							parseError << "Facet type is not recognized. Facet disabled.";
-							this->facetEnabled = false;
-							break;
-						}
+                            // insert gap
+                            string gapTextValue = string(field.attribute("facetGap").value());
+                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            }else{
+                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+                                facetEnabled = false;
+                                break;
+                            }
+                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+                                if(!srch2is::DateAndTimeHandler::verifyDateTimeString(gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
+                                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+                                    facetEnabled = false;
+                                    break;
+                                }
+                            }
+                            this->facetGaps.push_back(gapTextValue);
+                        }else{
+                            parseError << "Facet type is not recognized. Facet disabled.";
+                            this->facetEnabled = false;
+                            break;
+                        }
 
-					}
-				}
-			}
-		}
+                    }
+                }
+            }
+        }
     }
 
     if(!facetEnabled){
-    	this->facetAttributes.clear();
-    	this->facetTypes.clear();
-    	this->facetStarts.clear();
-    	this->facetEnds.clear();
-    	this->facetGaps.clear();
+        this->facetAttributes.clear();
+        this->facetTypes.clear();
+        this->facetStarts.clear();
+        this->facetEnds.clear();
+        this->facetGaps.clear();
     }
 
     if (this->indexType == 1) {
@@ -447,7 +539,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
 
-    // Analyzer flags : default values.(everything is disable)
+    // Analyzer flags : Everything is disabled by default.
     this->stemmerFlag = false;
     this->stemmerFile = "";
     this->stopFilterFilePath = "";
@@ -473,7 +565,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     this->stopFilterFilePath = this->srch2Home
                                             + string(field.attribute("words").value());
                                 }
-                            } else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
+                            } /*else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
                                 if (string(field.attribute("synonyms").value()).compare("") != 0) { // the dictionary file for synonyms is set
                                     this->synonymFilterFilePath = this->srch2Home
                                             + string(field.attribute("synonyms").value());
@@ -487,8 +579,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                         configSuccess = false;
                                         return;
                                     }
-                                }
-                            }
+                              }
+                            }*/
                         }
                     }
                 }
@@ -533,8 +625,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         configSuccess = false;
         return;
     }
-
-
     // dataDir is a required field
     configAttribute = configDoc.child("config").child("dataDir");
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
@@ -546,17 +636,39 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-
-    // dataFile is a required field
-    configAttribute = configDoc.child("config").child("dataFile");
-    if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
-        this->filePath = this->srch2Home + string(configAttribute.text().get());
+    configAttribute = configDoc.child("config").child("dataSourceType");
+    if (configAttribute && configAttribute.text()) {
+        int datasourceValue = configAttribute.text().as_int(DATA_SOURCE_JSON_FILE);
+        switch(datasourceValue) {
+        case 0:
+        	this->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
+        	break;
+        case 1:
+        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+        	break;
+        case 2:
+        	this->dataSourceType = DATA_SOURCE_MONGO_DB;
+        	break;
+        default:
+        	// if user forgets to specify this option, we will assume data soruce is
+        	// JSON file
+        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+        	break;
+        }
     } else {
-        parseError
-                << "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
-        configSuccess = false;
-        //TODO:  dataSourceType = FILEBOOTSTRAP_FALSE;
-        return;
+    	this->dataSourceType = DATA_SOURCE_JSON_FILE;
+    }
+    if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
+    	// dataFile is a required field only if JSON file is specified as data source.
+    	configAttribute = configDoc.child("config").child("dataFile");
+    	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
+    		this->filePath = this->srch2Home + string(configAttribute.text().get());
+    	}else {
+    		parseError
+    		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+    		configSuccess = false;
+    		return;
+    	}
     }
 
     // <config>
@@ -574,19 +686,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // filling the searchableAttributesInfo map
     for (int i = 0; i < searchableFieldsVector.size(); i++) {
         if (boostsMap.find(searchableFieldsVector[i]) == boostsMap.end()) {
-			searchableAttributesInfo[searchableFieldsVector[i]] =
-					pair<bool, pair<string, pair<unsigned, unsigned> > >(
-							searchableAttributesRequiredFlagVector[i],
-							pair<string, pair<unsigned, unsigned> >(
-									searchableAttributesDefaultVector[i],
-									pair<unsigned, unsigned>(0,1)));
+            searchableAttributesInfo[searchableFieldsVector[i]] =
+                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
+                            searchableAttributesRequiredFlagVector[i],
+                            pair<string, pair<unsigned, unsigned> >(
+                                    searchableAttributesDefaultVector[i],
+                                    pair<unsigned, unsigned>(0,1)));
         } else {
-			searchableAttributesInfo[searchableFieldsVector[i]] =
-					pair<bool, pair<string, pair<unsigned, unsigned> > >(
-							searchableAttributesRequiredFlagVector[i],
-							pair<string, pair<unsigned, unsigned> >(
-									searchableAttributesDefaultVector[i],
-									pair<unsigned, unsigned>(0,boostsMap[searchableFieldsVector[i]])));
+            searchableAttributesInfo[searchableFieldsVector[i]] =
+                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
+                            searchableAttributesRequiredFlagVector[i],
+                            pair<string, pair<unsigned, unsigned> >(
+                                    searchableAttributesDefaultVector[i],
+                                    pair<unsigned, unsigned>(0,boostsMap[searchableFieldsVector[i]])));
         }
     }
 
@@ -609,8 +721,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
     for(; searchableAttributeIter != searchableAttributesInfo.end(); searchableAttributeIter++){
-    	searchableAttributeIter->second.second.second.first = idIter;
-    	idIter ++;
+        searchableAttributeIter->second.second.second.first = idIter;
+        idIter ++;
     }
 
     // recordBoostField is an optional field
@@ -635,20 +747,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
-    this->indexCreateOrLoad = INDEXCREATE; // By default it is INDEXCREATE
-    configAttribute = configDoc.child("config").child("indexConfig").child("indexLoadCreate");
-    if (configAttribute && configAttribute.text()) {
-        string ioc = configAttribute.text().get();
-        if (this->isValidIndexCreateOrLoad(ioc)) {
-            this->indexCreateOrLoad = configAttribute.text().as_bool() == 0 ? INDEXCREATE : INDEXLOAD;
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for indexCreateOrLoad is not a valid. It should be 0 or 1.";
-            return;
-        }
-    }
-
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("rankingAlgorithm").child("recordScoreExpression");
@@ -664,7 +762,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // indexCreateOrLoad is an optional field
+    // queryTermFuzzyPenalty is an optional field
     this->queryTermSimilarityBoost = 1; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
     if (configAttribute && configAttribute.text()) {
@@ -674,6 +772,25 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermFuzzyPenalty is not a valid.";
+            return;
+        }
+    }
+
+    // queryTermSimilarityThreshold is an optional field
+    //By default it is 0.5.
+    this->queryTermSimilarityThreshold = 0.5;
+    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
+    if (configAttribute && configAttribute.text()) {
+        string qtsb = configAttribute.text().get();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
+            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
+                this->queryTermSimilarityThreshold = 0.5;
+                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
+            }
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
             return;
         }
     }
@@ -750,17 +867,22 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // fieldBasedSearch is an optional field
-    this->supportAttributeBasedSearch = false; // by default it is false
-    configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
-    if (configAttribute && configAttribute.text()) {
-        string fbs = configAttribute.text().get();
-        if (this->isValidFieldBasedSearch(fbs)) {
-            this->supportAttributeBasedSearch = configAttribute.text().as_bool();
-        } else {
-            parseError << "supportAttributeBasedSearch is not set correctly.\n";
-            configSuccess = false;
-            return;
+    if (this->enablePositionIndex == false) {
+        this->supportAttributeBasedSearch = false; // by default it is false
+        configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
+        if (configAttribute && configAttribute.text()) {
+            string configValue = configAttribute.text().get();
+            if (this->isValidBooleanValue(configValue)) {
+                this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+            } else {
+                parseError << "fieldBasedSearch is not set correctly.\n";
+                configSuccess = false;
+                return;
+            }
         }
+    } else {
+        // attribute based search is enabled if positional index is enabled
+        this->supportAttributeBasedSearch = true;
     }
 
     // queryTermMatchType is an optional field
@@ -799,7 +921,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidResponseFormat(rf)) {
             this->searchResponseJsonFormat = configAttribute.text().as_int();
         } else {
-            parseError << "The responseFormat provided is not valid";
+            parseError << "The provided responseFormat is not valid";
             configSuccess = false;
             return;
         }
@@ -830,16 +952,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     }
 
-//    //TODO: it should be removed.
-//    // dataSourceType is an optional field
-//    this->dataSourceType = FILEBOOTSTRAP_TRUE; // by default it is FILEBOOTSTRAP_TRUE
-//    configAttribute = configDoc.child("config").child("query").child("dataSourceType");
-//    if (configAttribute && configAttribute.text()) {
-//        this->dataSourceType = configAttribute.text().as_int(FILEBOOTSTRAP_TRUE) ? FILEBOOTSTRAP_TRUE : FILEBOOTSTRAP_FALSE;
-//        // if the value of dataSourceType is TRUE, the JSON data file should be provided.
-//        // TODO: should we check it here again? because we want to remove this.
-//    }
-    this->dataSourceType = FILEBOOTSTRAP_TRUE; // Should it be as default
+
 
 //    // TODO: it should be removed.
 //    configAttribute = configDoc.child("config").child("query").child("writeApiType");
@@ -925,7 +1038,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // logLevel is optional or required? XXX
+    // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("logLevel");
     bool llflag = true;
@@ -943,27 +1056,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    // accessLogFile is optional or required? XXX
-    // TODO: do we need it? or we should remove it
+    // accessLogFile is required
     configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("accessLogFile");
     if (configAttribute && configAttribute.text()) {
-        // TODO: What is the defualt value for it?!
         this->httpServerAccessLogFile = this->srch2Home + string(configAttribute.text().get());
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
         return;
     }
-
-    // errorLogFile is optional or required? XXX
-//    configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("errorLogFile");
-//    if (configAttribute && configAttribute.text()) {
-//        this->httpServerErrorLogFile = this->srch2Home + string(configAttribute.text().get());
-//    } else {
-//        parseError << "httpServerErrorLogFile is not set.\n";
-//        configSuccess = false;
-//        return;
-//    }
 
     /*
      * query: END
@@ -982,52 +1083,51 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->trieBootstrapDictFile = "";
     this->attributeToSort = 0;
 
-//
-//    if (vm.count("trie-bootstrap-dict-file")) {
-//        trieBootstrapDictFile = vm["trie-bootstrap-dict-file"].as<string>();
-//    } else {
-//        trieBootstrapDictFile = std::string("");
-//    }
-//
-//    if (vm.count("allowed-record-special-characters")) {
-//        allowedRecordTokenizerCharacters =
-//                vm["allowed-record-special-characters"].as<string>();
-//        if (allowedRecordTokenizerCharacters.empty())
-//            std::cerr
-//                    << "[Warning] There are no characters in the value allowedRecordTokenizerCharacters. To set it properly, those characters should be included in double quotes such as \"@'\""
-//                    << std::endl;
-//    } else {
-//        allowedRecordTokenizerCharacters = string("");
-//        //parseError << "allowed-record-special-characters is not set.\n";
-//    }
-//
-//    if (vm.count("default-attribute-to-sort")) {
-//        attributeToSort = vm["default-attribute-to-sort"].as<int>();
-//    } else {
-//        attributeToSort = 0;
-//        //parseError << "attributeToSort is not set.\n";
-//    }
-//
-//    if (vm.count("sortOrder")) {
-//        ordering = vm["sortOrder"].as<int>();
-//    } else {
-//        ordering = 0;
-//        //parseError << "ordering is not set.\n";
-//    }
-//
-//    if (not (this->writeReadBufferInBytes > 4194304
-//            && this->writeReadBufferInBytes < 65536000)) {
-//        this->writeReadBufferInBytes = 4194304;
-//    }
-
+    if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
+    	configAttribute = configDoc.child("config").child("mongodb").child("host");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoHost = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo host is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("port");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoPort = string(configAttribute.text().get());
+    	}else {
+    		this->mongoPort = ""; // use default port
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("db");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoDbName = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo data base name is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("collection");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoCollection = string(configAttribute.text().get());
+    	}else {
+    		parseError << "mongo collection name is not set.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("listenerWaitTime");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoListenerWaitTime = configAttribute.text().as_uint(1);
+    	}else {
+    		this->mongoListenerWaitTime = 1;
+    	}
+    }
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
         searchableAttributesInfo[searchableAttributesVector[iter]] =
-        		pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
-        				pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
-        		//    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
+                pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
+                        pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
     }
 }
 
@@ -1130,10 +1230,6 @@ const vector<string> * ConfigManager::getFacetGaps() const {
     return &facetGaps;
 }
 
-/*const vector<unsigned> * ConfigManager::getAttributesBoosts() const
- {
- return &attributesBoosts;
- }*/
 
 string ConfigManager::getSrch2Home() const {
     return this->srch2Home;
@@ -1204,6 +1300,10 @@ float ConfigManager::getQueryTermSimilarityBoost() const {
     return queryTermSimilarityBoost;
 }
 
+float ConfigManager::getQueryTermSimilarityThreshold() const {
+    return queryTermSimilarityThreshold;
+}
+
 float ConfigManager::getQueryTermLengthBoost() const {
     return queryTermLengthBoost;
 }
@@ -1217,12 +1317,8 @@ bool ConfigManager::getSupportAttributeBasedSearch() const {
 }
 
 ResponseType ConfigManager::getSearchResponseFormat() const {
-	return searchResponseFormat;
+    return searchResponseFormat;
 }
-
-//const string& ConfigManager::getAttributeStringForMySQLQuery() const {
-//    return attributeStringForMySQLQuery;
-//}
 
 const string& ConfigManager::getLicenseKeyFileName() const {
     return licenseKeyFile;
@@ -1345,25 +1441,25 @@ bool ConfigManager::isFloat(string str) {
 }
 
 bool ConfigManager::isValidFieldType(string& fieldType , bool isSearchable) {
-	if(isSearchable){
-		// supported types are: text, location_latitude, location_longitude
-		if ((fieldType.compare("text") == 0) || (fieldType.compare("location_latitude") == 0)
-				|| (fieldType.compare("location_longitude") == 0)) {
-			return true;
-		}
-		return false;
-	}else{
-		// supported types are: text, integer, float, time
-		if ((fieldType.compare("text") == 0) || (fieldType.compare("integer") == 0)
-				|| (fieldType.compare("float") == 0) || (fieldType.compare("time") == 0)) {
-			return true;
-		}
-		return false;
-	}
+    if(isSearchable){
+        // supported types are: text, location_latitude, location_longitude
+        if ((fieldType.compare("text") == 0) || (fieldType.compare("location_latitude") == 0)
+                || (fieldType.compare("location_longitude") == 0)) {
+            return true;
+        }
+        return false;
+    }else{
+        // supported types are: text, integer, float, time
+        if ((fieldType.compare("text") == 0) || (fieldType.compare("integer") == 0)
+                || (fieldType.compare("float") == 0) || (fieldType.compare("time") == 0)) {
+            return true;
+        }
+        return false;
+    }
 }
 
 bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType){
-	return validateValueWithType(fieldType , defaultValue);
+    return validateValueWithType(fieldType , defaultValue);
 }
 
 bool ConfigManager::isValidBool(string& fieldType) {
@@ -1419,6 +1515,10 @@ bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityB
     return this->isFloat(queryTermSimilarityBoost);
 }
 
+bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarityThreshold){
+    return this->isFloat(qTermSimilarityThreshold);
+}
+
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
     if (this->isFloat(queryTermLengthBoost)) {
         float val = ::atof(queryTermLengthBoost.c_str());
@@ -1461,8 +1561,8 @@ bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
     return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
 }
 
-bool ConfigManager::isValidFieldBasedSearch(string& fieldBasedSearch) {
-    if (fieldBasedSearch.compare("0") == 0 || fieldBasedSearch.compare("1") == 0) {
+bool ConfigManager::isValidBooleanValue(string& fieldValue) {
+    if (fieldValue.compare("0") == 0 || fieldValue.compare("1") == 0) {
         return true;
     }
     return false;
@@ -1546,27 +1646,28 @@ bool ConfigManager::isValidSearcherType(string& searcherType) {
 }
 
 srch2::instantsearch::FilterType ConfigManager::parseFieldType(string& fieldType){
-	if (fieldType.compare("integer") == 0)
-		return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
-	else if (fieldType.compare("float") == 0)
-		return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
-	else if (fieldType.compare("text") == 0)
-		return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
-	else if (fieldType.compare("time") == 0)
-		return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
+    if (fieldType.compare("integer") == 0)
+        return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
+    else if (fieldType.compare("float") == 0)
+        return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
+    else if (fieldType.compare("text") == 0)
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+    else if (fieldType.compare("time") == 0)
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
 
-	ASSERT(false);
+    ASSERT(false);
+    return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
 }
 
 int ConfigManager::parseFacetType(string& facetType){
-	string facetTypeLowerCase = boost::to_lower_copy(facetType);
-	if(facetTypeLowerCase.compare("categorical") == 0){
-		return 0;
-	}else if(facetTypeLowerCase.compare("range") == 0){
-		return 1;
-	}else{
-		return -1;
-	}
+    string facetTypeLowerCase = boost::to_lower_copy(facetType);
+    if(facetTypeLowerCase.compare("categorical") == 0){
+        return 0;
+    }else if(facetTypeLowerCase.compare("range") == 0){
+        return 1;
+    }else{
+        return -1;
+    }
 }
 
 // JUST FOR Wrapper TEST
@@ -1575,6 +1676,9 @@ void ConfigManager::setFilePath(const string& dataFile) {
 }
 
 
+bool ConfigManager::isPositionIndexEnabled() const{
+    return this->enablePositionIndex;
+}
 
 }
 }

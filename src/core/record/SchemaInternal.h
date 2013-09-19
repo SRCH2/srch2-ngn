@@ -83,8 +83,7 @@ public:
      * Creates a Schema object
      */
     SchemaInternal() {
-    }
-    ;
+    };
     SchemaInternal(srch2::instantsearch::IndexType indexType,
             srch2::instantsearch::PositionIndexType positionIndexType);
     SchemaInternal(const SchemaInternal &schemaInternal);

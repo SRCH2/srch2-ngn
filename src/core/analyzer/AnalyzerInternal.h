@@ -124,10 +124,10 @@ public:
      * @param[in] delimiterCharater
      */
     void tokenizeQuery(const string &queryString,
-                    vector<string> &queryKeywords) const;
+                    vector<PositionalTerm> &queryKeywords) const;
 
     void tokenizeQueryWithFilter(const string &queryString,
-                    vector<string> &queryKeywords, const char &delimiterCharacter,
+                    vector<PositionalTerm> &queryKeywords, const char &delimiterCharacter,
                     const char &filterDelimiterCharacter,
                     const char &fieldsAndCharacter, const char &fieldsOrCharacter,
                     const std::map<std::string, unsigned> &searchableAttributesNameToId,

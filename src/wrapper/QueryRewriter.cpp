@@ -47,7 +47,7 @@ void QueryRewriter::rewrite() {
      * for example a user can provide a query like : foo~0.5 AND bar
      * for this query:
      * rawQueryKeyword vector is <foo , bar>
-     * fuzzyLevel vector is <0.5,-1> // should rewrite -1 to what's comming from configuration file
+     * SimilarityThreshold vector is <0.5,-1> // should rewrite -1 to what's comming from configuration file
      * boostLevel vector is <> , no rewrite, planGen understands empty vector
      * prefixComplete vector <>
      */
@@ -86,10 +86,10 @@ void QueryRewriter::prepareKeywordInfo() {
                     indexDataContainerConf->getQueryTermBoost();
         }
 
-        if (paramContainer->hasParameterInQuery(KeywordFuzzyLevel)
-                && paramContainer->keywordFuzzyLevel.at(k) < 0) {
-            paramContainer->keywordFuzzyLevel.at(k) =
-                    indexDataContainerConf->getQueryTermSimilarityBoost();
+        if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)
+                && paramContainer->keywordSimilarityThreshold.at(k) < 0) {
+            paramContainer->keywordSimilarityThreshold.at(k) =
+                    indexDataContainerConf->getQueryTermSimilarityThreshold();
         }
 
         if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)
@@ -124,7 +124,23 @@ void QueryRewriter::applyAnalyzer() {
             keyword != paramContainer->rawQueryKeywords.end(); ++keyword) {
         // Currently we only get the first token coming out of analyzer chain for each
         // keyword. In future we should handle synonyms TODO
-        string keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
+    	string keywordAfterAnalyzer = "";
+    	if (paramContainer->isPhraseKeywordFlags[keywordIndex]){
+    		std::vector<PositionalTerm> analyzedQueryKeywords;
+    		analyzerNotConst.tokenizeQuery(*keyword, analyzedQueryKeywords);
+    		keywordAfterAnalyzer.clear();
+    		vector<unsigned> positionIndexes;
+    		for (int i=0; i < analyzedQueryKeywords.size(); ++i){
+    			if (i)
+    				keywordAfterAnalyzer.append(" ");
+    			keywordAfterAnalyzer.append(analyzedQueryKeywords[i].term);
+    			positionIndexes.push_back(analyzedQueryKeywords[i].position);
+    		}
+    		if (positionIndexes.size() > 0)
+    			paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
+    	}else{
+    		keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
+    	}
         if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
             keywordIndexesToErase.push_back(keywordIndex);
         } else { // just apply the analyzer
@@ -135,12 +151,12 @@ void QueryRewriter::applyAnalyzer() {
     }
     // now erase the data of erased keywords
     std::vector<std::string> rawQueryKeywords;
-    std::vector<float> keywordFuzzyLevel;
+    std::vector<float> keywordSimilarityThreshold;
     std::vector<int> keywordBoostLevel;
     std::vector<srch2is::TermType> keywordPrefixComplete;
-    std::vector<std::vector<std::string> > fieldFilter;
-    std::vector<srch2is::BooleanOperation> fieldFilterOps;
     std::vector<unsigned> fieldFilterNumbers;
+    std::vector<bool> isPhraseKeywordFlags;
+    std::vector<short> phraseSlops;
     // first keep the rest of keywords so that indexes stay valid (cannot remove and iterate in the same time)
     for (int i = 0; i < paramContainer->rawQueryKeywords.size(); i++) {
         if (std::find(keywordIndexesToErase.begin(), keywordIndexesToErase.end(), i)
@@ -149,23 +165,27 @@ void QueryRewriter::applyAnalyzer() {
             if(paramContainer->hasParameterInQuery(KeywordBoostLevel)){
                 keywordBoostLevel.push_back(paramContainer->keywordBoostLevel.at(i));
             }
-            if(paramContainer->hasParameterInQuery(KeywordFuzzyLevel)){
-                keywordFuzzyLevel.push_back(paramContainer->keywordFuzzyLevel.at(i));
+            if(paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)){
+                keywordSimilarityThreshold.push_back(paramContainer->keywordSimilarityThreshold.at(i));
             }
             if(paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)){
                 keywordPrefixComplete.push_back(paramContainer->keywordPrefixComplete.at(i));
             }
             fieldFilterNumbers.push_back(paramContainer->fieldFilterNumbers.at(i));
+            if (paramContainer->hasParameterInQuery(IsPhraseKeyword)){
+            	isPhraseKeywordFlags.push_back(paramContainer->isPhraseKeywordFlags.at(i));
+            }
+            phraseSlops.push_back(paramContainer->PhraseSlops.at(i));
         }
     }
     // then copy back
     paramContainer->rawQueryKeywords = rawQueryKeywords;
-    paramContainer->keywordFuzzyLevel = keywordFuzzyLevel;
+    paramContainer->keywordSimilarityThreshold = keywordSimilarityThreshold;
     paramContainer->keywordBoostLevel = keywordBoostLevel;
     paramContainer->keywordPrefixComplete = keywordPrefixComplete;
-    paramContainer->fieldFilter = fieldFilter;
-    paramContainer->fieldFilterOps = fieldFilterOps;
     paramContainer->fieldFilterNumbers = fieldFilterNumbers;
+    paramContainer->isPhraseKeywordFlags = isPhraseKeywordFlags;
+    paramContainer->PhraseSlops = phraseSlops;
 
     if(paramContainer->rawQueryKeywords.size() == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
@@ -185,8 +205,7 @@ void QueryRewriter::prepareFieldFilters() {
         // these two vectors will not be used in future. We clear them just for safety.
         paramContainer->fieldFilter.clear();
         paramContainer->fieldFilterOps.clear();
-        // no filters at all
-        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 1);
+        paramContainer->fieldFilterNumbers.assign(paramContainer->rawQueryKeywords.size(), 0x7fffffff);
         return;
     }
     if(paramContainer->hasParameterInQuery(FieldFilter) ){

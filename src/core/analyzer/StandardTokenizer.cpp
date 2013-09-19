@@ -22,8 +22,13 @@ bool StandardTokenizer::incrementToken() {
         ///check whether the scanning is over.
         if ((tokenStreamContainer->offset)
                 >= (tokenStreamContainer->completeCharVector).size()) {
-            return (tokenStreamContainer->currentToken).empty() ?
-                    false : true;
+
+            if (tokenStreamContainer->currentToken.empty()) {
+            	return false;
+            } else {
+            	tokenStreamContainer->currentTokenPosition++;
+            	return true;
+            }
         }
         CharType currentChar =
                 (tokenStreamContainer->completeCharVector)[tokenStreamContainer->offset];
@@ -42,6 +47,7 @@ bool StandardTokenizer::incrementToken() {
         switch (currentCharacterType) {
         case CharSet::DELIMITER_TYPE:
             if (!(tokenStreamContainer->currentToken).empty()) {
+            	tokenStreamContainer->currentTokenPosition++;
                 return true;
             }
             break;
@@ -54,8 +60,8 @@ bool StandardTokenizer::incrementToken() {
                 if (!(tokenStreamContainer->currentToken).empty()) //if the currentToken is not null, we need produce the token
                 {
                     (tokenStreamContainer->offset)--;
-                    return (!(tokenStreamContainer->currentToken).empty()) ?
-                            true : false;
+                    tokenStreamContainer->currentTokenPosition++;
+                    return true;
                 } else
                     (tokenStreamContainer->currentToken).push_back(currentChar);
             }
@@ -66,8 +72,13 @@ bool StandardTokenizer::incrementToken() {
             } else {
                 (tokenStreamContainer->currentToken).push_back(currentChar);
             }
-            return (!(tokenStreamContainer->currentToken).empty()) ?
-                    true : false;
+            tokenStreamContainer->currentTokenPosition++;
+            if (tokenStreamContainer->currentToken.empty()) {
+            	return false;
+            } else {
+            	tokenStreamContainer->currentTokenPosition++;
+            	return true;
+            }
         }
     }
     ASSERT(false);

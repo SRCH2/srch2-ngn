@@ -60,6 +60,7 @@ inline void print_trace (void)
 #define ASSERT(cond) do {\
         if (cond) {\
         } else {\
+            printf("Assert failed in file=%s and line %d\n", __FILE__, __LINE__); \
             print_trace();\
             abort();\
         }\
