@@ -13,20 +13,19 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png"/></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
 <hr/>
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#statusInfo">1. API to retrieve system status information</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiInfo">1.1. Info</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiserialize">2. API to serialize the index</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#apiSave">2.1. Save</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-data">3. Serializing Data to Disk</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -42,33 +41,48 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Documentation: RESTful API - Control</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-##1. API to retrieve system status information## {id="statusInfo"}
->   This API returns information about the status of the system. 
+##1. Retrieving System Status## {id="system-status"}
 
-###1.1 Info### {id="apiInfo"}
->   *   It returns the information about the system status. The response body will contain a JSON map with these fields:
->   *   "search_requests": number of queries received by the server so far;
->   *   "write_requests": number of insert/delete requests received by the server so far;
->   *   "docs_in_index": number of documents in the indexes;
->   *   "last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;
->   *   "last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;
->   *   "version": version of this engine.
->   Example: 
-```python
+This API returns the information about the system status. The response body will contain a JSON map with these fields:
+
+   -   "search_requests": the number of queries received by the server so far;
+   -   "write_requests": number of insert/delete requests received by the server so far;
+   -   "docs_in_index": number of documents in the indexes;
+   -   "last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;
+   -   "last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;
+   -   "version": version of this engine.
+
+Here is an example query: 
+```
 $ curl -i "http://localhost:8081/info"
 ```
 
-##2. API to serialize the index##{id="apiserialize"}
->   This API serializes the index to the disk. 
+Here is an example response:
 
-###2.1. Save### {id="apiSave"}
->   It saves the index with all the changes that have been made so far to the path on the disk specified by the option "index-dir-path" in the configuration file. So when the engine is restarted with the option "index-load-or-create" set to 1 in the configuration file, it can be brought back to the state right before it was shut down last time. 
+```
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 138
+Date: Thu, 19 Sep 2013 18:52:52 GMT
 
->   Example: 
+[{search_requests:0,write_requests:100,docs_in_index:100,"last_merge":"09/19/13 18:52:48","last_merge_time":"0","doc_count":"100"}, 4.0.0]
+```
+
+##2. Serializing Indexes to Disk##{id="serialize-indexes"}
+
+This API serializes the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the configuration file. Here is an example: 
 ```python
 $ curl -i "http://localhost:8081/save" -X PUT
+```
+
+##3. Serializing Data to Disk##{id="serialize-data"}
+
+This API serializes the data, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: 
+
+```
+$ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
 ```
 
 <hr/>
