@@ -304,6 +304,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             return;
                         }
 
+
                         // Check the validity of field default value based on it's type
                         if (string(field.attribute("default").value()).compare("") != 0){
                             tempUse = string(field.attribute("default").value());
@@ -765,6 +766,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // queryTermFuzzyPenalty is an optional field
     this->queryTermSimilarityBoost = 1; // By default it is 1
     configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
+    if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidQueryTermSimilarityBoost(qtsb)) {
             this->queryTermSimilarityBoost = configAttribute.text().as_float();
@@ -775,62 +777,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // queryTermSimilarityThreshold is an optional field
-    //By default it is 0.5.
-    this->queryTermSimilarityThreshold = 0.5;
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
-    if (configAttribute && configAttribute.text()) {
-        string qtsb = configAttribute.text().get();
-        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
-            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
-                this->queryTermSimilarityThreshold = 0.5;
-                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
-            }
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
-            return;
-        }
-    }
-
-    // queryTermSimilarityThreshold is an optional field
-    //By default it is 0.5.
-    this->queryTermSimilarityThreshold = 0.5;
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
-    if (configAttribute && configAttribute.text()) {
-        string qtsb = configAttribute.text().get();
-        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
-            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
-                this->queryTermSimilarityThreshold = 0.5;
-                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
-            }
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
-            return;
-        }
-    }
-
-    // queryTermSimilarityThreshold is an optional field
-    //By default it is 0.5.
-    this->queryTermSimilarityThreshold = 0.5;
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
-    if (configAttribute && configAttribute.text()) {
-        string qtsb = configAttribute.text().get();
-        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
-            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
-                this->queryTermSimilarityThreshold = 0.5;
-                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
-            }
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
-            return;
-        }
-    }
 
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
