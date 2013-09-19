@@ -37,9 +37,12 @@ void ConfigManager::loadConfigFile() {
     Logger::debug("Reading config file: %s\n", this->configFile.c_str());
     xml_document configDoc;
     // Checks if the xml file is parsed correctly or not.
-    if (!configDoc.load_file(this->configFile.c_str())) {
-        Logger::debug("%s parsed with errors.\n", this->configFile.c_str());
-        return;
+    pugi::xml_parse_result result = configDoc.load_file(this->configFile.c_str());
+    // Add a comment to this line
+    if (!result) {
+		Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
+		Logger::error("error: %s", result.description());
+		exit(-1);
     }
 
     bool configSuccess = true;
@@ -51,8 +54,8 @@ void ConfigManager::loadConfigFile() {
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
     if (!configSuccess) {
-        Logger::debug("ERRORS while reading the configuration file");
-        Logger::debug("%s\n", parseError.str().c_str());
+        Logger::error("ERRORS while reading the configuration file");
+        Logger::error("%s\n", parseError.str().c_str());
         cout << endl << parseError.str() << endl;
         exit(-1);
     }
