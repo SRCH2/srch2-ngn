@@ -108,56 +108,6 @@
 </td></tr></tbody></table></div>
 
 
-###Configure and Run the Search Server###{id="serverConfig"}
-
->   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Download the SRCH2 Engine from [here](http://www.srch2.com/files/srch2-engine-v3.0.tgz){ style="text-decoration:none"}. Then extract it and put all of the files where you want to have the engine. There are four files there as below:
-
->   *   *srch2-engine* (Binary file of the engine)
->   *   *conf.xml* (The configuration file)
->   *   *readme.txt* 
->   *   *sample-data.json* (It is a sample data having [JSON](http://www.json.org/){target="_blank"  style="text-decoration:none"} format to test the engine with)
-
-
->   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing _contact (at) srch2 (dot) com_. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally in a file called _“srch2_license_key.txt”_.
-
->   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;Place the license key and downloaded files into a single directory.
-
->   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded
-
-```python
-> cd path/to/the/engine/directory
-```
-
->  Run the engine now.
-
-```python
-> ./srch2-engine --config-file=/path/to/conf.xml
-```
-
->  _conf.xml_ is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. 
-
-
->   You should see 
-<center>
->   ![Engine is running](./images/engine_running.png)
-</center>
-
->   **Step 5:**&nbsp;&nbsp;&nbsp;&nbsp;Download the demo display and extract it.
-
->   **Step 6:**&nbsp;&nbsp;&nbsp;&nbsp;Open index.html in your favourite browser
-
->   **Step 7:**&nbsp;&nbsp;&nbsp;&nbsp;Do a search and see the results. You should be able to see:   
-
-###Description of Features###{id="uiFeatures"}
-> ![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width: 1068px}
-
->>1. Gets movie records with descriptions related to typed in value, key by key
->>2. Specify attribute:value pair or range to restrict results
->>3. Specify start,end,and gap value of facet year to get counts of movie from each defined era
->>4. Sort the results by Year released in specified ordering or if unspecified return
->>results in order of relevance  
->>5. Displays top movie matching the given critera  
->>6. Displays counts of facets on year and Genre  
 
 
 ##RESTful API##{id="restfulapi"}
