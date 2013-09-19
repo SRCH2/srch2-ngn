@@ -42,15 +42,16 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">9.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">9.2. Term Similarity Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">9.3. Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">9.4. Query Term Length Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.5. Prefix Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.6. Cache Size</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.7. Rows to be returned</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">9.8. Max Searcher Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.9. Enabling Field Based Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.11. Term Match Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.12. Query Term Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">9.4. Support Swap in Edit Distance</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">9.5. Query Term Length Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.6. Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.7. Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.8. Rows to be returned</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">9.9. Max Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.10. Enabling Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.11. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.12. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.13. Query Term Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
@@ -220,15 +221,20 @@
 ```
 >> It modifies the default behavior of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches). Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.
 
+>####9.4. Support Swap in Edit-distance operations, Optional{id="supportSwapInEditDistance"}
+```
+<supportSwapInEditDistance>true</supportSwapInEditDistance>
+```
+>> It specifies we 'swap' should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.
 
->####9.4. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
+>####9.5. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
 ```
 <queryTermLengthBoost></queryTermLengthBoost>
 ```
 >>Check [the ranking section](ranking.html) to see how this value is used in the ranking function. Its default value is 0.5. <br>
 
 
->####9.5. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
+>####9.6. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
 
 ```
 <prefixMatchPenalty>0.95</prefixMatchPenalty>
@@ -237,26 +243,26 @@
 >> The value should be in the range of 0 to 1. its default value is 0.95. See [the ranking section](ranking.html) <br>
 
 
->####9.6. Cache Size, Optional{id="cacheSize"}
+>####9.7. Cache Size, Optional{id="cacheSize"}
 
 ```
 <cacheSize>65536000</cacheSize>
 ```
 >> It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br>
 
->####9.7. Default value for number of returned results, Optional{id="rows"}
+>####9.8. Default value for number of returned results, Optional{id="rows"}
 ```
 <rows>10</rows>
 ```
 >> It specifies the number of results retrieved. Its defaults value is 10. <br>
 
->####9.8. Maximum number of search threads, Optional:{id="maxSearchThreads"}
+>####9.9. Maximum number of search threads, Optional:{id="maxSearchThreads"}
 ```
 <maxSearchThreads>2</maxSearchThreads>
 ```
 >> It specifies the number of threads that serve search requests. Its default value is 1. <br>
 
->####9.9. Field Based Search Enabled, Optional{id="fieldBasedSearch"}
+>####9.10. Field Based Search Enabled, Optional{id="fieldBasedSearch"}
 ```
 <fieldBasedSearch>0</fieldBasedSearch>
 ```
@@ -266,7 +272,7 @@
 >>>> Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 
->####9.10. Search Type, Optional{id="searcherType"}
+>####9.11. Search Type, Optional{id="searcherType"}
 ```
 <searcherType>0</searcherType>
 ```
@@ -275,7 +281,7 @@
 >>> 1: finding all matching results. <br>
 >Its default value is 0.<br>
 
->####9.11. Query Term Match Type, Optional{id="queryTermMatchType"}
+>####9.12. Query Term Match Type, Optional{id="queryTermMatchType"}
 ```
 <queryTermMatchType>1</queryTermMatchType>
 ```
@@ -284,7 +290,7 @@
 >>> 1: fuzzy match search.<br>
 >>> Its default value is 0.
 
->####9.12. Query Term Type, Optional{id="queryTermType"}
+>####9.13. Query Term Type, Optional{id="queryTermType"}
 
 ```
 <queryTermType>0</queryTermType>

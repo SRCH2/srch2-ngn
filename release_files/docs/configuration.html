@@ -49,15 +49,16 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">9.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">9.2. Term Similarity Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">9.3. Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">9.4. Query Term Length Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.5. Prefix Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.6. Cache Size</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.7. Rows to be returned</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">9.8. Max Searcher Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.9. Enabling Field Based Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.11. Term Match Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.12. Query Term Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">9.4. Support Swap in Edit Distance</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">9.5. Query Term Length Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.6. Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.7. Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.8. Rows to be returned</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">9.9. Max Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.10. Enabling Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.11. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.12. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.13. Query Term Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
@@ -269,7 +270,16 @@ Note: listenerWaitTime must be specified in seconds. It specifies how frequently
 <blockquote>
 <p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
 </blockquote>
-<h4 id="queryTermLengthBoost">9.4. Query Term Length Boost, Optional</h4>
+<h4 id="supportSwapInEditDistance">9.4. Support Swap in Edit-distance operations, Optional</h4>
+</blockquote>
+<pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies we 'swap' should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.</p>
+</blockquote>
+<h4 id="queryTermLengthBoost">9.5. Query Term Length Boost, Optional</h4>
 </blockquote>
 <pre><code>&lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
@@ -278,7 +288,7 @@ Note: listenerWaitTime must be specified in seconds. It specifies how frequently
 <blockquote>
 <p>Check <a href="ranking.html">the ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
 </blockquote>
-<h4 id="prefixMatchPenalty">9.5. Prefix Match Penalty, Optional</h4>
+<h4 id="prefixMatchPenalty">9.6. Prefix Match Penalty, Optional</h4>
 </blockquote>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
@@ -288,7 +298,7 @@ Note: listenerWaitTime must be specified in seconds. It specifies how frequently
 <p>It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
 The value should be in the range of 0 to 1. its default value is 0.95. See <a href="ranking.html">the ranking section</a> <br></p>
 </blockquote>
-<h4 id="cacheSize">9.6. Cache Size, Optional</h4>
+<h4 id="cacheSize">9.7. Cache Size, Optional</h4>
 </blockquote>
 <pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
@@ -297,7 +307,7 @@ The value should be in the range of 0 to 1. its default value is 0.95. See <a hr
 <blockquote>
 <p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br></p>
 </blockquote>
-<h4 id="rows">9.7. Default value for number of returned results, Optional</h4>
+<h4 id="rows">9.8. Default value for number of returned results, Optional</h4>
 </blockquote>
 <pre><code>&lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
@@ -306,7 +316,7 @@ The value should be in the range of 0 to 1. its default value is 0.95. See <a hr
 <blockquote>
 <p>It specifies the number of results retrieved. Its defaults value is 10. <br></p>
 </blockquote>
-<h4 id="maxSearchThreads">9.8. Maximum number of search threads, Optional:</h4>
+<h4 id="maxSearchThreads">9.9. Maximum number of search threads, Optional:</h4>
 </blockquote>
 <pre><code>&lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
@@ -315,7 +325,7 @@ The value should be in the range of 0 to 1. its default value is 0.95. See <a hr
 <blockquote>
 <p>It specifies the number of threads that serve search requests. Its default value is 1. <br></p>
 </blockquote>
-<h4 id="fieldBasedSearch">9.9. Field Based Search Enabled, Optional</h4>
+<h4 id="fieldBasedSearch">9.10. Field Based Search Enabled, Optional</h4>
 </blockquote>
 <pre><code>&lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
 </code></pre>
@@ -331,7 +341,7 @@ Note that if field-based search is enabled, the number of searchable attributes 
 </blockquote>
 </blockquote>
 </blockquote>
-<h4 id="searcherType">9.10. Search Type, Optional</h4>
+<h4 id="searcherType">9.11. Search Type, Optional</h4>
 </blockquote>
 <pre><code>&lt;searcherType&gt;0&lt;/searcherType&gt;
 </code></pre>
@@ -345,7 +355,7 @@ Note that if field-based search is enabled, the number of searchable attributes 
 Its default value is 0.<br></p>
 </blockquote>
 </blockquote>
-<h4 id="queryTermMatchType">9.11. Query Term Match Type, Optional</h4>
+<h4 id="queryTermMatchType">9.12. Query Term Match Type, Optional</h4>
 </blockquote>
 <pre><code>&lt;queryTermMatchType&gt;1&lt;/queryTermMatchType&gt;
 </code></pre>
@@ -359,7 +369,7 @@ Its default value is 0.<br></p>
 Its default value is 0.</p>
 </blockquote>
 </blockquote>
-<h4 id="queryTermType">9.12. Query Term Type, Optional</h4>
+<h4 id="queryTermType">9.13. Query Term Type, Optional</h4>
 </blockquote>
 <pre><code>&lt;queryTermType&gt;0&lt;/queryTermType&gt;
 </code></pre>
