@@ -78,7 +78,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         distance,
                         term->getKeyword()->size(),
                         isPrefixMatch,
-                        this->prefixMatchPenalty);
+                        this->prefixMatchPenalty , term->getSimilarityBoost());
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, prefixNode,
@@ -89,7 +89,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         distance,
                         term->getKeyword()->size(),
                         false,
-                        this->prefixMatchPenalty);// prefix match == false
+                        this->prefixMatchPenalty , term->getSimilarityBoost());// prefix match == false
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    recordOffset, leafNode, distance, false));
@@ -369,7 +369,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                                 currentHeapMax->ed,
                                 term->getKeyword()->size(),
                                 currentHeapMax->isPrefixMatch,
-                                this->prefixMatchPenalty);
+                                this->prefixMatchPenalty , term->getSimilarityBoost());
                     currentHeapMax->attributeBitMap = termAttributeBitmap;
                     currentHeapMax->positionIndexOffset = recordOffset;
                     push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,

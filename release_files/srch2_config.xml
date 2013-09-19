@@ -133,21 +133,13 @@
         </rankingalgorithm>
  
         <!--
-            Query Term Similarity Boost
+            Query Term Fuzzy Penalty
             Optional
              
-            Defaults to 0.5
+            Defaults to 1
         -->
-        <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
+        <queryTermFuzzyPenalty>1</queryTermFuzzyPenalty>
          
-         
-        <!--
-            Query Term Similarity Threshold
-            Optional
-             
-            Defaults to 0.5
-        -->
-        <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
         
         
         <!--

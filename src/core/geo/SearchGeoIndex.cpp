@@ -112,7 +112,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
         score = ranker->computeTermRecordRuntimeScore(score, skippedExpansion->editDistance,
                                                       mapSearcherTermVector[termToSkip].termPtr->getKeyword()->size(),
                                                       isPrefixMatch,
-                                                      prefixMatchPenalty);
+                                                      prefixMatchPenalty , mapSearcherTermVector[termToSkip].termPtr->getSimilarityBoost());
         
         overallScore += score;
     }
@@ -146,7 +146,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
                 score = ranker->computeTermRecordRuntimeScore(score, mapSearcherTermVector[i].expansionStructureVector[j].editDistance,
                                                               mapSearcherTermVector[i].termPtr->getKeyword()->size(),
                                                               isPrefixMatch,
-                                                              prefixMatchPenalty);
+                                                              prefixMatchPenalty , mapSearcherTermVector[i].termPtr->getSimilarityBoost());
         
                 overallScore += score;
                 selectedExpansions.push_back(j);

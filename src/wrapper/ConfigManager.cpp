@@ -38,10 +38,11 @@ void ConfigManager::loadConfigFile() {
     xml_document configDoc;
     // Checks if the xml file is parsed correctly or not.
     pugi::xml_parse_result result = configDoc.load_file(this->configFile.c_str());
+    // Add a comment to this line
     if (!result) {
-        Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
-        Logger::error("error: %s", result.description());
-        exit(-1);
+		Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
+		Logger::error("error: %s", result.description());
+		exit(-1);
     }
 
     bool configSuccess = true;
@@ -305,6 +306,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             configSuccess = false;
                             return;
                         }
+
 
                         // Check the validity of field default value based on it's type
                         if (string(field.attribute("default").value()).compare("") != 0){
@@ -764,19 +766,20 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // queryTermSimilarityBoost is an optional field
-    this->queryTermSimilarityBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityBoost");
+    // queryTermFuzzyPenalty is an optional field
+    this->queryTermSimilarityBoost = 1; // By default it is 1
+    configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidQueryTermSimilarityBoost(qtsb)) {
             this->queryTermSimilarityBoost = configAttribute.text().as_float();
         } else {
             configSuccess = false;
-            parseError << "The expression provided for queryTermSimilarityBoost is not a valid.";
+            parseError << "The expression provided for queryTermFuzzyPenalty is not a valid.";
             return;
         }
     }
+
 
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
