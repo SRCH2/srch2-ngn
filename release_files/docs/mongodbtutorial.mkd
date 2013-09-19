@@ -47,12 +47,12 @@
 #<center>Tutorial: MongoDB with SRCH2</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 18, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 ##1. Overview###{id="overview"}
->This is a tutorial on how to configure mongodb to use SRCH2. We assume that you have already downloaded the mongodb and it is working fine on your system. We will refer to the mongodb install directory where <i>bin</i> folder is present as MONGO_HOME.
+>This is a tutorial on how to configure mongodb to use SRCH2. We assume that you have already downloaded mongodb and it is working fine on your system. We will refer to the mongodb install directory where the <i>bin</i> folder is present as MONGO_HOME.
 ##2. Load Data###{id="loadData"}
 
->Let us first load some data into our mondogb. Download this <a href=srch2-tutorials/sample-data.json>sample data file</a> into your MONGO_HOME directory. Now, run the following command from your MONGO_HOME directory. 
+>Let us first load some data into mondogb. Download this <a href=srch2-tutorials/sample-data.json>sample data file</a> into your MONGO_HOME directory. Now, run the following command from your MONGO_HOME directory. 
 ```
-./bin/mongoimport --db demo --collection movies --type json --file movies.json 
+./bin/mongoimport --db demo --collection movies --type json --file sample-data.json 
 ```
 >Let's check if the data has been loaded. Start your mongo client and run following commands
 ```
@@ -61,7 +61,7 @@ mongodb> db.movies.find().count()
 ```
 > There should be 243 movies in the movies collections.
 ##2.1. Configure SRCH2###{id="configureSrch2"}
->Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package. Download a sample <a href="srch2-tutorials/srch2_config.xml">config.xml</a>.
+>Add following lines inside the <i>config</i> element of the conf.xml that comes with your SRCH2 package. Download a sample <a href="srch-tutorials/srch2-config.xml">config.xml</a>.
 ```
     <mongodb>
         <db>demo</db>
@@ -74,7 +74,7 @@ mongodb> db.movies.find().count()
 ##2.2. Start SRCH2 Engine###{id="startSrch2"}
 >Start the SRCH2 server. 
 ```
-./srch2-search-server --config=./srch2-conf.ini 
+./srch2-search-server --config=./srch2-conf.xml 
 ```
 > The engine should read the data, build indexes, and wait for the updates from mongodb.
 ##2.3. Search###{id="search"}
