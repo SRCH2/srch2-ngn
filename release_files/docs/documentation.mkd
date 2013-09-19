@@ -149,7 +149,7 @@
 >   **Step 7:**&nbsp;&nbsp;&nbsp;&nbsp;Do a search and see the results. You should be able to see:   
 
 ###Description of Features###{id="uiFeatures"}
-> ![Demo Webpage Image](./images/Srch2-FullDemoFront.png)
+> ![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width: 1068px}
 
 >>1. Gets movie records with descriptions related to typed in value, key by key
 >>2. Specify attribute:value pair or range to restrict results
@@ -157,7 +157,8 @@
 >>4. Sort the results by Year released in specified ordering or if unspecified return
 >>results in order of relevance  
 >>5. Displays top movie matching the given critera  
->>6.Displays counts of facets on year and Genre
+>>6. Displays counts of facets on year and Genre  
+
 
 ##RESTful API##{id="restfulapi"}
 <div id="indexTable"><table><tbody><tr><td>
