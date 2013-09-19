@@ -420,9 +420,9 @@ void* dispatch(void *arg) {
 void parseProgramArguments(int argc, char** argv,
         po::options_description& description,
         po::variables_map& vm_command_line_args) {
-    description.add_options()("help", "Prints help message")("version",
-            "Prints version number of the engine")("config-file",
-            po::value<string>(), "Path to the config file");
+    description.add_options()("config-file",po::value<string>(), "Path to the config file")
+            ("help", "Prints help message")
+            ("version", "Prints version number of the engine");
     try {
         po::store(po::parse_command_line(argc, argv, description),
                 vm_command_line_args);
@@ -430,7 +430,7 @@ void parseProgramArguments(int argc, char** argv,
     } catch (exception &ex) {
         cout << "error while parsing the arguments : " << endl << ex.what()
                 << endl;
-        cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
+        cout << "Usage: <SRCH2_HOME>/bin/srch2-engine" << endl;
         cout << description << endl;
         exit(-1);
     }
@@ -458,20 +458,15 @@ int main(int argc, char** argv) {
         }
     }
     // Parse command line arguments
-    po::options_description description("Optional Arguments");
+    po::options_description description("Valid Arguments");
     po::variables_map vm_command_line_args;
     parseProgramArguments(argc, argv, description, vm_command_line_args);
 
     if (vm_command_line_args.count("help")) {
-        cout << "Usage: $SRCH2_HOME/bin/srch2-engine" << endl;
+        cout << "Usage: <SRCH2_HOME>/bin/srch2-engine" << endl;
         cout << description << endl;
         return 0;
     }
-
-    std::string srch2HomePath = "";
-    char * srch2HomePathCStr = getenv("SRCH2_HOME");
-    if (srch2HomePathCStr != NULL)
-        srch2HomePath = srch2HomePathCStr;
 
     std::string srch2_config_file = "";
     if (vm_command_line_args.count("config-file")) {
@@ -483,23 +478,10 @@ int main(int argc, char** argv) {
             return -1;
         }
     } else {
-        if (srch2HomePath != "") {
-            srch2_config_file = srch2HomePath + "/conf/srch2_config.ini";
-            int status = ::access(srch2_config_file.c_str(), F_OK);
-            if (status != 0) {
-                std::cout << "config file = '" << srch2_config_file
-                        << "' not found or could not be read" << std::endl;
-                std::cout << "Please check whether SRCH2_HOME is set correctly"
-                        << std::endl;
-                return -1;
-            }
-        } else {
-            std::cout << "Environment variable SRCH2_HOME is not set "
-                    << std::endl;
-            std::cout << "Please read README file " << std::endl;
-            return -1;
-        }
-    }
+        cout << "Usage: <SRCH2_HOME>/bin/srch2-engine" << endl;
+        cout << description << endl;
+        exit(-1);
+    } 
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
 
