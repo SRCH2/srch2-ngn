@@ -1316,6 +1316,9 @@ void ConfigManager::splitBoostFieldValues(string boostString, map<string, unsign
             string field = boostTokens[i].substr(0, pos);
             string boost = boostTokens[i].substr(pos + 1, boostTokens[i].length());
             boosts[field] = (unsigned) atoi(boost.c_str());
+            if(boosts[field] < 1 || boosts[field] > 100){
+            	boosts[field] = 1;
+            }
         } else {
             boosts[boostTokens[i]] = 1;
         }
@@ -1504,7 +1507,7 @@ bool ConfigManager::isValidMaxMemory(string& maxMemory) {
 
 bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
     if (this->isOnlyDigits(mergeEveryNSeconds)) {
-        if (atoi(mergeEveryNSeconds.c_str()) >= 10) {
+        if (atoi(mergeEveryNSeconds.c_str()) >= 1) {
             return true;
         }
     }
@@ -1513,7 +1516,7 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
-        if (atoi(mergeEveryMWrites.c_str()) >= 10) {
+        if (atoi(mergeEveryMWrites.c_str()) >= 1) {
             return true;
         }
     }
