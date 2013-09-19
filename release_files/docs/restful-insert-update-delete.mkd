@@ -1,0 +1,214 @@
+
+<table ><tr>
+	
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiinsert">1. API related to insert/delete/update</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#insert">1.1. Insert</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#update">1.2. Update</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp<a style="text-decoration: none;color:#3366FF" href="#delete">1.3. Delete</a><br><br>
+
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+#<center>SRCH2 Documentation: RESTful API - Insert/Update/Delete</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
+##1. API related to insert/delete/update##{id="apiinsert"}
+>   Documents can be inserted into and deleted from the index. A unique identifier must be provided for each document. This identifier will be used in the search results to reference the matching document. Every field defined in the indexed document will be searchable.
+
+
+>   The engine has a background thread to periodically merge the inserted/deleted/updated documents into the index, based on parameters (time interval or number of requests) specified in the "config.ini" file.
+
+###1.1. Insert### {id="insert"}
+>   This request adds a document to the index. The request body should contain a JSON object, which should meet the following requirements:
+
+>   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
+>   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
+>   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude.
+>   *   The sum of the length of each field value cannot be greater than 100 kilobytes.
+
+
+>   Example for a "Keyword search" (Option 1) index: 
+```python
+$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop"}'
+```
+
+>  Example for a "Keyword+Geo" (Option 2) index: 
+```python
+$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id":"1234", "name":"Toy Story", "category":"shop", "lat": 43.22, "lng": -80.22}'
+```
+
+###1.2. Update### {id="update"}
+>   This request updates a document in the index. It needs to provide the "id" of the document to be updated. The request body should contain a JSON object, which should meet the following requirements:
+
+>   *   The JSON object should include a document identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
+>   *   The JSON object should include searchable fields defined in the configuration file "config.ini" and their corresponding values;
+>   *   If the engine is using a geo index, the JSON object should include a location specified by a latitude and a longitude;
+>   *   The sum of the length of each field value cannot be greater than 100 kilobytes;
+>   *   The "id" in the query url needs to be consistent with the "id" in the JSON object.
+
+>   Example for a "Keyword search" (Option 1) index: 
+```python
+$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
+```
+
+>   Example for a "Keyword+Geo" (Option 2) index:
+```python
+$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop", "latitude": 43.22, "longitude":
+ -80.22}'
+```
+
+
+###1.3. Delete### {id="delete"}
+>   This request deletes a document from the index. It needs to provide the "id" of the document to be deleted.
+>   For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per document.
+
+>   Example: 
+```python
+$ curl "http://localhost:8081/docs?id=1234" -i -X DELETE
+```
+
+
+
+
+
+<hr/>
+Have fun SRCHing!
+
+
+
+<style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+    	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+pre{
+	margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+
+html{
+	min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>
+

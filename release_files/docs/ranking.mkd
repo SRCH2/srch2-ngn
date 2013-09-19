@@ -1,0 +1,196 @@
+
+<table ><tr>
+	
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a><br><br>
+
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+
+#<center>SRCH2 Documentation: Ranking</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
+##Ranking##{id="ranking"}
+
+>   Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results. 
+
+>   Formally, let Q be a query with terms (keywords) t_1, t_2, ..., t_k. Let r be a record. We compute the score of r for Q as follows: 
+
+>   *   score(r, Q) = TermScore(r, t_1) + TermScore(r, t_2) + ... + TermScore(r, t_k).
+
+>   For each term t_i, let w_i be a keyword in r that matches t_i (exactly or fuzzily). The TermScore(r, t_i) is computed as follows: 
+
+>   TermScore(r, t_i) = TermRecordStaticScore(r, t_i) * NormalizedEdSimilarity(w_i, t_i) * PrefixMatchingNormalizer.
+
+>   where
+
+>   *   NormalizedEdSimilarity(w_i, t_i): 
+
+>>  NormalizedEdSimilarity(w_i, t_i) = 1 - EditDistance(w_i, t_i)/length(t_i). 
+>>  The upper bound of EditDistance(w_i, t_i) is length(t_i).
+
+>   *   PrefixMatchingNormalizer: 
+
+>>  It is 1 if term t_i is a complete keyword. If term t_i is a prefix, then PrefixMatchingNormalizer takes the value of the parameter "prefix-match-penalty" specified in the configuration file.
+
+>   *   TermRecordStaticScore(r, t_i): 
+
+>>  It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters: 
+
+>>  *   idf_score: internal IDF score;
+>>  *   doc_boost: the boost value of the record as specified in an attribute;
+>>  *   doc_length: number of unique keywords in the record.
+>>  The expression allows operators such as +, -, /, *, (, ), 0-9, etc. 
+
+>>  The "idf_score" uses the following formula:
+
+>>  *   idf_score(r, t_i) = (1.0 + sumOfFieldBoosts(r, t_i) / sumOfAllFieldBoosts ) * idf(t_i);
+
+>>  sumOfFieldBoosts(r, t_i) is the summation of the boosts of the attributes in which this keyword t_i appears in r, and sumOfAllFieldBoosts is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking. 
+
+>>  idf(t_i) is the inversed document frequency:
+
+>>  *   idf(t_i) = log_e (total # of documents/ # of documents having term t_i).
+
+>>  In the case where the record r has multiple keywords w_i's that match term t_i, TermScore(r, t_i) is the largest value among them.
+
+<hr/>
+Have fun SRCHing!
+
+
+
+<style type="text/css">
+#sidebar{
+    position:fixed;
+    width:20%;
+    	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+pre{
+	margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+
+html{
+	min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>

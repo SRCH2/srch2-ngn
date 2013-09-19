@@ -1,0 +1,205 @@
+
+<table ><tr>
+	
+<td > 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run the Search Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uiFeatures">2. Example UI</a></br><br>
+
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+
+</div> <!-- Sidebar -->
+
+</td>
+
+<td style="width:75%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+#<center>SRCH2 Documentation: Engine Installation</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
+
+###1. Configure and Run the Search Server###{id="serverConfig"}
+
+>   **Step 1:**&nbsp;&nbsp;&nbsp;&nbsp;Download the SRCH2 Engine from [here](http://www.srch2.com/files/srch2-engine-v3.0.tgz){ style="text-decoration:none"}. Then extract it and put all of the files where you want to have the engine. There are four files there as below:
+
+>   *   *srch2-engine* (Binary file of the engine)
+>   *   *conf.xml* (The configuration file)
+>   *   *readme.txt* 
+>   *   *sample-data.json* (It is a sample data having [JSON](http://www.json.org/){target="_blank"  style="text-decoration:none"} format to test the engine with)
+
+
+>   **Step 2:**&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing _contact (at) srch2 (dot) com_. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally in a file called _“srch2_license_key.txt”_.
+
+>   **Step 3:**&nbsp;&nbsp;&nbsp;&nbsp;Place the license key and downloaded files into a single directory.
+
+>   **Step 4:**&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded
+
+```python
+> cd path/to/the/engine/directory
+```
+
+>  Run the engine now.
+
+```python
+> ./srch2-engine --config-file=/path/to/conf.xml
+```
+
+>  _conf.xml_ is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. 
+
+
+>   You should see 
+<center>
+>   ![Engine is running](./images/engine_running.png)
+</center>
+
+>   **Step 5:**&nbsp;&nbsp;&nbsp;&nbsp;Download the demo display and extract it.
+
+>   **Step 6:**&nbsp;&nbsp;&nbsp;&nbsp;Open index.html in your favourite browser
+
+>   **Step 7:**&nbsp;&nbsp;&nbsp;&nbsp;Do a search and see the results. You should be able to see:   
+
+###2. Description of Features###{id="uiFeatures"}
+> ![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width: 1068px}
+
+>>1. Gets movie records with descriptions related to typed in value, key by key
+>>2. Specify attribute:value pair or range to restrict results
+>>3. Specify start,end,and gap value of facet year to get counts of movie from each defined era
+>>4. Sort the results by Year released in specified ordering or if unspecified return
+>>results in order of relevance  
+>>5. Displays top movie matching the given critera  
+>>6. Displays counts of facets on year and Genre  
+
+<hr/>
+Have fun SRCHing!
+
+
+
+<style type="text/css">
+#sidebar{
+    position:fixed;
+    width:15%;
+    	left:10px;
+	top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
+pre{
+	margin: auto;
+    width:80%;
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
+    line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    overflow:auto;
+    max-height:600px;
+}
+
+html{
+	min-width:1100px;
+}
+#indexTable{
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+    display: inline-block
+}
+#bigBox{
+    padding: 10px;
+    font-size: 13px;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    //text-align:center;
+    display: inline-block
+}
+
+</style>
+
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>

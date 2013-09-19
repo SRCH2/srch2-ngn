@@ -2,41 +2,671 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>configuration</title>
 </head>
 <body>
-<table><tr>
+<table ><tr>
 
-<td style="width:14%"> 
-<div id="content">
+<td> 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#foo">Foo</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#bar">Bar</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configTag">2. Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">3. SRCH2HOME</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">4. License File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">5. Hostname & Port</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">6. Data Directory</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">7. Data Source Information</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSources">7.1. Data Source Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7.2. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">7.3. MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">8. Index Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">8.1. Index Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">8.2. Field Boosts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">8.3. Record Boost Field</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">8.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">9. Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">9.1. Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityBoost">9.2. Term Similarity Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">9.3. Term Similarity Threshold</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermLengthBoost">9.4. Query Term Length Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.5. Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.6. Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.7. Rows to be returned</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">9.8. Max Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.9. Enabling Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.10. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.11. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.12. Query Term Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">11.1. Max Documents</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">11.2. Merge Policy</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateLog">11.3. Logging</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#logLevel">11.4. Log Level</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#accessLogFile">11.5. Log File</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">12. schema</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">12.1. Primary Key</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">12.2. Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">12.3. Enable Facets</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">12.4. Facet Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">12.5. Analyzer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
 </td></tr></tbody></table>
 
-<p><span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
-</div>
+</div> <!-- Table of content, id=content-->
+
+</div> <!-- Sidebar -->
+
 </td>
-<td style="width:86%">
+
+<td style="width:75%">
 </br>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div></p>
-<p></td></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#880000"><center>SRCH2 Engine Configuration</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 15, 2013</center></h6>
-<h3 id="sampleQueries">Sample queries:</h3>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table>
+
+</div>
+
+<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Engine Configuration</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
+<h3 id="overview">1. Overview:</h3>
 <blockquote>
-<p>The section describes how to configure the SRCH2 search engine.</p>
+<p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.</p>
+<p>The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
 </blockquote>
-<h3 id="foo">Foo</h3>
-<p>Foo content.</p>
-<h3 id="bar">Bar</h3>
-<p>Bar content.</p>
-<p>Have fun SRCHing!</p>
+<h3 id="configTag">2. Config Component:</h3>
+<blockquote>
+<p>The following is a breakdown of the subtags of the "config" component.</p>
+</blockquote>
+<h4 id="srch2Home">3. SRCH2 Home Directory, Required</h4>
+<pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
+</code></pre>
+
+<blockquote>
+<p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".</p>
+</blockquote>
+<h4 id="licenseFile">4. License Key File, Required</h4>
+<pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
+</code></pre>
+
+<blockquote>
+<p>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a <a href="http://srch2.com/try.php">form</a> to get a free trial key. <br></p>
+</blockquote>
+<h4 id="listeningHostname">5. Hostname and Port, Required</h4>
+<pre><code>&lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
+&lt;listeningPort&gt;8081&lt;/listeningPort&gt;
+</code></pre>
+
+<blockquote>
+<p>Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
+Specify as 0.0.0.0 if value is unknown.</p>
+</blockquote>
+<h4 id="dataDir">6. Data Directory, Required</h4>
+<pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
+</code></pre>
+
+<blockquote>
+<p>It specifies the path of a folder where the engine stores serialized index files. <br></p>
+</blockquote>
+<h4 id="data">7. Data</h4>
+<blockquote>
+<h4 id="dataSources">7.1. Data Sources, Optional</h4>
+</blockquote>
+<pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the type of data source to build the indexes from.</p>
+<blockquote>
+<pre><code>   1 - json data file. (Default)
+   2 - Mongo Db.
+</code></pre>
+</blockquote>
+</blockquote>
+<h4 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h4>
+</blockquote>
+<pre><code>&lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies a JSON data file to be loaded by the engine.<br></p>
+</blockquote>
+<h4 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h4>
+</blockquote>
+<pre><code>&lt;mongodb&gt;
+    &lt;host&gt;www.my-company.com&lt;/host&gt;
+    &lt;port&gt;1234&lt;/port&gt;
+    &lt;db&gt;database-name&lt;/db&gt;
+    &lt;collection&gt;collection-name&lt;/collection&gt;
+    &lt;listenerWaitTime&gt;3&lt;/listenerWaitTime&gt;
+&lt;/mongodb&gt; 
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies MongoDB instance information.
+Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). </p>
+</blockquote>
+</blockquote>
+<h4 id="indexConfig">8. Index Config:</h4>
+<blockquote>
+<p>This tag includes parameters related to customizing the indexes.</p>
+</blockquote>
+<pre><code>&lt;indexConfig&gt;
+...
+&lt;/indexConfig&gt;
+</code></pre>
+
+<blockquote>
+<h4 id="indexType">8.1. Index Type, Required</h4>
+</blockquote>
+<pre><code>&lt;indexType&gt;0&lt;/indexType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>0: Text Indexes; <br>
+1: Text + Geo Indexes, which support location-based search. <br></p>
+</blockquote>
+<h4 id="fieldBoost">8.2. Field Boosts, Optional</h4>
+</blockquote>
+<pre><code>&lt;fieldBoost&gt;&lt;/fieldBoost&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies boost values for the <a href="#fields">searchable attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three searchable attributes can be specified as: <br></p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;fieldBoost&gt;relevance^10 name^7 title&lt;/fieldBoost&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1.<br></p>
+</blockquote>
+<h4 id="recordBoostField">8.3. Record Boost Field, Optional</h4>
+</blockquote>
+<pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.</p>
+</blockquote>
+<h4 id="defaultQueryTermBoost">8.4. Default Query Term Boost, Optional</h4>
+</blockquote>
+<pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies a default <a href="configuration.html##Boosting%20a%20term">query term boost</a>. If the parameter is not given, the engine uses 1 as the default value.<br></p>
+</blockquote>
+</blockquote>
+<h4 id="queryConfig">9. Query parameters:</h4>
+<blockquote>
+<p>The following tag includes parameters related to queries.</p>
+</blockquote>
+<pre><code>&lt;query&gt;
+...
+&lt;/query&gt;
+</code></pre>
+
+<blockquote>
+<h4 id="rankingalgorithm">9.1. Ranking:</h4>
+<blockquote>
+<p>The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.</p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;rankingalgorithm&gt;
+&lt;recordScoreExpression&gt;idf_score*doc_boost&lt;/recordScoreExpression&gt;
+&lt;/rankingalgorithm&gt;
+</code></pre>
+
+<blockquote>
+<h4 id="queryTermSimilarityBoost">9.2. Term Similarity Boost, Optional</h4>
+</blockquote>
+<pre><code>&lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> section about how this parameter is used. Its default value is 0.5.</p>
+</blockquote>
+<h4 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h4>
+</blockquote>
+<pre><code>&lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
+</blockquote>
+<h4 id="queryTermLengthBoost">9.4. Query Term Length Boost, Optional</h4>
+</blockquote>
+<pre><code>&lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>Check <a href="ranking.html">the ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
+</blockquote>
+<h4 id="prefixMatchPenalty">9.5. Prefix Match Penalty, Optional</h4>
+</blockquote>
+<pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
+The value should be in the range of 0 to 1. its default value is 0.95. See <a href="ranking.html">the ranking section</a> <br></p>
+</blockquote>
+<h4 id="cacheSize">9.6. Cache Size, Optional</h4>
+</blockquote>
+<pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br></p>
+</blockquote>
+<h4 id="rows">9.7. Default value for number of returned results, Optional</h4>
+</blockquote>
+<pre><code>&lt;rows&gt;10&lt;/rows&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the number of results retrieved. Its defaults value is 10. <br></p>
+</blockquote>
+<h4 id="maxSearchThreads">9.8. Maximum number of search threads, Optional:</h4>
+</blockquote>
+<pre><code>&lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the number of threads that serve search requests. Its default value is 1. <br></p>
+</blockquote>
+<h4 id="fieldBasedSearch">9.9. Field Based Search Enabled, Optional</h4>
+</blockquote>
+<pre><code>&lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<p>It is a flag to toggle attribute-based search. An attribute-based search has conditions on which attributes a keyword needs to appear in.<br></p>
+<blockquote>
+<p>0 - Disabled <br>
+1 - Enabled <br>
+Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4 id="searcherType">9.10. Search Type, Optional</h4>
+</blockquote>
+<pre><code>&lt;searcherType&gt;0&lt;/searcherType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It sets the default search type of a query to the engine. <br></p>
+<blockquote>
+<p>0: finding the top relevant results; <br>
+1: finding all matching results. <br>
+Its default value is 0.<br></p>
+</blockquote>
+</blockquote>
+<h4 id="queryTermMatchType">9.11. Query Term Match Type, Optional</h4>
+</blockquote>
+<pre><code>&lt;queryTermMatchType&gt;1&lt;/queryTermMatchType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It modifies the default search behavior of the engine</p>
+<blockquote>
+<p>0: exact match search;<br>
+1: fuzzy match search.<br>
+Its default value is 0.</p>
+</blockquote>
+</blockquote>
+<h4 id="queryTermType">9.12. Query Term Type, Optional</h4>
+</blockquote>
+<pre><code>&lt;queryTermType&gt;0&lt;/queryTermType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It modifies the default treatment of search query's keyword:<br></p>
+<blockquote>
+<p>0: the term is treated as a prefix; <br>
+1: the term is treated as a complete term; <br>
+Its default value is 0.</p>
+</blockquote>
+</blockquote>
+<h4 id="queryResponseWriter">10. Response Writer:</h4>
+<blockquote>
+<p>This tag has parameters related to configuring the response of a query.</p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;queryResponseWriter&gt;
+...
+&lt;/queryResponseWriter&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<h4 id="ResponseContent">10.1. Response Content, Optional</h4>
+</blockquote>
+</blockquote>
+<pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<p>or</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>&lt;responseContent type=&quot;0&quot;&gt;&lt;/responseContent&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<p>It specifies the format of each json search response. You should set the type to one of the following options: <br></p>
+<blockquote>
+<p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
+1: format "rid,edit_dist,matching_prefix". <br>
+2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
+Its default value is 0. <br>
+It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
+<br></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4 id="updateHandler">11. Update Handler:</h4>
+<blockquote>
+<p>This tag includes tags related to configuring the engine to handle update requests.</p>
+</blockquote>
+<pre><code>&lt;updatehandler&gt;
+...
+&lt;/updatehandler&gt;
+</code></pre>
+
+<blockquote>
+<h4 id="maxDocs">11.1. Maximum Number of Documents, Required</h4>
+</blockquote>
+<pre><code>&lt;maxDocs&gt;15000000&lt;/maxDocs&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the maximum number of records indexable by the engine. Inserting more records than the specified here will cause the insertions to fail.</p>
+</blockquote>
+<h4 id="mergePolicy">11.2. Merge Policy, Required</h4>
+</blockquote>
+<pre><code>&lt;mergePolicy&gt;
+&lt;mergeEveryNSeconds&gt;10&lt;/mergeEveryNSeconds&gt;
+&lt;mergeEveryMWrites&gt;100&lt;/mergeEveryMWrites&gt;
+&lt;/mergePolicy&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>"mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.
+mergeEveryMWrites: <br>
+"mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
+</blockquote>
+<h4 id="updateLog">11.3. Logging:</h4>
+<blockquote>
+<p>The following tag includes parameters related to logging in SRCH2.</p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;updateLog&gt;
+...
+&lt;/updateLog&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<h4 id="logLevel">11.4. Log Level, Optional</h4>
+</blockquote>
+</blockquote>
+<pre><code>&lt;logLevel&gt;3&lt;/logLevel&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<p>The parameter decides the amount of feedback information the engine will report in its log. <br></p>
+<blockquote>
+<p>0: SILENT <br>
+1: ERROR <br>
+2: WARNING <br>
+3: INFO <br>
+Its default value is 3.</p>
+</blockquote>
+</blockquote>
+<h4 id="accessLogFile">11.5. Log File, Required:</h4>
+</blockquote>
+</blockquote>
+<pre><code>&lt;accessLogFile&gt;./data/faceted_search/log.txt&lt;/accessLogFile&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<p>It specifies the file to which the engine writes logging information.<br></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<h3 id="schemaTag">12. Schema Component:</h3>
+<blockquote>
+<p>The following sections explain each subtag under the <i>schema</i> component.</p>
+</blockquote>
+<pre><code>&lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
+...
+&lt;/schema&gt;
+</code></pre>
+
+<h4 id="uniqueKey">12.1. Primary Key:</h4>
+<blockquote>
+<p>Primary Key: Required</p>
+</blockquote>
+<pre><code>&lt;uniqueKey&gt;id&lt;/uniqueKey&gt;
+</code></pre>
+
+<blockquote>
+<p>It specifies the attribute used as the primary key to reference each record in the data. If a inserted record has a primary key conflicting with an existing record, the new record will be rejected by the engine. The attribute needs to be of text type.<br></p>
+</blockquote>
+<h4 id="fields">12.2. Fields, Required</h4>
+<pre><code>&lt;fields&gt;
+...
+&lt;/fields&gt;
+</code></pre>
+
+<blockquote>
+<p>This tag is a container of all field-related tags.</p>
+</blockquote>
+<pre><code>&lt;field name=&quot;category&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
+&lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
+&lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; indexed=&quot;false&quot;/&gt;
+&lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; indexed=&quot;false&quot;/&gt;
+&lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; indexed=&quot;false&quot;/&gt;
+</code></pre>
+
+<blockquote>
+<p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
+<p>"name" : the name of the field<br>
+"type" : the type of the field. Supported types are:<br></p>
+<blockquote>
+<ul>
+<li>Text<br></li>
+<li>integer<br></li>
+<li>float<br></li>
+<li>time<br></li>
+<li>location_longtitude (For Geo search)<br></li>
+<li>location_latitude (For Geo search)<br></li>
+</ul>
+<p>The engine supports the following formats of time and date: <br></p>
+<blockquote>
+<p>HH:MM:SS<br>
+MM/DD/YY<br>
+YY-MM-DD HH:MM::SS<br>
+YYMMDDHHMMSS<br>
+YYMMDDHHMM<br>
+YYMMDD<br></p>
+<p>The engine supports the following formats of time duration: <br>
+{An integer}{A date/time constant}, in which date and time constants are: <br>
+SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
+Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br></p>
+</blockquote>
+</blockquote>
+<p>Each field has certain properties:<br></p>
+<blockquote>
+<p>"required": The flag indicates whether this field can be empty or not. It is false by default.<br>
+"default" : It gives the default value of this field if the value is missing.<br>
+"searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
+"refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br>
+"indexed": If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
+Note:<br>
+- For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be float in the data file.<br>
+- The primary key is optional to be included here. It can also be searchable and/or refining.<br>
+- There must be at least one searchable field.</p>
+</blockquote>
+</blockquote>
+<h4 id="facetEnabled">12.3. Enable Facet:</h4>
+<blockquote>
+<p>Facet enabled flag <br>
+<strong>Optional</strong> <br>
+Toggles faceted search feature.<br></p>
+</blockquote>
+<pre><code>&lt;facetEnabled&gt;true&lt;/facetEnabled&gt;start
+</code></pre>
+
+<blockquote>
+<ul>
+<li>values are false (disabled) and true (enabled)<br></li>
+<li>By default it is disabled.<br></li>
+</ul>
+</blockquote>
+<h4 id="facetFields">12.4. Facet Fields:</h4>
+<blockquote>
+<p>This tag contains all facet-related tags.</p>
+</blockquote>
+<pre><code>&lt;facetFields&gt;
+...
+&lt;/facetFields&gt;
+</code></pre>
+
+<blockquote>
+<p>Facet fields: Required if facet is enabled <br></p>
+</blockquote>
+<pre><code>&lt;facetField name=&quot;likes&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;50&quot; facetGap=&quot;10&quot; /&gt;
+&lt;facetField name=&quot;model&quot; facetType=&quot;categorical&quot; /&gt;
+&lt;facetField name=&quot;price&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;100&quot; facetGap=&quot;10&quot; /&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<ul>
+<li>name: The name of the field used for this facet. It must correspond with a refining field specified in the <a href=#fields>field tag</a>. <br></li>
+<li>facetType: Facet type, which is either categorical or range. <br></li>
+<li>facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
+<li>facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
+<li>facetGap: The increment amount used for making demarking a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br><blockquote>
+<p>Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br></p>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</blockquote>
+<h4 id="analyzer">12.5. Analyzer:</h4>
+<blockquote>
+<p>It specifies the analyzer used by the engine. <br></p>
+</blockquote>
+<pre><code>&lt;types&gt;
+&lt;fieldType name=&quot;text_en&quot;&gt;
+&lt;analyzer&gt;
+...
+&lt;/analyzer&gt;
+&lt;/fieldType&gt;
+&lt;/types&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<h4 id="PorterStemFilter">12.5.1 Stemmer, Optional</h4>
+<p>The engine supports <a href="http://tartarus.org/martin/PorterStemmer/">Porter Stemming</a>. It uses a dictionary file with keywords that should be ignored by the stemmer. If no file if provided, the stemmer is disabled.</p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;stemmer-dictionary.txt&quot; /&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<h4 id="StopFilter">12.5.2 Stop Words, Optional</h4>
+<p>It specifies a file of stop words that can be ignored by the engine. Providing "" for "words" option can disable this filter.</p>
+</blockquote>
+</blockquote>
+<pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
+</code></pre>
+
+<p><hr/>
+Have fun SRCHing!</p>
 <style type="text/css">
+#sidebar{
+    position:fixed;
+    width:100%;
+        left:10px;
+    top:20px;
+    padding: 5.5px;
+    font-size: 13px;
+    //line-height: 20px;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align:center;
+}
 pre{
     margin: auto;
     width:80%;
@@ -57,25 +687,7 @@ pre{
     overflow:auto;
     max-height:600px;
 }
-#content{
-    position:fixed;
-    left:10px;
-    top:20px;
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-}
+
 html{
     min-width:1100px;
 }
@@ -112,5 +724,29 @@ html{
 }
 
 </style>
+
+<script>
+function alertSize() {
+  var myWidth = 0, myHeight = 0;
+  if( typeof( window.innerWidth ) == 'number' ) {
+    //Non-IE
+    myWidth = window.innerWidth;
+    myHeight = window.innerHeight;
+  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+    //IE 6+ in 'standards compliant mode'
+    myWidth = document.documentElement.clientWidth;
+    myHeight = document.documentElement.clientHeight;
+  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+    //IE 4 compatible
+    myWidth = document.body.clientWidth;
+    myHeight = document.body.clientHeight;
+  }
+  //window.alert( 'Width = ' + myWidth );
+  //window.alert( 'Height = ' + myHeight );
+  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
+  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
+}
+alertSize();
+</script>
 </body>
 </html>
