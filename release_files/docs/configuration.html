@@ -18,9 +18,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">RESTful API</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query Syntax</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query Syntax</a><br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query Syntax</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Search Query</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Insert/Delete/Update Query</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Control Query</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="">MongoDB Search</a></br><br>
@@ -37,7 +37,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">4. License File</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">5. Hostname & Port</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">6. Data Directory</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">7. Data Source Information</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSources">7.1. Data Source Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7.2. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">7.3. MongoDB</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">8. Index Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">8.1. Index Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">8.2. Field Boosts</a></br><br>
@@ -57,8 +60,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermMatchType">9.11. Term Match Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">9.12. Query Term Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseFormat">10.1. Response Format</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.2. Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">11.1. Max Documents</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">11.2. Merge Policy</a></br><br>
@@ -90,16 +92,16 @@
 
 </div>
 
-<h1 id="doc" style="color:#880000"><center>SRCH2 Engine Configuration</center></h1>
+<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Engine Configuration</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 18, 2013</center></h6>
 <h3 id="overview">1. Overview:</h3>
 <blockquote>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.</p>
-<p>The configuration file contains two top-level tags: <i>config</i> and <i>schema</i>. The children of the "config" (e.g., "srch2home") tune the engine, while the children of the 'schema' tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
+<p>The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
 </blockquote>
 <h3 id="configTag">2. Config Component:</h3>
 <blockquote>
-<p>The following is a breakdown of the subtags of the <i>config</i> component.</p>
+<p>The following is a breakdown of the subtags of the "config" component.</p>
 </blockquote>
 <h4 id="srch2Home">3. SRCH2 Home Directory, Required</h4>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
@@ -121,21 +123,57 @@
 </code></pre>
 
 <blockquote>
-<p>They specify the hostname and port number of the server. Make sure the port is open to outside requests.<br></p>
+<p>Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
+Specify as 0.0.0.0 if value is unknown.</p>
 </blockquote>
 <h4 id="dataDir">6. Data Directory, Required</h4>
-<pre><code>&lt;dataDir&gt;/path/to/data.json&lt;/dataDir&gt;
+<pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
 
 <blockquote>
 <p>It specifies the path of a folder where the engine stores serialized index files. <br></p>
 </blockquote>
-<h4 id="dataFile">7. Data File, Required if DATA_SOURCE = 2 (TODO):</h4>
+<h4 id="data">7. Data</h4>
+<blockquote>
+<h4 id="dataSources">7.1. Data Sources, Optional</h4>
+</blockquote>
+<pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies the type of data source to build the indexes from.</p>
+<blockquote>
+<pre><code>   1 - json data file. (Default)
+   2 - Mongo Db.
+</code></pre>
+</blockquote>
+</blockquote>
+<h4 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h4>
+</blockquote>
 <pre><code>&lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
 </code></pre>
 
 <blockquote>
+<blockquote>
 <p>It specifies a JSON data file to be loaded by the engine.<br></p>
+</blockquote>
+<h4 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h4>
+</blockquote>
+<pre><code>&lt;mongodb&gt;
+    &lt;host&gt;www.my-company.com&lt;/host&gt;
+    &lt;port&gt;1234&lt;/port&gt;
+    &lt;db&gt;database-name&lt;/db&gt;
+    &lt;collection&gt;collection-name&lt;/collection&gt;
+    &lt;listenerWaitTime&gt;3&lt;/listenerWaitTime&gt;
+&lt;/mongodb&gt; 
+</code></pre>
+
+<blockquote>
+<blockquote>
+<p>It specifies MongoDB instance information.
+Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). </p>
+</blockquote>
 </blockquote>
 <h4 id="indexConfig">8. Index Config:</h4>
 <blockquote>
@@ -164,7 +202,7 @@
 
 <blockquote>
 <blockquote>
-<p>It specifies boost values for the searchable attributes. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 100. (TODO: WHAT'S THE DEFAULT VALUE?) We specify the boost values as comma-separated entries. For example, the boost values for three searchable attributes can be specified as: <br></p>
+<p>It specifies boost values for the <a href="#fields">searchable attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three searchable attributes can be specified as: <br></p>
 </blockquote>
 </blockquote>
 <pre><code>&lt;fieldBoost&gt;relevance^10 name^7 title&lt;/fieldBoost&gt;
@@ -172,9 +210,7 @@
 
 <blockquote>
 <blockquote>
-<blockquote>
-<p>Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1. (TODO: WHAT'S THE DEFAULT VALUE?)<br></p>
-</blockquote>
+<p>Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1.<br></p>
 </blockquote>
 <h4 id="recordBoostField">8.3. Record Boost Field, Optional</h4>
 </blockquote>
@@ -232,7 +268,7 @@
 
 <blockquote>
 <blockquote>
-<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. (TODO: CLARIFY) Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
+<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
 </blockquote>
 <h4 id="queryTermLengthBoost">9.4. Query Term Length Boost, Optional</h4>
 </blockquote>
@@ -241,7 +277,7 @@
 
 <blockquote>
 <blockquote>
-<p>Check the ranking section to see how this value is used in the ranking function. Its default value is 0.5. (TODO) <br></p>
+<p>Check <a href="ranking.html">the ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
 </blockquote>
 <h4 id="prefixMatchPenalty">9.5. Prefix Match Penalty, Optional</h4>
 </blockquote>
@@ -251,7 +287,7 @@
 <blockquote>
 <blockquote>
 <p>It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
-The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <br></p>
+The value should be in the range of 0 to 1. its default value is 0.95. See <a href="ranking.html">the ranking section</a> <br></p>
 </blockquote>
 <h4 id="cacheSize">9.6. Cache Size, Optional</h4>
 </blockquote>
@@ -260,7 +296,7 @@ The value should be in the range of 0 to 1. its default value is 0.95. (TODO) <b
 
 <blockquote>
 <blockquote>
-<p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB]. Its default value is 50MB. (TODO) <br></p>
+<p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br></p>
 </blockquote>
 <h4 id="rows">9.7. Default value for number of returned results, Optional</h4>
 </blockquote>
@@ -331,10 +367,10 @@ Its default value is 0.</p>
 
 <blockquote>
 <blockquote>
-<p>It modifies the default treatment of search query's last keyword (TODO):<br></p>
+<p>It modifies the default treatment of search query's keyword:<br></p>
 <blockquote>
-<p>0: the trailing term is treated as a prefix; <br>
-1: the trailing term is treated as a complete term; <br>
+<p>0: the term is treated as a prefix; <br>
+1: the term is treated as a complete term; <br>
 Its default value is 0.</p>
 </blockquote>
 </blockquote>
@@ -350,23 +386,7 @@ Its default value is 0.</p>
 
 <blockquote>
 <blockquote>
-<h4 id="ResponseFormat">10.1. Response Format, Optional</h4>
-</blockquote>
-</blockquote>
-<pre><code>&lt;responseFormat&gt;0&lt;/responseFormat&gt;
-</code></pre>
-
-<blockquote>
-<blockquote>
-<blockquote>
-<p>It specifies the format of query results:</p>
-<blockquote>
-<p>0: JSON <br>
-1: JSONP <br>
-Its default value is 0. (TODO) <br></p>
-</blockquote>
-</blockquote>
-<h4 id="ResponseContent">10.2. Response Content, Optional</h4>
+<h4 id="ResponseContent">10.1. Response Content, Optional</h4>
 </blockquote>
 </blockquote>
 <pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
@@ -385,14 +405,14 @@ Its default value is 0. (TODO) <br></p>
 <blockquote>
 <blockquote>
 <blockquote>
-<p>It specifies the format of each json search response. You should set the type to one of the following options: (TODO) <br></p>
+<p>It specifies the format of each json search response. You should set the type to one of the following options: <br></p>
 <blockquote>
 <p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 1: format "rid,edit_dist,matching_prefix". <br>
 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
 Its default value is 0. <br>
-It is REQUIRED to set fields_to_return if search-response-format=2 <br>
-These are attributes returned to the user. (TODO)<br></p>
+It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
+<br></p>
 </blockquote>
 </blockquote>
 </blockquote>
@@ -426,7 +446,7 @@ These are attributes returned to the user. (TODO)<br></p>
 
 <blockquote>
 <blockquote>
-<p>"mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Its minimum value is 10 (seconds).(TODO) Note that decreasing this number will increase latency in the engine's response time.
+<p>"mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.
 mergeEveryMWrites: <br>
 "mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
 </blockquote>
@@ -500,7 +520,6 @@ Its default value is 3.</p>
 
 <blockquote>
 <p>This tag is a container of all field-related tags.</p>
-<p>Field: at least one field is searchable (TODO)</p>
 </blockquote>
 <pre><code>&lt;field name=&quot;category&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
 &lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
@@ -533,7 +552,7 @@ YYMMDD<br></p>
 <p>The engine supports the following formats of time duration: <br>
 {An integer}{A date/time constant}, in which date and time constants are: <br>
 SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
-Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO SPACE?)<br></p>
+Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br></p>
 </blockquote>
 </blockquote>
 <p>Each field has certain properties:<br></p>
@@ -542,10 +561,11 @@ Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks). (TODO: NO S
 "default" : It gives the default value of this field if the value is missing.<br>
 "searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
 "refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br>
-"indexed": If this flag is true, then the engine will treat it as both a searchable and refining attribute. <br>
+"indexed": If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
 Note:<br>
 - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be float in the data file.<br>
-- The primary key is optional to be included here. It can also be searchable and/or refining.<br></p>
+- The primary key is optional to be included here. It can also be searchable and/or refining.<br>
+- There must be at least one searchable field.</p>
 </blockquote>
 </blockquote>
 <h4 id="facetEnabled">12.3. Enable Facet:</h4>
@@ -619,7 +639,7 @@ Toggles faceted search feature.<br></p>
 <blockquote>
 <blockquote>
 <h4 id="StopFilter">12.5.2 Stop Words, Optional</h4>
-<p>It specifies a file of stop words that can be ignored by the engine. (TODO: words -&gt; stopwords?) Providing an empty file name can disable this filter.</p>
+<p>It specifies a file of stop words that can be ignored by the engine. Providing "" for "words" option can disable this filter.</p>
 </blockquote>
 </blockquote>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
