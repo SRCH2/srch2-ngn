@@ -11,8 +11,8 @@ srch2service = {
         _srch2_this.bind();
         _srch2_this.addScriptTag("");
     },
-    clean : function(){
-        document.getElementById(_srch2_this.config.resultContainer).innerHTML="";
+    clean : function() {
+        document.getElementById(_srch2_this.config.resultContainer).innerHTML = "";
     },
     getDefaultConfig : function() {
         /*
@@ -22,6 +22,7 @@ srch2service = {
             enableLog : true, // true / false
             logType : "console", // console or alert. Note: console.log might not work on IE.
             inputElementId : "input",
+            getQueryString : _srch2_this.getQueryString,
             debug : true, // true /false
             evenNameToBindInputElement : "keyup",
             searchType : "getAll",
@@ -83,7 +84,7 @@ srch2service = {
                 return;
             }
             _srch2_this.log("pressed", "debug");
-            var query = _srch2_this.getQuery();
+            var query = _srch2_this.config.getQueryString();
             _srch2_this.jsonpCall(query);
         });
     },
@@ -167,13 +168,6 @@ srch2service = {
             var output = "";
             var results = responseText.results;
             output += "<table width='450px'>";
-            output += "<tr>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>  </td>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Title' + "</td>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Year' + "</td>";
-            output += "</tr>";
             _srch2_this.queryKeywords = responseText.query_keywords;
             for (var i = 0; i < results.length; i++) {
                 output += "<tr class='result_row'>";
@@ -249,8 +243,7 @@ srch2service = {
                     returnObj.class = 'fuzzy_prefix';
                 }
             }
-            return returnObj;
-            facet_remove_filter
+            return returnObj; facet_remove_filter
         }
     },
     addHighliting : function(prefix, input) {
@@ -284,7 +277,7 @@ srch2service = {
         }
         return input;
     },
-    getQuery : function() {
+    getQueryString : function() {
         // 1. generate the query
         var query = '';
         if (_srch2_this.config.searchType.length > 0) {
