@@ -963,7 +963,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
                         query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
                                 queryTerms->at(j)->getKeyword()->size(),
                                 isPrefixMatch,
-                                query->getPrefixMatchPenalty());
+                                query->getPrefixMatchPenalty() , queryTerms->at(j)->getSimilarityBoost() );
                     found = true;
                     break;
                 }

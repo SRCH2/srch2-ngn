@@ -224,7 +224,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     float score3 = pingToGetTopScore(analyzer, indexSearcher, "faugen");
     cout << "Score: " << score3 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score3 > 60.3387-0.1 && score3 < 60.3387+0.1);
+    ASSERT(score3 > 30.1302-0.1 && score3 < 30.1302+0.1);
 
     // test 4: fuzzy search, prefix match, single term
     //         query: "fauge"
@@ -239,7 +239,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     float score4 = pingToGetTopScore(analyzer, indexSearcher, "fauge");
     cout << "Score: " << score4 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score4 > 55.0289-0.1 && score4 < 55.0289+0.1);
+    ASSERT(score4 > 27.4787-0.1 && score4 < 27.4787+0.1);
 
     // test 5: fuzzy search, prefix match, double terms
     //         query: "fauge+medican"
@@ -248,7 +248,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                             = (1 + 2/3) * (1+ln(1000/(2+1)))
     //                             = 11.34857165
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
     //                                          = 1 - 1/5 = 4/5
     //                   term1_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
     //                                     = 55.02893070786
@@ -257,7 +257,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                             = (1 + 1/3) * (1+ln(1000/(118+1))
     //                             = 4.1715090478
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
     //                                          = 1 - 1/7 = 6/7
     //                   term2_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
     //                                     = 21.67236384
@@ -266,7 +266,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                               = 76.701294554
     float score5 = pingToGetTopScore(analyzer, indexSearcher, "fauge+medican");
     cout << "Score: " << score5 << endl;
-    ASSERT(score5 > 76.7013-0.1 && score5 < 76.7013+0.1);
+    ASSERT(score5 > 38.3062-0.1 && score5 < 38.3062+0.1);
 
 }
 
@@ -308,30 +308,30 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //         query: "faugen"
     //         function: doc_boost = 6.38022916069
     //                   doc_length = 6
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/6 = 5/6
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/6 * 0.5 = 5/6*0.5
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity
-    //                               = 6.52308630355 * 5/6
-    //                               = 5.43590525296
+    //                               = 6.52308630355 * 5/6 * 0.5
+    //                               = 5.43590525296 * 0.5 = 2.7164
     float score3 = pingToGetTopScore(analyzer, indexSearcher, "faugen");
     cout << "Score: " << score3 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score3 > 5.4359-0.1 && score3 < 5.4360+0.1);
+    ASSERT(score3 > 2.7164-0.1 && score3 < 2.7164+0.1);
 
     // test 4: fuzzy search, prefix match, single term
     //         query: "fauge"
     //         function: doc_boost = 6.38022916069
     //                   doc_length = 6
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 * 0.5 = 4/5 * 0.5
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
-    //                               = 6.52308630355 * 0.95 * 4/5
-    //                               = 4.9575455907
+    //                               = 6.52308630355 * 0.95 * 4/5 * 0.5
+    //                               = 4.9575455907 * 0.5 = 2.4774
     float score4 = pingToGetTopScore(analyzer, indexSearcher, "fauge");
     cout << "Score: " << score4 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score4 > 4.9575-0.1 && score4 < 4.9576+0.1);
+    ASSERT(score4 > 2.4774-0.1 && score4 < 2.4774+0.1);
 
     // test 5: fuzzy search, prefix match, double terms
     //         query: "fauge+medican"
@@ -339,25 +339,25 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //                   doc_length = 6
     //                   Term1:
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 *0.5= 4/5 * 0.5
     //                   term1_total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = 6.52308630355 * 4/5 * 0.95
-    //                                     = 4.9575455907
+    //                                     = 6.52308630355 * 4/5 * 0.95 * 0.5
+    //                                     = 4.9575455907 * 0.5
     //                   Term2:
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/7 = 6/7
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/7 = 6/7 * 0.5
     //                   term2_total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = 6.52308630355 * 6/7 * 0.95
-    //                                     = 5.31165599003
+    //                                     = 6.52308630355 * 6/7 * 0.95 * 0.5
+    //                                     = 5.31165599003 * 0.5
     //
     //                   total_score = term1_total_score + term2_total_score
     //                               = 10.26920158073
     float score5 = pingToGetTopScore(analyzer, indexSearcher, "fauge+medican");
     cout << "Score: " << score5 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
-    ASSERT(score5 > 10.2692-0.1 && score5 < 10.2693+0.1);
+    ASSERT(score5 > 5.1318-0.1 && score5 < 5.1318+0.1);
 
 }
 
@@ -422,15 +422,15 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //         function: idf_score = sumOfFieldBoost
     //                             = (1 + 2/3)
     //                             = 5/3
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/6 = 5/6
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/6 = 5/6 * 0.5
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * geo_score
-    //                               = 5/3 * 6.38022916069 * 5/6 * 0.86168053715
-    //                               = 7.63572123656
+    //                               = 5/3 * 6.38022916069 * 5/6 * 0.86168053715 * 0.5
+    //                               = 7.63572123656 * 0.5
     float score3 = pingToGetTopScoreGeo(analyzer, indexSearcher, "faugen",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score3 << endl;
-    ASSERT(score3 > 7.6357-0.1 && score3 < 7.6358+0.1);
+    ASSERT(score3 > 3.8147-0.1 && score3 < 3.8147+0.1);
 
     // test 4: fuzzy search, prefix match, single term
     //         query: "fauge"
@@ -438,15 +438,15 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                             = (1 + 2/3)
     //                             = 5/3
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 *0.5= 4/5 * 0.5
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty * geo_score
-    //                               = 5/3 * 6.38022916069 * 4/5 * 0.95 * 0.86168053715
-    //                               = 6.96377776775
+    //                               = 5/3 * 6.38022916069 * 4/5 * 0.95 * 0.86168053715 * 0.5
+    //                               = 6.96377776775 * 0.5
     float score4 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score4 << endl;
-    ASSERT(score4 > 6.9637-0.1 && score4 < 6.9638+0.1);
+    ASSERT(score4 > 3.4790-0.1 && score4 < 3.4790+0.1);
 
     // test 5: fuzzy search, prefix match, double terms
     //         query: "fauge+medican"
@@ -455,8 +455,8 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                             = (1 + 2/3)
     //                             = 5/3
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 * 0.5 = 4/5 * 0.5
     //                   term1_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
     //                                     = 5/3 * 6.38022916069 * 4/5 * 0.95
     //                                     = 8.08162360354
@@ -465,8 +465,8 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                             = (1 + 1/3)
     //                             = 4/3
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/7 = 6/7
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/7 = 6/7 * 0.5
     //                   term2_total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
     //                                     = 4/3 * 6.38022916069 * 6/7 * 0.95
     //                                     = 6.92710594589
@@ -477,7 +477,7 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     float score5 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge+medican",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score5 << endl;
-    ASSERT(score5 > 12.9327-0.1 && score5 < 12.9328+0.1);
+    ASSERT(score5 > 6.4610-0.1 && score5 < 6.4610+0.1);
 
 }
 
@@ -539,7 +539,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //         query: "faugen"
     //         function: doc_boost = 6.38022916069
     //                   doc_length = 6
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
     //                                          = 1 - 1/6 = 5/6
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * geo_score
     //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 5/6 * 0.86168053715
@@ -547,22 +547,22 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     float score3 = pingToGetTopScoreGeo(analyzer, indexSearcher, "faugen",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score3 << endl;
-    ASSERT(score3 > 4.6840-0.1 && score3 < 4.6841+0.1);
+    ASSERT(score3 > 2.3407-0.1 && score3 < 2.3407+0.1);
 
     // test 4: fuzzy search, prefix match, single term
     //         query: "fauge"
     //         function: doc_boost = 6.38022916069
     //                   doc_length = 6
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 *0.5= 4/5 * 0.5
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty * geo_score
-    //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 4/5 * 0.95 * 0.86168053715
-    //                               = 4.27182054753
+    //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 4/5 * 0.95 * 0.86168053715 * 0.5
+    //                               = 4.27182054753 *0.5
     float score4 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score4 << endl;
-    ASSERT(score4 > 4.2718-0.1 && score4 < 4.2719+0.1);
+    ASSERT(score4 > 2.1347-0.1 && score4 < 2.1347+0.1);
 
     // test 5: fuzzy search, prefix match, double terms
     //         query: "fauge+medican"
@@ -570,18 +570,18 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   doc_length = 6
     //                   Term1:
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/5 = 4/5
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/5 *0.5 = 4/5 *0.5
     //                   term1_total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = (6.38022916069 + ( 1/ (6+1) ) ) * 4/5 * 0.95
-    //                                     = 4.9575455907
+    //                                     = (6.38022916069 + ( 1/ (6+1) ) ) * 4/5 * 0.95 *0.5
+    //                                     = 4.9575455907 *0.5
     //                   Term2:
     //                   prefixMatchPenalty = 0.95
-    //                   NormalizedEdSimilarity = 1 - ed/query_term_length
-    //                                          = 1 - 1/7 = 6/7
+    //                   NormalizedEdSimilarity = (1 - ed/query_term_length ) * similarityBoost^ed
+    //                                          = 1 - 1/7 = 6/7 * 0.5
     //                   term2_total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
-    //                                     = (6.38022916069 + ( 1/ (6+1) ) ) * 6/7 * 0.95
-    //                                     = 5.31165599003
+    //                                     = (6.38022916069 + ( 1/ (6+1) ) ) * 6/7 * 0.95 * 0.5
+    //                                     = 5.31165599003 *0.5
     //
     //                   total_score = (term1_total_score + term2_total_score) * geo_score
     //                               = (4.9575455907 + 5.31165599003) * 0.86168053715
@@ -589,7 +589,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     float score5 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge+medican",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score5 << endl;
-    ASSERT(score5 > 8.8487-0.1 && score5 < 8.8488+0.1);
+    ASSERT(score5 > 4.4219-0.1 && score5 < 4.4219+0.1);
 
 }
 
