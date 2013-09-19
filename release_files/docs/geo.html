@@ -2,12 +2,13 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>geo</title>
 </head>
 <body>
-<table ><tr>
-<td>
+<table style="width:100%;table-layout:fixed" ><tr>
+
+<td id="sideBarTd" style="width:25%"> 
 
 <div id="sidebar"> <!-- Sidebar -->
 
@@ -23,7 +24,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
 <hr/>
 
@@ -42,7 +43,7 @@
 
 </td>
 
-<td style="width:75%">
+<td id="docBody" style="width:70%">
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
@@ -53,7 +54,7 @@
 
 <h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Geo Search</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
-<p>This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco. The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.</p>
+<p>This documention discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitidue and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.</p>
 <h3 id="geo-engine-config">1. Geo Engine Configuration</h3>
 <p>The engine has two indexing options:</p>
 <ul>
@@ -61,7 +62,7 @@
 <p>Option 1: Keyword Search;</p>
 </li>
 <li>
-<p>Option 2: Keyword + Geo Search, which can do location-based search.</p>
+<p>Option 2: Keyword + Geo Search, whih can do location-based search.</p>
 </li>
 </ul>
 <p>We need to choose one option before starting the engine, since the engine will index the data differently depending on the option.</p>
@@ -69,12 +70,12 @@
 <pre><code>&lt;indexType&gt;1&lt;/indexType&gt;
 </code></pre>
 
-<p>The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longitude", respectively. For example:</p>
+<p>The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longtitude", respectively. For example:</p>
 <pre><code>&lt;field name=&quot;lat&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;location_latitude&quot;/&gt;
-&lt;field name=&quot;lng&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;location_longitude&quot;/&gt;
+&lt;field name=&quot;lng&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;location_longtitude&quot;/&gt;
 </code></pre>
 
-<p>Each record should have two values for these two types, and they should be float numbers. For example:</p>
+<p>Each record should have two values for these two types, and they should be float numbers.  For example:</p>
 <pre><code>{&quot;id&quot; : &quot;1234&quot;, &quot;name&quot; : &quot;Toy Story&quot;, &quot;category&quot; : &quot;shop&quot;, &quot;lat&quot; : 43.22, &quot;lng&quot;: -80.22}
 </code></pre>
 
@@ -123,107 +124,13 @@
 <p>The engine ranks each result using a score that combines its textual similarity with the query keywords and its geo distance to the location specified in the query.</p>
 <p><hr/>
 Have fun SRCHing!</p>
-<style type="text/css">
-#sidebar{
-position:fixed;
-width:20%;
-left:10px;
-top:20px;
-padding: 5.5px;
-font-size: 13px;
-//line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-text-align:center;
-}
-pre{
-margin: auto;
-width:80%;
-display: block;
-padding: 9.5px;
-font-size: 13px;
-line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-overflow:auto;
-max-height:600px;
-}
-
-html{
-min-width:1100px;
-}
-#indexTable{
-padding: 5.5px;
-font-size: 13px;
-//line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-text-align:center;
-display: inline-block
-}
-#bigBox{
-padding: 10px;
-font-size: 13px;
-white-space: pre;
-white-space: pre-wrap;
-background-color: #f5f5f5;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.15);
--webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-//text-align:center;
-display: inline-block
-}
-
-</style>
+<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
+<script type="text/javascript" src="setSizes.js"></script>
 
 <script>
-function alertSize() {
-var myWidth = 0, myHeight = 0;
-if( typeof( window.innerWidth ) == 'number' ) {
-//Non-IE
-myWidth = window.innerWidth;
-myHeight = window.innerHeight;
-} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-//IE 6+ in 'standards compliant mode'
-myWidth = document.documentElement.clientWidth;
-myHeight = document.documentElement.clientHeight;
-} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
-//IE 4 compatible
-myWidth = document.body.clientWidth;
-myHeight = document.body.clientHeight;
-}
-//window.alert( 'Width = ' + myWidth );
-//window.alert( 'Height = ' + myHeight );
-var linkpoolHeight = document.getElementById('linkpool').clientHeight;
-document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
-}
-alertSize();
+
+setSizes();
+window.onresize = setSizes
 </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 
-<table ><tr>
+<table style="width:100%;table-layout:fixed" ><tr>
 	
-<td > 
+<td id="sideBarTd" style="width:25%"> 
 
 <div id="sidebar"> <!-- Sidebar -->
 
@@ -13,9 +13,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geoSearch.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodbtutorial.html">MongoDB Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
@@ -37,7 +37,7 @@
 
 </td>
 
-<td style="width:75%">
+<td id="docBody" style="width:70%">
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
@@ -224,107 +224,12 @@ $ curl -i "http://localhost:8081/search?q=hosptal:title,description&start=0&limi
 
 
 
-
-<style type="text/css">
-#sidebar{
-    position:fixed;
-    width:20%;
-    	left:10px;
-	top:20px;
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-}
-pre{
-	margin: auto;
-    width:80%;
-    display: block;
-    padding: 9.5px;
-    font-size: 13px;
-    line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    overflow:auto;
-    max-height:600px;
-}
-
-html{
-	min-width:1100px;
-}
-#indexTable{
-    padding: 5.5px;
-    font-size: 13px;
-    //line-height: 20px;
-    word-break: break-all;
-    word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    text-align:center;
-    display: inline-block
-}
-#bigBox{
-    padding: 10px;
-    font-size: 13px;
-    white-space: pre;
-    white-space: pre-wrap;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    //text-align:center;
-    display: inline-block
-}
-
-</style>
+<link rel="stylesheet" type="text/css" href="documentation.css">
 
 
+<script type="text/javascript" src="setSizes.js"></script>
 <script>
-function alertSize() {
-  var myWidth = 0, myHeight = 0;
-  if( typeof( window.innerWidth ) == 'number' ) {
-    //Non-IE
-    myWidth = window.innerWidth;
-    myHeight = window.innerHeight;
-  } else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-    //IE 6+ in 'standards compliant mode'
-    myWidth = document.documentElement.clientWidth;
-    myHeight = document.documentElement.clientHeight;
-  } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
-    //IE 4 compatible
-    myWidth = document.body.clientWidth;
-    myHeight = document.body.clientHeight;
-  }
-  //window.alert( 'Width = ' + myWidth );
-  //window.alert( 'Height = ' + myHeight );
-  var linkpoolHeight = document.getElementById('linkpool').clientHeight;
-  document.getElementById('content').setAttribute('style' , 'height:'+(myHeight-linkpoolHeight-100)+'px;overflow:auto');
-}
-alertSize();
+
+setSizes();
+window.onresize = setSizes
 </script>
