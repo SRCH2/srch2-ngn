@@ -77,15 +77,18 @@
 </td>
 
 <td id="docBody" style="width:70%">
-</br>
+<br/>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
+<br/>
 #<center>SRCH2 Documentation: Engine Configuration</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
 ###1. Overview:###{id="overview"}
 >The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.
+
 
 >The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
 
