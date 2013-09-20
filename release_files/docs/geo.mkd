@@ -46,7 +46,7 @@
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
-This documention discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitidue and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
+This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
 
 ###1. Geo Engine Configuration{id="geo-engine-config"}
 
@@ -54,7 +54,7 @@ The engine has two indexing options:
 
 * Option 1: Keyword Search;
 
-* Option 2: Keyword + Geo Search, whih can do location-based search.
+* Option 2: Keyword + Geo Search, which can do location-based search.
 
 We need to choose one option before starting the engine, since the engine will index the data differently depending on the option.
 
@@ -64,7 +64,7 @@ To use geo indexing, use the following parameter in the configuration:
 <indexType>1</indexType>
 ```
 
-The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longtitude", respectively. For example:
+The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longitude", respectively. For example:
 
 ```
 <field name="lat" default="0" required="true" type="location_latitude"/>

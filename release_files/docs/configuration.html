@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>configuration</title>
 </head>
 <body>
@@ -94,14 +94,14 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
 <h3 id="overview">1. Overview:</h3>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.</p>
-<p>The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
+<p>The configuration file contains two top-level tags: “config” and “schema”. The children of the “config” (e.g., “srch2home”) tune the engine, while the children of the “schema” tag (e.g., “fields”) describe the data. Each parameter can have one of the following two labels: “Required” means this tag has to be present in the configuration file, and “Optional” means this tag does not need to be present.</p>
 <h3 id="configTag">2. Config Component:</h3>
-<p>The following is a breakdown of the subtags of the "config" component.</p>
+<p>The following is a breakdown of the subtags of the “config” component.</p>
 <h4 id="srch2Home">3. SRCH2 Home Directory, Required</h4>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
 
-<p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".</p>
+<p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at “/usr/joe/srch2/data/sample-data.json”, and the SRCH2 home directory is set to “/usr/joe/srch2”, then the configuration file should reference the data file’s location as “data/sample-data.json”.</p>
 <h4 id="licenseFile">4. License Key File, Required</h4>
 <pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
@@ -130,12 +130,12 @@ Specify as 0.0.0.0 if value is unknown.</p>
    2 - Mongo Db.
 </code></pre>
 </blockquote>
-<h4 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h4>
+<h4 id="dataFile">7.2. Data File, Required if “dataSourceType” is 1</h4>
 <pre><code>&lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
 </code></pre>
 
 <p>It specifies a JSON data file to be loaded by the engine.<br></p>
-<h4 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h4>
+<h4 id="mongodb">7.3. MongoDB, Required if “dataSourceType” is 2</h4>
 <pre><code>&lt;mongodb&gt;
     &lt;host&gt;www.my-company.com&lt;/host&gt;
     &lt;port&gt;1234&lt;/port&gt;
@@ -177,12 +177,12 @@ Specify as 0.0.0.0 if value is unknown.</p>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
-<p>It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.</p>
+<p>It specifies an attribute whose value is used as the boost value of a record’s score. The attribute needs to be of float type.</p>
 <h4 id="defaultQueryTermBoost">8.4. Default Query Term Boost, Optional</h4>
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
-<p>It specifies a default <a href="configuration.html##Boosting%20a%20term">query term boost</a>. If the parameter is not given, the engine uses 1 as the default value.<br></p>
+<p>It specifies a default <a href="configuration.html##Boosting a term">query term boost</a>. If the parameter is not given, the engine uses 1 as the default value.<br></p>
 <h4 id="queryConfig">9. Query parameters:</h4>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
@@ -201,17 +201,17 @@ Specify as 0.0.0.0 if value is unknown.</p>
 <pre><code>&lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
 </code></pre>
 
-<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> section about how this parameter is used. Its default value is 0.5.</p>
+<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy Searches">fuzzy matched keywords</a> section about how this parameter is used. Its default value is 0.5.</p>
 <h4 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h4>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
-<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
+<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
 <h4 id="supportSwapInEditDistance">9.4. Support Swap in Edit-distance operations, Optional</h4>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
-<p>It specifies we 'swap' should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.</p>
+<p>It specifies we ‘swap’ should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.</p>
 <h4 id="queryTermLengthBoost">9.5. Query Term Length Boost, Optional</h4>
 <pre><code>&lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
@@ -272,7 +272,7 @@ Its default value is 0.</p>
 <pre><code>&lt;queryTermType&gt;0&lt;/queryTermType&gt;
 </code></pre>
 
-<p>It modifies the default treatment of search query's keyword:<br></p>
+<p>It modifies the default treatment of search query’s keyword:<br></p>
 <blockquote>
 <p>0: the term is treated as a prefix; <br>
 1: the term is treated as a complete term; <br>
@@ -297,9 +297,9 @@ Its default value is 0.</p>
 
 <p>It specifies the format of each json search response. You should set the type to one of the following options: <br></p>
 <blockquote>
-<p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
-1: format "rid,edit_dist,matching_prefix". <br>
-2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
+<p>0: format “rid,edit_dist,matching_prefix,in_memory_record”; <br>
+1: format “rid,edit_dist,matching_prefix”. <br>
+2: format “rid,edit_dist,matching_prefix,fields_to_return”. <br>
 Its default value is 0. <br>
 It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
 <br></p>
@@ -324,9 +324,9 @@ It is REQUIRED to include a comma separated list of fields in the tag if it is 2
 </code></pre>
 
 <blockquote>
-<p>"mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.
+<p>“mergeEveryNSeconds”: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine’s response time.
 mergeEveryMWrites: <br>
-"mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
+“mergeEveryMWrites”: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
 </blockquote>
 <h4 id="updateLog">11.3. Logging:</h4>
 <p>The following tag includes parameters related to logging in SRCH2.</p>
@@ -381,8 +381,8 @@ Its default value is 3.</p>
 
 <p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
 <blockquote>
-<p>"name" : the name of the field<br>
-"type" : the type of the field. Supported types are:<br></p>
+<p>“name” : the name of the field<br>
+“type” : the type of the field. Supported types are:<br></p>
 <blockquote>
 <ul>
 <li>Text<br></li>
@@ -403,16 +403,16 @@ YYMMDD<br></p>
 <p>The engine supports the following formats of time duration: <br>
 {An integer}{A date/time constant}, in which date and time constants are: <br>
 SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
-Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br></p>
+Examples are: “DAY” (meaning 1 day) or “34WEEKS” (meaning 34 weeks).<br></p>
 </blockquote>
 </blockquote>
 <p>Each field has certain properties:<br></p>
 <blockquote>
-<p>"required": The flag indicates whether this field can be empty or not. It is false by default.<br>
-"default" : It gives the default value of this field if the value is missing.<br>
-"searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
-"refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br>
-"indexed": If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
+<p>“required”: The flag indicates whether this field can be empty or not. It is false by default.<br>
+“default” : It gives the default value of this field if the value is missing.<br>
+“searchable” : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
+“refining” : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., “price &lt; 20”), sort, and facet.<br>
+“indexed”: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
 Note:<br>
 - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be float in the data file.<br>
 - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
@@ -451,8 +451,8 @@ Toggles faceted search feature.<br></p>
 <li>facetType: Facet type, which is either categorical or range. <br></li>
 <li>facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
 <li>facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
-<li>facetGap: The increment amount used for making demarking a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br><blockquote>
-<p>Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br></p>
+<li>facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br><blockquote>
+<p>Note: fact ranges are created in correspondence with the “facetStart” value, not the “facetEnd” value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining=”true”) <br></p>
 </blockquote>
 </li>
 </ul>
@@ -474,15 +474,15 @@ Toggles faceted search feature.<br></p>
 </code></pre>
 
 <h4 id="StopFilter">12.5.2 Stop Words, Optional</h4>
-<p>It specifies a file of stop words that can be ignored by the engine. Providing "" for "words" option can disable this filter.</p>
+<p>It specifies a file of stop words that can be ignored by the engine. Providing “” for “words” option can disable this filter.</p>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
 </code></pre>
 
 <p><hr/>
 Have fun SRCHing!</p>
-<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
-<script type="text/javascript" src="setSizes.js"></script>
+<link rel="stylesheet" type="text/css" href="documentation.css">
 
+<script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
