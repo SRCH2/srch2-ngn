@@ -2,13 +2,12 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>install</title>
 </head>
 <body>
 <table style="width:100%;table-layout:fixed" ><tr>
-
-<td id="sideBarTd" style="width:25%"> 
+<td id="sideBarTd" style="width:25%">
 
 <div id="sidebar"> <!-- Sidebar -->
 
@@ -20,17 +19,17 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
 <hr/>
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run the Search Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uiFeatures">2. Example UI</a></br><br>
 
 </td></tr></tbody></table>
@@ -48,54 +47,55 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Engine Installation</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
-<h3 id="serverConfig">1. Configure and Run the Search Server</h3>
-<blockquote>
-<p><strong>Step 1:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Download the SRCH2 Engine from <a href="http://www.srch2.com/files/srch2-engine-v3.0.tgz" style="text-decoration:none">here</a>. Then extract it and put all of the files where you want to have the engine. There are four files there as below:</p>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<h3 id="serverConfig">1. Configure and Run Server</h3>
+<p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html" style="text-decoration:none">here</a>. The tar ball includes the following files:</p>
 <ul>
-<li><em>srch2-engine</em> (Binary file of the engine)</li>
-<li><em>conf.xml</em> (The configuration file)</li>
-<li><em>readme.txt</em> </li>
-<li><em>sample-data.json</em> (It is a sample data having <a href="http://www.json.org/" style="text-decoration:none" target="_blank">JSON</a> format to test the engine with)</li>
+<li>srch2-engine: the binary file of the engine;</li>
+<li>srch2_config.xml: a sample configuration file;</li>
+<li>sample-data.json: a sample json data with movie records;</li>
+<li>readme.txt.</li>
 </ul>
-<p><strong>Step 2:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. SRCH2 will send you a temporary license key file which has an expiration date. Store the key file locally in a file called <em>“srch2_license_key.txt”</em>.</p>
-<p><strong>Step 3:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Place the license key and downloaded files into a single directory.</p>
-<p><strong>Step 4:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Now it is time to run the engine. Open a terminal and go to the directory of the engine that you have already downloaded</p>
-</blockquote>
-<pre><code class="python">&gt; cd path/to/the/engine/directory
+<p>Step 2: Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. We can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
+<p>Step 3: Place the license key and downloaded files into a directory.</p>
+<p>Step 4: Open a shell and go to the directory of the engine. Run the following:</p>
+<pre><code class="python">shell&gt; ./srch2-engine --config-file=/path/to/conf.xml
 </code></pre>
 
-<blockquote>
-<p>Run the engine now.</p>
-</blockquote>
-<pre><code class="python">&gt; ./srch2-engine --config-file=/path/to/conf.xml
-</code></pre>
-
-<blockquote>
-<p><em>conf.xml</em> is the config file and here we are passing it to the engine. Wait until the engine finishes the index construction and is ready to serve queries. </p>
-<p>You should see 
+<p>The server will read the configuration file, reads the corresponding data file, builds indexes, and starts a RESTful server. You should see a page similar to the following:
 <center>
-  <img alt="Engine is running" src="./images/engine_running.png">
+<img alt="Engine is running" src="./images/engine_running.png">
 </center></p>
-<p><strong>Step 5:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Download the demo display and extract it.</p>
-<p><strong>Step 6:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Open index.html in your favourite browser</p>
-<p><strong>Step 7:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Do a search and see the results. You should be able to see:   </p>
-</blockquote>
-<h3 id="uiFeatures">2. Description of Features</h3>
-<blockquote>
-<p><img 1068px alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width:></p>
-<blockquote>
+<p>Step 5: RUN A CURL command with a screenshot.</p>
+<p>Step 5: Download the demo display and extract it.</p>
+<p>Step 6: Open index.html in your favorite browser</p>
+<p>Step 7: Do a search and see the results. You should be able to see the following page:</p>
+<h3 id="simple-ui">2. Simple Frontend UI</h3>
+<p>GIVE INSTRUCTIONS ON HOW TO OPEN THE SIMPLE UI. SHOW A SCREENSHOT.</p>
+<h3 id="advanced-ui">3. Advanced Frontend UI</h3>
+<p>GIVE INSTRUCTIONS ON HOW TO OPEN THE ADVANCED UI. SHOW A SCREENSHOT.</p>
+<p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width="750px"></p>
+<p>The screen has the following regions:</p>
 <ol>
-<li>Gets movie records with descriptions related to typed in value, key by key</li>
-<li>Specify attribute:value pair or range to restrict results</li>
-<li>Specify start,end,and gap value of facet year to get counts of movie from each defined era</li>
-<li>Sort the results by Year released in specified ordering or if unspecified return
-results in order of relevance  </li>
-<li>Displays top movie matching the given critera  </li>
-<li>Displays counts of facets on year and Genre  </li>
+<li>
+<p>Gets movie records with descriptions related to typed in value, key by key;</p>
+</li>
+<li>
+<p>Specify attribute:value pair or range to restrict results;</p>
+</li>
+<li>
+<p>Specify start,end,and gap value of facet year to get counts of movie from each defined era;</p>
+</li>
+<li>
+<p>Sort the results by Year released in specified ordering or if unspecified return results in order of relevance;</p>
+</li>
+<li>
+<p>Displays top movie matching the given critera;</p>
+</li>
+<li>
+<p>Displays counts of facets on year and genre.</p>
+</li>
 </ol>
-</blockquote>
-</blockquote>
 <p><hr/>
 Have fun SRCHing!</p>
 <p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
