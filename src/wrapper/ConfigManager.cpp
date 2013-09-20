@@ -37,9 +37,11 @@ void ConfigManager::loadConfigFile() {
     Logger::debug("Reading config file: %s\n", this->configFile.c_str());
     xml_document configDoc;
     // Checks if the xml file is parsed correctly or not.
-    if (!configDoc.load_file(this->configFile.c_str())) {
-        Logger::debug("%s parsed with errors.\n", this->configFile.c_str());
-        return;
+    pugi::xml_parse_result result = configDoc.load_file(this->configFile.c_str());
+    if (!result) {
+        Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
+        Logger::error("error: %s", result.description());
+        exit(-1);
     }
 
     bool configSuccess = true;
@@ -51,8 +53,8 @@ void ConfigManager::loadConfigFile() {
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
     if (!configSuccess) {
-        Logger::debug("ERRORS while reading the configuration file");
-        Logger::debug("%s\n", parseError.str().c_str());
+        Logger::error("ERRORS while reading the configuration file");
+        Logger::error("%s\n", parseError.str().c_str());
         cout << endl << parseError.str() << endl;
         exit(-1);
     }
@@ -1412,6 +1414,9 @@ void ConfigManager::splitBoostFieldValues(string boostString, map<string, unsign
             string field = boostTokens[i].substr(0, pos);
             string boost = boostTokens[i].substr(pos + 1, boostTokens[i].length());
             boosts[field] = (unsigned) atoi(boost.c_str());
+            if(boosts[field] < 1 || boosts[field] > 100){
+            	boosts[field] = 1;
+            }
         } else {
             boosts[boostTokens[i]] = 1;
         }
@@ -1604,7 +1609,7 @@ bool ConfigManager::isValidMaxMemory(string& maxMemory) {
 
 bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
     if (this->isOnlyDigits(mergeEveryNSeconds)) {
-        if (atoi(mergeEveryNSeconds.c_str()) >= 10) {
+        if (atoi(mergeEveryNSeconds.c_str()) >= 1) {
             return true;
         }
     }
@@ -1613,7 +1618,7 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
-        if (atoi(mergeEveryMWrites.c_str()) >= 10) {
+        if (atoi(mergeEveryMWrites.c_str()) >= 1) {
             return true;
         }
     }
