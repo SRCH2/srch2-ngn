@@ -1,39 +1,21 @@
 <table style="width:100%;table-layout:fixed" ><tr>
-
 <td id="sideBarTd" style="width:25%">
-
-
 <div id="sidebar"> <!-- Sidebar -->
-
-
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
-
 <table><tbody><tr><td>
-
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
-
+<div><h3><a style="text-decoration: none;color:#880000" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
-
 </td></tr></tbody></table>
 
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
-
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"/></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
-
 <hr/>
 
 <div id="content" > <!-- Table of content, id=content-->
@@ -78,21 +60,22 @@
 
 
 
-###1. Configure and Run Server###{id="serverConfig"}
+###1. <u>Configure and Run Server</u>###{id="serverConfig"}
 
 
-Step 1: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html). The tar ball includes the following files:
+<b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html). The tar ball includes the following files and a folder:
 
- - srch2-engine: the binary file of the engine;
- - readme.txt.
+ - srch2-engine (the binary file of the engine);
+ - readme.txt;
+ - example-demo.
+ 
+The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).
 
-It also has a folder "example-demo" that contains files for a demo, in which we use the engine to build a search service on movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).
+<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_.
 
-Step 2: Obtain a license key by emailing _contact (at) srch2 (dot) com_. You can also a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_.
+<b>Step 3</b>: Place the license key and downloaded files into a directory.
 
-Step 3: Place the license key and downloaded files into a directory.
-
-Step 4: Open a shell and go to the directory of the engine. Run the following:
+<b>Step 4</b>: Open a shell and go to the directory of the engine. Run the following:
 
 ```python
 shell> ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-config.xml
@@ -107,7 +90,7 @@ The server will read the configuration file, load the data in the corresponding 
 </center>
 
 
-Step 5: To test the engine, open a new terminal and type the following command:
+<b>Step 5</b>: To test the engine, open a new terminal and type the following command:
 
 ```python
 shell> curl -i  http://localhost:8081/search?q=terminator
@@ -122,14 +105,14 @@ Now you should see the following results:
 </br>
 
 
-###2. Simple Frontend UI###{id="simple-ui"}
+###2. <u>Simple Frontend UI</u>###{id="simple-ui"}
 
 Open a browser and go to local "example-demo/basic-ui/index.html". Type into the search box, after at least three letters you should see:
 
 ![Demo Webpage Image](./images/Srch2-BasicDemoFront.png){width=750px}
 
 
-###3. Advanced Frontend UI###{id="advanced-ui"}
+###3. <u>Advanced Frontend UI</u>###{id="advanced-ui"}
 
 Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search and see the results. You should see the following page:
 
@@ -137,7 +120,6 @@ Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search 
 
 
 The screen has the following regions:
-
 
 1. It is the main search box;
 
@@ -151,27 +133,17 @@ The screen has the following regions:
 
 6. It shows the facet results.
 
-Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.
+<b>Important</b>: Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.
 
 <hr/>
 
 Have fun SRCHing!
 
-
-
-
 <link rel="stylesheet" type="text/css" href="documentation.css">
-
-
-
-
 <script type="text/javascript" src="setSizes.js"></script>
 
 <script>
-
-
 setSizes();
-
 window.onresize = setSizes
 
 </script>

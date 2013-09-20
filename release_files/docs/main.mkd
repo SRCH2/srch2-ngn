@@ -13,7 +13,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
@@ -29,7 +29,6 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apisearch"/>API rela</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a></br><br>
-
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -47,17 +46,16 @@
 #<center>SRCH2 Documentation</center>#{id="doc" style="color:#880000" }
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-####[Note: SRCH2 runs on 64-bit Linux with a kernel version >= 2.6.]####
 
 The SRCH2 engine has the following powerful features:
 
- - <p style="display: inline">Instant Type-Forward Results<span id="InstantTypeForward_main" style="display: inline; cursor: pointer; color:#3366FF;">
+ - <p style="display: inline">Instant Search-As-You-Type<span id="InstantTypeForward_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
- - <p style="display: inline">Error Fixing with Fuzzy Search<span id="fuzzySearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
+ - <p style="display: inline">Error Correction with Configurable Fuzzy Search<span id="fuzzySearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
- - <p style="display: inline">Rapid Geo Search<span id="geoSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
+ - <p style="display: inline">Configurable Rapid Geo Search<span id="geoSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
- - <p style="display: inline">Full Text Indexes of Every Word, in Every Record<span id="fullTextSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
+ - <p style="display: inline">Full-Text Index and Configurable Real-Time Updates<span id="fullTextSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
  - <p style="display: inline">Real-Time Updates<span id="realTimeUpdates_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
@@ -70,13 +68,19 @@ You decide! We let you use the combination of rich search features you care abou
  This document illustrates how to set up a simple SRCH2 implementation. We’ll take you through all the basic steps required to download SRCH2, index your data in standard JSON format, configure search features, and run your search server. Enjoy!
 </br>
 
+###System Requirements###
+
+The SRCH2 engine runs on both 32-bit and 64-bit Linux with a kernel version >= 2.6.
+
+<hr/>
+
+Have fun SRCHing!
+
 
 <link rel="stylesheet" type="text/css" href="documentation.css">
 
-
 <script type="text/javascript" src="setSizes.js"></script>
 <script>
-
 setSizes();
 window.onresize = setSizes
 </script>
