@@ -68,7 +68,17 @@
 <center>
 <img alt="Engine is running" src="./images/engine_running.png">
 </center></p>
-<p>Step 5: RUN A CURL command with a screenshot.</p>
+<p>Step 5: To test the engine, open a new terminal use the following command. For example you want to search for the keyword <em>“properties”</em> you should write</p>
+<pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=properties
+</code></pre>
+
+<p>This query is doing a search for a "keyword search" index. Now you should see the results as following:</p>
+<p><center></p>
+<blockquote>
+<p><img alt="Engine is running" src="./images/results.png">
+</center>
+</br></p>
+</blockquote>
 <h3 id="simple-uis">2. Simple Frontend UI</h3>
 <p>step 6: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/basic-ui/.html.</p>
 <p>step 7: Type into the search bar, after 3 letters you should see:</p>

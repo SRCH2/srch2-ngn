@@ -69,10 +69,18 @@ The server will read the configuration file, reads the corresponding data file, 
 ![Engine is running](./images/engine_running.png)
 </center>
 
+Step 5: To test the engine, open a new terminal use the following command. For example you want to search for the keyword _“properties”_ you should write
 
-Step 5: RUN A CURL command with a screenshot.
+```python
+shell> curl -i  http://localhost:8081/search?q=properties
+```
 
+This query is doing a search for a "keyword search" index. Now you should see the results as following:
 
+<center>
+>   ![Engine is running](./images/results.png)
+</center>
+</br>
 
 
 ###2. Simple Frontend UI###{id="simple-uis"}
