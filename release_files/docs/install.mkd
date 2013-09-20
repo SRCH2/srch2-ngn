@@ -48,9 +48,11 @@
 Step 1: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html){ style="text-decoration:none"}. The tar ball includes the following files:
 
 - srch2-engine: the binary file of the engine;
-- srch2_config.xml: a sample configuration file;
-- sample-data.json: a sample json data with movie records;
 - readme.txt.
+
+and a folder of containing files for the two following demo:
+
+- example-demo
 
 Step 2: Obtain a license key from SRCH2 by emailing _contact (at) srch2 (dot) com_. We can also a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_.
 
@@ -59,7 +61,7 @@ Step 3: Place the license key and downloaded files into a directory.
 Step 4: Open a shell and go to the directory of the engine. Run the following:
 
 ```python
-shell> ./srch2-engine --config-file=/path/to/conf.xml
+shell> ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch-conf.xml
 ```
 
 The server will read the configuration file, reads the corresponding data file, builds indexes, and starts a RESTful server. You should see a page similar to the following:
@@ -70,20 +72,22 @@ The server will read the configuration file, reads the corresponding data file, 
 
 Step 5: RUN A CURL command with a screenshot.
 
-Step 5: Download the demo display and extract it.
 
-Step 6: Open index.html in your favorite browser
 
-Step 7: Do a search and see the results. You should be able to see the following page:
 
-###2. Simple Frontend UI###{id="simple-ui"}
+###2. Simple Frontend UI###{id="simple-uis"}
 
-GIVE INSTRUCTIONS ON HOW TO OPEN THE SIMPLE UI. SHOW A SCREENSHOT.
+step 6: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/basic-ui/.html.
+
+step 7: Type into the search bar, after 3 letters you should see:
+
+![Demo Webpage Image](./images/Srch2-BasicDemoFront.png){width=750px}
+
 
 ###3. Advanced Frontend UI###{id="advanced-ui"}
+step 7: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/advanced-ui/.html
 
-
-GIVE INSTRUCTIONS ON HOW TO OPEN THE ADVANCED UI. SHOW A SCREENSHOT.
+Step 8: Do a search and see the results. You should be able to see the following page:
 
 
 ![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width=750px}

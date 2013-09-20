@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>install</title>
 </head>
 <body>
@@ -52,14 +52,16 @@
 <p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html" style="text-decoration:none">here</a>. The tar ball includes the following files:</p>
 <ul>
 <li>srch2-engine: the binary file of the engine;</li>
-<li>srch2_config.xml: a sample configuration file;</li>
-<li>sample-data.json: a sample json data with movie records;</li>
 <li>readme.txt.</li>
+</ul>
+<p>and a folder of containing files for the two following demo:</p>
+<ul>
+<li>example-demo</li>
 </ul>
 <p>Step 2: Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. We can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
 <p>Step 3: Place the license key and downloaded files into a directory.</p>
 <p>Step 4: Open a shell and go to the directory of the engine. Run the following:</p>
-<pre><code class="python">shell&gt; ./srch2-engine --config-file=/path/to/conf.xml
+<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch-conf.xml
 </code></pre>
 
 <p>The server will read the configuration file, reads the corresponding data file, builds indexes, and starts a RESTful server. You should see a page similar to the following:
@@ -67,13 +69,13 @@
 <img alt="Engine is running" src="./images/engine_running.png">
 </center></p>
 <p>Step 5: RUN A CURL command with a screenshot.</p>
-<p>Step 5: Download the demo display and extract it.</p>
-<p>Step 6: Open index.html in your favorite browser</p>
-<p>Step 7: Do a search and see the results. You should be able to see the following page:</p>
-<h3 id="simple-ui">2. Simple Frontend UI</h3>
-<p>GIVE INSTRUCTIONS ON HOW TO OPEN THE SIMPLE UI. SHOW A SCREENSHOT.</p>
+<h3 id="simple-uis">2. Simple Frontend UI</h3>
+<p>step 6: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/basic-ui/.html.</p>
+<p>step 7: Type into the search bar, after 3 letters you should see:</p>
+<p><img alt="Demo Webpage Image" src="./images/Srch2-BasicDemoFront.png" width="750px"></p>
 <h3 id="advanced-ui">3. Advanced Frontend UI</h3>
-<p>GIVE INSTRUCTIONS ON HOW TO OPEN THE ADVANCED UI. SHOW A SCREENSHOT.</p>
+<p>step 7: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/advanced-ui/.html</p>
+<p>Step 8: Do a search and see the results. You should be able to see the following page:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width="750px"></p>
 <p>The screen has the following regions:</p>
 <ol>
