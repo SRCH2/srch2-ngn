@@ -105,7 +105,7 @@ This parameter specifies the installation folder of the SRCH2 engine, which incl
 ```
 <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
-It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a [form](http://srch2.com/try.php) to get a free trial key. <br>
+It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a [form](http://srch2.com/downloads.html) to get a free trial key. <br>
 
 
 ####5. Hostname and Port, Required{id="listeningHostname"}
@@ -191,7 +191,7 @@ It specifies an attribute whose value is used as the boost value of a record's s
 ```
 <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
-It specifies a default [query term boost](configuration.html##Boosting a term). If the parameter is not given, the engine uses 1 as the default value.<br>
+It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
 ####9. Query parameters:{id="queryConfig"}
@@ -203,7 +203,7 @@ The following tag includes parameters related to queries.
 ```
 ####9.1. Ranking:{id="rankingalgorithm"}
 
-The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.
+The following tags and parameters are related to ranking. See the [Ranking Section](ranking.html) for ranking-related information.
 
 ```
 <rankingalgorithm>
@@ -216,25 +216,25 @@ The following tags and parameters are related to ranking. See http://www.srch2.c
 ```
 <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
-It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [fuzzy matched keywords](querysyntax.html#Fuzzy Searches) section about how this parameter is used. Its default value is 0.5.
+It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
 
 ####9.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
 ```
 <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
-It modifies the default behavior of [fuzzy match keyword search](querysyntax.html#Fuzzy Searches). Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.
+It modifies the default behavior of fuzzy  keyword search. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.
 
-####9.4. Support Swap in Edit-distance operations, Optional{id="supportSwapInEditDistance"}
+####9.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
 ```
 <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
-It specifies we 'swap' should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.
+It specifies whether we support swap operation (e.g., "iphone" versus "ihpone") in the edit distance function, in addition to insertion, deletion, and substituion operations. By default it is true.
 
 ####9.5. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
 ```
 <queryTermLengthBoost></queryTermLengthBoost>
 ```
-Check [the ranking section](ranking.html) to see how this value is used in the ranking function. Its default value is 0.5. <br>
+Check the [ranking section](ranking.html) to see how this value is used in the ranking function. Its default value is 0.5. <br>
 
 
 ####9.6. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
@@ -243,7 +243,7 @@ Check [the ranking section](ranking.html) to see how this value is used in the r
 <prefixMatchPenalty>0.95</prefixMatchPenalty>
 ```
 It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
-The value should be in the range of 0 to 1. its default value is 0.95. See [the ranking section](ranking.html) <br>
+The value should be in the range of 0 to 1. Its default value is 0.95. See the [ranking section](ranking.html) for more information.<br>
 
 
 ####9.7. Cache Size, Optional{id="cacheSize"}
@@ -251,7 +251,7 @@ The value should be in the range of 0 to 1. its default value is 0.95. See [the 
 ```
 <cacheSize>65536000</cacheSize>
 ```
-It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br>
+It specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br>
 
 ####9.8. Default value for number of returned results, Optional{id="rows"}
 ```
@@ -471,7 +471,7 @@ Facet fields: Required if facet is enabled <br>
 > - facetType: Facet type, which is either categorical or range. <br>
 > - facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br>
 > - facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
-> - facetGap: The increment amount used for making demarking a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
+> - facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br>
 >> Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
 
 ####12.5. Analyzer:{id="analyzer"}

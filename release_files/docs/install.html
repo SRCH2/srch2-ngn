@@ -80,62 +80,59 @@
 <h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Engine Installation</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
 <h3 id="serverConfig">1. Configure and Run Server</h3>
-<p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html" style="text-decoration:none">here</a>. The tar ball includes the following files:</p>
+<p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a>. The tar ball includes the following files:</p>
 <ul>
-<li>
-<p>srch2-engine: the binary file of the engine;</p>
-</li>
-<li>
-<p>readme.txt.</p>
-</li>
+<li>srch2-engine: the binary file of the engine;</li>
+<li>readme.txt.</li>
 </ul>
 <p>It also has a folder "example-demo" that contains files for a demo, in which we use the engine to build a search service on movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
 <p>Step 2: Obtain a license key by emailing <em>contact (at) srch2 (dot) com</em>. You can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
 <p>Step 3: Place the license key and downloaded files into a directory.</p>
 <p>Step 4: Open a shell and go to the directory of the engine. Run the following:</p>
-<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-conf.xml
+<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-config.xml
 </code></pre>
 
 <p>The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:</p>
 <p><center></p>
 <p><img alt="Engine is running" src="./images/engine_running.png"></p>
 <p></center></p>
-<p>Step 5: To test the engine, open a new terminal use the following command. For example you want to search for the keyword "terminator" you should write</p>
+<p>Step 5: To test the engine, open a new terminal and type the following command:</p>
 <pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=terminator
 </code></pre>
 
-<p>Now you should see the results as following:</p>
+<p>Now you should see the following results:</p>
 <p><center>
 <img alt="Engine is running" src="./images/results.png">
 </center></p>
 <p></br></p>
 <h3 id="simple-ui">2. Simple Frontend UI</h3>
-<p>Open a browser and go to local "example-demo/basic-ui/.html". Type into the search box, after 3 letters you should see:</p>
+<p>Open a browser and go to local "example-demo/basic-ui/index.html". Type into the search box, after at least three letters you should see:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-BasicDemoFront.png" width="750px"></p>
 <h3 id="advanced-ui">3. Advanced Frontend UI</h3>
-<p>Open a browser and go to the "example-demo/advanced-ui/XXX.html". Do a search and see the results. You should see the following page:</p>
+<p>Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search and see the results. You should see the following page:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width="750px"></p>
 <p>The screen has the following regions:</p>
 <ol>
 <li>
-<p>Main search box;</p>
+<p>It is the main search box;</p>
 </li>
 <li>
-<p>Specify attribute:value pair or range to restrict results;</p>
+<p>It shows the search results;</p>
 </li>
 <li>
-<p>Specify start,end,and gap value of facet year to get counts of movie from each defined era;</p>
+<p>It allows us to specify the order in which the results are sorted using the year field;</p>
 </li>
 <li>
-<p>Sort the results by Year released in specified ordering or if unspecified return results in order of relevance;</p>
+<p>It allows us to specify filters for postprocessing results;</p>
 </li>
 <li>
-<p>Displays top movie matching the given critera;</p>
+<p>It allows us to specify a facet on the year field by providing a start year, end year, and a year gap;</p>
 </li>
 <li>
-<p>Displays counts of facets on year and genre.</p>
+<p>It shows the facet results.</p>
 </li>
 </ol>
+<p>Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.</p>
 <hr/>
 
 <p>Have fun SRCHing!</p>

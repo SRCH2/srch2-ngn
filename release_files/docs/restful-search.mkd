@@ -107,7 +107,7 @@ Before going into queries and their components, let us first understand the basi
 
 ### 3.1. Fields {id="fields"}
 
-When performing a search, we can either specify a field or use a [default value](##localParams). Any [indexed field](configuration.html##fields) can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:
+When performing a search, we can either specify a field or use a default value. Any [indexed field](configuration.html##fields) can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:
 ```
 title:algo AND go
 ```
@@ -128,7 +128,7 @@ q=schwar*
 
 ### 3.3.2. Fuzzy Search{id="fuzzySearch"}
 
-The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the neighbourhood of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:
+The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:
 ```
 q=schwarzeneger~0.8
 ```
@@ -137,7 +137,7 @@ The internal edit-distance threshold is floor((1-0.8) * length("schwarzeneger"))
 
 The engine allows each fuzzy search term to specify its own similarity value.
 
-If a term doesn't have a similarity value, e.g.,
+If a term does not have a similarity value, e.g.,
 
 ```
 schwarzeneger~
@@ -198,10 +198,15 @@ q={defaultFieldOperator=OR defaultSearchFields=author,title}algorithm
 ```
 
 The following are valid localParams:
+
  - [defaultSimilarityThreshold](configuration.html##queryTermSimilarityThreshold): a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    
+
  - [defaultBoostLevel](configuration.html##fieldBoost): a non-negative integer, e.g., 2.
+
  - [defaultPrefixComplete](configuration.html##queryTermType): 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
+
  - defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,author,price' (without quotes).
+
  - defaultFieldOperator : 'AND' or 'OR' (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.
 
 ##6. Query Parameters {id="queryParams"}

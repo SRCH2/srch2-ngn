@@ -106,7 +106,7 @@
 <h2 id="basicConcepts">3. Basic Concepts</h2>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.</p>
 <h3 id="fields">3.1. Fields</h3>
-<p>When performing a search, we can either specify a field or use a <a href="##localParams">default value</a>. Any <a href="configuration.html##fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:</p>
+<p>When performing a search, we can either specify a field or use a default value. Any <a href="configuration.html##fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:</p>
 <pre><code>title:algo AND go
 </code></pre>
 
@@ -174,12 +174,24 @@ Invalid query 3) q=algorithm~.6*
 <pre><code>q={defaultFieldOperator=OR defaultSearchFields=author,title}algorithm
 </code></pre>
 
-<p>The following are valid localParams:
- - <a href="configuration.html##queryTermSimilarityThreshold">defaultSimilarityThreshold</a>: a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.  <br>
- - <a href="configuration.html##fieldBoost">defaultBoostLevel</a>: a non-negative integer, e.g., 2.
- - <a href="configuration.html##queryTermType">defaultPrefixComplete</a>: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
- - defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,author,price' (without quotes).
- - defaultFieldOperator : 'AND' or 'OR' (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.</p>
+<p>The following are valid localParams:</p>
+<ul>
+<li>
+<p><a href="configuration.html##queryTermSimilarityThreshold">defaultSimilarityThreshold</a>: a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    </p>
+</li>
+<li>
+<p><a href="configuration.html##fieldBoost">defaultBoostLevel</a>: a non-negative integer, e.g., 2.</p>
+</li>
+<li>
+<p><a href="configuration.html##queryTermType">defaultPrefixComplete</a>: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.</p>
+</li>
+<li>
+<p>defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,author,price' (without quotes).</p>
+</li>
+<li>
+<p>defaultFieldOperator : 'AND' or 'OR' (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.</p>
+</li>
+</ul>
 <h2 id="queryParams">6. Query Parameters</h2>
 <h3 id="mainQuery">6.1. q: Main query parameter</h3>
 <p>A search over a searchable field is denoted by its name and the search term separated with a colon ":". For example, consider the query below.</p>
