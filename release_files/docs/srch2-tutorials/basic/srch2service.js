@@ -84,7 +84,7 @@ srch2service = {
                 return;
             }
             _srch2_this.log("pressed", "debug");
-            var query = _srch2_this.config.getQueryString();
+            var query = _srch2_this.config.getQueryString({});
             _srch2_this.jsonpCall(query);
         });
     },
