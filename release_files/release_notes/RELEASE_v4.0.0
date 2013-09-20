@@ -1,0 +1,34 @@
+*------------------------------------------------------------------
+*  RELEASE NOTES Version 4.0.0
+*  Date: September 19, 2013 
+*------------------------------------------------------------------
+
+Improvements over version 3.0.0:
+* Support of more data types: integer, float, date
+* Support of postprocessing filters (e.g., price < 20)
+* Support of sort in postprocessing
+* Support of stemming and stop words 
+* Faceted search
+* Standard query syntax 
+* More flexible configuration syntax 
+* Phrase/proximity search
+* Higher query performance
+* Support RESTful control message to export data to disk
+* Support search on MongoDB
+* Reading prebuilt-indexes without changing the configuration file
+* Allowing a query to use different edit-distance thresholds for different query 
+  terms
+* Introducing a new configuration parameter "TermFuzzyPenalty" to allow users to 
+  control the penalty of fuzzy matching
+* Support swap operation in edit distance, in addition to insertion, deletion, and
+  substitution
+* Reducing the lower bound of the time frequency of the merge thread from 10 seconds
+  to 1 second
+* Reducing the lower bound of the number of writes of the merge thread from 10 writes
+  to 1 write (immediate merge)
+* Configurable logging
+* Allowing a geo query without keywords
+* The engine now supports an empty data file for bootstrap.
+* Some messages were not clear. Current release has improved error/warning messages.
+* IDF ranking score didn't work if a word appears in all the records
+* The engine now supports high-speed insertions

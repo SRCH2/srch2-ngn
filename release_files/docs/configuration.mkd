@@ -471,7 +471,7 @@ Facet fields: Required if facet is enabled <br>
 > - facetType: Facet type, which is either categorical or range. <br>
 > - facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br>
 > - facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
-> - facetGap: The increment amount used for making demarking a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
+> - facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br>
 >> Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
 
 ####12.5. Analyzer:{id="analyzer"}
