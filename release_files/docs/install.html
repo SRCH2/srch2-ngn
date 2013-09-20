@@ -2,46 +2,77 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
+<meta name="generator" content="ReText 4.0.0">
 <title>install</title>
 </head>
 <body>
 <table style="width:100%;table-layout:fixed" ><tr>
+
 <td id="sideBarTd" style="width:25%">
+
 
 <div id="sidebar"> <!-- Sidebar -->
 
+
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+
 <table><tbody><tr><td>
+
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+
 </td></tr></tbody></table>
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
-</div> <!-- Links to main pages, id=linkpool-->
+
+<p><span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br></p>
+<p></div> <!-- Links to main pages, id=linkpool--></p>
 <hr/>
+
 <div id="content" > <!-- Table of content, id=content-->
+
 <table><tbody><tr><td>
+
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uiFeatures">2. Example UI</a></br><br>
+
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#simple-ui">2. Simple Frontend UI</a></br><br>
+
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#advanced-ui">3. Advanced Frontend UI</a></br><br>
+
 
 </td></tr></tbody></table>
 
-<p></div> <!-- Table of content, id=content--></p>
+
+</div>
+
+<!-- Table of content, id=content-->
+
 <p></div> <!-- Sidebar --></p>
 </td>
 
 <td id="docBody" style="width:70%">
+
 </br>
+
 <div><table><tbody><tr><td>
+
 <div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
 
 </td>
 
@@ -51,46 +82,43 @@
 <h3 id="serverConfig">1. Configure and Run Server</h3>
 <p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html" style="text-decoration:none">here</a>. The tar ball includes the following files:</p>
 <ul>
-<li>srch2-engine: the binary file of the engine;</li>
-<li>readme.txt.</li>
+<li>
+<p>srch2-engine: the binary file of the engine;</p>
+</li>
+<li>
+<p>readme.txt.</p>
+</li>
 </ul>
-<p>and a folder of containing files for the two following demo:</p>
-<ul>
-<li>example-demo</li>
-</ul>
-<p>Step 2: Obtain a license key from SRCH2 by emailing <em>contact (at) srch2 (dot) com</em>. We can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
+<p>It also has a folder "example-demo" that contains files for a demo, in which we use the engine to build a search service on movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
+<p>Step 2: Obtain a license key by emailing <em>contact (at) srch2 (dot) com</em>. You can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
 <p>Step 3: Place the license key and downloaded files into a directory.</p>
 <p>Step 4: Open a shell and go to the directory of the engine. Run the following:</p>
-<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch-conf.xml
+<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-conf.xml
 </code></pre>
 
-<p>The server will read the configuration file, reads the corresponding data file, builds indexes, and starts a RESTful server. You should see a page similar to the following:
-<center>
-<img alt="Engine is running" src="./images/engine_running.png">
-</center></p>
-<p>Step 5: To test the engine, open a new terminal use the following command. For example you want to search for the keyword <em>“properties”</em> you should write</p>
-<pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=properties
-</code></pre>
-
-<p>This query is doing a search for a "keyword search" index. Now you should see the results as following:</p>
+<p>The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:</p>
 <p><center></p>
-<blockquote>
-<p><img alt="Engine is running" src="./images/results.png">
-</center>
-</br></p>
-</blockquote>
-<h3 id="simple-uis">2. Simple Frontend UI</h3>
-<p>step 6: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/basic-ui/.html.</p>
-<p>step 7: Type into the search bar, after 3 letters you should see:</p>
+<p><img alt="Engine is running" src="./images/engine_running.png"></p>
+<p></center></p>
+<p>Step 5: To test the engine, open a new terminal use the following command. For example you want to search for the keyword "terminator" you should write</p>
+<pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=terminator
+</code></pre>
+
+<p>Now you should see the results as following:</p>
+<p><center>
+<img alt="Engine is running" src="./images/results.png">
+</center></p>
+<p></br></p>
+<h3 id="simple-ui">2. Simple Frontend UI</h3>
+<p>Open a browser and go to local "example-demo/basic-ui/.html". Type into the search box, after 3 letters you should see:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-BasicDemoFront.png" width="750px"></p>
 <h3 id="advanced-ui">3. Advanced Frontend UI</h3>
-<p>step 7: Open a browser and go to local file:///PATH/TO/EXTRACTED/FILES/example-demo/advanced-ui/.html</p>
-<p>Step 8: Do a search and see the results. You should be able to see the following page:</p>
+<p>Open a browser and go to the "example-demo/advanced-ui/XXX.html". Do a search and see the results. You should see the following page:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width="750px"></p>
 <p>The screen has the following regions:</p>
 <ol>
 <li>
-<p>Gets movie records with descriptions related to typed in value, key by key;</p>
+<p>Main search box;</p>
 </li>
 <li>
 <p>Specify attribute:value pair or range to restrict results;</p>
@@ -108,15 +136,18 @@
 <p>Displays counts of facets on year and genre.</p>
 </li>
 </ol>
-<p><hr/>
-Have fun SRCHing!</p>
+<hr/>
+
+<p>Have fun SRCHing!</p>
 <p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
 <script type="text/javascript" src="setSizes.js"></script>
 
 <script>
 
 setSizes();
+
 window.onresize = setSizes
+
 </script>
 </body>
 </html>
