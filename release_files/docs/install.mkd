@@ -1,0 +1,119 @@
+
+<table style="width:100%;table-layout:fixed" ><tr>
+<td id="sideBarTd" style="width:25%">
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uiFeatures">2. Example UI</a></br><br>
+
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+
+</div> <!-- Sidebar -->
+
+</td>
+
+<td id="docBody" style="width:70%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+#<center>SRCH2 Documentation: Engine Installation</center>#{id="doc" style="color:#880000" }
+######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
+
+###1. Configure and Run Server###{id="serverConfig"}
+
+Step 1: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html){ style="text-decoration:none"}. The tar ball includes the following files:
+
+- srch2-engine: the binary file of the engine;
+- srch2_config.xml: a sample configuration file;
+- sample-data.json: a sample json data with movie records;
+- readme.txt.
+
+Step 2: Obtain a license key from SRCH2 by emailing _contact (at) srch2 (dot) com_. We can also a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_.
+
+Step 3: Place the license key and downloaded files into a directory.
+
+Step 4: Open a shell and go to the directory of the engine. Run the following:
+
+```python
+shell> ./srch2-engine --config-file=/path/to/conf.xml
+```
+
+The server will read the configuration file, reads the corresponding data file, builds indexes, and starts a RESTful server. You should see a page similar to the following:
+<center>
+![Engine is running](./images/engine_running.png)
+</center>
+
+
+Step 5: RUN A CURL command with a screenshot.
+
+Step 5: Download the demo display and extract it.
+
+Step 6: Open index.html in your favorite browser
+
+Step 7: Do a search and see the results. You should be able to see the following page:
+
+###2. Simple Frontend UI###{id="simple-ui"}
+
+GIVE INSTRUCTIONS ON HOW TO OPEN THE SIMPLE UI. SHOW A SCREENSHOT.
+
+###3. Advanced Frontend UI###{id="advanced-ui"}
+
+
+GIVE INSTRUCTIONS ON HOW TO OPEN THE ADVANCED UI. SHOW A SCREENSHOT.
+
+
+![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width=750px}
+
+The screen has the following regions:
+
+1. Gets movie records with descriptions related to typed in value, key by key;
+
+2. Specify attribute:value pair or range to restrict results;
+
+3. Specify start,end,and gap value of facet year to get counts of movie from each defined era;
+
+4. Sort the results by Year released in specified ordering or if unspecified return results in order of relevance;
+
+5. Displays top movie matching the given critera;
+
+6. Displays counts of facets on year and genre.
+
+<hr/>
+Have fun SRCHing!
+
+
+
+<link rel="stylesheet" type="text/css" href="documentation.css">
+
+
+
+<script type="text/javascript" src="setSizes.js"></script>
+<script>
+
+setSizes();
+window.onresize = setSizes
+</script>
