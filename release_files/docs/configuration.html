@@ -106,7 +106,7 @@
 <pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
 
-<p>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a <a href="http://srch2.com/try.php">form</a> to get a free trial key. <br></p>
+<p>It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a <a href="http://srch2.com/downloads.html">form</a> to get a free trial key. <br></p>
 <h4 id="listeningHostname">5. Hostname and Port, Required</h4>
 <pre><code>&lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
@@ -182,7 +182,7 @@ Specify as 0.0.0.0 if value is unknown.</p>
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
-<p>It specifies a default <a href="configuration.html##Boosting%20a%20term">query term boost</a>. If the parameter is not given, the engine uses 1 as the default value.<br></p>
+<p>It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br></p>
 <h4 id="queryConfig">9. Query parameters:</h4>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
@@ -191,7 +191,7 @@ Specify as 0.0.0.0 if value is unknown.</p>
 </code></pre>
 
 <h4 id="rankingalgorithm">9.1. Ranking:</h4>
-<p>The following tags and parameters are related to ranking. See http://www.srch2.com/download.html for ranking-related information.</p>
+<p>The following tags and parameters are related to ranking. See the <a href="ranking.html">Ranking Section</a> for ranking-related information.</p>
 <pre><code>&lt;rankingalgorithm&gt;
 &lt;recordScoreExpression&gt;idf_score*doc_boost&lt;/recordScoreExpression&gt;
 &lt;/rankingalgorithm&gt;
@@ -201,33 +201,33 @@ Specify as 0.0.0.0 if value is unknown.</p>
 <pre><code>&lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
 </code></pre>
 
-<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="querysyntax.html#Fuzzy%20Searches">fuzzy matched keywords</a> section about how this parameter is used. Its default value is 0.5.</p>
+<p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="ranking.html">Ranking Section</a> section about how this parameter is used. Its default value is 0.5.</p>
 <h4 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h4>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
-<p>It modifies the default behavior of <a href="querysyntax.html#Fuzzy%20Searches">fuzzy match keyword search</a>. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
-<h4 id="supportSwapInEditDistance">9.4. Support Swap in Edit-distance operations, Optional</h4>
+<p>It modifies the default behavior of fuzzy  keyword search. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.</p>
+<h4 id="supportSwapInEditDistance">9.4. Support Swap as an Edit Distance Operation, Optional</h4>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
-<p>It specifies we 'swap' should be considered an edit-distance operation or not. By default edit-distance calculator uses insertion, deletion, substitution and swap.</p>
+<p>It specifies whether we support swap operation (e.g., "iphone" versus "ihpone") in the edit distance function, in addition to insertion, deletion, and substituion operations. By default it is true.</p>
 <h4 id="queryTermLengthBoost">9.5. Query Term Length Boost, Optional</h4>
 <pre><code>&lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
 
-<p>Check <a href="ranking.html">the ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
+<p>Check the <a href="ranking.html">ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
 <h4 id="prefixMatchPenalty">9.6. Prefix Match Penalty, Optional</h4>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
 <p>It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
-The value should be in the range of 0 to 1. its default value is 0.95. See <a href="ranking.html">the ranking section</a> <br></p>
+The value should be in the range of 0 to 1. Its default value is 0.95. See the <a href="ranking.html">ranking section</a> for more information.<br></p>
 <h4 id="cacheSize">9.7. Cache Size, Optional</h4>
 <pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
-<p>It specifies the number of bytes used in caching. The number should be in the range [50MB, 500MB] ([52428800,524288000]). Its default value is 52428800. <br></p>
+<p>It specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br></p>
 <h4 id="rows">9.8. Default value for number of returned results, Optional</h4>
 <pre><code>&lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
