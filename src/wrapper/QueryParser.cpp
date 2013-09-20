@@ -1650,10 +1650,12 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     if (isParsed) {
         Logger::debug("fuzzy modifier used in query");
         this->setInQueryParametersIfNotSet(KeywordSimilarityThreshold);
-        if (input[1] != '\0') {
+        /* Test if input is string "~" */
+        if (input.length() != 1) {
             // get the fuzzy value;
             Logger::debug("fuzzy value is specified extracting it");
-            float fuzzyNum = atof(&input[1]); // convert to float
+            /* The String is in form ~.d+, so ignore ~ and move forward */
+            float fuzzyNum = atof(input.c_str() + 1); // convert to float
             Logger::debug("fuzzy value is %f", fuzzyNum);
             this->setSimilarityThresholdInContainer(fuzzyNum);
         } else {
