@@ -1,7 +1,7 @@
 #ifndef __CORE_UTIL_VERSION_H__
 #define __CORE_UTIL_VERSION_H__
 
-#define CURRENT_VERSION "3.1.2"
+#define CURRENT_VERSION "4.0.0"
 
 /**
  *  Helper class for version system. 

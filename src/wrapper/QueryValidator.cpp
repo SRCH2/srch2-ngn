@@ -126,7 +126,7 @@ bool QueryValidator::validate() {
 
     // validate filter query
     // Example :
-    // fq=price:[* TO 100] AND model:JEEP AND CMPLX$price - discount < 100$
+    // fq=price:[* TO 100] AND model:JEEP AND boolexp$price - discount < 100$
     // price, model and discount should be non-searchable attributes.
     if(!validateFilterQuery()){
         return false;
