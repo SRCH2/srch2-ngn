@@ -1650,20 +1650,18 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
     if (isParsed) {
         Logger::debug("fuzzy modifier used in query");
         this->setInQueryParametersIfNotSet(KeywordSimilarityThreshold);
-        boost::smatch matches;
-        this->checkForFuzzyNums(input, matches); // check if fuzzy value is present
-        if (matches[0].matched) {
+        /* Test if input is string "~" */
+        if (input.length() != 1) {
             // get the fuzzy value;
             Logger::debug("fuzzy value is specified extracting it");
-            boost::smatch numMatches;
-            this->extractNumbers(matches[0].str(), numMatches);
-            float fuzzyNum = atof(("." + numMatches[0].str()).c_str()); // convert to float
+            /* The String is in form ~.d+, so ignore ~ and move forward */
+            float fuzzyNum = atof(input.c_str() + 1); // convert to float
             Logger::debug("fuzzy value is %f", fuzzyNum);
             this->setSimilarityThresholdInContainer(fuzzyNum);
         } else {
             // there is no value specified
             Logger::debug(
-                    "fuzzy value is not specified, using the lp value or -1.0");
+                    "fuzzy value is not specified, using the lp value");
             this->setSimilarityThresholdInContainer(this->lpKeywordSimilarityThreshold); // selts the localParameter specified value
         }
     } else {
