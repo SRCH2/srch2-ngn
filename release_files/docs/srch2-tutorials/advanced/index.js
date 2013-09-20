@@ -348,7 +348,7 @@ client = {
         var fqCmp = "";
         if (!(fqComplex == "" )) {
             filterQueryIsthere += 1;
-            fqCmp = "CMPLX$" + fqComplex + "$";
+            fqCmp = "boolexp$" + fqComplex + "$";
         }
         var op = "";
         if (filterQueryIsthere == 1) {
