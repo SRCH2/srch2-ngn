@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="./main.html">Main pages</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -22,7 +22,7 @@
 <hr/>
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configTag">2. Config</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">3. SRCH2HOME</a></br><br>
@@ -80,35 +80,38 @@
 <td id="docBody" style="width:70%">
 <br/>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2 Documentation: Engine Configuration</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Manual: Engine Configuration</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ###1. Overview:###{id="overview"}
+
 The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.
 
 The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
 
-###2. Config Component:{id="configTag"}
+###2. Config Component:###{id="configTag"}
+
 The following is a breakdown of the subtags of the "config" component.
 
-####3. SRCH2 Home Directory, Required{id="srch2Home"}
+###3. SRCH2 Home Directory, Required###{id="srch2Home"}
+
 ```
 <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
 This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
 
-####4. License Key File, Required{id="licenseFile"}
+###4. License Key File, Required###{id="licenseFile"}
 ```
 <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
-It specifies a license key file required by the engine. Email contact@srch2.com to get a key file. You can also fill in a [form](http://srch2.com/downloads.html) to get a free trial key. <br>
+It specifies a license key file required by the engine. Enter your email [here](http://www.srch2.com/downloads.html) to get a free trial key. <br>
 
 
-####5. Hostname and Port, Required{id="listeningHostname"}
+###5. Hostname and Port, Required###{id="listeningHostname"}
 ```
 <listeningHostname>127.0.0.1</listeningHostname>
 <listeningPort>8081</listeningPort>
@@ -116,7 +119,7 @@ It specifies a license key file required by the engine. Email contact@srch2.com 
 Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
 Specify as 0.0.0.0 if value is unknown.
 
-####6. Data Directory, Required{id="dataDir"}
+###6. Data Directory, Required###{id="dataDir"}
 ```
 <dataDir>/path/to/data/directory/</dataDir>
 ```
@@ -124,7 +127,7 @@ It specifies the path of a folder where the engine stores serialized index files
 
 
 
-####7. Data {id="data"}
+###7. Data ###{id="data"}
 
 ####7.1. Data Sources, Optional {id="dataSources"}
 
@@ -156,7 +159,7 @@ It specifies a JSON data file to be loaded by the engine.<br>
 It specifies MongoDB instance information.
 > Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). 
 
-####8. Index Config:{id="indexConfig"}
+###8. Index Config:###{id="indexConfig"}
 This tag includes parameters related to customizing the indexes.
 ```
 <indexConfig>
@@ -194,7 +197,7 @@ It specifies an attribute whose value is used as the boost value of a record's s
 It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
-####9. Query parameters:{id="queryConfig"}
+###9. Query parameters:###{id="queryConfig"}
 The following tag includes parameters related to queries.
 ```
 <query>
@@ -222,13 +225,13 @@ It specifies a similarity boost used in computing the score of a record in fuzzy
 ```
 <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
-It modifies the default behavior of fuzzy  keyword search. Its value must lie in [0,1] with 1 representing exact match, and 0 being the largest possible search neighbourhood. Its default value is 0.5.
+It modifies the default behavior of fuzzy keyword search. Its value must lie in [0,1], with 1 representing exact match, and 0 being the largest possible error tolerance. Its default value is 0.5.
 
 ####9.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
 ```
 <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
-It specifies whether we support swap operation (e.g., "iphone" versus "ihpone") in the edit distance function, in addition to insertion, deletion, and substituion operations. By default it is true.
+It specifies whether we support swap operation (e.g., "iphone" versus "ipohne") in the edit distance function, in addition to insertion, deletion, and substitution operations. By default it is true.
 
 ####9.5. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
 ```
@@ -257,7 +260,7 @@ It specifies the number of bytes used in caching. The number should be in the ra
 ```
 <rows>10</rows>
 ```
-It specifies the number of results retrieved. Its defaults value is 10. <br>
+It specifies the number of results retrieved. Its default value is 10. <br>
 
 ####9.9. Maximum number of search threads, Optional:{id="maxSearchThreads"}
 ```
@@ -269,7 +272,7 @@ It specifies the number of threads that serve search requests. Its default value
 ```
 <fieldBasedSearch>0</fieldBasedSearch>
 ```
-It is a flag to toggle attribute-based search. An attribute-based search has conditions on which attributes a keyword needs to appear in.<br>
+It is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine which attributes a keyword needs to appear in.<br>
 > 0 - Disabled <br>
 > 1 - Enabled <br>
 > Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
@@ -304,7 +307,7 @@ It modifies the default treatment of search query's keyword:<br>
 > Its default value is 0.
 
 
-####10. Response Writer:{id="queryResponseWriter"}
+###10. Response Writer:###{id="queryResponseWriter"}
 This tag has parameters related to configuring the response of a query.
 ```
 <queryResponseWriter>
@@ -321,7 +324,7 @@ This tag has parameters related to configuring the response of a query.
 ```
 <responseContent type="0"></responseContent>
 ```
-It specifies the format of each json search response. You should set the type to one of the following options: <br>
+It specifies the format of each JSON search response. You should set the type to one of the following options: <br>
 > 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 > 1: format "rid,edit_dist,matching_prefix". <br>
 > 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
@@ -329,7 +332,8 @@ It specifies the format of each json search response. You should set the type to
 > It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
 <br>
 
-####11. Update Handler:{id="updateHandler"}
+###11. Update Handler:###{id="updateHandler"}
+
 This tag includes tags related to configuring the engine to handle update requests.
 ```
 <updatehandler>
@@ -340,7 +344,8 @@ This tag includes tags related to configuring the engine to handle update reques
 ```
 <maxDocs>15000000</maxDocs>
 ```
-It specifies the maximum number of records indexable by the engine. Inserting more records than the specified here will cause the insertions to fail.
+It specifies the maximum number of records indexable by the engine. Inserting more records than what is specified here will cause the insertions to fail.
+
 ####11.2. Merge Policy, Required{id="mergePolicy"}
 
 ```
@@ -349,11 +354,12 @@ It specifies the maximum number of records indexable by the engine. Inserting mo
 <mergeEveryMWrites>100</mergeEveryMWrites>
 </mergePolicy>
 ```
-> "mergeEveryNSeconds": The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.
-> mergeEveryMWrites: <br>
-> "mergeEveryMWrites": Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
+ - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time. 
+ 
+  - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
 
 ####11.3. Logging:{id="updateLog"}
+
 The following tag includes parameters related to logging in SRCH2.
 ```
 <updateLog>
@@ -378,7 +384,8 @@ The parameter decides the amount of feedback information the engine will report 
 It specifies the file to which the engine writes logging information.<br>
 
 
-###12. Schema Component:{id="schemaTag"}
+###12. Schema Component:###{id="schemaTag"}
+
 The following sections explain each subtag under the <i>schema</i> component.
 ```
 <schema name="SRCH2" version="3">
@@ -410,51 +417,57 @@ This tag is a container of all field-related tags.
 ```
 These parameters give information about each field, including its name, type, and certain properties. <br>
 
-> "name" : the name of the field<br>
-> "type" : the type of the field. Supported types are:<br>
->> - Text<br>
->> - integer<br>
->> - float<br>
->> - time<br>
->> - location_longtitude (For Geo search)<br>
->> - location_latitude (For Geo search)<br>
+ - "name" : the name of the field<br>
+ - "type" : the type of the field. Supported types are:<br>
+> - Text<br>
+> - integer<br>
+> - float<br>
+> - time<br>
+> - location_longtitude (For Geo search)<br>
+> - location_latitude (For Geo search)<br>
 
->> The engine supports the following formats of time and date: <br>
->>> HH:MM:SS<br>
->>> MM/DD/YY<br>
->>> YY-MM-DD HH:MM::SS<br>
->>> YYMMDDHHMMSS<br>
->>> YYMMDDHHMM<br>
->>> YYMMDD<br>
+The engine supports the following formats of time and date: <br>
 
->>> The engine supports the following formats of time duration: <br>
->>> {An integer}{A date/time constant}, in which date and time constants are: <br>
->>> SECOND,SECONDS,MINUTE,MINUTES,HOUR,HOURS,DAY,DAYS,WEEK,WEEKS,MONTH,MONTHS,YEAR,YEARS<br>
->>> Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br>
+ - HH:MM:SS<br>
+ - MM/DD/YY<br>
+ - YY-MM-DD HH:MM::SS<br>
+ - YYMMDDHHMMSS<br>
+ - YYMMDDHHMM<br>
+ - YYMMDD<br>
 
-> Each field has certain properties:<br>
->> "required": The flag indicates whether this field can be empty or not. It is false by default.<br>
->> "default" : It gives the default value of this field if the value is missing.<br>
->> "searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
->> "refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
->> "indexed": If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
-> Note:<br>
->> - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be float in the data file.<br>
->> - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
->> - There must be at least one searchable field.
+The engine supports the following formats of time duration: <br>
 
-####12.3. Enable Facet:{id="facetEnabled"}
-Facet enabled flag <br>
-**Optional** <br>
-Toggles faceted search feature.<br>
+ - {An integer}{A date/time constant}, in which date and time constants are: <br>
+
+ - SECOND, SECONDS, MINUTE, MINUTES, HOUR, HOURS, DAY, DAYS, WEEK, WEEKS, MONTH, MONTHS, YEAR, YEARS<br>
+
+Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br>
+
+Each field has certain properties:
+
+ - "required": The flag indicates whether this field can be empty or not. It is false by default.<br>
+ - "default" : It gives the default value of this field if the value is missing.<br>
+ - "searchable" : If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
+ - "refining" : If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
+ - "indexed": If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
+
+Note:
+
+ - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br>
+ - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
+ - There must be at least one searchable field.
+
+####12.3. Enable Facet, Optional:{id="facetEnabled"}
+
+It toggles faceted search feature.<br>
 ```
 <facetEnabled>true</facetEnabled>start
 ```
-> - values are false (disabled) and true (enabled)<br>
-> - By default it is disabled.<br>
+Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br>
 
 
 ####12.4. Facet Fields:{id="facetFields"}
+
 This tag contains all facet-related tags.
 ```
 <facetFields>
@@ -472,7 +485,8 @@ Facet fields: Required if facet is enabled <br>
 > - facetStart: The start point of making range facets. It is required for a range facet. The value will be ignored for categorical facets. <br>
 > - facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
 > - facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br>
->> Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
+
+Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
 
 ####12.5. Analyzer:{id="analyzer"}
 It specifies the analyzer used by the engine. <br>

@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="./main.html">Main pages</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -27,24 +27,22 @@
 <table><tbody><tr><td>
 <div>
 <h3>
-<a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+<a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo-engine-config">1. Geo Engine Configuration</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo-query-syntax">2. Geo Query Syntax</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo-query-ranking">3. Geo Query Ranking</a></br><br>
 </td></tr></tbody></table>
-
 </div> <!-- Table of content, id=content-->
 </div> <!-- Sidebar -->
-
 </td>
 
 <td id="docBody" style="width:70%">
 </br>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Documentation: Geo Search</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Manual: Geo Search</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 

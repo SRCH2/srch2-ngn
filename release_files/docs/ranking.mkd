@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="./main.html">Main pages</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -20,14 +20,23 @@
 <span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
 
+<hr/>
+
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+</td></tr></tbody></table>
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+</td>
+
 <td id="docBody" style="width:70%">
 </br>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2 Documentation: Ranking</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Manual: Ranking</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 <h3>Overview</h3>

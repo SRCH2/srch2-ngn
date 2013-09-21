@@ -3,7 +3,7 @@
 <div id="sidebar"> <!-- Sidebar -->
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="./main.html">Main pages</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -22,7 +22,7 @@
 
 <table><tbody><tr><td>
 
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
 
@@ -49,18 +49,18 @@
 
 <div><table><tbody><tr><td>
 
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2 Documentation: Engine Installation</center>#{id="doc" style="color:#880000" }
+#<center>SRCH2 Manual: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
 
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 
-###1. <u>Configure and Run Server</u>###{id="serverConfig"}
+###1. <u>Download and Run Server</u>###{id="serverConfig"}
 
 
 <b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html). The tar ball includes the following files and a folder:
