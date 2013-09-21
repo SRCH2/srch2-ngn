@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -94,7 +94,7 @@ shell> ./srch2-search-server --config=./srch2-conf.xml
 
 The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
 
-##5. Search###{id="search"}
+##5. Search##{id="search"}
 
 In a shell, run the following command:
 
@@ -122,7 +122,7 @@ mongodb> db.movies.insert(
 
 This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record.
 
-##7. Update a Record###{id="updateRecord"}
+##7. Update a Record##{id="updateRecord"}
 
 Run the following command in the MongoDB shell to update the record we just inserted:
 ```
@@ -134,7 +134,7 @@ mongodb> db.movies.update( { id: 764006 },
 
 Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "mel gibson" as the <i>director</i> value.
 
-##8. Delete a Record###{id="deleteRecord"}
+##8. Delete a Record##{id="deleteRecord"}
 
 Run the following command in the MongoDB shell to delete the updated record:
 ```

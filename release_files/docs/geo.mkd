@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -48,7 +48,7 @@
 
 This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
 
-###1. Geo Engine Configuration{id="geo-engine-config"}
+##1. Geo Engine Configuration{id="geo-engine-config"}
 
 The engine has two indexing options:
 
@@ -76,7 +76,7 @@ Each record should have two values for these two types, and they should be float
 ```
 
 
-###2. Geo Query Syntax{id="geo-query-syntax"}
+##2. Geo Query Syntax{id="geo-query-syntax"}
 
 If geo indexing is used, a geo query should use one of the following two ways to define a geo region to search on:
 
