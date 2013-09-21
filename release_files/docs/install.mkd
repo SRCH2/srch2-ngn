@@ -3,7 +3,7 @@
 <div id="sidebar"> <!-- Sidebar -->
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -59,7 +59,7 @@
 
 
 
-###1. <u>Download and Run Server</u>###{id="serverConfig"}
+##1. Download and Run Server##{id="serverConfig"}
 
 
 <b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html). The tar ball includes the following files and a folder:
@@ -104,14 +104,14 @@ Now you should see the following results:
 </br>
 
 
-###2. <u>Simple Frontend UI</u>###{id="simple-ui"}
+##2. Simple Frontend UI##{id="simple-ui"}
 
 Open a browser and go to local "example-demo/basic-ui/index.html". Type into the search box, after at least three letters you should see:
 
 ![Demo Webpage Image](./images/Srch2-BasicDemoFront.png){width=750px}
 
 
-###3. <u>Advanced Frontend UI</u>###{id="advanced-ui"}
+##3. Advanced Frontend UI##{id="advanced-ui"}
 
 Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search and see the results. You should see the following page:
 

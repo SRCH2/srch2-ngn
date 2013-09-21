@@ -7,7 +7,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -87,31 +87,31 @@
 #<center>SRCH2 Manual: Engine Configuration</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-###1. Overview:###{id="overview"}
+##1. Overview:##{id="overview"}
 
 The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.
 
 The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
 
-###2. Config Component:###{id="configTag"}
+##2. Config Component:##{id="configTag"}
 
 The following is a breakdown of the subtags of the "config" component.
 
-###3. SRCH2 Home Directory, Required###{id="srch2Home"}
+##3. SRCH2 Home Directory, Required##{id="srch2Home"}
 
 ```
 <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
 This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".
 
-###4. License Key File, Required###{id="licenseFile"}
+##4. License Key File, Required##{id="licenseFile"}
 ```
 <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
 It specifies a license key file required by the engine. Enter your email [here](http://www.srch2.com/downloads.html) to get a free trial key. <br>
 
 
-###5. Hostname and Port, Required###{id="listeningHostname"}
+##5. Hostname and Port, Required##{id="listeningHostname"}
 ```
 <listeningHostname>127.0.0.1</listeningHostname>
 <listeningPort>8081</listeningPort>
@@ -119,7 +119,7 @@ It specifies a license key file required by the engine. Enter your email [here](
 Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
 Specify as 0.0.0.0 if value is unknown.
 
-###6. Data Directory, Required###{id="dataDir"}
+##6. Data Directory, Required##{id="dataDir"}
 ```
 <dataDir>/path/to/data/directory/</dataDir>
 ```
@@ -127,9 +127,9 @@ It specifies the path of a folder where the engine stores serialized index files
 
 
 
-###7. Data ###{id="data"}
+##7. Data ##{id="data"}
 
-####7.1. Data Sources, Optional {id="dataSources"}
+###7.1. Data Sources, Optional {id="dataSources"}
 
 ```
 <dataSourceType>1</dataSourceType>
@@ -139,14 +139,14 @@ It specifies the type of data source to build the indexes from.
 >        1 - json data file. (Default)
 >        2 - Mongo Db.
 
-####7.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
+###7.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
 ```
 <dataFile>/path/to/data.json</dataFile>
 ```
 It specifies a JSON data file to be loaded by the engine.<br>
 
-####7.3. MongoDB, Required if "dataSourceType" is 2 {id="mongodb"}
+###7.3. MongoDB, Required if "dataSourceType" is 2 {id="mongodb"}
 ```
 <mongodb>
     <host>www.my-company.com</host>
@@ -156,17 +156,17 @@ It specifies a JSON data file to be loaded by the engine.<br>
     <listenerWaitTime>3</listenerWaitTime>
 </mongodb> 
 ```
-It specifies MongoDB instance information.
-> Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). 
+It specifies MongoDB instance information. Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). 
 
-###8. Index Config:###{id="indexConfig"}
+##8. Index Config:##{id="indexConfig"}
+
 This tag includes parameters related to customizing the indexes.
 ```
 <indexConfig>
 ...
 </indexConfig>
 ```
-####8.1. Index Type, Required{id="indexType"}
+###8.1. Index Type, Required{id="indexType"}
 ```
 <indexType>0</indexType>
 ```
@@ -174,7 +174,7 @@ This tag includes parameters related to customizing the indexes.
 > 1: Text + Geo Indexes, which support location-based search. <br>
 
 
-####8.2. Field Boosts, Optional{id="fieldBoost"}
+###8.2. Field Boosts, Optional{id="fieldBoost"}
 ```
 <fieldBoost></fieldBoost>
 ```
@@ -185,26 +185,26 @@ It specifies boost values for the <a href="#fields">searchable attributes</a>. A
 Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1.<br>
 
 
-####8.3. Record Boost Field, Optional{id="recordBoostField"}
+###8.3. Record Boost Field, Optional{id="recordBoostField"}
 ```
 <recordBoostField>relevance</recordBoostField>
 ```
 It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.
-####8.4. Default Query Term Boost, Optional{id="defaultQueryTermBoost"}
+###8.4. Default Query Term Boost, Optional{id="defaultQueryTermBoost"}
 ```
 <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
-###9. Query parameters:###{id="queryConfig"}
+##9. Query parameters:##{id="queryConfig"}
 The following tag includes parameters related to queries.
 ```
 <query>
 ...
 </query>
 ```
-####9.1. Ranking:{id="rankingalgorithm"}
+###9.1. Ranking:{id="rankingalgorithm"}
 
 The following tags and parameters are related to ranking. See the [Ranking Section](ranking.html) for ranking-related information.
 
@@ -214,33 +214,33 @@ The following tags and parameters are related to ranking. See the [Ranking Secti
 </rankingalgorithm>
 ```
 
-####9.2. Term Similarity Boost, Optional{id="queryTermSimilarityBoost"}
+###9.2. Term Similarity Boost, Optional{id="queryTermSimilarityBoost"}
 
 ```
 <queryTermSimilarityBoost>0.9</queryTermSimilarityBoost>
 ```
 It specifies a similarity boost used in computing the score of a record in fuzzy search. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
 
-####9.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
+###9.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
 ```
 <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
 ```
 It modifies the default behavior of fuzzy keyword search. Its value must lie in [0,1], with 1 representing exact match, and 0 being the largest possible error tolerance. Its default value is 0.5.
 
-####9.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
+###9.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
 ```
 <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
 It specifies whether we support swap operation (e.g., "iphone" versus "ipohne") in the edit distance function, in addition to insertion, deletion, and substitution operations. By default it is true.
 
-####9.5. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
+###9.5. Query Term Length Boost, Optional{id="queryTermLengthBoost"}
 ```
 <queryTermLengthBoost></queryTermLengthBoost>
 ```
 Check the [ranking section](ranking.html) to see how this value is used in the ranking function. Its default value is 0.5. <br>
 
 
-####9.6. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
+###9.6. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
 
 ```
 <prefixMatchPenalty>0.95</prefixMatchPenalty>
@@ -249,26 +249,26 @@ It specifies the penalty for a prefix match. This value reduces, by a multiple, 
 The value should be in the range of 0 to 1. Its default value is 0.95. See the [ranking section](ranking.html) for more information.<br>
 
 
-####9.7. Cache Size, Optional{id="cacheSize"}
+###9.7. Cache Size, Optional{id="cacheSize"}
 
 ```
 <cacheSize>65536000</cacheSize>
 ```
 It specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br>
 
-####9.8. Default value for number of returned results, Optional{id="rows"}
+###9.8. Default value for number of returned results, Optional{id="rows"}
 ```
 <rows>10</rows>
 ```
 It specifies the number of results retrieved. Its default value is 10. <br>
 
-####9.9. Maximum number of search threads, Optional:{id="maxSearchThreads"}
+###9.9. Maximum number of search threads, Optional:{id="maxSearchThreads"}
 ```
 <maxSearchThreads>2</maxSearchThreads>
 ```
 It specifies the number of threads that serve search requests. Its default value is 1. <br>
 
-####9.10. Field Based Search Enabled, Optional{id="fieldBasedSearch"}
+###9.10. Field Based Search Enabled, Optional{id="fieldBasedSearch"}
 ```
 <fieldBasedSearch>0</fieldBasedSearch>
 ```
@@ -278,7 +278,7 @@ It is a flag to toggle attribute-based search. An attribute-based search applies
 > Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 
-####9.11. Search Type, Optional{id="searcherType"}
+###9.11. Search Type, Optional{id="searcherType"}
 ```
 <searcherType>0</searcherType>
 ```
@@ -287,7 +287,7 @@ It sets the default search type of a query to the engine. <br>
 > 1: finding all matching results. <br>
 Its default value is 0.<br>
 
-####9.12. Query Term Match Type, Optional{id="queryTermMatchType"}
+###9.12. Query Term Match Type, Optional{id="queryTermMatchType"}
 ```
 <queryTermMatchType>1</queryTermMatchType>
 ```
@@ -296,7 +296,7 @@ It modifies the default search behavior of the engine
 > 1: fuzzy match search.<br>
 > Its default value is 0.
 
-####9.13. Query Term Type, Optional{id="queryTermType"}
+###9.13. Query Term Type, Optional{id="queryTermType"}
 
 ```
 <queryTermType>0</queryTermType>
@@ -307,7 +307,7 @@ It modifies the default treatment of search query's keyword:<br>
 > Its default value is 0.
 
 
-###10. Response Writer:###{id="queryResponseWriter"}
+##10. Response Writer:##{id="queryResponseWriter"}
 This tag has parameters related to configuring the response of a query.
 ```
 <queryResponseWriter>
@@ -315,7 +315,7 @@ This tag has parameters related to configuring the response of a query.
 </queryResponseWriter>
 ```
 
-####10.1. Response Content, Optional{id="ResponseContent"}
+###10.1. Response Content, Optional{id="ResponseContent"}
 ```
 <responseContent type="2">lat,lng</responseContent>
 ```
@@ -332,7 +332,7 @@ It specifies the format of each JSON search response. You should set the type to
 > It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
 <br>
 
-###11. Update Handler:###{id="updateHandler"}
+##11. Update Handler:###{id="updateHandler"}
 
 This tag includes tags related to configuring the engine to handle update requests.
 ```
@@ -340,13 +340,13 @@ This tag includes tags related to configuring the engine to handle update reques
 ...
 </updatehandler>
 ```
-####11.1. Maximum Number of Documents, Required{id="maxDocs"}
+###11.1. Maximum Number of Documents, Required{id="maxDocs"}
 ```
 <maxDocs>15000000</maxDocs>
 ```
 It specifies the maximum number of records indexable by the engine. Inserting more records than what is specified here will cause the insertions to fail.
 
-####11.2. Merge Policy, Required{id="mergePolicy"}
+###11.2. Merge Policy, Required{id="mergePolicy"}
 
 ```
 <mergePolicy>
@@ -358,7 +358,7 @@ It specifies the maximum number of records indexable by the engine. Inserting mo
  
   - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
 
-####11.3. Logging:{id="updateLog"}
+###11.3. Logging:{id="updateLog"}
 
 The following tag includes parameters related to logging in SRCH2.
 ```
@@ -366,7 +366,7 @@ The following tag includes parameters related to logging in SRCH2.
 ...
 </updateLog>
 ```
-####11.4. Log Level, Optional{id="logLevel"}
+###11.4. Log Level, Optional{id="logLevel"}
 ```
 <logLevel>3</logLevel>
 ```
@@ -377,14 +377,14 @@ The parameter decides the amount of feedback information the engine will report 
 > 3: INFO <br>
 > Its default value is 3.
 
-####11.5. Log File, Required:{id="accessLogFile"}
+###11.5. Log File, Required:{id="accessLogFile"}
 ```
 <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
 ```
 It specifies the file to which the engine writes logging information.<br>
 
 
-###12. Schema Component:###{id="schemaTag"}
+##12. Schema Component:##{id="schemaTag"}
 
 The following sections explain each subtag under the <i>schema</i> component.
 ```
@@ -393,14 +393,14 @@ The following sections explain each subtag under the <i>schema</i> component.
 </schema>
 ```
 
-####12.1. Primary Key:{id="uniqueKey"}
+###12.1. Primary Key:{id="uniqueKey"}
 Primary Key: Required
 ```
 <uniqueKey>id</uniqueKey>
 ```
 It specifies the attribute used as the primary key to reference each record in the data. If a inserted record has a primary key conflicting with an existing record, the new record will be rejected by the engine. The attribute needs to be of text type.<br>
 
-####12.2. Fields, Required{id="fields"}
+###12.2. Fields, Required{id="fields"}
 ```
 <fields>
 ...
@@ -457,7 +457,7 @@ Note:
  - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 
-####12.3. Enable Facet, Optional:{id="facetEnabled"}
+###12.3. Enable Facet, Optional:{id="facetEnabled"}
 
 It toggles faceted search feature.<br>
 ```
@@ -466,7 +466,7 @@ It toggles faceted search feature.<br>
 Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br>
 
 
-####12.4. Facet Fields:{id="facetFields"}
+###12.4. Facet Fields:{id="facetFields"}
 
 This tag contains all facet-related tags.
 ```
@@ -488,7 +488,7 @@ Facet fields: Required if facet is enabled <br>
 
 Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
 
-####12.5. Analyzer:{id="analyzer"}
+###12.5. Analyzer:{id="analyzer"}
 It specifies the analyzer used by the engine. <br>
 ```
 <types>
@@ -499,12 +499,12 @@ It specifies the analyzer used by the engine. <br>
 </fieldType>
 </types>
 ```
-####12.5.1 Stemmer, Optional{id="PorterStemFilter"}
+###12.5.1 Stemmer, Optional{id="PorterStemFilter"}
 The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). It uses a dictionary file with keywords that should be ignored by the stemmer. If no file if provided, the stemmer is disabled.
 ```
 <filter name="PorterStemFilter" dictionary="stemmer-dictionary.txt" />
 ```
-####12.5.2 Stop Words, Optional{id="StopFilter"}
+###12.5.2 Stop Words, Optional{id="StopFilter"}
 It specifies a file of stop words that can be ignored by the engine. Providing "" for "words" option can disable this filter.
 ```
 <filter name="StopFilter" words="stop-words.txt" />

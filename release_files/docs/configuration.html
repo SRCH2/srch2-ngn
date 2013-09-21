@@ -14,7 +14,7 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
@@ -92,35 +92,35 @@
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Configuration</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
-<h3 id="overview">1. Overview:</h3>
+<h2 id="overview">1. Overview:</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.</p>
 <p>The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
-<h3 id="configTag">2. Config Component:</h3>
+<h2 id="configTag">2. Config Component:</h2>
 <p>The following is a breakdown of the subtags of the "config" component.</p>
-<h3 id="srch2Home">3. SRCH2 Home Directory, Required</h3>
+<h2 id="srch2Home">3. SRCH2 Home Directory, Required</h2>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
 
 <p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "data/sample-data.json".</p>
-<h3 id="licenseFile">4. License Key File, Required</h3>
+<h2 id="licenseFile">4. License Key File, Required</h2>
 <pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
 
 <p>It specifies a license key file required by the engine. Enter your email <a href="http://www.srch2.com/downloads.html">here</a> to get a free trial key. <br></p>
-<h3 id="listeningHostname">5. Hostname and Port, Required</h3>
+<h2 id="listeningHostname">5. Hostname and Port, Required</h2>
 <pre><code>&lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
 
 <p>Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
 Specify as 0.0.0.0 if value is unknown.</p>
-<h3 id="dataDir">6. Data Directory, Required</h3>
+<h2 id="dataDir">6. Data Directory, Required</h2>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
 
 <p>It specifies the path of a folder where the engine stores serialized index files. <br></p>
-<h3 id="data">7. Data</h3>
-<h4 id="dataSources">7.1. Data Sources, Optional</h4>
+<h2 id="data">7. Data</h2>
+<h3 id="dataSources">7.1. Data Sources, Optional</h3>
 <pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
 </code></pre>
 
@@ -130,12 +130,12 @@ Specify as 0.0.0.0 if value is unknown.</p>
    2 - Mongo Db.
 </code></pre>
 </blockquote>
-<h4 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h4>
+<h3 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;/path/to/data.json&lt;/dataFile&gt;
 </code></pre>
 
 <p>It specifies a JSON data file to be loaded by the engine.<br></p>
-<h4 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h4>
+<h3 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h3>
 <pre><code>&lt;mongodb&gt;
     &lt;host&gt;www.my-company.com&lt;/host&gt;
     &lt;port&gt;1234&lt;/port&gt;
@@ -145,18 +145,15 @@ Specify as 0.0.0.0 if value is unknown.</p>
 &lt;/mongodb&gt; 
 </code></pre>
 
-<p>It specifies MongoDB instance information.</p>
-<blockquote>
-<p>Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). </p>
-</blockquote>
-<h3 id="indexConfig">8. Index Config:</h3>
+<p>It specifies MongoDB instance information. Note: listenerWaitTime must be specified in seconds. It specifies how frequently SRCH2 engine is updated from your MongoDB instance (e.g., every 3 seconds). </p>
+<h2 id="indexConfig">8. Index Config:</h2>
 <p>This tag includes parameters related to customizing the indexes.</p>
 <pre><code>&lt;indexConfig&gt;
 ...
 &lt;/indexConfig&gt;
 </code></pre>
 
-<h4 id="indexType">8.1. Index Type, Required</h4>
+<h3 id="indexType">8.1. Index Type, Required</h3>
 <pre><code>&lt;indexType&gt;0&lt;/indexType&gt;
 </code></pre>
 
@@ -164,7 +161,7 @@ Specify as 0.0.0.0 if value is unknown.</p>
 <p>0: Text Indexes; <br>
 1: Text + Geo Indexes, which support location-based search. <br></p>
 </blockquote>
-<h4 id="fieldBoost">8.2. Field Boosts, Optional</h4>
+<h3 id="fieldBoost">8.2. Field Boosts, Optional</h3>
 <pre><code>&lt;fieldBoost&gt;&lt;/fieldBoost&gt;
 </code></pre>
 
@@ -173,72 +170,72 @@ Specify as 0.0.0.0 if value is unknown.</p>
 </code></pre>
 
 <p>Notice that the fields are sparated by a single white space. If a value is not provide for a field, the engine uses a default value of 1.<br></p>
-<h4 id="recordBoostField">8.3. Record Boost Field, Optional</h4>
+<h3 id="recordBoostField">8.3. Record Boost Field, Optional</h3>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
 <p>It specifies an attribute whose value is used as the boost value of a record's score. The attribute needs to be of float type.</p>
-<h4 id="defaultQueryTermBoost">8.4. Default Query Term Boost, Optional</h4>
+<h3 id="defaultQueryTermBoost">8.4. Default Query Term Boost, Optional</h3>
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
 <p>It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br></p>
-<h3 id="queryConfig">9. Query parameters:</h3>
+<h2 id="queryConfig">9. Query parameters:</h2>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
 ...
 &lt;/query&gt;
 </code></pre>
 
-<h4 id="rankingalgorithm">9.1. Ranking:</h4>
+<h3 id="rankingalgorithm">9.1. Ranking:</h3>
 <p>The following tags and parameters are related to ranking. See the <a href="ranking.html">Ranking Section</a> for ranking-related information.</p>
 <pre><code>&lt;rankingalgorithm&gt;
 &lt;recordScoreExpression&gt;idf_score*doc_boost&lt;/recordScoreExpression&gt;
 &lt;/rankingalgorithm&gt;
 </code></pre>
 
-<h4 id="queryTermSimilarityBoost">9.2. Term Similarity Boost, Optional</h4>
+<h3 id="queryTermSimilarityBoost">9.2. Term Similarity Boost, Optional</h3>
 <pre><code>&lt;queryTermSimilarityBoost&gt;0.9&lt;/queryTermSimilarityBoost&gt;
 </code></pre>
 
 <p>It specifies a similarity boost used in computing the score of a record in fuzzy search. See the <a href="ranking.html">Ranking Section</a> section about how this parameter is used. Its default value is 0.5.</p>
-<h4 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h4>
+<h3 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h3>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
 <p>It modifies the default behavior of fuzzy keyword search. Its value must lie in [0,1], with 1 representing exact match, and 0 being the largest possible error tolerance. Its default value is 0.5.</p>
-<h4 id="supportSwapInEditDistance">9.4. Support Swap as an Edit Distance Operation, Optional</h4>
+<h3 id="supportSwapInEditDistance">9.4. Support Swap as an Edit Distance Operation, Optional</h3>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
 <p>It specifies whether we support swap operation (e.g., "iphone" versus "ipohne") in the edit distance function, in addition to insertion, deletion, and substitution operations. By default it is true.</p>
-<h4 id="queryTermLengthBoost">9.5. Query Term Length Boost, Optional</h4>
+<h3 id="queryTermLengthBoost">9.5. Query Term Length Boost, Optional</h3>
 <pre><code>&lt;queryTermLengthBoost&gt;&lt;/queryTermLengthBoost&gt;
 </code></pre>
 
 <p>Check the <a href="ranking.html">ranking section</a> to see how this value is used in the ranking function. Its default value is 0.5. <br></p>
-<h4 id="prefixMatchPenalty">9.6. Prefix Match Penalty, Optional</h4>
+<h3 id="prefixMatchPenalty">9.6. Prefix Match Penalty, Optional</h3>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
 <p>It specifies the penalty for a prefix match. This value reduces, by a multiple, the score of a record with a prefix matched term. <br>
 The value should be in the range of 0 to 1. Its default value is 0.95. See the <a href="ranking.html">ranking section</a> for more information.<br></p>
-<h4 id="cacheSize">9.7. Cache Size, Optional</h4>
+<h3 id="cacheSize">9.7. Cache Size, Optional</h3>
 <pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
 <p>It specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br></p>
-<h4 id="rows">9.8. Default value for number of returned results, Optional</h4>
+<h3 id="rows">9.8. Default value for number of returned results, Optional</h3>
 <pre><code>&lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
 
 <p>It specifies the number of results retrieved. Its default value is 10. <br></p>
-<h4 id="maxSearchThreads">9.9. Maximum number of search threads, Optional:</h4>
+<h3 id="maxSearchThreads">9.9. Maximum number of search threads, Optional:</h3>
 <pre><code>&lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
 
 <p>It specifies the number of threads that serve search requests. Its default value is 1. <br></p>
-<h4 id="fieldBasedSearch">9.10. Field Based Search Enabled, Optional</h4>
+<h3 id="fieldBasedSearch">9.10. Field Based Search Enabled, Optional</h3>
 <pre><code>&lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
 </code></pre>
 
@@ -248,7 +245,7 @@ The value should be in the range of 0 to 1. Its default value is 0.95. See the <
 1 - Enabled <br>
 Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.</p>
 </blockquote>
-<h4 id="searcherType">9.11. Search Type, Optional</h4>
+<h3 id="searcherType">9.11. Search Type, Optional</h3>
 <pre><code>&lt;searcherType&gt;0&lt;/searcherType&gt;
 </code></pre>
 
@@ -258,7 +255,7 @@ Note that if field-based search is enabled, the number of searchable attributes 
 1: finding all matching results. <br>
 Its default value is 0.<br></p>
 </blockquote>
-<h4 id="queryTermMatchType">9.12. Query Term Match Type, Optional</h4>
+<h3 id="queryTermMatchType">9.12. Query Term Match Type, Optional</h3>
 <pre><code>&lt;queryTermMatchType&gt;1&lt;/queryTermMatchType&gt;
 </code></pre>
 
@@ -268,7 +265,7 @@ Its default value is 0.<br></p>
 1: fuzzy match search.<br>
 Its default value is 0.</p>
 </blockquote>
-<h4 id="queryTermType">9.13. Query Term Type, Optional</h4>
+<h3 id="queryTermType">9.13. Query Term Type, Optional</h3>
 <pre><code>&lt;queryTermType&gt;0&lt;/queryTermType&gt;
 </code></pre>
 
@@ -278,14 +275,14 @@ Its default value is 0.</p>
 1: the term is treated as a complete term; <br>
 Its default value is 0.</p>
 </blockquote>
-<h3 id="queryResponseWriter">10. Response Writer:</h3>
+<h2 id="queryResponseWriter">10. Response Writer:</h2>
 <p>This tag has parameters related to configuring the response of a query.</p>
 <pre><code>&lt;queryResponseWriter&gt;
 ...
 &lt;/queryResponseWriter&gt;
 </code></pre>
 
-<h4 id="ResponseContent">10.1. Response Content, Optional</h4>
+<h3 id="ResponseContent">10.1. Response Content, Optional</h3>
 <pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
 </code></pre>
 
@@ -304,19 +301,19 @@ Its default value is 0. <br>
 It is REQUIRED to include a comma separated list of fields in the tag if it is 2 <br>
 <br></p>
 </blockquote>
-<h3 id="updateHandler">11. Update Handler:</h3>
+<h2 id="updateHandler">11. Update Handler:</h2>
 <p>This tag includes tags related to configuring the engine to handle update requests.</p>
 <pre><code>&lt;updatehandler&gt;
 ...
 &lt;/updatehandler&gt;
 </code></pre>
 
-<h4 id="maxDocs">11.1. Maximum Number of Documents, Required</h4>
+<h3 id="maxDocs">11.1. Maximum Number of Documents, Required</h3>
 <pre><code>&lt;maxDocs&gt;15000000&lt;/maxDocs&gt;
 </code></pre>
 
 <p>It specifies the maximum number of records indexable by the engine. Inserting more records than what is specified here will cause the insertions to fail.</p>
-<h4 id="mergePolicy">11.2. Merge Policy, Required</h4>
+<h3 id="mergePolicy">11.2. Merge Policy, Required</h3>
 <pre><code>&lt;mergePolicy&gt;
 &lt;mergeEveryNSeconds&gt;10&lt;/mergeEveryNSeconds&gt;
 &lt;mergeEveryMWrites&gt;100&lt;/mergeEveryMWrites&gt;
@@ -331,14 +328,14 @@ It is REQUIRED to include a comma separated list of fields in the tag if it is 2
 <p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
 </li>
 </ul>
-<h4 id="updateLog">11.3. Logging:</h4>
+<h3 id="updateLog">11.3. Logging:</h3>
 <p>The following tag includes parameters related to logging in SRCH2.</p>
 <pre><code>&lt;updateLog&gt;
 ...
 &lt;/updateLog&gt;
 </code></pre>
 
-<h4 id="logLevel">11.4. Log Level, Optional</h4>
+<h3 id="logLevel">11.4. Log Level, Optional</h3>
 <pre><code>&lt;logLevel&gt;3&lt;/logLevel&gt;
 </code></pre>
 
@@ -350,25 +347,25 @@ It is REQUIRED to include a comma separated list of fields in the tag if it is 2
 3: INFO <br>
 Its default value is 3.</p>
 </blockquote>
-<h4 id="accessLogFile">11.5. Log File, Required:</h4>
+<h3 id="accessLogFile">11.5. Log File, Required:</h3>
 <pre><code>&lt;accessLogFile&gt;./data/faceted_search/log.txt&lt;/accessLogFile&gt;
 </code></pre>
 
 <p>It specifies the file to which the engine writes logging information.<br></p>
-<h3 id="schemaTag">12. Schema Component:</h3>
+<h2 id="schemaTag">12. Schema Component:</h2>
 <p>The following sections explain each subtag under the <i>schema</i> component.</p>
 <pre><code>&lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
 ...
 &lt;/schema&gt;
 </code></pre>
 
-<h4 id="uniqueKey">12.1. Primary Key:</h4>
+<h3 id="uniqueKey">12.1. Primary Key:</h3>
 <p>Primary Key: Required</p>
 <pre><code>&lt;uniqueKey&gt;id&lt;/uniqueKey&gt;
 </code></pre>
 
 <p>It specifies the attribute used as the primary key to reference each record in the data. If a inserted record has a primary key conflicting with an existing record, the new record will be rejected by the engine. The attribute needs to be of text type.<br></p>
-<h4 id="fields">12.2. Fields, Required</h4>
+<h3 id="fields">12.2. Fields, Required</h3>
 <pre><code>&lt;fields&gt;
 ...
 &lt;/fields&gt;
@@ -430,13 +427,13 @@ Its default value is 3.</p>
 <li>The primary key is optional to be included here. It can also be searchable and/or refining.<br></li>
 <li>There must be at least one searchable field.</li>
 </ul>
-<h4 id="facetEnabled">12.3. Enable Facet, Optional:</h4>
+<h3 id="facetEnabled">12.3. Enable Facet, Optional:</h3>
 <p>It toggles faceted search feature.<br></p>
 <pre><code>&lt;facetEnabled&gt;true&lt;/facetEnabled&gt;start
 </code></pre>
 
 <p>Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br></p>
-<h4 id="facetFields">12.4. Facet Fields:</h4>
+<h3 id="facetFields">12.4. Facet Fields:</h3>
 <p>This tag contains all facet-related tags.</p>
 <pre><code>&lt;facetFields&gt;
 ...
@@ -459,7 +456,7 @@ Its default value is 3.</p>
 </ul>
 </blockquote>
 <p>Note: fact ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br></p>
-<h4 id="analyzer">12.5. Analyzer:</h4>
+<h3 id="analyzer">12.5. Analyzer:</h3>
 <p>It specifies the analyzer used by the engine. <br></p>
 <pre><code>&lt;types&gt;
 &lt;fieldType name=&quot;text_en&quot;&gt;
@@ -470,12 +467,12 @@ Its default value is 3.</p>
 &lt;/types&gt;
 </code></pre>
 
-<h4 id="PorterStemFilter">12.5.1 Stemmer, Optional</h4>
+<h3 id="PorterStemFilter">12.5.1 Stemmer, Optional</h3>
 <p>The engine supports <a href="http://tartarus.org/martin/PorterStemmer/">Porter Stemming</a>. It uses a dictionary file with keywords that should be ignored by the stemmer. If no file if provided, the stemmer is disabled.</p>
 <pre><code>&lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;stemmer-dictionary.txt&quot; /&gt;
 </code></pre>
 
-<h4 id="StopFilter">12.5.2 Stop Words, Optional</h4>
+<h3 id="StopFilter">12.5.2 Stop Words, Optional</h3>
 <p>It specifies a file of stop words that can be ignored by the engine. Providing "" for "words" option can disable this filter.</p>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
 </code></pre>
