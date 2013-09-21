@@ -62,7 +62,7 @@ def prepareQuery(queryKeywords):
     query = query + '%20OR%20' # ' OR '
     query = query + 'likes%3A%5B44%20TO%20*%5D' # 'likes:[44 TO *]'
     query = query + '%20OR%20' # ' OR '
-    query = query + 'CMPLX%24price%3E88%20and%20price%3C96%24' # CMPLX$price>88 and price<96$
+    query = query + 'boolexp%24price%3E88%20and%20price%3C96%24' # CMPLX$price>88 and price<96$
     #print 'Query : ' + query
     ##################################
     return query
