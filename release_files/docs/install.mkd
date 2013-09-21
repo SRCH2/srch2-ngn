@@ -9,8 +9,8 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 
@@ -24,7 +24,7 @@
 
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Download and Run Server</a><br><br>
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#simple-ui">2. Simple Frontend UI</a></br><br>
 
@@ -55,7 +55,6 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
-
 ######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
