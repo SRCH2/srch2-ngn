@@ -14,14 +14,14 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main Pages</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
@@ -29,7 +29,7 @@
 <hr/>
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sampleQueries">2. Sample Queries</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#basicConcepts">3. Basic Concepts</a></br><br>
@@ -68,12 +68,12 @@
 <td id="docBody" style="width:70%">
 </br>
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: RESTful API - Search</center></h1>
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, September 19, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>Welcome to the Srch2 query syntax documentation page. This documentation begins with a set of sample queries to get a flavor of the query language. It then dives further into the language with an explanation of the basic concepts behind it. Then we give details of the structural components of a query with emphasis on their syntax specifications.</p>
@@ -82,7 +82,7 @@
 <pre><code>f1) curl -i &quot;http://localhost:8081/search?q=hospital&quot;
 </code></pre>
 
-<p>In this query, we are searching for all records containing the word "hospital". The result set will contain all records with the word "hospital" in any <a href="configuration.html##fields">searchable field</a>, as specified in the configuration file.</p>
+<p>In this query, we are searching for all records containing the word "hospital". The result set will contain all records with the word "hospital" in any <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
 <pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&quot;
 </code></pre>
 
@@ -106,7 +106,7 @@
 <h2 id="basicConcepts">3. Basic Concepts</h2>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.</p>
 <h3 id="fields">3.1. Fields</h3>
-<p>When performing a search, we can either specify a field or use a default value. Any <a href="configuration.html##fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:</p>
+<p>When performing a search, we can either specify a field or use a default value. Any <a href="configuration.html#fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:</p>
 <pre><code>title:algo AND go
 </code></pre>
 
@@ -120,13 +120,13 @@
 </code></pre>
 
 <h3 id="fuzzySearch">3.3.2. Fuzzy Search</h3>
-<p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the neighbourhood of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
+<p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
 <pre><code>q=schwarzeneger~0.8
 </code></pre>
 
 <p>The internal edit-distance threshold is floor((1-0.8) * length("schwarzeneger")) = floor(2.6) = 2. So the engine will find records with a keyword whose edit distance to the term "schwarzeneger" is at most two.</p>
 <p>The engine allows each fuzzy search term to specify its own similarity value.</p>
-<p>If a term doesn't have a similarity value, e.g.,</p>
+<p>If a term does not have a similarity value, e.g.,</p>
 <pre><code>schwarzeneger~
 </code></pre>
 
@@ -160,13 +160,13 @@ Invalid query 3) q=algorithm~.6*
 <br>
 <span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100%" src="images/Srch2-querysyntax.png" /></a></span>
 <center>Figure 1: Query Components</center></p>
-<h2 id="localParams">5. Local Paramerters (LocalParams)</h2>
+<h2 id="localParams">5. Local Parameters (LocalParams)</h2>
 <p><i>LocalParams</i> stands for "local parameters." It provides a way to "localize" query behavior by specifying modifiers for the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.</p>
 <p>To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by whitespace. So if the original query keyword is "algorithm", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}algorithm</i>. For example, we can specify a default field in local parameters as follows:</p>
 <pre><code>q={defaultSearchFields=title}algorithm
 </code></pre>
 
-<p>The above query search for words with the word "algorithm" in the field <i>title</i>. We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:</p>
+<p>The above query searches for records with the word "algorithm" in the field <i>title</i>. We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:</p>
 <pre><code>q={defaultFieldOperator=AND defaultSearchFields=author,title}algorithm
 </code></pre>
 
@@ -257,7 +257,7 @@ Invalid query 3) q=algorithm~.6*
 </code></pre>
 
 <p>The response of the above query includes faceting information for <i>price</i> and <i>age</i> fields. <br></p>
-<p>Please note: the <a href="configuration.html##facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
+<p>Please note: the <a href="configuration.html#facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
 <h3 id="facetStart">7.3.2. facet.range.start</h3>
 <p>It is the lower bound of the range. Example:</p>
 <pre><code>f.price.facet.start=0.0&amp;f.age.facet.start=10
@@ -278,10 +278,12 @@ Invalid query 3) q=algorithm~.6*
 <p>The above query defines the gap between each consecutive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
 <p>Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.</p>
 <h2 id="searchType">8. searchType</h2>
-<p>The engine offers three different strategies for searching records:
- - topK : The results will be sorted descending by their score. This score is calculated for each record. Not that this approach has a very high performance, but does not support facet and sort operations. <br>
-- getAll : Use this strategy if facets and sort query parameters are needed.
- - geo: Use of a location-based search. Sort and facets are supported. <br></p>
+<p>The engine offers three different strategies for searching records:</p>
+<ul>
+<li>topK: The results will be sorted descending by their score. This score is calculated for each record. Not that this approach has a very high performance, but does not support facet and sort operations. <br></li>
+<li>getAll: Use this strategy if facets and sort query parameters are needed.</li>
+<li>geo: Use of a location-based search. Sort and facets are supported. <br></li>
+</ul>
 <p>Example of using searchType:</p>
 <pre><code>1) searchType=topK
 2) searchType=getAll

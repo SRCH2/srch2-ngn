@@ -7,48 +7,32 @@
 </head>
 <body>
 <table style="width:100%;table-layout:fixed" ><tr>
-
 <td id="sideBarTd" style="width:25%">
-
-
 <div id="sidebar"> <!-- Sidebar -->
-
-
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
-
 <table><tbody><tr><td>
-
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
-
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="./main.html">Main pages</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
-
 </td></tr></tbody></table>
 
-<p><span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br></p>
-<p></div> <!-- Links to main pages, id=linkpool--></p>
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"/></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
 <hr/>
 
 <div id="content" > <!-- Table of content, id=content-->
 
 <table><tbody><tr><td>
 
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Configure and Run Server</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Download and Run Server</a><br><br>
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#simple-ui">2. Simple Frontend UI</a></br><br>
 
@@ -57,11 +41,7 @@
 
 </td></tr></tbody></table>
 
-
-</div>
-
-<!-- Table of content, id=content-->
-
+<p></div> <!-- Table of content, id=content--></p>
 <p></div> <!-- Sidebar --></p>
 </td>
 
@@ -71,24 +51,25 @@
 
 <div><table><tbody><tr><td>
 
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#880000"><center>SRCH2 Documentation: Engine Installation</center></h1>
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Installation</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
-<h3 id="serverConfig">1. Configure and Run Server</h3>
-<p>Step 1: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a>. The tar ball includes the following files:</p>
+<h3 id="serverConfig">1. <u>Download and Run Server</u></h3>
+<p><b>Step 1</b>: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a>. The tar ball includes the following files and a folder:</p>
 <ul>
-<li>srch2-engine: the binary file of the engine;</li>
-<li>readme.txt.</li>
+<li>srch2-engine (the binary file of the engine);</li>
+<li>readme.txt;</li>
+<li>example-demo.</li>
 </ul>
-<p>It also has a folder "example-demo" that contains files for a demo, in which we use the engine to build a search service on movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
-<p>Step 2: Obtain a license key by emailing <em>contact (at) srch2 (dot) com</em>. You can also a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
-<p>Step 3: Place the license key and downloaded files into a directory.</p>
-<p>Step 4: Open a shell and go to the directory of the engine. Run the following:</p>
+<p>The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
+<p><b>Step 2</b>: Obtain a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
+<p><b>Step 3</b>: Place the license key and downloaded files into a directory.</p>
+<p><b>Step 4</b>: Open a shell and go to the directory of the engine. Run the following:</p>
 <pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-config.xml
 </code></pre>
 
@@ -96,7 +77,7 @@
 <p><center></p>
 <p><img alt="Engine is running" src="./images/engine_running.png"></p>
 <p></center></p>
-<p>Step 5: To test the engine, open a new terminal and type the following command:</p>
+<p><b>Step 5</b>: To test the engine, open a new terminal and type the following command:</p>
 <pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=terminator
 </code></pre>
 
@@ -105,10 +86,10 @@
 <img alt="Engine is running" src="./images/results.png">
 </center></p>
 <p></br></p>
-<h3 id="simple-ui">2. Simple Frontend UI</h3>
+<h3 id="simple-ui">2. <u>Simple Frontend UI</u></h3>
 <p>Open a browser and go to local "example-demo/basic-ui/index.html". Type into the search box, after at least three letters you should see:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-BasicDemoFront.png" width="750px"></p>
-<h3 id="advanced-ui">3. Advanced Frontend UI</h3>
+<h3 id="advanced-ui">3. <u>Advanced Frontend UI</u></h3>
 <p>Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search and see the results. You should see the following page:</p>
 <p><img alt="Demo Webpage Image" src="./images/Srch2-FullDemoFront.png" width="750px"></p>
 <p>The screen has the following regions:</p>
@@ -132,17 +113,14 @@
 <p>It shows the facet results.</p>
 </li>
 </ol>
-<p>Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.</p>
+<p><b>Important</b>: Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.</p>
 <hr/>
 
 <p>Have fun SRCHing!</p>
-<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
-<script type="text/javascript" src="setSizes.js"></script>
-
+<p><link rel="stylesheet" type="text/css" href="documentation.css">
+<script type="text/javascript" src="setSizes.js"></script></p>
 <script>
-
 setSizes();
-
 window.onresize = setSizes
 
 </script>
