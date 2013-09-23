@@ -27,13 +27,11 @@
          
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-        <fieldBoost>category^2 name^1</fieldBoost>
-         
-         
-        <!-- 
-        <recordBoostField>relevance</recordBoostField>
+        <fieldBoost>title^2 director^1</fieldBoost>
+
+        <!--
+        <recordBoostField>director</recordBoostField>
         -->
-         
          
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
         
@@ -125,7 +123,6 @@
    <fields>
       <field name="title" type="text" indexed="true"/>
       <field name="director" type="text" indexed="true"/>
-      <field name="trailer_url" type="text" indexed="true"/>
       <field name="genre" type="text" indexed="false" refining="true"
              default="HORROR" required="false"/>
       <field name="year"  type="float"  indexed="false" refining="true"
