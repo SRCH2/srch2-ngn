@@ -146,7 +146,8 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
                 charVector = tokenStream->getProcessedToken();
                 unsigned position = tokenStream->getProcessedTokenPosition();
                 charTypeVectorToUtf8String(charVector, currentToken);
-                tokens.push_back({currentToken, position});
+                PositionalTerm pterm = {currentToken, position};
+                tokens.push_back(pterm);
             }
 
             for (unsigned i = 0; i< tokens.size(); ++i) {
@@ -173,7 +174,8 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
         charVector = this->tokenStream->getProcessedToken();
         unsigned position = this->tokenStream->getProcessedTokenPosition();
         charTypeVectorToUtf8String(charVector, currentToken);
-        queryKeywords.push_back({currentToken, position});
+        PositionalTerm pterm = {currentToken, position};
+        queryKeywords.push_back(pterm);
         //cout<<currentToken<<endl;
     }
 
@@ -234,7 +236,8 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
         }
 
         const string cleanString = this->cleanString(one_pair[0]);
-        queryKeywords.push_back({cleanString, i + 1});  // i + 1 because i is 0 based whereas position starts with 1
+        PositionalTerm pterm = {cleanString, i + 1};
+        queryKeywords.push_back(pterm);  // i + 1 because i is 0 based whereas position starts with 1
 
         if (one_pair.size() == 1) {        // have no filter information
             filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.

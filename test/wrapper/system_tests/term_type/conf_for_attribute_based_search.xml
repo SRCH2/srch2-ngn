@@ -127,12 +127,12 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term Similarity Boost
+            Query Term Fuzzy Penalty
             Optional
              
-            Defaults to 0.5
+            Defaults to 1
         -->
-        <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
+        <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
          
         <!--
             Query Term Length Boost

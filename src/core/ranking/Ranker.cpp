@@ -40,13 +40,14 @@ namespace srch2
     float DefaultTopKRanker::computeTermRecordRuntimeScore(float termRecordStaticScore, 
                                    unsigned editDistance, unsigned termLength, 
                                    bool isPrefixMatch,
-                                   float prefixMatchPenalty)
+                                   float prefixMatchPenalty , float termSimilarityBoost)
     {
         unsigned ed = editDistance;
         if (ed > termLength)
         	ed = termLength;
 
-        float normalizedEdSimilarity = 1 - (1.0*ed) / termLength;
+        // TODO : change this power calculation to using a pre-computed array
+        float normalizedEdSimilarity = (1 - (1.0*ed) / termLength)* pow(termSimilarityBoost, (float) ed);
         float PrefixMatchingNormalizer = isPrefixMatch ? (prefixMatchPenalty) : 1.0;
         return termRecordStaticScore * normalizedEdSimilarity * PrefixMatchingNormalizer;
     }

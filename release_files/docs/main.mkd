@@ -7,30 +7,20 @@
 
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Main pages</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">GEO Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
 </td></tr></tbody></table>
 <span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
 </div> <!-- Links to main pages, id=linkpool-->
 <hr/>
 <div id="content" > <!-- Table of content, id=content-->
-<table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Content</a></h3></div>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#intro">Introdcution</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#install">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#restfulapi"/>RESTful API</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apisearch"/>API rela</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#geo">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a></br><br>
-
-</td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
 </div> <!-- Sidebar -->
@@ -39,197 +29,50 @@
 
 <td id="docBody" style="width:70%">
 </br>
+
 <div><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc"></a></h3></div>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2 Documentation</center>#{id="doc" style="color:#880000" }
-######<center>Version: 4.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
-
-####[Note: SRCH2 runs on 64-bit Linux with a kernel version >= 2.6.]####
-###Introduction###{id="intro"}
-
->   We’re different. Without custom work, without coding, we offer:
+#<center>SRCH2 Manual</center>#{id="doc" style="color:#ee2e24" }
+######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
->   *   <p style="display: inline">Instant Type-Forward Results<span id="InstantTypeForward_main" style="display: inline; cursor: pointer; color:#3366FF;"> <span  onclick="hide('InstantTypeForward');">[hide]</span></span></p>
->       <p id='InstantTypeForward'></p>
+The SRCH2 engine has the following powerful features:
 
->   *   <p style="display: inline">Error Fixing with Fuzzy Search<span id="fuzzySearch_main" style="display: inline; cursor: pointer; color:#3366FF;"> <span onclick="display('fuzzySearch');"> [show]</span></span></p>
->       <p id='fuzzySearch'></p>
+ - <p style="display: inline">Instant Search-As-You-Type<span id="InstantTypeForward_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
->   *   <p style="display: inline">Rapid Geo Search<span id="geoSearch_main" style="display: inline; cursor: pointer; color:#3366FF;"><span onclick="display('geoSearch');" > [show]</span></span></p>
->       <p id='geoSearch'></p>
+ - <p style="display: inline">Error Correction with Configurable Fuzzy Search<span id="fuzzySearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
->   *   <p style="display: inline">Full Text Indexes of Every Word, in Every Record<span id="fullTextSearch_main" style="display: inline; cursor: pointer; color:#3366FF;"><span onclick="display('fullTextSearch');"> [show]</span></span></p>
->       <p id='fullTextSearch'></p>
+ - <p style="display: inline">Configurable Rapid Geo Search<span id="geoSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
->   *   <p style="display: inline">Real-Time Updates, No Locks<span id="realTimeUpdates_main" style="display: inline; cursor: pointer; color:#3366FF;"><span  onclick="display('realTimeUpdates');"> [show]</span></span></p>
->       <p id='realTimeUpdates'></p>
+ - <p style="display: inline">Full-Text Index and Configurable Real-Time Updates<span id="fullTextSearch_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
->   *   <p style="display: inline">All in massive scale, all at once.<span id="customRankings_main" style="display: inline; cursor: pointer; color:#3366FF;"><span onclick="display('customRankings');"> [show]</span></span></p>
->       <p id='customRankings'></p>
+ - <p style="display: inline">Real-Time Updates<span id="realTimeUpdates_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
+ - <p style="display: inline">All in massive scale, all at once.<span id="customRankings_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
->   Getting started is easy.
- 
->   SRCH2 provides a RESTful API, which can be used easily to do search queries, insert new documents, and delete existing documents. These clean configuration capabilities make getting started a snap.
+SRCH2 provides a RESTful API, which can be used easily to do search queries, insert new records, and delete existing records. These clean configuration capabilities make getting started a snap.
 
+You decide! We let you use the combination of rich search features you care about most. Easy configuration is the whole point. Decide how many errors you want to tolerate, or configure your ranking prioritization. For example, news and social sites might put the most recent records on top, while e-commerce sites might favor profitability, or relevance, or inventory in stock.
 
->   You decide! We let you use the combination of rich search features you care about most. Easy configuration is the whole point. Decide how many errors you want to tolerate, or configure your ranking prioritization. For example, news and social sites might put the most recent records on top, while e-commerce sites might favor profitability, or relevance, or inventory in stock.
-
- 
->   How to Set Up:
->   This document illustrates how to set up a simple SRCH2 implementation. We’ll take you through all the basic steps required to download SRCH2, index your database in standard JSON format, configure search features, and run your search server. SRCH2 runs on a Linux Ubuntu server. Please keep in mind that SRCH2 is designed to be highly configurable, so while this will get you started, we hope you tune it to your specific needs and use cases. An online demo based on these instructions is available at [http://example.srch2.com](http://example.srch2.com){target="_blank" style="text-decoration:none;"}. Enjoy!
+ This document illustrates how to set up a simple SRCH2 implementation. We’ll take you through all the basic steps required to download SRCH2, index your data in standard JSON format, configure search features, and run your search server. Enjoy!
 </br>
-##Install##{id="install"}
-<div id="indexTable"><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Contents</a></h3></div>
 
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">Configure and Run the Search Server</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#wsgi"/>Install Apache and mod_wsgi</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#UI">Design a Simple User Interface</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ranking">Ranking</a></br><br>
-</td></tr></tbody></table></div>
+##System Requirements##
 
+The SRCH2 engine runs on both 32-bit and 64-bit Linux with a kernel version >= 2.6.
 
+<hr/>
 
-
-##RESTful API##{id="restfulapi"}
-<div id="indexTable"><table><tbody><tr><td>
-<div><h3><a style="text-decoration: none;color:#880000" href="#doc">Contents</a></h3></div>
-
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apisearch">API related to search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiinsert"/>API related to insert/delete/update</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#apiserialize">API to serialize the index</a></br><br>
-</td></tr></tbody></table></div>
-
-
->   The SRCH2 search engine provides a RESTful API, which can be used easily to do search queries, insert new documents, and delete existing documents.
-
-###API related to search###{id="apisearch"}
->   A search query can be provided to find documents using the index. The search results contain document identifiers (provided at indexing time) and all their fields. 
-####Search####
->   This request sends a search query string that contains:
->>  *   "q": the query to be performed. You may use "+" to concatenate multiple keywords.
-
->   Optionally:
->>  *   "start": the first position to return (for pagination);
->>  *   "limit": how many results to return (its default value is 10);
->>  *   "fuzzy": 0 for exact search; 1 for fuzzy search.
-
->   If a query includes a "fuzzy=1" condition, the engine will do a fuzzy search automatically by using a normalized edit distance based on the length of the keyword. If the keyword length is in [0, 4], the edit distance threshold is 0; if the length is in [5, 7], the threshold is 1; if the length is more than 7, the threshold is 2.
-
->   If it is a geo index, the query should use one of the two ways below to define a geo region to search on:
->>  1.  Specify a bounding box:
->>> *   "lb_lat": the latitude of the left bottom point of the bounding box;
->>> *   "lb_lng": the longitude of the left bottom point of the bounding box;
->>> *   "rt_lat": the latitude of the top right point of the bounding box;
->>> *   "rt_lng": the longitude of the top right point of the bounding box.
-
->>  2.  Specify a center point and a radius:
->>> *   "ct_lat": the latitude of the center point;
->>> *   "ct_lng": the longitude of the center point;
->>> *   "radius": the radius of the search range in degree.
-
->   The response body will contain a JSON map with the following fields:
-
->   *   "payload_access_time": the time to generate the JSON results;
->   *   "query_keywords": the list of the keywords of this query;
->   *   "results": a list of result objects, where each result object has the following fields:
->>   *   "edit_dist": the edit distance between the matching part of the result and the query;
->>   *   "matching_prefix": the matching part of the result;
->>   *   "record": the result record with the "id" field and other fields. You can use the two options "search-response-format" and "attributes-to-return" in the configuration file to specify which fields of the record you want the engine to return.
->>   *   "score": a score of the result;
->   *   "results_found": the number of all the results found (GetAllResultsQuery and Geo Search only);
->   *   "searcher_time": the time (in milliseconds) it took to search;
->   *   "type": the type of search of this query: 0 for normal text only search; 1 for text only search to get all results; 2 for Geo search;
->   *   "fuzzy": indicating if the query is a fuzzy search: 0 for exact search; 1 for fuzzy search;
->   *   "offset": the offset point of the retrieved results in the whole results set;
->   *   "limit" : the number of the retrieved results;
->   *   "sortby": indicating which sortable attribute the results are sorted by (for GetAllResultsQuery only);
->   *   "order": indicating the ascending/descending order in which the results are sorted: 0 for an ascending order; 1 for a descending order (for GetAllResultsQuery only).
-
->   Example for a "Keyword search" (Option 1) index (Notice that the engine can do fuzzy search to find matches similar to the mistyped keyword "hosptal"): 
-
-```python
-$ curl -i "http://localhost:8081/search?q=hosptal+sevices&start=0&limit=20&fuzzy=1"
-```
-
->   Example for a "Keyword+Geo or Geo only" (Option 2) index:
-
-```python
-$ curl -i "http://localhost:8081/search?q=hosptal+sevices&start=0&limit=20&fuzzy=1&lb_lat=61.20&lb_lng=-149.90&rt_lat=61.22&rt_lng=-149.70"
-```
-
->   Example for a "Keyword+Geo or Geo only" (Option 2) index (Notice that the engine can search a range without keywords):
-```
-$ curl -i "http://localhost:8081/search?start=0&limit=20&lb_lat=61.20&lb_lng=-149.90&rt_lat=61.22&rt_lng=-149.70"
-```
-
->   By default, the results will be ranked by the way described in sections 3 and 4, and you need to specify the number of results by "start" and "limit".
->   To get all the results, you need to add a parameter "type" in the query url to let the engine do a different type of query. For this type of query, the engine will return all the results and sort them by the field of your choice. Please note that this type of query is not available for "Keyword+Geo" (Option 2) index.
-
->   In the configuration file, you need to set up options "attributes-sort", "attributes-sort-type", and "attributes-sort-default-value" to specify one or more fields that you would like to use to sort the results. For example, you want to use "id" or "relevance" to do the sorting. Then the three options will look like:
-
->   *   attributes-sort=id,relevance
->   *   attributes-sort-type=0,1 (0 for unsigned, 1 for float)
->   *   attributes-sort-default-value=0,0.5 (default values for the attributes if they are missing in the record)
-
->   In the query url, you need to specify the search type:
-
->   *   "type": 0 for normal search; 1 for search to get all results. Its default value is 0.
-
->   Optionally, you can also specify:
-
->   *   "sortby": the offset of the attributes you listed in the option "attributes-sort" that you want to sort the results by. The default value is 0.
->   *   "order": 0 for ascending; 1 for descending. The default value is 0 (ascending).
-
->   For example, with the configuration above, if you want to get all the results of a search and sort them by the "id" attribute in the ascending order (Notice that the engine can do fuzzy search to find matches similar to the mistyped keyword "hosptal"): 
-
-```python
-$ curl -i "http://localhost:8081/search?q=hosptal+sevices&fuzzy=1&type=1&sortby=0&order=0"
-```
-
->   If you want to get all results and sort them by "relevance" in descending order: 
-```python
-$ curl -i "http://localhost:8081/search?q=hosptal+sevices&fuzzy=1&type=1&sortby=1&order=1"
-```
-
-####Attribute-based Search####
-
->   Starting from version 2.08, our engine can support attribute-based search, i.e., users can specify certain attributes where a keyword has to appear. To do that, you need to turn on the "support-attribute-based-search" option in the configuration file.
-
->   In the query url, you can separate attribute names and values by colon, and use comma (",") to represent the "AND" logic between attributes and dot (".") to represent the "OR" logic.
-
->   For instance, if the keyword "hosptal" needs to appear in the attribute "title" and the keyword "sevices" needs to appear in the attribute "description", we can use the following query: 
-```python
-$ curl -i "http://localhost:8081/search?q=hosptal:title+sevices:description&start=0&limit=20&fuzzy=1"
-```
-
->   If the keyword "hosptal" needs to appear either in the attribute "title" or in the attribute "description": 
-```
-$ curl -i "http://localhost:8081/search?q=hosptal:title.description&start=0&limit=20&fuzzy=1"
-```
-
->   The dot in "hosptal:title.description" represents the "OR" condition. 
->   If the keyword "hosptal" needs to appear in both attributes "title" and "description":
-
-```
-$ curl -i "http://localhost:8081/search?q=hosptal:title,description&start=0&limit=20&fuzzy=1"
-```
-
-
-
+Have fun SRCHing!
 
 
 <link rel="stylesheet" type="text/css" href="documentation.css">
 
-
 <script type="text/javascript" src="setSizes.js"></script>
 <script>
-
 setSizes();
 window.onresize = setSizes
 </script>
