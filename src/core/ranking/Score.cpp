@@ -26,6 +26,7 @@
 #include "util/Assert.h"
 #include <limits>
 #include <cmath>
+#include <algorithm>
 #include "util/DateAndTimeHandler.h"
 
 namespace srch2
@@ -42,8 +43,13 @@ namespace srch2
 				return intScore == score.intScore;
 			case ATTRIBUTE_TYPE_FLOAT:
 				return floatScore == score.floatScore;
-			case ATTRIBUTE_TYPE_TEXT:
-				return stringScore == score.stringScore;
+			case ATTRIBUTE_TYPE_TEXT:{
+				std::string leftStr = stringScore;
+				std::transform(leftStr.begin(), leftStr.end(), leftStr.begin(), ::tolower);
+				std::string rightStr = score.stringScore;
+				std::transform(rightStr.begin(), rightStr.end(), rightStr.begin(), ::tolower);
+				return (leftStr.compare(rightStr) == 0);
+			}
 			case ATTRIBUTE_TYPE_TIME:
 				return timeScore == score.timeScore;
 			case ATTRIBUTE_TYPE_DURATION:
@@ -64,8 +70,13 @@ namespace srch2
 				return intScore < score.intScore;
 			case ATTRIBUTE_TYPE_FLOAT:
 				return floatScore < score.floatScore;
-			case ATTRIBUTE_TYPE_TEXT:
-				return stringScore < score.stringScore;
+			case ATTRIBUTE_TYPE_TEXT:{
+				std::string leftStr = stringScore;
+				std::transform(leftStr.begin(), leftStr.end(), leftStr.begin(), ::tolower);
+				std::string rightStr = score.stringScore;
+				std::transform(rightStr.begin(), rightStr.end(), rightStr.begin(), ::tolower);
+				return leftStr < rightStr;
+			}
 			case ATTRIBUTE_TYPE_TIME:
 				return timeScore < score.timeScore;
 			case ATTRIBUTE_TYPE_DURATION:
