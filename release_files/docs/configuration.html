@@ -94,7 +94,25 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0, Date: September 19, 2013</center></h6>
 <h3 id="overview">1. Overview:</h3>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.</p>
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
+=======</p>
+<blockquote>
 <p>The configuration file contains two top-level tags: "config" and "schema". The children of the "config" (e.g., "srch2home") tune the engine, while the children of the "schema" tag (e.g., "fields") describe the data. Each parameter can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>e6a27ee6fa7d8f92b53ba17b66d0b0cd6702d7f4</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
 <h3 id="configTag">2. Config Component:</h3>
 <p>The following is a breakdown of the subtags of the "config" component.</p>
 <h4 id="srch2Home">3. SRCH2 Home Directory, Required</h4>
@@ -112,8 +130,8 @@
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
 
-<p>Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
-Specify as 0.0.0.0 if value is unknown.</p>
+<p>This parameter is the network identification (i.e. IP address or host name) of the server on which the SRCH2 engine is running.
+NOTE: If you want the server to accept all incoming packets, use 0.0.0.0 .</p>
 <h4 id="dataDir">6. Data Directory, Required</h4>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
