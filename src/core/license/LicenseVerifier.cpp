@@ -185,7 +185,9 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 	if (filenameWithPath.compare("") == 0)
 	{
 		//return testWithEnvironmentVariable();
-        Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
+        Logger::error("Cannot read the license key file. Check \"<licenseFile>\" in the configuration file, which defines the location of the license key file.");
+        Logger::error("Note: Since all paths in the configuration file are appended to \"<srch2Home>\" value before use, make sure license file path is relative to srch2Home");
+        Logger::error("Note: It is recommended to use absolute path values for <srch2Home>.");
         exit(-1);     
 	}
 	else
@@ -199,7 +201,7 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		}
 		catch (exception& e)
 		{
-            Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
+            Logger::error("Cannot read the license key file. Check \"<licenseFile>\" in the configuration file, which defines the location of the license key file.");
 			exit(-1);
 		}
 
@@ -210,7 +212,9 @@ bool LicenseVerifier::testFile(const std::string& filenameWithPath)
 		}
 		else
 		{
-            Logger::error("Cannot read the license key file. Check \"license-file\" in the configuration file, which defines the location of the license key file.");
+            Logger::error("Cannot read the license key file. Check \"<licenseFile>\" in the configuration file, which defines the location of the license key file.");
+            Logger::error("Note: Since all paths in the configuration file are appended to \"<srch2Home>\" value before use, make sure license file path is relative to srch2Home");
+            Logger::error("Note: It is recommended to use absolute path values for <srch2Home>.");
 			exit(-1);
 		}
 
@@ -240,6 +244,8 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	catch (exception& e)
 	{
         Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
+        Logger::error("Note: Since all paths in the configuration file are appended to \"<srch2Home>\" value before use, make sure license file path is relative to srch2Home");
+        Logger::error("Note: It is recommended to use absolute path values for <srch2Home>.");
 		exit(-1);  // should be changed to throw an ExitException
 	}
 
@@ -250,6 +256,8 @@ bool LicenseVerifier::testWithEnvironmentVariable()
 	else
 	{
         Logger::error("Cannot read the license key file. Check the environment variable \"srch2_license_dir\", which defines the folder that includes the license key file.");
+        Logger::error("Note: Since all paths in the configuration file are appended to \"<srch2Home>\" value before use, make sure license file path is relative to srch2Home");
+        Logger::error("Note: It is recommended to use absolute path values for <srch2Home>.");
 		exit(-1);
 	}
 
