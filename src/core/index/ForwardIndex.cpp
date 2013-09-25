@@ -38,13 +38,14 @@ using namespace srch2::util;
 namespace srch2 {
 namespace instantsearch {
 
-bool ForwardList::isAttributeBasedSearch = false;
+
 
 ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal) {
     this->forwardListDirectory = new cowvector<ForwardListPtr>();
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
     this->mergeRequired = true;
+    this->isAttributeBasedSearch = false;
 }
 
 ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal,
@@ -54,6 +55,7 @@ ForwardIndex::ForwardIndex(const SchemaInternal* schemaInternal,
     this->schemaInternal = schemaInternal;
     this->commited_WriteView = false;
     this->mergeRequired = true;
+    this->isAttributeBasedSearch = false;
 }
 
 ForwardIndex::~ForwardIndex()
@@ -329,7 +331,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     // support attribute-based search
     if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
-    	ForwardList::isAttributeBasedSearch = true;
+    	this->isAttributeBasedSearch = true;
 
     	forwardList->setKeywordAttributeBitmaps(
     			new unsigned[keywordListCapacity]);

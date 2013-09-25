@@ -113,7 +113,7 @@ IndexData::IndexData(const string& directoryName)
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     if(positionIndexType == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
     		positionIndexType == srch2::instantsearch::POSITION_INDEX_FULL)
-    	ForwardList::isAttributeBasedSearch = true;
+    	this->forwardIndex->isAttributeBasedSearch = true;
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     this->forwardIndex->setSchema(this->schemaInternal);
