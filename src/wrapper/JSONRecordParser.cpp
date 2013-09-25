@@ -155,7 +155,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 }else{
                     if(attributeIter->second.second.second){
                         // ERROR
-                        error << "\nRequired non-searchable attribute is null.";
+                        error << "\nRequired refining attribute is null.";
                         return false;// Raise Error
                     }else{
                         // set the default value
@@ -167,16 +167,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
             string attributeStringValue;
             getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
-            if (attributeStringValue.compare("") == 0) // if the attribute is int or float, convert it to string
-            {
-                double attributeDoubleValue;
-                getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
-                stringstream s;
-                s << attributeDoubleValue;
-                attributeStringValue = s.str();
-            }
 
-            if (attributeStringValue.compare("NULL") != 0)
+            if (attributeStringValue.compare("NULL") != 0 && attributeStringValue.compare("") != 0)
             {
 				std::string attributeStringValueLowercase = attributeStringValue;
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
@@ -184,7 +176,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
             }else{
                 if(attributeIter->second.second.second){
                     // ERROR
-                    error << "\nRequired non-searchable attribute is null.";
+                    error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
                     // set the default value
