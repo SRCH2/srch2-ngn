@@ -178,7 +178,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
             if (attributeStringValue.compare("NULL") != 0)
             {
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+				std::string attributeStringValueLowercase = attributeStringValue;
+				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
                 if(attributeIter->second.second.second){
                     // ERROR
@@ -186,7 +188,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     return false;// Raise Error
                 }else{
                     // set the default value
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }
