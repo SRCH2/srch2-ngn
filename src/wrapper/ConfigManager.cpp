@@ -120,7 +120,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // uniqueKey is required
-    configAttribute = configDoc.child("schema").child("uniqueKey");
+    configAttribute = configDoc.child("config").child("schema").child("uniqueKey");
     if (configAttribute && configAttribute.text()) {
         this->primaryKey = string(configAttribute.text().get());
     } else {
@@ -151,7 +151,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->isPrimSearchable = 0;
 
-    configAttribute = configDoc.child("schema").child("fields");
+    configAttribute = configDoc.child("config").child("schema").child("fields");
     if (configAttribute) {
         for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare("field") == 0) {
@@ -391,7 +391,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * <facetEnabled>  in config.xml file
      */
     this->facetEnabled = false; // by default it is false
-    configAttribute = configDoc.child("schema").child("facetEnabled");
+    configAttribute = configDoc.child("config").child("schema").child("facetEnabled");
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
@@ -411,7 +411,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      */
 
     if(this->facetEnabled){
-        configAttribute = configDoc.child("schema").child("facetFields");
+        configAttribute = configDoc.child("config").child("schema").child("facetFields");
         if (configAttribute) {
             for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
                 if (string(field.name()).compare("facetField") == 0) {
@@ -550,7 +550,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->synonymFilterFilePath = "";
     this->synonymKeepOrigFlag = false;
 
-    configAttribute = configDoc.child("schema").child("types");
+    configAttribute = configDoc.child("config").child("schema").child("types");
     if (configAttribute) {        // Checks if <schema><types> exists or not
         for (xml_node fieldType = configAttribute.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
             if ((string(fieldType.name()).compare("fieldType") == 0)) { // Finds the fieldTypes
