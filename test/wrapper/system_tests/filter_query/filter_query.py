@@ -62,7 +62,7 @@ def prepareQuery(queryKeywords):
     query = query + '%20OR%20' # ' OR '
     query = query + 'likes%3A%5B44%20TO%20*%5D' # 'likes:[44 TO *]'
     query = query + '%20OR%20' # ' OR '
-    query = query + 'CMPLX%24price%3E88%20and%20price%3C96%24' # CMPLX$price>88 and price<96$
+    query = query + 'boolexp%24price%3E88%20and%20price%3C96%24' # CMPLX$price>88 and price<96$
     #print 'Query : ' + query
     ##################################
     return query
@@ -70,7 +70,7 @@ def prepareQuery(queryKeywords):
 def testFilterQuery(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./filter_query/conf.ini &'
+    binary= binary+' --config-file=./filter_query/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up
@@ -87,7 +87,7 @@ def testFilterQuery(queriesAndResultsPath, binary_path):
         #construct the query
         query='http://localhost:' + port + '/search?'
         query = query + prepareQuery(queryValue)
-        #print query
+        print query
         
         # do the query
         response = urllib2.urlopen(query).read()

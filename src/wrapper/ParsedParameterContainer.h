@@ -187,18 +187,20 @@ public:
     // which are set. It's a summary of the query parameters.
     std::vector<ParameterName> parametersInQuery;
 
-    bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's fuzzylevel as specified with keywords. else set fuzzy level to 0
+    bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's SimilarityThreshold as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
 
     // main query parser parameters
     // the following six vectors must be parallel
     std::vector<std::string> rawQueryKeywords; // stores the keywords in the query
-    std::vector<float> keywordFuzzyLevel; // stores the fuzzy level of each keyword in the query
+    std::vector<float> keywordSimilarityThreshold; // stores the fuzzy level of each keyword in the query
     std::vector<int> keywordBoostLevel; // stores the boost level of each keyword in the query
     std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
     std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
     std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.
+    std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
+    std::vector<short>  PhraseSlops;   // vector to store proximity slops
     std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
     // debug query parser parameters
     bool isDebugEnabled;
@@ -270,8 +272,11 @@ public:
     BooleanOperation termFQBooleanOperator; // boolean operator between different filterQuery terms. fq=field:[10 TO 20] AND field2:keyword
     // parsed error?
     bool isFqBooleanOperatorSet;
-    //TODO: move it close to the messages.
 
+    // the map whose key is analyzed phrase and value is keyword offsets in phrase
+    // "into the wild" becomes "into wild" after applying stop word filter.
+    // the map stores key = "into wild" and value = "1, 3".
+    std::map<string, vector<unsigned> > PhraseKeyWordsPositionMap;
 };
 
 }

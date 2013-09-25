@@ -1,0 +1,16 @@
+"american comedy"~1||1
+"american dark comedy"||1
+"crime gangster"||1
+"pulp fiction"||1
+"comedy american"~2||
+"comedy dark"~2||1
+"comedy dark"||
+"American 1994 comedy dark"~2||
+"fiction is a 1994"||1
+"fiction 1994"||
+"york new"~2||3
+"new york"||3
+"york new square time river hudson"~2||3
+"Shawshank Redemption"||2
+description%2Egenre:"crime gangster"||
+description%2Bgenre:"crime gangster"||1

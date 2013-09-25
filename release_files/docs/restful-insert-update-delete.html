@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="generator" content="ReText 4.0.0">
+<title>restful-insert-update-delete</title>
+</head>
+<body>
+<table style="width:100%;table-layout:fixed" ><tr>
+
+<td id="sideBarTd" style="width:25%"> 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insert">1. Insert</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#delete">2. Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#update">3. Update</a><br><br>
+
+</td></tr></tbody></table>
+
+<p></div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar --></p>
+</td>
+
+<td id="docBody" style="width:70%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
+
+</td>
+
+<p></tr></tbody></table></div></p>
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Insert/Delete/Update</center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<p>Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of requests) .</p>
+<h2 id="insert">1. Insert</h2>
+<p>This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:</p>
+<ul>
+<li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
+<li>The JSON object should include searchable fields defined in the configuration file and their corresponding values;</li>
+<li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
+<li>The sum of the length of each field value cannot be greater than 100 kilobytes.</li>
+</ul>
+<p>Here is an example:</p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot; : &quot;1234&quot;, &quot;name&quot; : &quot;Toy Story&quot;, &quot;category&quot; : &quot;shop&quot;}'
+</code></pre>
+
+<h2 id="delete">2. Delete</h2>
+<p>This request deletes a record from the indexes. It needs to provide the "id" of the record to be deleted. For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per record.</p>
+<p>Here is an example: </p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
+</code></pre>
+
+<h2 id="update">3. Update</h2>
+<p>This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:</p>
+<ul>
+<li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
+<li>The JSON object should include searchable fields defined in the configuration file and their corresponding values;</li>
+<li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
+<li>The sum of the length of each field value cannot be greater than 100 kilobytes;</li>
+<li>The "id" in the query URL needs to be consistent with the "id" in the JSON object.</li>
+</ul>
+<p>Here is an example query: </p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/update?id=123&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;}'
+</code></pre>
+
+<p><hr/>
+Have fun SRCHing!</p>
+<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
+<script type="text/javascript" src="setSizes.js"></script>
+
+<script>
+
+setSizes();
+window.onresize = setSizes
+</script>
+</body>
+</html>

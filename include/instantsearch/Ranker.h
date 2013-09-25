@@ -40,7 +40,7 @@ namespace srch2
         static float computeRecordTfIdfScore(const float tf, const float idf, const float sumOfFieldBoosts);
         static float computeTermRecordRuntimeScore(float recordStaticScore, 
                                unsigned editDistance, unsigned termLength, 
-                               bool isPrefixMatch, float prefixMatchPenalty);
+                               bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
 
         virtual float aggregateBoostedTermRuntimeScore(float oldRecordScore, 
                                float termBoost,

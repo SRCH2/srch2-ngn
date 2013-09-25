@@ -76,7 +76,7 @@ public:
     bool isLpFieldFilterBooleanOperatorAssigned; // whether lpFieldFilterBooleanOperator is assigned or not.
     BooleanOperation lpFieldFilterBooleanOperator; // TODO: when we want to add NOT or OR this part should change
     std::vector<std::string> lpFieldFilter; // fallback fields to search a keyword in
-    float lpKeywordFuzzyLevel; // variable to store the fallback fuzzyLevel specified in Local Parameters
+    float lpKeywordSimilarityThreshold; // variable to store the fallback SimilarityThreshold specified in Local Parameters
     int lpKeywordBoostLevel; // stores the fallback boostLevel specified in Local Parameters .. TODO: change the type
     srch2::instantsearch::TermType lpKeywordPrefixComplete; // stores the fallback termType for keywords
     // localparamter related variables end
@@ -111,7 +111,7 @@ private:
     // local parameter params
     static const char* const lpKeyValDelimiter; //solr
     static const char* const lpQueryBooleanOperatorParamName; //srch2
-    static const char* const lpKeywordFuzzyLevelParamName; // srch2
+    static const char* const lpKeywordSimilarityThresholdParamName; // srch2
     static const char* const lpKeywordBoostLevelParamName; // srch2
     static const char* const lpKeywordPrefixCompleteParamName; //srch2
     static const char* const lpFieldFilterParamName; //srch2
@@ -139,7 +139,7 @@ private:
     //searchType
     static const char* const searchType;
     /*
-     * example: q={defaultSearchFields=Author defaultFuzzyLevel=.8}title:algo* AND publisher:mac* AND lang:engl*^2~.8
+     * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()
      * 2. calls the keywordParser();
      */
@@ -158,7 +158,7 @@ private:
 
     /*
      * parses the pmp parameter and fills up the container
-     * example: 'pmp=.8'
+     * example: 'pmp=0.8'
      */
     void prefixMatchPenaltyParser();
 
@@ -241,7 +241,7 @@ private:
     /*
      * this function parses the local parameters section of all parts
      * input:
-     *      1. local parameters string : '{defaultSearchFields=Author defaultFuzzyLevel=.7}'
+     *      1. local parameters string : '{defaultSearchFields=Author defaultSimilarityThreshold=0.7}'
      * output:
      *      1. it fills up the metadata of the queryHelper object
      */
@@ -293,12 +293,12 @@ private:
     void checkForBoostNums(const string &input, boost::smatch &matches);
     /*
      * extracts the numbers from the input string
-     * example:  it will extract '8' from '~.8'.
+     * example:  it will extract '8' from '~0.8'.
      */
     void extractNumbers(const string &input, boost::smatch &matches);
     /*
-     * checks if the fuzzylevel is present in the input string
-     * example: 'gnuth~.8' has fuzzylevel as '.8'. 'gnuth~' has no fuzzylevel specified.
+     * checks if the SimilarityThreshold is present in the input string
+     * example: 'gnuth~0.8' has SimilarityThreshold as '0.8'. 'gnuth~' has no SimilarityThreshold specified.
      */
     void checkForFuzzyNums(const string &input, boost::smatch &matches);
     /*
@@ -334,14 +334,14 @@ private:
      */
     void setInQueryParametersIfNotSet(ParameterName param);
     /*
-     * sets the fuzzylevel in the container->keywordFuzzyLevel variable.
+     * sets the SimilarityThreshold in the container->keywordSimilarityThreshold variable.
      * check if isFuzzyFlag is set
      *      true-> check if is fuzzy is true or false,
-     *                  true -> use the fuzzylevel as specified
-     *                  else -> set 0.0 as fuzzylevel
+     *                  true -> use the SimilarityThreshold as specified
+     *                  else -> set 0.0 as SimilarityThreshold
      *      false-> set the fuzzy level as specified
      */
-    void setFuzzyLevelInContainer(const float f);
+    void setSimilarityThresholdInContainer(const float f);
     /*
      * sets the rectangular geo paramters in the geocontainer.
      */
@@ -403,7 +403,7 @@ private:
      * else, it raises warning and ignores the lpKey and lpVal
      * We support following lpKeys
      * 1) "defaultFieldOperator"
-     * 2) "defaultfuzzyLevel"
+     * 2) "defaultSimilarityThreshold"
      * 3) "defaultBoostLevel"
      * 4) "defaultPrefixComplete"
      * 5) "defaultSearchFields"
@@ -442,9 +442,9 @@ private:
     bool parsePrefixModifier(string &input, string &output);
     /*
      * parses the boost modifier
-     * eample: '^4~.8'
+     * eample: '^4~0.8'
      * output will be '^4'
-     * input will be changed to ~.8
+     * input will be changed to ~0.8
      */
     bool parseBoostModifier(string &input, string &output);
     /*
@@ -458,28 +458,45 @@ private:
      */
     void populateBoostInfo(bool isParsed, string &input);
     /*
-     ~* populate boost info
-     * Example: '^.4'
+     * populate fuzzy info
+     * Example: '~.4'
      * if 'isParsed' is 'True', checks if the 'input' contains a 'dot' followed by a number. In this example it contains '.4'.
-     * it will populate the keywordFuzzyLevel vector with 4.
-     * Incase the input string was just '~', it will populate the keywordFuzzyLevel
-     *  with the  lPdefaultFuzzyLevel value as specified in
+     * it will populate the keywordSimilarityThreshold vector with 4.
+     * Incase the input string was just '~', it will populate the keywordSimilarityThreshold
+     *  with the  lPdefaultSimilarityThreshold value as specified in
      * local Parameters.
      */
     void populateFuzzyInfo(bool isParsed, string &input);
     /*
-     * example: input : '~.8 AND Author:gnuth'
+     *populate proximity info
+     * Example: '~4'
+     * if 'isParsed' is 'True', checks if the 'input' contains a number. In this example it contains '4'.
+     * it will populate the keywordSimilarityThreshold vector with 4.
+     * Incase the input string was just '~', it will populate the keywordSimilarityThreshold
+     *  with the  lPdefaultSimilarityThreshold value as specified in
+     * local Parameters.
+     */
+    void populateProximityInfo(bool isParsed, string &input);
+    /*
+     * example: input : '~0.8 AND Author:gnuth'
      * parses the fuzzy modifier.
      * input will be changed to 'AND Author:gnuth'
-     * output will be '~.8'
+     * output will be '~0.8'
      */
     bool parseFuzzyModifier(string &input, string &output);
+    /*
+     * example '~8 AND Author:gnuth'
+     * parses the proximity modifier.
+     * input will be changed to 'AND Author:gnuth'
+     * output will be '~8'
+     */
+    bool parseProximityModifier(string &input, string &output);
     /*
      * clears the keyword related parallel vectors if required.
      * Checks if the an entry is present for the following vectors in the parametersInQuery vector.
      * If no entry is present for a vector, that vector will be cleared
      * Following are the vectors:
-     * keywordFuzzyLevel
+     * keywordSimilarityThreshold
      * keywordBoostLevel
      * keywordPrefixComplete
      * fieldFilter

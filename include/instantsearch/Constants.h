@@ -141,8 +141,9 @@ typedef enum
     ATTRIBUTE_TYPE_UNSIGNED,
     ATTRIBUTE_TYPE_FLOAT ,
     ATTRIBUTE_TYPE_TEXT ,
-    ATTRIBUTE_TYPE_TIME // Time is kept as a long integer in the core.
+    ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
          // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    ATTRIBUTE_TYPE_DURATION
 } FilterType;
 
 /*typedef enum
@@ -154,9 +155,9 @@ typedef enum
 
 typedef enum
 {
-    FULLPOSITIONINDEX , // the index of keyword in the record
-    FIELDBITINDEX ,// keeps the attribute in which a keyword appears in
-    NOPOSITIONINDEX // For stemmer to work, positionIndex must be enabled.
+    POSITION_INDEX_FULL , // the index of keyword in the record
+    POSITION_INDEX_FIELDBIT ,// keeps the attribute in which a keyword appears in
+    POSITION_INDEX_NONE // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
 /// Term constants
@@ -169,8 +170,19 @@ typedef enum
 } TermType;
 
 ///
+enum DateTimeType{
+    DateTimeTypeNow,
+    DateTimeTypePointOfTime,
+    DateTimeTypeDurationOfTime
+};
 
-
+/// response type
+typedef enum
+{
+    RESPONSE_WITH_RECORD,
+    RESPONSE_BASIC,
+    RESPONSE_WITH_SPECIFIED_ATTRIBUTES
+} ResponseType;
 
 
 }

@@ -39,6 +39,8 @@
 #include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/Score.h"
 #include "util/mytime.h"
+#include "util/ULEB128.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
 
 using std::vector;
 using std::fstream;
@@ -46,6 +48,7 @@ using std::string;
 using std::map;
 using std::pair;
 using half_float::half;
+using namespace snappy;
 
 // The upper bound of the number of keywords in a record is FFFFFF
 #define KEYWORD_THRESHOLD ((1<<24) - 1)
@@ -252,6 +255,11 @@ public:
 
     //void mapOldIdsToNewIds();
 
+    // Position Indexes APIs
+    void setPositionIndex(vector<uint8_t>& v);
+    void getKeyWordPostionsInRecordField(unsigned keywordId, unsigned attributeId,
+    		unsigned attributeBitMap, vector<unsigned>& positionList) const;
+
 private:
     friend class boost::serialization::access;
 
@@ -288,6 +296,7 @@ private:
         ar & this->externalRecordId;
         ar & this->inMemoryData;
         ar & this->nonSearchableAttributeValues;
+        ar & this->positionIndex;
     }
 
     // members
@@ -301,6 +310,7 @@ private:
     VariableLengthAttributeContainer nonSearchableAttributeValues;
 
     unsigned* keywordAttributeBitmaps;
+    vector<uint8_t> positionIndex;
 
 };
 
@@ -425,7 +435,8 @@ public:
         //clock_gettime(CLOCK_REALTIME, &tend);
         //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     }
-    ;
+
+    static void exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName);
 
     static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
     {
@@ -561,6 +572,10 @@ public:
      * Access the InMemoryData of a record using InternalRecordId
      */
     std::string getInMemoryData(unsigned internalRecordId) const;
+
+    void convertToVarLengthArray(const vector<unsigned>& positionListVector,
+    							 vector<uint8_t>& grandBuffer);
+
 };
 
 }

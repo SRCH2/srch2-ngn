@@ -325,11 +325,15 @@ public:
 
     const bool isCommited() const { return this->commited; }
 
+    void _exportData(const string& exportedDataFileName) const;
+
     void _save() const { this->_save(this->directoryName); }
 
     void _save(const std::string &directoryName) const;
     
     const Schema* getSchema() const;
+
+    Schema* getSchema();
 
     const std::string& getLicenseFileNameWithPath() const { return this->licenseFileNameWithPath; }
 

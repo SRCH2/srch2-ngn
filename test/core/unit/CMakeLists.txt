@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/src/core/
     ${CMAKE_BINARY_DIR}/include/
     ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}
 )
 
 set(GPERFTOOL_LIBS "")
@@ -104,6 +105,13 @@ ADD_EXECUTABLE(VariableLengthAttributeContainer_Test VariableLengthAttributeCont
 TARGET_LINK_LIBRARIES(VariableLengthAttributeContainer_Test ${UNIT_TEST_LIBS})	
 LIST(APPEND UNIT_TESTS VariableLengthAttributeContainer_Test)
 
+ADD_EXECUTABLE(ULEB128_Test ULEB128_Test.cpp)
+TARGET_LINK_LIBRARIES(ULEB128_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS ULEB128_Test)
+
+ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
+TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )

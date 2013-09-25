@@ -110,7 +110,9 @@ IndexData::IndexData(const string& directoryName)
         this->invertedIndex =new  InvertedIndex(this->forwardIndex);
 
     // set if it's a attributeBasedSearch
-    if(this->schemaInternal->getPositionIndexType() == srch2::instantsearch::FIELDBITINDEX)
+    PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
+    if(positionIndexType == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+    		positionIndexType == srch2::instantsearch::POSITION_INDEX_FULL)
     	ForwardList::isAttributeBasedSearch = true;
 
     ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
@@ -290,19 +292,20 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
             std::string line;
             while ( std::getline(infile, line) )
             {
-                std::vector<std::string> keywords;
+                std::vector<PositionalTerm> tokensInfo;
                 //char c = '.';
 //                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                analyzer->tokenizeQuery(line, keywords);
+                analyzer->tokenizeQuery(line, tokensInfo);
 
-                for (std::vector<std::string>::const_iterator kiter = keywords.begin();
-                            kiter != keywords.end();
+                for (std::vector<PositionalTerm>::const_iterator kiter = tokensInfo.begin();
+                            kiter != tokensInfo.end();
                             ++kiter)
                 {
                     /// add words to trie
                     unsigned invertedIndexOffset = 0;
                     unsigned keywordId = 0;
-                    keywordId = this->trie->addKeyword(getCharTypeVector(*kiter), invertedIndexOffset);
+                    string keyword = kiter->term;
+                    keywordId = this->trie->addKeyword(getCharTypeVector(keyword), invertedIndexOffset);
                     this->invertedIndex->incrementDummyHitCount(invertedIndexOffset);
                 }
             }
@@ -402,9 +405,8 @@ INDEXWRITE_RETVAL IndexData::_commit()
          */
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
-        // Check for the case where no records were added to the index when commit() is called.
-        if (totalNumberofDocuments == 0)
-            return OP_FAIL;//Failed
+        // Note: we should commit even if totalNumberofDocuments = 0
+
         this->forwardIndex->commit();
         this->trie->commit();
         //this->trie->print_Trie();
@@ -607,6 +609,11 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 
 }
 
+void IndexData::_exportData(const string &exportedDataFileName) const
+{
+    ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
+}
+
 void IndexData::_save(const string &directoryName) const
 {
     // serialize the data structures to disk
@@ -636,6 +643,11 @@ void IndexData::printNumberOfBytes() const
 const Schema* IndexData::getSchema() const
 {
     return dynamic_cast<const Schema *>(this->schemaInternal);
+}
+
+Schema* IndexData::getSchema()
+{
+    return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
 IndexData::~IndexData()

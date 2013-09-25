@@ -77,7 +77,7 @@ def prepareQuery(queryKeywords):
 def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_new_query_syntax/conf.ini &'
+    binary= binary+' --config-file=./test_new_query_syntax/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up
@@ -108,8 +108,8 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         #check the result
         checkResult(query, response_json, resultValue, facetResultValue[j])
         j=j+1
-        print j
-        print '------------------------------------------------------------------'
+        #print j
+        #print '------------------------------------------------------------------'
     try:
         s = commands.getoutput('ps aux | grep srch2-search-server')
         stat = s.split()

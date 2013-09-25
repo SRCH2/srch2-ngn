@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="generator" content="ReText 4.0.0">
+<title>mongodb</title>
+</head>
+<body>
+<table style="width:100%;table-layout:fixed" ><tr>
+
+<td id="sideBarTd" style="width:25%"> 
+
+<div id="sidebar"> <!-- Sidebar -->
+
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+<hr/>
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#populate-mongo">2. Populate MongoDB</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#configureSrch2">3. Configure SRCH2</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#startSrch2">4. Start SRCH2 Engine</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#search">5. Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#insertData">6. Insert a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateRecord">7. Update a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#deleteRecord">8. Delete a Record</a></br><br>
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td id="docBody" style="width:70%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table>
+
+</div>
+
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Search in MongoDB </center></h1>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<h2 id="overview">1. Overview</h2>
+<p>This tutorial shows how to use SRCH2 to do powerful text search on <a href="http://www.mongodb.org/">MongoDB</a>. We assume we have already downloaded and installed MongoDB, and its "bin" directory is already included in our PATH environment variable so that we can run those MongoDB commands easily. We also assume we have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this <a href="install.html">page</a> first.</p>
+<h2 id="populate-mongo">2. Populate MongoDB</h2>
+<p>Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert the records in the file into a collection called "movies" in a database called "demo".</p>
+<pre><code>shell&gt; mongoimport --db demo --collection movies --type json --file sample-data.json 
+</code></pre>
+
+<p>To check if the data has been loaded, run following commands:</p>
+<pre><code>shell&gt; mongo
+mongodb&gt; use demo
+mongodb&gt; db.movies.find().count()
+</code></pre>
+
+<p>There should be 243 movies in the "movies" collection.</p>
+<h2 id="configureSrch2">3. Configure SRCH2</h2>
+<p>Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Add the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
+<pre><code>    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
+    &lt;mongodb&gt;
+        &lt;db&gt;demo&lt;/db&gt;
+        &lt;host&gt;localhost&lt;/host&gt;
+        &lt;collection&gt;movies&lt;/collection&gt;
+        &lt;port&gt;27017&lt;/port&gt;
+        &lt;listenerWaitTime&gt;3&lt;/listenerWaitTime&gt;
+    &lt;/mongodb&gt;
+</code></pre>
+
+<p>Change the parameters if needed.</p>
+<h2 id="startSrch2">4. Start SRCH2 Engine</h2>
+<p>Run the following command to start the SRCH2 server:</p>
+<pre><code>shell&gt; ./srch2-search-server --config=./srch2-conf.xml 
+</code></pre>
+
+<p>The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.</p>
+<h2 id="search">5. Search</h2>
+<p>In a shell, run the following command:</p>
+<pre><code>shell&gt; curl &quot;http://localhost:8081/search?q=terminator&quot;
+</code></pre>
+
+<p>We should see the records with the keyword "terminator".</p>
+<h2 id="insertData">6. Insert a Record</h2>
+<p>In the MongoDB client, run the following command to insert a new record.</p>
+<pre><code>mongodb&gt; db.movies.insert(
+{
+    &quot;trailer_url&quot; : &quot;http://www.youtube.com/watch?v=68I3j2luW64&quot;,
+    &quot;title&quot; : &quot;The Terminator&quot;,
+    &quot;director&quot; : &quot;James Cameron&quot;,
+    &quot;year&quot; : NumberLong(1984),
+    &quot;banner_url&quot; : &quot;http://ia.media-imdb.com/images/M/MV5BODE1MDczNTUxOV5BMl5BanBnXkFtZTcwMTA0NDQyNA@@._V1_SX214_.jpg&quot;,
+    &quot;id&quot; : NumberLong(764006),
+    &quot;genre&quot; : &quot;action&quot;
+}
+);
+</code></pre>
+
+<p>This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record.</p>
+<h2 id="updateRecord">7. Update a Record</h2>
+<p>Run the following command in the MongoDB shell to update the record we just inserted:</p>
+<pre><code>mongodb&gt; db.movies.update( { id: 764006 },
+{
+       $set: { director: &quot;mel gibson&quot; },
+} );
+</code></pre>
+
+<p>Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "mel gibson" as the <i>director</i> value.</p>
+<h2 id="deleteRecord">8. Delete a Record</h2>
+<p>Run the following command in the MongoDB shell to delete the updated record:</p>
+<pre><code>mongodb&gt; db.movies.remove({&quot;id&quot; :764006 });
+</code></pre>
+
+<p>Again, wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.</p>
+<p><hr/>
+Have fun SRCHing!</p>
+<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
+<script type="text/javascript" src="setSizes.js"></script>
+
+<script>
+
+setSizes();
+window.onresize = setSizes
+</script>
+</body>
+</html>

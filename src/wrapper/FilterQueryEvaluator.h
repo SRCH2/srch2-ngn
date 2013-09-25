@@ -36,6 +36,7 @@
 #include <boost/algorithm/string.hpp>
 #include "RegexConstants.h"
 #include "util/Assert.h"
+#include "util/DateAndTimeHandler.h"
 
 
 using namespace std;
@@ -132,11 +133,31 @@ public:
             if (!validateValueWithType(attributeType, attributeValueLower)) {
                 return false;
             }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueLower);
+            	attributeValueLower = buffer.str();
+            }else{
+				std::string attributeValueLowerLowercase = attributeValueLower;
+				std::transform(attributeValueLowerLowercase.begin(), attributeValueLowerLowercase.end(), attributeValueLowerLowercase.begin(), ::tolower);
+				attributeValueLower = attributeValueLowerLowercase;
+            }
         }
 
         if (attributeValueUpper.compare("*") != 0) {
             if (!validateValueWithType(attributeType, attributeValueUpper)) {
                 return false;
+            }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueUpper);
+            	attributeValueUpper = buffer.str();
+            }else{
+				std::string attributeValueUpperLowercase = attributeValueUpper;
+				std::transform(attributeValueUpperLowercase.begin(), attributeValueUpperLowercase.end(), attributeValueUpperLowercase.begin(), ::tolower);
+				attributeValueUpper = attributeValueUpperLowercase;
             }
         }
         return true;
@@ -262,6 +283,16 @@ public:
             if (!validateValueWithType(attributeType, attributeValue)) {
                 return false;
             }
+            // now that it is validated, it should be changed to long representation.
+            if(attributeType == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+            	std::stringstream buffer;
+            	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValue);
+            	attributeValue = buffer.str();
+            }else{
+				std::string attributeValueLowercase = attributeValue;
+				std::transform(attributeValueLowercase.begin(), attributeValueLowercase.end(), attributeValueLowercase.begin(), ::tolower);
+				attributeValue = attributeValueLowercase;
+            }
         }
         return true;
     }
@@ -308,7 +339,7 @@ private:
 // based on the Score value of those attributes coming from records.
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
 /*
- * Exmaple of ComplexQueryExpression is CMPLX$price - discount < income * rate$
+ * Exmaple of ComplexQueryExpression is boolexp$price - discount < income * rate$
  * It accepts any kind of math expression which uses UNSIGNED/FLOAT non-searchable
  * attributes.
  */
@@ -335,7 +366,7 @@ public:
         // expressionString is '$ AND Popularity:[10 TO 100]'. remove leading '$'
         expressionString = expressionString.substr(1); // expressionString is now ' AND Popularity:[10 TO 100]'
         boost::algorithm::trim(expressionString);
-        // extract the expression, remove the 'CMPLX(' and ')' part
+        // extract the expression, remove the 'boolexp(' and ')' part
         return true;
     }
     bool parseComplxExpression(string &input, string &output) {
@@ -460,7 +491,7 @@ public:
      * Detail: this function will check if a filterquery term is a range, equality or complex term.
      * it calls teh addCriterion method with appropreate trem type.
      * then, it looks for boolean operator, if found, it loops back and repeat the process for other terms.
-     * example: 'fq=price:[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+     * example: 'fq=price:[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND boolexp$popularity>20$'
      *
      */
     bool parseAndAddCriterion(string &fq) {
@@ -487,7 +518,7 @@ public:
                 // it is not an equality nor a range expression
                 // see if it's a complex expression
                 string complexStr = "";
-                hasParsedParameter = this->parseComplexExpression(fq, complexStr); // checks and removes the CMPLX$ string returns true if found CMPLX$
+                hasParsedParameter = this->parseComplexExpression(fq, complexStr); // checks and removes the boolexp$ string returns true if found boolexp$
                 if (!hasParsedParameter) {
                     parseNextTerm = false;
                     Logger::info(" Parsing error:: not a valid filter query");
@@ -497,7 +528,7 @@ public:
                     return false;
                 }
                 Logger::debug(
-                        " 'CMPLX$' found, possible complex expression query");
+                        " 'boolexp$' found, possible complex expression query");
                 string dummyField = "NO_FIELD";
                 hasParsedParameter = this->addCriterion(fq,
                         FqKeywordTypeComplex, dummyField); // NO_FIELD, is a dummy parameter, that will not be used.
@@ -506,7 +537,7 @@ public:
                 }
                 boost::algorithm::trim(fq);
             } else {
-                // hasParsedParameter is true, fq is now changed to : '[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+                // hasParsedParameter is true, fq is now changed to : '[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm AND boolexp$popularity>20$'
                 // fqField is 'price:'
                 // remove the ':' from 'price:'
                 fqField = fqField.substr(0, fqField.length() - 1);
@@ -534,7 +565,7 @@ public:
             }
             // so far a new term has been parsed.
             // now we will continue with parsing the next operator
-            // fq should have been changed to 'AND popularity:[* TO 100] AND Title:algorithm AND CMPLX$popularity>20$'
+            // fq should have been changed to 'AND popularity:[* TO 100] AND Title:algorithm AND boolexp$popularity>20$'
             string boolOperator = "";
             hasParsedParameter = this->parseFqBoolOperator(fq, boolOperator); //
             if (hasParsedParameter) {

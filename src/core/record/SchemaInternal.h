@@ -83,8 +83,7 @@ public:
      * Creates a Schema object
      */
     SchemaInternal() {
-    }
-    ;
+    };
     SchemaInternal(srch2::instantsearch::IndexType indexType,
             srch2::instantsearch::PositionIndexType positionIndexType);
     SchemaInternal(const SchemaInternal &schemaInternal);
@@ -159,6 +158,9 @@ public:
         return 0;
     }
 
+    void setSupportSwapInEditDistance(const bool supportSwapInEditDistance);
+    bool getSupportSwapInEditDistance() const;
+
     void setScoringExpression(const std::string &scoringExpression);
     const std::string getScoringExpression() const;
 
@@ -209,6 +211,7 @@ private:
     srch2::instantsearch::PositionIndexType positionIndexType;
 
     std::string scoringExpressionString;
+    bool supportSwapInEditDistance;
 
     bool commited;
 

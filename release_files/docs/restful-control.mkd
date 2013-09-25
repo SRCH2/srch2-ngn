@@ -1,0 +1,102 @@
+
+<table style="width:100%;table-layout:fixed" ><tr>
+<td id="sideBarTd" style="width:25%"> 
+<div id="sidebar"> <!-- Sidebar -->
+<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
+<table><tbody><tr><td>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+</td></tr></tbody></table>
+
+<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png"/></a></span></br></br>
+</div> <!-- Links to main pages, id=linkpool-->
+
+<hr/>
+
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-data">3. Serializing Data to Disk</a><br><br>
+
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td id="docBody" style="width:70%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+#<center>SRCH2 Manual: RESTful API - Control</center>#{id="doc" style="color:#ee2e24" }
+######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+
+##1. Retrieving System Status## {id="system-status"}
+
+This API returns the information about the system status. The response body will contain a JSON map with these fields:
+
+   -   "search_requests": the number of queries received by the server so far;
+   -   "write_requests": number of insert/delete requests received by the server so far;
+   -   "docs_in_index": number of documents in the indexes;
+   -   "last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;
+   -   "last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;
+   -   "version": version of this engine.
+
+Here is an example query: 
+```
+$ curl -i "http://localhost:8081/info"
+```
+
+Here is an example response:
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 138
+Date: Thu, 19 Sep 2013 18:52:52 GMT
+
+[{search_requests:0,write_requests:100,docs_in_index:100,"last_merge":"09/19/13 18:52:48","last_merge_time":"0","doc_count":"100"}, 4.0.0]
+```
+
+##2. Serializing Indexes to Disk##{id="serialize-indexes"}
+
+This API serializes the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the configuration file. Here is an example: 
+```python
+$ curl -i "http://localhost:8081/save" -X PUT
+```
+
+##3. Serializing Data to Disk##{id="serialize-data"}
+
+This API serializes the data, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: 
+
+```
+$ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
+```
+
+<hr/>
+Have fun SRCHing!
+
+
+
+<link rel="stylesheet" type="text/css" href="documentation.css">
+
+
+
+<script type="text/javascript" src="setSizes.js"></script>
+<script>
+
+setSizes();
+window.onresize = setSizes
+</script>

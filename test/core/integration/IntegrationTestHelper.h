@@ -284,7 +284,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
 // 1. parse a query to exact and prefix keywords
 void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -292,7 +292,7 @@ void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
-        Term *term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+        Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -304,7 +304,7 @@ void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
 // 2. parse a query to exact and complete keywords
 void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -312,7 +312,7 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
-        Term *term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+        Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->add(term);
     }
@@ -323,7 +323,7 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
 // 3. parse a query to fuzzy and prefix keywords
 void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -331,7 +331,7 @@ void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
-        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].size()));
+        Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].term.size()));
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -343,7 +343,7 @@ void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
 // 4. parse a query to fuzzy and complete keywords
 void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -351,7 +351,7 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     {
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
-        Term *term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].size()));
+        Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].term.size()));
         term->addAttributeToFilterTermHits(attributeIdToFilter);
         //query->setPrefixMatchPenalty(0.95);
         query->add(term);
@@ -362,7 +362,7 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
 
 void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed)
 {
-    vector<string> queryKeywords;
+    vector<PositionalTerm> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -376,10 +376,10 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
         }
 
         if(ed==0){
-            term = ExactTerm::create(queryKeywords[i], termType, 1, 0.5);
+            term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
         }
         else{
-            term = FuzzyTerm::create(queryKeywords[i], termType, 1, 0.5, ed);
+            term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
         }
         term->addAttributeToFilterTermHits(-1);
         query->setPrefixMatchPenalty(0.95);
@@ -1116,6 +1116,52 @@ bool pingFuzzyComplete(const Analyzer *analyzer, IndexSearcher *indexSearcher, s
     delete queryResults;
     delete query;
     return returnvalue;
+}
+
+void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1, unsigned ed = 1)
+{
+    vector<PositionalTerm> queryKeywords;
+    analyzer->tokenizeQuery(queryString,queryKeywords);
+    // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
+    //cout<<"Query:";
+    for (unsigned i = 0; i < queryKeywords.size(); ++i)
+    {
+        //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
+        TermType termType = TERM_TYPE_COMPLETE;
+        Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
+        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        //query->setPrefixMatchPenalty(0.95);
+        query->add(term);
+    }
+    //cout << endl;
+    queryKeywords.clear();
+}
+
+bool pingEd(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+{
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseEdQuery(analyzer, query, queryString, attributeIdToFilter);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+
+    indexSearcher->search(query, queryResults, resultCount);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
+bool pingEd(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+{
+    vector<unsigned> rIDList;
+    rIDList.push_back(recordID);
+    return pingEd(analyzer,indexSearcher,queryString,numberofHits,rIDList,attributeIdToFilter);
 }
 
 // fuzzy query by default

@@ -247,6 +247,9 @@ void VariableLengthAttributeContainer::allocate(const Schema * schema,
         case ATTRIBUTE_TYPE_TIME:
             totalLength += sizeof(long);
             break;
+        case ATTRIBUTE_TYPE_DURATION:
+        	ASSERT(false);
+        	break;
         }
     }
     //
@@ -280,6 +283,9 @@ unsigned VariableLengthAttributeContainer::getSizeOfNonSearchableAttributeValueI
     case ATTRIBUTE_TYPE_TIME:
         return sizeof(long);
         break;
+    case ATTRIBUTE_TYPE_DURATION:
+    	ASSERT(false);
+    	break;
     }
     ASSERT(false);
     return 0;
@@ -369,6 +375,9 @@ void VariableLengthAttributeContainer::convertStringToByteArray(FilterType type,
         convertLongToByteArray(longValue, output, startOffset);
         sizeInBytes = sizeof(long);
         break;
+    case ATTRIBUTE_TYPE_DURATION:
+    	ASSERT(false);
+    	break;
     }
 
 }
@@ -404,6 +413,9 @@ std::string VariableLengthAttributeContainer::convertByteArrayToString(
         ss << longValue;
         result = ss.str();
         break;
+    case ATTRIBUTE_TYPE_DURATION:
+    	ASSERT(false);
+    	break;
     }
 
     return result;
@@ -437,6 +449,9 @@ void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
         longValue = convertByteArrayToLong(startOffset);
         result->setScore(longValue);
         break;
+    case ATTRIBUTE_TYPE_DURATION:
+    	ASSERT(false);
+    	break;
     }
 
 }

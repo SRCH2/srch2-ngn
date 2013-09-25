@@ -66,7 +66,7 @@ def prepareQuery(queryKeywords):
 def testFuzzyA1(queriesAndResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./fuzzy_a1/conf.ini &'
+    binary= binary+' --config-file=./fuzzy_a1/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up

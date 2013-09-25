@@ -35,6 +35,10 @@ namespace instantsearch {
 
 class AnalyzerInternal;
 
+struct PositionalTerm {
+	string term;
+	unsigned position;
+};
 
 struct TokenAttributeHits {
     /** Each entry has position information as follows:
@@ -84,7 +88,7 @@ public:
 	std::string applyFilters(std::string input);
 
 	void tokenizeQuery(const std::string &queryString,
-			std::vector<std::string> &queryKeywords) const;
+			std::vector<PositionalTerm> &queryKeywords) const;
 
 	void tokenizeRecord(const Record *record,
 	        std::map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
@@ -97,7 +101,7 @@ public:
 
 	// TODO: Refactor the function and its arguments. Possibly move to wrapper
 	void tokenizeQueryWithFilter(const std::string &queryString,
-			std::vector<std::string> &queryKeywords,
+			std::vector<PositionalTerm> &queryKeywords,
 			const char &splitterCharacter,
 			const char &filterSplitterCharacter,
 			const char &fieldsAndCharacter,

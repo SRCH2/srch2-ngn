@@ -28,11 +28,12 @@
 #include "util/Assert.h"
 
 #include <boost/array.hpp>
-
 using srch2::util::Logger;
 using std::string;
 using std::pair;
 using std::make_pair;
+
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -237,6 +238,9 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
 			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
+		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+			ASSERT(false);
+			break;
 	}
 
     return score;
@@ -269,7 +273,7 @@ void ForwardIndex::merge()
 }
 
 void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
-        KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
+        KeywordIdKeywordStringInvertedListIdTriple &uniqueKeywordIdList,
         map<string, TokenAttributeHits> &tokenAttributeHitsMap) {
     ASSERT(recordId == this->getTotalNumberOfForwardLists_WriteView());
 
@@ -283,16 +287,16 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
      recordOrder.push_back(recordId);
      }*/
     // We consider KEYWORD_THRESHOLD keywords at most, skip the extra ones
-    if (keywordIdList.size() >= KEYWORD_THRESHOLD)
-        keywordIdList.resize(KEYWORD_THRESHOLD);
+    if (uniqueKeywordIdList.size() >= KEYWORD_THRESHOLD)
+        uniqueKeywordIdList.resize(KEYWORD_THRESHOLD);
 
-    unsigned keywordListCapacity = keywordIdList.size();
+    unsigned keywordListCapacity = uniqueKeywordIdList.size();
 
     ForwardList *forwardList = new ForwardList(keywordListCapacity);
     forwardList->setExternalRecordId(record->getPrimaryKey());
     forwardList->setRecordBoost(record->getRecordBoost());
     forwardList->setInMemoryData(record->getInMemoryData());
-    forwardList->setNumberOfKeywords(keywordIdList.size());
+    forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
     //Adding Non searchable Attribute list
     vector<string> nonSearchableAttributeValues;
@@ -306,44 +310,91 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
     forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
 
-
     // Add KeywordId List
-    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
-        forwardList->setKeywordId(iter, keywordIdList[iter].first);
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
     }
 
     //Add Score List
-    for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
 
         map<string, TokenAttributeHits>::const_iterator mapIterator =
-                tokenAttributeHitsMap.find(keywordIdList[iter].second.first);
+                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
         forwardList->setKeywordRecordStaticScore(iter,
                 forwardList->computeFieldBoostSummation(this->schemaInternal,
                         mapIterator->second));
     }
 
+    PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     // support attribute-based search
-    if (this->schemaInternal->getPositionIndexType()
-            == srch2::instantsearch::FIELDBITINDEX) {
-        ForwardList::isAttributeBasedSearch = true;
-        forwardList->setKeywordAttributeBitmaps(
-                new unsigned[keywordListCapacity]);
+    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
+    	ForwardList::isAttributeBasedSearch = true;
 
-        for (unsigned iter = 0; iter < keywordIdList.size(); ++iter) {
-            map<string, TokenAttributeHits>::const_iterator mapIterator =
-                    tokenAttributeHitsMap.find(
-                            keywordIdList[iter].second.first);
-            ASSERT(mapIterator != tokenAttributeHitsMap.end());
-            unsigned bitVector = 0;
-            for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-                    i++) {
-                int attributeId = ((mapIterator->second.attributeList.at(i))
-                        >> 24) - 1;
-                bitVector |= (1 << attributeId);
-            }
-            forwardList->setKeywordAttributeBitmap(iter, bitVector);
-        }
+    	forwardList->setKeywordAttributeBitmaps(
+    			new unsigned[keywordListCapacity]);
+
+    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+    		map<string, TokenAttributeHits>::const_iterator mapIterator =
+    				tokenAttributeHitsMap.find(
+    						uniqueKeywordIdList[iter].second.first);
+    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    		unsigned bitVector = 0;
+    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+    				i++) {
+    			int attributeId = ((mapIterator->second.attributeList.at(i))
+    					>> 24) - 1;
+    			bitVector |= (1 << attributeId);
+    		}
+    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
+    	}
+    }
+
+    if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
+    	// Add position indexes in forward list
+    	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
+    	// this buffer is temporary storage of variable length byte array, since its
+    	// size is not known in advance.
+    	vector<uint8_t> tempVarLenByteBuffer;
+    	// To avoid frequent resizing, reserve space for vector. 10 is random number
+    	tempVarLenByteBuffer.reserve(uniqueKeywordIdList.size() * 10);
+
+    	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
+
+    		string keyword = uniqueKeywordIdList[i].second.first;
+    		TokenAttributeHitsIter iterator = tokenAttributeHitsMap.find(keyword);
+    		ASSERT(iterator != tokenAttributeHitsMap.end());
+
+    		unsigned prevAttributeId = 0;
+    		vector<unsigned> positionListVector;
+
+    		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
+    			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
+    			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
+
+    			// if it is a first element or current attribute is same as
+    			// previous attribute id. then continue to push the position
+    			// in position list vector
+    			if (j == 0 || prevAttributeId == attributeId) {
+    				positionListVector.push_back(position);
+    			} else {
+    				// if the previous attribute is not same as current attribute
+    				// then convert the position list vector to variable length byte
+    				// array and APPPEND to grand buffer.
+    				convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    				positionListVector.clear();
+    				positionListVector.push_back(position);
+    			}
+    			prevAttributeId = attributeId;
+    		}
+
+    		// convert the position list vector of last attribute to variable
+    		// length byte array
+    		convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    		positionListVector.clear();
+    	}
+    	// set grand buffer to position index of current forward list.
+    	forwardList->setPositionIndex(tempVarLenByteBuffer);
     }
 
     ForwardListPtr managedForwardListPtr;
@@ -352,6 +403,36 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 
     this->mergeRequired = true;
+}
+/*
+ *  This function converts position list vector to variable length byte array and
+ *  append it to grand buffer after adding the size of byte array first.
+ */
+void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListVector,
+		vector<uint8_t>& grandBuffer) {
+
+	uint8_t * buffer = 0;
+	// convert to vector to variable length byte array
+	unsigned lengthOfDeltas = ULEB128::uInt32VectorToVarLenArray(positionListVector, &buffer);
+
+	if (buffer == NULL)
+		return;
+
+	uint8_t vlb[5];
+	short numberOfBytesForLength;
+	// now convert the deltaSize to varable length byte (vlb)
+	ULEB128::uInt32ToVarLengthBytes(lengthOfDeltas , vlb, &numberOfBytesForLength);
+
+	// append vlb of deltaSize to grand buffer first
+	for (int k =0; k < numberOfBytesForLength; ++k)
+		grandBuffer.push_back(vlb[k]);
+
+	// append vlb of delta stored in buffer.
+	for (int k =0; k < lengthOfDeltas; ++k)
+		grandBuffer.push_back(buffer[k]);
+
+	if (buffer)
+		free(buffer);
 }
 
 // TODO check if this is still useful
@@ -436,7 +517,9 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         // support attribute-based search
         if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::FIELDBITINDEX)
+                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+                this->schemaInternal->getPositionIndexType()
+                                == srch2::instantsearch::POSITION_INDEX_FULL)
             keywordRichInformationList[keywordOffset].keywordAttribute =
                     forwardList->getKeywordAttributeBitmap(keywordOffset);
     }
@@ -462,7 +545,9 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         //copy attribute
         // support attribute-based search
         if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::FIELDBITINDEX) {
+                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+                this->schemaInternal->getPositionIndexType()
+                                == srch2::instantsearch::POSITION_INDEX_FULL) {
             forwardList->setKeywordAttributeBitmap(keywordOffset,
                     iter->keywordAttribute);
         }
@@ -584,7 +669,7 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema,
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
                 termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,
                 tempScore)) {
-            if (tempScore > matchingKeywordRecordStaticScore) {
+            if (tempScore >= matchingKeywordRecordStaticScore) {
                 matchingKeywordRecordStaticScore = tempScore;
                 matchingKeywordAttributeBitmap = tempAttributeBitmap;
                 returnValue = true;
@@ -688,7 +773,7 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
     // support attribute-based search
     if (searchableAttributeId == 0
             || (schema->getPositionIndexType()
-                    != srch2::instantsearch::FIELDBITINDEX)) {
+                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)) {
         return true;
     } else {
         ASSERT(
@@ -785,6 +870,84 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      return returnValue;
      */
 }
+
+void ForwardList::setPositionIndex(vector<uint8_t>& v){
+	positionIndex = v;
+	ASSERT(positionIndex.size() == positionIndex.capacity());
+}
+unsigned getBitSet(unsigned number);
+unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
+
+void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
+		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
+
+	if (positionIndex.size() == 0){
+		Logger::warn("Position Index not found in forward index!!");
+		return;
+	}
+
+	const uint8_t * piPtr = &positionIndex[0];  // pointer to position index for the record
+	unsigned piOffset = 0;
+
+	if (*(piPtr + positionIndex.size() - 1) & 0x80)
+	{
+		 Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
+		 return;
+	}
+
+	// get the correct byte array position for current keyword + attribute combination
+
+	for (unsigned j = 0; j < keyOffset ; ++j) {
+		currKeyattributeBitMap = keywordAttributeBitmaps[j];
+		unsigned count = getBitSet(currKeyattributeBitMap);
+		for (unsigned k = 0; k < count; ++k){
+			unsigned value;
+			short byteRead;
+			ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+			piOffset += byteRead + value;
+		}
+	}
+	currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
+	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
+	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
+
+	ASSERT(totalBitSet > attrBitPosition);
+	for (int i = 0; i < totalBitSet; ++i){
+		unsigned value;
+		short byteRead;
+		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+		if (i == attrBitPosition){
+			ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
+			break;
+		}else {
+			piOffset += byteRead + value;
+		}
+	}
+}
+// get the count of set bits in he number
+// Brian Kernighan's method
+// Published in 1988, the C Programming Language 2nd Ed
+unsigned getBitSet(unsigned number) {
+	unsigned int count; // c accumulates the total bits set in v
+	for (count = 0; number; count++)
+	{
+		number &= number - 1; // clear the least significant bit set
+	}
+	return count;
+}
+
+// get the count of bit set before the bit position of attributeId
+unsigned getBitSetPositionOfAttr(unsigned attrBitMap, unsigned attributeId) {
+	unsigned shift = 0;
+	unsigned count = 0;
+	while(shift < attributeId) {
+		if ((attrBitMap & (1 << shift)) == 1)
+			++count;
+		++shift;
+	}
+	return count;
+}
+
 
 /**********************************************/
 std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
@@ -945,6 +1108,30 @@ unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
     const ForwardList* forwardList = this->getForwardList(forwardListId, valid);
     //assert(valid == true);
     return forwardList->getKeywordOffset(keywordId);
+}
+
+
+void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName)
+{
+    ofstream out(exportedDataFileName.c_str());
+    // If the forwardIndex needs to merge, we do the merge it first
+    if(forwardIndex.mergeRequired)
+        forwardIndex.merge();
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex.forwardListDirectory->getReadView(forwardListDirectoryReadView);
+    string uncompressedInMemoryRecordString;
+    // loop all the forwardList Index
+    for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
+        bool valid = false;
+        const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
+        // ignore the invalid record
+        if (valid == false)
+            continue;
+        const string& compressedInMemoryRecordString = fl->getInMemoryData();
+        snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
+        out << uncompressedInMemoryRecordString << endl;
+    }
+    out.close();
 }
 
 }

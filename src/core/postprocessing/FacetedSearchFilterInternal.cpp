@@ -33,13 +33,15 @@ void FacetedSearchFilterInternal::doAggregationCategorical(const Score & attribu
         std::map<string , float > * counts) {
 
     // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
-    std::map<string , float >::iterator p = counts->find(attributeValue.toString());
+	std::string attributeValueLowerCase = attributeValue.toString();
+	std::transform(attributeValueLowerCase.begin(), attributeValueLowerCase.end(), attributeValueLowerCase.begin(), ::tolower);
+    std::map<string , float >::iterator p = counts->find(attributeValueLowerCase);
     if( p != counts->end()){
         p->second ++;
         return;
     }
     // not found in map, initialization with 1
-    (*counts)[attributeValue.toString()] = 1;
+    (*counts)[attributeValueLowerCase] = 1;
     return;
 }
 
@@ -95,15 +97,33 @@ void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearche
                     schema->getNonSearchableAttributeId(*field));
             Score start;
             start.setScore(attributeType, this->rangeStarts.at(fieldIndex));
-            rangeStartScores.push_back(start);
 
             Score end;
             end.setScore(attributeType, this->rangeEnds.at(fieldIndex));
-            rangeEndScores.push_back(end);
 
             Score gap;
-            gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            if(attributeType == ATTRIBUTE_TYPE_TIME){
+            	// For time attributes gap should not be of the same type, it should be
+            	// of type TimeDuration.
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");
+            	}else{
+            		gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
+            	}
+            }else{
+            	if(start > end){ // start should not be greater than end
+            		start = end;
+            		gap.setScore(attributeType , "0");
+            	}else{
+            		gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
+            	}
+            }
+
+            rangeStartScores.push_back(start);
+            rangeEndScores.push_back(end);
             rangeGapScores.push_back(gap);
+
         }
 
         //

@@ -123,6 +123,9 @@ public:
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 
+    // get schema, which can be modified without rebuilding the index
+    virtual srch2::instantsearch::Schema *getSchema() = 0;
+
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;
 
     /**
@@ -140,6 +143,8 @@ public:
 
     virtual void save(const std::string& directoryName) = 0;
     virtual void save() = 0;
+
+    virtual void exportData(const string &exportedDataFileName) = 0;
 
     /*For testing purpose only. Do not use in wrapper code*/
     virtual void merge_ForTesting() = 0;

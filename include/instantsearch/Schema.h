@@ -76,7 +76,7 @@ public:
     /**
      * Creates a Schema object
      */
-    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::NOPOSITIONINDEX);
+    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE);
     //    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::FULLPOSITIONINDEX);
 
     virtual srch2::instantsearch::IndexType getIndexType() const = 0;
@@ -161,6 +161,11 @@ public:
      */
     virtual void setScoringExpression(const std::string &scoringExpression) = 0;
     virtual const std::string getScoringExpression() const = 0;
+
+    // set if support swap operation for edit distance
+    virtual void setSupportSwapInEditDistance(const bool supportSwapInEditDistance) = 0;
+    virtual bool getSupportSwapInEditDistance() const = 0;
+
     /**
      * Writes the schema to a folder specified in schema::create(...) function.
      * After commit(), no more changes can be added.

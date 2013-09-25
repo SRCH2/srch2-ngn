@@ -9,7 +9,7 @@
 #include <map>
 #include <cstring>
 #include <cstdlib>
-
+#include <boost/algorithm/string.hpp>
 #include "JSONRecordParser.h"
 #include <instantsearch/GlobalCache.h>
 
@@ -19,6 +19,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerFactory.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace snappy;
 
@@ -66,6 +67,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
     if (primaryKeyStringValue.compare("NULL") != 0)
     {
+    	// trim to avoid any mismatch due to leading and trailing white space
+    	boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
         record->setPrimaryKey(primaryKey);
         if (indexDataContainerConf->getIsPrimSearchable())
@@ -175,7 +178,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
             if (attributeStringValue.compare("NULL") != 0)
             {
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+				std::string attributeStringValueLowercase = attributeStringValue;
+				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
                 if(attributeIter->second.second.second){
                     // ERROR
@@ -183,7 +188,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     return false;// Raise Error
                 }else{
                     // set the default value
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }
@@ -273,13 +280,18 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
         indexType = srch2is::LocationIndex;
     }
 
-    if (indexDataContainerConf->getSupportAttributeBasedSearch())
+    // if position index is ebabled then attribute based search is also enabled
+    // so check whether position index is enabled first
+    if (indexDataContainerConf->isPositionIndexEnabled()){
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
+    }
+    else if (indexDataContainerConf->getSupportAttributeBasedSearch())
     {
-        positionIndexType = srch2::instantsearch::FIELDBITINDEX;
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
     }
     else
     {
-        positionIndexType = srch2::instantsearch::NOPOSITIONINDEX;
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
     }
 
     srch2is::Schema* schema = srch2is::Schema::create(indexType, positionIndexType);
@@ -317,6 +329,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
+    schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 
     return schema;
 }
@@ -335,7 +348,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-
+    unsigned indexedCounter = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
@@ -351,6 +364,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
                 indexer->addRecord(record, analyzer, 0);
+                indexedCounter++;
             }
             else
             {
@@ -359,15 +373,15 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             }
             record->clear();
             int reportFreq = 10000;
+            ++lineCounter;
             if (lineCounter % reportFreq == 0)
             {
               std::cout << "Indexing first " << lineCounter << " records" << "\r";
             }
-            ++lineCounter;
         }
     }
     std::cout<<"                                                     \r";
-    Logger::console("Indexed %d records.", lineCounter);
+    Logger::console("Indexed %d / %d records.", indexedCounter, lineCounter);
 
     in.close();
 
@@ -375,9 +389,11 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
     // be added
     indexer->commit();
 
-    Logger::console("Saving Index.....");
-    indexer->save();
-    Logger::console("Index saved.");
+    if (indexedCounter > 0) {
+    	Logger::console("Saving Indexes.....");
+    	indexer->save();
+    	Logger::console("Indexes saved.");
+    }
     delete analyzer;
 }
 
@@ -403,6 +419,15 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
 	    	{
 	    		convertValueToString(*iter, stringValue);
+	    		stringValue += " ";
+	    	}
+	    }else if (value.isObject()){
+	    	// for certain data sources such as mongo db, the field value may be
+	    	// JSON object ( e.g mongo db primary key "_id")
+	    	// For JSON object, recursively concatenate all keys' value
+	    	vector<string> keys = value.getMemberNames();
+	    	for (int i= 0; i < keys.size(); ++i) {
+	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
 	    		stringValue += " ";
 	    	}
 	    }
@@ -447,8 +472,13 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	convertValueToString(value, temp);
 
 	// now check to see if it has proper date/time format
-
-	stringValue = convertTimeFormatToLong(temp);
+	stringValue = "";
+	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
+			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
+		stringstream buffer;
+		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
+		stringValue = buffer.str();
+	}
     return;
 
 }

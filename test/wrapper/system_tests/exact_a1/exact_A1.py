@@ -72,7 +72,7 @@ def prepareQuery(queryKeywords):
 def testExactA1(queriesAndResultsPath, binary_path):
     #Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_a1/conf.ini &'
+    binary= binary+' --config-file=./exact_a1/conf.xml &'
     print 'starting engine: ' + binary
     os.popen(binary)
 
