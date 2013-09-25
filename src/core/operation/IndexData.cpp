@@ -138,6 +138,46 @@ IndexData::IndexData(const string& directoryName)
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
 
+// the function overloads operator "<" in order to provide a custom comparison for
+// const pair<unsigned, pair<string, unsigned> > type
+bool operator < (const pair<unsigned, pair<string, unsigned> >& left,
+		const pair<unsigned, pair<string, unsigned> >& right){
+
+	int result = left.second.first.compare(right.second.first);
+	if (result < 0) {
+		return true;
+	} else if (result > 0) {
+		return false;
+	} else {
+		/*
+		 *   if string matches then compare the attribute ids. For the multiple occurrence of
+		 *   a keyword in a record, there position index should be grouped together based on
+		 *   attribute id.
+		 */
+		int leftAttributeId = left.second.second >> 24;
+		int rightAttributeId = right.second.second >> 24;
+
+		if (leftAttributeId < rightAttributeId)
+			return true;
+		else
+			return false;
+	}
+}
+
+// check whether the keyword id list is sorted based
+bool is_sorted(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
+	KeywordIdKeywordStringInvertedListIdTriple::const_iterator iter = keywordIdList.begin();
+	KeywordIdKeywordStringInvertedListIdTriple::const_iterator previter  = iter;
+	++iter;
+	while(iter != keywordIdList.end())
+	{
+		if (*iter < *previter)  // '<' operator is overload above.
+			return false;
+		++iter;
+	}
+	return true;
+}
+
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
@@ -230,8 +270,13 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                     delete oldParentOrSelfAndAncs;
             }
         }
-        // Sort keywordList
-        std::sort( keywordIdList.begin(), keywordIdList.end() );
+        // Commented out the sort statement below. We do not want to sort the keyword List because
+        // keywords are stored in a map which keeps them alphabetically sorted.
+        // std::sort( keywordIdList.begin(), keywordIdList.end());
+
+        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see is_sorted()
+        // function above.
+        ASSERT(is_sorted(keywordIdList));
 
         unsigned internalRecordId;
         this->forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(), internalRecordId);

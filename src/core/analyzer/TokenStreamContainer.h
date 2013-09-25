@@ -22,6 +22,7 @@ public:
     void fillInCharacters(const std::vector<CharType> &charVector){
         currentToken.clear();
         completeCharVector = charVector;
+        currentTokenPosition = 0;
         offset = 0;
     }
 	/*
