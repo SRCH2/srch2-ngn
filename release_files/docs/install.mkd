@@ -88,6 +88,7 @@ The server will read the configuration file, load the data in the corresponding 
 
 </center>
 
+Note: (1) All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  (2) It is recommended to use an absolute path value for the "srch2Home" variable.
 
 <b>Step 5</b>: To test the engine, open a new terminal and type the following command:
 

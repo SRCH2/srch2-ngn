@@ -116,8 +116,8 @@ It specifies a license key file required by the engine. Enter your email [here](
 <listeningHostname>127.0.0.1</listeningHostname>
 <listeningPort>8081</listeningPort>
 ```
-This parameter is the network identification (i.e. IP address or host name) of the server on which the SRCH2 engine is running.
-NOTE: If you want the server to accept all incoming packets, use 0.0.0.0 .
+This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is running.
+NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>" (without the quote).
 ####6. Data Directory, Required{id="dataDir"}
 ```
 <dataDir>/path/to/data/directory/</dataDir>
