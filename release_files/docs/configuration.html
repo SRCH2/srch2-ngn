@@ -322,10 +322,10 @@ It is REQUIRED to include a comma separated list of fields in the tag if it is 2
 
 <ul>
 <li>
-<p><b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time. </p>
+<p><b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.  This number should be at least 1 (second).</p>
 </li>
 <li>
-<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
+<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge.  This number should be at least 1. <br></p>
 </li>
 </ul>
 <h3 id="updateLog">11.3. Logging:</h3>

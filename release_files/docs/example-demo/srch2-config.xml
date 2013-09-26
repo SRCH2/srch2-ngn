@@ -18,8 +18,7 @@
  
     <dataDir>./indexes</dataDir>
      
-    <dataFile>sample-data.json</dataFile>
-     
+    <dataFile>example-demo/sample-data.json</dataFile>
          
     <indexConfig>
          
@@ -29,18 +28,12 @@
 
         <fieldBoost>title^2 director^1</fieldBoost>
 
-        <!--
-        <recordBoostField>director</recordBoostField>
-        -->
-         
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
         
         <dataSourceType>1</dataSourceType>
         
-    
         <!-- 
-            Mongo Db settings
-            Required if dataSourceType = 2
+            MongoDB settings, required if dataSourceType = 2
         -->
         <!--
         <mongodb>

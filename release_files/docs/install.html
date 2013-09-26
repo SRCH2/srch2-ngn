@@ -62,22 +62,22 @@
 <h2 id="serverConfig">1. Download and Run Server</h2>
 <p><b>Step 1</b>: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a>. The tar ball includes the following files and a folder:</p>
 <ul>
-<li>srch2-engine (the binary file of the engine);</li>
+<li>bin/srch2-engine (the engine binary);</li>
 <li>readme.txt;</li>
-<li>example-demo.</li>
+<li>example-demo/.</li>
 </ul>
 <p>The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
 <p><b>Step 2</b>: Obtain a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em>.</p>
-<p><b>Step 3</b>: Place the license key and downloaded files into a directory.</p>
-<p><b>Step 4</b>: Open a shell and go to the directory of the engine. Run the following:</p>
-<pre><code class="python">shell&gt; ./srch2-engine --config-file=/PATH/TO/EXTRACTED/FILES/example-demo/srch2-config.xml
+<p><b>Step 3</b>: Place the license key and downloaded files into the install directory.</p>
+<p><b>Step 4</b>: Open a shell and go to the "example-demo" directory. Run the following:</p>
+<pre><code class="python">shell&gt; ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
 </code></pre>
 
 <p>The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:</p>
 <p><center></p>
 <p><img alt="Engine is running" src="./images/engine_running.png"></p>
 <p></center></p>
-<p>Note: (1) All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  (2) It is recommended to use an absolute path value for the "srch2Home" variable.</p>
+<p>Note: (1) All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  (2) It is recommended to use an absolute path value for the "srch2Home" variable. (3) Once the engine starts, it stores the indexes in the folder specified by the  "dataDir" parameter in the config file (with a default folder of "dataDir"). The next file we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.</p>
 <p><b>Step 5</b>: To test the engine, open a new terminal and type the following command:</p>
 <pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=terminator
 </code></pre>
