@@ -133,6 +133,14 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do test_new_query_syntax-------------'
+python ./test_new_query_syntax/test_new_query_syntax.py $SRCH2_ENGINE_DIR ./test_new_query_syntax/queriesAndResults.txt ./test_new_query_syntax/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
 echo '----do date and time implementation test--------------'
 python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE_DIR ./date_time_new_features_test/queriesAndResults.txt
 

@@ -28,7 +28,6 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
                 break
     else:
         isPass=0
-        print query+' test failed'
         print 'query results||given results'
         print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
         maxLen = max(len(responseJson),len(resultValue))
@@ -39,16 +38,15 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
                  print '  '+'||'+resultValue[i]
             else:
                  print responseJson[i]['record']['id']+'||'+resultValue[i]
-    #if the search result is ok, we continue to check facet Result
     if isPass == 1:
         isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
 
     if isPass == 1:
         print  query+' test pass'
+    else:
+        print  query+' test failed'
 
-def checkFacetResults(query, responseJson, resultValue):
-   if len(responseJson) != len(resultValue):
-      return False
+def checkFacetResults(query, responseJson, facetResultValue):
    for i in range(0,len(responseJson)):
       facet_line = ''
       facet_field_name = responseJson[i]['facet_field_name']
@@ -56,8 +54,8 @@ def checkFacetResults(query, responseJson, resultValue):
       facet_info = responseJson[i]['facet_info']
       for j in range(0,len(facet_info)):
          facet_line = facet_line + facet_info[j]['category_name'] + ',' + str(facet_info[j]['category_value']) + '|'
-      if resultValue[i] != facet_line:
-         print resultValue[i]
+      if facetResultValue != facet_line:
+         print facetResultValue
          print 'vs.'
          print facet_line
          return False
@@ -68,66 +66,59 @@ def checkFacetResults(query, responseJson, resultValue):
 def prepareQuery(queryKeywords):
     query = ''
     #################  prepare main query part
-    query = query + 'q='
+    #query = query + ''
     # local parameters
-    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
-    # keywords section
-    for i in range(0, len(queryKeywords)):
-        if i == (len(queryKeywords)-1):
-            query=query+queryKeywords[i]+'*' # last keyword prefix
-        else:
-            query=query+queryKeywords[i]+'%20AND%20'
+    query = query + queryKeywords
 
-    ################# fuzzy parameter
-    query = query + '&fuzzy=true'
-    ################# facet parameters
-    query = query + '&facet=true&facet.field=model&facet.range=price&facet.range=likes'
-    ################# rows parameter
-    query = query + '&rows=1'
-    print 'Query : ' + query
+    #print 'Query : ' + query
     ##################################
     return query
 
-def testFacetedSearch(queriesAndResultsPath , facetResultsPath, binary_path):
+def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./faceted_search/conf.xml &'
+    binary= binary+' --config-file=./test_new_query_syntax/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up
     pingServer()
 
-    #construct the query
+    # get facet correct result from file
+    f_facet = open(facetResultsPath , 'r')
+    facetResultValue = []
+    for facet_line in f_facet:
+        facetResultValue.append(facet_line.strip())
 
+    #construct the query
+    j=0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
-        queryValue=value[0].split()
+        queryValue=value[0]
         resultValue=(value[1]).split()
         #construct the query
         query='http://localhost:' + port + '/search?'
         query = query + prepareQuery(queryValue)
         #print query
         
-
-        # get facet correct result from file
-        f_facet = open(facetResultsPath , 'r')
-        facetResultValue = []
-        for facet_line in f_facet:
-            facetResultValue.append(facet_line.strip())
-            
         # do the query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
-      
         #check the result
-        checkResult(query, response_json, resultValue , facetResultValue )
-
-    #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
+        checkResult(query, response_json, resultValue, facetResultValue[j])
+        j=j+1
+        #print j
+        #print '------------------------------------------------------------------'
+    try:
+        s = commands.getoutput('ps aux | grep srch2-search-server')
+        stat = s.split()
+        os.kill(int(stat[1]), signal.SIGUSR1)
+    except: 
+        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
+        a = s.split()
+        cmd = "kill -9 {0}".format(a[-1])
+        os.system(cmd)
     print '=============================='
 
 if __name__ == '__main__':    
@@ -135,6 +126,6 @@ if __name__ == '__main__':
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
    binary_path = sys.argv[1]
    queriesAndResultsPath = sys.argv[2]
-   facetResultsPath = sys.argv[3]
-   testFacetedSearch(queriesAndResultsPath, facetResultsPath, binary_path)
+   facetResultsPath=sys.argv[3]
+   testNewFeatures(queriesAndResultsPath, facetResultsPath, binary_path)
 
