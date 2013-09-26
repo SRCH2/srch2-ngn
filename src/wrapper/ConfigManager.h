@@ -155,6 +155,7 @@ private:
 	string mongoDbName;
 	string mongoCollection;
 	unsigned mongoListenerWaitTime;
+	unsigned mongoListenerMaxRetryOnFailure;
 
 
     void splitString(string str, const string& delimiter, vector<string>& result);
@@ -319,6 +320,10 @@ public:
     }
     const unsigned getMongoListenerWaitTime () const{
     	return mongoListenerWaitTime;
+    }
+
+    const unsigned getMongoListnerMaxRetryCount() const {
+    	return mongoListenerMaxRetryOnFailure;
     }
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);

@@ -438,6 +438,9 @@ void parseProgramArguments(int argc, char** argv,
 
 pthread_t *threads;
 int MAX_THREADS;
+
+vector<struct event_base *> evbases;
+
 /**
  * Kill the server.  This function can be called from another thread to kill the server
  */
@@ -445,9 +448,16 @@ int MAX_THREADS;
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_cancel(threads[i]);
-        Logger::console("Thread = <%u> stopped", threads[i]);
-    }
+            pthread_cancel(threads[i]);
+            Logger::console("Thread = <%u> stopped", threads[i]);
+        }
+
+//    for (int i = 0; i < evbases.size(); ++i) {
+//    	// call event_base_loopexit to terminate the thread's loop once it is done
+//    	// processing current event. This is a graceful shut down of each thread
+//    	event_base_loopbreak(evbases[i]);
+//    	event_base_dispatch(evbases[i]);
+//    }
 }
 
 int main(int argc, char** argv) {
@@ -601,7 +611,6 @@ int main(int argc, char** argv) {
 
     int fd = bindSocket(http_addr, http_port);
     threads = new pthread_t[MAX_THREADS];
-    vector<struct event_base *> evbases;
     vector<struct evhttp *> http_servers;
     for (int i = 0; i < MAX_THREADS; i++) {
         evbase = event_init();
@@ -675,6 +684,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_join(threads[i], NULL);
+        Logger::console("Thread = <%u> stopped", threads[i]);
     }
 
     delete[] threads;
