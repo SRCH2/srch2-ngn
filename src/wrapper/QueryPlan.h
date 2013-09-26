@@ -126,6 +126,9 @@ public:
 			case srch2http::GeoSearchType:
 				return 2;
 				break;
+			case srch2http::RetrieveByIdSearchType:
+				return 3;
+				break;
 			default:
 
 				break;
@@ -137,8 +140,18 @@ public:
 		this->searchType = searchType;
 	}
 
+	std::string getDocIdForRetrieveByIdSearchType(){
+		return this->docIdForRetrieveByIdSearchType;
+	}
+
+	void setDocIdForRetrieveByIdSearchType(const std::string & docid){
+		this->docIdForRetrieveByIdSearchType = docid;
+	}
+
 
 private:
+
+	std::string docIdForRetrieveByIdSearchType;
 
 	Query *exactQuery;
 	Query *fuzzyQuery;

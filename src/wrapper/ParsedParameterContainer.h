@@ -187,6 +187,8 @@ public:
     // which are set. It's a summary of the query parameters.
     std::vector<ParameterName> parametersInQuery;
 
+    std::string docIdForRetrieveByIdSearchType; // if docid parameter is given in the query, this member keeps the value of primary_key to be used later to retrieve the record
+
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's SimilarityThreshold as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.

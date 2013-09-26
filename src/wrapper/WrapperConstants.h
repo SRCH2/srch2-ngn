@@ -48,6 +48,7 @@ typedef enum {
     IsOmitHeader,
     ResponseFormat,
     FilterQueryEvaluatorFlag,
+    RetrieveByIdSearchType,
     TopKSearchType,
     GetAllResultsSearchType,
     GeoSearchType,

@@ -765,6 +765,34 @@ void IndexSearcherInternal::search(const Circle &queryCircle, QueryResults *quer
     this->indexer->rwMutexForWriter->unlockRead();
 }
 
+// for retrieving only one result by having the primary key
+void IndexSearcherInternal::search(const std::string & primaryKey, QueryResults *queryResults){
+
+	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
+	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == true ){
+		// The query result to be returned.
+		// First check to see if the record is valid.
+        bool validForwardList;
+        this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
+        if (validForwardList) {
+			QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+			queryResult->externalRecordId = primaryKey;
+			queryResult->internalRecordId = internalRecordId;
+			Score score;
+			score.setScore((float)0.0);
+			queryResult->_score = score;
+			queryResults->impl->sortedFinalResults.push_back(queryResult);
+			return;
+        }else{
+        	return;
+        }
+	}else{
+		return;
+	}
+
+
+}
+
 void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) const
 {
     const Query *query = queryResults->impl->getQuery();

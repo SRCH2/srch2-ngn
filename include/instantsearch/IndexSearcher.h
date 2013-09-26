@@ -81,6 +81,9 @@ public:
     // for doing a geo range query with a rectangle
     virtual void search(const Rectangle &queryRectangle, QueryResults *queryResults) = 0;
 
+    // for retrieving only one result by having the primary key
+    virtual void search(const std::string & primaryKey, QueryResults *queryResults) = 0;
+
     /// Added for stemmer
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int nextK = 0, bool &isStemmed) = 0;
 

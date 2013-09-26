@@ -1093,7 +1093,6 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
     if (externalRecordId.empty())
         return false;
 
-    std::cout << this->externalToInternalRecordIdMap.size() << "====================================================" << std::endl;
     std::map<string, unsigned>::const_iterator mapIter = this
             ->externalToInternalRecordIdMap.find(externalRecordId);
     if (mapIter != this->externalToInternalRecordIdMap.end()) {
