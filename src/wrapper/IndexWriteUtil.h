@@ -22,7 +22,10 @@ struct IndexWriteUtil
     static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
-    	JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+    	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str) == false){
+    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
+    		return;
+    	}
     	//add the record to the index
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
