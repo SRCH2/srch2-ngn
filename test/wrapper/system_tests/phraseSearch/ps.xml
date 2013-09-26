@@ -382,7 +382,7 @@
   		- values are false (disabled) and true (enabled)
   		- By default it is disabled.
   -->
-  <facetEnabled>true</facetEnabled>
+  <facetEnabled>false</facetEnabled>
   
   <facetFields>
 	  <!--
@@ -400,9 +400,6 @@
 	  		Note:
 	  		- All facetFields must be declared in fields tag as well (with indexed="false")
 	  -->
-  	  <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
-	  <facetField name="model" facetType="categorical" />
-	  <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
   </facetFields>
   
   
