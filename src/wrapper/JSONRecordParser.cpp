@@ -65,7 +65,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     string primaryKeyStringValue;
     getJsonValueString(root, primaryKeyName, primaryKeyStringValue, "primary-key");
 
-    if (primaryKeyStringValue.compare("NULL") != 0)
+    if (primaryKeyStringValue.compare("NULL") != 0 && primaryKeyStringValue.compare("") != 0)
     {
     	// trim to avoid any mismatch due to leading and trailing white space
     	boost::algorithm::trim(primaryKeyStringValue);
