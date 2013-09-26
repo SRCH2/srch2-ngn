@@ -339,8 +339,6 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
         ++counter;
     }
 
-
-
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;

@@ -769,26 +769,23 @@ void IndexSearcherInternal::search(const Circle &queryCircle, QueryResults *quer
 void IndexSearcherInternal::search(const std::string & primaryKey, QueryResults *queryResults){
 
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
-	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == true ){
-		// The query result to be returned.
-		// First check to see if the record is valid.
-        bool validForwardList;
-        this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
-        if (validForwardList) {
-			QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
-			queryResult->externalRecordId = primaryKey;
-			queryResult->internalRecordId = internalRecordId;
-			Score score;
-			score.setScore((float)0.0);
-			queryResult->_score = score;
-			queryResults->impl->sortedFinalResults.push_back(queryResult);
-			return;
-        }else{
-        	return;
-        }
-	}else{
+	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
 		return;
 	}
+	// The query result to be returned.
+	// First check to see if the record is valid.
+	bool validForwardList;
+	this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
+	if (validForwardList == false) {
+		return;
+	}
+
+	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+	queryResult->externalRecordId = primaryKey;
+	queryResult->internalRecordId = internalRecordId;
+	queryResult->_score.setScore((float)0.0);
+	queryResults->impl->sortedFinalResults.push_back(queryResult);
+	return;
 
 
 }

@@ -1009,20 +1009,9 @@ bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
 // WRITER accesses this function
 void ForwardIndex::appendExternalRecordIdToIdMap(
         const std::string &externalRecordId, unsigned &internalRecordId) {
-    //bool returnValue = false;
-    /*if ( this->getInternalRecordId(externalRecordId, internalRecordId) == false)
-     {*/
-    //this->internalToExternalRecordIdVector.push_back(std::make_pair(externalRecordId,true)); // Added in ForwardIndex::addRecord(...)
     internalRecordId = this->getTotalNumberOfForwardLists_WriteView();
     this->externalToInternalRecordIdMap[externalRecordId] =
             internalRecordId;
-    //returnValue = true;
-    /*}
-     else
-     {
-     internalRecordId = (unsigned)(-1);
-     }*/
-    //return returnValue;
 }
 
 // delete a record with a specific id
@@ -1097,7 +1086,6 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
             ->externalToInternalRecordIdMap.find(externalRecordId);
     if (mapIter != this->externalToInternalRecordIdMap.end()) {
         internalRecordId = mapIter->second;
-        //ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_WriteView());
         return true;
     } else {
         return false;
@@ -1108,7 +1096,6 @@ unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
         unsigned keywordId) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardListId, valid);
-    //assert(valid == true);
     return forwardList->getKeywordOffset(keywordId);
 }
 
