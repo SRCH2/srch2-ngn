@@ -165,7 +165,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
     /// Get the internalRecordId
     unsigned internalRecordId;
     //Check for duplicate record
-    bool recordPrimaryKeyFound = this->forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(), internalRecordId);
+    bool recordPrimaryKeyFound = this->forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(), internalRecordId);
 
     // InternalRecordId == ForwardListId
     if (recordPrimaryKeyFound == false)
@@ -266,7 +266,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         ASSERT(isSorted(keywordIdList));
 
         unsigned internalRecordId;
-        this->forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(), internalRecordId);
+        this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
         this->forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
         if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex )
@@ -358,7 +358,7 @@ void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 {
-    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord_WriteView(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
+    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
         this->mergeRequired = true; // need to tell the merge thread to merge
@@ -373,7 +373,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 // get the deleted internal recordID
 INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &externalRecordId, unsigned &internalRecordId)
 {
-    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId_WriteView(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
+    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
         this->mergeRequired = true; // need to tell the merge thread to merge
@@ -387,7 +387,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
 // recover the deleted record
 INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId, unsigned internalRecordId)
 {
-    INDEXWRITE_RETVAL success = this->forwardIndex->recoverRecord_WriteView(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
+    INDEXWRITE_RETVAL success = this->forwardIndex->recoverRecord(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
         this->mergeRequired = true; // need to tell the merge thread to merge
@@ -403,7 +403,7 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
 // check if the record exists
 INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId) const
 {
-    return this->forwardIndex->lookupRecord_WriteView(externalRecordId);
+    return this->forwardIndex->lookupRecord(externalRecordId);
 }
 
 /* build the index. After commit(), no more records can be added.

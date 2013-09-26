@@ -749,7 +749,7 @@ unsigned ForwardList::getNumberOfBytes() const {
 }
 
 // READER accesses this function
-bool ForwardIndex::getExternalRecordId_ReadView(const unsigned internalRecordId,
+bool ForwardIndex::getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId,
         std::string &externalRecordId) const {
     ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_ReadView());
 
@@ -1007,14 +1007,14 @@ bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
 
 /********-record-id-converter-**********/
 // WRITER accesses this function
-void ForwardIndex::appendExternalRecordId_WriteView(
+void ForwardIndex::appendExternalRecordIdToIdMap(
         const std::string &externalRecordId, unsigned &internalRecordId) {
     //bool returnValue = false;
     /*if ( this->getInternalRecordId(externalRecordId, internalRecordId) == false)
      {*/
     //this->internalToExternalRecordIdVector.push_back(std::make_pair(externalRecordId,true)); // Added in ForwardIndex::addRecord(...)
     internalRecordId = this->getTotalNumberOfForwardLists_WriteView();
-    this->externalToInternalRecordIdMap_WriteView[externalRecordId] =
+    this->externalToInternalRecordIdMap[externalRecordId] =
             internalRecordId;
     //returnValue = true;
     /*}
@@ -1027,22 +1027,22 @@ void ForwardIndex::appendExternalRecordId_WriteView(
 
 // delete a record with a specific id
 // WRITER accesses this function
-bool ForwardIndex::deleteRecord_WriteView(const std::string &externalRecordId) {
+bool ForwardIndex::deleteRecord(const std::string &externalRecordId) {
     unsigned internalRecordId;
 
-    return deleteRecordGetInternalId_WriteView(externalRecordId,
+    return deleteRecordGetInternalId(externalRecordId,
             internalRecordId);
 }
 
 // delete a record with a specific id, return the deleted internalRecordId
 // WRITER accesses this function
-bool ForwardIndex::deleteRecordGetInternalId_WriteView(
+bool ForwardIndex::deleteRecordGetInternalId(
         const std::string &externalRecordId, unsigned &internalRecordId) {
-    bool found = this->getInternalRecordId_WriteView(externalRecordId,
+    bool found = this->getInternalRecordIdFromExternalRecordId(externalRecordId,
             internalRecordId);
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
-        this->externalToInternalRecordIdMap_WriteView.erase(externalRecordId);
+        this->externalToInternalRecordIdMap.erase(externalRecordId);
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1051,14 +1051,14 @@ bool ForwardIndex::deleteRecordGetInternalId_WriteView(
 
 // recover a deleted record with a specific internal id
 // WRITER accesses this function
-bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId,
+bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
         unsigned internalRecordId) {
     // see if the external record id exists in the externalToInternalRecordIdMap 
-    bool found = this->getInternalRecordId_WriteView(externalRecordId,
+    bool found = this->getInternalRecordIdFromExternalRecordId(externalRecordId,
             internalRecordId);
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
-        this->externalToInternalRecordIdMap_WriteView[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
+        this->externalToInternalRecordIdMap[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1067,15 +1067,15 @@ bool ForwardIndex::recoverRecord_WriteView(const std::string &externalRecordId,
 
 // check if a record with a specific internal id exists
 // WRITER accesses this function
-INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord_WriteView(
+INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
         const std::string &externalRecordId) const {
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
     std::map<string, unsigned>::const_iterator mapIter = this
-            ->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
+            ->externalToInternalRecordIdMap.find(externalRecordId);
 
-    if (mapIter == this->externalToInternalRecordIdMap_WriteView.end())
+    if (mapIter == this->externalToInternalRecordIdMap.end())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
     bool valid = false;
@@ -1088,14 +1088,15 @@ INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord_WriteView(
 }
 
 // WRITER accesses this function
-bool ForwardIndex::getInternalRecordId_WriteView(
+bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
         const std::string &externalRecordId, unsigned &internalRecordId) const {
     if (externalRecordId.empty())
         return false;
 
+    std::cout << this->externalToInternalRecordIdMap.size() << "====================================================" << std::endl;
     std::map<string, unsigned>::const_iterator mapIter = this
-            ->externalToInternalRecordIdMap_WriteView.find(externalRecordId);
-    if (mapIter != this->externalToInternalRecordIdMap_WriteView.end()) {
+            ->externalToInternalRecordIdMap.find(externalRecordId);
+    if (mapIter != this->externalToInternalRecordIdMap.end()) {
         internalRecordId = mapIter->second;
         //ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_WriteView());
         return true;
