@@ -138,6 +138,25 @@ IndexData::IndexData(const string& directoryName)
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
 
+// check whether the keyword id list is sorted. This is called from ASSERT statement below to
+// verify the correctness of the assumption that keywordIdList is alphabetaically sorted
+bool isSorted(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
+
+	if (keywordIdList.size() < 2)
+		return true;   // 0 or 1 element array is considered sorted
+
+	KeywordIdKeywordStringInvertedListIdTriple::const_iterator iter = keywordIdList.begin();
+	KeywordIdKeywordStringInvertedListIdTriple::const_iterator previter  = iter;
+	++iter;
+	while(iter != keywordIdList.end())
+	{
+		if (iter->second.first.compare(previter->second.first) <= 0)
+			return false;
+		++iter;
+	}
+	return true;
+}
+
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
@@ -230,8 +249,21 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                     delete oldParentOrSelfAndAncs;
             }
         }
-        // Sort keywordList
-        std::sort( keywordIdList.begin(), keywordIdList.end() );
+
+        // Commented out the sort statement below. We do not need to sort the keyword List again
+        // because keywords are stored in a map which keeps them alphabetically sorted.
+        // If this _addRecord() is called BEFORE commit(), these keyword IDs within this list are
+        // sorted using the alphabetical order of the keywords, even though they are not sorted
+        // based on the integer order. During the commit() phase, we will map these IDs to their
+        // final IDs from the trie, and the order of the IDs becomes the integer order automatically.
+        // If this _addRecord() is called AFTER commit(), the keyword IDs are sorted using the
+        // alphabetical order, which is already consistent with the integer order.
+        //
+        // std::sort( keywordIdList.begin(), keywordIdList.end());
+
+        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see is_sorted()
+        // function above.
+        ASSERT(isSorted(keywordIdList));
 
         unsigned internalRecordId;
         this->forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(), internalRecordId);
