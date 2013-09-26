@@ -144,7 +144,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         // if type is date/time, check the syntax
         if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes");
         	if(attributeStringValue==""){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -166,7 +166,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         }else{
 
             string attributeStringValue;
-            getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
+            getJsonValueString(root, attributeKeyName, attributeStringValue, "refining-attributes");
 
             if (attributeStringValue.compare("NULL") != 0 && attributeStringValue.compare("") != 0)
             {
