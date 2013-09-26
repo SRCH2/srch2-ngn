@@ -274,7 +274,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         if (this->isValidFieldType(tempUse , true)) {
                             searchableFieldTypesVector.push_back(tempUse);
                         } else {
-                            parseError << "Config File Error: " << tempUse << " is an unknown field type.\n";
+                            parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
+                            parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
                             configSuccess = false;
                             return;
                         }
@@ -302,7 +303,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         if (this->isValidFieldType(tempUse , false)) {
                             nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
                         } else {
-                            parseError << "Config File Error: " << tempUse << " is an unknown field type for refining fields.\n";
+                            parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
+                            parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
                             configSuccess = false;
                             return;
                         }

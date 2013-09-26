@@ -250,8 +250,6 @@ public:
 
     unsigned getNumberOfBytes() const;
 
-    // is attribute based search or not
-    static bool isAttributeBasedSearch;
 
     //void mapOldIdsToNewIds();
 
@@ -268,15 +266,28 @@ private:
         typename Archive::is_loading load;
         ar & this->numberOfKeywords;
         ar & this->recordBoost;
+        /*
+         * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
+         * scheme is :
+         * first save/load the size of keywordAttributeBitmaps array, and then if size was not zero also save/load the array itself.
+         *
+         */
+        unsigned sizeOfKeywordAttributeBitmaps = 0;
+        if(this->keywordAttributeBitmaps != NULL){
+        	sizeOfKeywordAttributeBitmaps = this->getNumberOfKeywords();
+        }
+        ar & sizeOfKeywordAttributeBitmaps;
         // In loading process, we need to allocate space for the members first.
         if (load) {
             this->keywordIds = new unsigned[this->getNumberOfKeywords()];
             this->keywordRecordStaticScores =
                     new half[this->getNumberOfKeywords()];
             // check if it's an attribute based search
-            if (ForwardList::isAttributeBasedSearch) {
+            if (sizeOfKeywordAttributeBitmaps != 0) {
                 this->keywordAttributeBitmaps =
                         new unsigned[this->getNumberOfKeywords()];
+            }else{
+            	 this->keywordAttributeBitmaps = NULL;
             }
         }
         ar
@@ -287,7 +298,7 @@ private:
                         this->keywordRecordStaticScores,
                         this->getNumberOfKeywords());
         // check if it's an attribute based search
-        if (ForwardList::isAttributeBasedSearch) {
+        if (sizeOfKeywordAttributeBitmaps != 0) {
             ar
                     & boost::serialization::make_array(
                             this->keywordAttributeBitmaps,
@@ -344,6 +355,7 @@ private:
 
     friend class boost::serialization::access;
 
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & forwardListDirectory;
@@ -358,6 +370,9 @@ private:
             vector<unsigned>& positionList);
 
 public:
+
+    // is attribute based search or not
+    bool isAttributeBasedSearch;
 
     ForwardIndex(const SchemaInternal* schemaInternal);
     ForwardIndex(const SchemaInternal* schemaInternal,

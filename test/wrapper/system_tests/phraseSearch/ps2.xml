@@ -48,7 +48,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/phraseSearch/</dataDir>
+    <dataDir>./data/phraseSearch2/</dataDir>
      
     <!--
         Data File
@@ -57,7 +57,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./phraseSearch/ps-test.json</dataFile>
+    <dataFile>./phraseSearch/ps-test2.json</dataFile>
      
     <indexConfig>
 
@@ -358,9 +358,9 @@
             here and indexed="false" it will be also used for sort,filtering and facet.
             - 
    -->
-   <field name="title" type="text" indexed="true" />
-   <field name="description" type="text" indexed="true" />
-   <field name="genre" type="text" indexed="true" />
+   <field name="name" type="text" indexed="true" />
+   <field name="body" type="text" indexed="true" />
+   <field name="ranking" type="float" indexed="false" refining="true" />
  </fields>
  
  <!--
