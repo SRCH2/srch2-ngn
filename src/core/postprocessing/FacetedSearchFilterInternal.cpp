@@ -50,6 +50,18 @@ void FacetedSearchFilterInternal::doAggregationRange(const Score & attributeValu
         const std::vector<Score> & lowerBounds,
         std::vector<pair<string, float> > * counts  , Score & start, Score & end, Score & gap) {
 
+	// the reason for this is that the interval right before end can be smaller than gap. So the formula used in
+	// findIndexOfContainingInterval will return a wrong index.
+	// example:
+	// start = 0 ; gap = 6; end = 10
+	// intervals will be (*,0) , [0,6), [6,10), [10,*)
+	// interval [6,10) is smaller than gap. now if we use formula (value - start ) / gap + 1
+	// for 10 or 11, it returns 2 which is wrong.
+	if(attributeValue >= end){
+		unsigned groupId =  counts->size() - 1;
+	    counts->at(groupId).second ++ ;
+	    return;
+	}
     unsigned groupId = attributeValue.findIndexOfContainingInterval(start,end, gap);
     if(groupId == -1){
         return;

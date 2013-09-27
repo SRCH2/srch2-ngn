@@ -1133,6 +1133,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     	}else {
     		this->mongoListenerMaxRetryOnFailure = 3;
     	}
+
+    	// For MongoDB as a data source , primary key must be "_id" which is a unique key generated
+    	// by MongoDB. It is important to set primary key to "_id" because oplog entries for inserts
+    	// and deletes in MongoDB can be identified by _id only.
+    	this->primaryKey = "_id";
     }
 }
 
