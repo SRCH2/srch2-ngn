@@ -45,6 +45,7 @@ public:
 	void executeTopK(QueryResults * finalResults);
 	void executeGetAllResults(QueryResults * finalResults);
 	void executeGeo(QueryResults * finalResults);
+	void executeRetrieveById(QueryResults * finalResults);
 
 	void executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output);
 

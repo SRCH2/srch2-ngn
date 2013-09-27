@@ -141,6 +141,15 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
+echo '----do test_search_by_id-------------'
+python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE_DIR
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+
 echo '----do date and time implementation test--------------'
 python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE_DIR ./date_time_new_features_test/queriesAndResults.txt
 

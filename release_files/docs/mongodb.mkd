@@ -49,7 +49,7 @@
 
 ##1. Overview###{id="overview"}
 
-This tutorial shows how to use SRCH2 to do powerful text search on [MongoDB](http://www.mongodb.org/). We assume we have already downloaded and installed MongoDB, and its "bin" directory is already included in our PATH environment variable so that we can run those MongoDB commands easily. We also assume we have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this [page](install.html) first.
+This tutorial shows how to use SRCH2 to do powerful text search on [MongoDB](http://www.mongodb.org/). We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. We also assume that you have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this [page](install.html) first.
 
 Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
 
@@ -72,7 +72,7 @@ There should be 243 movies in the "movies" collection.
 
 ##3. Configure SRCH2###{id="configureSrch2"}
 
-Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Add the following lines inside the <i>config</i> element to specify information about this MongoDB data source:
+Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:
  
 ```
     <dataSourceType>2</dataSourceType>
@@ -85,13 +85,13 @@ Download a sample <a href="example-demo/srch2-config.xml">configuration file</a>
     </mongodb>
 ```
 
-Change the parameters if needed.
+Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
 
 ##4. Start SRCH2 Engine###{id="startSrch2"}
 
 Run the following command to start the SRCH2 server:
 ```
-shell> ./srch2-search-server --config=./srch2-conf.xml 
+shell> path/to/srch2-engine --config-file =/path/to/srch2-config.xml 
 ```
 
 The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
@@ -103,7 +103,7 @@ In a shell, run the following command:
 ```
 shell> curl "http://localhost:8081/search?q=terminator"
 ```
-We should see the records with the keyword "terminator".
+You should see the records with the keyword "terminator".
 
 ##6. Insert a Record###{id="insertData"}
 
@@ -122,7 +122,7 @@ mongodb> db.movies.insert(
 );
 ```
 
-This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record.
+This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.
 
 ##7. Update a Record##{id="updateRecord"}
 

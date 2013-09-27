@@ -51,6 +51,12 @@ QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer,
  */
 void QueryPlanGen::generatePlan(QueryPlan * queryPlan) {
 
+	// if search type is RetrieveByIdSearchType, only docid must be set in QueryPlan, no other information is needed in QueryPlan
+	if(this->paramsContainer.hasParameterInQuery(RetrieveByIdSearchType)){
+		queryPlan->setDocIdForRetrieveByIdSearchType(this->paramsContainer.docIdForRetrieveByIdSearchType);
+		queryPlan->setSearchType(RetrieveByIdSearchType);
+		return;
+	}
     // create query objects
     createExactAndFuzzyQueries(queryPlan);
     // generate post processing plan

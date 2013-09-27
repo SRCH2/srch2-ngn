@@ -40,6 +40,11 @@ QueryValidator::QueryValidator(const Schema & schema,
 // this function goes through the queryParameters and based on that validates the query.
 bool QueryValidator::validate() {
 
+	// validation case : If search type is RetrievByIdSearchType, then no need to continue any more validation.
+	if (paramContainer->hasParameterInQuery(RetrieveByIdSearchType)) {
+		return true;
+	}
+
     // validation case : Only one of the search types should exist in queryParameters
     int numberOfProvidedSearchTypes = 0;
     if (paramContainer->hasParameterInQuery(TopKSearchType)) {

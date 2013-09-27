@@ -40,6 +40,11 @@ QueryRewriter::QueryRewriter(const ConfigManager *indexDataContainerConf,
 }
 
 void QueryRewriter::rewrite() {
+
+	// If search type is RetrievByIdSearchType, no need to continue rewriting.
+	if(this->paramContainer->hasParameterInQuery(RetrieveByIdSearchType)){
+		return;
+	}
     // go through the queryParameters and call the analyzer on the query if needed.
 
     /*
