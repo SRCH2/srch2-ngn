@@ -85,7 +85,7 @@ Download a sample <a href="example-demo/srch2-config.xml">configuration file</a>
     </mongodb>
 ```
 
-Change the parameters if needed. Please make sure that you have also set srch2_home in srch2's configuration file. All other paths mentioned in configuration files are relative to srch2_home.
+Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
 
 ##4. Start SRCH2 Engine###{id="startSrch2"}
 
