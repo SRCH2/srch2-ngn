@@ -44,7 +44,15 @@ def checkResult(query, responseJsonAll,resultValue):
     else:
         print  query+' test failed'
 
-
+# This test tests search by ID api
+# 1. it searches for id=2 and it should find it
+# 2. it searches for id=200 and it should not find it
+# 3. it inserts id=200
+# 4. it searches for id=200 and it finds it this time
+# 5. it deletes id=2
+# 6. it searches for id=2 and should not find it
+# 7. it inserts id=2
+# 8. it searches for id=2 and should find it again
 def testNewFeatures( binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
