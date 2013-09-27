@@ -8,8 +8,14 @@ cd $SYSTEM_TEST_DIR
 
 # We remove the old indexes, if any, before doing the test.
 rm data/ -rf 
-echo '----do save_shutdown_restart_test--------------'
+echo '----do phrase search test--------------'
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
 if [ $? -gt 0 ]; then
     echo " --- error ---"
     exit -1
@@ -121,6 +127,14 @@ fi
 
 echo '----do filter query test--------------'
 python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+echo '----do test_new_query_syntax-------------'
+python ./test_new_query_syntax/test_new_query_syntax.py $SRCH2_ENGINE_DIR ./test_new_query_syntax/queriesAndResults.txt ./test_new_query_syntax/facetResults.txt
 
 if [ $? -gt 0 ]; then
     echo " --- error ---"

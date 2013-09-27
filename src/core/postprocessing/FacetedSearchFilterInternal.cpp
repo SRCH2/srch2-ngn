@@ -33,13 +33,15 @@ void FacetedSearchFilterInternal::doAggregationCategorical(const Score & attribu
         std::map<string , float > * counts) {
 
     // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
-    std::map<string , float >::iterator p = counts->find(attributeValue.toString());
+	std::string attributeValueLowerCase = attributeValue.toString();
+	std::transform(attributeValueLowerCase.begin(), attributeValueLowerCase.end(), attributeValueLowerCase.begin(), ::tolower);
+    std::map<string , float >::iterator p = counts->find(attributeValueLowerCase);
     if( p != counts->end()){
         p->second ++;
         return;
     }
     // not found in map, initialization with 1
-    (*counts)[attributeValue.toString()] = 1;
+    (*counts)[attributeValueLowerCase] = 1;
     return;
 }
 

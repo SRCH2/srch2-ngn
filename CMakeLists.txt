@@ -136,7 +136,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	IF (DO_ASSERT)
 		MESSAGE(STATUS "ASSERT Turned ON")
 	ELSE()
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DASSERT_LEVEL=0")
+		# add assert_level=0 macro 
+		add_definitions(-DASSERT_LEVEL=0)
 		MESSAGE(STATUS "ASSERT Turned OFF")
 	ENDIF()
     
@@ -223,6 +224,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
         ADD_SUBDIRECTORY(src/wrapper)
         ADD_SUBDIRECTORY(src/server)
     	IF (BUILD_TEST)
+            #remove assert_level=0 macro. We would like to enable asserts in test cases for both release and debug mode 
+            remove_definitions(-DASSERT_LEVEL=0)
             INCLUDE (CTest)
             ADD_SUBDIRECTORY(test)
             ADD_DEPENDENCIES(build_integration_test srch2_core)

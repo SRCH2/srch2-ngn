@@ -372,6 +372,8 @@ void QueryRewriter::prepareFacetFilterInfo() {
             facetQueryContainer->rangeEnds.at(facetFieldIndex) = "";
             facetQueryContainer->rangeGaps.at(facetFieldIndex) = "";
         } else if (*type == srch2is::FacetTypeRange) { /// fills out the empty places
+            FilterType fieldType = schema.getTypeOfNonSearchableAttribute(
+                    schema.getNonSearchableAttributeId(facetQueryContainer->fields.at(facetFieldIndex)));
             if (facetQueryContainer->rangeStarts.at(facetFieldIndex).compare("") == 0) {
                 // should get the value from config
                 vector<string>::const_iterator facetIteratorInConfVector = find(
@@ -386,7 +388,7 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeStarts.at(facetFieldIndex) = startFromConfig;
                 }
-            }else{
+            }else if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
             	// here we should use DateAndTimeHandler class to conver start to long representation
             	// we assume it's a good syntax because everything is checked in query validator
             	std::stringstream buffer;
@@ -409,7 +411,7 @@ void QueryRewriter::prepareFacetFilterInfo() {
                                             - indexDataContainerConf->getFacetAttributes()->begin());
                     facetQueryContainer->rangeEnds.at(facetFieldIndex) = endFromConfig;
                 }
-            }else{
+            }else if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
             	// here we should use DateAndTimeHandler class to conver start to long representation
             	// we assume it's a good syntax because everything is checked in query validator
             	std::stringstream buffer;

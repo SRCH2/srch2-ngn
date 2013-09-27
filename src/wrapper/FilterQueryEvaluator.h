@@ -138,6 +138,10 @@ public:
             	std::stringstream buffer;
             	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueLower);
             	attributeValueLower = buffer.str();
+            }else{
+				std::string attributeValueLowerLowercase = attributeValueLower;
+				std::transform(attributeValueLowerLowercase.begin(), attributeValueLowerLowercase.end(), attributeValueLowerLowercase.begin(), ::tolower);
+				attributeValueLower = attributeValueLowerLowercase;
             }
         }
 
@@ -150,6 +154,10 @@ public:
             	std::stringstream buffer;
             	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValueUpper);
             	attributeValueUpper = buffer.str();
+            }else{
+				std::string attributeValueUpperLowercase = attributeValueUpper;
+				std::transform(attributeValueUpperLowercase.begin(), attributeValueUpperLowercase.end(), attributeValueUpperLowercase.begin(), ::tolower);
+				attributeValueUpper = attributeValueUpperLowercase;
             }
         }
         return true;
@@ -280,6 +288,10 @@ public:
             	std::stringstream buffer;
             	buffer << srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(attributeValue);
             	attributeValue = buffer.str();
+            }else{
+				std::string attributeValueLowercase = attributeValue;
+				std::transform(attributeValueLowercase.begin(), attributeValueLowercase.end(), attributeValueLowercase.begin(), ::tolower);
+				attributeValue = attributeValueLowercase;
             }
         }
         return true;

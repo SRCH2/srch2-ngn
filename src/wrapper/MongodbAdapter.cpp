@@ -99,12 +99,11 @@ void MongoDataSource::spawnUpdateListener(Srch2Server * server){
     		MongoDataSource::runUpdateListener, (void *)server);
     if (res != 0)
         Logger::console("Could not create mongo oplog reader thread: error = %d", res);
-    else
-        Logger::info("Mongo oplog reader thread started ...");
+
 }
 
 void* MongoDataSource::runUpdateListener(void *searchServer){
-
+    Logger::console("MOGNOLISTENER: thread started ...");
     Srch2Server * server =(Srch2Server *)searchServer;
     const ConfigManager *configManager = server->indexDataContainerConf;
     string mongoNamespace= "local.oplog.rs";
@@ -112,13 +111,13 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     filterNamespace.append(configManager->getMongoDbName()).append(".").append(configManager->getMongoCollection());
     string host = configManager->getMongoServerHost();
     string port = configManager->getMongoServerPort();
-
+    unsigned retryCount = 0;
+  retry:
     try {
     string hostAndport = host;
     if (port.size()) {
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
     }
-    Logger::console("MOGNOLISTENER: thread started ...");
     mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
     mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 
@@ -126,6 +125,16 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     bool printOnce = true;
     time_t opLogTime = 0;
     time_t threadSpecificCutOffTime = bulkLoadEndTime;
+
+    // first check whether the replication is enabled and the host is primary of the
+    // replica set
+    if (!oplogConnection.exists(mongoNamespace)){
+    	Logger::error("MOGNOLISTENER: oplog does not exist on host = %s", host.c_str());
+    	Logger::error("MOGNOLISTENER: either replication is not enabled on the host instance "
+    			"or the host is not a primary member of replica set");
+    	Logger::error("MOGNOLISTENER: exiting ... ");
+    	return NULL;
+    }
     while(1) {
         // open the tail cursor on the capped collection oplog.rs
         // the cursor will wait for more data when it reaches at
@@ -161,6 +170,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
                     Logger::console("MOGNOLISTENER: waiting for updates ...");
                     printOnce = false;
                 }
+                retryCount = 0; // reset retryCount
                 sleep(configManager->getMongoListenerWaitTime());  // sleep...do not hog the CPU
             }
         }
@@ -170,7 +180,14 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     } catch (const exception& ex){
     	Logger::console("Unknown exception : %s", ex.what());
     }
-    return NULL;  // if we ever return
+    sleep(configManager->getMongoListenerWaitTime());
+    if (retryCount++ < configManager->getMongoListnerMaxRetryCount()) {
+    	Logger::console("MONGOLISTENER: trying again ...");
+    	goto retry;
+    }
+    // if all retries failed then exit the thread
+    Logger::error("MONGOLISTENER: exiting...");
+    return NULL;
 }
 
 bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const ConfigManager* configManager){

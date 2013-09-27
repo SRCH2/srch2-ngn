@@ -65,7 +65,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     string primaryKeyStringValue;
     getJsonValueString(root, primaryKeyName, primaryKeyStringValue, "primary-key");
 
-    if (primaryKeyStringValue.compare("NULL") != 0)
+    if (primaryKeyStringValue.compare("NULL") != 0 && primaryKeyStringValue.compare("") != 0)
     {
     	// trim to avoid any mismatch due to leading and trailing white space
     	boost::algorithm::trim(primaryKeyStringValue);
@@ -144,7 +144,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         // if type is date/time, check the syntax
         if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"non-searchable-attributes");
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes");
         	if(attributeStringValue==""){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -155,7 +155,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 }else{
                     if(attributeIter->second.second.second){
                         // ERROR
-                        error << "\nRequired non-searchable attribute is null.";
+                        error << "\nRequired refining attribute is null.";
                         return false;// Raise Error
                     }else{
                         // set the default value
@@ -166,27 +166,23 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         }else{
 
             string attributeStringValue;
-            getJsonValueString(root, attributeKeyName, attributeStringValue, "non-searchable-attributes");
-            if (attributeStringValue.compare("") == 0) // if the attribute is int or float, convert it to string
-            {
-                double attributeDoubleValue;
-                getJsonValueDouble(root, attributeKeyName, attributeDoubleValue, "non-searchable-attributes");
-                stringstream s;
-                s << attributeDoubleValue;
-                attributeStringValue = s.str();
-            }
+            getJsonValueString(root, attributeKeyName, attributeStringValue, "refining-attributes");
 
-            if (attributeStringValue.compare("NULL") != 0)
+            if (attributeStringValue.compare("NULL") != 0 && attributeStringValue.compare("") != 0)
             {
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+				std::string attributeStringValueLowercase = attributeStringValue;
+				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
                 if(attributeIter->second.second.second){
                     // ERROR
-                    error << "\nRequired non-searchable attribute is null.";
+                    error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
                     // set the default value
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }

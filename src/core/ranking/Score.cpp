@@ -26,6 +26,7 @@
 #include "util/Assert.h"
 #include <limits>
 #include <cmath>
+#include <algorithm>
 #include "util/DateAndTimeHandler.h"
 
 namespace srch2
@@ -43,7 +44,7 @@ namespace srch2
 			case ATTRIBUTE_TYPE_FLOAT:
 				return floatScore == score.floatScore;
 			case ATTRIBUTE_TYPE_TEXT:
-				return stringScore == score.stringScore;
+				return (stringScore.compare(score.stringScore) == 0);
 			case ATTRIBUTE_TYPE_TIME:
 				return timeScore == score.timeScore;
 			case ATTRIBUTE_TYPE_DURATION:

@@ -39,8 +39,9 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
                  print '  '+'||'+resultValue[i]
             else:
                  print responseJson[i]['record']['id']+'||'+resultValue[i]
-
-    isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
+    #if the search result is ok, we continue to check facet Result
+    if isPass == 1:
+        isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
 
     if isPass == 1:
         print  query+' test pass'
