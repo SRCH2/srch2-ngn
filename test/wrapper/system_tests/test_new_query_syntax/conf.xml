@@ -321,7 +321,6 @@
         </updateLog>
      
     </updatehandler>
-</config>
  
 <schema name="SRCH2" version="3">
   
@@ -443,3 +442,5 @@
     </fieldType>
  </types>
 </schema>
+
+</config>
