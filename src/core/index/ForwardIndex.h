@@ -41,6 +41,7 @@
 #include "util/mytime.h"
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/ThreadSafeMap.h"
 
 using std::vector;
 using std::fstream;
@@ -340,7 +341,7 @@ private:
     cowvector<ForwardListPtr> *forwardListDirectory;
 
     //Used only in WriteView
-    map<std::string, unsigned> externalToInternalRecordIdMap_WriteView;
+    ThreadSafeMap<std::string, unsigned> externalToInternalRecordIdMap;
 
     // Build phase structure
     // Stores the order of records, by which it was added to forward index. Used in bulk initial insert
@@ -359,7 +360,7 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & forwardListDirectory;
-        ar & externalToInternalRecordIdMap_WriteView;
+        ar & externalToInternalRecordIdMap;
         ar & commited_WriteView;
     }
 
@@ -555,18 +556,18 @@ public:
      * If the externalRecordId already exists, "false" is returned. internalRecordId is set to a default (unsigned)(-1) in this case.
      */
     //bool appendExternalRecordId(unsigned externalRecordId, unsigned &internalRecordId);// Goes to both map-write and forwardIndex
-    void appendExternalRecordId_WriteView(const std::string &externalRecordId,
+    void appendExternalRecordIdToIdMap(const std::string &externalRecordId,
             unsigned &internalRecordId);
 
-    bool deleteRecord_WriteView(const std::string &externalRecordId);
-    bool deleteRecordGetInternalId_WriteView(
+    bool deleteRecord(const std::string &externalRecordId);
+    bool deleteRecordGetInternalId(
             const std::string &externalRecordId, unsigned &internalRecordId);
     //bool deleteExternalRecordId(unsigned externalRecordId); // Goes to forwardIndex and map-write
 
-    bool recoverRecord_WriteView(const std::string &externalRecordId,
+    bool recoverRecord(const std::string &externalRecordId,
             unsigned internalRecordId);
 
-    INDEXLOOKUP_RETVAL lookupRecord_WriteView(
+    INDEXLOOKUP_RETVAL lookupRecord(
             const std::string &externalRecordId) const;
 
     void reassignKeywordIds(const unsigned recordId,
@@ -577,10 +578,10 @@ public:
      * For the given internalRecordId, returns the ExternalRecordId. ASSERT if the internalRecordId
      * is out of bound of RecordIdVector.
      */
-    bool getExternalRecordId_ReadView(const unsigned internalRecordId,
+    bool getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId,
             std::string &externalRecordId) const; // Goes to forwardIndex-read
 
-    bool getInternalRecordId_WriteView(const std::string &externalRecordId,
+    bool getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId,
             unsigned &internalRecordId) const; // Goes to recordIdConverterMap-read
 
     /**

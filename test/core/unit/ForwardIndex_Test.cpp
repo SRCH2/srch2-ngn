@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
 	ForwardIndex *forwardIndex = new ForwardIndex(schema);
 
 	unsigned internalRecordId;
-	forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId);
-	ASSERT( forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId) == true);
+	forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(),internalRecordId);
+	ASSERT( forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(),internalRecordId) == true);
 
 	///Insert into Trie
 	unsigned invertedIndexOffset = 0;

@@ -286,6 +286,78 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
+
+/**
+ * Iterate over the recordIDs in queryResults and get the record.
+ * Add the record information to the request.out string.
+ */
+void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+		const QueryPlan &queryPlan,
+		const ConfigManager *indexDataContainerConf,
+		const QueryResults *queryResults,
+		const srch2is::Indexer *indexer,
+		const string & message,
+		const unsigned ts1,
+		struct timespec &tstart, struct timespec &tend){
+
+    Json::FastWriter writer;
+    Json::Value root;
+
+    // For logging
+    string logQueries;
+
+    root["searcher_time"] = ts1;
+    root["results"].resize(queryResults->getNumberOfResults());
+
+    clock_gettime(CLOCK_REALTIME, &tstart);
+    unsigned counter = 0;
+
+    for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
+
+        root["results"][counter]["record_id"] = queryResults->getRecordId(
+                i);
+
+        if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+            unsigned internalRecordId = queryResults->getInternalRecordId(
+                    i);
+            std::string compressedInMemoryRecordString = indexer
+                    ->getInMemoryData(internalRecordId);
+
+            std::string uncompressedInMemoryRecordString;
+
+            snappy::Uncompress(compressedInMemoryRecordString.c_str(),
+                    compressedInMemoryRecordString.size(),
+                    &uncompressedInMemoryRecordString);
+
+            Json::Value in_mem_String;
+            Json::Reader reader;
+            reader.parse(uncompressedInMemoryRecordString, in_mem_String,
+                    false);
+            root["results"][counter]["record"] = in_mem_String;
+        }
+        ++counter;
+    }
+
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    root["payload_access_time"] = ts2;
+
+    // return some meta data
+
+    root["type"] = queryPlan.getSearchTypeCode();
+    root["results_found"] = queryResults->getNumberOfResults();
+
+    root["message"] = message;
+    Logger::info(
+            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
+            req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+}
+
+
+
 void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
@@ -756,6 +828,17 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     paramContainer.getMessageString(), ts1, tstart, tend);
         }
         break;
+    case RetrieveByIdSearchType:
+    	finalResults->printStats();
+    	HTTPRequestHandler::printOneResultRetrievedById(req,
+    			headers,
+    			queryPlan ,
+    			indexDataContainerConf,
+    			finalResults ,
+    			server->indexer ,
+    			paramContainer.getMessageString() ,
+    			ts1, tstart , tend);
+    	break;
     default:
         break;
     }
