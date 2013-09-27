@@ -33,6 +33,7 @@ const char* const QueryParser::lengthBoostParamName = "lengthBoost"; //srch2
 const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
 const char* const QueryParser::filterQueryParamName = "fq"; //solr
 const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
+const char* const QueryParser::docIdParamName = "docid"; //srch2
 // local parameter params
 const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
@@ -110,6 +111,9 @@ bool QueryParser::parse() {
 
     // do some parsing
     try {
+    	if(this->docIdParser()){
+    		return true;
+    	}
         this->isFuzzyParser();
         this->mainQueryParser();
         this->debugQueryParser();
@@ -140,6 +144,27 @@ bool QueryParser::parse() {
                         "Ooops! Something went wrong while parsing the query. If you face this again, please contact srch2."));
     }
     return !this->isParsedError; // return true for success, false for parse error
+}
+
+bool QueryParser::docIdParser(){
+    /*
+     * checks to see if "docid" exists in parameters.
+     */
+    Logger::debug("checking for docid parameter");
+    const char * docIdTemp = evhttp_find_header(&headers,
+            QueryParser::docIdParamName);
+    if (docIdTemp) { // if this parameter exists
+        Logger::debug("docid parameter found");
+        size_t st;
+        string docId = evhttp_uridecode(docIdTemp, 0, &st);
+        this->container->docIdForRetrieveByIdSearchType = docId;
+        this->container->parametersInQuery.push_back(
+                srch2::httpwrapper::RetrieveByIdSearchType);
+        return true;
+    } else {
+        Logger::debug("docid parameter not specified");
+        return false;
+    }
 }
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs

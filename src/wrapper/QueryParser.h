@@ -108,6 +108,7 @@ private:
     static const char* const prefixMatchPenaltyParamName; //srch2
     static const char* const filterQueryParamName; //solr
     static const char* const isFuzzyParamName; //srch2
+    static const char* const docIdParamName;
     // local parameter params
     static const char* const lpKeyValDelimiter; //solr
     static const char* const lpQueryBooleanOperatorParamName; //srch2
@@ -138,6 +139,17 @@ private:
     }
     //searchType
     static const char* const searchType;
+
+    /*
+     * example: docid=123
+     * if docid is given in the query the rest of parameters will be ignored and the record with this primary key will
+     * be returned.
+     * If this function returns true it means docid is requested and parsing should be stopped for the rest of parameters.
+     * if it returns false it means docid is not among query parameters.
+     */
+    bool docIdParser();
+
+
     /*
      * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()

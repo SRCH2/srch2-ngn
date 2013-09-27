@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!--
+<!-- 
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/test_new_query_syntax</dataDir>
+    <dataDir>./data/test_search_by_id</dataDir>
      
     <!--
         Data File
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./test_new_query_syntax/sample-data.json</dataFile>
+    <dataFile>./test_search_by_id/sample-data.json</dataFile>
      
      
          
@@ -358,11 +358,12 @@
             here and indexed="false" it will be also used for sort,filtering and facet.
             - 
    -->
-   <field name="title" type="text" indexed="true" />
-   <field name="description" type="text" indexed="true" />
-   <field name="relevance" default="0.005" required="true" type="float" indexed="false" refining="true"/>
-   <field name="primary_category" default="/transportation/bridge" required="true" type="text" indexed="false" refining="true"/>
- </fields>
+           <field name="category" type="text" indexed="true" />
+           <field name="name" type="text" indexed="true" />
+           <field name="model" default="benz" required="true" type="text" indexed="false" refining="true"/>
+           <field name="price" default="200" required="true" type="float" indexed="false" refining="true"/>
+           <field name="likes" default="0" required="true" type="integer" indexed="false" refining="true"/> 
+</fields>
  
  <!--
         Primary Key
@@ -401,8 +402,10 @@
 	  		Note:
 	  		- All facetFields must be declared in fields tag as well (with indexed="false")
 	  -->
-  	  <facetField name="relevance" facetType="range" facetStart="0" facetEnd="0.003" facetGap="0.0005" />
-	  <facetField name="primary_category" facetType="categorical" />
+                  <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
+                  <facetField name="model" facetType="categorical" />
+                  <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+  
   </facetFields>
   
   

@@ -32,3 +32,5 @@ Improvements over version 3.0.0:
 * Some messages were not clear. Current release has improved error/warning messages.
 * IDF ranking score didn't work if a word appears in all the records
 * The engine now supports high-speed insertions
+* The engine now seralizes the latest indexes to disk and stops gracefully after
+  receiving a "kill signal" (e.g., Ctrl+C).

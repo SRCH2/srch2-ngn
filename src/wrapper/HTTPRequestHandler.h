@@ -57,6 +57,15 @@ class HTTPRequestHandler
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
+
+		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+				const QueryPlan &queryPlan,
+				const ConfigManager *indexDataContainerConf,
+				const QueryResults *queryResults,
+				const srch2is::Indexer *indexer,
+				const string & message,
+				const unsigned ts1,
+				struct timespec &tstart, struct timespec &tend);
 };
 
 }

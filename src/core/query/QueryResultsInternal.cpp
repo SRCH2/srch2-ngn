@@ -189,7 +189,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
 
     while (this->nextKResultsHeap.size() > 0) {
         string externalRecordId;
-        if (forwardIndex->getExternalRecordId_ReadView(
+        if (forwardIndex->getExternalRecordIdFromInternalRecordId(
                 this->nextKResultsHeap.top()->internalRecordId,
                 externalRecordId)) {
             QueryResult * qs = resultsFactory->impl->createQueryResult();

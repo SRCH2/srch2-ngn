@@ -78,6 +78,8 @@ public:
     // for doing a  range query with a circle but without keyword information
     void search(const Circle &queryCircle, QueryResults *queryResults);
 
+    // for retrieving only one result by having the primary key
+    void search(const std::string & primaryKey, QueryResults *queryResults);
 
     std::string getInMemoryData(unsigned internalRecordId) const {
         return this->indexData->forwardIndex->getInMemoryData(internalRecordId);

@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
 	InvertedIndex *invertedIndex = new InvertedIndex(forwardIndex);
 
 	unsigned internalRecordId;
-	forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId);
-	ASSERT( forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId) == true);
+	forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(),internalRecordId);
+	ASSERT( forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(),internalRecordId) == true);
 
 
 	///Insert into Trie
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
 	analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 	printTokenAttributeHitsMap(&tokenAttributeHitsMap);
 
-	forwardIndex->appendExternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId);
-	ASSERT( forwardIndex->getInternalRecordId_WriteView(record->getPrimaryKey(),internalRecordId) == true);
+	forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(),internalRecordId);
+	ASSERT( forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(),internalRecordId) == true);
 
 
 	for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();

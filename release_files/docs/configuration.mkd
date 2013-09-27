@@ -116,10 +116,9 @@ It specifies a license key file required by the engine. Enter your email [here](
 <listeningHostname>127.0.0.1</listeningHostname>
 <listeningPort>8081</listeningPort>
 ```
-Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
-Specify as 0.0.0.0 if value is unknown.
-
-##6. Data Directory, Required##{id="dataDir"}
+This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is running.
+NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>" (without the quote).
+####6. Data Directory, Required{id="dataDir"}
 ```
 <dataDir>/path/to/data/directory/</dataDir>
 ```
@@ -354,9 +353,9 @@ It specifies the maximum number of records indexable by the engine. Inserting mo
 <mergeEveryMWrites>100</mergeEveryMWrites>
 </mergePolicy>
 ```
- - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time. 
+ - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.  This number should be at least 1 (second).
  
-  - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br>
+  - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge.  This number should be at least 1. <br>
 
 ###11.3. Logging:{id="updateLog"}
 

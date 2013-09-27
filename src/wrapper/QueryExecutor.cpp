@@ -50,6 +50,9 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     case GeoSearchType: //MapQuery
         executeGeo(finalResults);
         break;
+    case RetrieveByIdSearchType:
+    	executeRetrieveById(finalResults);
+    	break;
     default:
         ASSERT(false);
         break;
@@ -268,6 +271,19 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             exactQueryResults, finalResults);
 
     delete exactQueryResults;
+}
+
+/*
+ * Retrieves the result by the primary key given by the user.
+ */
+void QueryExecutor::executeRetrieveById(QueryResults * finalResults){
+
+	// since this object is only allocated with an empty constructor, this init function needs to be called to
+    // initialize the object.
+	// There is no Query object for this type of search, so we pass NULL.
+    finalResults->init(this->queryResultFactory, indexSearcher,NULL);
+    this->indexSearcher->search(this->queryPlan.getDocIdForRetrieveByIdSearchType() , finalResults);
+
 }
 
 void QueryExecutor::executePostProcessingPlan(Query * query,
