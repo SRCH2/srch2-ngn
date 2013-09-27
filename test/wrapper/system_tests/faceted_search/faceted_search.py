@@ -72,10 +72,10 @@ def prepareFacet(fieldTuple):
     query =  query + ('field' if (len(fieldTuple) == 1) else 'range')
     query = query + '=' + fieldTuple[0]
     i=0
-    for value in fieldTuple:
-        query = query + '&f.' + fieldTuple[0] + '.'
+    for value in fieldTuple[1:]:
+        query = query + '&f.' + fieldTuple[0] + '.facet.'
         query = query + facetParamNameTuple[i]
-        ++i
+        i= i + 1
         query = query + '=' + value
     return query
 
@@ -97,6 +97,7 @@ def prepareQuery(queryKeywords, facetedFields):
     query = query + '&fuzzy=true'
     ################# facet parameters
     query = query + '&facet=true'
+
     for field in facetedFields:
         query = query + '&' + prepareFacet(field)
     ################# rows parameter
@@ -105,7 +106,7 @@ def prepareQuery(queryKeywords, facetedFields):
     ##################################
     return query
 
-def testFacetedSearch(f_in , f_facet, binary_path, facetedFields):
+def testFacetedSearch(f_in , f_facet, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
     binary= binary+' --config-file=./faceted_search/conf.xml &'
@@ -114,22 +115,31 @@ def testFacetedSearch(f_in , f_facet, binary_path, facetedFields):
     #make sure that start the engine up
     pingServer()
 
+    #parse used to extract facet fields from input
+    facet_parser= argparse.ArgumentParser()
+    facet_parser.add_argument('-f',  metavar='facet', nargs='+', 
+                                                    action='append')
     #construct the query
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
-        queryValue=value[0].split()
+        tmpQueryValue= value[0].split(',')
+        queryValue= tmpQueryValue[0].split()
+        #line input is the format query, facet args||numResults
+        #extracting and parsing the facet args
+        facet_args=facet_parser.parse_args(tmpQueryValue[1].split())
+        facetedFields= facet_args.f
+        facet_args.f=[]
         resultValue=(value[1]).split()
         #construct the query
         query='http://localhost:' + port + '/search?'
         query = query + (prepareQuery(queryValue, facetedFields))
-        print query
         #print query
         
 
         # get facet correct result from file
         facetResultValue=[]
-        for i in xrange(0, numberOfFacetFields):
+        for i in xrange(0, len(facetedFields)):
             facetResultValue.append(f_facet.next().strip())
            
         # do the query
@@ -151,17 +161,16 @@ if __name__ == '__main__':
    parser= argparse.ArgumentParser()
    parser.add_argument('--srch2', required=True,
                                                 dest='binary_path')
-   parser.add_argument('--qryNrlst', type=file, required=True,
+   parser.add_argument('--qryNrslt', type=file, required=True,
                                                 dest='queriesAndResults')
-   parser.add_argument('--frlst', type=file, required=True,
+   parser.add_argument('--frslt', type=file, required=True,
                                                 dest='facetResults')
-   parser.add_argument('-f',  metavar='facet', nargs='+', 
-                                                    action='append')
+#   parser.add_argument('-f',  metavar='facet', nargs='+', 
+#                                                    action='append')
 
    args= parser.parse_args()
-   print args.f
    binary_path = args.binary_path
    queriesAndResultsPath = args.queriesAndResults
    facetResultsPath = args.facetResults
-   testFacetedSearch(queriesAndResultsPath, facetResultsPath, binary_path, args.f)
+   testFacetedSearch(queriesAndResultsPath, facetResultsPath, binary_path)
 
