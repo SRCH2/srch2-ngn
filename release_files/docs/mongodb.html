@@ -58,6 +58,7 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>This tutorial shows how to use SRCH2 to do powerful text search on <a href="http://www.mongodb.org/">MongoDB</a>. We assume we have already downloaded and installed MongoDB, and its "bin" directory is already included in our PATH environment variable so that we can run those MongoDB commands easily. We also assume we have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this <a href="install.html">page</a> first.</p>
+<p>Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.</p>
 <h2 id="populate-mongo">2. Populate MongoDB</h2>
 <p>Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert the records in the file into a collection called "movies" in a database called "demo".</p>
 <pre><code>shell&gt; mongoimport --db demo --collection movies --type json --file sample-data.json 

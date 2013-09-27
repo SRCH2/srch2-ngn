@@ -112,9 +112,9 @@
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
 
-<p>Hostname is the IP address, redirect specified in iptables, or masking name specified in the /etc/hostname which the client will use to reach this server.<br>
-Specify as 0.0.0.0 if value is unknown.</p>
-<h2 id="dataDir">6. Data Directory, Required</h2>
+<p>This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is running.
+NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>" (without the quote).</p>
+<h4 id="dataDir">6. Data Directory, Required</h4>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
 
@@ -322,10 +322,10 @@ It is REQUIRED to include a comma separated list of fields in the tag if it is 2
 
 <ul>
 <li>
-<p><b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time. </p>
+<p><b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background sleeps before it wakes up and does the merge. Note that decreasing this number will increase latency in the engine's response time.  This number should be at least 1 (second).</p>
 </li>
 <li>
-<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge. <br></p>
+<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge.  This number should be at least 1. <br></p>
 </li>
 </ul>
 <h3 id="updateLog">11.3. Logging:</h3>

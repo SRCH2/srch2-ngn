@@ -79,15 +79,15 @@
 <p>Welcome to the Srch2 query syntax documentation page. This documentation begins with a set of sample queries to get a flavor of the query language. It then dives further into the language with an explanation of the basic concepts behind it. Then we give details of the structural components of a query with emphasis on their syntax specifications.</p>
 <h2 id="sampleQueries">2. Sample queries</h2>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
-<pre><code>f1) curl -i &quot;http://localhost:8081/search?q=hospital&quot;
+<pre><code>f1) curl -i &quot;http://localhost:8081/search?q=algorithm&quot;
 </code></pre>
 
-<p>In this query, we are searching for all records containing the word "hospital". The result set will contain all records with the word "hospital" in any <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
+<p>In this query, we are searching for all records containing the word "algorithm". The result set will contain all records with the word "algorithm" in any <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
 <pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&quot;
 </code></pre>
 
 <p>This query will get records with the word "algorithm" in its <i>title</i> field and the word "gnuth" in its <i>author</i> field.</p>
-<pre><code>f3) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100]&quot;
+<pre><code>f3) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&amp;fq=price:[10 TO 100]&quot;
 </code></pre>
 
 <p>This query is similar to the previous one. The only difference is that in <i>f3</i>, we filter the results based on the <i>price</i> field. So the result set contains records with the word "algorithm" in their <i>title</i> field, the word "gnuth" in their <i>author</i> field, and have a <i>price</i> between 10 and 100 (both inclusive).</p>
@@ -103,6 +103,10 @@
 </code></pre>
 
 <p>This query, again, is similar to query <i>f4</i>, except that the new query requests the engine to return faceted information for the record's <i>category</i> field.</p>
+<p>Note: The response of each RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query url. For example:</p>
+<pre><code>curl -i &quot;http://localhost:8081/search?q=algorithm&amp;callback=myfunc
+</code></pre>
+
 <h2 id="basicConcepts">3. Basic Concepts</h2>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.</p>
 <h3 id="fields">3.1. Fields</h3>

@@ -1,4 +1,5 @@
-
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- SRCH2 Configuration File -->
 <config>
     <!-- SRCH2 Home directory -->
     <srch2Home>${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/</srch2Home> 
@@ -401,118 +402,120 @@
     
     </updatehandler>
 
+	<schema name="SRCH2" version="3">
+	 
+	 <fields>
+
+	   <!-- SOLR
+	    # Attributes we want to search on in addition to the primary key.
+	    # Specify them as comma separated entries, e.g., title,name,address,affiliation.
+	    # REQUIRED
+	    old: attributes-search=name,category
+	    
+	    - Currently we are not spporting "stored", "default" and "required". In future we can add these attributes to each field.
+	    - Currently the only default type that we support is "text", "location_longtitude" and "location_latitude". 
+		Later in future we can support other types such as "int", "float" and etc
+	   -->
+	   <field name="id" type="text" indexed="false" supporting="true" /> 
+	   <field name="relevance" type="text" indexed="true" />
+	   <field name="name" type="text" indexed="true" />
+	   <field name="lat" type="location_latitude"  indexed="false" />
+	   <field name="lng" type="location_longitude"  indexed="false" />
+
+	   
+	   
+	   <!-- SOLR
+		- spatial search
+		To do spatial search, you need to set the types of the fields that you want them as lantitude and longtitude as "location_latitude" and "location_longitude" accordingly.
+		For example:
+		
+		<field name="lat" type="location_latitude" indexed="true" />
+		<field name="lng" type="location_longtitude" indexed="true" />
+		
+		<!--
+		srch2:  => CAN BE REMOVED (if there are fields having location type, the index should be geo, otherwise will be text type index.)
+		    # Index type.
+		    #  0: Text Index
+		    #  1: Geo+Text Index
+		    # REQUIRED
+		    index-type=0
+		    #index-type=1 # Use this line instead of the previous line for geo search
+		
+		    #attribute-latitude=lat # Use these 2 lines instead of the previous 2 for geo search
+		    #attribute-longitude=lng
+	   -->
+	 </fields>
+
+
+	 <!-- SOLR
+	    # Primary key attribute of the data
+	    # REQUIRED
+	    primary-key=id
+
+	    # Flag to indicate whether the primary key is searchable.
+	    # 0 - NO
+	    # 1 - YES
+	    # OPTIONAL. Default value is 0
+	    is-primary-key-searchable=0  => REMOVED
+	 -->
+	 <uniqueKey>id</uniqueKey>
+	    
+	 
+	  <types>
+	    <!--  
+		# REQUIRED if index-type=1
+		# Need to be float type in the json objects in the data file
+		old: attribute-latitude=IGNORE
+		old: attribute-longitude=IGNORE
+	    -->
+	    <fieldType name="location_latitude" type="float" />
+	    <fieldType name="location_longitude" type="float" />
+
+	    <fieldType name="text_en">
+		<analyzer> <!-- solr has type for "Analyzer" such as "index", "query" -->
+		    <!--
+		        # Enable/Disabling the stemmer
+		        # The vali values are:
+		        # 0: To disable the stemmer
+		        # 1: To enable the stemmer
+		        default-stemmer-flag=0
+		        # stemmer dictionary file
+		        stemmer-file=StemmerHeadwords.txt
+		        
+		        // TODO: control of using dictionary
+		    -->
+		    <filter name="PorterStemFilter" dictionary="./srch2_data/StemmerHeadwords.txt" />
+		    
+		    <!--
+		        # Enable/Disabling the StopWord Filter
+		        # The vali values are:
+		        # IGNORE: To disable the StopWord Filter
+		        # path-to-the-stop-words-file: To enable the StopWord Filter
+		        stop-filter-file-path=IGNORE
+		    -->
+		    <filter name="StopFilter" words="./srch2_data/lang/stopwords_en.txt" />
+		    
+		    <!-- 
+		        # Enable/Disabling the Synonym Filter
+		        # The vali values are:
+		        # IGNORE: To disable the Synonym Filter
+		        # path-to-the-synonym-file: To enable the Synonym Filter
+		        synonym-filter-file-path=IGNORE
+
+		        # Replace the synonym with original words or keep the orginal words too
+		        # The vali values are:
+		        # 0: Do not keep the original words
+		        # 1: Keep the original words
+		        default-synonym-keep-origin-flag=1
+		        // check if we need to put it in lang
+		    -->
+		    <filter name="SynonymFilter" synonyms="./srch2_data/synonyms.txt"  expand="true"/>      
+		</analyzer>
+	    </fieldType>
+	 </types>
+	</schema>
+
 </config>
 
 
-<schema name="SRCH2" version="3">
- 
- <fields>
 
-   <!-- SOLR
-    # Attributes we want to search on in addition to the primary key.
-    # Specify them as comma separated entries, e.g., title,name,address,affiliation.
-    # REQUIRED
-    old: attributes-search=name,category
-    
-    - Currently we are not spporting "stored", "default" and "required". In future we can add these attributes to each field.
-    - Currently the only default type that we support is "text", "location_longtitude" and "location_latitude". 
-        Later in future we can support other types such as "int", "float" and etc
-   -->
-   <field name="id" type="text" indexed="false" supporting="true" /> 
-   <field name="relevance" type="text" indexed="true" />
-   <field name="name" type="text" indexed="true" />
-   <field name="lat" type="location_latitude"  indexed="false" />
-   <field name="lng" type="location_longitude"  indexed="false" />
-
-   
-   
-   <!-- SOLR
-        - spatial search
-        To do spatial search, you need to set the types of the fields that you want them as lantitude and longtitude as "location_latitude" and "location_longitude" accordingly.
-        For example:
-        
-        <field name="lat" type="location_latitude" indexed="true" />
-        <field name="lng" type="location_longtitude" indexed="true" />
-        
-        <!--
-        srch2:  => CAN BE REMOVED (if there are fields having location type, the index should be geo, otherwise will be text type index.)
-            # Index type.
-            #  0: Text Index
-            #  1: Geo+Text Index
-            # REQUIRED
-            index-type=0
-            #index-type=1 # Use this line instead of the previous line for geo search
-        
-            #attribute-latitude=lat # Use these 2 lines instead of the previous 2 for geo search
-            #attribute-longitude=lng
-   -->
- </fields>
-
-
- <!-- SOLR
-    # Primary key attribute of the data
-    # REQUIRED
-    primary-key=id
-
-    # Flag to indicate whether the primary key is searchable.
-    # 0 - NO
-    # 1 - YES
-    # OPTIONAL. Default value is 0
-    is-primary-key-searchable=0  => REMOVED
- -->
- <uniqueKey>id</uniqueKey>
-    
- 
-  <types>
-    <!--  
-        # REQUIRED if index-type=1
-        # Need to be float type in the json objects in the data file
-        old: attribute-latitude=IGNORE
-        old: attribute-longitude=IGNORE
-    -->
-    <fieldType name="location_latitude" type="float" />
-    <fieldType name="location_longitude" type="float" />
-
-    <fieldType name="text_en">
-        <analyzer> <!-- solr has type for "Analyzer" such as "index", "query" -->
-            <!--
-                # Enable/Disabling the stemmer
-                # The vali values are:
-                # 0: To disable the stemmer
-                # 1: To enable the stemmer
-                default-stemmer-flag=0
-                # stemmer dictionary file
-                stemmer-file=StemmerHeadwords.txt
-                
-                // TODO: control of using dictionary
-            -->
-            <filter name="PorterStemFilter" dictionary="./srch2_data/StemmerHeadwords.txt" />
-            
-            <!--
-                # Enable/Disabling the StopWord Filter
-                # The vali values are:
-                # IGNORE: To disable the StopWord Filter
-                # path-to-the-stop-words-file: To enable the StopWord Filter
-                stop-filter-file-path=IGNORE
-            -->
-            <filter name="StopFilter" words="./srch2_data/lang/stopwords_en.txt" />
-            
-            <!-- 
-                # Enable/Disabling the Synonym Filter
-                # The vali values are:
-                # IGNORE: To disable the Synonym Filter
-                # path-to-the-synonym-file: To enable the Synonym Filter
-                synonym-filter-file-path=IGNORE
-
-                # Replace the synonym with original words or keep the orginal words too
-                # The vali values are:
-                # 0: Do not keep the original words
-                # 1: Keep the original words
-                default-synonym-keep-origin-flag=1
-                // check if we need to put it in lang
-            -->
-            <filter name="SynonymFilter" synonyms="./srch2_data/synonyms.txt"  expand="true"/>      
-        </analyzer>
-    </fieldType>
- </types>
-</schema>
