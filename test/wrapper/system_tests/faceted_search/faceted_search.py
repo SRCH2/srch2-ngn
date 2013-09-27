@@ -64,6 +64,20 @@ def checkFacetResults(query, responseJson, resultValue):
          return False
    return True
 
+facetParamNameTuple= ('start', 'end', 'gap')
+
+#prepare a facet parameter for the query based on list entry:
+def prepareFacet(fieldTuple):
+    query = 'facet.'
+    query =  query + ('field' if (len(fieldTuple) == 1) else 'range')
+    query = query + '=' + fieldTuple[0]
+    i=0
+    for value in fieldTuple:
+        query = query + '&f.' + fieldTuple[0] + '.'
+        query = query + facetParamNameTuple[i]
+        ++i
+        query = query + '=' + value
+    return query
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords, facetedFields):
@@ -84,9 +98,7 @@ def prepareQuery(queryKeywords, facetedFields):
     ################# facet parameters
     query = query + '&facet=true'
     for field in facetedFields:
-        query = query + '&facet.'
-        query =  query + ('field' if field[1] =='0' else 'range')
-        query = query + '=' + field[0]
+        query = query + '&' + prepareFacet(field)
     ################# rows parameter
     query = query + '&rows=1'
     print 'Query : ' + query
@@ -143,10 +155,11 @@ if __name__ == '__main__':
                                                 dest='queriesAndResults')
    parser.add_argument('--frlst', type=file, required=True,
                                                 dest='facetResults')
-   parser.add_argument('-f',  metavar='facet', nargs=2, 
+   parser.add_argument('-f',  metavar='facet', nargs='+', 
                                                     action='append')
 
    args= parser.parse_args()
+   print args.f
    binary_path = args.binary_path
    queriesAndResultsPath = args.queriesAndResults
    facetResultsPath = args.facetResults
