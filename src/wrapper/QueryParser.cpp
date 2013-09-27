@@ -1582,6 +1582,7 @@ bool QueryParser::parseLpValue(string &input, string &value) {
 
 bool QueryParser::parseTermBoolOperator(string &input, string &output) {
     boost::regex re(TERM_BOOL_OP_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    boost::algorithm::trim(input);
     bool isParsed = doParse(input, re, output);
     if (!this->container->isTermBooleanOperatorSet && isParsed) {
         this->populateTermBooleanOperator(output);
