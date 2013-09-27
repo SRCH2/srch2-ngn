@@ -57,7 +57,7 @@
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Search in MongoDB </center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
-<p>This tutorial shows how to use SRCH2 to do powerful text search on <a href="http://www.mongodb.org/">MongoDB</a>. We assume we have already downloaded and installed MongoDB, and its "bin" directory is already included in our PATH environment variable so that we can run those MongoDB commands easily. We also assume we have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this <a href="install.html">page</a> first.</p>
+<p>This tutorial shows how to use SRCH2 to do powerful text search on <a href="http://www.mongodb.org/">MongoDB</a>. We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. We also assume that you have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this <a href="install.html">page</a> first.</p>
 <p>Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.</p>
 <h2 id="populate-mongo">2. Populate MongoDB</h2>
 <p>Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert the records in the file into a collection called "movies" in a database called "demo".</p>
@@ -72,7 +72,7 @@ mongodb&gt; db.movies.find().count()
 
 <p>There should be 243 movies in the "movies" collection.</p>
 <h2 id="configureSrch2">3. Configure SRCH2</h2>
-<p>Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Add the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
+<p>Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
 <pre><code>    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
     &lt;mongodb&gt;
         &lt;db&gt;demo&lt;/db&gt;
@@ -83,10 +83,10 @@ mongodb&gt; db.movies.find().count()
     &lt;/mongodb&gt;
 </code></pre>
 
-<p>Change the parameters if needed.</p>
+<p>Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.</p>
 <h2 id="startSrch2">4. Start SRCH2 Engine</h2>
 <p>Run the following command to start the SRCH2 server:</p>
-<pre><code>shell&gt; ./srch2-search-server --config=./srch2-conf.xml 
+<pre><code>shell&gt; path/to/srch2-engine --config-file =/path/to/srch2-config.xml 
 </code></pre>
 
 <p>The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.</p>
@@ -95,7 +95,7 @@ mongodb&gt; db.movies.find().count()
 <pre><code>shell&gt; curl &quot;http://localhost:8081/search?q=terminator&quot;
 </code></pre>
 
-<p>We should see the records with the keyword "terminator".</p>
+<p>You should see the records with the keyword "terminator".</p>
 <h2 id="insertData">6. Insert a Record</h2>
 <p>In the MongoDB client, run the following command to insert a new record.</p>
 <pre><code>mongodb&gt; db.movies.insert(
@@ -111,7 +111,7 @@ mongodb&gt; db.movies.find().count()
 );
 </code></pre>
 
-<p>This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record.</p>
+<p>This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.</p>
 <h2 id="updateRecord">7. Update a Record</h2>
 <p>Run the following command in the MongoDB shell to update the record we just inserted:</p>
 <pre><code>mongodb&gt; db.movies.update( { id: 764006 },

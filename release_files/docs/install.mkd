@@ -62,7 +62,7 @@
 ##1. Download and Run Server##{id="serverConfig"}
 
 
-<b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html). The tar ball includes the following files and a folder:
+<b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html) and unzip it. The tar ball includes the following files and a folder:
 
  - bin/srch2-engine (the engine binary);
  - readme.txt;
@@ -70,14 +70,12 @@
  
 The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).
 
-<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_.
+<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_ into the install directory.
 
-<b>Step 3</b>: Place the license key and downloaded files into the install directory.
-
-<b>Step 4</b>: Open the file "example-demo/srch2-config.xml", and change the variable "srch2Home" to the install folder of the
+<b>Step 3</b>: Open the file "example-demo/srch2-config.xml", and change the variable "srch2Home" to the install folder of the
 SRCH2 package.
 
-<b>Step 5</b>: Go to the install folder and run the following:
+<b>Step 4</b>: Go to the install folder and run the following:
 
 ```python
 shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
@@ -91,7 +89,11 @@ The server will read the configuration file, load the data in the corresponding 
 
 </center>
 
-Note: (1) All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  (2) It is recommended to use an absolute path value for the "srch2Home" variable. (3) Once the engine starts, it stores the indexes in the folder specified by the  "dataDir" parameter in the config file (with a default folder of "dataDir"). The next file we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.
+Note:
+
+ - All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  
+ - It is recommended to use an absolute path value for the "srch2Home" variable.
+ - Once the engine starts, it stores the indexes in the folder specified by the  "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.
 
 <b>Step 5</b>: To test the engine, open a new terminal and type the following command:
 
@@ -110,14 +112,14 @@ Now you should see the following results:
 
 ##2. Simple Frontend UI##{id="simple-ui"}
 
-Open a browser and go to local "example-demo/basic-ui/index.html". Type into the search box, after at least three letters you should see:
+Use a browser to open the file "example-demo/basic-ui/index.html". Type into the search box.  After a few characters you should see results similar to the following:
 
 ![Demo Webpage Image](./images/Srch2-BasicDemoFront.png){width=750px}
 
 
 ##3. Advanced Frontend UI##{id="advanced-ui"}
 
-Open a browser and go to the "example-demo/advanced-ui/index.html". Do a search and see the results. You should see the following page:
+Use the browser to open the file "example-demo/advanced-ui/index.html". Do a search, and you should see a page similar to the following:
 
 ![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width=750px}
 
@@ -128,15 +130,15 @@ The screen has the following regions:
 
 2. It shows the search results;
 
-3. It allows us to specify the order in which the results are sorted using the year field;
+3. It allows how to specify the order in which the results are sorted using the year field;
 
-4. It allows us to specify filters for postprocessing results;
+4. It allows how to specify filters to postprocess results;
 
-5. It allows us to specify a facet on the year field by providing a start year, end year, and a year gap;
+5. It allows us to specify a facet on the year field by providing a start year, an end year, and a year gap;
 
 6. It shows the facet results.
 
-<b>Important</b>: Each time we make changes to some conditions, make sure to change the focus to the search box and move the cursor to reissue the search query to the server.
+<b>Note</b>: Each time we make changes to some conditions, make sure to move the focus to the search box and move the cursor to reissue the search query to the server in order to see the new results.
 
 <hr/>
 
