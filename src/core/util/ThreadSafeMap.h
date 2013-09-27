@@ -16,8 +16,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef __UTIL_LOCKPROTECTEDMAP_H_
-#define __UTIL_LOCKPROTECTEDMAP_H_
+#ifndef __UTIL_THREADSAFEMAP_H__
+#define __UTIL_THREADSAFEMAP_H__
 
 #include "ReadWriteMutex.h"
 
@@ -36,19 +36,20 @@ namespace instantsearch
 /*
  * This class encapsulates a lock and a map which is protected by that lock.
  * All queries to the map must pass through the API provided by this class, therefore lock is used when accessing the map.
+ * Note : we require at most 100 Readers/Writer at the same time.
  */
-template <class KEY, class VALUE> class LockProtectedMap {
+template <class KEY, class VALUE> class ThreadSafeMap {
 private:
-	map<KEY, VALUE> data;
+    map<KEY, VALUE> data;
     ReadWriteMutex  *rwMutexForData;
 
 public:
 
-    LockProtectedMap(){
+    ThreadSafeMap(){
     	rwMutexForData =  new ReadWriteMutex(100);
     }
 
-    ~LockProtectedMap(){
+    ~ThreadSafeMap(){
     	delete rwMutexForData;
     }
 
@@ -91,4 +92,4 @@ public:
 }
 }
 
-#endif // __UTIL_LOCKPROTECTEDMAP_H_
+#endif // __UTIL_THREADSAFEMAP_H__

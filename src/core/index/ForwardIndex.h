@@ -41,7 +41,7 @@
 #include "util/mytime.h"
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
-#include "util/LockProtectedMap.h"
+#include "util/ThreadSafeMap.h"
 
 using std::vector;
 using std::fstream;
@@ -341,7 +341,7 @@ private:
     cowvector<ForwardListPtr> *forwardListDirectory;
 
     //Used only in WriteView
-    LockProtectedMap<std::string, unsigned> externalToInternalRecordIdMap;
+    ThreadSafeMap<std::string, unsigned> externalToInternalRecordIdMap;
 
     // Build phase structure
     // Stores the order of records, by which it was added to forward index. Used in bulk initial insert

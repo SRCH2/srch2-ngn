@@ -1054,7 +1054,6 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
 }
 
 // check if a record with a specific internal id exists
-// WRITER accesses this function
 INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
         const std::string &externalRecordId) const {
     if (externalRecordId.empty())
@@ -1076,7 +1075,6 @@ INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
         return LU_PRESENT_IN_READVIEW_AND_WRITEVIEW;
 }
 
-// WRITER accesses this function
 bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
         const std::string &externalRecordId, unsigned &internalRecordId) const {
     if (externalRecordId.empty())
