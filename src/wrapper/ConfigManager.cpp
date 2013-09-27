@@ -1127,6 +1127,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     	}else {
     		this->mongoListenerWaitTime = 1;
     	}
+    	configAttribute = configDoc.child("config").child("mongodb").child("maxRetryOnFailure");
+    	if (configAttribute && configAttribute.text()) {
+    		this->mongoListenerMaxRetryOnFailure = configAttribute.text().as_uint(3);
+    	}else {
+    		this->mongoListenerMaxRetryOnFailure = 3;
+    	}
     }
 }
 

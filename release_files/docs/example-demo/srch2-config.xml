@@ -21,7 +21,22 @@
  
     <dataDir>./indexes</dataDir>
      
+    <dataSourceType>1</dataSourceType>
+    
     <dataFile>example-demo/sample-data.json</dataFile>
+
+    <!-- 
+        Mongo Db settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <mongodb>
+        <host></host>
+        <port></port>
+        <db></db>
+        <collection></collection>
+    </mongodb> 
+    -->     
          
     <indexConfig>
          
@@ -32,23 +47,8 @@
         <fieldBoost>title^2 director^1</fieldBoost>
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
-        
-        <dataSourceType>1</dataSourceType>
-        
-        <!-- 
-            MongoDB settings, required if dataSourceType = 2
-        -->
-        <!--
-        <mongodb>
-            <host></host>
-            <port></port>
-            <db></db>
-            <collection></collection>
-        </mongodb> 
-        -->     
+    
     </indexConfig>
-  
-  
   
   
     <query>
