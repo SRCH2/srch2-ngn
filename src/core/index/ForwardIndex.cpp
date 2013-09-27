@@ -1010,8 +1010,7 @@ bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
 void ForwardIndex::appendExternalRecordIdToIdMap(
         const std::string &externalRecordId, unsigned &internalRecordId) {
     internalRecordId = this->getTotalNumberOfForwardLists_WriteView();
-    this->externalToInternalRecordIdMap[externalRecordId] =
-            internalRecordId;
+    this->externalToInternalRecordIdMap.setValue(externalRecordId , internalRecordId);
 }
 
 // delete a record with a specific id
@@ -1047,7 +1046,7 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
             internalRecordId);
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
-        this->externalToInternalRecordIdMap[externalRecordId] = internalRecordId; // add the external record id back to the externalToInternalRecordIdMap
+        this->externalToInternalRecordIdMap.setValue(externalRecordId , internalRecordId); // add the external record id back to the externalToInternalRecordIdMap
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1061,14 +1060,15 @@ INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
-    std::map<string, unsigned>::const_iterator mapIter = this
-            ->externalToInternalRecordIdMap.find(externalRecordId);
+    unsigned internalRecordId;
+    bool isInMap = this->externalToInternalRecordIdMap.getValue(externalRecordId , internalRecordId);
 
-    if (mapIter == this->externalToInternalRecordIdMap.end())
-        return LU_ABSENT_OR_TO_BE_DELETED;
+    if(isInMap == false){
+    	return LU_ABSENT_OR_TO_BE_DELETED;
+    }
 
     bool valid = false;
-    this->getForwardList(mapIter->second, valid);
+    this->getForwardList(internalRecordId, valid);
 
     if (valid == false)
         return LU_TO_BE_INSERTED;
@@ -1082,14 +1082,8 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
     if (externalRecordId.empty())
         return false;
 
-    std::map<string, unsigned>::const_iterator mapIter = this
-            ->externalToInternalRecordIdMap.find(externalRecordId);
-    if (mapIter != this->externalToInternalRecordIdMap.end()) {
-        internalRecordId = mapIter->second;
-        return true;
-    } else {
-        return false;
-    }
+    return this->externalToInternalRecordIdMap.getValue(externalRecordId , internalRecordId);
+
 }
 
 unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
