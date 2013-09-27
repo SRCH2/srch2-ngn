@@ -14,6 +14,11 @@ if [ $? -gt 0 ]; then
     echo " --- error ---"
     exit -1
 fi
+python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
 
 python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
 if [ $? -gt 0 ]; then

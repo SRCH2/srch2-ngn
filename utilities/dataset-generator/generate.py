@@ -384,4 +384,4 @@ if __name__ == '__main__':
    records = prepareRecords(fieldLists)
    outputFile = open(outputFileName , 'w')
    for record in records:
-      outputFile.write(record+'\n')
+      outputFile.write(record)

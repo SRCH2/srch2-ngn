@@ -64,7 +64,7 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
         phrase=value[0]
         expectedRecordIds=(value[1]).split()
         query='http://localhost:' + port + '/search?q='+ urllib.quote(phrase)
-        #print query
+        print query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
         #print response_json['results']
