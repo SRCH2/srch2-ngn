@@ -99,12 +99,11 @@ void MongoDataSource::spawnUpdateListener(Srch2Server * server){
     		MongoDataSource::runUpdateListener, (void *)server);
     if (res != 0)
         Logger::console("Could not create mongo oplog reader thread: error = %d", res);
-    else
-        Logger::info("Mongo oplog reader thread started ...");
+
 }
 
 void* MongoDataSource::runUpdateListener(void *searchServer){
-
+    Logger::console("MOGNOLISTENER: thread started ...");
     Srch2Server * server =(Srch2Server *)searchServer;
     const ConfigManager *configManager = server->indexDataContainerConf;
     string mongoNamespace= "local.oplog.rs";
@@ -119,7 +118,6 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     if (port.size()) {
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
     }
-    Logger::console("MOGNOLISTENER: thread started ...");
     mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
     mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 
@@ -172,6 +170,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
                     Logger::console("MOGNOLISTENER: waiting for updates ...");
                     printOnce = false;
                 }
+                retryCount = 0; // reset retryCount
                 sleep(configManager->getMongoListenerWaitTime());  // sleep...do not hog the CPU
             }
         }
@@ -186,7 +185,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     	Logger::console("MONGOLISTENER: trying again ...");
     	goto retry;
     }
-    // if all retry fail then exit the thread
+    // if all retries failed then exit the thread
     Logger::error("MONGOLISTENER: exiting...");
     return NULL;
 }

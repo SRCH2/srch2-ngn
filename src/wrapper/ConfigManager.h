@@ -155,6 +155,7 @@ private:
 	string mongoDbName;
 	string mongoCollection;
 	unsigned mongoListenerWaitTime;
+	// stores the retry count when MongoDB listner encounter some problem.
 	unsigned mongoListenerMaxRetryOnFailure;
 
 
