@@ -84,16 +84,25 @@ Released   : 20090327
                                                 <input type="radio" name="filter_op" value="OR" />
                                                 OR
                                                 <br />
-                                                <span style="font-size:70%">Example: name : john</span>
+                                                <span style="font-size:70%">Refining Field: </span>
                                                 <br/>
-                                                <input type="text" size="10" id="filter_assignment_field" />
-                                                :
+                                                <select id="filter_assignment_field" />
+                                                   <option value="genre">Genre</option>
+                                                   <option value="year">Year</option>
+                                                </select><br/>
+                                                <span style="font-size:70%">Refining Value: </span><br/>
                                                 <input type="text" size="10" id="filter_assignment_value" />
                                                 <br/>
-                                                <span style="font-size:70%">Example: price : [10 TO *]</span>
                                                 <br/>
-                                                <input type="text" size="10" id="filter_range_field" />
-                                                :[
+                                                
+                                                <span style="font-size:70%">Refining Field: </span>
+                                                <br/>
+                                                <select id="filter_range_field" />
+                                                   <option value="genre">Genre</option>
+                                                   <option value="year">Year</option>
+                                                </select><br/>
+                                                <span style="font-size:70%">Refining Value: </span><br/>
+                                                [
                                                 <input type="text" size="2" id="filter_range_start" />
                                                 TO
                                                 <input type="text" size="2" id="filter_range_end" />
@@ -101,7 +110,7 @@ Released   : 20090327
                                                 <br/>
                                                 <span style="font-size:70%">Example: boolexp$ (price - discount)*rate < 100 $</span>
                                                 <br/>
-                                                boolexp$
+                                                boolexp <br/>$
                                                 <input type="text" size="15" id="filter_complex" />
                                                 $
                                             </form>
