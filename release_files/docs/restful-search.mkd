@@ -77,15 +77,15 @@ Welcome to the Srch2 query syntax documentation page. This documentation begins 
 
 Let us start with sample queries to give an idea of the query syntax.
 ```
-f1) curl -i "http://localhost:8081/search?q=hospital"
+f1) curl -i "http://localhost:8081/search?q=algorithm"
 ```
-In this query, we are searching for all records containing the word "hospital". The result set will contain all records with the word "hospital" in any [searchable field](configuration.html#fields), as specified in the configuration file.
+In this query, we are searching for all records containing the word "algorithm". The result set will contain all records with the word "algorithm" in any [searchable field](configuration.html#fields), as specified in the configuration file.
 ```
 f2) curl -i "http://localhost:8081/search?q=title:algorithm AND author:gnuth"
 ```
 This query will get records with the word "algorithm" in its <i>title</i> field and the word "gnuth" in its <i>author</i> field.
 ```
-f3) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq=price:[10 TO 100]"
+f3) curl -i "http://localhost:8081/search?q=title:algorithm AND author:gnuth&fq=price:[10 TO 100]"
 ```
 This query is similar to the previous one. The only difference is that in <i>f3</i>, we filter the results based on the <i>price</i> field. So the result set contains records with the word "algorithm" in their <i>title</i> field, the word "gnuth" in their <i>author</i> field, and have a <i>price</i> between 10 and 100 (both inclusive).
 ```
@@ -103,7 +103,13 @@ f6) curl -i "http://localhost:8081/search?q=title:algorithms AND author:gnuth&fq
 ```
 This query, again, is similar to query <i>f4</i>, except that the new query requests the engine to return faceted information for the record's <i>category</i> field.
 
+Note: The response of each RESTful request is in the [JSON](http://www.json.org/) format.  The engine also supports the [JSONP](http://en.wikipedia.org/wiki/JSONP) format. In order to get the response data in JSONP, append a parameter field "callback" to the query url. For example:
+```
+curl -i "http://localhost:8081/search?q=algorithm&callback=myfunc
+```
+
 ##3. Basic Concepts{id="basicConcepts"}
+
 Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.
 
 ### 3.1. Fields {id="fields"}

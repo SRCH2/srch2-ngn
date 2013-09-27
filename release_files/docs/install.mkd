@@ -74,7 +74,10 @@ The "example-demo" folder contains files for a demo, in which we use the engine 
 
 <b>Step 3</b>: Place the license key and downloaded files into the install directory.
 
-<b>Step 4</b>: Open a shell and go to the "example-demo" directory. Run the following:
+<b>Step 4</b>: Open the file "example-demo/srch2-config.xml" and change the variable "srch2Home" to the installation folder of the
+SRCH2 package.
+
+<b>Step 5</b>: Open a shell and go to the "example-demo" directory. Run the following:
 
 ```python
 shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
