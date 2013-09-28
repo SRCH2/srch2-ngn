@@ -35,6 +35,7 @@
         <port></port>
         <db></db>
         <collection></collection>
+        <listenerWaitTime>3</listenerWaitTime>
     </mongodb> 
     -->     
          
@@ -56,14 +57,9 @@
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
         </rankingalgorithm>
  
-        <queryTermSimilarityBoost>0.5</queryTermSimilarityBoost>
-         
-         
-        <queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
-        
-        
-        <queryTermLengthBoost>0.5</queryTermLengthBoost>
-         
+        <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
+
+	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
          
         <prefixMatchPenalty>0.95</prefixMatchPenalty>
  

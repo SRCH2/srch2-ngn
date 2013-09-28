@@ -14,9 +14,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -58,9 +58,9 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Installation</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 27, 2013</center></h6>
 <h2 id="serverConfig">1. Download and Run Server</h2>
-<p><b>Step 1</b>: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a> and unzip it. The tar ball includes the following files and a folder:</p>
+<p><b>Step 1</b>: Download the latest SRCH2 engine from <a href="http://www.srch2.com/downloads.html">here</a> and unzip it to a folder, e.g., "/home/joe/srch2". The tar ball includes the following files and a folder:</p>
 <ul>
 <li>bin/srch2-engine (the engine binary);</li>
 <li>readme.txt;</li>
@@ -68,8 +68,8 @@
 </ul>
 <p>The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).</p>
 <p><b>Step 2</b>: Obtain a free 30-day trial key by filling in the <a href="http://www.srch2.com/downloads.html">form</a>. Store the key file locally as <em>“srch2_license_key.txt”</em> into the install directory.</p>
-<p><b>Step 3</b>: Open the file "example-demo/srch2-config.xml", and change the variable "srch2Home" to the install folder of the
-SRCH2 package.</p>
+<p><b>Step 3</b>: Open the file <a href="example-demo/srch2-config.xml">example-demo/srch2-config.xml</a>, and change the variable "srch2Home" to the install folder of the
+SRCH2 package, e.g., "/home/joe/srch2".</p>
 <p><b>Step 4</b>: Go to the install folder and run the following:</p>
 <pre><code class="python">shell&gt; ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
 </code></pre>
@@ -108,28 +108,36 @@ SRCH2 package.</p>
 <p>It shows the search results;</p>
 </li>
 <li>
-<p>It allows how to specify the order in which the results are sorted using the year field;</p>
+<p>It allows the user to specify the order in which the results are sorted using the year field;</p>
 </li>
 <li>
-<p>It allows how to specify filters to postprocess results;</p>
+<p>It allows the user to specify filters to postprocess results;</p>
 </li>
 <li>
-<p>It allows us to specify a facet on the year field by providing a start year, an end year, and a year gap;</p>
+<p>It allows the user to specify a facet on the year field by providing a start year, an end year, and a year gap;</p>
 </li>
 <li>
 <p>It shows the facet results.</p>
 </li>
 </ol>
 <p><b>Note</b>: Each time we make changes to some conditions, make sure to move the focus to the search box and move the cursor to reissue the search query to the server in order to see the new results.</p>
-<hr/>
+<p><hr/>
+<link rel="stylesheet" type="text/css" href="documentation.css"></p>
+<script type="text/javascript" src="setSizes.js"></script>
 
-<p>Have fun SRCHing!</p>
-<p><link rel="stylesheet" type="text/css" href="documentation.css">
-<script type="text/javascript" src="setSizes.js"></script></p>
 <script>
+
 setSizes();
 window.onresize = setSizes
+</script>
 
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>
 </body>
 </html>

@@ -10,9 +10,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -42,16 +42,16 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: RESTful API - Insert/Delete/Update</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of requests) .
+Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of write requests) .
 
 ##1. Insert## {id="insert"}
 
 This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:
 
  - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
- - The JSON object should include searchable fields defined in the configuration file and their corresponding values;
+ - The JSON object should include searchable fields defined in the [configuration file](example-demo/srch2-config.xml) and their corresponding values;
  - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
  - The sum of the length of each field value cannot be greater than 100 kilobytes.
 
@@ -75,28 +75,34 @@ $ curl "http://localhost:8081/docs?id=1234" -i -X DELETE
 This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:
 
  - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
- - The JSON object should include searchable fields defined in the configuration file and their corresponding values;
+ - The JSON object should include searchable fields defined in the [configuration file](example-demo/srch2-config.xml) and their corresponding values;
  - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
  - The sum of the length of each field value cannot be greater than 100 kilobytes;
  - The "id" in the query URL needs to be consistent with the "id" in the JSON object.
 
-Here is an example query: 
+Here is an example: 
 
 ```python
 $ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
 ```
+
+Internally the engine implements the update by first deleting the old record, then inserting the new record.
+
 <hr/>
-Have fun SRCHing!
-
-
-
 <link rel="stylesheet" type="text/css" href="documentation.css">
-
-
 
 <script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
 window.onresize = setSizes
+</script>
+
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>

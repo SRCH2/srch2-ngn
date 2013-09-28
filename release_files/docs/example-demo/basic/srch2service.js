@@ -5,7 +5,7 @@ srch2service = {
          reading the config object.
          */
         _srch2_this = this;
-        var defaultConf = _srch2_this.getDefaultConfig();
+        defaultConf = _srch2_this.getDefaultConfig();
         $.extend(defaultConf, config);
         _srch2_this.config = defaultConf;
         _srch2_this.bind();
@@ -174,7 +174,7 @@ srch2service = {
                 var record = results[i].record;
                 var prefix = results[i].matching_prefix;
                 output += "<td style='border-bottom:thin dotted;width:9%'>" + "<img style='width:100%; height:auto' src='" + record.banner_url + "'></td>";
-                output += "<td style='border-bottom:thin dotted'>" + _srch2_this.addHighliting(prefix, JSON.stringify(record)) + "</td>";
+                output += "<td style='border-bottom:thin dotted;font-weight:bold;color:#000000'>" + _srch2_this.addHighliting(prefix, JSON.stringify(record)) + "</td>";
                 output += "</tr>";
             }
             output += "</table>";

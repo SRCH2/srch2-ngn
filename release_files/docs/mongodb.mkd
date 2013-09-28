@@ -10,9 +10,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -45,7 +45,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: Search in MongoDB </center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview###{id="overview"}
 
@@ -55,7 +55,7 @@ Notice that the SRCH2 engine works with a MongoDB server running with the replic
 
 ##2. Populate MongoDB###{id="populate-mongo"}
 
-Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert the records in the file into a collection called "movies" in a database called "demo".
+Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection called "movies" in a database called "demo".
 
 ```
 shell> mongoimport --db demo --collection movies --type json --file sample-data.json 
@@ -77,10 +77,10 @@ Download a sample <a href="example-demo/srch2-config.xml">configuration file</a>
 ```
     <dataSourceType>2</dataSourceType>
     <mongodb>
-        <db>demo</db>
         <host>localhost</host>
-        <collection>movies</collection>
         <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
         <listenerWaitTime>3</listenerWaitTime>
     </mongodb>
 ```
@@ -89,9 +89,10 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 
 ##4. Start SRCH2 Engine###{id="startSrch2"}
 
-Run the following command to start the SRCH2 server:
-```
-shell> path/to/srch2-engine --config-file =/path/to/srch2-config.xml 
+Go to the install folder of SRCH2 and run the following:
+
+```python
+shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
 ```
 
 The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
@@ -122,7 +123,7 @@ mongodb> db.movies.insert(
 );
 ```
 
-This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.
+This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
 
 ##7. Update a Record##{id="updateRecord"}
 
@@ -146,13 +147,8 @@ mongodb> db.movies.remove({"id" :764006 });
 Again, wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.
 
 <hr/>
-Have fun SRCHing!
-
-
-
 
 <link rel="stylesheet" type="text/css" href="documentation.css">
-
 
 
 <script type="text/javascript" src="setSizes.js"></script>
@@ -160,4 +156,13 @@ Have fun SRCHing!
 
 setSizes();
 window.onresize = setSizes
+</script>
+
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>
