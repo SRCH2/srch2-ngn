@@ -115,7 +115,7 @@ if [ $? -gt 0 ]; then
 fi
 
 echo '----do facted search test--------------'
-python ./faceted_search/faceted_search.py $SRCH2_ENGINE_DIR ./faceted_search/queriesAndResults.txt ./faceted_search/facetResults.txt
+python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt
 
 if [ $? -gt 0 ]; then
     echo " --- error ---"
