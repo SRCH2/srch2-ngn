@@ -1,12 +1,14 @@
 #using python fuzzy_A1.py queriesAndResults.txt
 
-import sys, urllib2, json, time, subprocess, os, commands,signal
+import sys, urllib2, json, time, subprocess, os, commands,signal, argparse
 
 port = '8081'
+numberOfFacetFields= 3;
 
 #make sure that start the engine up
 def pingServer():
     info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+    print info 
     while os.system(info) != 0:
         time.sleep(1)
         info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
@@ -39,9 +41,8 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
                  print '  '+'||'+resultValue[i]
             else:
                  print responseJson[i]['record']['id']+'||'+resultValue[i]
-    #if the search result is ok, we continue to check facet Result
-    if isPass == 1:
-        isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
+
+    isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
 
     if isPass == 1:
         print  query+' test pass'
@@ -63,9 +64,23 @@ def checkFacetResults(query, responseJson, resultValue):
          return False
    return True
 
+facetParamNameTuple= ('start', 'end', 'gap')
+
+#prepare a facet parameter for the query based on list entry:
+def prepareFacet(fieldTuple):
+    query = 'facet.'
+    query =  query + ('field' if (len(fieldTuple) == 1) else 'range')
+    query = query + '=' + fieldTuple[0]
+    i=0
+    for value in fieldTuple[1:]:
+        query = query + '&f.' + fieldTuple[0] + '.facet.'
+        query = query + facetParamNameTuple[i]
+        i= i + 1
+        query = query + '=' + value
+    return query
 
 #prepare the query based on the valid syntax
-def prepareQuery(queryKeywords):
+def prepareQuery(queryKeywords, facetedFields):
     query = ''
     #################  prepare main query part
     query = query + 'q='
@@ -81,14 +96,17 @@ def prepareQuery(queryKeywords):
     ################# fuzzy parameter
     query = query + '&fuzzy=true'
     ################# facet parameters
-    query = query + '&facet=true&facet.field=model&facet.range=price&facet.range=likes'
+    query = query + '&facet=true'
+
+    for field in facetedFields:
+        query = query + '&' + prepareFacet(field)
     ################# rows parameter
     query = query + '&rows=1'
     print 'Query : ' + query
     ##################################
     return query
 
-def testFacetedSearch(queriesAndResultsPath , facetResultsPath, binary_path):
+def testFacetedSearch(f_in , f_facet, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
     binary= binary+' --config-file=./faceted_search/conf.xml &'
@@ -97,26 +115,33 @@ def testFacetedSearch(queriesAndResultsPath , facetResultsPath, binary_path):
     #make sure that start the engine up
     pingServer()
 
+    #parse used to extract facet fields from input
+    facet_parser= argparse.ArgumentParser()
+    facet_parser.add_argument('-f',  metavar='facet', nargs='+', 
+                                                    action='append')
     #construct the query
-
-    f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
-        queryValue=value[0].split()
+        tmpQueryValue= value[0].split(',')
+        queryValue= tmpQueryValue[0].split()
+        #line input is the format query, facet args||numResults
+        #extracting and parsing the facet args
+        facet_args=facet_parser.parse_args(tmpQueryValue[1].split())
+        facetedFields= facet_args.f
+        facet_args.f=[]
         resultValue=(value[1]).split()
         #construct the query
         query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue)
+        query = query + (prepareQuery(queryValue, facetedFields))
         #print query
         
 
         # get facet correct result from file
-        f_facet = open(facetResultsPath , 'r')
-        facetResultValue = []
-        for facet_line in f_facet:
-            facetResultValue.append(facet_line.strip())
-            
+        facetResultValue=[]
+        for i in xrange(0, len(facetedFields)):
+            facetResultValue.append(f_facet.next().strip())
+           
         # do the query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
@@ -133,8 +158,19 @@ def testFacetedSearch(queriesAndResultsPath , facetResultsPath, binary_path):
 if __name__ == '__main__':    
    #Path of the query file
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
-   binary_path = sys.argv[1]
-   queriesAndResultsPath = sys.argv[2]
-   facetResultsPath = sys.argv[3]
+   parser= argparse.ArgumentParser()
+   parser.add_argument('--srch2', required=True,
+                                                dest='binary_path')
+   parser.add_argument('--qryNrslt', type=file, required=True,
+                                                dest='queriesAndResults')
+   parser.add_argument('--frslt', type=file, required=True,
+                                                dest='facetResults')
+#   parser.add_argument('-f',  metavar='facet', nargs='+', 
+#                                                    action='append')
+
+   args= parser.parse_args()
+   binary_path = args.binary_path
+   queriesAndResultsPath = args.queriesAndResults
+   facetResultsPath = args.facetResults
    testFacetedSearch(queriesAndResultsPath, facetResultsPath, binary_path)
 
