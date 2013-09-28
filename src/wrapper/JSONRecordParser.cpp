@@ -253,9 +253,9 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Co
     }
     else
     {
-        JSONRecordParser::_JSONValueObjectToRecord(record, inputLine, root, indexDataContainerConf, error);
+    	parseSuccess = JSONRecordParser::_JSONValueObjectToRecord(record, inputLine, root, indexDataContainerConf, error);
     }
-    return true;
+    return parseSuccess;
 }
 
 srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager *indexDataContainerConf)
@@ -464,6 +464,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	convertValueToString(value, temp);
 
 	// now check to see if it has proper date/time format
+	boost::algorithm::trim(temp);
 	stringValue = "";
 	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
 			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
