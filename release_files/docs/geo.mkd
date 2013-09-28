@@ -10,9 +10,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -43,7 +43,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: Geo Search</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
@@ -58,7 +58,7 @@ The engine has two indexing options:
 
 We need to choose one option before starting the engine, since the engine will index the data differently depending on the option.
 
-To use geo indexing, use the following parameter in the configuration:
+To enable geo indexing, use the following parameter in the configuration file:
 
 ```
 <indexType>1</indexType>
@@ -68,11 +68,11 @@ The value "1" means that the indexing type is for geo. Correspondingly, we need 
 
 ```
 <field name="lat" default="0" required="true" type="location_latitude"/>
-<field name="lng" default="0" required="true" type="location_longtitude"/>
+<field name="lng" default="0" required="true" type="location_longitude"/>
 ```
-Each record should have two values for these two types, and they should be float numbers.  For example:
+Each record should have two corresponding values for these two types, and they should be float numbers.  For example:
 ```
-{"id" : "1234", "name" : "Toy Story", "category" : "shop", "lat" : 43.22, "lng": -80.22}
+{"id" : "1234", "name" : "ghirardelli", "category" : "chocolate", "lat" : 43.22, "lng": -80.22}
 ```
 
 
@@ -96,7 +96,7 @@ If geo indexing is used, a geo query should use one of the following two ways to
 
 > * "clong": the longitude of the center point;
 
-> * "radius": the radius of the search range in degree.
+> * "radius": the radius of the circle in degree.
 
 
 The following is an example geo query:
@@ -109,18 +109,20 @@ $ curl -i "http://localhost:8081/search?q=girardelli&start=0&rows=20&lblat=61.20
 The engine ranks each result using a score that combines its textual similarity with the query keywords and its geo distance to the location specified in the query.
 
 <hr/>
-Have fun SRCHing!
-
-
-
-
 <link rel="stylesheet" type="text/css" href="documentation.css">
-
-
 
 <script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
 window.onresize = setSizes
+</script>
+
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>

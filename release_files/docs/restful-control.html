@@ -14,9 +14,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -32,7 +32,7 @@
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-data">3. Serializing Data to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-records">3. Serializing Records to Disk</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -49,14 +49,14 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Control</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 19, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 27, 2013</center></h6>
 <h2 id="system-status">1. Retrieving System Status</h2>
 <p>This API returns the information about the system status. The response body will contain a JSON map with these fields:</p>
 <ul>
 <li>"search_requests": the number of queries received by the server so far;</li>
-<li>"write_requests": number of insert/delete requests received by the server so far;</li>
+<li>"write_requests": number of insert/delete/update requests received by the server so far;</li>
 <li>"docs_in_index": number of documents in the indexes;</li>
-<li>"last_merge": last time (UTC time) the inserted/deleted documents are merged into the indexes;</li>
+<li>"last_merge": last time (UTC time) the inserted/deleted/updated documents are merged into the indexes;</li>
 <li>"last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;</li>
 <li>"version": version of this engine.</li>
 </ul>
@@ -74,24 +74,33 @@ Date: Thu, 19 Sep 2013 18:52:52 GMT
 </code></pre>
 
 <h2 id="serialize-indexes">2. Serializing Indexes to Disk</h2>
-<p>This API serializes the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the configuration file. Here is an example: </p>
+<p>This API serializes the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the <a href="example-demo/srch2-config.xml">configuration file</a>. Here is an example: </p>
 <pre><code class="python">$ curl -i &quot;http://localhost:8081/save&quot; -X PUT
 </code></pre>
 
-<h2 id="serialize-data">3. Serializing Data to Disk</h2>
-<p>This API serializes the data, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: </p>
+<h2 id="serialize-records">3. Serializing Records to Disk</h2>
+<p>This API serializes the records, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: </p>
 <pre><code>$ curl -i &quot;http://localhost:8081/export?exported_data_file=mydata.json&quot; -X PUT
 </code></pre>
 
+<p>The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".</p>
 <p><hr/>
-Have fun SRCHing!</p>
-<p><link rel="stylesheet" type="text/css" href="documentation.css"></p>
+<link rel="stylesheet" type="text/css" href="documentation.css"></p>
 <script type="text/javascript" src="setSizes.js"></script>
 
 <script>
 
 setSizes();
 window.onresize = setSizes
+</script>
+
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>
 </body>
 </html>

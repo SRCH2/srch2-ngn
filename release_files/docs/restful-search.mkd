@@ -10,9 +10,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API : Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API : Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API : Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
@@ -67,7 +67,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: RESTful API - Search</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, September 19, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.0.0, September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview###{id="overview"}
 
@@ -308,7 +308,7 @@ Please note: the [configuration file](configuration.html#facetFields) should def
 
 ###7.3.2. facet.range.start {id="facetStart"}
 
-It is the lower bound of the range. Example:
+It is the mininum value (inclusive) of the range. Example:
 ```
 f.price.facet.start=0.0&f.age.facet.start=10
 ```
@@ -316,7 +316,7 @@ The above query defines the lower bounds of the facet ranges for <i>price</i> an
 
 ###7.3.3. facet.range.end {id="facetEnd"}
 
-It is the upper bound of the range. Example:
+It is the upper bound (exclusive) of the range. Example:
 ```
 f.price.facet.end=1000.0&f.age.facet.end=99
 ```
@@ -381,16 +381,20 @@ rows=7
 Please note: this parameter and <i>start</i> can be used to implement pagination.
 
 <hr/>
-Have fun SRCHing!
-
-
 <link rel="stylesheet" type="text/css" href="documentation.css">
-
-
 
 <script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
 window.onresize = setSizes
+</script>
+
+<script language="javascript"> 
+months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
+var theDate = new Date(document.lastModified); 
+theDate.setHours(theDate.getHours() - 7)
+with (theDate) { 
+document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
+} 
 </script>
