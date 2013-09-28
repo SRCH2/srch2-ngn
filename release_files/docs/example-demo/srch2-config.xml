@@ -58,6 +58,8 @@
         </rankingalgorithm>
  
         <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
+
+	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
          
         <prefixMatchPenalty>0.95</prefixMatchPenalty>
  

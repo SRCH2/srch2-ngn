@@ -130,11 +130,11 @@ The screen has the following regions:
 
 2. It shows the search results;
 
-3. It allows how to specify the order in which the results are sorted using the year field;
+3. It allows the user to specify the order in which the results are sorted using the year field;
 
-4. It allows how to specify filters to postprocess results;
+4. It allows the user to specify filters to postprocess results;
 
-5. It allows us to specify a facet on the year field by providing a start year, an end year, and a year gap;
+5. It allows the user to specify a facet on the year field by providing a start year, an end year, and a year gap;
 
 6. It shows the facet results.
 

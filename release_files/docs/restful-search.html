@@ -58,6 +58,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#orderby">10. Order by</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#start">11. Start</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">12. Rows</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fetchById">13. Fetch a Record by ID</a></br><br>
 
 </td></tr></tbody></table>
 
@@ -76,13 +77,14 @@
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, September 27, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
-<p>Welcome to the Srch2 query syntax documentation page. This documentation begins with a set of sample queries to get a flavor of the query language. It then dives further into the language with an explanation of the basic concepts behind it. Then we give details of the structural components of a query with emphasis on their syntax specifications.</p>
+<p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
+<p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
 <h2 id="sampleQueries">2. Sample queries</h2>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
 <pre><code>f1) curl -i &quot;http://localhost:8081/search?q=algorithm&quot;
 </code></pre>
 
-<p>In this query, we are searching for all records containing the word "algorithm". The result set will contain all records with the word "algorithm" in any <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
+<p>In this query, we are searching for all records containing the word "algorithm". The result set will contain all records with the word "algorithm" in a <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
 <pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&quot;
 </code></pre>
 
@@ -94,7 +96,7 @@
 <pre><code>f4) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $&quot;
 </code></pre>
 
-<p>The query <i>f4</i> exhibits the engine's ability to filter records using boolean expressions, in addition to values and ranges. In <i>f4</i>, the engine further filters the resulting records based on their field <i>discount</i> having a value greater than 10.</p>
+<p>The query <i>f4</i> exhibits the engine's ability to filter records using boolean expressions, in addition to values and ranges. In <i>f4</i>, the engine further filters the results based on their field <i>discount</i> having a value greater than 10.</p>
 <pre><code>f5) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $ &amp;sort=category&amp;orderby=asc&quot;
 </code></pre>
 
@@ -103,15 +105,15 @@
 </code></pre>
 
 <p>This query, again, is similar to query <i>f4</i>, except that the new query requests the engine to return faceted information for the record's <i>category</i> field.</p>
-<p>Note: The response of each RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query url. For example:</p>
+<p>Note: The response of each RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query URL. For example:</p>
 <pre><code>curl -i &quot;http://localhost:8081/search?q=algorithm&amp;callback=myfunc
 </code></pre>
 
 <h2 id="basicConcepts">3. Basic Concepts</h2>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.</p>
 <h3 id="fields">3.1. Fields</h3>
-<p>When performing a search, we can either specify a field or use a default value. Any <a href="configuration.html#fields">indexed field</a> can be searched with the syntax field name followed by a colon ":" and the search term. For example, assuming that the index contains two fields, <i>title</i> and <i>text</i>, and <i>text</i> is the default field, to find the records entitled "algo" that contain the text "don't go this way", we can use the following syntax:</p>
-<pre><code>title:algo AND go
+<p>When performing a search, we can either specify a field or use a default value. A field that is labeled as "<a href="configuration.html#fields">searchable</a>" or "<a href="configuration.html#fields">indexed</a>" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose that the data contains two fields, <i>title</i> and <i>text</i>. To find the records with "algo" and "structure" in "title" field, we can use the following query:</p>
+<pre><code>title:algo AND structure
 </code></pre>
 
 <h3 id="terms">3.2. Terms</h3>
@@ -125,13 +127,13 @@
 
 <h3 id="fuzzySearch">3.3.2. Fuzzy Search</h3>
 <p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
-<pre><code>q=schwarzeneger~0.8
+<pre><code>q=schwarazenneggar~0.8
 </code></pre>
 
-<p>The internal edit-distance threshold is floor((1-0.8) * length("schwarzeneger")) = floor(2.6) = 2. So the engine will find records with a keyword whose edit distance to the term "schwarzeneger" is at most two.</p>
+<p>The internal edit-distance threshold is floor((1-0.8) * length("schwarazenneggar")) = floor(0.2 * 16) = 3. So the engine will find records with a keyword whose edit distance to the term "schwarazenneggar" is at most three.</p>
 <p>The engine allows each fuzzy search term to specify its own similarity value.</p>
 <p>If a term does not have a similarity value, e.g.,</p>
-<pre><code>schwarzeneger~
+<pre><code>schwarazenneggar~
 </code></pre>
 
 <p>the engine will use the similarity threshold specified in the <a href="configuration.html##queryTermSimilarityThreshold">configuration file</a></p>
@@ -166,7 +168,7 @@ Invalid query 3) q=algorithm~.6*
 <center>Figure 1: Query Components</center></p>
 <h2 id="localParams">5. Local Parameters (LocalParams)</h2>
 <p><i>LocalParams</i> stands for "local parameters." It provides a way to "localize" query behavior by specifying modifiers for the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.</p>
-<p>To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by whitespace. So if the original query keyword is "algorithm", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}algorithm</i>. For example, we can specify a default field in local parameters as follows:</p>
+<p>To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by a white space. So if the original query keyword is "algorithm", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}algorithm</i>. For example, we can specify a default field in local parameters as follows:</p>
 <pre><code>q={defaultSearchFields=title}algorithm
 </code></pre>
 
@@ -181,13 +183,13 @@ Invalid query 3) q=algorithm~.6*
 <p>The following are valid localParams:</p>
 <ul>
 <li>
-<p><a href="configuration.html##queryTermSimilarityThreshold">defaultSimilarityThreshold</a>: a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    </p>
+<p><a href="configuration.html#queryTermSimilarityThreshold">defaultSimilarityThreshold</a>: a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    </p>
 </li>
 <li>
-<p><a href="configuration.html##fieldBoost">defaultBoostLevel</a>: a non-negative integer, e.g., 2.</p>
+<p><a href="configuration.html#fieldBoost">defaultBoostLevel</a>: a non-negative integer, e.g., 2.</p>
 </li>
 <li>
-<p><a href="configuration.html##queryTermType">defaultPrefixComplete</a>: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.</p>
+<p><a href="configuration.html#queryTermType">defaultPrefixComplete</a>: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.</p>
 </li>
 <li>
 <p>defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,author,price' (without quotes).</p>
@@ -198,16 +200,16 @@ Invalid query 3) q=algorithm~.6*
 </ul>
 <h2 id="queryParams">6. Query Parameters</h2>
 <h3 id="mainQuery">6.1. q: Main query parameter</h3>
-<p>A search over a searchable field is denoted by its name and the search term separated with a colon ":". For example, consider the query below.</p>
+<p>A search over a searchable field is denoted by its name and the search term separated with a colon ":". For example, consider the query below:</p>
 <pre><code>q=title:algorithm
 </code></pre>
 
-<p>It searches for the keyword "algorithm" in the field <i>title</i> of a record. If no field is provided, the engine will search on the <a href="configuration.html##fields">'indexed' field(s)</a> as specified in the configuration file. For example,</p>
+<p>It searches for the keyword "algorithm" in the field <i>title</i> of a record. If no field is provided, the engine will search on the <a href="configuration.html#fields">'indexed' field(s)</a> as specified in the <a href="example-demo/srch2-config.xml">configuration file</a>. For example,</p>
 <pre><code>q=algorithm
 </code></pre>
 
-<p>The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration.<br></p>
-<p><em>Note:</em> all the field names used in "q" must have their indexed property set to be true in the configuration file.</p>
+<p>The above query searches for the keyword "algorithm" in all the searchable fields as specified in the configuration file.<br></p>
+<p><em>Note:</em> all the field names used in "q" must have their "searchable" property or "indexed" property set to true in the configuration file.</p>
 <h3 id="filterQuery">6.2. fq: Filter-query parameter</h3>
 <p>This parameter is used to specify a filter restricting the set of records returned, without influencing their scores. In the example below, only records having year equal to 2012 will return.</p>
 <pre><code>fq=year:2012
@@ -222,8 +224,8 @@ Invalid query 3) q=algorithm~.6*
 <pre><code>fruit:[apple TO banana]
 </code></pre>
 
-<p>This will find all records whose <i>fruit</i> value is alphabetically between 'apple' and 'banana' (both inclusive).</p>
-<p><em>Note:</em> the engine supports only one kind of boolean operator (either 'OR' or 'AND') between all filter terms. The following are examples of valid arguments:</p>
+<p>This will find all records whose <i>fruit</i> value is alphabetically between "apple" and "banana" (both inclusive).</p>
+<p><em>Note:</em> the engine supports only one kind of boolean operator (OR or AND) between all the filter terms. The following are examples of valid arguments:</p>
 <pre><code>1) fq=popularity:[10 TO *] AND section:0 AND price:[* TO 100]
 2) fq=popularity:[10 TO *] OR section:0 OR price:[* TO 100]
 </code></pre>
@@ -233,16 +235,16 @@ Invalid query 3) q=algorithm~.6*
 <pre><code>fq=popularity:[10 TO *] AND section:0 AND boolexp$numOfReviews * 5 + numOfLikes * 2 &gt; 940$
 </code></pre>
 
-<p>Please note: for the predicate 'boolexp$ numOfReviews * 5 + numOfLikes * 2 &gt; 940$', the engine will evaluate the boolean expression between the two '$' signs, which in this case is 'numOfReviews * 5 + numOfLikes * 2 &gt; 940'. Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.</p>
-<p>In filter query terms, we can use the '-' operator before a field:term binding to tell the engine to exclude the records from the results that match the given binding criterion. For example:</p>
+<p>Please note: for the predicate "boolexp$ numOfReviews * 5 + numOfLikes * 2 &gt; 940$", the engine will evaluate the boolean expression between the two '$' signs, which in this case is "numOfReviews * 5 + numOfLikes * 2 &gt; 940". Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.</p>
+<p>In filter query terms, we can use the "-" operator before a field:term binding to tell the engine to exclude the records from the results that match the given binding criterion. For example:</p>
 <pre><code>fq=-popularity:[10 TO *]
 </code></pre>
 
 <p>The above filter query will find records whose popularity is <b>less than</b> 10.</p>
-<p>Please note: the attributes used in "fq" must have the 'refining' property set to true in the configuration file. Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.</p>
+<p>Please note: the attributes used in "fq" must have the "refining" property set to true in the configuration file. Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.</p>
 <h2 id="facetParams">7. Facet Query Params</h2>
 <h3 id="facetEnabled">7.1. facet</h3>
-<p>It is either 'true' or 'false', indicating whether we want to enable faceting. To turn faceting on, we need to include the following</p>
+<p>It is either "true" or "false", indicating whether we want to enable faceting. To turn faceting on, we need to include the following</p>
 <pre><code>facet=true
 </code></pre>
 
@@ -260,7 +262,7 @@ Invalid query 3) q=algorithm~.6*
 <pre><code>facet.range=price&amp;facet.range=age
 </code></pre>
 
-<p>The response of the above query includes faceting information for <i>price</i> and <i>age</i> fields. <br></p>
+<p>The response of the above query includes facet information for the <i>price</i> and <i>age</i> fields. <br></p>
 <p>Please note: the <a href="configuration.html#facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
 <h3 id="facetStart">7.3.2. facet.range.start</h3>
 <p>It is the mininum value (inclusive) of the range. Example:</p>
@@ -275,20 +277,20 @@ Invalid query 3) q=algorithm~.6*
 
 <p>The above query defines the upper bounds of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
 <h3 id="facetGap">7.3.4. facet.range.gap</h3>
-<p>It is the size of each range starting from the lower bound. Example:</p>
+<p>It is the size of each range starting from the minimum value. Example:</p>
 <pre><code>f.price.facet.gap=100&amp;f.age.facet.gap=10
 </code></pre>
 
-<p>The above query defines the gap between each consecutive faceted value of the facet ranges for <i>price</i> and <i>age</i> fields.</p>
+<p>The above query defines the gap between each consecutive faceted value of the facet ranges for the <i>price</i> and <i>age</i> fields.</p>
 <p>Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.</p>
 <h2 id="searchType">8. searchType</h2>
 <p>The engine offers three different strategies for searching records:</p>
 <ul>
-<li>topK: The results will be sorted descending by their score. This score is calculated for each record. Not that this approach has a very high performance, but does not support facet and sort operations. <br></li>
+<li>topK: The results will be sorted descending by their score. This score is calculated for each record. Not that this approach has a high performance, but does not support facet and sort operations. <br></li>
 <li>getAll: Use this strategy if facets and sort query parameters are needed.</li>
 <li>geo: Use of a location-based search. Sort and facets are supported. <br></li>
 </ul>
-<p>Example of using searchType:</p>
+<p>The following are examples of using searchType:</p>
 <pre><code>1) searchType=topK
 2) searchType=getAll
 3) searchType=geo
@@ -309,16 +311,22 @@ Invalid query 3) q=algorithm~.6*
 
 <p><em>Note:</em> the order specified in the <i>orderby</i> parameter will be applied to all the fields mentioned in the sort parameter. Currently, specifying different <i>orderby</i> values for different fields is not supported.</p>
 <h2 id="start">11. start</h2>
-<p>The offset in the complete result set of the query, where the set of returned records should begin. The default value is 0.</p>
+<p>It is the offset in the complete result set of the query, where the set of returned records should begin. The default value is 0.</p>
 <pre><code>start=10
 </code></pre>
 
 <h2 id="rows">12. rows</h2>
-<p>It indicates the number of records to return from the complete result set. The default value is 0.</p>
+<p>It indicates the number of records to return from the complete result set. Its default value is 0.</p>
 <pre><code>rows=7
 </code></pre>
 
-<p>Please note: this parameter and <i>start</i> can be used to implement pagination.</p>
+<p>This parameter and <i>start</i> can be used to implement pagination.</p>
+<h2 id="fetchById">13. Fetch a Record by ID</h2>
+<p>The SRCH2 engine provides an API that allows the user to fetch a record by giving its primary key value.  An example of such a request is:</p>
+<pre><code>curl -i &quot;http://localhost:8081/search?docid=123&quot;
+</code></pre>
+
+<p>which returns the record with "123" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.</p>
 <p><hr/>
 <link rel="stylesheet" type="text/css" href="documentation.css"></p>
 <script type="text/javascript" src="setSizes.js"></script>
