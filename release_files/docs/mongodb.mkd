@@ -112,7 +112,7 @@ In the MongoDB client, run the following command to insert a new record.
 ```
 mongodb> db.movies.insert(
 {
-"trailer_url" : "http://www.youtube.com/watch?v=cRdxXPV9GNQ",
+"trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
 "title" : "Terminator 3: Rise of the Machines",
 "director" : "James Cameron",
 "year" : NumberLong(2003),
