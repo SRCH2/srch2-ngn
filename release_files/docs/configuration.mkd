@@ -37,6 +37,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost Field</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">8.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyPenalty">8.2. Query Term Fuzzy Penalty</a></br><br>
@@ -188,6 +189,17 @@ It specifies an attribute whose value is used as the score (boost value) of a re
 <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br>
+
+
+###7.5. Enable Positional Index, Optional{id="enablePositionIndex"}
+
+A positional index supports queries with conditions related to keyword positions in a record, such as [proximity search](restful-search.html#proximitySearch). The "enablePositionIndex" tag can be used to enable or disable positional indexing.  For instance, the following
+example shows how to enable this indexing:
+
+```
+<enablePositionIndex>1</enablePositionIndex>
+```  
+Notice that the positional index takes more memory resources. By default it is disabled.<br>
 
 
 ##8. Query Parameters:##{id="queryConfig"}

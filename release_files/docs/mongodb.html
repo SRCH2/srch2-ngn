@@ -58,7 +58,7 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, Date: September 27, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>This tutorial shows how to use SRCH2 to do powerful text search on <a href="http://www.mongodb.org/">MongoDB</a>. We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. We also assume that you have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this <a href="install.html">page</a> first.</p>
-<p>Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.</p>
+<p>Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these <a href="http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/">instructions</a> to enable this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.</p>
 <h2 id="populate-mongo">2. Populate MongoDB</h2>
 <p>Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection called "movies" in a database called "demo".</p>
 <pre><code>shell&gt; mongoimport --db demo --collection movies --type json --file sample-data.json 
@@ -100,30 +100,31 @@ mongodb&gt; db.movies.find().count()
 <p>In the MongoDB client, run the following command to insert a new record.</p>
 <pre><code>mongodb&gt; db.movies.insert(
 {
-    &quot;trailer_url&quot; : &quot;http://www.youtube.com/watch?v=68I3j2luW64&quot;,
-    &quot;title&quot; : &quot;The Terminator&quot;,
-    &quot;director&quot; : &quot;James Cameron&quot;,
-    &quot;year&quot; : NumberLong(1984),
-    &quot;banner_url&quot; : &quot;http://ia.media-imdb.com/images/M/MV5BODE1MDczNTUxOV5BMl5BanBnXkFtZTcwMTA0NDQyNA@@._V1_SX214_.jpg&quot;,
-    &quot;id&quot; : NumberLong(764006),
-    &quot;genre&quot; : &quot;action&quot;
-}
-);
+&quot;trailer_url&quot; : &quot;http://www.youtube.com/watch?v=QHhZK-g7wHo&quot;,
+&quot;title&quot; : &quot;Terminator 3: Rise of the Machines&quot;,
+&quot;director&quot; : &quot;James Cameron&quot;,
+&quot;year&quot; : NumberLong(2003),
+&quot;banner_url&quot; : &quot;http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg&quot;,
+&quot;id&quot; : NumberLong(765006),
+&quot;genre&quot; : &quot;drama&quot;
+});
+
 </code></pre>
 
 <p>This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.</p>
 <h2 id="updateRecord">7. Update a Record</h2>
-<p>Run the following command in the MongoDB shell to update the record we just inserted:</p>
-<pre><code>mongodb&gt; db.movies.update( { id: 764006 },
+<p>The record we inserted has a wrong director "James Cameron." The correct director is Jonathan Mostow. To fix the error, run the following command in the MongoDB shell to update the record:</p>
+<pre><code>mongodb&gt; db.movies.update( { id: 765006 },
 {
-       $set: { director: &quot;mel gibson&quot; },
-} );
+$set: { director: &quot;Jonathan Mostow&quot; },
+});
+
 </code></pre>
 
-<p>Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "mel gibson" as the <i>director</i> value.</p>
+<p>Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "Jonathan Mostow" as the <i>director</i> value.</p>
 <h2 id="deleteRecord">8. Delete a Record</h2>
 <p>Run the following command in the MongoDB shell to delete the updated record:</p>
-<pre><code>mongodb&gt; db.movies.remove({&quot;id&quot; :764006 });
+<pre><code>mongodb&gt; db.movies.remove({&quot;id&quot; : 765006 });
 </code></pre>
 
 <p>Again, wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.</p>

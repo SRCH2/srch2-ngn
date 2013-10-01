@@ -26,17 +26,18 @@
     <dataFile>example-demo/sample-data.json</dataFile>
 
     <!-- 
-        Mongo Db settings
+        Mongo DB settings
         Required if dataSourceType = 2
     -->
     <!--
+    <dataSourceType>2</dataSourceType>
     <mongodb>
-        <host></host>
-        <port></port>
-        <db></db>
-        <collection></collection>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
         <listenerWaitTime>3</listenerWaitTime>
-    </mongodb> 
+    </mongodb>
     -->     
          
     <indexConfig>
@@ -48,6 +49,8 @@
         <fieldBoost>title^2 director^1</fieldBoost>
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
     
     </indexConfig>
   

@@ -157,7 +157,8 @@ Invalid query 3) q=algorithm~.6*
 </code></pre>
 
 <h3 id="proximitySearch">3.3.4. Proximity Search</h3>
-<p>The engine supports finding words that are within a specified proximity. To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "algorithm" and "data" within 10 words of each other in a document:</p>
+<p>The engine supports finding words that are within a specified proximity. To use this feature, we need to set the <a href="configuration.html#enablePositionIndex">enablePositionIndex</a> flag in the configuration file to true.</p>
+<p>To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "algorithm" and "data" within 10 words of each other in a document:</p>
 <pre><code>q=&quot;algorithm data&quot;~10
 </code></pre>
 

@@ -58,6 +58,8 @@
 ######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
+This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie recrods, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
+
 
 ##1. Download and Run Server##{id="serverConfig"}
 

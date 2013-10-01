@@ -44,6 +44,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost Field</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">8.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyPenalty">8.2. Query Term Fuzzy Penalty</a></br><br>
@@ -175,6 +176,13 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 </code></pre>
 
 <p>It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br></p>
+<h3 id="enablePositionIndex">7.5. Enable Positional Index, Optional</h3>
+<p>A positional index supports queries with conditions related to keyword positions in a record, such as <a href="restful-search.html#proximitySearch">proximity search</a>. The "enablePositionIndex" tag can be used to enable or disable positional indexing.  For instance, the following
+example shows how to enable this indexing:</p>
+<pre><code>&lt;enablePositionIndex&gt;1&lt;/enablePositionIndex&gt;
+</code></pre>
+
+<p>Notice that the positional index takes more memory resources. By default it is disabled.<br></p>
 <h2 id="queryConfig">8. Query Parameters:</h2>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
