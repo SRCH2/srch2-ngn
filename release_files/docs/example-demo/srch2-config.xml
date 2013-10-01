@@ -26,7 +26,7 @@
     <dataFile>example-demo/sample-data.json</dataFile>
 
     <!-- 
-        Mongo Db settings
+        Mongo DB settings
         Required if dataSourceType = 2
     -->
     <!--
@@ -49,6 +49,8 @@
         <fieldBoost>title^2 director^1</fieldBoost>
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
     
     </indexConfig>
   
