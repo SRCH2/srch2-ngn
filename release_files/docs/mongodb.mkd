@@ -51,7 +51,7 @@
 
 This tutorial shows how to use SRCH2 to do powerful text search on [MongoDB](http://www.mongodb.org/). We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. We also assume that you have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this [page](install.html) first.
 
-Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these [instructions](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) on how to run the MongoDB server in this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
+Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these [instructions](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) to enable this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
 
 ##2. Populate MongoDB###{id="populate-mongo"}
 
@@ -113,29 +113,30 @@ In the MongoDB client, run the following command to insert a new record.
 mongodb> db.movies.insert(
 {
 "trailer_url" : "http://www.youtube.com/watch?v=cRdxXPV9GNQ",
-"title" : "Avatar",
+"title" : "Terminator 3: Rise of the Machines",
 "director" : "James Cameron",
-"year" : NumberLong(2009),
-"banner_url" : "http://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Avatar-Teaser-Poster.jpg/220px-Avatar-Teaser-Poster.jpg",
+"year" : NumberLong(2003),
+"banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg",
 "id" : NumberLong(765006),
 "genre" : "drama"
 });
+
 ```
 
 This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record. <b>Note:</b> The wait time depends upon your configuration such as <a href="configuration.html#mongodb">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
 
 ##7. Update a Record##{id="updateRecord"}
 
-Run the following command in the MongoDB shell to update the record we just inserted:
+The record we inserted has a wrong director "James Cameron." The correct director is Jonathan Mostow. To fix the error, run the following command in the MongoDB shell to update the record:
 ```
 mongodb> db.movies.update( { id: 765006 },
 {
-$set: { director: "Christopher Nolan" },
+$set: { director: "Jonathan Mostow" },
 });
 
 ```
 
-Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "Christopher Nolan" as the <i>director</i> value.
+Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "Jonathan Mostow" as the <i>director</i> value.
 
 ##8. Delete a Record##{id="deleteRecord"}
 
