@@ -17,6 +17,13 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
+/* Part of the code is from the following IBM site:
+ * http://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=%2Fapis%2Fusers_77.htm.
+ * It's part of the IBM i5/OS V5R4 package, which was
+ * released on January 31, 2006 (according to
+ * http://www-01.ibm.com/common/ssi/cgi-bin/ssialias?subtype=ca&infotype=an&appname=iSource&supplier=897&letternum=ENUS206-015).
+ */
+
 #include "util/ReadWriteMutex.h"
 #include "util/Assert.h"
 
