@@ -461,7 +461,7 @@ void dummyRequestHandler(struct evhttp_request *req, void *state) {
 /*
  *  Creates a http request for /info Rest API of srch2 engine.
  */
-void make_http_request(){
+void makeHttpRequest(){
     struct evhttp_connection *conn;
     struct evhttp_request *req;
     /*
@@ -501,7 +501,7 @@ static void killServer(int signal) {
      *  are waiting for http requests. So we send a dummy http request to our own engine from within
      *  the engine. This request allows the threads to come out of blocking syscall and get killed.
      */
-    make_http_request();
+    makeHttpRequest();
 #endif
 }
 
