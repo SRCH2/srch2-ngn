@@ -30,23 +30,111 @@
 namespace srch2 {
 namespace instantsearch {
 
+
+class FacetHelper
+{
+public:
+	virtual std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) = 0;
+	virtual void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) = 0;
+	virtual void initialize(const std::string * info , const Schema * schema) = 0;
+
+	virtual ~FacetHelper(){};
+};
+
+class CategoricalFacetHelper : public FacetHelper
+{
+public:
+	std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) ;
+	void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) ;
+	void initialize(const std::string * info , const Schema * schema) ;
+
+	std::map<std::string, unsigned> categoryValueToBucketIdMap;
+};
+
+class RangeFacetHelper : public FacetHelper
+{
+public:
+	RangeFacetHelper(){
+		generateListOfIdsAndNamesFlag = false;
+	}
+	std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) ;
+	void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) ;
+	void initialize(const std::string * info , const Schema * schema) ;
+
+	Score start, end, gap;
+	unsigned numberOfBuckets;
+	bool generateListOfIdsAndNamesFlag;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// FacetResultsContainer and its two children
+class FacetResultsContainer
+{
+public:
+	virtual void initialize(FacetHelper * facetHelper , FacetAggregationType  opCode) = 0;
+	virtual void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType opCode) = 0;
+	virtual void getNamesAndValues(std::vector<std::pair< std::string, float > > & results) = 0;
+	virtual ~FacetResultsContainer() {};
+
+	float initAggregation(FacetAggregationType  opCode);
+	float doAggregation(float bucketValue, FacetAggregationType  opCode);
+};
+
+class CategoricalFacetResultsContainer : public FacetResultsContainer
+{
+public:
+	// a map from bucket id to the pair of bucketname,bucketvalue
+	std::map<unsigned, std::pair<std::string, float> > bucketsInfo;
+
+	void initialize(FacetHelper * facetHelper , FacetAggregationType  opCode);
+	void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType opCode);
+	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results);
+
+};
+
+class RangeFacetResultsContainer : public FacetResultsContainer
+{
+public:
+	// A list of pairs of <bucketname,bucketvalue> that bucketId is the index of each bucket in this list
+	std::vector<std::pair<std::string, float> > bucketsInfo;
+
+	void initialize(FacetHelper * facetHelper , FacetAggregationType  opCode);
+	void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType opCode);
+	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results);
+
+};
+
 class FacetedSearchFilterInternal
 {
 
 public:
     FacetedSearchFilterInternal(){
-        isPrepared = false;
     }
 
-    void doAggregationRange(const Score & attributeValue,
-            const std::vector<Score> & lowerBounds,
-            std::vector<pair<string, float> > * counts , Score & start, Score & end, Score & gap);
+    ~FacetedSearchFilterInternal(){
+    	for(std::map<std::string , FacetHelper *>::iterator facetHelperPtr = facetHelpers.begin() ;
+    			facetHelperPtr != facetHelpers.end() ; ++facetHelperPtr){
+    		if(facetHelperPtr->second != NULL){
+    			delete facetHelperPtr->second;
+    		}
+    	}
+    	for(std::map<std::string , std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
+    			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
+    		if(facetResultsPtr->second.second != NULL){
+    			delete facetResultsPtr->second.second;
+    		}
+    	}
+    }
 
-    void doAggregationCategorical(const Score & attributeValue,
-            std::map<string , float > * count);
+    void doFilter(IndexSearcher *indexSearcher,
+            const Query * query, QueryResults * input, QueryResults * output) ;
+    void preFilter(IndexSearcher *indexSearcher);
+    void doProcessOneResult(const Score & attributeValue, const std::string & facetFieldName);
 
-    // this function prepares the "lowerbound" structure from the parallel string vectors
-    void prepareFacetInputs(IndexSearcher *indexSearcher);
+    void initialize(std::vector<FacetType> & facetTypes,
+            std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
+            std::vector<std::string> & rangeEnds,
+            std::vector<std::string> & rangeGaps);
 
     // TODO : change fields from string to unsigned (attribute IDs)
     std::vector<FacetType> facetTypes;
@@ -54,13 +142,10 @@ public:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
-    // these members are filled in prepareFacetInputs
-    std::vector<Score> rangeStartScores;
-    std::vector<Score> rangeEndScores;
-    std::vector<Score> rangeGapScores;
-    // TODO : in the future we must suppose different range sizes ....
-    std::map<std::string, std::vector<Score> > lowerBoundsOfIntervals;
-    bool isPrepared;
+
+    // a map between facet field names and facet helper pointers
+    std::map<std::string , FacetHelper *> facetHelpers;
+	std::map<std::string , std::pair< FacetType , FacetResultsContainer * > > facetResults;
 };
 
 }
