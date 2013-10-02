@@ -8,7 +8,6 @@ namespace srch2
 namespace instantsearch
 {
 
-#define LicenseVerifier FooBar
 
 class LicenseVerifier {
     public:
