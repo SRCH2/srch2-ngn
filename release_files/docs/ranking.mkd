@@ -68,15 +68,15 @@ Formally, let <i>Q</i> be a query with terms (keywords) <i>t_1</i>, <i>t_2</i>, 
 
 For each term <i>t_i</i>, let <i>w_i</i> be a keyword in <i>r</i> that matches <i>t_i</i> (exactly or fuzzily). The TermScore(<i>r</i>, <i>t_i</i>) is computed as follows:
 
-<center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * QueryTermFuzzyPenalty.</center>
+<center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * FuzzyMatchPenalty.</center>
 
 The formula uses the following parameters:
 
 <b>1. NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It is calculated as follows:
 
-<center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * QueryTermFuzzyPenalty^ed. </center>
+<center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * FuzzyMatchPenalty^ed. </center>
 
-In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "QueryTermFuzzyPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.
+In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "FuzzyMatchPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.
 
 <b>2. PrefixMatchPenalty</b>: It is 1 if term <i>t_i</i> is a complete keyword. If term <i>t_i</i> is a prefix, then PrefixMatchPenalty takes the value of the parameter "prefixMatchPenalty" specified in the [configuration file](example-demo/srch2-config.xml).
 
