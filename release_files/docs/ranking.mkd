@@ -56,7 +56,7 @@
 The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:
 
 - How much penalty we want give to partial matches (e.g., "candy" vs "can" ) compared to complete-keyword matches (e.g., "can" vs "can), using the parameter "PrefixMatchPenalty"; and
-- How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "QueryTermFuzzyPenalty".
+- How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "FuzzyMatchPenalty".
 
 ##Ranking Formula##{id="formula"}
 
