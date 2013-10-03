@@ -1,4 +1,3 @@
-neveroccurword, -f model -f likes 0 -f price 0 100 20||
 verycommonword, -f model -f likes 0 -f price 0||48
 singletonword,  -f model||101
 verycommonword, -f likes 43 43||48

@@ -138,8 +138,8 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 
-echo '----do test_new_query_syntax-------------'
-python ./test_new_query_syntax/test_new_query_syntax.py $SRCH2_ENGINE_DIR ./test_new_query_syntax/queriesAndResults.txt ./test_new_query_syntax/facetResults.txt
+echo '----do test_solr_compatible_query_syntax-------------'
+python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE_DIR ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt
 
 if [ $? -gt 0 ]; then
     echo " --- error ---"
