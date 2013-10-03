@@ -84,7 +84,7 @@ private:
 // FacetResultsContainer and its two children
 /*
  * FacetResultsContainer and its two children (CategoricalFacetResultsContainer and RangeFacetResultsContainer)
- * are the containers of the buckets. The keep the buckets of a facet and also apply aggregation operations.
+ * are the containers of the buckets. They keep the buckets of a facet and also apply aggregation operations.
  */
 class FacetResultsContainer
 {
@@ -169,10 +169,7 @@ public:
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
 
-    // a map between facet field names and facet helper pointers
-//    std::map<std::string , FacetHelper *> facetHelpers;
-//	std::map<std::string , std::pair< FacetType , FacetResultsContainer * > > facetResults;
-
+    // These two vectors are parallel with fields.
 	std::vector<FacetHelper *> facetHelpers;
 	std::vector<std::pair< FacetType , FacetResultsContainer * > > facetResults;
 };

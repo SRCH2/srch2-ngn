@@ -116,7 +116,7 @@ void CategoricalFacetHelper::initialize(const std::string * facetInfoForInitiali
 }
 
 /*
- * This function find the interval in which attributeValue is placed. ID and name will be returned, since all the names are returned once
+ * This function finds the interval in which attributeValue is placed. ID and name will be returned. since all the names are returned once
  * in generateListOfIdsAndNames, all names are returned as "" to save copying string values.
  */
 std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const Score & attributeValue){
@@ -301,9 +301,7 @@ void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
 		info[3] = *facetField;
 		facetHelper->initialize(info , schema);
 		facetResultsContainer->initialize(facetHelper , FacetAggregationTypeCount );
-//		this->facetResults[*facetField] = std::make_pair(facetType , facetResultsContainer);
 		this->facetResults.push_back(std::make_pair(facetType , facetResultsContainer));
-//		this->facetHelpers[*facetField] = facetHelper;
 		this->facetHelpers.push_back(facetHelper);
 
 	}
