@@ -219,7 +219,7 @@ void test1(int argc, char** argv) {
     message << "\n";
 
     message << "QueryTermBoost: " << serverConf->getQueryTermBoost() << "\n";
-    message << "QueryTermSimilarityBoost: " << serverConf->getQueryTermSimilarityBoost() << "\n";
+    message << "FuzzyMatchPenalty: " << serverConf->getFuzzyMatchPenalty() << "\n";
     message << "QueryTermLengthBoost: " << serverConf->getQueryTermLengthBoost() << "\n";
     message << "PrefixMatchPenalty: " << serverConf->getPrefixMatchPenalty() << "\n";
     message << "AttributeRecordBoostName: " << serverConf->getAttributeRecordBoostName() << "\n";
@@ -229,7 +229,7 @@ void test1(int argc, char** argv) {
 
     message << "AttributeToSort: " << serverConf->getAttributeToSort() << "\n";
     message << "Ordering: " << serverConf->getOrdering() << "\n";
-    message << "QueryTermSimilarityBoost: " << serverConf->getQueryTermSimilarityBoost() << "\n";
+    message << "FuzzyMatchPenalty: " << serverConf->getFuzzyMatchPenalty() << "\n";
     message << "RecordAllowedSpecialCharacters: " << serverConf->getRecordAllowedSpecialCharacters() << "\n";
     message << "CacheSizeInBytes: " << serverConf->getCacheSizeInBytes() << "\n";
     message << "WriteApiType: " << serverConf->getWriteApiType() << "\n";

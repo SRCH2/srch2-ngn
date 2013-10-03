@@ -124,7 +124,7 @@ public:
     }
 
     Term(const std::string &keyword, TermType type,
-            const float boost = 1.0, const float similarityBoost = 0.5, const uint8_t threshold = 0);
+            const float boost = 1.0, const float fuzzyMatchPenalty = 0.5, const uint8_t threshold = 0);
 
     /**
      * \ingroup RankingFunctions
