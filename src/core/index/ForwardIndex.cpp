@@ -874,8 +874,14 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
 }
 
 void ForwardList::setPositionIndex(vector<uint8_t>& v){
-	positionIndex = v;
-	ASSERT(positionIndex.size() == positionIndex.capacity());
+	if(positionIndex != NULL){
+		delete positionIndex;
+	}
+	positionIndexSize = v.size();
+	positionIndex = new uint8_t[positionIndexSize];
+	for(int i=0;i<positionIndexSize;++i){
+		positionIndex[i] = v[i];
+	}
 }
 unsigned getBitSet(unsigned number);
 unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
@@ -883,7 +889,7 @@ unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
 		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
 
-	if (positionIndex.size() == 0){
+	if (positionIndexSize == 0){
 		Logger::warn("Position Index not found in forward index!!");
 		return;
 	}
@@ -891,7 +897,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 	const uint8_t * piPtr = &positionIndex[0];  // pointer to position index for the record
 	unsigned piOffset = 0;
 
-	if (*(piPtr + positionIndex.size() - 1) & 0x80)
+	if (*(piPtr + positionIndexSize - 1) & 0x80)
 	{
 		 Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
 		 return;

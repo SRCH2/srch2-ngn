@@ -183,6 +183,8 @@ public:
         keywordAttributeBitmaps = NULL;
         nonSearchableAttributeValuesData = NULL;
         nonSearchableAttributeValuesDataSize = 0;
+        positionIndex = NULL;
+        positionIndexSize = 0;
     }
 
     virtual ~ForwardList() {
@@ -197,6 +199,9 @@ public:
         }
         if(nonSearchableAttributeValuesData != NULL){
         	delete nonSearchableAttributeValuesData;
+        }
+        if(positionIndex != NULL){
+        	delete positionIndex;
         }
     }
 
@@ -276,6 +281,7 @@ private:
         ar & this->numberOfKeywords;
         ar & this->recordBoost;
         ar & this->nonSearchableAttributeValuesDataSize;
+        ar & this->positionIndexSize;
         /*
          * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
          * scheme is :
@@ -304,6 +310,11 @@ private:
             }else{
             	this->nonSearchableAttributeValuesData = NULL;
             }
+            if(positionIndexSize != 0){
+            	this->positionIndex = new uint8_t[positionIndexSize];
+            }else{
+            	this->positionIndex = NULL;
+            }
         }
         ar
                 & boost::serialization::make_array(this->keywordIds,
@@ -325,7 +336,10 @@ private:
                 & boost::serialization::make_array(
                         this->nonSearchableAttributeValuesData,
                         this->nonSearchableAttributeValuesDataSize);
-        ar & this->positionIndex;
+        ar
+                & boost::serialization::make_array(
+                        this->positionIndex,
+                        this->positionIndexSize);
     }
 
     // members
@@ -341,7 +355,8 @@ private:
     unsigned nonSearchableAttributeValuesDataSize;
 
     unsigned* keywordAttributeBitmaps;
-    vector<uint8_t> positionIndex;
+    uint8_t * positionIndex;
+    unsigned positionIndexSize;
 
 };
 
