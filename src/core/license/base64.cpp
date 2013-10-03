@@ -1,4 +1,6 @@
 /*
+  Source :  http://www.adp-gmbh.ch/cpp/common/base64.html
+
    base64.cpp and base64.h
 
    Copyright (C) 2004-2008 René Nyffenegger
