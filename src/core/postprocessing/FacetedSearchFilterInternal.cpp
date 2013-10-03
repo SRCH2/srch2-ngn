@@ -243,11 +243,11 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
         const ForwardList * list = forwardIndex->getForwardList(
                 queryResult->internalRecordId, isValid);
         ASSERT(isValid);
-        const VariableLengthAttributeContainer * nonSearchableAttributes =
+        const Byte * nonSearchableAttributesData =
                 list->getNonSearchableAttributeContainer();
         // this vector is parallel to attributeIds vector
         std::vector<Score> attributeDataValues;
-        nonSearchableAttributes->getBatchOfAttributes(attributeIds, schema, &attributeDataValues);
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,nonSearchableAttributesData, &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
         for(std::vector<std::string>::iterator facetField = fields.begin();

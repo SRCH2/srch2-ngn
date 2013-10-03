@@ -229,16 +229,16 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			score.setScore(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			score.setScore(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			score.setScore(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			score.setScore(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);

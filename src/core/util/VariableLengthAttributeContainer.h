@@ -31,11 +31,9 @@
 
 #include "instantsearch/Schema.h"
 #include "instantsearch/Score.h"
-
-#define Byte unsigned char
-
 namespace srch2 {
 namespace instantsearch {
+#define Byte unsigned char
 /*
  * This class implements a directory-less variable length encoding. It has a Byte array which keeps
  * the values of the fields. The encoding uses sizeof(unsigned), sizeof(float) and sizeof(long) bytes
@@ -50,93 +48,74 @@ class VariableLengthAttributeContainer {
 
 public:
 
-    VariableLengthAttributeContainer();
-    ~VariableLengthAttributeContainer();
-
     // fills the container with the values
-    void fill(const Schema * schema,const vector<string> & nonSearchableAttributeValues);
+    static void fill(const Schema * schema,const vector<string> & nonSearchableAttributeValues, Byte *& data, unsigned & dataSize);
 
     // deallocates the data and clears the container. After calling this function it can be filled again.
-    void clear();
+    static void clear(Byte *& data , unsigned dataSize);
     // gets string representation of the attribute value
-    std::string getAttribute(unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
+    static std::string getAttribute(unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data);
 
     // gets the attribute value wrapped in a Score object
-    void getAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema, Score * score) const;
+    static void getAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data, Score * score);
 
     // gets values of attributes in iters in Score objects. iters must be ascending.
-    void getBatchOfAttributes(
+    static void getBatchOfAttributes(
             const std::vector<unsigned> & nonSearchableAttributeIndexs,
-            const Schema * schema, std::vector<Score> * scores) const;
+            const Schema * schema, const Byte * data, std::vector<Score> * scores);
 
-    unsigned getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
-    float getFloatAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
-    double getDoubleAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
-    std::string getTextAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
-    long getTimeAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema) const;
+    static unsigned getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data);
+    static float getFloatAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schem, const Byte * dataa);
+    static double getDoubleAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data) ;
+    static std::string getTextAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data) ;
+    static long getTimeAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data) ;
 
 private:
 
-    Byte * data; // byte array to keep the data
-
-    unsigned dataSize;
     // initializes the data array
-    void allocate(const Schema * schema,
-            const vector<string> & nonSearchableAttributeValues);
+    static void allocate(const Schema * schema,
+            const vector<string> & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize);
     // uses Schema interface to get the type of an attribute indexed by iter
-    FilterType getAttributeType(unsigned iter, const Schema * schema) const;
+    static FilterType getAttributeType(unsigned iter, const Schema * schema) ;
 
     // this function tells us the number of bytes used in the data for the attribute starting from startOffset
     // 4 bytes for size is included for TEXT case ...
-    unsigned getSizeOfNonSearchableAttributeValueInData(FilterType type,
-            unsigned startOffset) const;
+    static unsigned getSizeOfNonSearchableAttributeValueInData(FilterType type,
+            unsigned startOffset, const Byte * data) ;
 
     // Converting unsigned and char vector together.
-    void convertUnsignedToByteArray(unsigned input, Byte * output,
-            unsigned startOffset) const;
-    unsigned convertByteArrayToUnsigned(unsigned startOffset) const;
+    static void convertUnsignedToByteArray(unsigned input, Byte * output,
+            unsigned startOffset) ;
+    static unsigned convertByteArrayToUnsigned(unsigned startOffset, const Byte * data) ;
 
     // Converting float and char vector together.
-    void convertFloatToByteArray(float input, Byte * output,
-            unsigned startOffset) const;
-    float convertByteArrayToFloat(unsigned startOffset) const;
+    static void convertFloatToByteArray(float input, Byte * output,
+            unsigned startOffset) ;
+    static float convertByteArrayToFloat(unsigned startOffset, const Byte * data) ;
 
     // Converting long and char vector together.
-    void convertLongToByteArray(long input, Byte * output,
-            unsigned startOffset) const;
-    long convertByteArrayToLong(unsigned startOffset) const;
+    static void convertLongToByteArray(long input, Byte * output,
+            unsigned startOffset) ;
+    static long convertByteArrayToLong(unsigned startOffset, const Byte * data) ;
 
     // Based on the type, converts the string representation of the value to char vector
     // appends the results to the output
-    void convertStringToByteArray(FilterType type, std::string value,
-            Byte * output, unsigned startOffset, unsigned & size) const;
+    static void convertStringToByteArray(FilterType type, std::string value,
+            Byte * output, unsigned startOffset, unsigned & size) ;
 
     // Based on type, converts char vector to the string representation of the value, can also be used to convert charvector to string
-    std::string convertByteArrayToString(FilterType type,
-            unsigned stringOffset) const;
+    static std::string convertByteArrayToString(FilterType type,
+            unsigned stringOffset, const Byte * data) ;
 
-    void convertByteArrayToScore(FilterType type, unsigned startOffset,
-            Score * result) const;
-
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        typename Archive::is_loading load;
-        ar & this->dataSize;
-        // In loading process, we need to allocate space for the members first.std::string VariableLengthAttributeContainer::getAttribute(unsigned nonSearchableAttributeIndex,
-        if (load) {
-            this->data = new Byte[this->dataSize];
-        }
-        ar & boost::serialization::make_array(this->data, this->dataSize);
-    }
+    static void convertByteArrayToScore(FilterType type, unsigned startOffset, const Byte * data,
+            Score * result) ;
 
 };
 

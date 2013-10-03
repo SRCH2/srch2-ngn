@@ -72,14 +72,15 @@ void test_1(){
 
 
 
-	VariableLengthAttributeContainer vlac;
+	Byte * vlac = NULL;
+	unsigned vlacSize;
 	std::string record1[10] =
 	{"John Smith" , "23" , "2344567" , "Doctor" , "70.4567" , "12000" , "John" , "Smith" , "12345" , "34567"};
 	vector<string> nonSearchableAttributeValues;
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record1,record1 + 10);
-	vlac.fill(schema, nonSearchableAttributeValues);
+	VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues , vlac , vlacSize);
 	for(int i=0;i<10;i++){
-	    if(record1[i] != vlac.getAttribute(i , schema)){
+	    if(record1[i] != VariableLengthAttributeContainer::getAttribute(i , schema, vlac)){
 	        ASSERT(false);
 	    }
 	}
@@ -88,55 +89,55 @@ void test_1(){
 	std::string record2[10] =
 	{"John Black Patterson" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "" , "1235" , "3467"};
 	nonSearchableAttributeValues.clear();
-	vlac.clear();
+	VariableLengthAttributeContainer::clear(vlac , vlacSize );
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record2 , record2+10);
-	vlac.fill(schema,nonSearchableAttributeValues);
+	VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac , vlacSize);
 	for(int i=0;i<10;i++){
-		ASSERT( record2[i] == vlac.getAttribute(i , schema) );
+		ASSERT( record2[i] == VariableLengthAttributeContainer::getAttribute(i , schema, vlac) );
 	}
 	/////////////////////////////////
 
 	std::string record3[10] =
 	{"" , "0" , "20344567" , "Professor" , "-70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
-    vlac.clear();
+    VariableLengthAttributeContainer::clear(vlac, vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record3 , record3+10);
-    vlac.fill(schema,nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues , vlac, vlacSize);
 	for(int i=0;i<10;i++){
-		ASSERT( record3[i] == vlac.getAttribute(i , schema) );
+		ASSERT( record3[i] == VariableLengthAttributeContainer::getAttribute(i , schema,vlac) );
 	}
 	//////////////////////////////////////////////
 
 	std::string record4[10] =
 	{"" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
-    vlac.clear();
+    VariableLengthAttributeContainer::clear(vlac , vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record4 , record4+10);
-    vlac.fill(schema,nonSearchableAttributeValues);
-	ASSERT(vlac.getFloatAttribute(4,schema) == float(70.4567));
-	ASSERT(vlac.getUnsignedAttribute(8,schema) == 9835);
-	ASSERT(vlac.getTextAttribute(3,schema) == "Professor");
-	ASSERT(vlac.getTimeAttribute(2,schema) == 20344567);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac, vlacSize);
+	ASSERT(VariableLengthAttributeContainer::getFloatAttribute(4,schema,vlac) == float(70.4567));
+	ASSERT(VariableLengthAttributeContainer::getUnsignedAttribute(8,schema,vlac) == 9835);
+	ASSERT(VariableLengthAttributeContainer::getTextAttribute(3,schema,vlac) == "Professor");
+	ASSERT(VariableLengthAttributeContainer::getTimeAttribute(2,schema,vlac) == 20344567);
 	/////////////////////////////////////////////
 
 	std::string record5[10] =
 	{"David Simpson" , "3245" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
-    vlac.clear();
+    VariableLengthAttributeContainer::clear(vlac, vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record5 , record5+10);
-    vlac.fill(schema,nonSearchableAttributeValues);
-	ASSERT(vlac.getFloatAttribute(4,schema) == float(70.4567));
-	ASSERT(vlac.getUnsignedAttribute(8,schema) == 9835);
-	ASSERT(vlac.getTextAttribute(3,schema) == "Professor");
-	ASSERT(vlac.getTimeAttribute(2,schema) == 20344567);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac, vlacSize);
+	ASSERT(VariableLengthAttributeContainer::getFloatAttribute(4,schema,vlac) == float(70.4567));
+	ASSERT(VariableLengthAttributeContainer::getUnsignedAttribute(8,schema,vlac) == 9835);
+	ASSERT(VariableLengthAttributeContainer::getTextAttribute(3,schema,vlac) == "Professor");
+	ASSERT(VariableLengthAttributeContainer::getTimeAttribute(2,schema,vlac) == 20344567);
 	////////////////////////////////////////////
 
 	std::string record6[10] =
 	{"" , "0" , "20344567" , "Professor" , "70.4567" , "12000" , "John" , "Smith Patterson" , "9835" , "3467"};
     nonSearchableAttributeValues.clear();
-    vlac.clear();
+    VariableLengthAttributeContainer::clear(vlac,vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record6 , record6+10);
-    vlac.fill(schema,nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues,vlac,vlacSize);
 	std::vector<Score> results;
 	std::vector<unsigned> attributes;
 	attributes.push_back(2);
@@ -144,7 +145,7 @@ void test_1(){
 	attributes.push_back(5);
 	attributes.push_back(7);
 	attributes.push_back(8);
-	vlac.getBatchOfAttributes(attributes , schema, &results);
+	VariableLengthAttributeContainer::getBatchOfAttributes(attributes , schema, vlac, &results);
 	ASSERT(results.at(0).getTimeScore() == 20344567);
 	ASSERT(results.at(1).getTextScore().compare("Professor") == 0);
 	ASSERT(results.at(2).getIntScore() == 12000);

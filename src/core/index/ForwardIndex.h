@@ -117,16 +117,16 @@ public:
 
     const std::string getNonSearchableAttributeValue(unsigned iter,
             const Schema * schema) const {
-        return nonSearchableAttributeValues.getAttribute(iter, schema);
+        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->nonSearchableAttributeValuesData);
     }
 
-    const VariableLengthAttributeContainer * getNonSearchableAttributeContainer() const {
-        return &nonSearchableAttributeValues;
+    const Byte * getNonSearchableAttributeContainer() const {
+        return nonSearchableAttributeValuesData;
     }
 
 
     void setNonSearchableAttributeValues(const Schema * schema, const vector<string> & nonSearchableAttributeValues) {
-        this->nonSearchableAttributeValues.fill(schema, nonSearchableAttributeValues);
+        VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues, this->nonSearchableAttributeValuesData , this->nonSearchableAttributeValuesDataSize);
     }
 
     const unsigned* getKeywordIds() const {
@@ -181,15 +181,23 @@ public:
         keywordIds = new unsigned[keywordListCapacity];
         keywordRecordStaticScores = new half[keywordListCapacity];
         keywordAttributeBitmaps = NULL;
+        nonSearchableAttributeValuesData = NULL;
+        nonSearchableAttributeValuesDataSize = 0;
     }
 
     virtual ~ForwardList() {
-        if (keywordIds != NULL)
+        if (keywordIds != NULL){
             delete keywordIds;
-        if (keywordRecordStaticScores != NULL)
+        }
+        if (keywordRecordStaticScores != NULL){
             delete keywordRecordStaticScores;
-        if (keywordAttributeBitmaps != NULL)
+        }
+        if (keywordAttributeBitmaps != NULL){
             delete keywordAttributeBitmaps;
+        }
+        if(nonSearchableAttributeValuesData != NULL){
+        	delete nonSearchableAttributeValuesData;
+        }
     }
 
     float computeFieldBoostSummation(const Schema *schema,
@@ -267,6 +275,7 @@ private:
         typename Archive::is_loading load;
         ar & this->numberOfKeywords;
         ar & this->recordBoost;
+        ar & this->nonSearchableAttributeValuesDataSize;
         /*
          * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
          * scheme is :
@@ -290,6 +299,11 @@ private:
             }else{
             	 this->keywordAttributeBitmaps = NULL;
             }
+            if(nonSearchableAttributeValuesDataSize != 0){
+            	this->nonSearchableAttributeValuesData = new Byte[this->nonSearchableAttributeValuesDataSize];
+            }else{
+            	this->nonSearchableAttributeValuesData = NULL;
+            }
         }
         ar
                 & boost::serialization::make_array(this->keywordIds,
@@ -307,7 +321,10 @@ private:
         }
         ar & this->externalRecordId;
         ar & this->inMemoryData;
-        ar & this->nonSearchableAttributeValues;
+        ar
+                & boost::serialization::make_array(
+                        this->nonSearchableAttributeValuesData,
+                        this->nonSearchableAttributeValuesDataSize);
         ar & this->positionIndex;
     }
 
@@ -319,7 +336,9 @@ private:
     unsigned* keywordIds;
     half* keywordRecordStaticScores;
 
-    VariableLengthAttributeContainer nonSearchableAttributeValues;
+    Byte * nonSearchableAttributeValuesData; // byte array to keep the data
+
+    unsigned nonSearchableAttributeValuesDataSize;
 
     unsigned* keywordAttributeBitmaps;
     vector<uint8_t> positionIndex;
