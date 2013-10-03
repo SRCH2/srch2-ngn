@@ -30,8 +30,8 @@ namespace srch2 {
 namespace instantsearch {
 
 
-float FacetResultsContainer::initAggregation(FacetAggregationType  opCode){
-	switch (opCode) {
+float FacetResultsContainer::initAggregation(FacetAggregationType  aggregationType){
+	switch (aggregationType) {
 		case FacetAggregationTypeCount:
 			return 0;
 		default:
@@ -39,8 +39,8 @@ float FacetResultsContainer::initAggregation(FacetAggregationType  opCode){
 			return 0;
 	}
 }
-float FacetResultsContainer::doAggregation(float bucketValue, FacetAggregationType  opCode){
-	switch (opCode) {
+float FacetResultsContainer::doAggregation(float bucketValue, FacetAggregationType  aggregationType){
+	switch (aggregationType) {
 		case FacetAggregationTypeCount:
 			return bucketValue + 1;
 		default:
@@ -49,16 +49,20 @@ float FacetResultsContainer::doAggregation(float bucketValue, FacetAggregationTy
 	}
 }
 
-void CategoricalFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  opCode){
+void CategoricalFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType){
 	// No need to do anything in this function.
 }
-void CategoricalFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType opCode){
+void CategoricalFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
 
-	if(bucketsInfo.find(bucketId) == bucketsInfo.end()){ // A new bucket
-		bucketsInfo[bucketId] = std::make_pair(bucketName , initAggregation(opCode));
+	std::map<unsigned, std::pair<std::string, float> >::iterator bucketIter = bucketsInfo.find(bucketId);
+	if( bucketIter == bucketsInfo.end()){ // A new bucket
+		std::pair<std::string, float> newBucket = std::make_pair(bucketName , initAggregation(aggregationType));
+		newBucket.second = doAggregation(newBucket.second , aggregationType);
+		bucketsInfo[bucketId] = newBucket;
+	}else{
+		bucketIter->second.second = doAggregation(bucketIter->second.second , aggregationType);
 	}
 
-	bucketsInfo[bucketId].second = doAggregation(bucketsInfo[bucketId].second , opCode);
 }
 void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
 	for(std::map<unsigned, std::pair<std::string, float> >::iterator bucketPtr = bucketsInfo.begin() ;
@@ -68,21 +72,26 @@ void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< 
 }
 
 
-
-void RangeFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  opCode){
+/*
+ * Since we want to include all intervals of a range facet (even if they don't have any records in them)
+ * we have to first initialize all intervals to a value (e.g. count of 0). To do this we use facetHelper to give us
+ * a list of IDs which it will generate later with their name. For example:
+ * <0,"-inf">,<1,"10">,<2,"20">,<3,"30">
+ */
+void RangeFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType){
 	std::vector<std::pair<unsigned, std::string> > idsAndNames;
 	facetHelper->generateListOfIdsAndNames(&idsAndNames);
 	int index = 0;
 	for(std::vector<std::pair<unsigned, std::string> >::iterator idAndName = idsAndNames.begin();
 			idAndName != idsAndNames.end() ; ++idAndName){
 		ASSERT(index == idAndName->first); // bucket Id must be the index of buckets in this vector
-		bucketsInfo.push_back(std::make_pair(idAndName->second , initAggregation(opCode) ));
+		bucketsInfo.push_back(std::make_pair(idAndName->second , initAggregation(aggregationType) ));
 		//
 		index++;
 	}
 }
-void RangeFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType opCode){
-	bucketsInfo.at(bucketId).second = doAggregation(bucketsInfo.at(bucketId).second , opCode);
+void RangeFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
+	bucketsInfo.at(bucketId).second = doAggregation(bucketsInfo.at(bucketId).second , aggregationType);
 }
 void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
 	results.insert(results.begin(), bucketsInfo.begin() , bucketsInfo.end());
@@ -102,16 +111,20 @@ void CategoricalFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<uns
 	// This function should not be called.
 	ASSERT(false);
 }
-void CategoricalFacetHelper::initialize(const std::string * info, const Schema * schema){
+void CategoricalFacetHelper::initialize(const std::string * facetInfoForInitialization, const Schema * schema){
 	// No need to do anything here
 }
 
+/*
+ * This function find the interval in which attributeValue is placed. ID and name will be returned, since all the names are returned once
+ * in generateListOfIdsAndNames, all names are returned as "" to save copying string values.
+ */
 std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const Score & attributeValue){
 	if(attributeValue >= end){
 		return std::make_pair(numberOfBuckets-1 , "");
 	}
 	unsigned bucketId = attributeValue.findIndexOfContainingInterval(start, end, gap);
-    if(bucketId == -1){
+    if(bucketId == -1){ // Something has gone wrong and Score class has been unable to calculate the index.
     	ASSERT(false);
         return std::make_pair(0 , "");;
     }
@@ -156,11 +169,19 @@ void RangeFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned,
 	generateListOfIdsAndNamesFlag = false;
 
 }
-void RangeFacetHelper::initialize(const std::string * info , const Schema * schema){
-	std::string startString = info[0];
-	std::string endString = info[1];
-	std::string gapString = info[2];
-	std::string fieldName = info[3];
+
+/*
+ * Info must contain :
+ * facetInfoForInitialization[0] <= start
+ * facetInfoForInitialization[1] <= end
+ * facetInfoForInitialization[2] <= gap
+ * facetInfoForInitialization[3] <= fieldName
+ */
+void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization , const Schema * schema){
+	std::string startString = facetInfoForInitialization[0];
+	std::string endString = facetInfoForInitialization[1];
+	std::string gapString = facetInfoForInitialization[2];
+	std::string fieldName = facetInfoForInitialization[3];
 
     FilterType attributeType = schema->getTypeOfNonSearchableAttribute(
             schema->getNonSearchableAttributeId(fieldName));
@@ -235,16 +256,16 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
                                    std::distance(fields.begin() , facetField));
             // choose the type of aggregation for this attribute
             // increments the correct facet by one
-            doProcessOneResult(attributeValue , *facetField );
+            doProcessOneResult(attributeValue , std::distance(fields.begin() , facetField));
         }
     }
 
     // now copy all results to output
-	for(std::map<std::string , std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
+	for(std::vector<std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
 			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
 		std::vector<std::pair< std::string, float > > results;
-		facetResultsPtr->second.second->getNamesAndValues(results);
-		output->impl->facetResults[facetResultsPtr->first] = std::make_pair(facetResultsPtr->second.first , results);
+		facetResultsPtr->second->getNamesAndValues(results);
+		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
 	}
 
 }
@@ -280,14 +301,16 @@ void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
 		info[3] = *facetField;
 		facetHelper->initialize(info , schema);
 		facetResultsContainer->initialize(facetHelper , FacetAggregationTypeCount );
-		this->facetResults[*facetField] = std::make_pair(facetType , facetResultsContainer);
-		this->facetHelpers[*facetField] = facetHelper;
+//		this->facetResults[*facetField] = std::make_pair(facetType , facetResultsContainer);
+		this->facetResults.push_back(std::make_pair(facetType , facetResultsContainer));
+//		this->facetHelpers[*facetField] = facetHelper;
+		this->facetHelpers.push_back(facetHelper);
 
 	}
 }
-void FacetedSearchFilterInternal::doProcessOneResult(const Score & attributeValue, const std::string & facetFieldName){
-	std::pair<unsigned , std::string> idandName = facetHelpers[facetFieldName]->generateIDAndName(attributeValue);
-	this->facetResults[facetFieldName].second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+void FacetedSearchFilterInternal::doProcessOneResult(const Score & attributeValue, const unsigned facetFieldIndex){
+	std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
+	this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
 }
 
 void FacetedSearchFilterInternal::initialize(std::vector<FacetType> & facetTypes,
