@@ -26,7 +26,7 @@
 #include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 using namespace std;
 
@@ -102,13 +102,13 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
         const Byte * nonSearchableAttributesData =
                 list->getNonSearchableAttributeContainer();
         // now get the values from the container
-        vector<Score> scores;
-        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , nonSearchableAttributesData,&scores);
+        vector<TypedValue> typedValues;
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , nonSearchableAttributesData,&typedValues);
         // save the values in QueryResult objects
         for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
                 attributesIterator != attributes->end() ; ++attributesIterator){
             queryResult->valuesOfParticipatingNonSearchableAttributes[*attributesIterator] =
-                    scores.at(std::distance(attributes->begin() , attributesIterator));
+                    typedValues.at(std::distance(attributes->begin() , attributesIterator));
         }
     }
 

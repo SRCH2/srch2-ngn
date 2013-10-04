@@ -139,7 +139,7 @@
              
             Defaults to 0.5
         -->
-        <queryTermFuzzyPenalty>0.9</queryTermFuzzyPenalty>
+        <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
          
         <!--
             Query Term Length Boost

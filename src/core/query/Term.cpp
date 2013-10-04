@@ -44,13 +44,13 @@ struct Term::Impl
     unsigned searchableAttributeIdToFilter;
 };
 
-Term::Term(const string &keywordStr, TermType type, const float boost, const float similarityBoost, const uint8_t threshold)
+Term::Term(const string &keywordStr, TermType type, const float boost, const float fuzzyMatchPenalty, const uint8_t threshold)
 {
     impl = new Impl;
     impl->keyword = keywordStr;
     impl->type = type;
     impl->boost = boost;
-    impl->similarityBoost = similarityBoost;
+    impl->similarityBoost = fuzzyMatchPenalty;
     impl->threshold = threshold;
     impl->searchableAttributeIdToFilter = -1;
 }

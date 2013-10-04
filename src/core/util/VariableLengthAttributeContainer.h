@@ -30,7 +30,9 @@
 #include <vector>
 
 #include "instantsearch/Schema.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
+
+#define Byte unsigned char
 namespace srch2 {
 namespace instantsearch {
 #define Byte unsigned char
@@ -59,17 +61,17 @@ public:
 
     // gets the attribute value wrapped in a Score object
     static void getAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema, const Byte * data, Score * score);
+            const Schema * schema, const Byte * data, TypedValue * score);
 
     // gets values of attributes in iters in Score objects. iters must be ascending.
     static void getBatchOfAttributes(
             const std::vector<unsigned> & nonSearchableAttributeIndexs,
-            const Schema * schema, const Byte * data, std::vector<Score> * scores);
+            const Schema * schema, const Byte * data, std::vector<TypedValues> * scores);
 
     static unsigned getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
             const Schema * schema, const Byte * data);
     static float getFloatAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schem, const Byte * dataa);
+            const Schema * schem, const Byte * data);
     static double getDoubleAttribute(const unsigned nonSearchableAttributeIndex,
             const Schema * schema, const Byte * data) ;
     static std::string getTextAttribute(const unsigned nonSearchableAttributeIndex,
@@ -115,7 +117,7 @@ private:
             unsigned stringOffset, const Byte * data) ;
 
     static void convertByteArrayToScore(FilterType type, unsigned startOffset, const Byte * data,
-            Score * result) ;
+            TypedValue * result) ;
 
 };
 

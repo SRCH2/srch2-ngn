@@ -48,7 +48,7 @@ private:
 
 
 	// <config><query>
-	float queryTermSimilarityBoost;
+	float fuzzyMatchPenalty;
 	float queryTermSimilarityThreshold;
 	float queryTermLengthBoost;
 	float prefixMatchPenalty;
@@ -173,7 +173,7 @@ private:
     bool isValidQueryTermBoost(string& quertTermBoost);
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
-    bool isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost);
+    bool isValidFuzzyMatchPenalty(string& fuzzyMatchPenalty);
     bool isValidQueryTermSimilarityThreshold(string & qTermEditDistanceNormFactor);
     bool isValidQueryTermLengthBoost(string& queryTermLengthBoost);
     bool isValidPrefixMatch(string& prefixmatch);
@@ -241,7 +241,7 @@ public:
 	string getStemmerFile() const; // stemmer file
 	string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost() const;
-	float getQueryTermSimilarityBoost() const;
+	float getFuzzyMatchPenalty() const;
 	float getQueryTermSimilarityThreshold() const ;
 	float getQueryTermLengthBoost() const;
 	float getPrefixMatchPenalty() const;

@@ -33,7 +33,7 @@ namespace instantsearch
 
 class Query;
 class IndexSearcher;
-class Score;
+class TypedValue;
 class QueryResultsInternal;
 class QueryResultFactoryInternal;
 
@@ -109,7 +109,7 @@ public:
      * Gets the score of the 'position'-th item in the QueryResults object.
      */
     std::string getResultScoreString(unsigned position) const ;
-    Score getResultScore(unsigned position) const ;
+    TypedValue getResultScore(unsigned position) const ;
 
     /**
      *

@@ -768,16 +768,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // queryTermFuzzyPenalty is an optional field
-    this->queryTermSimilarityBoost = 1; // By default it is 1
-    configAttribute = configDoc.child("config").child("query").child("queryTermFuzzyPenalty");
+    // fuzzyMatchPenalty is an optional field
+    this->fuzzyMatchPenalty = 1; // By default it is 1
+    configAttribute = configDoc.child("config").child("query").child("fuzzyMatchPenalty");
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
-        if (this->isValidQueryTermSimilarityBoost(qtsb)) {
-            this->queryTermSimilarityBoost = configAttribute.text().as_float();
+        if (this->isValidFuzzyMatchPenalty(qtsb)) {
+            this->fuzzyMatchPenalty = configAttribute.text().as_float();
         } else {
             configSuccess = false;
-            parseError << "The expression provided for queryTermFuzzyPenalty is not a valid.";
+            parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
             return;
         }
     }
@@ -1314,8 +1314,8 @@ unsigned ConfigManager::getQueryTermBoost() const {
     return queryTermBoost;
 }
 
-float ConfigManager::getQueryTermSimilarityBoost() const {
-    return queryTermSimilarityBoost;
+float ConfigManager::getFuzzyMatchPenalty() const {
+    return fuzzyMatchPenalty;
 }
 
 float ConfigManager::getQueryTermSimilarityThreshold() const {
@@ -1529,8 +1529,8 @@ bool ConfigManager::isValidRecordScoreExpession(string& recordScoreExpression) {
     return true;
 }
 
-bool ConfigManager::isValidQueryTermSimilarityBoost(string& queryTermSimilarityBoost) {
-    return this->isFloat(queryTermSimilarityBoost);
+bool ConfigManager::isValidFuzzyMatchPenalty(string& fuzzyMatchPenalty) {
+    return this->isFloat(fuzzyMatchPenalty);
 }
 
 bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarityThreshold){

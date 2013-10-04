@@ -214,7 +214,7 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 //TODO check bounds
 //   return this->keywordIdVector->at(cursor);
 //}
-Score ForwardList::getForwardListNonSearchableAttributeScore(
+TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
         const SchemaInternal* schemaInternal,
         unsigned schemaNonSearchableAttributeId) const {
 
@@ -225,27 +225,27 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
     FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(
             schemaNonSearchableAttributeId);
 
-    Score score;
+    TypedValue typedValue;
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			score.setScore(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			score.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			score.setScore(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
+			score.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			score.setScore(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			score.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			score.setScore(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			score.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);
 			break;
 	}
 
-    return score;
+    return typedValue;
 
 }
 

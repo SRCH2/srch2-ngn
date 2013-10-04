@@ -18,7 +18,7 @@
  */
 
 #include "NonSearchableAttributeExpressionFilterInternal.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "query/QueryResultsInternal.h"
 #include "string"
 #include <vector>
@@ -46,20 +46,20 @@ bool NonSearchableAttributeExpressionFilterInternal::doPass(Schema * schema, For
     }
 
     // now fetch the values of different attributes from forward index
-    vector<Score> scores;
+    vector<TypedValue> typedValues;
     bool isValid = false;
     const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
     ASSERT(isValid);
     const Byte * nonSearchableAttributesData = list->getNonSearchableAttributeContainer();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,nonSearchableAttributesData ,&scores);
+    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,nonSearchableAttributesData ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]
-    map<string, Score> valuesForEvaluation;
+    map<string, TypedValue> valuesForEvaluation;
     // prepare the evaluator input
     unsigned scoresIndex =0;
     for(vector<string>::iterator attr = attributes.begin() ; attr != attributes.end() ; ++attr ){
-        valuesForEvaluation[*attr] = scores.at(scoresIndex);
+        valuesForEvaluation[*attr] = typedValues.at(scoresIndex);
         scoresIndex++;
     }
     return filter->evaluator->evaluate(valuesForEvaluation);
