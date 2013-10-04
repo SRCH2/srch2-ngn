@@ -1178,7 +1178,7 @@ float pingToGetTopScore(const Analyzer *analyzer, IndexSearcher *indexSearcher, 
     indexSearcher->search(query, queryResults, 10);
     //printResults(queryResults);
 
-    float resultValue = queryResults->getResultScore(0).getFloatScore();
+    float resultValue = queryResults->getResultScore(0).getFloatTypedValue();
     delete queryResults;
     delete query;
     return resultValue;

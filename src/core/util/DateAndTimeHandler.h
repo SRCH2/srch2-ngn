@@ -20,7 +20,7 @@
 #define __WRAPPER_DATEANDTIMEHANDLER_H__
 
 #include "instantsearch/Constants.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 #include <string>
 #include <cstdlib>

@@ -26,7 +26,7 @@
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 namespace srch2
 {
@@ -36,7 +36,7 @@ namespace instantsearch
 class SortEvaluator
 {
 public:
-	virtual int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const = 0 ;
+	virtual int compare(const std::map<std::string, TypedValue> & left,const std::map<std::string, TypedValue> & right) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;

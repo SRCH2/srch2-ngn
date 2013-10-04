@@ -25,7 +25,7 @@
 #include "operation/TermVirtualList.h"
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
-#include <instantsearch/Score.h>
+#include <instantsearch/TypedValue.h>
 
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
@@ -54,14 +54,14 @@ class QueryResult {
 public:
     string externalRecordId;
     unsigned internalRecordId;
-    Score _score;
+    TypedValue _score;
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
-    std::map<std::string,Score> valuesOfParticipatingNonSearchableAttributes;
+    std::map<std::string,TypedValue> valuesOfParticipatingNonSearchableAttributes;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
-    Score getResultScore() const
+    TypedValue getResultScore() const
     {
     	return _score;
     }
@@ -89,8 +89,8 @@ public:
       float leftRecordScore, rightRecordScore;
       unsigned leftRecordId  = lhs->internalRecordId;
       unsigned rightRecordId = rhs->internalRecordId;
-		Score _leftRecordScore = lhs->_score;
-		Score _rightRecordScore = rhs->_score;
+		TypedValue _leftRecordScore = lhs->_score;
+		TypedValue _rightRecordScore = rhs->_score;
 		return DefaultTopKRanker::compareRecordsGreaterThan(_leftRecordScore,  leftRecordId,
 		                                    _rightRecordScore, rightRecordId);
   }

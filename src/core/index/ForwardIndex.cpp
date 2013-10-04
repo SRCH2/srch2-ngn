@@ -214,7 +214,7 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 //TODO check bounds
 //   return this->keywordIdVector->at(cursor);
 //}
-Score ForwardList::getForwardListNonSearchableAttributeScore(
+TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
         const SchemaInternal* schemaInternal,
         unsigned schemaNonSearchableAttributeId) const {
 
@@ -225,27 +225,27 @@ Score ForwardList::getForwardListNonSearchableAttributeScore(
     FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(
             schemaNonSearchableAttributeId);
 
-    Score score;
+    TypedValue typedValue;
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			score.setScore(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			score.setScore(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			score.setScore(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			score.setScore(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);
 			break;
 	}
 
-    return score;
+    return typedValue;
 
 }
 

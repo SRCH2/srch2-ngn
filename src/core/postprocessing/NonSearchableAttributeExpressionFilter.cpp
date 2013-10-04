@@ -28,7 +28,7 @@
 #include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "instantsearch/QueryResults.h"
 
 namespace srch2

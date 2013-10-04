@@ -27,7 +27,7 @@
 #include <algorithm>
 #include "ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "instantsearch/IndexSearcher.h"
 #include <instantsearch/Constants.h>
 
