@@ -115,7 +115,6 @@ pthread_mutex_t msg_mutex = PTHREAD_MUTEX_INITIALIZER;
 int token = 0;
 
 
-//Create Index "A". Deserialise "A". Update Index "A". Search "A". Serialize "A"
 void testRead(Indexer *indexer)
 {
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
@@ -296,14 +295,9 @@ void* writerWithMutex(void *arg)
 
 void* reader(void *arg)
 {
-    //parm *p = (parm *) arg;
-    //int id = p->id;
-    // printf("READER: Thread %d.\n", p->id);
 	Indexer * indexer = (Indexer *) arg;
     testRead(indexer);
-    //sleep(6);
     sleep(2);
-    // printf("READ:Entering Thread id %d. Run 2.\n", id);
     testRead(indexer);
     return NULL;
 }

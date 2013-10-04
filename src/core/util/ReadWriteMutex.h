@@ -110,10 +110,14 @@ public:
     ~ReadWriteMutex() {
 
     	/*
-    	 *  Semaphore created by sem_open should be closed vis sem_close(). sem_unlink removes
+    	 *  Semaphore created by sem_open should be closed via sem_close(). sem_unlink removes
     	 *  the semaphore's name from the system. Although we create a unique semaphore name for
     	 *  each ReadWriteMutex object , we should unlink the semaphore for better clean up.
-    	 *  Caution: sem_destroy should not called on named semaphore.
+    	 *  Caution: sem_destroy should not called on named semaphore. It should be called only
+    	 *  on semaphore created by sem_init(). calling sem_destroy on semaphore created by sem_open
+    	 *  has undefined behavior in certain unix implementations. On MacOSX the semaphore is not
+    	 *  destroyed.
+    	 *  http://pubs.opengroup.org/onlinepubs/007908775/xsh/sem_destroy.html
     	 */
         sem_close(m_semaphore);
         sem_unlink(semaphoreName);
