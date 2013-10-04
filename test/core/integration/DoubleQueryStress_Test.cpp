@@ -116,6 +116,8 @@ int main(int argc, char **argv)
         }
         delete indexSearcher;
         delete analyzer;
+        delete indexer;
+        delete cache;
     }
 
     clock_gettime(CLOCK_REALTIME, &tend);

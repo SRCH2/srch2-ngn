@@ -107,9 +107,8 @@ typedef struct
 {
     int id;
     int nproc;
+    Indexer *indexer;
 } parm;
-
-Indexer *indexer;
 
 //char message[100];    /* storage for message  */
 pthread_mutex_t msg_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -119,13 +118,6 @@ int token = 0;
 //Create Index "A". Deserialise "A". Update Index "A". Search "A". Serialize "A"
 void testRead(Indexer *indexer)
 {
-    // Create an index writer
-    unsigned mergeEveryNSeconds = 3;    
-    unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-           
-    indexer = Indexer::load(indexMetaData1);
-
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
     const Analyzer *analyzer = getAnalyzer();
 
@@ -254,6 +246,7 @@ void* writerWithMutex(void *arg)
     parm *p = (parm *) arg;
     int id = p->id;
     int i;
+    Indexer *indexer = p->indexer;
 
     //printf("WRITER Thread %d.\n", id);
 
@@ -306,6 +299,7 @@ void* reader(void *arg)
     //parm *p = (parm *) arg;
     //int id = p->id;
     // printf("READER: Thread %d.\n", p->id);
+	Indexer * indexer = (Indexer *) arg;
     testRead(indexer);
     //sleep(6);
     sleep(2);
@@ -318,7 +312,6 @@ void test0()
 {
     pthread_t *threadReaders;
     pthread_attr_t pthread_custom_attr;
-    parm *p;
     int n, i;
     n = 40;
 
@@ -327,20 +320,16 @@ void test0()
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-    indexer = Indexer::load(indexMetaData1);
+    Indexer *indexer = Indexer::load(indexMetaData1);
 
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
 
     pthread_attr_init(&pthread_custom_attr);
 
-    p=(parm *)malloc(sizeof(parm)*n);
-
     // Start up thread
     for (i = 0; i < n; i++)
     {
-        p[i].id = i;
-        p[i].nproc = n;
-        pthread_create(&threadReaders[i], &pthread_custom_attr, reader, (void *)(p+i));
+        pthread_create(&threadReaders[i], &pthread_custom_attr, reader, (void *)indexer);
     }
 
     // Synchronize the completion of each thread.
@@ -348,7 +337,6 @@ void test0()
     {
         pthread_join(threadReaders[i], NULL);
     }
-    free(p);
 
     delete indexer;
 }
@@ -373,7 +361,7 @@ void test1()
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-    indexer = Indexer::load(indexMetaData1);
+    Indexer * indexer = Indexer::load(indexMetaData1);
 
     threadReaders1 = (pthread_t *) malloc(n * sizeof(*threadReaders1));
     //threadReaders2 = (pthread_t *) malloc(n * sizeof(*threadReaders2));
@@ -388,14 +376,15 @@ void test1()
     {
         p[i].id = i;
         p[i].nproc = n;
-
-        pthread_create(&threadReaders1[i], &pthread_custom_attr, reader, (void *)(p+i));
+        p[i].indexer = indexer;
+        pthread_create(&threadReaders1[i], &pthread_custom_attr, reader, (void *)indexer);
         //pthread_create(&threadReaders2[i], &pthread_custom_attr, reader, (void *)(p+i));
     }
 
     // start writer
     p[n-1].id = n-1;
     p[n-1].nproc = n;
+    p[n-1].indexer = indexer;
     pthread_create(&threadWriter, &pthread_custom_attr, writerWithMutex, (void *)(p+n-1));
 
     // Synchronize the completion of each thread.
@@ -433,7 +422,7 @@ void test2()
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-    indexer = Indexer::load(indexMetaData1);
+    Indexer* indexer = Indexer::load(indexMetaData1);
     
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
     threadWriters = (pthread_t *) malloc(n * sizeof(*threadWriters));
@@ -446,7 +435,8 @@ void test2()
     for (i = 0; i < n; i++) {
         p[i].id = i;
         p[i].nproc = n;
-        pthread_create(&threadReaders[i], &pthread_custom_attr, reader, (void *)(p+i));
+        p[i].indexer = indexer;
+        pthread_create(&threadReaders[i], &pthread_custom_attr, reader, (void *)indexer);
         pthread_create(&threadWriters[i], &pthread_custom_attr, writerWithMutex, (void *)(p+i)); 
     }
 
@@ -462,6 +452,7 @@ void test2()
 
 int main(int argc, char *argv[])
 {
+	try{
     // multiple readers
     cout << "Case 0: Multiple Readers - Testing..." << endl;
     test0();
@@ -476,6 +467,8 @@ int main(int argc, char *argv[])
     cout << "Case 2: Mulitple Readers and Multiple writers - Testing..." << endl;
     test2();
     cout << "Test2 Passed" << endl;
-
+	}catch(const exception& ex) {
+		cout << ex.what() << endl;
+	}
     return 0;
 }

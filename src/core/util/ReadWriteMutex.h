@@ -108,7 +108,15 @@ public:
     }
 
     ~ReadWriteMutex() {
-        sem_destroy(m_semaphore);
+
+    	/*
+    	 *  Semaphore created by sem_open should be closed vis sem_close(). sem_unlink removes
+    	 *  the semaphore's name from the system. Although we create a unique semaphore name for
+    	 *  each ReadWriteMutex object , we should unlink the semaphore for better clean up.
+    	 *  Caution: sem_destroy should not called on named semaphore.
+    	 */
+        sem_close(m_semaphore);
+        sem_unlink(semaphoreName);
         //pthread_spin_destroy(&m_spinlock);
         pthread_mutex_destroy(&mutex);
     }
