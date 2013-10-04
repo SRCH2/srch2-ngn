@@ -100,8 +100,8 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
         const ForwardList * list = forwardIndex->getForwardList(queryResult->internalRecordId, isValid);
         ASSERT(isValid);
         const Byte * nonSearchableAttributesData =
-                list->getNonSearchableAttributeContainer();
-        // now get the values from the container
+                list->getNonSearchableAttributeContainerData();
+        // now parse the values by VariableLengthAttributeContainer
         vector<TypedValue> typedValues;
         VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , nonSearchableAttributesData,&typedValues);
         // save the values in QueryResult objects

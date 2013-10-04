@@ -120,7 +120,7 @@ public:
         return VariableLengthAttributeContainer::getAttribute(iter, schema, this->nonSearchableAttributeValuesData);
     }
 
-    const Byte * getNonSearchableAttributeContainer() const {
+    const Byte * getNonSearchableAttributeContainerData() const {
         return nonSearchableAttributeValuesData;
     }
 

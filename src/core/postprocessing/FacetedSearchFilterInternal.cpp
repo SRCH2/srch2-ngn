@@ -244,7 +244,7 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
                 queryResult->internalRecordId, isValid);
         ASSERT(isValid);
         const Byte * nonSearchableAttributesData =
-                list->getNonSearchableAttributeContainer();
+                list->getNonSearchableAttributeContainerData();
         // this vector is parallel to attributeIds vector
         std::vector<TypedValue> attributeDataValues;
         VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,nonSearchableAttributesData, &attributeDataValues);

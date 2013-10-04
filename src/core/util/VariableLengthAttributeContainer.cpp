@@ -410,7 +410,7 @@ std::string VariableLengthAttributeContainer::convertByteArrayToString(
     return result;
 }
 
-void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
+void VariableLengthAttributeContainer::convertByteArrayToTypedValue(FilterType type,
         unsigned startOffset, const Byte * data, TypedValue * result) {
     unsigned intValue = 0;
     float floatValue = 0;

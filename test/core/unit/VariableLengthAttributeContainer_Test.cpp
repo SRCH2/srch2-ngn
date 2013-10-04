@@ -155,8 +155,6 @@ void test_1(){
 
 int main(int argc, char *argv[]){
 
-
-//	test_1();
 	test_1();
 
     cout << "Variable Length Attribute Container unit tests : Passed" << endl;

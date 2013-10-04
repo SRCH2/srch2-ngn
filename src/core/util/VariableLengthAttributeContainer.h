@@ -35,7 +35,6 @@
 #define Byte unsigned char
 namespace srch2 {
 namespace instantsearch {
-#define Byte unsigned char
 /*
  * This class implements a directory-less variable length encoding. It has a Byte array which keeps
  * the values of the fields. The encoding uses sizeof(unsigned), sizeof(float) and sizeof(long) bytes
@@ -51,9 +50,11 @@ class VariableLengthAttributeContainer {
 public:
 
     // fills the container with the values
+	// Byte *& data is a pass by reference of a pointer variable, data will be allocated and set in this function.
     static void fill(const Schema * schema,const vector<string> & nonSearchableAttributeValues, Byte *& data, unsigned & dataSize);
 
     // deallocates the data and clears the container. After calling this function it can be filled again.
+	// Byte *& data is a pass by reference of a pointer variable, data will be deallocated and set to NULL in this function.
     static void clear(Byte *& data , unsigned dataSize);
     // gets string representation of the attribute value
     static std::string getAttribute(unsigned nonSearchableAttributeIndex,
@@ -66,7 +67,7 @@ public:
     // gets values of attributes in iters in Score objects. iters must be ascending.
     static void getBatchOfAttributes(
             const std::vector<unsigned> & nonSearchableAttributeIndexs,
-            const Schema * schema, const Byte * data, std::vector<TypedValues> * scores);
+            const Schema * schema, const Byte * data, std::vector<TypedValue> * scores);
 
     static unsigned getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
             const Schema * schema, const Byte * data);
@@ -116,7 +117,7 @@ private:
     static std::string convertByteArrayToString(FilterType type,
             unsigned stringOffset, const Byte * data) ;
 
-    static void convertByteArrayToScore(FilterType type, unsigned startOffset, const Byte * data,
+    static void convertByteArrayToTypedValue(FilterType type, unsigned startOffset, const Byte * data,
             TypedValue * result) ;
 
 };

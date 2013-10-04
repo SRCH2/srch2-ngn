@@ -229,16 +229,16 @@ TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			score.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			score.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			score.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			score.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);
@@ -876,6 +876,7 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
 void ForwardList::setPositionIndex(vector<uint8_t>& v){
 	if(positionIndex != NULL){
 		delete positionIndex;
+		positionIndex = NULL;
 	}
 	positionIndexSize = v.size();
 	positionIndex = new uint8_t[positionIndexSize];
