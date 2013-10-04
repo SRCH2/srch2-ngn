@@ -95,12 +95,12 @@ std::string VariableLengthAttributeContainer::getAttribute(
 }
 // gets the attribute value wrapped in a Score object
 void VariableLengthAttributeContainer::getAttribute(const unsigned nonSearchableAttributeIndex,
-        const Schema * schema, Score * score) const {
+        const Schema * schema, TypedValue * typedValue) const {
     unsigned startOffset = 0;
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
-            convertByteArrayToScore(type ,startOffset , score );
+            convertByteArrayToTypedValue(type ,startOffset , typedValue );
             return;
         }else{ // skip this attribute
             unsigned numberOfBytesToSkip = getSizeOfNonSearchableAttributeValueInData(type , startOffset);
@@ -113,9 +113,9 @@ void VariableLengthAttributeContainer::getAttribute(const unsigned nonSearchable
 // gets values of attributes in iters in Score objects. iters must be ascending.
 void VariableLengthAttributeContainer::getBatchOfAttributes(
         const std::vector<unsigned> & nonSearchableAttributeIndexesArg, const Schema * schema,
-        std::vector<Score> * scoresArg) const {
+        std::vector<TypedValue> * typedValuesArg) const {
 
-    std::vector<Score> scores;
+    std::vector<TypedValue> typedValues;
     std::vector<unsigned> nonSearchableAttributeIndexes = nonSearchableAttributeIndexesArg;
 
     // first make sure input IDs are sorted.
@@ -126,9 +126,9 @@ void VariableLengthAttributeContainer::getBatchOfAttributes(
         FilterType type = getAttributeType(nonSearchableAttributeIndex , schema);
         if(find(nonSearchableAttributeIndexes.begin()
                 ,nonSearchableAttributeIndexes.end() , nonSearchableAttributeIndex) != nonSearchableAttributeIndexes.end()){ // index is among requested indexes
-            Score attributeValue;
-            convertByteArrayToScore(type , startOffset , &attributeValue);
-            scores.push_back(attributeValue);
+        	TypedValue attributeValue;
+            convertByteArrayToTypedValue(type , startOffset , &attributeValue);
+            typedValues.push_back(attributeValue);
             // also must move the startOffset forward
             unsigned numberOfBytesToSkip = getSizeOfNonSearchableAttributeValueInData(type , startOffset );
             startOffset += numberOfBytesToSkip;
@@ -145,7 +145,7 @@ void VariableLengthAttributeContainer::getBatchOfAttributes(
                 std::distance(
                         nonSearchableAttributeIndexes.begin(),
                         std::find(nonSearchableAttributeIndexes.begin() , nonSearchableAttributeIndexes.end() , *originalID ));
-        scoresArg->push_back(scores.at(indexOfOriginalIDInNewVector));
+        typedValuesArg->push_back(typedValues.at(indexOfOriginalIDInNewVector));
     }
 }
 
@@ -421,8 +421,8 @@ std::string VariableLengthAttributeContainer::convertByteArrayToString(
     return result;
 }
 
-void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
-        unsigned startOffset, Score * result) const {
+void VariableLengthAttributeContainer::convertByteArrayToTypedValue(FilterType type,
+        unsigned startOffset, TypedValue * result) const {
     unsigned intValue = 0;
     float floatValue = 0;
     long longValue = 0;
@@ -431,11 +431,11 @@ void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
     switch (type) {
     case ATTRIBUTE_TYPE_UNSIGNED:
         intValue = convertByteArrayToUnsigned(startOffset);
-        result->setScore(intValue);
+        result->setTypedValue(intValue);
         break;
     case ATTRIBUTE_TYPE_FLOAT:
         floatValue = convertByteArrayToFloat(startOffset);
-        result->setScore(floatValue);
+        result->setTypedValue(floatValue);
         break;
     case ATTRIBUTE_TYPE_TEXT:
         sizeOfString = convertByteArrayToUnsigned(startOffset);
@@ -443,11 +443,11 @@ void VariableLengthAttributeContainer::convertByteArrayToScore(FilterType type,
         for (int i = 0; i < sizeOfString; i++) {
             stringValue.push_back(this->data[startOffset + i]);
         }
-        result->setScore(stringValue);
+        result->setTypedValue(stringValue);
         break;
     case ATTRIBUTE_TYPE_TIME:
         longValue = convertByteArrayToLong(startOffset);
-        result->setScore(longValue);
+        result->setTypedValue(longValue);
         break;
     case ATTRIBUTE_TYPE_DURATION:
     	ASSERT(false);

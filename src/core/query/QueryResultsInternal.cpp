@@ -145,9 +145,9 @@ bool QueryResultsInternal::hasTopK(const float maxScoreForUnvisitedRecords) {
     if (this->nextKResultsHeap.size() == 0) {
         return false;
     }
-    Score tempScore = this->nextKResultsHeap.top()->getResultScore();
-    ASSERT(tempScore.getType() == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT);
-    temp1 = tempScore.getFloatScore();
+    TypedValue tempTypedValue = this->nextKResultsHeap.top()->getResultScore();
+    ASSERT(tempTypedValue.getType() == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT);
+    temp1 = tempTypedValue.getFloatTypedValue();
     temp2 = maxScoreForUnvisitedRecords;
     if ((this->nextKResultsHeap.size() == this->nextK) && (temp1 >= temp2))
         return true;
@@ -196,7 +196,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
             qs->externalRecordId = externalRecordId;
             qs->internalRecordId = this->nextKResultsHeap.top()
                     ->internalRecordId;
-            qs->_score.setScore(this->nextKResultsHeap.top()->_score); //TODO
+            qs->_score.setTypedValue(this->nextKResultsHeap.top()->_score); //TODO
             qs->matchingKeywords.assign(
                     this->nextKResultsHeap.top()->matchingKeywords.begin(),
                     this->nextKResultsHeap.top()->matchingKeywords.end());

@@ -24,7 +24,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "operation/IndexSearcherInternal.h"
 
 namespace srch2 {
@@ -40,7 +40,7 @@ namespace instantsearch {
 class FacetHelper
 {
 public:
-	virtual std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) = 0;
+	virtual std::pair<unsigned , std::string> generateIDAndName(const TypedValue & attributeValue) = 0;
 	virtual void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) = 0;
 	virtual void initialize(const std::string * facetInfoForInitialization , const Schema * schema) = 0;
 
@@ -54,7 +54,7 @@ public:
 class CategoricalFacetHelper : public FacetHelper
 {
 public:
-	std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) ;
+	std::pair<unsigned , std::string> generateIDAndName(const TypedValue & attributeValue) ;
 	void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) ;
 	void initialize(const std::string * facetInfoForInitialization , const Schema * schema) ;
 
@@ -70,12 +70,12 @@ public:
 	RangeFacetHelper(){
 		generateListOfIdsAndNamesFlag = false;
 	}
-	std::pair<unsigned , std::string> generateIDAndName(const Score & attributeValue) ;
+	std::pair<unsigned , std::string> generateIDAndName(const TypedValue & attributeValue) ;
 	void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) ;
 	void initialize(const std::string * facetInfoForInitialization , const Schema * schema) ;
 
 private:
-	Score start, end, gap;
+	TypedValue start, end, gap;
 	unsigned numberOfBuckets;
 	bool generateListOfIdsAndNamesFlag;
 };
@@ -156,7 +156,7 @@ public:
     void doFilter(IndexSearcher *indexSearcher,
             const Query * query, QueryResults * input, QueryResults * output) ;
     void preFilter(IndexSearcher *indexSearcher);
-    void doProcessOneResult(const Score & attributeValue, const unsigned facetFieldIndex);
+    void doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex);
 
     void initialize(std::vector<FacetType> & facetTypes,
             std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,

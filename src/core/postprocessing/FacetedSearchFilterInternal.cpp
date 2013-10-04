@@ -23,7 +23,7 @@
 #include <string>
 #include <algorithm>
 #include "util/Assert.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 using namespace std;
 namespace srch2 {
@@ -98,7 +98,7 @@ void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::s
 }
 
 
-std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(const Score & attributeValue){
+std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(const TypedValue & attributeValue){
 	std::string attributeValueLowerCase = attributeValue.toString();
 	std::transform(attributeValueLowerCase.begin(), attributeValueLowerCase.end(), attributeValueLowerCase.begin(), ::tolower);
 
@@ -119,7 +119,7 @@ void CategoricalFacetHelper::initialize(const std::string * facetInfoForInitiali
  * This function finds the interval in which attributeValue is placed. ID and name will be returned. since all the names are returned once
  * in generateListOfIdsAndNames, all names are returned as "" to save copying string values.
  */
-std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const Score & attributeValue){
+std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const TypedValue & attributeValue){
 	if(attributeValue >= end){
 		return std::make_pair(numberOfBuckets-1 , "");
 	}
@@ -147,8 +147,8 @@ void RangeFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned,
 		ASSERT(false);
 		return;
 	}
-	Score lowerBoundToAdd = start;
-    std::vector<Score> lowerBounds;
+	TypedValue lowerBoundToAdd = start;
+    std::vector<TypedValue> lowerBounds;
 	// Example : start : 1, gap : 10 , end : 100
 	// first -large_value is added as the first category
 	// then 1, 11, 21, ...and 91 are added in the loop.
@@ -185,25 +185,25 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 
     FilterType attributeType = schema->getTypeOfNonSearchableAttribute(
             schema->getNonSearchableAttributeId(fieldName));
-    start.setScore(attributeType, startString);
+    start.setTypedValue(attributeType, startString);
 
-    end.setScore(attributeType, endString);
+    end.setTypedValue(attributeType, endString);
 
     if(attributeType == ATTRIBUTE_TYPE_TIME){
     	// For time attributes gap should not be of the same type, it should be
     	// of type TimeDuration.
     	if(start > end){ // start should not be greater than end
     		start = end;
-    		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");
+    		gap.setTypedValue(ATTRIBUTE_TYPE_DURATION, "00:00:00");
     	}else{
-    		gap.setScore(ATTRIBUTE_TYPE_DURATION, gapString);
+    		gap.setTypedValue(ATTRIBUTE_TYPE_DURATION, gapString);
     	}
     }else{
     	if(start > end){ // start should not be greater than end
     		start = end;
-    		gap.setScore(attributeType , "0");
+    		gap.setTypedValue(attributeType , "0");
     	}else{
-    		gap.setScore(attributeType, gapString);
+    		gap.setTypedValue(attributeType, gapString);
     	}
     }
 
@@ -246,13 +246,13 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
         const VariableLengthAttributeContainer * nonSearchableAttributes =
                 list->getNonSearchableAttributeContainer();
         // this vector is parallel to attributeIds vector
-        std::vector<Score> attributeDataValues;
+        std::vector<TypedValue> attributeDataValues;
         nonSearchableAttributes->getBatchOfAttributes(attributeIds, schema, &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
         for(std::vector<std::string>::iterator facetField = fields.begin();
                 facetField != fields.end() ; ++facetField){
-            Score & attributeValue = attributeDataValues.at(
+        	TypedValue & attributeValue = attributeDataValues.at(
                                    std::distance(fields.begin() , facetField));
             // choose the type of aggregation for this attribute
             // increments the correct facet by one
@@ -306,7 +306,7 @@ void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
 
 	}
 }
-void FacetedSearchFilterInternal::doProcessOneResult(const Score & attributeValue, const unsigned facetFieldIndex){
+void FacetedSearchFilterInternal::doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex){
 	std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
 	this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
 }

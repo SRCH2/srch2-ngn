@@ -26,7 +26,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include "ParserUtility.h"
-#include <instantsearch/Score.h>
+#include <instantsearch/TypedValue.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/NonSearchableAttributeExpressionFilter.h>
 #include "instantsearch/Schema.h"
@@ -40,7 +40,7 @@
 
 
 using namespace std;
-using srch2::instantsearch::Score;
+using srch2::instantsearch::TypedValue;
 using srch2::instantsearch::FilterType;
 using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
 using srch2::instantsearch::BooleanOperation;
@@ -60,7 +60,7 @@ public:
     virtual bool validate(const Schema & schema) = 0;
 
     virtual bool evaluate(
-            std::map<std::string, Score> & nonSearchableAttributeValues)= 0;
+            std::map<std::string, TypedValue> & nonSearchableAttributeValues)= 0;
 
     virtual ~QueryExpression() {
     }
@@ -168,15 +168,15 @@ public:
      * it is in the range or not. The interval is closed.
      * For example: a result with value 10 returns true for range [10 TO *]
      */
-    bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
+    bool evaluate(std::map<std::string, TypedValue> & nonSearchableAttributeValues) {
         // first find the value coming from the record
-        Score value = nonSearchableAttributeValues[this->attributeName];
+        TypedValue value = nonSearchableAttributeValues[this->attributeName];
         bool lowerBoundCheck = false;
         if (attributeValueLower.compare("*") == 0) {
             lowerBoundCheck = true;
         } else {
-            Score lowerBound;
-            lowerBound.setScore(value.getType(), attributeValueLower);
+            TypedValue lowerBound;
+            lowerBound.setTypedValue(value.getType(), attributeValueLower);
             lowerBoundCheck = (lowerBound <= value);
         }
 
@@ -184,8 +184,8 @@ public:
         if (attributeValueUpper.compare("*") == 0) {
             upperBoundCheck = true;
         } else {
-            Score upperBound;
-            upperBound.setScore(value.getType(), attributeValueUpper);
+            TypedValue upperBound;
+            upperBound.setTypedValue(value.getType(), attributeValueUpper);
             upperBoundCheck = (value <= upperBound);
         }
 
@@ -297,7 +297,7 @@ public:
         return true;
     }
 
-    bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
+    bool evaluate(std::map<std::string, TypedValue> & nonSearchableAttributeValues) {
 
         // Compatible with SOLR : * means anything not empty.
         // Because the actual value can contain * if range bound is * we change it
@@ -307,15 +307,15 @@ public:
             negative = !negative;
         }
         // first find the value coming from the record
-        Score value = nonSearchableAttributeValues[this->attributeName];
+        TypedValue value = nonSearchableAttributeValues[this->attributeName];
 
         if (attributeValue.compare("") == 0
                 && (value.getType() == srch2is::ATTRIBUTE_TYPE_UNSIGNED
                         || value.getType() == srch2is::ATTRIBUTE_TYPE_FLOAT)) {
             attributeValue = value.minimumValue().toString() + "";
         }
-        Score valueToCheck;
-        valueToCheck.setScore(value.getType(), attributeValue);
+        TypedValue valueToCheck;
+        valueToCheck.setTypedValue(value.getType(), attributeValue);
 
         bool result = (value == valueToCheck);
         if (!negative) { // no '-' in the beginning of the field
@@ -336,7 +336,7 @@ private:
 };
 
 // this class gets a string which is an expression of nuon-searchable attribute names,it evluates the expression
-// based on the Score value of those attributes coming from records.
+// based on the TypedValue value of those attributes coming from records.
 // NOTE: the expressions only must be based on UNSIGNED or FLOAT non-searchable attributes.
 /*
  * Exmaple of ComplexQueryExpression is boolexp$price - discount < income * rate$
@@ -409,7 +409,7 @@ public:
         return expressionParser.compile(parsedExpression, expression);
     }
 
-    bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
+    bool evaluate(std::map<std::string, TypedValue> & nonSearchableAttributeValues) {
         // set values of variables
         for (std::map<std::string, double>::iterator symbol = symbolVariables
                 .begin(); symbol != symbolVariables.end(); ++symbol) {
@@ -447,7 +447,7 @@ public:
     void setOperation(BooleanOperation op) {
         this->termFQBooleanOperator = op;
     }
-    bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) {
+    bool evaluate(std::map<std::string, TypedValue> & nonSearchableAttributeValues) {
         switch (this->termFQBooleanOperator) {
         case srch2::instantsearch::BooleanOperatorAND:
             for (std::vector<QueryExpression *>::iterator criterion =

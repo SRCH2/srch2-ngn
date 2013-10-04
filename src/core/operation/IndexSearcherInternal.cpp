@@ -20,7 +20,7 @@
 
 #include <instantsearch/Query.h>
 #include <instantsearch/Ranker.h>
-#include <instantsearch/Score.h>
+#include <instantsearch/TypedValue.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
 #include "operation/IndexerInternal.h"
@@ -142,7 +142,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         while ((recordID = getNextRecordID(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS) {
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
             queryResult->internalRecordId = recordID;                       // keep the internalRecordId
-            queryResult->_score.setScore(1.0);                              // since we can't make a difference of these record, we give them the same score
+            queryResult->_score.setTypedValue(1.0);                              // since we can't make a difference of these record, we give them the same score
             queryResult->matchingKeywords = queryResultMatchingKeywords;    // The matching words will also be the same with search query
             queryResult->attributeBitmaps = queryResultBitmaps;             // We lose the Bitmaps the keywords mathched
             queryResult->editDistances = queryResultEditDistances;          // and also the edit distance
@@ -225,7 +225,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
                     queryResult->internalRecordId = internalRecordId;
                     //unsigned sumOfEditDistances = std::accumulate(queryResultEditDistances.begin(),
                     //                          queryResultEditDistances.end(), 0);
-                    queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
+                    queryResult->_score.setTypedValue(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
                     //We compute the score for this query result here. This score will be used later to sort the results.
                     //    query->getRanker()->computeResultScoreUsingAttributeScore(query, recordScore,
                     //                                  sumOfEditDistances,
@@ -424,7 +424,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             bool forwardListValid = false;
             this->indexData->forwardIndex->getForwardList(internalRecordId, forwardListValid);
             if (forwardListValid) {
-                queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
+                queryResult->_score.setTypedValue(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));
                 queryResult->matchingKeywords = queryResultMatchingKeywords;
                 queryResult->attributeBitmaps = queryResultAttributeBitmaps;
                 queryResult->editDistances = queryResultEditDistances;
@@ -497,7 +497,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
                         queryResult->internalRecordId = internalRecordId;
 
-                        queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
+                        queryResult->_score.setTypedValue(query->getRanker()->computeOverallRecordScore(query, queryResultTermScores));//TODO
                         queryResult->matchingKeywords = queryResultMatchingKeywords;
                         queryResult->attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult->editDistances = queryResultEditDistances;
@@ -636,7 +636,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         // add this record to topK results if its score is good enough
                         QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
                         queryResult->internalRecordId = internalRecordId;
-                        queryResult->_score.setScore(query->getRanker()->computeOverallRecordScore(query,queryResultTermScores));//TODO
+                        queryResult->_score.setTypedValue(query->getRanker()->computeOverallRecordScore(query,queryResultTermScores));//TODO
                         queryResult->matchingKeywords = queryResultMatchingKeywords;
                         queryResult->attributeBitmaps = queryResultAttributeBitmaps;
                         queryResult->editDistances = queryResultEditDistances;
@@ -783,7 +783,7 @@ void IndexSearcherInternal::search(const std::string & primaryKey, QueryResults 
 	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
 	queryResult->externalRecordId = primaryKey;
 	queryResult->internalRecordId = internalRecordId;
-	queryResult->_score.setScore((float)0.0);
+	queryResult->_score.setTypedValue((float)0.0);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
 	return;
 

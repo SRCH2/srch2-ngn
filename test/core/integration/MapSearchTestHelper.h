@@ -269,7 +269,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     indexSearcher->search(query, queryResults);
     //printGeoResults(queryResults);
 
-    float resVal = queryResults->getResultScore(0).getFloatScore();
+    float resVal = queryResults->getResultScore(0).getFloatTypedValue();
     delete queryResults;
     delete query;
     return resVal;

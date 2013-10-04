@@ -16,7 +16,7 @@
  */
 
 #include "util/VariableLengthAttributeContainer.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -137,7 +137,7 @@ void test_1(){
     vlac.clear();
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record6 , record6+10);
     vlac.fill(schema,nonSearchableAttributeValues);
-	std::vector<Score> results;
+	std::vector<TypedValue> results;
 	std::vector<unsigned> attributes;
 	attributes.push_back(2);
 	attributes.push_back(3);
@@ -145,11 +145,11 @@ void test_1(){
 	attributes.push_back(7);
 	attributes.push_back(8);
 	vlac.getBatchOfAttributes(attributes , schema, &results);
-	ASSERT(results.at(0).getTimeScore() == 20344567);
-	ASSERT(results.at(1).getTextScore().compare("Professor") == 0);
-	ASSERT(results.at(2).getIntScore() == 12000);
-	ASSERT(results.at(3).getTextScore().compare("Smith Patterson") == 0);
-	ASSERT(results.at(4).getIntScore() == 9835);
+	ASSERT(results.at(0).getTimeTypedValue() == 20344567);
+	ASSERT(results.at(1).getTextTypedValue().compare("Professor") == 0);
+	ASSERT(results.at(2).getIntTypedValue() == 12000);
+	ASSERT(results.at(3).getTextTypedValue().compare("Smith Patterson") == 0);
+	ASSERT(results.at(4).getIntTypedValue() == 9835);
 }
 
 int main(int argc, char *argv[]){

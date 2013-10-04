@@ -23,7 +23,7 @@
 
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/IndexSearcher.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 namespace srch2
 {
@@ -34,7 +34,7 @@ class NonSearchableAttributeExpressionFilterInternal;
 class NonSearchableAttributeExpressionEvaluator
 {
 public:
-	virtual bool evaluate(std::map<std::string, Score> & nonSearchableAttributeValues) = 0 ;
+	virtual bool evaluate(std::map<std::string, TypedValue> & nonSearchableAttributeValues) = 0 ;
 	virtual ~NonSearchableAttributeExpressionEvaluator(){};
 };
 

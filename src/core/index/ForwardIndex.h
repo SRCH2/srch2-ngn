@@ -37,7 +37,7 @@
 #include "util/encoding.h"
 #include "util/half.h"
 #include "util/VariableLengthAttributeContainer.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "util/mytime.h"
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
@@ -197,7 +197,7 @@ public:
 
     //unsigned getForwardListElement(unsigned cursor) const;
 
-    Score getForwardListNonSearchableAttributeScore(
+    TypedValue getForwardListNonSearchableAttributeScore(
             const SchemaInternal* schemaInternal,
             unsigned schemaNonSearchableAttributeId) const;
 
