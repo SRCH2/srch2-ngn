@@ -197,7 +197,7 @@ public:
 
     //unsigned getForwardListElement(unsigned cursor) const;
 
-    TypedValue getForwardListNonSearchableAttributeScore(
+    TypedValue getForwardListNonSearchableAttributeTypedValue(
             const SchemaInternal* schemaInternal,
             unsigned schemaNonSearchableAttributeId) const;
 

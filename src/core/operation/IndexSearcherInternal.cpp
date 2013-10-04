@@ -142,7 +142,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
         while ((recordID = getNextRecordID(virtualListVector)) != RecordIdSetIterator::NO_MORE_RECORDS) {
             QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
             queryResult->internalRecordId = recordID;                       // keep the internalRecordId
-            queryResult->_score.setTypedValue(1.0);                              // since we can't make a difference of these record, we give them the same score
+            queryResult->_score.setTypedValue(1.0);                              // since we can't make a difference of these records, we give them the same score
             queryResult->matchingKeywords = queryResultMatchingKeywords;    // The matching words will also be the same with search query
             queryResult->attributeBitmaps = queryResultBitmaps;             // We lose the Bitmaps the keywords mathched
             queryResult->editDistances = queryResultEditDistances;          // and also the edit distance

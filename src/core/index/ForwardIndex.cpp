@@ -214,7 +214,7 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 //TODO check bounds
 //   return this->keywordIdVector->at(cursor);
 //}
-TypedValue ForwardList::getForwardListNonSearchableAttributeScore(
+TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
         const SchemaInternal* schemaInternal,
         unsigned schemaNonSearchableAttributeId) const {
 

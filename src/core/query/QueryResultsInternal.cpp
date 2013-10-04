@@ -196,7 +196,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
             qs->externalRecordId = externalRecordId;
             qs->internalRecordId = this->nextKResultsHeap.top()
                     ->internalRecordId;
-            qs->_score.setTypedValue(this->nextKResultsHeap.top()->_score); //TODO
+            qs->_score.setTypedValue(this->nextKResultsHeap.top()->_score);
             qs->matchingKeywords.assign(
                     this->nextKResultsHeap.top()->matchingKeywords.begin(),
                     this->nextKResultsHeap.top()->matchingKeywords.end());
