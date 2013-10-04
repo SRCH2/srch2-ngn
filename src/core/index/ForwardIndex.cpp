@@ -229,16 +229,16 @@ TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , nonSearchableAttributeValuesData));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);
@@ -874,15 +874,8 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
 }
 
 void ForwardList::setPositionIndex(vector<uint8_t>& v){
-	if(positionIndex != NULL){
-		delete positionIndex;
-		positionIndex = NULL;
-	}
-	positionIndexSize = v.size();
-	positionIndex = new uint8_t[positionIndexSize];
-	for(int i=0;i<positionIndexSize;++i){
-		positionIndex[i] = v[i];
-	}
+	this->positionIndexSize = v.size();
+	appendPositionIndex(v);
 }
 unsigned getBitSet(unsigned number);
 unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
@@ -895,7 +888,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		return;
 	}
 
-	const uint8_t * piPtr = &positionIndex[0];  // pointer to position index for the record
+	const uint8_t * piPtr = &getPositionIndexPointer()[0];  // pointer to position index for the record
 	unsigned piOffset = 0;
 
 	if (*(piPtr + positionIndexSize - 1) & 0x80)
@@ -907,7 +900,8 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 	// get the correct byte array position for current keyword + attribute combination
 
 	for (unsigned j = 0; j < keyOffset ; ++j) {
-		currKeyattributeBitMap = keywordAttributeBitmaps[j];
+		currKeyattributeBitMap =
+			    getkKeywordAttributeBitmapsPointer()[j];
 		unsigned count = getBitSet(currKeyattributeBitMap);
 		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
@@ -916,7 +910,8 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 			piOffset += byteRead + value;
 		}
 	}
-	currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
+	currKeyattributeBitMap =
+		    getkKeywordAttributeBitmapsPointer()[keyOffset];
 	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
 	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
 

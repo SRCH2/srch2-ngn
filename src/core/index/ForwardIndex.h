@@ -117,56 +117,62 @@ public:
 
     const std::string getNonSearchableAttributeValue(unsigned iter,
             const Schema * schema) const {
-        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->nonSearchableAttributeValuesData);
+        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getNonSearchableAttributeValuesDataPointer());
     }
 
     const Byte * getNonSearchableAttributeContainerData() const {
-        return nonSearchableAttributeValuesData;
+        return getNonSearchableAttributeValuesDataPointer();
     }
 
 
     void setNonSearchableAttributeValues(const Schema * schema, const vector<string> & nonSearchableAttributeValues) {
-        VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues, this->nonSearchableAttributeValuesData , this->nonSearchableAttributeValuesDataSize);
+    	Byte * nonSearchableTempPointer = NULL;
+        VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues, nonSearchableTempPointer , this->nonSearchableAttributeValuesDataSize);
+        appendNonSearchableAttributeValuesData(nonSearchableTempPointer);
+        delete nonSearchableTempPointer;
     }
 
     const unsigned* getKeywordIds() const {
-        return keywordIds;
+        return getKeywordIdsPointer();
     }
 
     const unsigned getKeywordId(unsigned iter) const {
-        return keywordIds[iter];
+        return getKeywordIdsPointer()[iter];
     }
 
     void setKeywordId(unsigned iter, unsigned keywordId) {
         if (iter <= KEYWORD_THRESHOLD)
-            this->keywordIds[iter] = keywordId;
+            this->getKeywordIdsPointer()[iter] = keywordId;
     }
 
     const float getKeywordRecordStaticScore(unsigned iter) const {
-        return keywordRecordStaticScores[iter];
+        return getKeywordRecordStaticScoresPointer()[iter];
     }
 
     void setKeywordRecordStaticScore(unsigned iter, float keywordScore) {
         if (iter <= KEYWORD_THRESHOLD)
-            this->keywordRecordStaticScores[iter] = keywordScore;
+            this->getKeywordRecordStaticScoresPointer()[iter] = keywordScore;
     }
 
     unsigned* getKeywordAttributeBitmaps() const {
-        return keywordAttributeBitmaps;
+        return getkKeywordAttributeBitmapsPointer();
     }
 
     void setKeywordAttributeBitmaps(unsigned * keywordAttributeBitmaps) {
-        this->keywordAttributeBitmaps = keywordAttributeBitmaps;
+        appendKeywordAttributeBitmaps(keywordAttributeBitmaps);
+        if(keywordAttributeBitmaps != NULL){
+        	delete keywordAttributeBitmaps;
+        }
     }
 
     unsigned getKeywordAttributeBitmap(unsigned iter) const {
-        return keywordAttributeBitmaps[iter];
+        return getkKeywordAttributeBitmapsPointer()[iter];
     }
 
     void setKeywordAttributeBitmap(unsigned iter,
             unsigned keywordAttributeBitmap) {
         if (iter <= KEYWORD_THRESHOLD)
-            this->keywordAttributeBitmaps[iter] = keywordAttributeBitmap;
+            this->getkKeywordAttributeBitmapsPointer()[iter] = keywordAttributeBitmap;
     }
 
     //set the size of keywordIds and keywordRecordStaticScores to keywordListCapacity
@@ -178,30 +184,15 @@ public:
         numberOfKeywords = 0;
         recordBoost = 0.5;
         inMemoryData = "";
-        keywordIds = new unsigned[keywordListCapacity];
-        keywordRecordStaticScores = new half[keywordListCapacity];
-        keywordAttributeBitmaps = NULL;
-        nonSearchableAttributeValuesData = NULL;
+        dataSize = getKeywordIdsSizeInBytes(keywordListCapacity) + getKeywordRecordStaticScoresSizeInBytes(keywordListCapacity);
+        data = new Byte[dataSize];
         nonSearchableAttributeValuesDataSize = 0;
-        positionIndex = NULL;
         positionIndexSize = 0;
     }
 
     virtual ~ForwardList() {
-        if (keywordIds != NULL){
-            delete keywordIds;
-        }
-        if (keywordRecordStaticScores != NULL){
-            delete keywordRecordStaticScores;
-        }
-        if (keywordAttributeBitmaps != NULL){
-            delete keywordAttributeBitmaps;
-        }
-        if(nonSearchableAttributeValuesData != NULL){
-        	delete nonSearchableAttributeValuesData;
-        }
-        if(positionIndex != NULL){
-        	delete positionIndex;
+        if(data != NULL){
+        	delete data;
         }
     }
 
@@ -282,64 +273,22 @@ private:
         ar & this->recordBoost;
         ar & this->nonSearchableAttributeValuesDataSize;
         ar & this->positionIndexSize;
+        ar & this->dataSize;
         /*
          * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
          * scheme is :
          * first save/load the size of keywordAttributeBitmaps array, and then if size was not zero also save/load the array itself.
          *
          */
-        unsigned sizeOfKeywordAttributeBitmaps = 0;
-        if(this->keywordAttributeBitmaps != NULL){
-        	sizeOfKeywordAttributeBitmaps = this->getNumberOfKeywords();
-        }
-        ar & sizeOfKeywordAttributeBitmaps;
         // In loading process, we need to allocate space for the members first.
         if (load) {
-            this->keywordIds = new unsigned[this->getNumberOfKeywords()];
-            this->keywordRecordStaticScores =
-                    new half[this->getNumberOfKeywords()];
-            // check if it's an attribute based search
-            if (sizeOfKeywordAttributeBitmaps != 0) {
-                this->keywordAttributeBitmaps =
-                        new unsigned[this->getNumberOfKeywords()];
-            }else{
-            	 this->keywordAttributeBitmaps = NULL;
-            }
-            if(nonSearchableAttributeValuesDataSize != 0){
-            	this->nonSearchableAttributeValuesData = new Byte[this->nonSearchableAttributeValuesDataSize];
-            }else{
-            	this->nonSearchableAttributeValuesData = NULL;
-            }
-            if(positionIndexSize != 0){
-            	this->positionIndex = new uint8_t[positionIndexSize];
-            }else{
-            	this->positionIndex = NULL;
-            }
+        	this->data = new Byte[this->dataSize];
         }
         ar
-                & boost::serialization::make_array(this->keywordIds,
-                        this->getNumberOfKeywords());
-        ar
-                & boost::serialization::make_array(
-                        this->keywordRecordStaticScores,
-                        this->getNumberOfKeywords());
-        // check if it's an attribute based search
-        if (sizeOfKeywordAttributeBitmaps != 0) {
-            ar
-                    & boost::serialization::make_array(
-                            this->keywordAttributeBitmaps,
-                            this->getNumberOfKeywords());
-        }
+                & boost::serialization::make_array(this->data,
+                        this->dataSize);
         ar & this->externalRecordId;
         ar & this->inMemoryData;
-        ar
-                & boost::serialization::make_array(
-                        this->nonSearchableAttributeValuesData,
-                        this->nonSearchableAttributeValuesDataSize);
-        ar
-                & boost::serialization::make_array(
-                        this->positionIndex,
-                        this->positionIndexSize);
     }
 
     // members
@@ -347,16 +296,99 @@ private:
     half recordBoost;
     std::string externalRecordId;
     std::string inMemoryData;
-    unsigned* keywordIds;
-    half* keywordRecordStaticScores;
-
-    Byte * nonSearchableAttributeValuesData; // byte array to keep the data
 
     unsigned nonSearchableAttributeValuesDataSize;
-
-    unsigned* keywordAttributeBitmaps;
-    uint8_t * positionIndex;
     unsigned positionIndexSize;
+
+    Byte * data;
+    unsigned dataSize;
+
+
+    ///////////////////     Keyword IDs Helper Functions //////////////////////////////////////
+    unsigned * getKeywordIdsPointer() const{
+    	return (unsigned *)data;
+    }
+    unsigned getKeywordIdsSizeInBytes(unsigned sizeInUnsigned) const {
+    	return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
+    }
+    unsigned getKeywordIdsSizeInBytes() const {
+    	return getKeywordIdsSizeInBytes(this->getNumberOfKeywords());
+    }
+
+    ////////////////////  Keyword Record Static Scores Helper Fucntions /////////////////////////
+    half* getKeywordRecordStaticScoresPointer() const{
+    	return (half *)(data + getKeywordIdsSizeInBytes());
+    }
+    unsigned getKeywordRecordStaticScoresSizeInBytes(unsigned sizeInHalf) const {
+    	return sizeInHalf * (sizeof(half) / sizeof(Byte));
+    }
+    unsigned getKeywordRecordStaticScoresSizeInBytes() const {
+    	return getKeywordRecordStaticScoresSizeInBytes(this->getNumberOfKeywords());
+    }
+
+    //////////////// Non Searchable Attribute Values Helper Function /////////////////////////
+    Byte * getNonSearchableAttributeValuesDataPointer() const{
+    	return data +
+    			getKeywordIdsSizeInBytes() +
+    			getKeywordRecordStaticScoresSizeInBytes();
+    }
+    unsigned getNonSearchableAttributeValuesDataSize() const{
+    	return this->nonSearchableAttributeValuesDataSize;
+    }
+    void appendNonSearchableAttributeValuesData(Byte * nonSearchableAttributeValuesData) {
+    	Byte * newData = new Byte[dataSize + this->nonSearchableAttributeValuesDataSize];
+    	memcpy(newData , this->data , this->dataSize);
+    	memcpy(newData + this->dataSize , nonSearchableAttributeValuesData , this->nonSearchableAttributeValuesDataSize);
+    	delete data;
+    	data = newData;
+    	dataSize = dataSize + this->nonSearchableAttributeValuesDataSize;
+    }
+
+
+    //////////////////// Keyword Attributes Bitmap Helper Functions ////////////////////////////
+    unsigned * getkKeywordAttributeBitmapsPointer() const{
+    	return (unsigned *)(data +
+    			getKeywordIdsSizeInBytes() +
+    			getKeywordRecordStaticScoresSizeInBytes() +
+    			getNonSearchableAttributeValuesDataSize());
+    }
+    unsigned getKeywordAttributeBitmapsSizeInBytes(unsigned sizeInUnsigned) const{
+    	return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
+    }
+    unsigned getKeywordAttributeBitmapsSizeInBytes() const{
+    	return getKeywordAttributeBitmapsSizeInBytes(this->getNumberOfKeywords());
+    }
+    void appendKeywordAttributeBitmaps(unsigned * keywordAttributeBitmaps){
+    	Byte * newData = new Byte[dataSize + this->getKeywordAttributeBitmapsSizeInBytes()];
+    	memcpy(newData , this->data , this->dataSize);
+    	memcpy(newData + this->dataSize , (Byte *)keywordAttributeBitmaps , this->getKeywordAttributeBitmapsSizeInBytes());
+    	delete data;
+    	data = newData;
+    	dataSize = dataSize + this->getKeywordAttributeBitmapsSizeInBytes();
+    }
+
+    /////////////////////// Position Index Helper Functions //////////////////////////////
+    uint8_t * getPositionIndexPointer() const{
+    	return (uint8_t *)(data +
+    			getKeywordIdsSizeInBytes() +
+    			getKeywordRecordStaticScoresSizeInBytes() +
+    			getNonSearchableAttributeValuesDataSize() +
+    			getKeywordAttributeBitmapsSizeInBytes());
+    }
+    unsigned getPositionIndexSize(){
+    	return positionIndexSize;
+    }
+    void appendPositionIndex(vector<uint8_t> positionIndex){
+    	Byte * newData = new Byte[dataSize + this->getPositionIndexSize()];
+    	memcpy(newData , this->data , this->dataSize);
+    	copy(positionIndex.begin() , positionIndex.end(), newData + this->dataSize);
+    	delete data;
+    	data = newData;
+    	dataSize = dataSize + this->getPositionIndexSize();
+    }
+
+
+
 
 };
 
