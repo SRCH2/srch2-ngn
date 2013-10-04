@@ -40,7 +40,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">8.1. Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyPenalty">8.2. Query Term Fuzzy Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">8.2. Fuzzy Match Penalty</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">8.3. Term Similarity Threshold</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">8.4. Support Swap in Edit Distance</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">8.5. Prefix Match Penalty</a></br><br>
@@ -227,10 +227,10 @@ This expression is used to compute the static score of a record with respect to 
 
 The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [Ranking Section](ranking.html) to see how this static score is used in ranking.
 
-###8.2. Query Term Fuzzy Penalty, Optional{id="queryTermFuzzyPenalty"}
+###8.2. Fuzzy Match Penalty, Optional{id="fuzzyMatchPenalty"}
 
 ```
-<queryTermFuzzyPenalty>0.9</queryTermFuzzyPenalty>
+<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
 ```
 It is used to decide how much penality we want to give to a fuzzy match. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
 
