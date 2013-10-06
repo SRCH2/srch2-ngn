@@ -310,7 +310,6 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
                 ->getNonSearchableAttributeValue(iter);
         nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
-    forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
@@ -330,11 +329,11 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     // support attribute-based search
+    unsigned * keywordAttributeBitMapTemp = NULL;
     if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
     	this->isAttributeBasedSearch = true;
 
-    	forwardList->setKeywordAttributeBitmaps(
-    			new unsigned[keywordListCapacity]);
+    	keywordAttributeBitMapTemp = new unsigned[keywordListCapacity];
 
     	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
     		map<string, TokenAttributeHits>::const_iterator mapIterator =
@@ -348,16 +347,16 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     					>> 24) - 1;
     			bitVector |= (1 << attributeId);
     		}
-    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
+    		keywordAttributeBitMapTemp[iter] = bitVector;
     	}
     }
 
+	// this buffer is temporary storage of variable length byte array, since its
+	// size is not known in advance.
+	vector<uint8_t> tempVarLenByteBuffer;
     if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
     	// Add position indexes in forward list
     	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
-    	// this buffer is temporary storage of variable length byte array, since its
-    	// size is not known in advance.
-    	vector<uint8_t> tempVarLenByteBuffer;
     	// To avoid frequent resizing, reserve space for vector. 10 is random number
     	tempVarLenByteBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
@@ -395,9 +394,11 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
     		positionListVector.clear();
     	}
-    	// set grand buffer to position index of current forward list.
-    	forwardList->setPositionIndex(tempVarLenByteBuffer);
     }
+
+    // set all extra information into the forward list.
+    forwardList->setNSAValuesAndAttrBitMapAndPosIndex(this->schemaInternal ,
+    		nonSearchableAttributeValues , keywordAttributeBitMapTemp , tempVarLenByteBuffer);
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
@@ -873,10 +874,6 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      */
 }
 
-void ForwardList::setPositionIndex(vector<uint8_t>& v){
-	this->positionIndexSize = v.size();
-	appendPositionIndex(v);
-}
 unsigned getBitSet(unsigned number);
 unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 
@@ -888,7 +885,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		return;
 	}
 
-	const uint8_t * piPtr = &getPositionIndexPointer()[0];  // pointer to position index for the record
+	const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
 	unsigned piOffset = 0;
 
 	if (*(piPtr + positionIndexSize - 1) & 0x80)
@@ -901,7 +898,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 
 	for (unsigned j = 0; j < keyOffset ; ++j) {
 		currKeyattributeBitMap =
-			    getkKeywordAttributeBitmapsPointer()[j];
+			    getKeywordAttributeBitmapsPointer()[j];
 		unsigned count = getBitSet(currKeyattributeBitMap);
 		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
@@ -911,7 +908,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		}
 	}
 	currKeyattributeBitMap =
-		    getkKeywordAttributeBitmapsPointer()[keyOffset];
+		    getKeywordAttributeBitmapsPointer()[keyOffset];
 	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
 	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
 
