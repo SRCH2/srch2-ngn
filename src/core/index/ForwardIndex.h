@@ -124,21 +124,50 @@ public:
         return getNonSearchableAttributeValuesDataPointer();
     }
 
-    void setNSAValuesAndAttrBitMapAndPosIndex(const Schema * schema,
+    /*
+     * The format of data in this array is :
+     * ------------------------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
+     * ------------------------------------------------------------------------------------------------------------------
+     *
+     * This function will calculate and prepare nonSearchableAttribute byte array in its place.
+     * and will allocate the whole space and copy the third and the last part data
+     * the rest of data will be filled out through setKeywordId(...) , setKeywordRecordStaticScore(...)
+     * and setKeywordAttributeBitmap(...) API calls.
+     */
+    void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
     		const vector<string> & nonSearchableAttributeValues,
-    		unsigned * keywordAttributeBitmaps,
-    		vector<uint8_t>& v){
-    	Byte * nonSearchableTempPointer = NULL;
-        VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues, nonSearchableTempPointer , this->nonSearchableAttributeValuesDataSize);
+    		bool shouldAttributeBitMapBeAllocated,
+    		vector<uint8_t>& positionIndexDataVector){
+    	this->nonSearchableAttributeValuesDataSize = VariableLengthAttributeContainer::getSizeNeededForAllocation(schema, nonSearchableAttributeValues);
         /////
-    	this->positionIndexSize = v.size();
+    	this->positionIndexSize = positionIndexDataVector.size();
         //
-        appendNSAValuesAndAttrBitMapAndPosIndex(nonSearchableTempPointer , keywordAttributeBitmaps , v);
-        //
-        delete nonSearchableTempPointer;
-        if(keywordAttributeBitmaps != NULL){
-        	delete keywordAttributeBitmaps;
-        }
+
+    	unsigned keywordAttributeBitMapSize = 0;
+    	if(shouldAttributeBitMapBeAllocated == true){
+    		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
+    	}
+    	// first two blocks are for keywordIDs and keywordRecordStaticScores.
+    	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
+    	data = new Byte[dataSize +
+    	                          this->nonSearchableAttributeValuesDataSize +
+    	                          this->getKeywordAttributeBitmapsSizeInBytes() +
+    	                          this->getPositionIndexSize()];
+    	// next block is for nonSearchableAttributeValues
+    	dataSize = dataSize + this->nonSearchableAttributeValuesDataSize;
+    	// fourth block is attributeBitmap
+    	/////
+    	if(shouldAttributeBitMapBeAllocated == true){
+			dataSize = dataSize + this->getKeywordAttributeBitmapsSizeInBytes();
+    	}
+    	// last part is positionIndex
+    	/////
+    	copy(positionIndexDataVector.begin() , positionIndexDataVector.end(), data + this->dataSize);
+    	dataSize = dataSize + this->getPositionIndexSize();
+
+    	// now that memory is allocated and position index is copied we can fill nonSearchableData in place.
+    	VariableLengthAttributeContainer::fillWithoutAllocation(schema, nonSearchableAttributeValues, getNonSearchableAttributeValuesDataPointer() );
     }
 
     const unsigned* getKeywordIds() const {
@@ -186,8 +215,10 @@ public:
         numberOfKeywords = 0;
         recordBoost = 0.5;
         inMemoryData = "";
-        dataSize = getKeywordIdsSizeInBytes(keywordListCapacity) + getKeywordRecordStaticScoresSizeInBytes(keywordListCapacity);
-        data = new Byte[dataSize];
+        // the dataSize and data are initialized temporarily. They will actually be initialized in
+        // allocateSpaceAndSetNSAValuesAndPosIndex when other pieces of data are also ready.
+        dataSize = 0;
+        data = NULL;
         nonSearchableAttributeValuesDataSize = 0;
         positionIndexSize = 0;
     }
@@ -311,35 +342,6 @@ private:
     unsigned positionIndexSize;
     unsigned dataSize;
 
-    ////////////// One big chunk append //////////////////////////////////////////////
-    void appendNSAValuesAndAttrBitMapAndPosIndex(Byte * nonSearchableAttributeValuesData,
-    		unsigned * keywordAttributeBitmaps,
-    		vector<uint8_t> positionIndex){
-    	/////
-    	unsigned keywordAttributeBitMapSize = 0;
-    	if(keywordAttributeBitmaps != NULL){
-    		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
-    	}
-    	Byte * newData = new Byte[dataSize +
-    	                          this->nonSearchableAttributeValuesDataSize +
-    	                          this->getKeywordAttributeBitmapsSizeInBytes() +
-    	                          this->getPositionIndexSize()];
-    	memcpy(newData , this->data , this->dataSize);
-    	/// we should delete data as soon as possible
-    	delete data;
-    	data = newData;
-    	memcpy(newData + this->dataSize , nonSearchableAttributeValuesData , this->nonSearchableAttributeValuesDataSize);
-    	dataSize = dataSize + this->nonSearchableAttributeValuesDataSize;
-    	/////
-    	if(keywordAttributeBitmaps != NULL){
-			memcpy(newData + this->dataSize , (Byte *)keywordAttributeBitmaps , this->getKeywordAttributeBitmapsSizeInBytes());
-			dataSize = dataSize + this->getKeywordAttributeBitmapsSizeInBytes();
-    	}
-    	/////
-    	memcpy(newData , this->data , this->dataSize);
-    	copy(positionIndex.begin() , positionIndex.end(), newData + this->dataSize);
-    	dataSize = dataSize + this->getPositionIndexSize();
-    }
 
     ///////////////////     Keyword IDs Helper Functions //////////////////////////////////////
     inline unsigned * getKeywordIdsPointer() const{

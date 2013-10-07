@@ -310,45 +310,10 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
                 ->getNonSearchableAttributeValue(iter);
         nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
-
-    // Add KeywordId List
-    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
-    }
-
-    //Add Score List
-    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-
-        map<string, TokenAttributeHits>::const_iterator mapIterator =
-                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
-        ASSERT(mapIterator != tokenAttributeHitsMap.end());
-        forwardList->setKeywordRecordStaticScore(iter,
-                forwardList->computeFieldBoostSummation(this->schemaInternal,
-                        mapIterator->second));
-    }
-
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
-    // support attribute-based search
-    unsigned * keywordAttributeBitMapTemp = NULL;
+    bool shouldAttributeBitMapBeAllocated = false;
     if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
-    	this->isAttributeBasedSearch = true;
-
-    	keywordAttributeBitMapTemp = new unsigned[keywordListCapacity];
-
-    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-    		map<string, TokenAttributeHits>::const_iterator mapIterator =
-    				tokenAttributeHitsMap.find(
-    						uniqueKeywordIdList[iter].second.first);
-    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
-    		unsigned bitVector = 0;
-    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-    				i++) {
-    			int attributeId = ((mapIterator->second.attributeList.at(i))
-    					>> 24) - 1;
-    			bitVector |= (1 << attributeId);
-    		}
-    		keywordAttributeBitMapTemp[iter] = bitVector;
-    	}
+    	shouldAttributeBitMapBeAllocated = true;
     }
 
 	// this buffer is temporary storage of variable length byte array, since its
@@ -397,8 +362,44 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
 
     // set all extra information into the forward list.
-    forwardList->setNSAValuesAndAttrBitMapAndPosIndex(this->schemaInternal ,
-    		nonSearchableAttributeValues , keywordAttributeBitMapTemp , tempVarLenByteBuffer);
+    forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
+    		nonSearchableAttributeValues , shouldAttributeBitMapBeAllocated , tempVarLenByteBuffer);
+
+    // Add KeywordId List
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
+    }
+
+    //Add Score List
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+
+        map<string, TokenAttributeHits>::const_iterator mapIterator =
+                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
+        ASSERT(mapIterator != tokenAttributeHitsMap.end());
+        forwardList->setKeywordRecordStaticScore(iter,
+                forwardList->computeFieldBoostSummation(this->schemaInternal,
+                        mapIterator->second));
+    }
+
+    // support attribute-based search
+    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
+    	this->isAttributeBasedSearch = true;
+
+    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+    		map<string, TokenAttributeHits>::const_iterator mapIterator =
+    				tokenAttributeHitsMap.find(
+    						uniqueKeywordIdList[iter].second.first);
+    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    		unsigned bitVector = 0;
+    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+    				i++) {
+    			int attributeId = ((mapIterator->second.attributeList.at(i))
+    					>> 24) - 1;
+    			bitVector |= (1 << attributeId);
+    		}
+    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
+    	}
+    }
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;

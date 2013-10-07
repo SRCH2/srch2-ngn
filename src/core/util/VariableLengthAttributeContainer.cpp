@@ -28,17 +28,43 @@
 namespace srch2 {
 namespace instantsearch {
 
+// it calculates and returns the number of butes that this list will need
+unsigned VariableLengthAttributeContainer::getSizeNeededForAllocation(
+		const Schema * schema,
+		const vector<string> & nonSearchableAttributeValues){
+    unsigned totalLength = 0;
+    for (int i = 0; i < schema->getNumberOfNonSearchableAttributes(); ++i) { // iterate on attributes in schema
+        // find the type of ith attribute
+        FilterType type = getAttributeType(i, schema);
+        //
+        switch (type) {
+        case ATTRIBUTE_TYPE_UNSIGNED:
+            totalLength += sizeof(unsigned);
+            break;
+        case ATTRIBUTE_TYPE_FLOAT:
+            totalLength += sizeof(float);
+            break;
+        case ATTRIBUTE_TYPE_TEXT:
+            totalLength += (sizeof(unsigned)
+                    + nonSearchableAttributeValues.at(i).size());
+            break;
+        case ATTRIBUTE_TYPE_TIME:
+            totalLength += sizeof(long);
+            break;
+        case ATTRIBUTE_TYPE_DURATION:
+        	ASSERT(false);
+        	break;
+        }
+    }
+    //
+    return totalLength;
+}
 
 // fills the container with the values
-void VariableLengthAttributeContainer::fill(const Schema * schema,
-        const vector<string> & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize) {
-    // to make sure this class is not updates anywhere in the system
-    if (data != NULL) {
-        ASSERT(false);
-    }
-
-    // first allocate the Byte array
-    allocate(schema, nonSearchableAttributeValues , data , dataSize);
+// Byte *& data is a pass by reference of a pointer variable, data will be allocated and set in this function.
+void VariableLengthAttributeContainer::fillWithoutAllocation(
+		const Schema * schema,
+		const vector<string> & nonSearchableAttributeValues, Byte * data){
 
     // iterate on nonsearchableAttributes and make a Byte vector
     unsigned startOffset = 0;
@@ -54,6 +80,23 @@ void VariableLengthAttributeContainer::fill(const Schema * schema,
         startOffset += usedSizeForThisAttribute;
     }
 
+}
+
+
+
+// fills the container with the values
+void VariableLengthAttributeContainer::fill(const Schema * schema,
+        const vector<string> & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize) {
+    // to make sure this class is not updates anywhere in the system
+    if (data != NULL) {
+        ASSERT(false);
+    }
+
+    // first allocate the Byte array
+    allocate(schema, nonSearchableAttributeValues , data , dataSize);
+
+    // now fill the allocated space
+    fillWithoutAllocation(schema, nonSearchableAttributeValues, data);
 }
 
 
@@ -216,31 +259,8 @@ long VariableLengthAttributeContainer::getTimeAttribute(const unsigned nonSearch
 
 void VariableLengthAttributeContainer::allocate(const Schema * schema,
         const vector<string> & nonSearchableAttributeValues, Byte *& data, unsigned & dataSize) {
-    unsigned totalLength = 0;
 
-    for (int i = 0; i < schema->getNumberOfNonSearchableAttributes(); ++i) { // iterate on attributes in schema
-        // find the type of ith attribute
-        FilterType type = getAttributeType(i, schema);
-        //
-        switch (type) {
-        case ATTRIBUTE_TYPE_UNSIGNED:
-            totalLength += sizeof(unsigned);
-            break;
-        case ATTRIBUTE_TYPE_FLOAT:
-            totalLength += sizeof(float);
-            break;
-        case ATTRIBUTE_TYPE_TEXT:
-            totalLength += (sizeof(unsigned)
-                    + nonSearchableAttributeValues.at(i).size());
-            break;
-        case ATTRIBUTE_TYPE_TIME:
-            totalLength += sizeof(long);
-            break;
-        case ATTRIBUTE_TYPE_DURATION:
-        	ASSERT(false);
-        	break;
-        }
-    }
+    unsigned totalLength = getSizeNeededForAllocation(schema , nonSearchableAttributeValues);
     //
     data = new Byte[totalLength];
     dataSize = totalLength;
