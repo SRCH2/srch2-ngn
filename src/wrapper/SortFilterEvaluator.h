@@ -37,7 +37,7 @@ namespace httpwrapper
 class SortFilterEvaluator : public SortEvaluator
 {
 public:
-	int compare(const std::map<std::string, TypedValue> & left,const std::map<std::string, TypedValue> & right) const{
+	int compare(const std::map<std::string, TypedValue> & left, unsigned leftTieBreaker,const std::map<std::string, TypedValue> & right, unsigned rightTieBreaker) const{
 
 		for(std::vector<std::string>::const_iterator attributeIndex = field.begin() ; attributeIndex != field.end() ; ++attributeIndex){
 		    int comparisonResultOnThisAttribute = compareOneAttribute(left.at(*attributeIndex) , right.at(*attributeIndex));
@@ -45,8 +45,14 @@ public:
 				return comparisonResultOnThisAttribute;
 			}
 		}
-		return 0;
-
+		ASSERT(leftTieBreaker != rightTieBreaker);
+		if(order == srch2::instantsearch::SortOrderAscending){
+			if(leftTieBreaker < rightTieBreaker) return 1;
+			else return -1;
+		}else{
+			if(leftTieBreaker < rightTieBreaker) return -1;
+			else return 1;
+		}
 	}
 
 	const std::vector<std::string> * getParticipatingAttributes() const {

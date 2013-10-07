@@ -52,8 +52,8 @@ public:
     // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
     bool operator()(const QueryResult * lhs, const QueryResult * rhs) const {
         // do the comparison
-        return filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes,
-                rhs->valuesOfParticipatingNonSearchableAttributes) > 0;
+        return filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes, lhs->internalRecordId,
+                rhs->valuesOfParticipatingNonSearchableAttributes, rhs->internalRecordId) > 0;
     }
 };
 

@@ -36,7 +36,7 @@ namespace instantsearch
 class SortEvaluator
 {
 public:
-	virtual int compare(const std::map<std::string, TypedValue> & left,const std::map<std::string, TypedValue> & right) const = 0 ;
+	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;
