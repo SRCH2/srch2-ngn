@@ -438,6 +438,53 @@ void parseProgramArguments(int argc, char** argv,
 
 pthread_t *threads;
 int MAX_THREADS;
+
+// These are global variables that store host and port information for srch2 engine
+short http_port;
+const char *http_addr;
+
+#ifdef __MACH__
+/*
+ *  dummy request handler for make_http_request function below.
+ */
+void dummyRequestHandler(struct evhttp_request *req, void *state) {
+	if (req == NULL) {
+		Logger::debug("timed out!\n");
+	} else if (req->response_code == 0) {
+		Logger::debug("connection refused!\n");
+	} else if (req->response_code != 200) {
+		Logger::debug("error: %u %s\n", req->response_code, req->response_code_line);
+	} else {
+		Logger::debug("success: %u %s\n", req->response_code, req->response_code_line);
+	}
+}
+/*
+ *  Creates a http request for /info Rest API of srch2 engine.
+ */
+void makeHttpRequest(){
+    struct evhttp_connection *conn;
+    struct evhttp_request *req;
+    /*
+     * evhttp_connection_new does not perform dns lookup and expects numeric ip address
+     * Hence we should do explicit coversion before calling evhttp_connection_new
+     */
+    char hostIpAddr[20];
+	memset(hostIpAddr, 0, sizeof(hostIpAddr));
+    struct hostent * host = gethostbyname(http_addr);
+    if (host == NULL) {
+    	// nothing much can be done..let us try 0.0.0.0
+    	strncpy(hostIpAddr, "0.0.0.0", 7);
+    } else {
+    	// convert binary ip address to human readable ip address.
+    	struct in_addr **addr_list = (struct in_addr **) host->h_addr_list;
+    	strcpy(hostIpAddr, inet_ntoa(*addr_list[0]));
+    }
+    conn = evhttp_connection_new( hostIpAddr, http_port);
+    evhttp_connection_set_timeout(conn, 1);
+    req = evhttp_request_new(dummyRequestHandler, (void*)NULL);
+    evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
+}
+#endif
 /**
  * Kill the server.  This function can be called from another thread to kill the server
  */
@@ -446,8 +493,16 @@ static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_cancel(threads[i]);
-        Logger::console("Thread = <%u> stopped", threads[i]);
     }
+#ifdef __MACH__
+    /*
+     *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
+     *  which is a blocking call. In other words, our engine threads are not cancelled while they
+     *  are waiting for http requests. So we send a dummy http request to our own engine from within
+     *  the engine. This request allows the threads to come out of blocking syscall and get killed.
+     */
+    makeHttpRequest();
+#endif
 }
 
 int main(int argc, char** argv) {
@@ -517,8 +572,8 @@ int main(int argc, char** argv) {
 
     //sleep(200);
 
-    short http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
-    const char *http_addr =
+    http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
+    http_addr =
             serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
     struct evhttp *http_server = NULL;
     struct event_base *evbase = NULL;
@@ -675,6 +730,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_join(threads[i], NULL);
+        Logger::console("Thread = <%u> stopped", threads[i]);
     }
 
     delete[] threads;

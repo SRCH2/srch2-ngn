@@ -45,6 +45,10 @@ ADD_EXECUTABLE(MultipleLanguage_Test MultipleLanguage_Test.cpp ${IndexIntegratio
 TARGET_LINK_LIBRARIES(MultipleLanguage_Test ${INTEGRATION_TEST_LIBS})
 LIST(APPEND INTEGRATION_TESTS MultipleLanguage_Test)
 
+ADD_EXECUTABLE(MultipleLanguage_2_Test MultipleLanguage_2_Test.cpp ${IndexIntegration_Source})
+TARGET_LINK_LIBRARIES(MultipleLanguage_2_Test ${INTEGRATION_TEST_LIBS})
+LIST(APPEND INTEGRATION_TESTS MultipleLanguage_2_Test)
+
 # ADD_EXECUTABLE(StemmerIntegration_Test StemmerIntegration_Test.cpp ${IndexIntegration_Source})
 # TARGET_LINK_LIBRARIES(StemmerIntegration_Test  ${INTEGRATION_TEST_LIBS})
 	

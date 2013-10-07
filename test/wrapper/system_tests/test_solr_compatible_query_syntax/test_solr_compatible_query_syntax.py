@@ -77,7 +77,7 @@ def prepareQuery(queryKeywords):
 def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_new_query_syntax/conf.xml &'
+    binary= binary+' --config-file=./test_solr_compatible_query_syntax/conf.xml &'
     print 'starting engine: ' + binary 
     os.popen(binary)
     #make sure that start the engine up

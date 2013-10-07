@@ -17,12 +17,12 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 #include <instantsearch/SortFilter.h>
-#include <instantsearch/Score.h>
+#include <instantsearch/TypedValue.h>
 #include <map>
 #include <string>
 
 using srch2::instantsearch::SortEvaluator;
-using srch2::instantsearch::Score;
+using srch2::instantsearch::TypedValue;
 
 #ifndef _WRAPPER_SORTFILTEREVALUATOR_H_
 
@@ -37,7 +37,7 @@ namespace httpwrapper
 class SortFilterEvaluator : public SortEvaluator
 {
 public:
-	int compare(const std::map<std::string, Score> & left,const std::map<std::string, Score> & right) const{
+	int compare(const std::map<std::string, TypedValue> & left,const std::map<std::string, TypedValue> & right) const{
 
 		for(std::vector<std::string>::const_iterator attributeIndex = field.begin() ; attributeIndex != field.end() ; ++attributeIndex){
 		    int comparisonResultOnThisAttribute = compareOneAttribute(left.at(*attributeIndex) , right.at(*attributeIndex));
@@ -60,7 +60,7 @@ public:
 
 private:
 
-	int compareOneAttribute(const Score & left , const Score & right) const{
+	int compareOneAttribute(const TypedValue & left , const TypedValue & right) const{
 		if(left == right ) return 0;
 		if(order == srch2::instantsearch::SortOrderAscending){ // TODO should be checked in test to see if this function is returning proper result
 			if(left < right) return 1;

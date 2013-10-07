@@ -23,7 +23,7 @@
 #include <instantsearch/Constants.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
-#include <instantsearch/Score.h>
+#include <instantsearch/TypedValue.h>
 #include <vector>
 
 using std::vector;
@@ -61,8 +61,8 @@ namespace srch2
         // compare two records based on their scores and record ids
         // used in InvertedList and QueryResultsInternal as a ">" operator to rank the elements
         // on a list in a descending order
-        static bool compareRecordsGreaterThan(const Score &  leftRecordScore,  unsigned leftRecordId,
-                          const Score & rightRecordScore, unsigned rightRecordId);//TODO
+        static bool compareRecordsGreaterThan(const TypedValue &  leftRecordScore,  unsigned leftRecordId,
+                          const TypedValue & rightRecordScore, unsigned rightRecordId);//TODO
 
         // Used by GetAllResultsRanker. Default implementation returns 0.
         virtual float computeResultScoreUsingAttributeScore(const Query *query, 

@@ -23,56 +23,116 @@
 #include <string>
 #include <algorithm>
 #include "util/Assert.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-void FacetedSearchFilterInternal::doAggregationCategorical(const Score & attributeValue,
-        std::map<string , float > * counts) {
 
-    // move on computed facet results to see if this value is seen before (increment) or is new (add and initialize)
+float FacetResultsContainer::initAggregation(FacetAggregationType  aggregationType){
+	switch (aggregationType) {
+		case FacetAggregationTypeCount:
+			return 0;
+		default:
+			ASSERT(false);
+			return 0;
+	}
+}
+float FacetResultsContainer::doAggregation(float bucketValue, FacetAggregationType  aggregationType){
+	switch (aggregationType) {
+		case FacetAggregationTypeCount:
+			return bucketValue + 1;
+		default:
+			ASSERT(false);
+			return 0;
+	}
+}
+
+void CategoricalFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType){
+	// No need to do anything in this function.
+}
+void CategoricalFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
+
+	std::map<unsigned, std::pair<std::string, float> >::iterator bucketIter = bucketsInfo.find(bucketId);
+	if( bucketIter == bucketsInfo.end()){ // A new bucket
+		std::pair<std::string, float> newBucket = std::make_pair(bucketName , initAggregation(aggregationType));
+		newBucket.second = doAggregation(newBucket.second , aggregationType);
+		bucketsInfo[bucketId] = newBucket;
+	}else{
+		bucketIter->second.second = doAggregation(bucketIter->second.second , aggregationType);
+	}
+
+}
+void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+	for(std::map<unsigned, std::pair<std::string, float> >::iterator bucketPtr = bucketsInfo.begin() ;
+			bucketPtr != bucketsInfo.end() ; ++bucketPtr){
+		results.push_back(std::make_pair(bucketPtr->second.first , bucketPtr->second.second));
+	}
+}
+
+
+/*
+ * Since we want to include all intervals of a range facet (even if they don't have any records in them)
+ * we have to first initialize all intervals to a value (e.g. count of 0). To do this we use facetHelper to give us
+ * a list of IDs which it will generate later with their name. For example:
+ * <0,"-inf">,<1,"10">,<2,"20">,<3,"30">
+ */
+void RangeFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType){
+	std::vector<std::pair<unsigned, std::string> > idsAndNames;
+	facetHelper->generateListOfIdsAndNames(&idsAndNames);
+	int index = 0;
+	for(std::vector<std::pair<unsigned, std::string> >::iterator idAndName = idsAndNames.begin();
+			idAndName != idsAndNames.end() ; ++idAndName){
+		ASSERT(index == idAndName->first); // bucket Id must be the index of buckets in this vector
+		bucketsInfo.push_back(std::make_pair(idAndName->second , initAggregation(aggregationType) ));
+		//
+		index++;
+	}
+}
+void RangeFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
+	bucketsInfo.at(bucketId).second = doAggregation(bucketsInfo.at(bucketId).second , aggregationType);
+}
+void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+	results.insert(results.begin(), bucketsInfo.begin() , bucketsInfo.end());
+}
+
+
+std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(const TypedValue & attributeValue){
 	std::string attributeValueLowerCase = attributeValue.toString();
 	std::transform(attributeValueLowerCase.begin(), attributeValueLowerCase.end(), attributeValueLowerCase.begin(), ::tolower);
-    std::map<string , float >::iterator p = counts->find(attributeValueLowerCase);
-    if( p != counts->end()){
-        p->second ++;
-        return;
-    }
-    // not found in map, initialization with 1
-    (*counts)[attributeValueLowerCase] = 1;
-    return;
-}
 
-// Range facet
-void FacetedSearchFilterInternal::doAggregationRange(const Score & attributeValue,
-        const std::vector<Score> & lowerBounds,
-        std::vector<pair<string, float> > * counts  , Score & start, Score & end, Score & gap) {
-
-	// the reason for this is that the interval right before end can be smaller than gap. So the formula used in
-	// findIndexOfContainingInterval will return a wrong index.
-	// example:
-	// start = 0 ; gap = 6; end = 10
-	// intervals will be (*,0) , [0,6), [6,10), [10,*)
-	// interval [6,10) is smaller than gap. now if we use formula (value - start ) / gap + 1
-	// for 10 or 11, it returns 2 which is wrong.
-	if(attributeValue >= end){
-		unsigned groupId =  counts->size() - 1;
-	    counts->at(groupId).second ++ ;
-	    return;
+	if(categoryValueToBucketIdMap.find(attributeValueLowerCase) == categoryValueToBucketIdMap.end()){
+		categoryValueToBucketIdMap[attributeValueLowerCase] = categoryValueToBucketIdMap.size();
 	}
-    unsigned groupId = attributeValue.findIndexOfContainingInterval(start,end, gap);
-    if(groupId == -1){
-        return;
-    }
-    if(groupId >= counts->size()){
-        groupId =  counts->size() - 1;
-    }
-    counts->at(groupId).second ++ ;
-    return;
+	return std::make_pair(categoryValueToBucketIdMap[attributeValueLowerCase] , attributeValueLowerCase);
+}
+void CategoricalFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames){
+	// This function should not be called.
+	ASSERT(false);
+}
+void CategoricalFacetHelper::initialize(const std::string * facetInfoForInitialization, const Schema * schema){
+	// No need to do anything here
 }
 
+/*
+ * This function finds the interval in which attributeValue is placed. ID and name will be returned. since all the names are returned once
+ * in generateListOfIdsAndNames, all names are returned as "" to save copying string values.
+ */
+std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const TypedValue & attributeValue){
+	if(attributeValue >= end){
+		return std::make_pair(numberOfBuckets-1 , "");
+	}
+	unsigned bucketId = attributeValue.findIndexOfContainingInterval(start, end, gap);
+    if(bucketId == -1){ // Something has gone wrong and Score class has been unable to calculate the index.
+    	ASSERT(false);
+        return std::make_pair(0 , "");;
+    }
+    if(bucketId >= numberOfBuckets){
+    	bucketId =  numberOfBuckets - 1;
+    }
+    return std::make_pair(bucketId , "");
+}
 /*
  * Example :
  * If we have two attributes : price,model (facet type : range, categorical)
@@ -81,105 +141,185 @@ void FacetedSearchFilterInternal::doAggregationRange(const Score & attributeValu
  * values for price:
  * -large_value, 1, 11, 21, 31, 41, ..., 91, 101
  */
-void FacetedSearchFilterInternal::prepareFacetInputs(IndexSearcher *indexSearcher) {
+void RangeFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames){
 
-    if(isPrepared){
-        return;
+	if(generateListOfIdsAndNamesFlag == true || idsAndNames == NULL){
+		ASSERT(false);
+		return;
+	}
+	TypedValue lowerBoundToAdd = start;
+    std::vector<TypedValue> lowerBounds;
+	// Example : start : 1, gap : 10 , end : 100
+	// first -large_value is added as the first category
+	// then 1, 11, 21, ...and 91 are added in the loop.
+	// and 101 is added after loop.
+	lowerBounds.push_back(lowerBoundToAdd.minimumValue()); // to collect data smaller than start
+	while (lowerBoundToAdd < end) {
+		lowerBounds.push_back(lowerBoundToAdd); // data of normal categories
+		lowerBoundToAdd = lowerBoundToAdd + gap;
+	}
+	lowerBounds.push_back(end); // to collect data greater than end
+	// now set the number of buckets
+	numberOfBuckets = lowerBounds.size();
+	// now fill the output
+	for(int lowerBoundsIndex = 0; lowerBoundsIndex < lowerBounds.size() ; lowerBoundsIndex++){
+		idsAndNames->push_back(std::make_pair(lowerBoundsIndex , lowerBounds.at(lowerBoundsIndex).toString()));
+	}
+	// And set the flag to make sure this function is called only once.
+	generateListOfIdsAndNamesFlag = false;
+
+}
+
+/*
+ * Info must contain :
+ * facetInfoForInitialization[0] <= start
+ * facetInfoForInitialization[1] <= end
+ * facetInfoForInitialization[2] <= gap
+ * facetInfoForInitialization[3] <= fieldName
+ */
+void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization , const Schema * schema){
+	std::string startString = facetInfoForInitialization[0];
+	std::string endString = facetInfoForInitialization[1];
+	std::string gapString = facetInfoForInitialization[2];
+	std::string fieldName = facetInfoForInitialization[3];
+
+    FilterType attributeType = schema->getTypeOfNonSearchableAttribute(
+            schema->getNonSearchableAttributeId(fieldName));
+    start.setTypedValue(attributeType, startString);
+
+    end.setTypedValue(attributeType, endString);
+
+    if(attributeType == ATTRIBUTE_TYPE_TIME){
+    	// For time attributes gap should not be of the same type, it should be
+    	// of type TimeDuration.
+    	if(start > end){ // start should not be greater than end
+    		start = end;
+    		gap.setTypedValue(ATTRIBUTE_TYPE_DURATION, "00:00:00");
+    	}else{
+    		gap.setTypedValue(ATTRIBUTE_TYPE_DURATION, gapString);
+    	}
     }else{
-        isPrepared = true;
+    	if(start > end){ // start should not be greater than end
+    		start = end;
+    		gap.setTypedValue(attributeType , "0");
+    	}else{
+    		gap.setTypedValue(attributeType, gapString);
+    	}
     }
 
+}
+
+
+void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
+        const Query * query, QueryResults * input, QueryResults * output){
     IndexSearcherInternal * indexSearcherInternal =
             dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Schema * schema = indexSearcherInternal->getSchema();
     ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
 
+    // first prepare internal structures based on the input
+    preFilter(indexSearcher);
 
-    // 1. parse the values into Score.
-    unsigned fieldIndex = 0;
-    for (std::vector<std::string>::iterator field = this->fields.begin();
-            field != this->fields.end(); ++field) {
-        if (this->facetTypes.at(fieldIndex) == FacetTypeCategorical) { // Simple facet
-            Score placeHolder; // just insert placeholders
-            rangeStartScores.push_back(placeHolder);
-            rangeEndScores.push_back(placeHolder);
-            rangeGapScores.push_back(placeHolder);
-        } else { // Range facet
-            FilterType attributeType = schema->getTypeOfNonSearchableAttribute(
-                    schema->getNonSearchableAttributeId(*field));
-            Score start;
-            start.setScore(attributeType, this->rangeStarts.at(fieldIndex));
+    // also copy all input results to output to save previous filter works
+    output->copyForPostProcessing(input);
 
-            Score end;
-            end.setScore(attributeType, this->rangeEnds.at(fieldIndex));
 
-            Score gap;
-            if(attributeType == ATTRIBUTE_TYPE_TIME){
-            	// For time attributes gap should not be of the same type, it should be
-            	// of type TimeDuration.
-            	if(start > end){ // start should not be greater than end
-            		start = end;
-            		gap.setScore(ATTRIBUTE_TYPE_DURATION, "00:00:00");
-            	}else{
-            		gap.setScore(ATTRIBUTE_TYPE_DURATION, this->rangeGaps.at(fieldIndex));
-            	}
-            }else{
-            	if(start > end){ // start should not be greater than end
-            		start = end;
-            		gap.setScore(attributeType , "0");
-            	}else{
-            		gap.setScore(attributeType, this->rangeGaps.at(fieldIndex));
-            	}
-            }
-
-            rangeStartScores.push_back(start);
-            rangeEndScores.push_back(end);
-            rangeGapScores.push_back(gap);
-
-        }
-
-        //
-        fieldIndex++;
+    // translate list of attribute names to list of attribute IDs
+    std::vector<unsigned> attributeIds;
+    for(std::vector<std::string>::iterator facetField = fields.begin();
+            facetField != fields.end() ; ++facetField){
+        attributeIds.push_back(schema->getNonSearchableAttributeId(*facetField));
     }
 
-    // 2. create the lowerbound vector for each attribute
+    // move on the results once and do all facet calculations.
+    for (std::vector<QueryResult *>::iterator resultIter =
+            output->impl->sortedFinalResults.begin();
+            resultIter != output->impl->sortedFinalResults.end();
+            ++resultIter) {
+        QueryResult * queryResult = *resultIter;
+        // extract all facet related nonsearchable attribute values from this record
+        // by accessing the forward index only once.
+        bool isValid = false;
+        const ForwardList * list = forwardIndex->getForwardList(
+                queryResult->internalRecordId, isValid);
+        ASSERT(isValid);
+        const VariableLengthAttributeContainer * nonSearchableAttributes =
+                list->getNonSearchableAttributeContainer();
+        // this vector is parallel to attributeIds vector
+        std::vector<TypedValue> attributeDataValues;
+        nonSearchableAttributes->getBatchOfAttributes(attributeIds, schema, &attributeDataValues);
 
-    unsigned facetTypeIndex = 0;
-    for (std::vector<FacetType>::iterator facetTypeIterator = facetTypes.begin();
-            facetTypeIterator != facetTypes.end(); ++facetTypeIterator) {
-
-        std::vector<Score> lowerBounds;
-		Score & start = rangeStartScores.at(facetTypeIndex);
-		Score & end = rangeEndScores.at(facetTypeIndex);
-		Score & gap = rangeGapScores.at(facetTypeIndex);
-		Score lowerBoundToAdd = start;
-        switch (*facetTypeIterator) {
-        case FacetTypeCategorical: // lower bounds vector is empty, because lower bounds are not determined before results
-            break;
-
-        case FacetTypeRange:
-            ASSERT(start.getType() != srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-
-            // Example : start : 1, gap : 10 , end : 100
-            // first -large_value is added as the first category
-            // then 1, 11, 21, ...and 91 are added in the loop.
-            // and 101 is added after loop.
-            lowerBounds.push_back(lowerBoundToAdd.minimumValue()); // to collect data smaller than start
-            while (lowerBoundToAdd < end) {
-                lowerBounds.push_back(lowerBoundToAdd); // data of normal categories
-                lowerBoundToAdd = lowerBoundToAdd + gap;
-            }
-            lowerBounds.push_back(end); // to collect data greater than end
-            break;
-        default:
-        	ASSERT(false);
-        	break;
+        // now iterate on attributes and incrementally update the facet results
+        for(std::vector<std::string>::iterator facetField = fields.begin();
+                facetField != fields.end() ; ++facetField){
+        	TypedValue & attributeValue = attributeDataValues.at(
+                                   std::distance(fields.begin() , facetField));
+            // choose the type of aggregation for this attribute
+            // increments the correct facet by one
+            doProcessOneResult(attributeValue , std::distance(fields.begin() , facetField));
         }
-        lowerBoundsOfIntervals[fields.at(facetTypeIndex)] = lowerBounds;
-        //
-        facetTypeIndex++;
     }
 
+    // now copy all results to output
+	for(std::vector<std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
+			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
+		std::vector<std::pair< std::string, float > > results;
+		facetResultsPtr->second->getNamesAndValues(results);
+		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
+	}
+
+}
+
+void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
+
+    IndexSearcherInternal * indexSearcherInternal =
+            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+    Schema * schema = indexSearcherInternal->getSchema();
+
+	for(std::vector<std::string>::iterator facetField = fields.begin();
+            facetField != fields.end() ; ++facetField){
+		FacetType facetType = facetTypes.at(std::distance(fields.begin() , facetField));
+		FacetHelper * facetHelper = NULL;
+		FacetResultsContainer * facetResultsContainer = NULL;
+		switch (facetType) {
+			case FacetTypeCategorical:
+				facetHelper = new CategoricalFacetHelper();
+				facetResultsContainer = new CategoricalFacetResultsContainer();
+				break;
+			case FacetTypeRange:
+				facetHelper = new RangeFacetHelper();
+				facetResultsContainer = new RangeFacetResultsContainer();
+				break;
+			default:
+				ASSERT(false);
+				break;
+		}
+		std::string info[4];
+		info[0] = rangeStarts.at(std::distance(fields.begin() , facetField));
+		info[1] = rangeEnds.at(std::distance(fields.begin() , facetField));
+		info[2] = rangeGaps.at(std::distance(fields.begin() , facetField));
+		info[3] = *facetField;
+		facetHelper->initialize(info , schema);
+		facetResultsContainer->initialize(facetHelper , FacetAggregationTypeCount );
+		this->facetResults.push_back(std::make_pair(facetType , facetResultsContainer));
+		this->facetHelpers.push_back(facetHelper);
+
+	}
+}
+void FacetedSearchFilterInternal::doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex){
+	std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
+	this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+}
+
+void FacetedSearchFilterInternal::initialize(std::vector<FacetType> & facetTypes,
+        std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
+        std::vector<std::string> & rangeEnds,
+        std::vector<std::string> & rangeGaps){
+    this->fields = fields;
+    this->facetTypes = facetTypes;
+    this->rangeStarts = rangeStarts;
+    this->rangeEnds = rangeEnds;
+    this->rangeGaps = rangeGaps;
 }
 
 }

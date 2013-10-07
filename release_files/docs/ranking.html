@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
+<meta name="generator" content="ReText 4.0.1">
 <title>ranking</title>
 </head>
 <body>
@@ -58,18 +58,18 @@
 <p>The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:</p>
 <ul>
 <li>How much penalty we want give to partial matches (e.g., "candy" vs "can" ) compared to complete-keyword matches (e.g., "can" vs "can), using the parameter "PrefixMatchPenalty"; and</li>
-<li>How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "QueryTermFuzzyPenalty".</li>
+<li>How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "FuzzyMatchPenalty".</li>
 </ul>
 <h2 id="formula">Ranking Formula</h2>
 <p>Now we give the details of the ranking function. Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results.</p>
 <p>Formally, let <i>Q</i> be a query with terms (keywords) <i>t_1</i>, <i>t_2</i>, ..., <i>t_k</i>. Let <i>r</i> be a record. We compute the score of <i>r</i> for <i>Q</i> as follows:</p>
 <p><center> score(<i>r</i>, <i>Q</i>) = TermScore(<i>r</i>, <i>t_1</i>) + TermScore(<i>r</i>, <i>t_2</i>) + ... + TermScore(<i>r</i>, <i>t_k</i>).</center></p>
 <p>For each term <i>t_i</i>, let <i>w_i</i> be a keyword in <i>r</i> that matches <i>t_i</i> (exactly or fuzzily). The TermScore(<i>r</i>, <i>t_i</i>) is computed as follows:</p>
-<p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * QueryTermFuzzyPenalty.</center></p>
+<p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * FuzzyMatchPenalty.</center></p>
 <p>The formula uses the following parameters:</p>
 <p><b>1. NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It is calculated as follows:</p>
-<p><center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * QueryTermFuzzyPenalty^ed. </center></p>
-<p>In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "QueryTermFuzzyPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.</p>
+<p><center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * FuzzyMatchPenalty^ed. </center></p>
+<p>In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "FuzzyMatchPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.</p>
 <p><b>2. PrefixMatchPenalty</b>: It is 1 if term <i>t_i</i> is a complete keyword. If term <i>t_i</i> is a prefix, then PrefixMatchPenalty takes the value of the parameter "prefixMatchPenalty" specified in the <a href="example-demo/srch2-config.xml">configuration file</a>.</p>
 <p><b>3. TermRecordStaticScore(r, t_i)</b>: It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters:</p>
 <ul>

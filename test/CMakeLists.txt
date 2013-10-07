@@ -100,6 +100,10 @@ SET_TESTS_PROPERTIES(IndexUpdater_Test
 ADD_TEST(MultipleLanguage_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/MultipleLanguage_Test "--verbose")
 SET_TESTS_PROPERTIES(MultipleLanguage_Test 
 				PROPERTIES ENVIRONMENT "dblp_index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;small_index_dir=${INTEGRATION_TEST_INDEX_DIR}small-test-data/;")
+
+ADD_TEST(MultipleLanguage_2_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/MultipleLanguage_2_Test "--verbose")
+SET_TESTS_PROPERTIES(MultipleLanguage_2_Test 
+				PROPERTIES ENVIRONMENT "dblp_index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;small_index_dir=${INTEGRATION_TEST_INDEX_DIR}small-test-data/;")
 	
 ADD_TEST(ThreadSafety_QueryStress_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/ThreadSafety_QueryStress_Test "--verbose")
 #SET_TESTS_PROPERTIES(ThreadSafety_QueryStress_Test 

@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "instantsearch/Schema.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 
 #define Byte unsigned char
 
@@ -64,12 +64,12 @@ public:
 
     // gets the attribute value wrapped in a Score object
     void getAttribute(const unsigned nonSearchableAttributeIndex,
-            const Schema * schema, Score * score) const;
+            const Schema * schema, TypedValue * score) const;
 
     // gets values of attributes in iters in Score objects. iters must be ascending.
     void getBatchOfAttributes(
             const std::vector<unsigned> & nonSearchableAttributeIndexs,
-            const Schema * schema, std::vector<Score> * scores) const;
+            const Schema * schema, std::vector<TypedValue> * scores) const;
 
     unsigned getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
             const Schema * schema) const;
@@ -122,8 +122,8 @@ private:
     std::string convertByteArrayToString(FilterType type,
             unsigned stringOffset) const;
 
-    void convertByteArrayToScore(FilterType type, unsigned startOffset,
-            Score * result) const;
+    void convertByteArrayToTypedValue(FilterType type, unsigned startOffset,
+            TypedValue * result) const;
 
     friend class boost::serialization::access;
 

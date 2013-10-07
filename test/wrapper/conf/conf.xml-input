@@ -141,12 +141,11 @@
             # Default query term fuzzy penalty
             # OPTIONAL. Defaults to 1
         -->
-        <queryTermFuzzyPenalty></queryTermFuzzyPenalty>
+        <fuzzyMatchPenalty></fuzzyMatchPenalty>
         
         <!--srch2           
-            # Default query term similarity boost
+            # Default query term length boost
             # OPTIONAL. Defaults to 0.5
-            #default-query-term-length-boost=0.5
         -->
         <queryTermLengthBoost></queryTermLengthBoost>
         

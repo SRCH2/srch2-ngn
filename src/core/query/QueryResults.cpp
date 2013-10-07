@@ -110,7 +110,7 @@ std::string QueryResults::getResultScoreString(unsigned position) const {
     ASSERT (position < this->getNumberOfResults());
     return impl->sortedFinalResults.at(position)->_score.toString();
 }
-Score QueryResults::getResultScore(unsigned position) const {
+TypedValue QueryResults::getResultScore(unsigned position) const {
     ASSERT (position < this->getNumberOfResults());
     return impl->sortedFinalResults.at(position)->_score;
 }

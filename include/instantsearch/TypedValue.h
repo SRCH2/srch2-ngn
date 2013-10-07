@@ -21,8 +21,8 @@
 
 
 
-#ifndef __INSTANTSEARCH_SCORE_H__
-#define __INSTANTSEARCH_SCORE_H__
+#ifndef __INSTANTSEARCH_TYPEDVALUE_H__
+#define __INSTANTSEARCH_TYPEDVALUE_H__
 
 #include <cstring>
 #include <ctime>
@@ -37,42 +37,42 @@ namespace srch2
     namespace instantsearch
     {
 
-    class Score // TODO : change the name to something like Value
+    class TypedValue
     {
     public:
-    	Score(const Score& score);
-    	bool operator==(const Score& score) const;
-    	bool operator!=(const Score& score) const;
-    	bool operator<(const Score& score) const;
-    	bool operator>(const Score& score) const;
-    	bool operator<=(const Score& score) const;
-    	bool operator>=(const Score& score) const;
-    	Score operator+(const Score& a);
+    	TypedValue(const TypedValue& typedValue);
+    	bool operator==(const TypedValue& typedValue) const;
+    	bool operator!=(const TypedValue& typedValue) const;
+    	bool operator<(const TypedValue& typedValue) const;
+    	bool operator>(const TypedValue& typedValue) const;
+    	bool operator<=(const TypedValue& typedValue) const;
+    	bool operator>=(const TypedValue& typedValue) const;
+    	TypedValue operator+(const TypedValue& a);
 
-    	Score(){
+    	TypedValue(){
     	};
-    	void setScore(unsigned intScore);
-    	void setScore(float floatScore);
-    	void setScore(double doubleScore);
-    	void setScore(string stringScore);
-    	void setScore(long timeScore);
-    	void setScore(const srch2::instantsearch::TimeDuration & duration);
-    	void setScore(const Score& score);
-    	void setScore(FilterType type , string value);
+    	void setTypedValue(unsigned intTypeValue);
+    	void setTypedValue(float floatTypeValue);
+    	void setTypedValue(double doubleTypeValue);
+    	void setTypedValue(string stringTypeValue);
+    	void setTypedValue(long timeTypeValue);
+    	void setTypedValue(const srch2::instantsearch::TimeDuration & duration);
+    	void setTypedValue(const TypedValue& typeValue);
+    	void setTypedValue(FilterType type , string value);
 
     	FilterType getType() const{
     		return valueType;
     	}
 
-    	unsigned getIntScore() const;
-    	float getFloatScore() const;
-    	double getDoubleScore() const;
-    	string getTextScore() const;
-    	long getTimeScore() const;
+    	unsigned getIntTypedValue() const;
+    	float getFloatTypedValue() const;
+    	double getDoubleTypedValue() const;
+    	string getTextTypedValue() const;
+    	long getTimeTypedValue() const;
     	TimeDuration getTimeDuration() const;
 
 
-    	Score minimumValue();
+    	TypedValue minimumValue();
 
     	float castToFloat();
 
@@ -80,7 +80,7 @@ namespace srch2
     	 * returns 0 if this < start
     	 * otherwise, returns floor((this - start) / gap)+1
     	 */
-    	unsigned findIndexOfContainingInterval(Score & start , Score & end, Score & gap) const;
+    	unsigned findIndexOfContainingInterval(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
 
     	string toString() const;
@@ -88,11 +88,11 @@ namespace srch2
 
     private:
     	FilterType valueType;
-    	unsigned intScore;
-    	float floatScore;
-    	string stringScore;
-    	long timeScore;
-    	TimeDuration timeDurationScore;
+    	unsigned intTypedValue;
+    	float floatTypedValue;
+    	string stringTypedValue;
+    	long timeTypedValue;
+    	TimeDuration timeDurationTypedValue;
     };
 
 
@@ -100,4 +100,4 @@ namespace srch2
 
 }
 
-#endif
+#endif // __INSTANTSEARCH_TYPEDVALUE_H__

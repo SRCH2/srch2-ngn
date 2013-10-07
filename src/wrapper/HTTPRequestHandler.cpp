@@ -12,7 +12,7 @@
 
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
-#include "instantsearch/Score.h"
+#include "instantsearch/TypedValue.h"
 #include "instantsearch/ResultsPostProcessor.h"
 #include "ParsedParameterContainer.h"
 #include "QueryParser.h"
@@ -129,7 +129,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["results"][counter]["record_id"] = queryResults->getRecordId(
                     i);
             root["results"][counter]["score"] = (0
-                    - queryResults->getResultScore(i).getFloatScore()); //the actual distance between the point of record and the center point of the range
+                    - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
             if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                     || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
                 unsigned internalRecordId = queryResults->getInternalRecordId(
@@ -159,7 +159,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["results"][counter]["record_id"] = queryResults->getRecordId(
                     i);
             root["results"][counter]["score"] = queryResults->getResultScore(i)
-                    .getFloatScore();
+                    .getFloatTypedValue();
 
             // print edit distance vector
             vector<unsigned> editDistances;
