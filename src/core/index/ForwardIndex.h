@@ -131,8 +131,7 @@ public:
      * ------------------------------------------------------------------------------------------------------------------
      *
      * This function will calculate and prepare nonSearchableAttribute byte array in its place.
-     * and will allocate the whole space and copy the third and the last part data" -> "the third part
-     * (refining-attribute values) and the last part (positional index)
+     * and will allocate the whole space and copy the last part (positional index)
      * the rest of data will be filled out through setKeywordId(...) , setKeywordRecordStaticScore(...)
      * and setKeywordAttributeBitmap(...) API calls.
      */
