@@ -62,7 +62,7 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
                 // parse BSON object returned by cursor and fill in record object
                 bool result = BSONParser::parse(record, bsonObj, configManager);
                 if (result) {
-                    indexer->addRecord(record, analyzer, 0);
+                    indexer->addRecord(record, analyzer);
                     ++indexCnt;
                 }
                 record->clear();
@@ -247,7 +247,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         } else {
             srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
             IndexWriteUtil::_insertCommand(server->indexer,
-                    configManager, root, 0, record, errorMsg);
+                    configManager, root, record, errorMsg);
             record->clear();
             delete record;
         }
@@ -276,7 +276,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         if (primaryKeyStringValue.size()) {
             errorMsg << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
             //delete the record from the index
-            switch(server->indexer->deleteRecord(primaryKeyStringValue, 0))
+            switch(server->indexer->deleteRecord(primaryKeyStringValue))
             {
             case srch2is::OP_FAIL:
             {
@@ -326,7 +326,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         unsigned deletedInternalRecordId;
         if (primaryKeyStringValue.size()) {
             srch2is::INDEXWRITE_RETVAL ret =
-            		server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId);
+            		server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId);
             if (ret == srch2is::OP_FAIL)
             {
                 errorMsg << "failed\",\"reason\":\"no record with given primary key\"}";
@@ -346,7 +346,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                 } else {
                     srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
                     IndexWriteUtil::_insertCommand(server->indexer,
-                            configManager, root, 0, record, errorMsg);
+                            configManager, root, record, errorMsg);
                     record->clear();
                     delete record;
                 }
@@ -357,7 +357,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                 errorMsg << "failed\",\"reason\":\"insert: Document limit reached." << endl;
                 /// reaching here means the insert failed, need to resume the deleted old record
                 srch2::instantsearch::INDEXWRITE_RETVAL ret =
-                		server->indexer->recoverRecord(primaryKeyStringValue, 0, deletedInternalRecordId);
+                		server->indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
             }
         }
         break;

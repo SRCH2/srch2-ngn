@@ -19,7 +19,7 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str) == false){
@@ -31,7 +31,7 @@ struct IndexWriteUtil
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
             srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
             delete analyzer;
 
     		switch( ret )
@@ -62,7 +62,7 @@ struct IndexWriteUtil
     }
 
     //TODO: NO way to tell if delete failed on srch2 index
-    static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, const uint64_t offset, std::stringstream &log_str)
+    static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -74,7 +74,7 @@ struct IndexWriteUtil
     	{
     		//delete the record from the index
 
-    		switch(indexer->deleteRecord(primaryKeyStringValue, 0))
+    		switch(indexer->deleteRecord(primaryKeyStringValue))
     		{
 				case OP_FAIL:
     		    {
@@ -95,7 +95,7 @@ struct IndexWriteUtil
     	//std::cout << "DELETE request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const uint64_t offset, std::stringstream &log_str)
+    static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
 	{
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -114,7 +114,7 @@ struct IndexWriteUtil
 			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
 
 			//delete the record from the index
-			switch(indexer->deleteRecord(primaryKeyStringValue, 0))
+			switch(indexer->deleteRecord(primaryKeyStringValue))
 			{
 				case OP_FAIL:
 				{
@@ -133,7 +133,7 @@ struct IndexWriteUtil
 		}
 	}
 
-    static void _updateCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, const uint64_t offset, Record *record, std::stringstream &log_str)
+    static void _updateCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
         /// step 1, delete old record
 
@@ -166,7 +166,7 @@ struct IndexWriteUtil
             }
 
 			//delete the record from the index
-			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, 0, deletedInternalRecordId))
+			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
 			{
 				case srch2::instantsearch::OP_FAIL:
 				{
@@ -192,7 +192,7 @@ struct IndexWriteUtil
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
             Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer, offset);
+    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
 
     		switch( ret )
 			{
@@ -220,7 +220,7 @@ struct IndexWriteUtil
 
         /// reaching here means the insert failed, need to resume the deleted old record
         
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, offset, deletedInternalRecordId);
+        srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
 
         switch ( ret )
         {
@@ -256,7 +256,6 @@ struct IndexWriteUtil
     	{
 	  
 	  // CHENLI: do not save indexes to disk since we can always rebuild them from
-	  // the log messages in Kafka
 	  // indexer->save();
 	  std::cout << "_commitCommand(): Do NOT save indexes to the disk." << std::endl;
 	  log_str << "{\"commit\":\"success\"}";

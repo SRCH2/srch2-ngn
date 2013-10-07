@@ -78,7 +78,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
             cellCounter++;
         }
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 

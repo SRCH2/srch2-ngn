@@ -78,8 +78,6 @@ IndexData::IndexData(const string &directoryName,
     else
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
 
-    //Starting offset
-    this->kafkaOffset_CurrentIndexSnapshot = 0;
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
     this->commited = false;

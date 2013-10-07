@@ -21,7 +21,7 @@ SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/
 
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
-ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
 						${Srch2InstantSearch_LIBRARIES} 
 						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
@@ -39,7 +39,7 @@ TARGET_LINK_LIBRARIES(PostProcessingFilter_Test
 ADD_DEPENDENCIES(PostProcessingFilter_Test srch2_core)
 
 					
-ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:KAFKA_OBJECTS>)
+ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(XMLParser_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 

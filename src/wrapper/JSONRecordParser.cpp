@@ -355,7 +355,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
             {
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
-                indexer->addRecord(record, analyzer, 0);
+                indexer->addRecord(record, analyzer);
                 indexedCounter++;
             }
             else

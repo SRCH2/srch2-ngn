@@ -95,27 +95,24 @@ public:
 
     /*
     * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.*/
-    virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer, const uint64_t kafkaMessageOffset) = 0;
+    virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer) = 0;
 
     /*
     * Deletes all the records.*/
-    virtual INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset) = 0;
+    virtual INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID) = 0;
 
     /*
     * Deletes all the records.
       Get deleted internal record id */
-    virtual INDEXWRITE_RETVAL deleteRecordGetInternalId(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned &internalRecordId) = 0;
+    virtual INDEXWRITE_RETVAL deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId) = 0;
 
     /*
       Resume a deleted record */
-    virtual INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned internalRecordId) = 0;
+    virtual INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId) = 0;
 
     /*
       Check if a record exists */
     virtual INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID) = 0;
-
-    // get the Kafka Offset of the last message in the last index snapshot on disk.
-    virtual uint64_t getKafkaOffsetFromIndexSnapShot() const = 0;
 
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
 

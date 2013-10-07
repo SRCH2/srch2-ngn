@@ -56,11 +56,10 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     return commitReturnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer, const uint64_t kafkaMessageOffset)
+INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer)
 {
     writelock();
     this->writesCounter_forMerge++;
-    this->kafkaOffset_LatestWriteView = kafkaMessageOffset;
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
 
     writeunlock();
@@ -68,12 +67,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset)
+INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
     writelock();
     this->writesCounter_forMerge++;
 
-    this->kafkaOffset_LatestWriteView = kafkaMessageOffset;
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
     
     writeunlock();
@@ -81,12 +79,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned &internalRecordId)
+INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
     writelock();
     this->writesCounter_forMerge++;
 
-    this->kafkaOffset_LatestWriteView = kafkaMessageOffset;
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
 
     writeunlock();
@@ -94,12 +91,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned internalRecordId)
+INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId)
 {
     writelock();
     this->writesCounter_forMerge++;
 
-    this->kafkaOffset_LatestWriteView = kafkaMessageOffset;
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
 
     writeunlock();
@@ -131,7 +127,6 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     this->merge();
     writesCounter_forMerge = 0;
 
-    this->index->_setKafkaOffsetOfCurrentIndexSnapshot(this->kafkaOffset_LatestReadView);
     //get the export data
     this->index->_exportData(exportedDataFileName);
 
@@ -146,7 +141,6 @@ void IndexReaderWriter::save()
     this->merge();
     writesCounter_forMerge = 0;
 
-    this->index->_setKafkaOffsetOfCurrentIndexSnapshot(this->kafkaOffset_LatestReadView);
     this->index->_save();
 
     writeunlock();
@@ -159,7 +153,6 @@ void IndexReaderWriter::save(const std::string& directoryName)
     this->merge();
     writesCounter_forMerge = 0;
 
-    this->index->_setKafkaOffsetOfCurrentIndexSnapshot(this->kafkaOffset_LatestReadView);
     this->index->_save(directoryName);
 
     writeunlock();
@@ -176,7 +169,6 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge()
 
     INDEXWRITE_RETVAL returnValue = this->index->_merge();
 
-    this->kafkaOffset_LatestReadView = this->kafkaOffset_LatestWriteView;
 
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
