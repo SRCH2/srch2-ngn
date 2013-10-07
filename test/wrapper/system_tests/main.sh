@@ -7,19 +7,13 @@ PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
 # We remove the old indexes, if any, before doing the test.
-rm data/ -rf 
+rm -rf data/ 
 echo '----do phrase search test--------------'
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt
 if [ $? -gt 0 ]; then
     echo " --- error ---"
     exit -1
 fi
-python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
-
 python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
 if [ $? -gt 0 ]; then
     echo " --- error ---"
