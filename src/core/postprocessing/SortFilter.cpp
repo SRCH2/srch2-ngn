@@ -99,11 +99,11 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
         bool isValid = false;
         const ForwardList * list = forwardIndex->getForwardList(queryResult->internalRecordId, isValid);
         ASSERT(isValid);
-        const VariableLengthAttributeContainer * nonSearchableAttributeContainer =
-                list->getNonSearchableAttributeContainer();
-        // now get the values from the container
+        const Byte * nonSearchableAttributesData =
+                list->getNonSearchableAttributeContainerData();
+        // now parse the values by VariableLengthAttributeContainer
         vector<TypedValue> typedValues;
-        nonSearchableAttributeContainer->getBatchOfAttributes(attributeIds, schema,&typedValues);
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , nonSearchableAttributesData,&typedValues);
         // save the values in QueryResult objects
         for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
                 attributesIterator != attributes->end() ; ++attributesIterator){

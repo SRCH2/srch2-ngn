@@ -229,16 +229,16 @@ TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
 
     switch (filterType) {
 		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			typedValue.setTypedValue(nonSearchableAttributeValues.getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			typedValue.setTypedValue(nonSearchableAttributeValues.getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			typedValue.setTypedValue(nonSearchableAttributeValues.getTextAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			typedValue.setTypedValue(nonSearchableAttributeValues.getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal));
+			typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
 			break;
 		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 			ASSERT(false);
@@ -283,11 +283,6 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
      * to interpret the order of positionIndex entries.
      */
 
-    //An unused position was found
-    /*if (!commited_WriteView)
-     {
-     recordOrder.push_back(recordId);
-     }*/
     // We consider KEYWORD_THRESHOLD keywords at most, skip the extra ones
     if (uniqueKeywordIdList.size() >= KEYWORD_THRESHOLD)
         uniqueKeywordIdList.resize(KEYWORD_THRESHOLD);
@@ -310,56 +305,20 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
                 ->getNonSearchableAttributeValue(iter);
         nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
     }
-    forwardList->setNonSearchableAttributeValues(this->schemaInternal , nonSearchableAttributeValues );
-
-    // Add KeywordId List
-    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
-    }
-
-    //Add Score List
-    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-
-        map<string, TokenAttributeHits>::const_iterator mapIterator =
-                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
-        ASSERT(mapIterator != tokenAttributeHitsMap.end());
-        forwardList->setKeywordRecordStaticScore(iter,
-                forwardList->computeFieldBoostSummation(this->schemaInternal,
-                        mapIterator->second));
-    }
-
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
-    // support attribute-based search
+    bool shouldAttributeBitMapBeAllocated = false;
     if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
-    	this->isAttributeBasedSearch = true;
-
-    	forwardList->setKeywordAttributeBitmaps(
-    			new unsigned[keywordListCapacity]);
-
-    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-    		map<string, TokenAttributeHits>::const_iterator mapIterator =
-    				tokenAttributeHitsMap.find(
-    						uniqueKeywordIdList[iter].second.first);
-    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
-    		unsigned bitVector = 0;
-    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-    				i++) {
-    			int attributeId = ((mapIterator->second.attributeList.at(i))
-    					>> 24) - 1;
-    			bitVector |= (1 << attributeId);
-    		}
-    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
-    	}
+    	shouldAttributeBitMapBeAllocated = true;
     }
 
+	// this buffer is temporary storage of variable length byte array, since its
+	// size is not known in advance.
+	vector<uint8_t> tempPositionIndexBuffer;
     if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
     	// Add position indexes in forward list
     	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
-    	// this buffer is temporary storage of variable length byte array, since its
-    	// size is not known in advance.
-    	vector<uint8_t> tempVarLenByteBuffer;
     	// To avoid frequent resizing, reserve space for vector. 10 is random number
-    	tempVarLenByteBuffer.reserve(uniqueKeywordIdList.size() * 10);
+    	tempPositionIndexBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
     	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
 
@@ -383,7 +342,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
-    				convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     				positionListVector.clear();
     				positionListVector.push_back(position);
     			}
@@ -392,11 +351,49 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		// convert the position list vector of last attribute to variable
     		// length byte array
-    		convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     		positionListVector.clear();
     	}
-    	// set grand buffer to position index of current forward list.
-    	forwardList->setPositionIndex(tempVarLenByteBuffer);
+    }
+
+    // set all extra information into the forward list.
+    forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
+    		nonSearchableAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer);
+
+    // Add KeywordId List
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+        forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
+    }
+
+    //Add Score List
+    for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+
+        map<string, TokenAttributeHits>::const_iterator mapIterator =
+                tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
+        ASSERT(mapIterator != tokenAttributeHitsMap.end());
+        forwardList->setKeywordRecordStaticScore(iter,
+                forwardList->computeFieldBoostSummation(this->schemaInternal,
+                        mapIterator->second));
+    }
+
+    // support attribute-based search
+    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
+    	this->isAttributeBasedSearch = true;
+
+    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+    		map<string, TokenAttributeHits>::const_iterator mapIterator =
+    				tokenAttributeHitsMap.find(
+    						uniqueKeywordIdList[iter].second.first);
+    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    		unsigned bitVector = 0;
+    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
+    				i++) {
+    			int attributeId = ((mapIterator->second.attributeList.at(i))
+    					>> 24) - 1;
+    			bitVector |= (1 << attributeId);
+    		}
+    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
+    	}
     }
 
     ForwardListPtr managedForwardListPtr;
@@ -873,25 +870,21 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      */
 }
 
-void ForwardList::setPositionIndex(vector<uint8_t>& v){
-	positionIndex = v;
-	ASSERT(positionIndex.size() == positionIndex.capacity());
-}
 unsigned getBitSet(unsigned number);
 unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
 		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
 
-	if (positionIndex.size() == 0){
+	if (positionIndexSize == 0){
 		Logger::warn("Position Index not found in forward index!!");
 		return;
 	}
 
-	const uint8_t * piPtr = &positionIndex[0];  // pointer to position index for the record
+	const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
 	unsigned piOffset = 0;
 
-	if (*(piPtr + positionIndex.size() - 1) & 0x80)
+	if (*(piPtr + positionIndexSize - 1) & 0x80)
 	{
 		 Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
 		 return;
@@ -900,7 +893,8 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 	// get the correct byte array position for current keyword + attribute combination
 
 	for (unsigned j = 0; j < keyOffset ; ++j) {
-		currKeyattributeBitMap = keywordAttributeBitmaps[j];
+		currKeyattributeBitMap =
+			    getKeywordAttributeBitmapsPointer()[j];
 		unsigned count = getBitSet(currKeyattributeBitMap);
 		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
@@ -909,7 +903,8 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 			piOffset += byteRead + value;
 		}
 	}
-	currKeyattributeBitMap = keywordAttributeBitmaps[keyOffset];
+	currKeyattributeBitMap =
+		    getKeywordAttributeBitmapsPointer()[keyOffset];
 	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
 	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
 

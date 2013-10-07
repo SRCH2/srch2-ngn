@@ -50,8 +50,8 @@ bool NonSearchableAttributeExpressionFilterInternal::doPass(Schema * schema, For
     bool isValid = false;
     const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
     ASSERT(isValid);
-    const VariableLengthAttributeContainer * container = list->getNonSearchableAttributeContainer();
-    container->getBatchOfAttributes(attributeIds,schema,&typedValues);
+    const Byte * nonSearchableAttributesData = list->getNonSearchableAttributeContainerData();
+    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,nonSearchableAttributesData ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]
