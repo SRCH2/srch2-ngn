@@ -131,7 +131,8 @@ public:
      * ------------------------------------------------------------------------------------------------------------------
      *
      * This function will calculate and prepare nonSearchableAttribute byte array in its place.
-     * and will allocate the whole space and copy the third and the last part data
+     * and will allocate the whole space and copy the third and the last part data" -> "the third part
+     * (refining-attribute values) and the last part (positional index)
      * the rest of data will be filled out through setKeywordId(...) , setKeywordRecordStaticScore(...)
      * and setKeywordAttributeBitmap(...) API calls.
      */
@@ -147,6 +148,7 @@ public:
     	unsigned keywordAttributeBitMapSize = 0;
     	if(shouldAttributeBitMapBeAllocated == true){
     		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
+    		ASSERT(keywordAttributeBitMapSize > 0);
     	}
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
@@ -525,7 +527,6 @@ public:
      * Check if the ForwardList of recordId has a keywordId in range [minId, maxId]. Note that this is closed range.
      * If the recordId does not exist, return false.
      */
-//    bool haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId, const int termSearchableAttributeIdToFilterTermHits, unsigned &keywordId, float &score) const;
     ///Added for stemmer
     bool haveWordInRangeWithStemmer(const unsigned recordId,
             const unsigned minId, const unsigned maxId,

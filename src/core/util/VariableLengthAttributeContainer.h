@@ -49,11 +49,10 @@ class VariableLengthAttributeContainer {
 
 public:
 
-	// it calculates and returns the number of butes that this list will need
+	// it calculates and returns the number of bytes that this list will need
 	static unsigned getSizeNeededForAllocation(const Schema * schema,const vector<string> & nonSearchableAttributeValues);
 
     // fills the container with the values
-	// Byte *& data is a pass by reference of a pointer variable, data will be allocated and set in this function.
     static void fillWithoutAllocation(const Schema * schema,const vector<string> & nonSearchableAttributeValues, Byte * data);
 
     // fills the container with the values

@@ -283,11 +283,6 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
      * to interpret the order of positionIndex entries.
      */
 
-    //An unused position was found
-    /*if (!commited_WriteView)
-     {
-     recordOrder.push_back(recordId);
-     }*/
     // We consider KEYWORD_THRESHOLD keywords at most, skip the extra ones
     if (uniqueKeywordIdList.size() >= KEYWORD_THRESHOLD)
         uniqueKeywordIdList.resize(KEYWORD_THRESHOLD);
@@ -318,12 +313,12 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
 	// this buffer is temporary storage of variable length byte array, since its
 	// size is not known in advance.
-	vector<uint8_t> tempVarLenByteBuffer;
+	vector<uint8_t> tempPositionIndexBuffer;
     if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
     	// Add position indexes in forward list
     	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
     	// To avoid frequent resizing, reserve space for vector. 10 is random number
-    	tempVarLenByteBuffer.reserve(uniqueKeywordIdList.size() * 10);
+    	tempPositionIndexBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
     	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
 
@@ -347,7 +342,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
-    				convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     				positionListVector.clear();
     				positionListVector.push_back(position);
     			}
@@ -356,14 +351,14 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		// convert the position list vector of last attribute to variable
     		// length byte array
-    		convertToVarLengthArray(positionListVector, tempVarLenByteBuffer);
+    		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     		positionListVector.clear();
     	}
     }
 
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		nonSearchableAttributeValues , shouldAttributeBitMapBeAllocated , tempVarLenByteBuffer);
+    		nonSearchableAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer);
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {

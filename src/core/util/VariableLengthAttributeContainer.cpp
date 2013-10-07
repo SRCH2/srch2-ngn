@@ -28,7 +28,7 @@
 namespace srch2 {
 namespace instantsearch {
 
-// it calculates and returns the number of butes that this list will need
+// it calculates and returns the number of bytes that this list will need
 unsigned VariableLengthAttributeContainer::getSizeNeededForAllocation(
 		const Schema * schema,
 		const vector<string> & nonSearchableAttributeValues){
@@ -88,9 +88,7 @@ void VariableLengthAttributeContainer::fillWithoutAllocation(
 void VariableLengthAttributeContainer::fill(const Schema * schema,
         const vector<string> & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize) {
     // to make sure this class is not updates anywhere in the system
-    if (data != NULL) {
-        ASSERT(false);
-    }
+    ASSERT(data == NULL);
 
     // first allocate the Byte array
     allocate(schema, nonSearchableAttributeValues , data , dataSize);
