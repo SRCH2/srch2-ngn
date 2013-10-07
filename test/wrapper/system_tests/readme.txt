@@ -1,4 +1,17 @@
 
+how to run system test case:
+
+/path/to/system/test/dir/main.sh /path/to/system/test/dir /path/to/srch2-engine 
+
+if you are running it for the sytem test directory itself then 
+
+./main.sh . /path/to/srch2-engine
+
+
+
+*** BELOW IS THE OLD CONTENT OF README.TXT WHICH IS MAINLY ABOUT STATEMEDIA TESTS ***
+
+
 Written by Chen Li in May 2012
 Updated by Xiang An on June 1, 2012
 Updated by Huaijie Zhu on July 17,2013

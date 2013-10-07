@@ -127,12 +127,6 @@ int token = 0;
 void testRead(Indexer *indexer)
 {
     // Create an index writer
-    unsigned mergeEveryNSeconds = 3;    
-    unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
-           
-    indexer = Indexer::load(indexMetaData1);
-
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
     const Analyzer *analyzer =getAnalyzer();
 
@@ -302,7 +296,7 @@ void test1()
     addSimpleRecords();
 
     // create an indexer
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
     indexer = Indexer::load(indexMetaData1);
