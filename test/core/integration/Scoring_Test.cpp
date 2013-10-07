@@ -79,7 +79,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
             cellCounter++;
         }
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -163,7 +163,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 

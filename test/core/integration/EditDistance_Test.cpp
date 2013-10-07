@@ -70,7 +70,7 @@ void buildLocalIndex(string INDEX_DIR)
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     // create a record of 3 attributes
     record->clear();
@@ -79,7 +79,7 @@ void buildLocalIndex(string INDEX_DIR)
     record->setSearchableAttributeValue("article_authors", "abXXXXX XXXabXX XXXXXab");
     record->setRecordBoost(20);
 
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
 /*
     // create another record

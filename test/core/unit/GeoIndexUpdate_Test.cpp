@@ -76,7 +76,7 @@ void addLocationRecordWithSingleAttr(vector< pair<string, pair<string, Point> > 
 	record->setSearchableAttributeValue(0, firstAttribute);
 	record->setLocationAttributeValue(point.x, point.y);
 
-	indexer->addRecord(record, analyzer, 0);
+	indexer->addRecord(record, analyzer);
 
     // store the inserted record to search later
     pair<string, Point> recordToSearch (pkey_string.str(), point);
@@ -543,7 +543,7 @@ void testDeletion(vector< pair<string, pair<string, Point> > > &recordsToSearch,
 
     for (int i = 0; i < recordsToSearch.size(); i+=2)
     {
-        indexer->deleteRecord(recordsToSearch[i].second.first, 0);
+        indexer->deleteRecord(recordsToSearch[i].second.first);
         deletedRecords.push_back(recordsToSearch[i]);
         recordsToSearch.erase(recordsToSearch.begin() + i);
     }

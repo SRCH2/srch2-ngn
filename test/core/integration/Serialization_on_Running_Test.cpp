@@ -87,7 +87,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
 
         records_in_index.push_back(newp);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -149,7 +149,7 @@ void updateAndSaveIndex(Indexer *indexer, Analyzer* analyzer, string data_file, 
 
         records_in_index.push_back(newp);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -237,7 +237,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -312,7 +312,7 @@ void updateAndSaveGeoIndex(Indexer *indexer,Analyzer* analyzer, string data_file
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 

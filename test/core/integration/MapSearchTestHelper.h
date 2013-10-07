@@ -201,7 +201,7 @@ void readGeoRecordsFromFile(string filepath, Indexer *index, Schema *schema, Ana
 		record->setLocationAttributeValue(p.x, p.y);
 
 		// add the record
-		index->addRecord(record, analyzer, 0);
+		index->addRecord(record, analyzer);
 		delete record;
 	}
 

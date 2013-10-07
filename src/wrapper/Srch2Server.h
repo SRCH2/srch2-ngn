@@ -38,30 +38,6 @@ namespace srch2
 {
 namespace httpwrapper
 {
-// Check if index files already exist.
-bool checkIndexExistence(const ConfigManager *indexDataContainerConf)
-{
-    const string &directoryName = indexDataContainerConf->getIndexPath();
-    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
-        return false;
-    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
-        return false;
-    if(!checkDirExistence((directoryName + "/" + IndexConfig::forwardIndexFileName).c_str()))
-        return false;
-    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
-        return false;
-    if (indexDataContainerConf->getIndexType() == srch2::instantsearch::DefaultIndex){
-        // Check existence of the inverted index file for basic keyword search ("A1")
-        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
-            return false;
-    }else{
-        // Check existence of the quadtree index file for geo keyword search ("M1")
-        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
-            return false;
-    }
-    return true;
-}
-
 
 class Srch2Server
 {
@@ -93,6 +69,30 @@ public:
 		this->createAndBootStrapIndexer();
 	}
 
+
+	// Check if index files already exist.
+	bool checkIndexExistence(const ConfigManager *indexDataContainerConf)
+	{
+	    const string &directoryName = indexDataContainerConf->getIndexPath();
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::forwardIndexFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
+	        return false;
+	    if (indexDataContainerConf->getIndexType() == srch2::instantsearch::DefaultIndex){
+	        // Check existence of the inverted index file for basic keyword search ("A1")
+	        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+	            return false;
+	    }else{
+	        // Check existence of the quadtree index file for geo keyword search ("M1")
+	        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
+	            return false;
+	    }
+	    return true;
+	}
 
 	IndexMetaData *createIndexMetaData(const ConfigManager *indexDataContainerConf)
 	{

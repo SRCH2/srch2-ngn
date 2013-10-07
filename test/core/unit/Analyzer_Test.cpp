@@ -901,7 +901,7 @@ void testAnalyzerSerilization(string dataDir) {
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     index->commit();
     index->save();
@@ -950,7 +950,7 @@ void testAnalyzerSerilization(string dataDir) {
     record2->setSearchableAttributeValue("article_authors", " and Jack Lennon");
     record2->setSearchableAttributeValue("article_title", "Yeste More");
     record2->setRecordBoost(10);
-    index2->addRecord(record2, analyzer2, 0);
+    index2->addRecord(record2, analyzer2);
 
     index2->commit();
     index2->save();
