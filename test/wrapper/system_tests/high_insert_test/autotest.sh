@@ -36,7 +36,7 @@ endServer(){
         alive=$(ps -ef|grep $1| grep -v "grep" | wc -l)
         count=$[ $count + 1 ]
     done
-    rm ./high_insert_test/index -rf
+    rm -rf ./high_insert_test/index
     rm ./high_insert_test/log.txt
 }
 

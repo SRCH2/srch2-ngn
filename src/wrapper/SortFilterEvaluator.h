@@ -45,7 +45,6 @@ public:
 				return comparisonResultOnThisAttribute;
 			}
 		}
-		ASSERT(leftTieBreaker != rightTieBreaker);
 		if(order == srch2::instantsearch::SortOrderAscending){
 			if(leftTieBreaker < rightTieBreaker) return 1;
 			else return -1;
