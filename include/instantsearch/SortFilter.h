@@ -36,6 +36,8 @@ namespace instantsearch
 class SortEvaluator
 {
 public:
+	// pass left and right value to compare. Additionally pass internal record id of both left
+	// and right records which serve as tie breaker.
 	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual ~SortEvaluator(){};

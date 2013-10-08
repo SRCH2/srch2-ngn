@@ -45,6 +45,8 @@ public:
 				return comparisonResultOnThisAttribute;
 			}
 		}
+		// if we reach here then left value is equal to right value. Hence we use tiebreaker ( internal record ids)
+		// to determine the order. It helps in achieving deterministic order.
 		if(order == srch2::instantsearch::SortOrderAscending){
 			if(leftTieBreaker < rightTieBreaker) return 1;
 			else return -1;
