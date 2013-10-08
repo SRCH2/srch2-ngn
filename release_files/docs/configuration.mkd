@@ -426,10 +426,10 @@ The engine supports the following formats of time and date: <br>
 
  - HH:MM:SS<br>
  - MM/DD/YY<br>
- - YY-MM-DD HH:MM::SS<br>
- - YYMMDDHHMMSS<br>
- - YYMMDDHHMM<br>
- - YYMMDD<br>
+ - YYYY-MM-DD HH:MM::SS<br>
+ - YYYYMMDDHHMMSS<br>
+ - YYYYMMDDHHMM<br>
+ - YYYYMMDD<br>
 
 The engine supports time durations of the format "{An integer}{A date/time constant}", in which date and time constants are: SECOND, SECONDS, MINUTE, MINUTES, HOUR, HOURS, DAY, DAYS, WEEK, WEEKS, MONTH, MONTHS, YEAR, YEARS.  Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br>
 
