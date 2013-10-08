@@ -165,6 +165,11 @@ void RangeFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned,
 	// now fill the output
 	for(int lowerBoundsIndex = 0; lowerBoundsIndex < lowerBounds.size() ; lowerBoundsIndex++){
 		string bucketName = lowerBounds.at(lowerBoundsIndex).toString();
+		/*
+		 * If the type of this facet attribute is time, we should translate the number of
+		 * seconds from Jan 1st 1970 (aka "epoch") to a human readable representation of time.
+		 * For example, if this value is 1381271294, the name of this bucket is 10/8/2013 3:28:14.
+		 */
 		if(attributeType == ATTRIBUTE_TYPE_TIME){
 			long timeValue = lowerBounds.at(lowerBoundsIndex).getTimeTypedValue();
 			bucketName = DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(&timeValue);
