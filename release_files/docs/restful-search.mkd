@@ -186,7 +186,7 @@ To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. 
 q="algorithm data"~10
 ```
 
-Notice that a proximity search does not support edit-disance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
+Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
 
 ##4. Understanding different query components{id="queryComponents"}
 
