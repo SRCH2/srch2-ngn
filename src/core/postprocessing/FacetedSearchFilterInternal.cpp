@@ -24,6 +24,7 @@
 #include <algorithm>
 #include "util/Assert.h"
 #include "instantsearch/TypedValue.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace std;
 namespace srch2 {
@@ -163,7 +164,12 @@ void RangeFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned,
 	numberOfBuckets = lowerBounds.size();
 	// now fill the output
 	for(int lowerBoundsIndex = 0; lowerBoundsIndex < lowerBounds.size() ; lowerBoundsIndex++){
-		idsAndNames->push_back(std::make_pair(lowerBoundsIndex , lowerBounds.at(lowerBoundsIndex).toString()));
+		string bucketName = lowerBounds.at(lowerBoundsIndex).toString();
+		if(attributeType == ATTRIBUTE_TYPE_TIME){
+			long timeValue = lowerBounds.at(lowerBoundsIndex).getTimeTypedValue();
+			bucketName = DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(&timeValue);
+		}
+		idsAndNames->push_back(std::make_pair(lowerBoundsIndex , bucketName));
 	}
 	// And set the flag to make sure this function is called only once.
 	generateListOfIdsAndNamesFlag = false;
@@ -183,7 +189,7 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 	std::string gapString = facetInfoForInitialization[2];
 	std::string fieldName = facetInfoForInitialization[3];
 
-    FilterType attributeType = schema->getTypeOfNonSearchableAttribute(
+    attributeType = schema->getTypeOfNonSearchableAttribute(
             schema->getNonSearchableAttributeId(fieldName));
     start.setTypedValue(attributeType, startString);
 
