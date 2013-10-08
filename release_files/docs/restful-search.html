@@ -162,6 +162,7 @@ Invalid query 3) q=algorithm~.6*
 <pre><code>q=&quot;algorithm data&quot;~10
 </code></pre>
 
+<p>Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.</p>
 <h2 id="queryComponents">4. Understanding different query components</h2>
 <p>The components and sub-components of a query are shown in Figure 1. The "Local Parameters" have query-related meta data specification, and the "Query Parameters" include specifications for the main query, postprocessing filters, sorting, and facets.
 <br>
