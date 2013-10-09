@@ -61,7 +61,6 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    //TODO: NO way to tell if delete failed on srch2 index
     static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
@@ -92,7 +91,6 @@ struct IndexWriteUtil
     		log_str << "failed\",\"reason\":\"no record with given primary key\"}";
     	}
 
-    	//std::cout << "DELETE request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
     static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
@@ -255,9 +253,8 @@ struct IndexWriteUtil
     	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     	{
 	  
-	  // CHENLI: do not save indexes to disk since we can always rebuild them from
+	  // do not save indexes to disk since we can always rebuild them from
 	  // indexer->save();
-	  std::cout << "_commitCommand(): Do NOT save indexes to the disk." << std::endl;
 	  log_str << "{\"commit\":\"success\"}";
     	}
     	else

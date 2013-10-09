@@ -1332,10 +1332,6 @@ const string& ConfigManager::getHTTPServerListeningPort() const {
     return httpServerListeningPort;
 }
 
-uint32_t ConfigManager::getWriteReadBufferInBytes() const {
-    return writeReadBufferInBytes;
-}
-
 int ConfigManager::getDefaultResultsToRetrieve() const {
     return resultsToRetrieve;
 }

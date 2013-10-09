@@ -197,8 +197,6 @@ public:
 	virtual ~ConfigManager();
 
 	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
-//	void parse(const boost::program_options::variables_map &vm,
-//			bool &configSuccess, std::stringstream &parseError);
 
 	void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -264,8 +262,6 @@ public:
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerListeningHostname() const;
 	const std::string& getHTTPServerListeningPort() const;
-
-	uint32_t getWriteReadBufferInBytes() const;
 
 	bool isRecordBoostAttributeSet() const;
 
