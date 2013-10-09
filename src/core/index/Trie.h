@@ -51,6 +51,7 @@
 #include "util/mypthread.h"
 #include "util/Assert.h"
 #include "util/encoding.h"
+#include "index/InvertedIndex.h"
 
 using std::endl;
 using std::set;
@@ -134,6 +135,8 @@ public:
     unsigned char terminalFlag1bDepth7b;
     CharType character;
 
+    // Node sub-trie value
+    float nodeSubTrieValue;
     /// Terminal-node members
     unsigned id;
     unsigned invertedListOffset;
@@ -201,6 +204,7 @@ private:
     void serialize(Archive & ar, const unsigned int version) {
         ar & terminalFlag1bDepth7b;
         ar & character;
+        ar & nodeSubTrieValue;
         ar & id;
         ar & invertedListOffset;
         ar & leftMostDescendant;
@@ -313,6 +317,30 @@ public:
     inline void setId( unsigned id ) { /*assert(this!= NULL);*/
         this->id = id;
     }
+
+    inline float getNodeSubTrieValue() {
+    	return this->nodeSubTrieValue;
+    }
+
+    inline void setNodeSubTrieValue(float nodeSubTrieValue) {
+    	this->nodeSubTrieValue = nodeSubTrieValue;
+    }
+
+    void addNewNodeSubTrieValueToAggregatedValue(float newValue){
+    	this->setNodeSubTrieValue(this->getNodeSubTrieValue() + newValue);
+    }
+
+    void updateNodeSubTrieValueAggregatedValue(){
+    	// iterate on children and aggregate the values
+        unsigned int childIterator = 0;
+        float updatedAggregatedValue = 0;
+        for ( ; childIterator < this->getChildrenCount(); childIterator++ ) {
+            updatedAggregatedValue += this->getChild(childIterator)->getNodeSubTrieValue();
+        }
+        // set the result in the class member
+        this->setNodeSubTrieValue(updatedAggregatedValue);
+    }
+
 
     void addChild(CharType character, TrieNode *childNode);
 
@@ -603,9 +631,25 @@ public:
      */
     void reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper);
 
+    /*
+     * These two functions are supposed to be called in the last step of commit (after nulk load)
+     * because they assume inverted and forward indices are ready. Unless invertedIndex
+     * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
+     * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
+     */
+    void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex);
+    void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex);
+
     void merge();
 
     void commit();
+
+    /*
+     * Calls calculateTrieNodeSubTrieValues and sets commit flag of trie to true
+     * Final commit must be called after InvertedInde and ForwardIndex commits are done unless invertedIndex
+     * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
+     */
+    void finalCommit(const InvertedIndex * invertedIndex);
 
     const std::vector<unsigned> *getOldIdToNewIdMapVector() const;
 

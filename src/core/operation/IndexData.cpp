@@ -480,6 +480,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
 
+        this->trie->finalCommit(this->invertedIndex);
         //this->trie->print_Trie();
         this->commited = true;
         return OP_SUCCESS;

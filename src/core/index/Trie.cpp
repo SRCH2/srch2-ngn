@@ -37,6 +37,7 @@ TrieNode::TrieNode()
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->nodeSubTrieValue = 0;
     this->invertedListOffset = 0;
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -54,6 +55,7 @@ TrieNode::TrieNode(bool create_root)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->nodeSubTrieValue = 0;
     this->invertedListOffset = 0;
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -68,6 +70,7 @@ TrieNode::TrieNode(int depth, CharType character)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->nodeSubTrieValue = 0;
     this->invertedListOffset = 0;
     this->character = character;
 
@@ -82,6 +85,7 @@ TrieNode::TrieNode(const TrieNode *src)
 {
     this->character = src->character;
     this->id = src->id;
+    this->nodeSubTrieValue = src->nodeSubTrieValue;
     this->invertedListOffset = src->invertedListOffset;
     this->leftMostDescendant = src->leftMostDescendant;
     this->rightMostDescendant = src->rightMostDescendant;
@@ -188,7 +192,7 @@ int TrieNode::findChildNodePosition(CharType childCharacter) const
 
 unsigned TrieNode::getByteSizeOfCurrentNode() const
 {
-    return (sizeof(terminalFlag1bDepth7b) + sizeof(character)  + sizeof(invertedListOffset) +
+    return (sizeof(terminalFlag1bDepth7b) + sizeof(character) + sizeof(nodeSubTrieValue) + sizeof(invertedListOffset) +
             //sizeof(hitCount) +
             sizeof(id)+ sizeof(leftMostDescendant)+ sizeof(rightMostDescendant) + sizeof(childrenPointerList));
 }
@@ -1230,6 +1234,59 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
     trieNodesToReassign.clear();
 }
 
+
+void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex){
+    boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+    this->getTrieRootNode_ReadView(trieRootNode_ReadView);
+    TrieNode *root = trieRootNode_ReadView->root;
+    if(root == NULL){
+    	return;
+    }
+    calculateTrieNodeSubTrieValuesForANode(root, invertedIndex);
+
+}
+
+void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex){
+    if(root == NULL){
+    	return;
+    }
+    // first iterate on children an calculate this value for them
+    unsigned childIterator = 0;
+    for(; childIterator < root->getChildrenCount() ; childIterator ++){
+    	calculateTrieNodeSubTrieValuesForANode(root->getChild(childIterator) , invertedIndex);
+    }
+    // now update the value of this node from its children
+    root->updateNodeSubTrieValueAggregatedValue();
+    // now if this node is a terminal node, use inverted index to add the score of
+    // the top record of its inverted list to nodeSubTrieValue
+    if(root->isTerminalNode()){
+    	if(invertedIndex == NULL){
+            // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
+            root->addNewNodeSubTrieValueToAggregatedValue(1);
+            return;
+    	}
+        shared_ptr<vectorview<unsigned> > invertedListReadView;
+        invertedIndex->getInvertedListReadView(root->getInvertedListOffset(), invertedListReadView);
+        float termRecordStaticScore = 0;
+        unsigned termAttributeBitmap = 0;
+        // move on inverted list to find the first record which is valid
+        unsigned invertedListCursor = 0;
+        while(invertedListCursor < invertedListReadView->size()){
+			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
+			unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, root->getInvertedListOffset());
+			if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+				break;
+			}
+        }
+        // now that we have the static score, add the static score to the value of this node
+        root->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
+        return;
+    }
+    return;
+}
+
+
 void Trie::merge()
 {
     // In each merge, we first put the current read view to the end of the queue,
@@ -1278,6 +1335,12 @@ void Trie::commit()
 
     unsigned finalKeywordIdCounter = 0;
     this->commitSubTrie(this->root_readview.get()->root, finalKeywordIdCounter, sparsityFactor);
+}
+
+void Trie::finalCommit(const InvertedIndex * invertedIndex){
+	// traverse the trie in preorder to calculate nodeSubTrieValue
+	calculateTrieNodeSubTrieValues(invertedIndex);
+	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }
 
