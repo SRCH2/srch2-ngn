@@ -168,6 +168,8 @@ TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(c
         	/*
         	 * Example : 12WEEKS or 1SECOND
         	 */
+        	// The constant must match the end of timeString. Also the size of timeString must be larger than constant because
+        	// we know certainly that it starts with a number.
             if(timeString.length() > constant.length() &&
             		0 == timeString.compare (timeString.length() - constant.length(), constant.length(), constant)){
             	int numberOfThisUnit = boost::lexical_cast<int>(timeString.substr(0,timeString.size() - constant.size()));
