@@ -46,6 +46,8 @@ public:
     IndexMetaData( GlobalCache *_cache,
                    unsigned _mergeEveryNSeconds,
                    unsigned _mergeEveryMWrites,
+                   unsigned _updateHistogramEveryPMerges,
+                   unsigned _updateHistogramEveryQWrites,
                    const std::string &_directoryName,
                    const std::string &_trieBootstrapFileNameWithPath)
     {
@@ -63,6 +65,16 @@ public:
         }
         mergeEveryMWrites = _mergeEveryMWrites;
 
+        if(_updateHistogramEveryPMerges == 0){
+        	_updateHistogramEveryPMerges = 10;
+        }
+        updateHistogramEveryPMerges = _updateHistogramEveryPMerges;
+
+        if(_updateHistogramEveryQWrites == 0){
+        	_updateHistogramEveryQWrites = 50;
+        }
+        updateHistogramEveryQWrites = _updateHistogramEveryQWrites;
+
         directoryName = _directoryName;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
     }
@@ -77,6 +89,8 @@ public:
     GlobalCache *cache;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
 };
 
 

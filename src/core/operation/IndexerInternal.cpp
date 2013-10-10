@@ -124,7 +124,8 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     writelock();
 
     // merge the index
-    this->merge();
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
     writesCounter_forMerge = 0;
 
     //get the export data
@@ -138,7 +139,8 @@ void IndexReaderWriter::save()
 {
     writelock();
 
-    this->merge();
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
     writesCounter_forMerge = 0;
 
     this->index->_save();
@@ -150,7 +152,8 @@ void IndexReaderWriter::save(const std::string& directoryName)
 {
     writelock();
 
-    this->merge();
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
     writesCounter_forMerge = 0;
 
     this->index->_save(directoryName);
@@ -159,15 +162,18 @@ void IndexReaderWriter::save(const std::string& directoryName)
 }
 
 
-INDEXWRITE_RETVAL IndexReaderWriter::merge()
+INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
     if (this->cache != NULL)
         this->cache->clear();
 
+    // increment the mergeCounterForUpdatingHistogram
+    this->mergeCounter_forUpdatingHistogram ++;
+
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge();
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
 
 
     struct timespec tend;
@@ -201,7 +207,13 @@ void IndexReaderWriter::mergeThreadLoop()
             break;
         else
         {
-            this->merge();
+        	// check to see if it's the time to update histogram information
+        	// if so, reset the merge counter for future.
+            bool updateHistogramFlag = shouldUpdateHistogram();
+            if(updateHistogramFlag == true){
+            	this->resetMergeCounterForHistogram();
+            }
+            this->merge(updateHistogramFlag);
             writesCounter_forMerge = 0;
             rwMutexForWriter->unlockWrite();
         }

@@ -31,6 +31,7 @@ namespace httpwrapper {
 
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
+
 }
 
 void ConfigManager::loadConfigFile() {
@@ -1121,6 +1122,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     	// and deletes in MongoDB can be identified by _id only.
     	this->primaryKey = "_id";
     }
+
+    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
+    // is no option in xml for this one yet
+    unsigned estimatedHistograpUpdateUpperBound = 5; // 5 seconds (estimated for around 120M trie nodes.)
+    float updateHistogramWorkRatioOverTime = 0.1; // 10 persent of background thread process is spent for updating histogram
+    this->updateHistogramEveryPMerges = (unsigned)
+    		( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
+    this->updateHistogramEveryQWrites =
+    		(unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
@@ -1149,6 +1159,14 @@ uint32_t ConfigManager::getMergeEveryNSeconds() const {
 
 uint32_t ConfigManager::getMergeEveryMWrites() const {
     return mergeEveryMWrites;
+}
+
+uint32_t ConfigManager::getUpdateHistogramEveryPMerges() const {
+    return updateHistogramEveryPMerges;
+}
+
+uint32_t ConfigManager::getUpdateHistogramEveryQWrites() const {
+    return updateHistogramEveryQWrites;
 }
 
 int ConfigManager::getIndexType() const {

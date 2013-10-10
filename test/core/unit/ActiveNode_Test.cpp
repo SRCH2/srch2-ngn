@@ -660,7 +660,7 @@ void testActiveNodeWithTrieUpdate()
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
 
-    trie->merge();
+    trie->merge(NULL , false);
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
     PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
@@ -709,7 +709,7 @@ void testLeafNodeIteratorWithTrieUpdate()
     //trie->addKeyword_ThreadSafe("zzzzzz", invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
-    trie->merge();
+    trie->merge(NULL , false);
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
     PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;

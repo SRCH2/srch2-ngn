@@ -81,6 +81,10 @@ private:
 	unsigned mergeEveryNSeconds;
 	unsigned mergeEveryMWrites;
 
+	// no config option for this yet
+	unsigned updateHistogramEveryPMerges;
+	unsigned updateHistogramEveryQWrites;
+
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
@@ -245,6 +249,9 @@ public:
 	uint32_t getCacheSizeInBytes() const;
 	uint32_t getMergeEveryNSeconds() const;
 	uint32_t getMergeEveryMWrites() const;
+
+	uint32_t getUpdateHistogramEveryPMerges() const;
+	uint32_t getUpdateHistogramEveryQWrites() const;
 
 	int getNumberOfThreads() const;
 

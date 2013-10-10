@@ -400,7 +400,7 @@ void test2()
     trie1->addKeyword("00000000000", invertedIndexOffset);
     trie1->addKeyword("0000000000088", invertedIndexOffset);
 
-    trie1->merge();
+    trie1->merge(NULL, false);
 
     cout<<"\nAfter Commit and Update:\n" << std::endl;
 
@@ -533,7 +533,7 @@ void test2_ThreadSafe()
     trie1->addKeyword_ThreadSafe("00000000000", invertedIndexOffset);
     trie1->addKeyword_ThreadSafe("0000000000088", invertedIndexOffset);
 
-    trie1->merge();
+    trie1->merge(NULL, false);
 
     map<TrieNode *, unsigned> trieNodeIdMapper;
     trie1->reassignKeywordIds(trieNodeIdMapper);

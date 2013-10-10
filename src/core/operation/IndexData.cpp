@@ -502,7 +502,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
     }
 }
 
-INDEXWRITE_RETVAL IndexData::_merge()
+INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram)
 {
     Logger::debug("Merge begins--------------------------------"); 
 
@@ -511,8 +511,14 @@ INDEXWRITE_RETVAL IndexData::_merge()
     
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);
-    
-    this->trie->merge();
+
+    // if it is the case of M1, invertedIndex is passes as NULL so that histogram information only
+    // uses frequency. Otherwise, the invertedIndex will be used to integrate its information with frequency
+    const InvertedIndex * invertedIndex = NULL;
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+    	invertedIndex = this->invertedIndex;
+    }
+    this->trie->merge(invertedIndex, updateHistogram);
     
     // struct timespec tend;
     // clock_gettime(CLOCK_REALTIME, &tend);

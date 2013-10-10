@@ -804,8 +804,11 @@ void Trie::load(Trie &trie, const std::string &trieFullPathFileName)
 
 void Trie::save(Trie &trie, const std::string &trieFullPathFileName)
 {
-    if (trie.merge_required)
-        trie.merge();
+    if (trie.merge_required){
+    	// we don't have to update histogram when we want to save.
+    	// if we want to do that we need to change save API to get InvertedIndex.
+        trie.merge(NULL, false);
+    }
     std::ofstream ofs(trieFullPathFileName.c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
     oa << trie;
@@ -1287,8 +1290,14 @@ void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const Inverted
 }
 
 
-void Trie::merge()
+void Trie::merge(const InvertedIndex * invertedIndex , bool updateHistogram)
 {
+
+	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
+	// then update the histogram information in Trie.
+	if(updateHistogram == true){
+		this->calculateTrieNodeSubTrieValues(invertedIndex);
+	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
     // in the order of their arrival. For each read view, we check its reference count.

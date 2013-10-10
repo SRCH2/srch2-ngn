@@ -293,7 +293,7 @@ public:
     void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
 
     // merge the index
-    INDEXWRITE_RETVAL _merge();
+    INDEXWRITE_RETVAL _merge(bool updateHistogram);
 
      // delete a record with a specific id
     INDEXWRITE_RETVAL _deleteRecord(const std::string &externalRecordId);

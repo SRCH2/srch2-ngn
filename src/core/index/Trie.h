@@ -640,7 +640,7 @@ public:
     void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex);
     void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex);
 
-    void merge();
+    void merge(const InvertedIndex * invertedIndex , bool updateHistogram);
 
     void commit();
 

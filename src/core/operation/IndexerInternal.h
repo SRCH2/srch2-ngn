@@ -122,7 +122,10 @@ public:
         this->cache = dynamic_cast<Cache*>(indexMetaData->cache);
         this->mergeEveryNSeconds = indexMetaData->mergeEveryNSeconds;
         this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
+        this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;
+        this->updateHistogramEveryQWrites = indexMetaData->updateHistogramEveryQWrites;
         this->writesCounter_forMerge = 0;
+        this->mergeCounter_forUpdatingHistogram = 0;
 
         this->mergeThreadStarted = false; // No threads running
         this->rwMutexForWriter = new ReadWriteMutex(100);
@@ -222,9 +225,21 @@ public:
     
     const bool isCommited() const { return this->index->isCommited(); }
 
+    bool shouldUpdateHistogram(){
+    	if(writesCounter_forMerge >= this->updateHistogramEveryQWrites ||
+    			mergeCounter_forUpdatingHistogram >= this->updateHistogramEveryPMerges){
+    		return true;
+    	}
+    	return false;
+    }
+
+    void resetMergeCounterForHistogram(){
+    	this->mergeCounter_forUpdatingHistogram = 0;
+    }
+
     void merge_ForTesting()
     {
-        this->merge();
+        this->merge(false);
     }
 
     QuadTree *getQuadTree() const { return this->index->quadTree; }
@@ -245,7 +260,11 @@ private:
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
 
-    INDEXWRITE_RETVAL merge();
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
+    volatile unsigned mergeCounter_forUpdatingHistogram;
+
+    INDEXWRITE_RETVAL merge(bool updateHistogram);
 
     void mergeThreadLoop();
 
