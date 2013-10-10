@@ -168,7 +168,8 @@ TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(c
         	/*
         	 * Example : 12WEEKS or 1SECOND
         	 */
-            if(timeString.find(constant) != std::string::npos){
+            if(timeString.length() > constant.length() &&
+            		0 == timeString.compare (timeString.length() - constant.length(), constant.length(), constant)){
             	int numberOfThisUnit = boost::lexical_cast<int>(timeString.substr(0,timeString.size() - constant.size()));
             	if(constant.compare("SECOND") == 0 || constant.compare("SECONDS") == 0  ){
             		TimeDuration td;
