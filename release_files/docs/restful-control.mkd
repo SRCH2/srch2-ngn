@@ -43,6 +43,10 @@
 #<center>SRCH2 Manual: RESTful API - Control</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
+The SRCH2 engine supports certain control messages through its RESTful API.
+
+Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+
 ##1. Retrieving System Status## {id="system-status"}
 
 This API returns the information about the system status. The response body will contain a JSON map with these fields:

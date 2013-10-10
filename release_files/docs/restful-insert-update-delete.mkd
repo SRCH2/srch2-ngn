@@ -46,6 +46,8 @@
 
 Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of write requests) .
 
+Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+
 ##1. Insert## {id="insert"}
 
 This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:

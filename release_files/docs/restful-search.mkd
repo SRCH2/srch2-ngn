@@ -76,6 +76,8 @@ The SRCH2 engine provides a RESTful API that receives a request (query, insert/d
 
 Refer to [this page](restful-insert-update-delete.html) about the insert/dete/update API and [this page](restful-control.html) about the control API. 
 
+Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+
 ##2. Sample queries##{id="sampleQueries"}
 
 Let us start with sample queries to give an idea of the query syntax.
