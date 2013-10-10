@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
@@ -38,7 +39,6 @@
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
-
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
