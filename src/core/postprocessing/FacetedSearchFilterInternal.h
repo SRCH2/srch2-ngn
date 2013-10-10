@@ -78,6 +78,7 @@ private:
 	TypedValue start, end, gap;
 	unsigned numberOfBuckets;
 	bool generateListOfIdsAndNamesFlag;
+	FilterType attributeType;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

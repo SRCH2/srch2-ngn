@@ -392,7 +392,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
             //{
             const Json::Value doc = root;
             IndexWriteUtil::_insertCommand(server->indexer,
-                    server->indexDataContainerConf, doc, 0, record, log_str);
+                    server->indexDataContainerConf, doc, record, log_str);
             record->clear();
             //}
             delete record;
@@ -412,7 +412,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         evhttp_parse_query(req->uri, &headers);
 
         IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataContainerConf, headers, 0, log_str);
+                server->indexDataContainerConf, headers, log_str);
 
         Logger::info("%s", log_str.str().c_str());
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -467,7 +467,7 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
             const Json::Value doc = root;
 
             IndexWriteUtil::_updateCommand(server->indexer,
-                    server->indexDataContainerConf, headers, doc, 0, record,
+                    server->indexDataContainerConf, headers, doc, record,
                     log_str);
 
             record->clear();
@@ -532,7 +532,7 @@ void HTTPRequestHandler::writeCommand_v1(evhttp_request *req,
                      std::cout << "[" << writer.write(doc)  << "]" << std::endl;*/
 
                     IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataContainerConf, doc, 0, record,
+                            server->indexDataContainerConf, doc, record,
                             log_str);
                     record->clear();
 
@@ -556,7 +556,7 @@ void HTTPRequestHandler::writeCommand_v1(evhttp_request *req,
         evhttp_parse_query(req->uri, &headers);
 
         IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataContainerConf, headers, 0, log_str);
+                server->indexDataContainerConf, headers, log_str);
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The batch was processed successfully\",\"log\":["

@@ -79,7 +79,7 @@ void buildIndex(string data_file, string index_dir)
             cellCounter++;
         }
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -147,7 +147,7 @@ void updateIndex(string data_file, Indexer *index)
             cellCounter++;
         }
 
-        index->addRecord(record, analyzer, 0);
+        index->addRecord(record, analyzer);
 
         docsCounter++;
 

@@ -215,8 +215,6 @@ private:
     bool mergeRequired;
     std::string licenseFileNameWithPath;
 
-    //This is the same as the kafka offset of the last message in the latest index snapshot.
-    uint64_t kafkaOffset_CurrentIndexSnapshot;
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;    
@@ -233,7 +231,6 @@ private:
         ia >> readCount_tmp;
         ia >> writeCount_tmp;
         ia >> numDocs_tmp;
-        ia >> kafkaOffset_CurrentIndexSnapshot;
         this->readCounter = new ReadCounter(readCount_tmp);
         this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
         ifs.close();
@@ -249,7 +246,6 @@ private:
         oa << readCount_tmp;
         oa << writeCount_tmp;
         oa << numDocs_tmp;
-        oa << kafkaOffset_CurrentIndexSnapshot;
         ofs.close();
     };
 
@@ -294,18 +290,8 @@ public:
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
     
-    uint64_t _getKafkaOffsetOfCurrentIndexSnapshot() const
-    {
-        return this->kafkaOffset_CurrentIndexSnapshot;
-    }
-
     void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
 
-    void _setKafkaOffsetOfCurrentIndexSnapshot(const uint64_t kafkaOffset_CurrentIndexSnapshot)
-    {
-        this->kafkaOffset_CurrentIndexSnapshot = kafkaOffset_CurrentIndexSnapshot;
-    }
-        
     // merge the index
     INDEXWRITE_RETVAL _merge();
 

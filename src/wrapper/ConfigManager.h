@@ -102,11 +102,6 @@ private:
 	std::string stopFilterFilePath;
 
 	string trieBootstrapDictFile;
-	string kafkaBrokerHostName;
-	uint16_t kafkaBrokerPort;
-	string kafkaConsumerTopicName; //Customer name
-	uint32_t kafkaConsumerPartitionId;
-	uint32_t pingKafkaBrokerEveryNSeconds;
 	uint32_t writeReadBufferInBytes;
 
     bool supportSwapInEditDistance;
@@ -201,10 +196,7 @@ public:
     ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
 
-//	void kafkaOptionsParse(const po::variables_map &vm, bool &configSuccess,			std::stringstream &parseError);
 	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
-//	void parse(const boost::program_options::variables_map &vm,
-//			bool &configSuccess, std::stringstream &parseError);
 
 	void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -270,13 +262,6 @@ public:
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerListeningHostname() const;
 	const std::string& getHTTPServerListeningPort() const;
-
-	const std::string& getKafkaBrokerHostName() const;
-	uint16_t getKafkaBrokerPort() const;
-	const std::string& getKafkaConsumerTopicName() const;
-	uint32_t getKafkaConsumerPartitionId() const;
-	uint32_t getWriteReadBufferInBytes() const;
-	uint32_t getPingKafkaBrokerEveryNSeconds() const;
 
 	bool isRecordBoostAttributeSet() const;
 

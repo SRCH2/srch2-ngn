@@ -208,7 +208,7 @@ void test1()
         record->setSearchableAttributeValue("article_title", title);
 
         record->setRecordBoost(rand() % 100);
-        index->addRecord(record, analyzer, 0);
+        index->addRecord(record, analyzer);
 
         // for creating another record
         record->clear();
@@ -249,14 +249,14 @@ void addRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     index->commit();
     //index->commit();
@@ -269,7 +269,7 @@ void addRecords()
     record->setSearchableAttributeValue(0, "Jimaai Hendaarix");
     record->setSearchableAttributeValue(1, "Littaale waaing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     //index->print_Index();
 
@@ -304,7 +304,7 @@ void test3()
     record->setSearchableAttributeValue(0, "steve jobs");
     record->setSearchableAttributeValue(1, "stanford speech");
     record->setRecordBoost(90);
-    indexer->addRecord(record, analyzer, 0);
+    indexer->addRecord(record, analyzer);
     indexer->merge_ForTesting();
 
 /*    // create an index searcher
