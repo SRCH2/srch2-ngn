@@ -12,9 +12,20 @@
 #include <instantsearch/QueryResults.h>
 
 #include "ConfigManager.h"
-#include "Srch2KafkaConsumer.h"
-
 #include "util/mypthread.h"
+
+#include "IndexWriteUtil.h"
+#include "json/json.h"
+#include "util/Logger.h"
+#include "util/FileOps.h"
+#include "index/IndexUtil.h"
+#include "MongodbAdapter.h"
+#include <string>
+#include <vector>
+#include <iostream>
+#include <stdint.h>
+#include <fstream>
+#include <sstream>
 
 namespace srch2is = srch2::instantsearch;
 using std::string;
@@ -28,13 +39,11 @@ namespace srch2
 namespace httpwrapper
 {
 
-
 class Srch2Server
 {
 public:
 	Indexer *indexer;
 	const ConfigManager *indexDataContainerConf;
-	Srch2KafkaConsumer *kafkaConsumer;
 
 	/* Fields used only for stats */
 	time_t stat_starttime;          /* Server start time */
@@ -52,14 +61,116 @@ public:
 	{
 		this->indexer = NULL;
 		this->indexDataContainerConf = NULL;
-		this->kafkaConsumer = NULL;
 	}
 
 	void init(const ConfigManager *indexDataContainerConf)
 	{
 		this->indexDataContainerConf = indexDataContainerConf;
-		this->kafkaConsumer = new Srch2KafkaConsumer(this->indexDataContainerConf);
-		this->indexer = this->kafkaConsumer->getIndexer();
+		this->createAndBootStrapIndexer();
+	}
+
+
+	// Check if index files already exist.
+	bool checkIndexExistence(const ConfigManager *indexDataContainerConf)
+	{
+	    const string &directoryName = indexDataContainerConf->getIndexPath();
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::forwardIndexFileName).c_str()))
+	        return false;
+	    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
+	        return false;
+	    if (indexDataContainerConf->getIndexType() == srch2::instantsearch::DefaultIndex){
+	        // Check existence of the inverted index file for basic keyword search ("A1")
+	        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+	            return false;
+	    }else{
+	        // Check existence of the quadtree index file for geo keyword search ("M1")
+	        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
+	            return false;
+	    }
+	    return true;
+	}
+
+	IndexMetaData *createIndexMetaData(const ConfigManager *indexDataContainerConf)
+	{
+		//Create a cache
+		srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataContainerConf->getCacheSizeInBytes(), 200000);
+
+		// Create an IndexMetaData
+		srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( cache,
+								   indexDataContainerConf->getMergeEveryNSeconds(),
+								   indexDataContainerConf->getMergeEveryMWrites(),
+								   indexDataContainerConf->getIndexPath(),
+								   indexDataContainerConf->getTrieBootstrapDictFileName());
+
+		return indexMetaData;
+	}
+
+	void createAndBootStrapIndexer()
+	{
+		// create IndexMetaData
+		IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataContainerConf);
+		IndexCreateOrLoad indexCreateOrLoad;
+		if(checkIndexExistence(indexDataContainerConf))
+		    indexCreateOrLoad = srch2http::INDEXLOAD;
+		else
+		    indexCreateOrLoad = srch2http::INDEXCREATE;
+
+		switch (indexCreateOrLoad)
+		{
+			case srch2http::INDEXCREATE:
+			{
+				AnalyzerHelper::initializeAnalyzerResource(this->indexDataContainerConf);
+				// Create a schema to the data source definition in the Srch2ServerConf
+				srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataContainerConf);
+				Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataContainerConf);
+				indexer = Indexer::create(indexMetaData, analyzer, schema);
+				delete analyzer;
+				switch(indexDataContainerConf->getDataSourceType())
+				{
+					case srch2http::DATA_SOURCE_JSON_FILE:
+					{
+						// Create from JSON and save to index-dir
+						Logger::console("Creating indexes from JSON file...");
+						DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						break;
+					}
+					case srch2http::DATA_SOURCE_MONGO_DB:
+					{
+						Logger::console("Creating indexes from a MongoDb instance...");
+						MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+						break;
+					}
+					default:
+					{
+	                    Logger::console("Creating new empty index");
+					}
+				};
+				AnalyzerHelper::saveAnalyzerResource(this->indexDataContainerConf);
+				break;
+			}
+			case srch2http::INDEXLOAD:
+			{
+				// Load from index-dir directly, skip creating an index initially.
+				indexer = Indexer::load(indexMetaData);
+				// Load Analayzer data from disk
+				AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
+				indexer->getSchema()->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
+				bool isAttributeBasedSearch = false;
+				if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+				    indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FULL) {
+					isAttributeBasedSearch =true;
+				}
+				if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
+				{
+					cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
+				}
+				break;
+			}
+		}
 	}
 
 	virtual ~Srch2Server(){}

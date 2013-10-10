@@ -84,7 +84,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 

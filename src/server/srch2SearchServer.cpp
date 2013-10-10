@@ -21,7 +21,6 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
-#include "Srch2KafkaConsumer.h"
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"

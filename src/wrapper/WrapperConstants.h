@@ -74,7 +74,6 @@ typedef enum {
 /// Configuration related constants
 
 typedef enum {
-	KAFKAWRITEAPI ,
 	HTTPWRITEAPI
 } WriteApiType;
 

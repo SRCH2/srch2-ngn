@@ -60,21 +60,21 @@ void addPolishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -82,7 +82,7 @@ void addPolishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Ze wszystkich kierunków, znajdziesz nie jeden, który jest w stanie kontemplacji się");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -90,7 +90,7 @@ void addPolishRecords() {
 	record->setSearchableAttributeValue(2,
 			"on po dyskurs, jeden z najciekawszych i składek cenne dla historii wczesnego wykrywan");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -98,7 +98,7 @@ void addPolishRecords() {
 	record->setSearchableAttributeValue(2,
 			"George Meredith, OM (1828-1909), angielski pisarz i poeta. Studiował prawo i został Artykularny jako radca prawny");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -106,7 +106,7 @@ void addPolishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"To jest powielanie książki wydanej przed 1923. Ta dyskursów książka może być sporadyczne niedoskonałości, takich jak brakujące lub niewyraźne strony ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -187,21 +187,21 @@ void addPortugueseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -210,7 +210,7 @@ void addPortugueseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"aqui não é tão divertido e melhorando universalmente, tal como a que é introduzida, como se fosse, ocasionalmente,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -218,7 +218,7 @@ void addPortugueseRecords() {
 	record->setSearchableAttributeValue(2,
 			"Em um certo condado da Inglaterra, delimitada de um lado pelo mar");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -226,7 +226,7 @@ void addPortugueseRecords() {
 	record->setSearchableAttributeValue(2,
 			"A história foi adaptada mais tarde por Thomas Rickman em um filme de TV de mesmo nome, dirigido");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -235,7 +235,7 @@ void addPortugueseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"O livro analisa o papel da Igreja cristã na vida dos Africano-Americanos");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -333,21 +333,21 @@ void addRomanianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -355,7 +355,7 @@ void addRomanianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"ecounts aventurile unui tânăr pe nume d'Artagnan după ce pleacă");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -363,7 +363,7 @@ void addRomanianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Acesta susține independența financiară prin investiții, imobiliare,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -371,7 +371,7 @@ void addRomanianRecords() {
 	record->setSearchableAttributeValue(2,
 			"care intra sub dominația Wolf Larsen, puternic și amoral căpitan care de salvare");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -380,7 +380,7 @@ void addRomanianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"ȚII de ea au fost adaptate de William Gibson pentru un 1957 căpitan");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -462,21 +462,21 @@ void addRussianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -484,7 +484,7 @@ void addRussianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"это адаптация повести Стивена Кинга Рита Хейворт");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -492,7 +492,7 @@ void addRussianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Это в значительной степени автобиографическая работа, которая была основана на спонтанной");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -500,7 +500,7 @@ void addRussianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Дверь балкона была открыта, а под занавес Tomorrow перемешивают на ветру, заполнив。");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -509,7 +509,7 @@ void addRussianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Он восходит солнце стоит как,talk пожалуй, самым впечатляющим первый роман novel ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -593,21 +593,21 @@ void addSerbianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -615,14 +615,14 @@ void addSerbianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Време је ноћ. А посао тренутка плеше");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
 	record->setSearchableAttributeValue(1, "Од мора до мора");
 	record->setSearchableAttributeValue(2, "Мотив и шема која ће доћи у ништа");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -630,7 +630,7 @@ void addSerbianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Када је млади Марк Робартс напуштања Tomorrow колеџа, његов отац можда и изјављујем да су сви људи。");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -638,7 +638,7 @@ void addSerbianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			" Први су су се упознали More на венчању Флеур Little и Мајкл Монт је и искра ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -720,21 +720,21 @@ void addSlovakRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -743,7 +743,7 @@ void addSlovakRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Lawrence a niečo ako súper Virginie Woolfovej. Mansfield tvorivé rokov");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -751,7 +751,7 @@ void addSlovakRecords() {
 	record->setSearchableAttributeValue(2,
 			"IT prekvapí a zároveň možno pobaví, aby ste vedeli,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -759,7 +759,7 @@ void addSlovakRecords() {
 	record->setSearchableAttributeValue(2,
 			"Počas vojny povstania, bol nový poor a vplyvný Yesterday klub založený v meste Baltimore v štáte Maryland");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -767,7 +767,7 @@ void addSlovakRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Robert Blair chystal ukradnúť z pomalej deň v jeho advokátskej kancelárii, keď zazvonil telefó ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -851,14 +851,14 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
@@ -866,7 +866,7 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Come Tomorrow Two življenja More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -874,7 +874,7 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Nekateri dušo tišine, starodavno in potrpežljiv kot korake, brooded nad njimi.");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -882,7 +882,7 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue(2,
 			"To verjetno zgodba se začne na morju, ki je bil modro sanje, kot barvita kot modro-svilene nogavice");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -890,7 +890,7 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue(2,
 			"out od najtemnejših globin življenja, kjer je podpredsednik in kriminal in bedo bahajo");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -898,7 +898,7 @@ void addSlovenianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Je del utopija, del distopija, del temno satira, s pridihom sodobnega steampunk ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -980,21 +980,21 @@ void addSpanishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Spanish characters
 	record->clear();
@@ -1003,7 +1003,7 @@ void addSpanishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Teófilo, que, para muchas personas tomar una pluma para el libro que cuenta la historia entre nosotros lo han hecho");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1011,7 +1011,7 @@ void addSpanishRecords() {
 	record->setSearchableAttributeValue(2,
 			"Los descendientes de Abraham, hijo de David, la genealogía de Jesucristo");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	//simple Spanish and english
 	record->clear();
@@ -1020,7 +1020,7 @@ void addSpanishRecords() {
 	record->setSearchableAttributeValue(2,
 			"SEÑOR a Israel por medio Tomorrow de Malaquías miss implicaba 。");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1028,7 +1028,7 @@ void addSpanishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"El segundo año del rey Little Darío agosto Jehová á wing ddo Berequías, hijo del profeta Zacarías ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1125,21 +1125,21 @@ void addSwedishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1148,7 +1148,7 @@ void addSwedishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Efter att jag hade studerat naturvetenskap och särskilt biologisk vetenskap för några år");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1156,7 +1156,7 @@ void addSwedishRecords() {
 	record->setSearchableAttributeValue(2,
 			"På grund av sin ålder, kan den innehålla brister såsom Markeringar, noteringar, marginaliaen");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1164,7 +1164,7 @@ void addSwedishRecords() {
 	record->setSearchableAttributeValue(2,
 			"Felix Holt, när han kom in, var inte i en observant humör, och när,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1173,7 +1173,7 @@ void addSwedishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Engelska författaren William Morris om engelska böndernas revolt av 1381 och rebellen John Ball. ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1255,21 +1255,21 @@ void addThaiRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1278,7 +1278,7 @@ void addThaiRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"นี้ละครที่ผิดปกติในอัตชีวประวัติส่วนดี narrates โดยไม่ต้องสงสารตัวเอง");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1286,7 +1286,7 @@ void addThaiRecords() {
 	record->setSearchableAttributeValue(2,
 			"ดำเนินแรงโน้มถ่วงไม่มีที่ติดังนั้นภูมิปัญญาเอกพจน์โดดเด่นเพื่อ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1295,7 +1295,7 @@ void addThaiRecords() {
 	record->setSearchableAttributeValue(2,
 			"นี่คือการทำสำเนาห Tomorrow นังสือที่ตีพิมพ์ก่อนที่ 1923");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1303,7 +1303,7 @@ void addThaiRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"แฟรงค์ Gresham เป็นความตั้งใจที่จะแต่งงานกับสุดที่รักของเขาแมรี่ Thorne ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1385,21 +1385,21 @@ void addTurkishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1408,7 +1408,7 @@ void addTurkishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"sloganımız çalışır. Teorik olarak biz ne biz savunma");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1416,7 +1416,7 @@ void addTurkishRecords() {
 	record->setSearchableAttributeValue(2,
 			"Ne kadar gramatik sanat tefekkür gücüne sahip mi?");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1424,7 +1424,7 @@ void addTurkishRecords() {
 	record->setSearchableAttributeValue(2,
 			"Yeni Dünya erken keşif home Tarihi için en lost meraklı ve değerli katkılarından biri,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1432,7 +1432,7 @@ void addTurkishRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			". O hukuk okumak ve bir avukat olarak sözleşmeli edildi ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1514,21 +1514,21 @@ void addUkrainianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1536,7 +1536,7 @@ void addUkrainianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"З людьми, що посієш, те й пожнеш,");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1544,7 +1544,7 @@ void addUkrainianRecords() {
 	record->setSearchableAttributeValue(2,
 			"нарочним порушених упокій Денніс Howmore");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1552,7 +1552,7 @@ void addUkrainianRecords() {
 	record->setSearchableAttributeValue(2,
 			"Місцевих найстаріших сімей, які year опинилися  him в  that незручне становище");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1560,7 +1560,7 @@ void addUkrainianRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Цілком можливо, що жінки не мають позитивні оцінки того, що ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1642,21 +1642,21 @@ void addVietnameseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1665,7 +1665,7 @@ void addVietnameseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Đây là một bản sao của một cuốn sách xuất bản trước năm 1923");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1673,7 +1673,7 @@ void addVietnameseRecords() {
 	record->setSearchableAttributeValue(2,
 			"Crack chết người của một súng trường và tiếng kêu xuyên của Ấn Độ trên các warpat");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1681,7 +1681,7 @@ void addVietnameseRecords() {
 	record->setSearchableAttributeValue(2,
 			"Thẻ ghi nợ và tín dụng là hai khía cạnh cơ bản của tất cả các giao dịch tài chính");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1201);
@@ -1690,7 +1690,7 @@ void addVietnameseRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Bản chất của chúng ta suy yếu không đầy đủ; Một cái gì đó trong tù này ngôi sao của chúng tôi ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1772,21 +1772,21 @@ void addFarsiRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -1795,7 +1795,7 @@ void addFarsiRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"اظهار نظر او که کلاغ به تدریج منقرض شدن");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1803,7 +1803,7 @@ void addFarsiRecords() {
 	record->setSearchableAttributeValue(2,
 			"مواد منفجره، وکیل مدافع جوزف آنتونلی مورد از دست دادن هرگز - و یا پشت سر هم از وجدان");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -1885,21 +1885,21 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Arabic characters
 	record->clear();
@@ -1908,7 +1908,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"جعلت رواية أو الرومانسية من يفرلي طريقها إلى الجمهور ببطء، وبطبيعة الحال");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -1916,7 +1916,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"مانسفيلد هو الكاتب الأكثر شهرة في نيوزيلندا.");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -1924,7 +1924,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"يجب أن القراء ليس دفعة واحدة تخيل الترفيه الكبرى، مثل الكرة المحكمة، أو بسهرة موسيقية");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1104);
@@ -1932,7 +1932,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"رئيس بلدية ومؤسسة من المدينة وإعطاء الكرة الكبرى");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1105);
@@ -1940,7 +1940,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"خلال الحرب من تمرد، تم إنشاء ناد جديد ومؤثر في مدينة بالتيمور في ولاية ميريلاند");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1106);
@@ -1948,7 +1948,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"الحرية وضرورة استخدام لها. الحافز وخطة من شأنها أن تأتي إلى");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1107);
@@ -1956,7 +1956,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"العلماء فرانكشتاين استبدال دور الخالق في محاولة لخلق الحياة في أيديهم");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1108);
@@ -1964,7 +1964,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"وكان روبرت بلير على وشك ضرب قبالة من يوم بطيئة في مكتب محاماة له عندما رن جرس ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1109);
@@ -1972,7 +1972,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"الجرح الخطوات القديمة حتى من جانب الجبل من خلال أشجار الصنوبر طويل القامة، والصبر في عمق مداس عليها من قبل أقدام من عشرين قرنا");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1110);
@@ -1980,7 +1980,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"تبدأ هذه القصة من غير المرجح على البحر الذي كان حلما الأزرق، ملونة مثل جوارب زرقاء الحرير،");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	//simple Arabic and english
 	record->clear();
@@ -1990,7 +1990,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"عند الشباب Robarts مارك كان يغادر collegeالكلية،أيضاwas والدهleaving قد أعلن   ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	//Test a record that includes both Arabic and English
 	record->clear();
@@ -1999,7 +1999,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"من أحلك أعماق الحياة، viceحيث الرذيلة والجريمة centuryوالبؤس وتكثر، ويأتي بايرون من lifeالقرن ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1203);
@@ -2007,7 +2007,7 @@ void addArabicRecords() {
 	record->setSearchableAttributeValue(2,
 			"Missمن أحلك أعماق الحياة يخاف، viceحيث الرذيلة والجريمة centuryوالبؤس وتكثر، ويأتي بايرون من lifeالقرن ");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -2152,21 +2152,21 @@ void addHebrewRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2175,7 +2175,7 @@ void addHebrewRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"יום זה כ יצירות פילוסופיות חשובות, בשמו שלו שנים מאוחר יותר פילוסופיה בוגרת יותר");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -2183,7 +2183,7 @@ void addHebrewRecords() {
 	record->setSearchableAttributeValue(2,
 			"ספר זה עוקב אחרי בחור צעיר בשם טוד האקט רואה את עצמו כצייר ואמן");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	//simple Tra_Chinese and english
 	record->clear();
@@ -2192,7 +2192,7 @@ void addHebrewRecords() {
 	record->setSearchableAttributeValue(2,
 			" חומרי נפץ,test הסנגור ג'וזף אנטונלי מעולם לא Tomorrow  מאבדים את מקרה - או פרץ של מצפון צורב בוא");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	index->commit();
 	index->save();
@@ -2274,21 +2274,21 @@ void addKazakhRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2297,7 +2297,7 @@ void addKazakhRecords() {
 	record->setSearchableAttributeValue("article_sentence",
 			"тастағанға ұқсайды");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -2305,7 +2305,7 @@ void addKazakhRecords() {
 	record->setSearchableAttributeValue(2,
 			"тастапты ұқсайды тастағанға");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 
 
@@ -2375,21 +2375,21 @@ void addBurmeseRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2398,7 +2398,7 @@ void addBurmeseRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"Republic of the Union of Myanmar");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -2406,7 +2406,7 @@ void addBurmeseRecords() {
 	record->setSearchableAttributeValue(2,
 			"This article is written in English for a specific purpose. Please do not translate it.");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 
 
@@ -2475,21 +2475,21 @@ void addPortugueseBrazilRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2498,7 +2498,7 @@ void addPortugueseBrazilRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"driver's license (US), driving licence (UK)");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -2506,7 +2506,7 @@ void addPortugueseBrazilRecords() {
 	record->setSearchableAttributeValue(2,
 			"train");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 
 
@@ -2575,21 +2575,21 @@ void addSpanishLatinRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"Come Yesterday Once More");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 	record->setRecordBoost(10);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2598,7 +2598,7 @@ void addSpanishLatinRecords() {
 	record->setSearchableAttributeValue("article_translate",
 			"The Novel or Romance of Waverley made its way to the public slowly");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1102);
@@ -2606,7 +2606,7 @@ void addSpanishLatinRecords() {
 	record->setSearchableAttributeValue(2,
 			"but afterwards with such accumulating popularity as to encourage the Author to a second attempt");
 	record->setRecordBoost(90);
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 
 
@@ -2681,7 +2681,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 
 	record->setRecordBoost(90);
 
-	index->addRecord(record, analyzer, 0);
+	index->addRecord(record, analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1002);
@@ -2693,7 +2693,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 
 	record->setRecordBoost(90);
 
-	index->addRecord(record,analyzer, 0);
+	index->addRecord(record,analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1003);
@@ -2704,7 +2704,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "C");
 
 	record->setRecordBoost(10);
-	index->addRecord(record,analyzer, 0);
+	index->addRecord(record,analyzer);
 
 	// pure Tra_Chinese characters
 	record->clear();
@@ -2717,7 +2717,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "ج");
 
 	record->setRecordBoost(90);
-	index->addRecord(record,analyzer, 0);
+	index->addRecord(record,analyzer);
 
 	record->clear();
 	record->setPrimaryKey(1103);
@@ -2729,7 +2729,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setNonSearchableAttributeValue("class" , "د");
 
 	record->setRecordBoost(90);
-	index->addRecord(record,analyzer, 0);
+	index->addRecord(record,analyzer);
 
 	index->commit();
 	index->save();

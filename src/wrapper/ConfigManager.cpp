@@ -961,24 +961,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
 
 
-//    // TODO: it should be removed.
-//    configAttribute = configDoc.child("config").child("query").child("writeApiType");
-//    if (configAttribute && configAttribute.text()) {
-//        this->writeApiType = configAttribute.text().as_bool(HTTPWRITEAPI) == 0 ? KAFKAWRITEAPI : HTTPWRITEAPI;
-//        // if the value of dataSourceType is TRUE, the JSON data file should be provided.
-//        // TODO: should we check it here again? because we want to remove this.
-//        switch (writeApiType) {
-//        case KAFKAWRITEAPI:
-//            // TODO: kafka options are done?! W
-//           //this->kafkaOptionsParse(vm, configSuccess, parseError);
-//           break;
-//        case HTTPWRITEAPI:
-//           break;
-//        }
-//    } else {
-//        parseError << "WriteAPI type Set. Default to HTTPWRITEAPI.\n";
-//        writeApiType = HTTPWRITEAPI;
-//    }
     this->writeApiType = HTTPWRITEAPI;
 
     configAttribute = configDoc.child("config").child("updatehandler").child("maxDocs");
@@ -1151,10 +1133,6 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &s
 
 ConfigManager::~ConfigManager() {
 
-}
-
-const std::string& ConfigManager::getCustomerName() const {
-    return kafkaConsumerTopicName;
 }
 
 uint32_t ConfigManager::getDocumentLimit() const {
@@ -1352,30 +1330,6 @@ const string& ConfigManager::getHTTPServerListeningHostname() const {
 
 const string& ConfigManager::getHTTPServerListeningPort() const {
     return httpServerListeningPort;
-}
-
-const string& ConfigManager::getKafkaBrokerHostName() const {
-    return kafkaBrokerHostName;
-}
-
-uint16_t ConfigManager::getKafkaBrokerPort() const {
-    return kafkaBrokerPort;
-}
-
-const string& ConfigManager::getKafkaConsumerTopicName() const {
-    return kafkaConsumerTopicName;
-}
-
-uint32_t ConfigManager::getKafkaConsumerPartitionId() const {
-    return kafkaConsumerPartitionId;
-}
-
-uint32_t ConfigManager::getWriteReadBufferInBytes() const {
-    return writeReadBufferInBytes;
-}
-
-uint32_t ConfigManager::getPingKafkaBrokerEveryNSeconds() const {
-    return pingKafkaBrokerEveryNSeconds;
 }
 
 int ConfigManager::getDefaultResultsToRetrieve() const {

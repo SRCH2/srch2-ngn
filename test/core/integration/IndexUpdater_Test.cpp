@@ -69,21 +69,21 @@ void addSimpleRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     index->commit();
     index->save();
@@ -122,7 +122,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRecordBoost(90);
     record->setNonSearchableAttributeValue(0, "100");
     record->setNonSearchableAttributeValue(1, "9.1");
-    index->addRecord(record, analyzer , 0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
@@ -131,7 +131,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setNonSearchableAttributeValue(0, "200");
     record->setNonSearchableAttributeValue(1, "3.14159265");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1003);
@@ -140,7 +140,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setNonSearchableAttributeValue(0, "300");
     record->setNonSearchableAttributeValue(1, "4.234");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     //indexer->print_Index();
     index->commit();
@@ -187,7 +187,7 @@ void test1()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -288,7 +288,7 @@ void test2()
     record->setSearchableAttributeValue(1, "jimi hendrix");
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -347,7 +347,7 @@ void test3()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     //Update a Deserialised Index with Duplicate
     record->clear();
@@ -355,7 +355,7 @@ void test3()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     //Update a Deserialised Index with Duplicate
     record->clear();
@@ -363,7 +363,7 @@ void test3()
     record->setSearchableAttributeValue(1, "tom tom tom tom"); // THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -417,7 +417,7 @@ void test4()
     Analyzer *analyzer = getAnalyzer();
 
     std::string recordId = "1998";
-    index->deleteRecord(recordId, 0);
+    index->deleteRecord(recordId);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -475,7 +475,7 @@ void test5()
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
     record->setRecordBoost(100);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -730,7 +730,7 @@ void test9()
     record->setNonSearchableAttributeValue(0, "400");
     record->setNonSearchableAttributeValue(1, "2.234");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
@@ -885,14 +885,14 @@ void test11()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     // any commit henceforth should fail because the engine allows only one commit
     // which actually means bulk load done.
@@ -903,7 +903,7 @@ void test11()
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
 
     index->commit();
@@ -935,7 +935,7 @@ void test11()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
 
