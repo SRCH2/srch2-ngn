@@ -79,6 +79,7 @@
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
 <p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
+<p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="sampleQueries">2. Sample queries</h2>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
 <pre><code>f1) curl -i &quot;http://localhost:8081/search?q=algorithm&quot;
