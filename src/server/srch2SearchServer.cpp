@@ -21,7 +21,10 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#ifdef __MACH__
+// This header is used only in mac osx related code
 #include <arpa/inet.h>
+#endif
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
