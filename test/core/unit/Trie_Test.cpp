@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
     if ( argc > 1 && strcmp(argv[1], "--verbose") == 0) {
         verbose = true;
     }
-
+//    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
     //TODO logic tests
     test1();
     cout << "test1 done" << endl;

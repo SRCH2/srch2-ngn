@@ -480,7 +480,20 @@ INDEXWRITE_RETVAL IndexData::_commit()
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
 
-        this->trie->finalCommit(this->invertedIndex);
+
+        /*
+         * Since we don't have inverted index for M1, we send NULL.
+         * NULL will make the component to compute simple frequency
+         * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
+         */
+        if (isLocational)
+        {
+			this->trie->finalCommit(NULL);
+        }
+        else
+        {
+			this->trie->finalCommit(this->invertedIndex);
+        }
         //this->trie->print_Trie();
         this->commited = true;
         return OP_SUCCESS;

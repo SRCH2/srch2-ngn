@@ -1246,41 +1246,41 @@ void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex){
 
 }
 
-void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex){
-    if(root == NULL){
+void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const InvertedIndex * invertedIndex){
+    if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
     unsigned childIterator = 0;
-    for(; childIterator < root->getChildrenCount() ; childIterator ++){
-    	calculateTrieNodeSubTrieValuesForANode(root->getChild(childIterator) , invertedIndex);
+    for(; childIterator < node->getChildrenCount() ; childIterator ++){
+    	calculateTrieNodeSubTrieValuesForANode(node->getChild(childIterator) , invertedIndex);
     }
     // now update the value of this node from its children
-    root->updateNodeSubTrieValueAggregatedValue();
+    node->updateNodeSubTrieValueAggregatedValue();
     // now if this node is a terminal node, use inverted index to add the score of
     // the top record of its inverted list to nodeSubTrieValue
-    if(root->isTerminalNode()){
+    if(node->isTerminalNode()){
     	if(invertedIndex == NULL){
             // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
-            root->addNewNodeSubTrieValueToAggregatedValue(1);
+            node->addNewNodeSubTrieValueToAggregatedValue(1);
             return;
     	}
         shared_ptr<vectorview<unsigned> > invertedListReadView;
-        invertedIndex->getInvertedListReadView(root->getInvertedListOffset(), invertedListReadView);
+        invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
         float termRecordStaticScore = 0;
         unsigned termAttributeBitmap = 0;
         // move on inverted list to find the first record which is valid
         unsigned invertedListCursor = 0;
         while(invertedListCursor < invertedListReadView->size()){
 			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-			unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, root->getInvertedListOffset());
+			unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
 			if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 				break;
 			}
         }
         // now that we have the static score, add the static score to the value of this node
-        root->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
+        node->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
         return;
     }
     return;
@@ -1636,6 +1636,9 @@ void Trie::printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned
     ASSERT (node != NULL);
     if (node == NULL)
         return;
+    string temp;
+    this->getPrefixString(root, node, temp);
+    Logger::debug("(%d,%f,%s)", node->getId() , node->nodeSubTrieValue , temp.c_str());
     if ( node->isTerminalNode() ) {
         if (!keywordIds.count(node->getId()))
             keywordIds.insert(node->getId());
