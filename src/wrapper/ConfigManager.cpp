@@ -1131,6 +1131,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     		( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
     this->updateHistogramEveryQWrites =
     		(unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
+
+    // set default number of suggestions because we don't have any config options for this yet
+    this->defaultNumberOfSuggestionsToReturn = 5;
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {

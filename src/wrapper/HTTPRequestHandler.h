@@ -33,6 +33,7 @@ class HTTPRequestHandler
 {
     public:
         static void searchCommand(evhttp_request *req, Srch2Server *server);
+        static void suggestCommand(evhttp_request *req, Srch2Server *server);
         static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
         static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
         static void updateCommand(evhttp_request *req, Srch2Server *server);
@@ -62,6 +63,13 @@ class HTTPRequestHandler
 				const QueryPlan &queryPlan,
 				const ConfigManager *indexDataContainerConf,
 				const QueryResults *queryResults,
+				const srch2is::Indexer *indexer,
+				const string & message,
+				const unsigned ts1,
+				struct timespec &tstart, struct timespec &tend);
+
+		static void printSuggestions(evhttp_request *req, const evkeyvalq &headers,
+				const vector<string> & suggestions,
 				const srch2is::Indexer *indexer,
 				const string & message,
 				const unsigned ts1,

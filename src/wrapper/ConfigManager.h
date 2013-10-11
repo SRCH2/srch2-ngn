@@ -62,6 +62,8 @@ private:
 	bool exactFuzzy;
 	bool queryTermType;
 
+	unsigned defaultNumberOfSuggestionsToReturn;
+
 
 	// <config><query><queryResponseWriter>
 	int searchResponseJsonFormat;
@@ -322,6 +324,10 @@ public:
     void setFilePath(const string& dataFile);
 
     bool isPositionIndexEnabled() const;
+
+    unsigned getDefaultNumberOfSuggestionsToReturn() const {
+    	return defaultNumberOfSuggestionsToReturn;
+    }
 
 };
 

@@ -59,6 +59,8 @@ public:
     IndexSearcherInternal(IndexReaderWriter *indexer);
     virtual ~IndexSearcherInternal() {};
 
+    int suggest(const string & keyword, const float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
+
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
     int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK);
