@@ -563,7 +563,20 @@ int main(int argc, char** argv) {
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
     //load the index from the data source
-    server.init(serverConf);
+    try{
+    	server.init(serverConf);
+    }catch(exception& ex) {
+    	/*
+    	 *  We got some fatal error during server initialization. Print the error message and
+    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
+    	 *  exception reaches at this point. All exception reached here are considered fatal
+    	 *  and server will stop.
+    	 */
+    	Logger::error(ex.what());
+        if (logFile)
+            fclose(logFile);
+    	exit(-1);
+    }
     //cout << "srch2 server started." << endl;
     if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
     	// set current time as cut off time for further updates

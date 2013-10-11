@@ -790,24 +790,6 @@ const TrieNode *Trie::getTrieNodeFromUtf8String(const TrieNode* rootReadView, co
     return parentNode;
 }
 
-void Trie::load(Trie &trie, const std::string &trieFullPathFileName)
-{
-    std::ifstream ifs(trieFullPathFileName.c_str(), std::ios::binary);
-    boost::archive::binary_iarchive ia(ifs);
-    ia >> trie;
-    ifs.close();
-}
-
-void Trie::save(Trie &trie, const std::string &trieFullPathFileName)
-{
-    if (trie.merge_required)
-        trie.merge();
-    std::ofstream ofs(trieFullPathFileName.c_str(), std::ios::binary);
-    boost::archive::binary_oarchive oa(ofs);
-    oa << trie;
-    ofs.close();
-}
-
 int Trie::getNumberOfBytes() const
 {
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;

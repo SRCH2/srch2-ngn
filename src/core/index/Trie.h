@@ -532,10 +532,6 @@ public:
 
     const TrieNode *getTrieNode(const TrieNode* rootReadView, const std::vector<CharType> &keyword) const;
 
-    static void load(Trie &trie, const std::string &trieFullPathFileName);
-
-    static void save(Trie &trie, const std::string &trieFullPathFileName);
-
     int getNumberOfBytes() const;
 
     int getNumberOfNodes() const;
@@ -603,6 +599,7 @@ public:
      */
     void reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper);
 
+    bool isMergeRequired() { return merge_required; }
     void merge();
 
     void commit();

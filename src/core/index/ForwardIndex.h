@@ -550,34 +550,7 @@ public:
      */
     unsigned getNumberOfBytes() const;
 
-    // Boost load and save functions
-    static void load(ForwardIndex &forwardIndex,
-            const std::string &forwardIndexFullPathFileName) {
-        // read the ForwardIndex from the file
-        //struct timespec tstart;
-        //clock_gettime(CLOCK_REALTIME, &tstart);
-        std::ifstream ifs(forwardIndexFullPathFileName.c_str(),
-                std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> forwardIndex;
-        ifs.close();
-        //struct timespec tend;
-        //clock_gettime(CLOCK_REALTIME, &tend);
-        //unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    }
-
     static void exportData(ForwardIndex &forwardIndex, const string &exportedDataFileName);
-
-    static void save(ForwardIndex &forwardIndex, const std::string &forwardIndexFullPathFileName)
-    {
-        if(forwardIndex.mergeRequired)
-            forwardIndex.merge();
-        std::ofstream ofs(forwardIndexFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_oarchive oa(ofs);
-        oa << forwardIndex;
-        ofs.close();
-    }
-    ;
 
     /**
      * Build Phase functions
@@ -615,7 +588,7 @@ public:
     bool isCommitted() const {
         return this->commited_WriteView;
     }
-
+    bool isMergeRequired() const { return mergeRequired; }
     /*std::vector<unsigned>* getRecordOrderVector() {
      return &recordOrder;
      };*/

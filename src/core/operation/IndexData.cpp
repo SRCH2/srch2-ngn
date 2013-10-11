@@ -31,7 +31,7 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
-
+#include "serialization/Serializer.h"
 #include <stdio.h>  /* defines FILENAME_MAX */
 #include <iostream>
 #include <string>
@@ -95,43 +95,47 @@ IndexData::IndexData(const string& directoryName)
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
 	}
+    Serializer serializer;
+    try{
+    	this->schemaInternal = new SchemaInternal();
+    	serializer.load(*(this->schemaInternal), this->directoryName + "/" + IndexConfig::schemaFileName);
+    	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 
-    this->schemaInternal = new SchemaInternal();
-    SchemaInternal::load(*(this->schemaInternal), directoryName + "/" + string(IndexConfig::schemaFileName));
+    	this->trie = new Trie_Internal();
+    	this->forwardIndex = new ForwardIndex(this->schemaInternal);
+    	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
+    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
+    		this->invertedIndex =new  InvertedIndex(this->forwardIndex);
 
-    this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
+    	// set if it's a attributeBasedSearch
+    	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
+    	if(positionIndexType == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+    			positionIndexType == srch2::instantsearch::POSITION_INDEX_FULL)
+    		this->forwardIndex->isAttributeBasedSearch = true;
 
-    this->trie = new Trie_Internal();
-    this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    Trie_Internal::load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+    	serializer.load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
+    	this->forwardIndex->setSchema(this->schemaInternal);
 
-    // set if it's a attributeBasedSearch
-    PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
-    if(positionIndexType == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
-    		positionIndexType == srch2::instantsearch::POSITION_INDEX_FULL)
-    	this->forwardIndex->isAttributeBasedSearch = true;
+    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
+    	{
+    		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
+    		this->invertedIndex->setForwardIndex(this->forwardIndex);
+    	}
+    	else
+    	{
+    		this->quadTree = new QuadTree();
+    		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
+    		this->quadTree->setForwardIndex(this->forwardIndex);
+    		this->quadTree->setTrie(this->trie);
+    		//cout << "QuadTree loaded" << endl;
+    	}
 
-    ForwardIndex::load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
-    this->forwardIndex->setSchema(this->schemaInternal);
-
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    {
-        InvertedIndex::load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
-        this->invertedIndex->setForwardIndex(this->forwardIndex);
+    	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
+    	this->commited = true;
+    }catch(exception& ex){
+    	Logger::error("Error while loading the index files ...");
+    	throw ex;
     }
-    else
-    {
-        this->quadTree = new QuadTree();
-        QuadTree::load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
-        this->quadTree->setForwardIndex(this->forwardIndex);
-        this->quadTree->setTrie(this->trie);
-        //cout << "QuadTree loaded" << endl;
-    }
-    
-    this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
-    this->commited = true;
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
@@ -646,16 +650,25 @@ void IndexData::_exportData(const string &exportedDataFileName) const
 
 void IndexData::_save(const string &directoryName) const
 {
+	Serializer serializer;
+    if (this->trie->isMergeRequired())
+        this->trie->merge();
     // serialize the data structures to disk
-    Trie_Internal::save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
     //this->forwardIndex->print_test();
     //this->invertedIndex->print_test();
-    ForwardIndex::save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
-    SchemaInternal::save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        InvertedIndex::save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
-    else
-        QuadTree::save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+    if(this->forwardIndex->isMergeRequired())
+        this->forwardIndex->merge();
+    serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
+    serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+    	 if(this->invertedIndex->mergeRequired())
+    		 this->invertedIndex->merge();
+    	 serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+    }
+    else {
+    	serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+    }
 
     this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
 }
