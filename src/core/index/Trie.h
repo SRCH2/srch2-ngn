@@ -342,6 +342,8 @@ public:
     }
 
 
+    void findMostPopularSuggestionsInThisSubTrie(vector<pair< float , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
+
     void addChild(CharType character, TrieNode *childNode);
 
     void addChild(int position, TrieNode *childNode);

@@ -54,7 +54,7 @@ public:
      * Finds the suggestions of the engine for keyword using fuzzyMatchPenalty.
      * Returns the number of suggestions found.
      */
-    virtual int suggest(const string & keyword, const float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;
+    virtual int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;
 
     /**
      * Finds the next topK answers starting from

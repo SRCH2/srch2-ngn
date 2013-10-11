@@ -700,14 +700,72 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     return queryResults->getNumberOfResults() - offset;
 }
 
+bool suggestionComparator(const pair<float , const TrieNode *> & left , const pair<float , const TrieNode *> & right ){
+	return left.first < right.first;
+}
+
 int IndexSearcherInternal::suggest(const string & keyword,
-		const float fuzzyMatchPenalty ,
+		float fuzzyMatchPenalty ,
 		const unsigned numberOfSuggestionsToReturn ,
 		vector<string> & suggestions){
 
+	// non valid cases for input
+	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
+		return 0;
+	}
+    if (this->indexData->isCommited() == false){
+        return -1;
+    }
+
+	// make sure fuzzyMatchPenalty is in [0,1]
+	if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
+		fuzzyMatchPenalty = 0.5;
+	}
+	// calculate editDistanceThreshold
+	unsigned editDistanceThreshold = keyword.length() * (1 - fuzzyMatchPenalty);
+
+	// compute active nodes
+	// 1. firt we must create term object which is used to compute activenodes.
+	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
+	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
+	// 2. compute active nodes.
+	PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+	// 3. we don't the term anymore
+	delete term;
+	// 4. now iterate on active nodes and find suggestions for each on of them
+    ActiveNodeSetIterator iter(termActiveNodeSet, editDistanceThreshold);
+    std::vector<std::pair<float , const TrieNode *> > suggestionPairs;
+    for (; !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+//        distance = termActiveNodeSet->getEditdistanceofPrefix(trieNode);
+        trieNode->findMostPopularSuggestionsInThisSubTrie(suggestionPairs , numberOfSuggestionsToReturn );
+        if(suggestions.size() >= numberOfSuggestionsToReturn){
+        	break;
+        }
+    }
+
+    // 4. now sort the suggestions and copy them into the output
+    std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
+    int suggestionCount = 0;
+    for(std::vector<std::pair<float , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion){
+    	string suggestionString ;
+        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                               suggestion->second, suggestionString);
+    	suggestions.push_back(suggestionString);
+    	suggestionCount ++;
+    }
+	// 5. now delete activenode set
+    if (termActiveNodeSet->isResultsCached() == true)
+    	termActiveNodeSet->busyBit->setFree();
+    else
+        delete termActiveNodeSet;
 	return 0;
-	////////////////////////// ?????????????????????????????????????????????????????????????????????????
 }
+
+
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
 {

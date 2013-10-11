@@ -142,6 +142,40 @@ void TrieNode::print_TrieNode() const
     }
 }
 
+bool trieNodeComparatorBasedOnHistogramValue(const TrieNode * left , const TrieNode * right){
+	return left->nodeSubTrieValue < right->nodeSubTrieValue;
+}
+
+void TrieNode::findMostPopularSuggestionsInThisSubTrie(vector<pair< float ,const TrieNode *> > & suggestions,
+		const int numberOfSuggestionsToFind) const{
+
+	vector<const TrieNode *> nonTerminalChildrenHeap;
+	//1. First first iterate on children and add terminal children to suggestions.
+	// in the same time insert non-terminal nodes to a heap
+	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
+		const TrieNode * child = this->getChild(childIterator);
+		if(child->isTerminalNode()){
+			suggestions.push_back(make_pair(child->nodeSubTrieValue , child ));
+		}else{
+			nonTerminalChildrenHeap.push_back(child);
+		}
+	}
+	// heapify the heap
+	std::make_heap(nonTerminalChildrenHeap.begin() , nonTerminalChildrenHeap.end() , trieNodeComparatorBasedOnHistogramValue);
+	// 2. Now move on non-terminal children in descending order based on their histogram value
+	// and call this function (recursive call)
+	while(nonTerminalChildrenHeap.size() > 0){
+		const TrieNode * nonTerminalChild = nonTerminalChildrenHeap.front();
+		pop_heap(nonTerminalChildrenHeap.begin() , nonTerminalChildrenHeap.end() , trieNodeComparatorBasedOnHistogramValue);
+		nonTerminalChildrenHeap.pop_back();
+		nonTerminalChild->findMostPopularSuggestionsInThisSubTrie(suggestions , numberOfSuggestionsToFind);
+
+		if(suggestions.size() >= numberOfSuggestionsToFind){
+			return;
+		}
+	}
+	return;
+}
 
 
 void TrieNode::addChild(CharType character, TrieNode *childNode)
