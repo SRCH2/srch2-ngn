@@ -145,11 +145,6 @@ public:
         delete this->rwMutexForWriter;
     };
 
-    uint64_t getKafkaOffsetFromIndexSnapShot() const
-    {
-        return this->index->_getKafkaOffsetOfCurrentIndexSnapshot();
-    }
-
     uint32_t getNumberOfDocumentsInIndex() const
     {
         return this->index->_getNumberOfDocumentsInIndex();
@@ -169,16 +164,16 @@ public:
     /**
      * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.
      */
-    INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer, const uint64_t kafkaMessageOffset);
+    INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
     /**
      * Deletes all the records.
      */
-    INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset);
+    INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID);
 
-    INDEXWRITE_RETVAL deleteRecordGetInternalId(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned &internalRecordId);
+    INDEXWRITE_RETVAL deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId);
 
-    INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, const uint64_t kafkaMessageOffset, unsigned internalRecordId);
+    INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId);
 
     INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID);
 
@@ -245,12 +240,6 @@ private:
 
     pthread_t mergerThread;
     pthread_attr_t attr;
-
-    // The kafka offset the last message in the read view.
-    uint64_t kafkaOffset_LatestReadView;
-
-    // The kafka offset the last message in the write view.
-    uint64_t kafkaOffset_LatestWriteView;
 
     volatile unsigned writesCounter_forMerge;
     unsigned mergeEveryNSeconds;

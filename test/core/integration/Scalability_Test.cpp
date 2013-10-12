@@ -64,7 +64,7 @@ void buildIndex(string dataFile, string indexDir) {
             cellCounter++;
         }
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 
@@ -135,7 +135,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
 
         record->setLocationAttributeValue(lat, lng);
 
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
 
         docsCounter++;
 

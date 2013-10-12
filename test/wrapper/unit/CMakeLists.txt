@@ -13,12 +13,3 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                   OUTPUT_VARIABLE gcc_compiler_version)
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
 
-ADD_EXECUTABLE(test-kafka testKafka.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS>)
-TARGET_LINK_LIBRARIES(test-kafka ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES})
-
-ADD_EXECUTABLE(test-jsoncpp testJSON.cpp $<TARGET_OBJECTS:KAFKA_OBJECTS>)
-TARGET_LINK_LIBRARIES(test-jsoncpp ${jsoncpp_LIBRARY} ${Boost_LIBRARIES}  ${CMAKE_REQUIRED_LIBRARIES})
-
-ADD_DEPENDENCIES(test-kafka srch2_core)
-ADD_DEPENDENCIES(test-jsoncpp srch2_core)
-

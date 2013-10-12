@@ -4,11 +4,11 @@
 #include <boost/program_options.hpp>
 #include <instantsearch/Indexer.h>
 #include "wrapper/JSONRecordParser.h"
-#include "wrapper/Srch2KafkaConsumer.h"
 #include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
 #include "license/LicenseVerifier.h"
 #include "util/Logger.h"
+#include "wrapper/Srch2Server.h"
 #include <map>
 #include <vector>
 
@@ -313,7 +313,8 @@ bool test2(int argc, char** argv) {
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
     // create IndexMetaData
-    srch2is::IndexMetaData *indexMetaData = srch2http::Srch2KafkaConsumer::createIndexMetaData(serverConf);
+    srch2http::Srch2Server srch2Server;
+    srch2is::IndexMetaData *indexMetaData = srch2Server.createIndexMetaData(serverConf);
 
     // Create an analyzer
     srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",

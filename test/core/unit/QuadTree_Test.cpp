@@ -115,7 +115,7 @@ void addLocationRecord(Indexer *indexer, Schema *schema, Analyzer* analyzer, uns
 	record->setSearchableAttributeValue(1, secondAttribute);
 	record->setLocationAttributeValue(point.x, point.y);
 
-	indexer->addRecord(record, analyzer, 0);
+	indexer->addRecord(record, analyzer);
 
 	delete record;
 }

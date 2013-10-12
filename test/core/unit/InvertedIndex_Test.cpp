@@ -56,56 +56,56 @@ void addRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "come Yesterday Once More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(0, "George Harris");
     record->setSearchableAttributeValue(1, "Here comes the sun");
     record->setRecordBoost(20);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(0, "Pink Floyd");
     record->setSearchableAttributeValue(1, "Shine on you crazy diamond");
     record->setRecordBoost(30);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1004);
     record->setSearchableAttributeValue(0, "Uriah Hepp");
     record->setSearchableAttributeValue(1, "Come Shine away Melinda ");
     record->setRecordBoost(40);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1005);
     record->setSearchableAttributeValue(0, "Pinksyponzi Floydsyponzi");
     record->setSearchableAttributeValue(1, "Shinesyponzi on Wish you were here");
     record->setRecordBoost(50);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1006);
     record->setSearchableAttributeValue(0, "U2 2345 Pink");
     record->setSearchableAttributeValue(1, "with or without you");
     record->setRecordBoost(60);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1007);
     record->setSearchableAttributeValue(0, "Led Zepplelin");
     record->setSearchableAttributeValue(1, "Stairway to Heaven pink floyd");
     record->setRecordBoost(80);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer,  0);
+    index->addRecord(record, analyzer);
 
     ///TODO: Assert that This record must not be added
     /// 1) Repeat of primary key

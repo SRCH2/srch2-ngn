@@ -21,7 +21,10 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
-#include "Srch2KafkaConsumer.h"
+#ifdef __MACH__
+// This header is used only in mac osx related code
+#include <arpa/inet.h>
+#endif
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
@@ -39,7 +42,6 @@
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
-
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;

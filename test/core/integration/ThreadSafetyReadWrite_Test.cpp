@@ -75,21 +75,21 @@ void addSimpleRecords()
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
     record->setRecordBoost(90);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
     record->setRecordBoost(10);
-    index->addRecord(record, analyzer, 0);
+    index->addRecord(record, analyzer);
 
     index->commit();
     index->save();
@@ -216,7 +216,7 @@ void testWrite(Indexer *indexer, unsigned id)
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
-    indexer->addRecord(record, analyzer, 0);
+    indexer->addRecord(record, analyzer);
 
     //Query: "tom", hits -> 1001, 1003 , 1999
     {

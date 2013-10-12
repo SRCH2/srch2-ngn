@@ -149,7 +149,7 @@ void buildIndex(string indexDir)
         }
         //cout<<endl;
         // add the record
-        indexer->addRecord(record, analyzer, 0);
+        indexer->addRecord(record, analyzer);
         record->clear();
     }
     // build the index
@@ -254,7 +254,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
             }
             cellCounter++;
         }
-        bool added = indexer->addRecord(record, analyzer, 0);
+        bool added = indexer->addRecord(record, analyzer);
         (void)added;
         //if (added == -1)
         //cout<< "Outside:"<< docsCounter << " " << endl;
