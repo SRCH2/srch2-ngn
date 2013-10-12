@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
         trie->addKeyword(mapIterator->first, invertedIndexOffset);
     }
     trie->commit();
-    trie->finalCommit(NULL);
+    trie->finalCommit(NULL , 0);
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 

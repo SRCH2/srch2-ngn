@@ -486,11 +486,11 @@ INDEXWRITE_RETVAL IndexData::_commit()
          */
         if (isLocational)
         {
-			this->trie->finalCommit(NULL);
+			this->trie->finalCommit(NULL , 0);
         }
         else
         {
-			this->trie->finalCommit(this->invertedIndex);
+			this->trie->finalCommit(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
         //this->trie->print_Trie();
         this->commited = true;
@@ -518,7 +518,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram)
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     	invertedIndex = this->invertedIndex;
     }
-    this->trie->merge(invertedIndex, updateHistogram);
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
     // struct timespec tend;
     // clock_gettime(CLOCK_REALTIME, &tend);

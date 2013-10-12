@@ -143,7 +143,7 @@ void TrieNode::print_TrieNode() const
 }
 
 bool trieNodeComparatorBasedOnHistogramValue(const TrieNode * left , const TrieNode * right){
-	return left->nodeSubTrieValue < right->nodeSubTrieValue;
+	return left->nodeSubTrieValue > right->nodeSubTrieValue;
 }
 
 void TrieNode::findMostPopularSuggestionsInThisSubTrie(vector<pair< float ,const TrieNode *> > & suggestions,
@@ -841,7 +841,7 @@ void Trie::save(Trie &trie, const std::string &trieFullPathFileName)
     if (trie.merge_required){
     	// we don't have to update histogram when we want to save.
     	// if we want to do that we need to change save API to get InvertedIndex.
-        trie.merge(NULL, false);
+        trie.merge(NULL, 0, false);
     }
     std::ofstream ofs(trieFullPathFileName.c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
@@ -1272,28 +1272,30 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 }
 
 
-void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex){
+void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);
     TrieNode *root = trieRootNode_ReadView->root;
     if(root == NULL){
     	return;
     }
-    calculateTrieNodeSubTrieValuesForANode(root, invertedIndex);
+    calculateTrieNodeSubTrieValuesForANode(root, invertedIndex , totalNumberOfRecords);
 
 }
 
-void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const InvertedIndex * invertedIndex){
+void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
     unsigned childIterator = 0;
     for(; childIterator < node->getChildrenCount() ; childIterator ++){
-    	calculateTrieNodeSubTrieValuesForANode(node->getChild(childIterator) , invertedIndex);
+    	calculateTrieNodeSubTrieValuesForANode(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
     }
     // now update the value of this node from its children
-    node->updateNodeSubTrieValueAggregatedValue();
+    if(! node->isTerminalNode()){
+		node->updateNodeSubTrieValueAggregatedValueByUsingJointProbability();
+    }
     // now if this node is a terminal node, use inverted index to add the score of
     // the top record of its inverted list to nodeSubTrieValue
     if(node->isTerminalNode()){
@@ -1304,6 +1306,11 @@ void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const Inverted
     	}
         shared_ptr<vectorview<unsigned> > invertedListReadView;
         invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
+
+
+        /*********  This code uses the score of the top record as the terminal node value  **************
+         ****************** We keep this code in case we want to use it in future. **********************
+
         float termRecordStaticScore = 0;
         unsigned termAttributeBitmap = 0;
         // move on inverted list to find the first record which is valid
@@ -1319,18 +1326,30 @@ void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const Inverted
         // now that we have the static score, add the static score to the value of this node
         node->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
         return;
+
+        *************************************************************************************************
+        *************************************************************************************************/
+
+        // we use the probability of this terminal node to occur in a record as the initial value
+        if(totalNumberOfRecords == 0){
+        	node->addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(1);
+        	return;
+        }
+        float pTerminalNode = (1.0 * invertedListReadView->size()) / totalNumberOfRecords ;
+        node->addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(pTerminalNode);
+        return;
     }
     return;
 }
 
 
-void Trie::merge(const InvertedIndex * invertedIndex , bool updateHistogram)
+void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram)
 {
 
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
-		this->calculateTrieNodeSubTrieValues(invertedIndex);
+		this->calculateTrieNodeSubTrieValues(invertedIndex , totalNumberOfResults);
 	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
@@ -1380,9 +1399,9 @@ void Trie::commit()
     this->commitSubTrie(this->root_readview.get()->root, finalKeywordIdCounter, sparsityFactor);
 }
 
-void Trie::finalCommit(const InvertedIndex * invertedIndex){
+void Trie::finalCommit(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
 	// traverse the trie in preorder to calculate nodeSubTrieValue
-	calculateTrieNodeSubTrieValues(invertedIndex);
+	calculateTrieNodeSubTrieValues(invertedIndex , totalNumberOfResults);
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }

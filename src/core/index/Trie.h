@@ -330,6 +330,10 @@ public:
     	this->setNodeSubTrieValue(this->getNodeSubTrieValue() + newValue);
     }
 
+    void addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(float newP){
+    	// P(A or B) = P(A) + P(B) - P(A and B) = P(A) + P(B) - P(A)*P(B) // estimating P(A and B) with P(A)*P(B)
+    	this->setNodeSubTrieValue(this->getNodeSubTrieValue() + newP - this->getNodeSubTrieValue() * newP);
+    }
     void updateNodeSubTrieValueAggregatedValue(){
     	// iterate on children and aggregate the values
         unsigned int childIterator = 0;
@@ -339,6 +343,23 @@ public:
         }
         // set the result in the class member
         this->setNodeSubTrieValue(updatedAggregatedValue);
+    }
+
+    void updateNodeSubTrieValueAggregatedValueByUsingJointProbability(){
+    	// P(A or B or C or ... or F) =
+    	//                     P(A)+P(B)+...+P(F) - P(A and B and ... and F) =
+    	//                     P(A)+P(B)+...+P(F) - P(A)*P(B)*...*P(F)
+    	// iterate on children and aggregate the values
+        unsigned int childIterator = 0;
+        float summationOfProbabilities = 0;
+        float multiplicationOfProbabilities = 1;
+        for ( ; childIterator < this->getChildrenCount(); childIterator++ ) {
+        	summationOfProbabilities += this->getChild(childIterator)->getNodeSubTrieValue();
+        	multiplicationOfProbabilities *= this->getChild(childIterator)->getNodeSubTrieValue();
+        }
+        // set the result in the class member
+        // P(A)+P(B)+...+P(F) - P(A)*P(B)*...*P(F)
+        this->setNodeSubTrieValue(summationOfProbabilities - multiplicationOfProbabilities);
     }
 
 
@@ -639,10 +660,10 @@ public:
      * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
-    void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex);
-    void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex);
+    void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+    void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
 
-    void merge(const InvertedIndex * invertedIndex , bool updateHistogram);
+    void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
 
     void commit();
 
@@ -651,7 +672,7 @@ public:
      * Final commit must be called after InvertedInde and ForwardIndex commits are done unless invertedIndex
      * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
      */
-    void finalCommit(const InvertedIndex * invertedIndex);
+    void finalCommit(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults );
 
     const std::vector<unsigned> *getOldIdToNewIdMapVector() const;
 

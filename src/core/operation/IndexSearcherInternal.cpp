@@ -701,7 +701,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 }
 
 bool suggestionComparator(const pair<float , const TrieNode *> & left , const pair<float , const TrieNode *> & right ){
-	return left.first < right.first;
+	return left.first > right.first;
 }
 
 int IndexSearcherInternal::suggest(const string & keyword,
@@ -752,6 +752,9 @@ int IndexSearcherInternal::suggest(const string & keyword,
     for(std::vector<std::pair<float , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion){
     	string suggestionString ;
+    	// for testing purposes
+    	float histogramValueOfTerminalNode = suggestion->first;
+    	//
         this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
                                                suggestion->second, suggestionString);
     	suggestions.push_back(suggestionString);
