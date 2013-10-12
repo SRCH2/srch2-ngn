@@ -20,7 +20,7 @@ wpgen.py updateall
 # replace the "title" tag with the correct value
 
 sed -e 's#<title>.*</title>#<title>SRCH2: Manual</title>#g' html/main.html > main.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Installaion</title>#g' html/install.html > install.html  
+sed -e 's#<title>.*</title>#<title>SRCH2: Installation</title>#g' html/install.html > install.html  
 sed -e 's#<title>.*</title>#<title>SRCH2: Configuration</title>#g' html/configuration.html > configuration.html  
 sed -e 's#<title>.*</title>#<title>SRCH2: Search API</title>#g' html/restful-search.html > restful-search.html  
 sed -e 's#<title>.*</title>#<title>SRCH2: Insert/Update/Delete API</title>#g' html/restful-insert-update-delete.html > restful-insert-update-delete.html  
