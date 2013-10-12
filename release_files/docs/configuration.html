@@ -50,7 +50,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">8.1. Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">8.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">8.2. Fuzzy Match Penalty</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">8.3. Term Similarity Threshold</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">8.4. Support Swap in Edit Distance</a></br><br>
@@ -197,11 +197,11 @@ example shows how to enable this indexing:</p>
 &lt;/query&gt;
 </code></pre>
 
-<h3 id="rankingalgorithm">8.1. Ranking:</h3>
+<h3 id="rankingAlgorithm">8.1. Ranking:</h3>
 <p>The following tags and parameters are related to ranking. </p>
-<pre><code>&lt;rankingalgorithm&gt;
+<pre><code>&lt;rankingAlgorithm&gt;
      &lt;recordScoreExpression&gt;idf_score*doc_boost&lt;/recordScoreExpression&gt;
-&lt;/rankingalgorithm&gt;
+&lt;/rankingAlgorithm&gt;
 </code></pre>
 
 <p>This expression is used to compute the static score of a record with respect to a term.  It is computed during index construction and stored in the indexes statically.  It can use the following parameters:</p>
