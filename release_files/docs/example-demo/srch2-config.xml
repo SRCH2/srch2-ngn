@@ -56,9 +56,9 @@
   
   
     <query>
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
         <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
 
