@@ -2,29 +2,37 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.1">
-<title>ranking</title>
+<meta name="generator" content="ReText Webpages generator 4.0.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>SRCH2: Ranking</title>
 </head>
+
 <body>
+
 <table style="width:100%;table-layout:fixed" ><tr>
+
 <td id="sideBarTd" style="width:25%">
+
 <div id="sidebar"> <!-- Sidebar -->
+
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/D\
+elete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
 </td></tr></tbody></table>
 
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"/></a></span></br></br>
+<span ><a  href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
 </div> <!-- Links to main pages, id=linkpool-->
-<hr/>
+
+<hr>
 
 <div id="content" > <!-- Table of content, id=content-->
 
@@ -36,7 +44,11 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#formula">2. Ranking Formula</a></br><br>
 </td></tr></tbody></table>
 
-<p></div> <!-- Table of content, id=content--></p>
+
+</div>
+
+<!-- Table of content, id=content-->
+
 <p></div> <!-- Sidebar --></p>
 </td>
 
@@ -84,10 +96,13 @@
 <p>The value "idf(<i>t_i</i>)" is the inversed document frequency, calculated as follows:</p>
 <p><center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center></p>
 <p>In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.</p>
-<p><hr/>
-<link rel="stylesheet" type="text/css" href="documentation.css"></p>
-<script type="text/javascript" src="setSizes.js"></script>
 
+</table>
+<hr>
+
+<link rel="stylesheet" type="text/css" href="documentation.css">
+
+<script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
@@ -102,5 +117,6 @@ with (theDate) {
 document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
 } 
 </script>
+
 </body>
 </html>
