@@ -147,7 +147,9 @@ public:
     	unsigned keywordAttributeBitMapSize = 0;
     	if(shouldAttributeBitMapBeAllocated == true){
     		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
-    		ASSERT(keywordAttributeBitMapSize > 0);
+    		/*
+    		 * Still keywordAttributeBitMapSize can be 0 which is the case of empty record.
+    		 */
     	}
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
