@@ -16,7 +16,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include "util/Version.h"
 #include "util/Logger.h"
-#include <iostream>
 using namespace std;
 using namespace srch2::util;
 
