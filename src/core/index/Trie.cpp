@@ -1280,7 +1280,8 @@ void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex , 
     	return;
     }
     calculateTrieNodeSubTrieValuesForANode(root, invertedIndex , totalNumberOfRecords);
-
+    std::vector<CharType> prefix;
+//    printTrieNodeSubTrieValues(prefix, trieRootNode_ReadView->root);
 }
 
 void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
@@ -1340,6 +1341,22 @@ void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const Inverted
         return;
     }
     return;
+}
+
+void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth){
+	for(int i=0;i<depth ; i++){
+		std::cout << "-" ;
+	}
+	prefix.push_back(root->getCharacter());
+	string str = getUtf8String(prefix);
+	std::cout << str << "(" << root->nodeSubTrieValue << ")" << std::endl;
+	if(! root->isTerminalNode()){
+	    unsigned childIterator = 0;
+	    for(; childIterator < root->getChildrenCount() ; childIterator ++){
+	    	printTrieNodeSubTrieValues(prefix, root->getChild(childIterator) , depth+1);
+	    }
+	}
+	prefix.pop_back();
 }
 
 

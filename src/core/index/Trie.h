@@ -346,21 +346,29 @@ public:
     }
 
     void updateNodeSubTrieValueAggregatedValueByUsingJointProbability(){
+    	if(this->getChildrenCount() == 0){
+    		return;
+    	}
     	// P(A or B or C or ... or F) =
-    	//                     P(A)+P(B)+...+P(F) - P(A and B and ... and F) =
-    	//                     P(A)+P(B)+...+P(F) - P(A)*P(B)*...*P(F)
+    	//                     P(A) + P(B or C .. or F) - P(A) + P(B or C .. or F) = ... (RECURSIVE)
     	// iterate on children and aggregate the values
-        unsigned int childIterator = 0;
-        float summationOfProbabilities = 0;
-        float multiplicationOfProbabilities = 1;
-        for ( ; childIterator < this->getChildrenCount(); childIterator++ ) {
-        	summationOfProbabilities += this->getChild(childIterator)->getNodeSubTrieValue();
-        	multiplicationOfProbabilities *= this->getChild(childIterator)->getNodeSubTrieValue();
-        }
+    	float startingChildProbability = this->getChild(0)->nodeSubTrieValue;
+    	float restOfNodesJointProbability = nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(1);
+
         // set the result in the class member
         // P(A)+P(B)+...+P(F) - P(A)*P(B)*...*P(F)
-        this->setNodeSubTrieValue(summationOfProbabilities - multiplicationOfProbabilities);
+        this->setNodeSubTrieValue(startingChildProbability + restOfNodesJointProbability - startingChildProbability*restOfNodesJointProbability);
     }
+
+    float nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(unsigned startingChild = 0){
+    	if(startingChild >= this->getChildrenCount()){
+    		return 0;
+    	}
+    	float startingChildProbability = this->getChild(startingChild)->nodeSubTrieValue;
+    	float restOfNodesJointProbability = nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(startingChild + 1);
+    	return startingChildProbability + restOfNodesJointProbability - startingChildProbability*restOfNodesJointProbability;
+    }
+
 
 
     void findMostPopularSuggestionsInThisSubTrie(vector<pair< float , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
@@ -660,8 +668,10 @@ public:
      * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
+
     void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
     void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 
     void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
 

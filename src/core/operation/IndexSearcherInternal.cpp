@@ -865,12 +865,14 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
     const Query *query = queryResults->impl->getQuery();
     const vector<Term* > *queryTerms = query->getQueryTerms();
     if (query->getQueryType() != SearchTypeMapQuery) {
+    	std::cout << "Query : " << std::endl;
         for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
                 vectorIterator != queryTerms->end();
                 vectorIterator++ ) {
             // compute the active nodes for this term
             Term *term = *vectorIterator;
             std::stringstream str;
+        	std::cout << term->getKeyword()->c_str() << "(" ;
 
             str << "ActiveNodes compute:"<<*term->getKeyword();
             queryResults->addMessage(str.str().c_str());
@@ -879,6 +881,17 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
             timespec t2;
             clock_gettime(CLOCK_REALTIME, &t1);*/
             PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+
+            ActiveNodeSetIterator iter(termActiveNodeSet, term->getThreshold());
+            for (; !iter.isDone(); iter.next()) {
+                TrieNodePointer trieNode;
+                unsigned distance;
+                iter.getItem(trieNode, distance);
+        //        distance = termActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                std::cout << trieNode->nodeSubTrieValue << ",";
+            }
+            std::cout << ")" << " | ";
+
             /*clock_gettime(CLOCK_REALTIME, &t2);
             double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
             cout << "compute active node set cost: " << time_span << " milliseconds." << endl;*/
@@ -897,6 +910,7 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
 
             queryResults->impl->virtualListVector->push_back(termVirtualList);
         }
+        std::cout << std::endl;
     }
 }
 
