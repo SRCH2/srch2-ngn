@@ -34,7 +34,7 @@ class QuadTree;
  *   | 16 bits counter | 32bits Boost version | 8 bits endianess (0|1) | 8 bits size of pointer|
  *   ------------------------------------------------------------------------------------------
  *
- *   We do not store engine's version because index version may not change every other release.
+ *   We do not store engine's version because index version may not change in each new release.
  */
 class IndexVersion{
 public:
@@ -67,7 +67,7 @@ private:
 	short sequentialId;
 	unsigned boostVersion;
 	uint8_t endianness;  // 0 for big endian or 1 for small endian
-	uint8_t bitness;
+	uint8_t bitness;     // this value holds size of pointer i.e 4/8 bytes.
 };
 
 /*
