@@ -326,7 +326,7 @@ Trie::Trie()
     this->numberOfTerminalNodes = 0;
     this->oldIdToNewIdMapVector = NULL;
     this->commited = false;
-    this->merge_required = 0;
+    this->mergeRequired = 0;
 
     this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1; // init the counter
     pthread_spin_init(&m_spinlock, 0);
@@ -641,7 +641,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
     if (keyword.size() == 0)
         return 0;
 
-    this->merge_required = true;
+    this->mergeRequired = true;
 
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);

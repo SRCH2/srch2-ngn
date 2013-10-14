@@ -116,18 +116,15 @@ IndexData::IndexData(const string& directoryName)
     	serializer.load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     	this->forwardIndex->setSchema(this->schemaInternal);
 
-    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    	{
+    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
-    	}
-    	else
-    	{
+    	} else {
     		this->quadTree = new QuadTree();
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
     		this->quadTree->setForwardIndex(this->forwardIndex);
     		this->quadTree->setTrie(this->trie);
-    		//cout << "QuadTree loaded" << endl;
+    		//Logger::debug("QuadTree loaded");
     	}
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);

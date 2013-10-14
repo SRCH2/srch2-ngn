@@ -443,7 +443,7 @@ private:
     std::vector<unsigned> *oldIdToNewIdMapVector;
 
     bool commited;
-    bool merge_required;
+    bool mergeRequired;
 
     friend class boost::serialization::access;
 
@@ -599,7 +599,7 @@ public:
      */
     void reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper);
 
-    bool isMergeRequired() { return merge_required; }
+    bool isMergeRequired() { return mergeRequired; }
     void merge();
 
     void commit();

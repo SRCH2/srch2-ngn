@@ -5,8 +5,8 @@
  *      Author: srch2
  */
 
-#ifndef __CORE__SERIALIZATION__SERIALIZER_H__
-#define __CORE__SERIALIZATION__SERIALIZER_H__
+#ifndef __CORE_SERIALIZATION_SERIALIZER_H__
+#define __CORE_SERIALIZATION_SERIALIZER_H__
 
 #include <boost/version.hpp>
 #include <string>
@@ -16,7 +16,7 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include "util/Version.h"
 #include "util/Logger.h"
-
+#include <iostream>
 using namespace std;
 using namespace srch2::util;
 
@@ -31,27 +31,30 @@ class QuadTree;
 
 /*
  *   Index version layout
+ *   ------------------------------------------------------------------------------------------
+ *   | 16 bits counter | 32bits Boost version | 8 bits endianess (0|1) | 8 bits size of pointer|
+ *   ------------------------------------------------------------------------------------------
+ *
+ *   We do not store engine's version because index version may not change every other release.
  */
 class IndexVersion{
 public:
 	IndexVersion(uint8_t internalVersion, unsigned boostVersion);
 	IndexVersion(){
-		this->internalVersion = 0;
+		this->sequentialId = 0;
 		this->boostVersion = 0;
 		this->endianness = 0;
 		this->bitness = 0;
 	}
 	bool operator == (const IndexVersion& in){
-		if (this->internalVersion == in.internalVersion &&
+		return (this->sequentialId == in.sequentialId &&
 			this->boostVersion == in.boostVersion &&
-			this->endianness == in.endianness){
-			return true;
-		}
-		return false;
+			this->endianness == in.endianness &&
+			this->bitness == in.bitness);
 	}
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int file_version ){
-		ar & internalVersion;
+		ar & sequentialId;
 		ar & boostVersion;
 		ar & endianness;
 		ar & bitness;
@@ -62,7 +65,7 @@ public:
 	 */
 	static IndexVersion currentVersion;
 private:
-	uint8_t internalVersion;
+	short sequentialId;
 	unsigned boostVersion;
 	uint8_t endianness;  // 0 for big endian or 1 for small endian
 	uint8_t bitness;
@@ -91,8 +94,8 @@ public:
     	} else {
     		// throw invalid index file exception
     		ifs.close();
-    		Logger::error("Invalid index file. Either index files are built with previous version"
-    				"of engine or copied from different machine/architecture.");
+    		Logger::error("Invalid index file. Either index files are built with a previous version"
+    				"of engine or copied from a different machine/architecture.");
     		throw exception();
     	}
 		ifs.close();

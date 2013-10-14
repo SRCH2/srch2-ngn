@@ -569,7 +569,7 @@ int main(int argc, char** argv) {
     	/*
     	 *  We got some fatal error during server initialization. Print the error message and
     	 *  exit the process. Note: Other internal modules should make sure that no recoverable
-    	 *  exception reaches at this point. All exception reached here are considered fatal
+    	 *  exception reaches at this point. All exceptions reached here are considered fatal
     	 *  and server will stop.
     	 */
     	Logger::error(ex.what());
