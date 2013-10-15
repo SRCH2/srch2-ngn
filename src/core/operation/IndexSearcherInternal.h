@@ -55,6 +55,8 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
+	static const unsigned HISTOGRAM_THRESHOLD;
+
     //Get Schema pointer from IndexSearcherInternal
     IndexSearcherInternal(IndexReaderWriter *indexer);
     virtual ~IndexSearcherInternal() {};
@@ -88,7 +90,15 @@ public:
     }
 
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
-    void computeTermVirtualList(QueryResults *queryResults) const;
+    void computeTermVirtualList(QueryResults *queryResults ,
+    		vector<PrefixActiveNodeSet *> * activeNodes = NULL ,
+    		const vector<bool> * isTermTooPopularVector = NULL) const;
+
+    // This function uses the histogram information of the trie to estimate the number of records which have this term
+    unsigned getEstimatedNumberOfRecordsWhichHaveThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const;
+
+    // This functions defined the policy of estimating the results or computing them.
+    bool isTermPopular(Term *term , PrefixActiveNodeSet * activeNodes, unsigned & popularity) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex() {
@@ -127,6 +137,8 @@ private:
 
     int searchTopKQuery(const Query *query, const int offset,
                         const int nextK, QueryResults* queryResults);
+
+    int searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query, PrefixActiveNodeSet * activeNodes, unsigned k, QueryResults * queryResults);
 
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 

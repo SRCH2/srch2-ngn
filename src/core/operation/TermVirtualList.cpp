@@ -138,7 +138,7 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned d
 
 // Iterate over active nodes, fill the vector, and call make_heap on it.
 TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-                                 Term *term, float prefixMatchPenalty)
+                                 Term *term, float prefixMatchPenalty, bool shouldIterateToLeafNodes )
 {
     this->invertedIndex = invertedIndex;
     this->prefixActiveNodeSet = prefixActiveNodeSet;
@@ -149,6 +149,11 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentRecordID = -1;
     this->usingBitset = false;
     this->bitSetSize = 0;
+    this->isTermVirtualListDisabled = false;
+    if(shouldIterateToLeafNodes == false){
+    	this->isTermVirtualListDisabled = true;
+    	return;
+    }
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());

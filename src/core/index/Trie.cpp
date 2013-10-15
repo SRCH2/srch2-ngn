@@ -146,7 +146,7 @@ bool trieNodeComparatorBasedOnHistogramValue(const TrieNode * left , const TrieN
 	return left->nodeSubTrieValue > right->nodeSubTrieValue;
 }
 
-void TrieNode::findMostPopularSuggestionsInThisSubTrie(vector<pair< float ,const TrieNode *> > & suggestions,
+void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > ,const TrieNode *> > & suggestions,
 		const int numberOfSuggestionsToFind) const{
 
 	vector<const TrieNode *> nonTerminalChildrenHeap;
@@ -155,7 +155,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(vector<pair< float ,const
 	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
 		const TrieNode * child = this->getChild(childIterator);
 		if(child->isTerminalNode()){
-			suggestions.push_back(make_pair(child->nodeSubTrieValue , child ));
+			suggestions.push_back(make_pair(make_pair(child->nodeSubTrieValue , ed) , child ));
 		}else{
 			nonTerminalChildrenHeap.push_back(child);
 		}
@@ -168,7 +168,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(vector<pair< float ,const
 		const TrieNode * nonTerminalChild = nonTerminalChildrenHeap.front();
 		pop_heap(nonTerminalChildrenHeap.begin() , nonTerminalChildrenHeap.end() , trieNodeComparatorBasedOnHistogramValue);
 		nonTerminalChildrenHeap.pop_back();
-		nonTerminalChild->findMostPopularSuggestionsInThisSubTrie(suggestions , numberOfSuggestionsToFind);
+		nonTerminalChild->findMostPopularSuggestionsInThisSubTrie(ed , suggestions , numberOfSuggestionsToFind);
 
 		if(suggestions.size() >= numberOfSuggestionsToFind){
 			return;

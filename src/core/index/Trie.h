@@ -371,7 +371,7 @@ public:
 
 
 
-    void findMostPopularSuggestionsInThisSubTrie(vector<pair< float , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
+    void findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
 

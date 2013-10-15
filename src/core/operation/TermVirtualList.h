@@ -127,7 +127,7 @@ public:
     // in 3 places: this function, BimaleServeConf.cpp, and Query.cpp.
     // Unify them.
     TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-                    Term *term, float prefixMatchPenalty = 0.95);
+                    Term *term, float prefixMatchPenalty = 0.95 , bool shouldIterateToLeafNodes = true);
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
     void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
@@ -175,6 +175,8 @@ public:
     // the number of records in the bitset, which is the total number of records in the data set
     int bitSetSize;
 
+    //
+    bool isTermVirtualListDisabled;
 private:
 
     PrefixActiveNodeSet *prefixActiveNodeSet;
