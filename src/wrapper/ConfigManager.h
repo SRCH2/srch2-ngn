@@ -192,6 +192,8 @@ private:
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
 
+    void lowerCaseNodeNames(xml_node &node);
+
 public:
     ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
