@@ -23,7 +23,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: Search in MongoDB </center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview###{id="overview"}
 
