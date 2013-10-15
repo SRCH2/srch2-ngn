@@ -69,20 +69,22 @@ public:
     virtual bool for_each(xml_node &node);
 };
 
+// iterator calls this method once for each node in tree
 bool XmlLowerCaseWalker::for_each(xml_node &node)
 {
+    // lowercase the name of each node
+    unsigned int length, i;
+
     const char_t *oldName = node.name();
 
     if (oldName && oldName[0])
     {
-        unsigned int length, i;
-
 	length = strlen(oldName);
 
 	if (length > 0)
 	{
-	    // duplicate XML node name, but in lowercase
-	  char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
+	    // duplicate name, but in lowercase
+	    char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
 	    for (i = 0; i < length; i++)
 	        newName[i] = tolower(oldName[i]);
 	    newName[i++] = '\000';
@@ -90,6 +92,25 @@ bool XmlLowerCaseWalker::for_each(xml_node &node)
 	    (void) node.set_name(newName);
 	}
     }
+
+    // lowercase attribute names too
+    for (pugi::xml_attribute_iterator attribute = node.attributes_begin(); attribute != node.attributes_end(); ++attribute)
+    {
+        oldName = attribute->name();
+	length = strlen(oldName);
+
+	if (length > 0)
+	{
+	    // duplicate name, but in lowercase
+	    char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
+	    for (i = 0; i < length; i++)
+	        newName[i] = tolower(oldName[i]);
+	    newName[i++] = '\000';
+
+	    (void) attribute->set_name(newName);
+	}
+    }
+
     return true;
 }
 
@@ -458,11 +479,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
             for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
                 if (string(field.name()).compare("facetfield") == 0) {
 		  if (string(field.attribute("name").value()).compare("") != 0
-                            && string(field.attribute("facetType").value()).compare("") != 0){
+                            && string(field.attribute("facettype").value()).compare("") != 0){
                         // insert the name of the facet
                         this->facetAttributes.push_back(string(field.attribute("name").value()));
                         // insert the type of the facet
-                        tempUse = string(field.attribute("facetType").value());
+                        tempUse = string(field.attribute("facettype").value());
                         int facetType = parseFacetType(tempUse);
                         if(facetType == 0){ // categorical
                             this->facetTypes.push_back(facetType);
@@ -473,7 +494,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }else if(facetType == 1){ // range
                             this->facetTypes.push_back(facetType);
                             // insert start
-                            string startTextValue = string(field.attribute("facetStart").value());
+                            string startTextValue = string(field.attribute("facetstart").value());
                             string facetAttributeName = string(field.attribute("name").value());
                             srch2::instantsearch::FilterType facetAttributeType ;
                             if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
@@ -499,7 +520,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             this->facetStarts.push_back(startTextValue);
 
                             // insert end
-                            string endTextValue = string(field.attribute("facetEnd").value());
+                            string endTextValue = string(field.attribute("facetend").value());
                             if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
                                 facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
                             }else{
@@ -523,7 +544,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             this->facetEnds.push_back(endTextValue);
 
                             // insert gap
-                            string gapTextValue = string(field.attribute("facetGap").value());
+                            string gapTextValue = string(field.attribute("facetgap").value());
                             if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
                                 facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
                             }else{
@@ -595,7 +616,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child("config").child("schema").child("types");
     if (configAttribute) {        // Checks if <schema><types> exists or not
         for (xml_node fieldType = configAttribute.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
-            if ((string(fieldType.name()).compare("fieldType") == 0)) { // Finds the fieldTypes
+            if ((string(fieldType.name()).compare("fieldtype") == 0)) { // Finds the fieldTypes
                 if (string(fieldType.attribute("name").value()).compare("text_en") == 0) {
                     // Checking if the values are empty or not
                     xml_node configAttributeTemp = fieldType.child("analyzer"); // looks for analyzer
