@@ -627,6 +627,38 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+// resetLoggerCommand : Reopen the logger file.
+void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
+	//  TODO: maybe concurrent control
+	switch(req->type) {
+	case EVHTTP_REQ_POST: {
+		FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
+		            "a");
+
+		Logger::closeOutputFile();
+	    if (logFile == NULL) {
+	        Logger::setOutputFile(stdout);
+	        Logger::error("Reopen Log file %s failed.",
+	        		server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str());
+	    } else {
+	        Logger::setOutputFile(logFile);
+	    }
+
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                "{\"message\":\"The logger file repointing has done successfully\", \"log\":["
+                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+        break;
+	}
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+	};
+}
+
+
 // exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
 void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
