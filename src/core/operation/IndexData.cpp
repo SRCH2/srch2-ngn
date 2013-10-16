@@ -418,8 +418,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
     if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         isLocational = true;
 
-    if (this->commited == false)
-    {
+    if (this->commited == false){
         //cout << "here: index commit" << endl;
         /*
          * For the text only Index:
@@ -449,8 +448,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
 
-        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
-        {
+        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter){
             ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(forwardIndexIter);
             vector<NewKeywordIdKeywordOffsetTriple> newKeywordIdKeywordOffsetTriple;
             //this->forwardIndex->commit(forwardList, oldIdToNewIdMapVector, newKeywordIdKeywordOffsetTriple);
@@ -461,16 +459,13 @@ INDEXWRITE_RETVAL IndexData::_commit()
         }
         this->forwardIndex->finalCommit();
 //        this->forwardIndex->print_size();
-        if (isLocational)
-        {
+        if (isLocational){
             //time_t begin,end;
             //time(&begin);
             this->quadTree->createFilters();
             //time(&end);
             //std::cout << "CFilters and OFilters creating time elapsed: " << difftime(end, begin) << " seconds"<< std::endl;
-        }
-        else
-        {
+        }else{
             this->invertedIndex->setForwardIndex(this->forwardIndex);
             this->invertedIndex->finalCommit();
         }
@@ -484,26 +479,20 @@ INDEXWRITE_RETVAL IndexData::_commit()
          * NULL will make the component to compute simple frequency
          * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
          */
-        if (isLocational)
-        {
-			this->trie->finalCommit(NULL , 0);
-        }
-        else
-        {
-			this->trie->finalCommit(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+        if (isLocational){
+			this->trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+        }else{
+			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
         //this->trie->print_Trie();
         this->commited = true;
         return OP_SUCCESS;
-    }
-    else
-    {
+    }else{
         return OP_FAIL;
     }
 }
 
-INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram)
-{
+INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     Logger::debug("Merge begins--------------------------------"); 
 
     if (!this->mergeRequired)
@@ -512,8 +501,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram)
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);
 
-    // if it is the case of M1, invertedIndex is passes as NULL so that histogram information only
-    // uses frequency. Otherwise, the invertedIndex will be used to integrate its information with frequency
+    // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
+    // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
     const InvertedIndex * invertedIndex = NULL;
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     	invertedIndex = this->invertedIndex;

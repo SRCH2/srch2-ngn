@@ -65,11 +65,13 @@ public:
         }
         mergeEveryMWrites = _mergeEveryMWrites;
 
+        // we are going to update the histogram information every 10 merges.
         if(_updateHistogramEveryPMerges == 0){
         	_updateHistogramEveryPMerges = 10;
         }
         updateHistogramEveryPMerges = _updateHistogramEveryPMerges;
 
+        // we are going to update the histogram information every 50 writes
         if(_updateHistogramEveryQWrites == 0){
         	_updateHistogramEveryQWrites = 50;
         }

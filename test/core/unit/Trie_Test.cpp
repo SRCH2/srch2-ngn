@@ -99,7 +99,7 @@ void test1()
     ASSERT(keywordId8 == 6);
 
     trie1->commit();
-    trie1->finalCommit(NULL, 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
@@ -374,7 +374,7 @@ void test2()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
-    trie1->finalCommit(NULL , 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL , 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -507,7 +507,7 @@ void test2_ThreadSafe()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
-    trie1->finalCommit(NULL, 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -576,7 +576,7 @@ void test3()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
-    trie1->finalCommit(NULL, 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -618,7 +618,7 @@ void test4()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
-    trie1->finalCommit(NULL, 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     Trie::save(*trie1,filenameTrie);
@@ -666,7 +666,7 @@ void test5()
     keywordId8 = trie1->addKeyword("cans", invertedIndexOffset);
 
     trie1->commit();
-    trie1->finalCommit(NULL, 0);
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     /*

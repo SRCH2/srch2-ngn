@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
         trie->addKeyword(mapIterator->first, invertedIndexOffset);
     }
     trie->commit();
-    trie->finalCommit(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 

@@ -51,6 +51,8 @@
 #include "util/mypthread.h"
 #include "util/Assert.h"
 #include "util/encoding.h"
+
+// we need to include inverted index in here to get information about list frequencies to do query suggestions
 #include "index/InvertedIndex.h"
 
 using std::endl;
@@ -135,8 +137,6 @@ public:
     unsigned char terminalFlag1bDepth7b;
     CharType character;
 
-    // Node sub-trie value
-    float nodeHistogramValue;
     /// Terminal-node members
     unsigned id;
     unsigned invertedListOffset;
@@ -196,7 +196,8 @@ public:
 private:
     // a compact representation of leftInsertCounter and rightInsertCounter
     unsigned insertCounters;
-
+    // Node sub-trie value
+    float nodeHistogramValue;
 private:
     friend class boost::serialization::access;
 
@@ -334,51 +335,14 @@ public:
     	return (p1 + p2) - (p1 * p2);
     }
 
-    void updateInternalNodeHistogramValue(HistogramAggregationType aggrType){
+    // it updates the histogram value of this node based on the information coming from the children
+    void updateInternalNodeHistogramValue(HistogramAggregationType aggrType);
 
-    	if(this->getChildrenCount() == 0) return;
+    // initializes the histogram value of this trie node
+    void initializeInternalNodeHistogramValue(HistogramAggregationType aggrType);
 
-    	float aggregatedValueSoFar = this->getChild(0)->getNodeHistogramValue();
-    	// iterate on children and aggregate the values
-        for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
-            switch (aggrType) {
-				case HistogramAggregationTypeSummation:
-					aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
-					break;
-				case HistogramAggregationTypeJointProbability:
-					aggregatedValueSoFar =
-							aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
-					break;
-			}
-        }
-        // and also use the value that this node currently has
-        switch (aggrType) {
-			case HistogramAggregationTypeSummation:
-				aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getNodeHistogramValue());
-				break;
-			case HistogramAggregationTypeJointProbability:
-				aggregatedValueSoFar =
-						aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getNodeHistogramValue());
-				break;
-		}
-
-        // set the result in the class member
-        this->setNodeHistogramValue(aggregatedValueSoFar);
-    }
-
-    void initializeInternalNodeHistogramValue(HistogramAggregationType aggrType){
-    	float initValue = 0;
-        switch (aggrType) {
-			case HistogramAggregationTypeSummation:
-				initValue = 0;
-				break;
-			case HistogramAggregationTypeJointProbability:
-				initValue = 0;
-				break;
-		}
-        this->setNodeHistogramValue(initValue);
-    }
-
+    // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
+    // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
     void findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
@@ -677,10 +641,12 @@ public:
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
 
-    void calculateTrieNodeHistogramValues(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
-    void calculateTrieNodeHistogramValuesRecursive(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+    void calculateNodeHistogramValuesFromChildrenRecursive(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
     void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 
+    // invertedIndex and totalNumberOfResults are used to update histogram information on the trie
+    // updateHistogram is the flag which tells us if we should update histogram or not.
     void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
 
     void commit();
@@ -688,9 +654,9 @@ public:
     /*
      * Calls calculateTrieNodeSubTrieValues and sets commit flag of trie to true
      * Final commit must be called after InvertedInde and ForwardIndex commits are done unless invertedIndex
-     * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
+     * is NULL (which is the case of M1), in which case this value is actually just the frequency of leaf nodes in each subtrie.
      */
-    void finalCommit(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults );
+    void finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults );
 
     const std::vector<unsigned> *getOldIdToNewIdMapVector() const;
 

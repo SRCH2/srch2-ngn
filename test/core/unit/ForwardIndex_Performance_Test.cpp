@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 
     /// Commit the trie
 	trie->commit();
-    trie->finalCommit(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
 
 	typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 	TrieRootNodeSharedPtr rootSharedPtr;

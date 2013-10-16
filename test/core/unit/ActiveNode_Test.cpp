@@ -124,7 +124,7 @@ Trie *constructTrie()
     trie->addKeyword(getCharTypeVector("cat"), invertedIndexOffset);
     trie->addKeyword(getCharTypeVector("dog"), invertedIndexOffset);
     trie->commit();
-    trie->finalCommit(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
 
     return trie;
 }
@@ -415,7 +415,7 @@ Trie *constructNoFuzzyTrie()
     trie->addKeyword(getCharTypeVector("ㄕㄢ"), invertedIndexOffset);
 
     trie->commit();
-    trie->finalCommit(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
 
     return trie;
 }

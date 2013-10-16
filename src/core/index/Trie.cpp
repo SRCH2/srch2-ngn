@@ -146,33 +146,33 @@ bool trieNodeComparatorBasedOnHistogramValue(const TrieNode * left , const TrieN
 	return left->getNodeHistogramValue() > right->getNodeHistogramValue();
 }
 
+// this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
+// stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToFind
 void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > ,const TrieNode *> > & suggestions,
 		const int numberOfSuggestionsToFind) const{
 
-	vector<const TrieNode *> nonTerminalChildrenHeap;
-	//1. First first iterate on children and add terminal children to suggestions.
+	vector<const TrieNode *> nonTerminalChildrenVector;
+	//1. First iterate on children and add terminal children to suggestions.
 	// in the same time insert non-terminal nodes to a heap
 	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
 		const TrieNode * child = this->getChild(childIterator);
 		if(child->isTerminalNode()){
 			suggestions.push_back(make_pair(make_pair(child->getNodeHistogramValue() , ed) , child ));
 		}else{
-			nonTerminalChildrenHeap.push_back(child);
+			nonTerminalChildrenVector.push_back(child);
 		}
 	}
-	// heapify the heap
-	std::make_heap(nonTerminalChildrenHeap.begin() , nonTerminalChildrenHeap.end() , trieNodeComparatorBasedOnHistogramValue);
+	// sort the non-terminal nodes.
+	std::sort(nonTerminalChildrenVector.begin() , nonTerminalChildrenVector.end() , trieNodeComparatorBasedOnHistogramValue);
 	// 2. Now move on non-terminal children in descending order based on their histogram value
 	// and call this function (recursive call)
-	while(nonTerminalChildrenHeap.size() > 0){
-		const TrieNode * nonTerminalChild = nonTerminalChildrenHeap.front();
-		pop_heap(nonTerminalChildrenHeap.begin() , nonTerminalChildrenHeap.end() , trieNodeComparatorBasedOnHistogramValue);
-		nonTerminalChildrenHeap.pop_back();
-		nonTerminalChild->findMostPopularSuggestionsInThisSubTrie(ed , suggestions , numberOfSuggestionsToFind);
-
+	for(vector<const TrieNode *>::iterator nonTerminalChild = nonTerminalChildrenVector.begin() ;
+			nonTerminalChild != nonTerminalChildrenVector.end() ; ++nonTerminalChild){
+		(*nonTerminalChild)->findMostPopularSuggestionsInThisSubTrie(ed , suggestions , numberOfSuggestionsToFind);
 		if(suggestions.size() >= numberOfSuggestionsToFind){
 			return;
 		}
+
 	}
 	return;
 }
@@ -1272,23 +1272,23 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 }
 
 
-void Trie::calculateTrieNodeHistogramValues(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);
     TrieNode *root = trieRootNode_ReadView->root;
     if(root == NULL){
     	return;
     }
-    calculateTrieNodeHistogramValuesRecursive(root, invertedIndex , totalNumberOfRecords);
+    calculateNodeHistogramValuesFromChildrenRecursive(root, invertedIndex , totalNumberOfRecords);
 }
 
-void Trie::calculateTrieNodeHistogramValuesRecursive(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesFromChildrenRecursive(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
     for(unsigned childIterator = 0; childIterator < node->getChildrenCount() ; childIterator ++){
-    	calculateTrieNodeHistogramValuesRecursive(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
+    	calculateNodeHistogramValuesFromChildrenRecursive(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
     }
 
     // now we should initialized the value of this node
@@ -1350,6 +1350,51 @@ void Trie::calculateTrieNodeHistogramValuesRecursive(TrieNode *node, const Inver
     return;
 }
 
+void TrieNode::updateInternalNodeHistogramValue(HistogramAggregationType aggrType){
+
+	if(this->getChildrenCount() == 0) return;
+
+	float aggregatedValueSoFar = this->getChild(0)->getNodeHistogramValue();
+	// iterate on children and aggregate the values
+    for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
+        switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+				break;
+			case HistogramAggregationTypeJointProbability:
+				aggregatedValueSoFar =
+						aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+				break;
+		}
+    }
+    // and also use the value that this node currently has
+    switch (aggrType) {
+		case HistogramAggregationTypeSummation:
+			aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getNodeHistogramValue());
+			break;
+		case HistogramAggregationTypeJointProbability:
+			aggregatedValueSoFar =
+					aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getNodeHistogramValue());
+			break;
+	}
+
+    // set the result in the class member
+    this->setNodeHistogramValue(aggregatedValueSoFar);
+}
+
+void TrieNode::initializeInternalNodeHistogramValue(HistogramAggregationType aggrType){
+	float initValue = 0;
+    switch (aggrType) {
+		case HistogramAggregationTypeSummation:
+			initValue = 0;
+			break;
+		case HistogramAggregationTypeJointProbability:
+			initValue = 0;
+			break;
+	}
+    this->setNodeHistogramValue(initValue);
+}
+
 void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth){
 	for(int i=0;i<depth ; i++){
 		std::cout << "-" ;
@@ -1373,7 +1418,7 @@ void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumbe
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
-		this->calculateTrieNodeHistogramValues(invertedIndex , totalNumberOfRecords);
+		this->calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfRecords);
 	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
@@ -1423,9 +1468,9 @@ void Trie::commit()
     this->commitSubTrie(this->root_readview.get()->root, finalKeywordIdCounter, sparsityFactor);
 }
 
-void Trie::finalCommit(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
+void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
 	// traverse the trie in preorder to calculate nodeSubTrieValue
-	calculateTrieNodeHistogramValues(invertedIndex , totalNumberOfResults);
+	calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfResults);
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }

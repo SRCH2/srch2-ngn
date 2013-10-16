@@ -51,7 +51,7 @@ public:
     static IndexSearcher *create(Indexer *indexer);
 
     /*
-     * Finds the suggestions of the engine for keyword using fuzzyMatchPenalty.
+     * Finds the suggestions for a keyword based on fuzzyMatchPenalty.
      * Returns the number of suggestions found.
      */
     virtual int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;

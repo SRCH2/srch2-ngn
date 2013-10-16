@@ -124,8 +124,8 @@ public:
         this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
         this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;
         this->updateHistogramEveryQWrites = indexMetaData->updateHistogramEveryQWrites;
-        this->writesCounter_forMerge = 0;
-        this->mergeCounter_forUpdatingHistogram = 0;
+        this->writesCounterForMerge = 0;
+        this->mergeCounterForUpdatingHistogram = 0;
 
         this->mergeThreadStarted = false; // No threads running
         this->rwMutexForWriter = new ReadWriteMutex(100);
@@ -225,16 +225,20 @@ public:
     
     const bool isCommited() const { return this->index->isCommited(); }
 
+
+    // histogram update is triggered if :
+    // A : we have had updateHistogramEveryQWrites writes since the last histogram update
+    // or B : we have had updateHistogramEveryPMerges merges since the last histogram update
     bool shouldUpdateHistogram(){
-    	if(writesCounter_forMerge >= this->updateHistogramEveryQWrites ||
-    			mergeCounter_forUpdatingHistogram >= this->updateHistogramEveryPMerges){
+    	if(writesCounterForMerge >= this->updateHistogramEveryQWrites ||
+    			mergeCounterForUpdatingHistogram >= this->updateHistogramEveryPMerges){
     		return true;
     	}
     	return false;
     }
 
     void resetMergeCounterForHistogram(){
-    	this->mergeCounter_forUpdatingHistogram = 0;
+    	this->mergeCounterForUpdatingHistogram = 0;
     }
 
     void merge_ForTesting()
@@ -256,13 +260,13 @@ private:
     pthread_t mergerThread;
     pthread_attr_t attr;
 
-    volatile unsigned writesCounter_forMerge;
+    volatile unsigned writesCounterForMerge;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
 
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
-    volatile unsigned mergeCounter_forUpdatingHistogram;
+    volatile unsigned mergeCounterForUpdatingHistogram;
 
     INDEXWRITE_RETVAL merge(bool updateHistogram);
 
@@ -283,7 +287,7 @@ private:
     void writeunlock()
     {
         //indexHealthInfo.notifyWrite();
-        if (this->mergeThreadStarted && writesCounter_forMerge >= mergeEveryMWrites)
+        if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites)
         {
             rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
         }

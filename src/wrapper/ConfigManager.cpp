@@ -1125,15 +1125,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
     // is no option in xml for this one yet
-    unsigned estimatedHistograpUpdateUpperBound = 5; // 5 seconds (estimated for around 120M trie nodes.)
-    float updateHistogramWorkRatioOverTime = 0.1; // 10 persent of background thread process is spent for updating histogram
+    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
     this->updateHistogramEveryPMerges = (unsigned)
     		( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
     this->updateHistogramEveryQWrites =
     		(unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 
     // set default number of suggestions because we don't have any config options for this yet
-    this->defaultNumberOfSuggestionsToReturn = 5;
+    this->defaultNumberOfSuggestions = 5;
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {

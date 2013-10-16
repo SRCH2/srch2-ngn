@@ -62,7 +62,7 @@ private:
 	bool exactFuzzy;
 	bool queryTermType;
 
-	unsigned defaultNumberOfSuggestionsToReturn;
+	unsigned defaultNumberOfSuggestions;
 
 
 	// <config><query><queryResponseWriter>
@@ -326,7 +326,7 @@ public:
     bool isPositionIndexEnabled() const;
 
     unsigned getDefaultNumberOfSuggestionsToReturn() const {
-    	return defaultNumberOfSuggestionsToReturn;
+    	return defaultNumberOfSuggestions;
     }
 
 };
