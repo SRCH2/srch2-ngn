@@ -81,12 +81,13 @@ bool XmlLowerCaseWalker::for_each(xml_node &node)
 
 	if (length > 0) {
 	    // duplicate name, but in lowercase
-	    char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
+	    char_t *newName = new char_t[length + 1];
 	    for (unsigned int i = 0; i < length; i++)
 	        newName[i] = tolower(oldName[i]);
 	    newName[length] = '\000';
 
 	    (void) node.set_name(newName); // discard return - no need to interrupt traversal
+	    delete[] newName;
 	}
     }
 
