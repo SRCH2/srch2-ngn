@@ -203,7 +203,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
             SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
         ENDIF()
     ENDIF ()   
-	
+    # For MacOS-X, add compatibility flag to support version 10.5 and above. 
+    # MacOS-X 10.5 and above have intel processors and our mac build machine is also intel
+    IF (MAC_OS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.5 ")
+    ENDIF()
 	#Add subdirectories to look for other CMakeList.txt
 	ADD_SUBDIRECTORY(include/instantsearch)
 	ADD_SUBDIRECTORY(src/core)
