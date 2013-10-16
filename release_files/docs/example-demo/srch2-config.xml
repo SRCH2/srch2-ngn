@@ -60,7 +60,7 @@
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
         </rankingAlgorithm>
  
-        <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
+        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
 
 	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
          
