@@ -45,6 +45,7 @@ void ConfigManager::loadConfigFile() {
 		exit(-1);
     }
 
+    // make XML node names and attribute names lowercase so we are case insensitive
     lowerCaseNodeNames(configDoc);
 
     bool configSuccess = true;
@@ -73,45 +74,40 @@ public:
 bool XmlLowerCaseWalker::for_each(xml_node &node)
 {
     // lowercase the name of each node
-    unsigned int length, i;
-
     const char_t *oldName = node.name();
 
-    if (oldName && oldName[0])
-    {
-	length = strlen(oldName);
+    if (oldName && oldName[0]) {
+        unsigned int length = strlen(oldName);
 
-	if (length > 0)
-	{
+	if (length > 0) {
 	    // duplicate name, but in lowercase
 	    char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
-	    for (i = 0; i < length; i++)
+	    for (unsigned int i = 0; i < length; i++)
 	        newName[i] = tolower(oldName[i]);
-	    newName[i++] = '\000';
+	    newName[length] = '\000';
 
-	    (void) node.set_name(newName);
+	    (void) node.set_name(newName); // discard return - no need to interrupt traversal
 	}
     }
 
     // lowercase attribute names too
-    for (pugi::xml_attribute_iterator attribute = node.attributes_begin(); attribute != node.attributes_end(); ++attribute)
-    {
+    for (pugi::xml_attribute_iterator attribute = node.attributes_begin(); attribute != node.attributes_end(); ++attribute) {
         oldName = attribute->name();
-	length = strlen(oldName);
+	unsigned int length = strlen(oldName);
 
-	if (length > 0)
-	{
+	if (length > 0) {
 	    // duplicate name, but in lowercase
-	    char_t *newName = static_cast<char_t *> (alloca(length + 1)); // self-freeing
-	    for (i = 0; i < length; i++)
+	    char_t *newName = new char_t[length + 1];
+	    for (unsigned int i = 0; i < length; i++)
 	        newName[i] = tolower(oldName[i]);
-	    newName[i++] = '\000';
+	    newName[length] = '\000';
 
-	    (void) attribute->set_name(newName);
+	    (void) attribute->set_name(newName);  // ignoring return value to avoid interrupting tree traversal
+	    delete[] newName;
 	}
     }
 
-    return true;
+    return true;  // always allow tree traversal to continue uninterrupted
 }
 
 void ConfigManager::lowerCaseNodeNames(xml_node &document)
