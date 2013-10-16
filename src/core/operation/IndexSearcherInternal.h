@@ -55,7 +55,7 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
-	static const unsigned HISTOGRAM_THRESHOLD;
+	static const unsigned HISTOGRAM_POPULARITY_THRESHOLD;
 
     //Get Schema pointer from IndexSearcherInternal
     IndexSearcherInternal(IndexReaderWriter *indexer);
@@ -92,13 +92,16 @@ public:
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
     void computeTermVirtualList(QueryResults *queryResults ,
     		vector<PrefixActiveNodeSet *> * activeNodes = NULL ,
-    		const vector<bool> * isTermTooPopularVector = NULL) const;
+    		const vector<float> * scoreOfTopRecords = NULL) const;
 
     // This function uses the histogram information of the trie to estimate the number of records which have this term
-    unsigned getEstimatedNumberOfRecordsWhichHaveThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const;
+    unsigned getEstimatedNumberOfRecordsWithThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const;
 
     // This functions defined the policy of estimating the results or computing them.
-    bool isTermPopular(Term *term , PrefixActiveNodeSet * activeNodes, unsigned & popularity) const;
+    bool isTermTooPopular(Term *term, PrefixActiveNodeSet * activeNodes, unsigned & popularity ) const;
+
+    // This function find the runtime score of the top record of the inverted list of most popular suggestion of this term
+    float findTopRunTimeScoreOfMostPopularSuggestion(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex() {
@@ -152,6 +155,13 @@ private:
 
     // return the next record that exists in all the virtual lists ("AND of these keyword lists). If there are no more records, return NO_MORE_RECORDS
     int getNextRecordID(vector<TermVirtualList* >* virtualListVector);
+
+    // this functions traverses the trie to find the most popular suggestions of a term
+    // returns the number of suggestions found.
+    void findKMostPopularSuggestionsSorted(Term *term ,
+    		PrefixActiveNodeSet * activeNodes,
+    		unsigned numberOfSuggestionsToReturn ,
+    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 };
 
 }

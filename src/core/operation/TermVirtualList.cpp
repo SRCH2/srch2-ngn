@@ -138,7 +138,7 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned d
 
 // Iterate over active nodes, fill the vector, and call make_heap on it.
 TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-                                 Term *term, float prefixMatchPenalty, bool shouldIterateToLeafNodes )
+                                 Term *term, float prefixMatchPenalty, float shouldIterateToLeafNodesAndScoreOfTopRecord )
 {
     this->invertedIndex = invertedIndex;
     this->prefixActiveNodeSet = prefixActiveNodeSet;
@@ -149,9 +149,11 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentRecordID = -1;
     this->usingBitset = false;
     this->bitSetSize = 0;
-    this->isTermVirtualListDisabled = false;
-    if(shouldIterateToLeafNodes == false){
-    	this->isTermVirtualListDisabled = true;
+    // this flag indicates whether this TVL is for a tooPopular term or not.
+    // If it is a TVL of a too popular term, this TVL is disabled, meaning it should not be used for iteration over
+    // heapItems. In this case shouldIterateToLeafNodesAndScoreOfTopRecord is not equal to -1
+    this->topRecordScoreWhenListIsDisabled = shouldIterateToLeafNodesAndScoreOfTopRecord;
+    if(this->topRecordScoreWhenListIsDisabled != -1){
     	return;
     }
     // check the TermType
@@ -229,6 +231,14 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
 
     // Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
     make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, TermVirtualList::HeapItemCmp());
+}
+bool TermVirtualList::isTermVirtualListDisabled(){
+	return (this->topRecordScoreWhenListIsDisabled != -1);
+}
+
+bool TermVirtualList::getScoreOfTopRecordWhenListIsDisabled(){
+	ASSERT(this->topRecordScoreWhenListIsDisabled != -1);
+	return this->topRecordScoreWhenListIsDisabled;
 }
 
 TermVirtualList::~TermVirtualList()

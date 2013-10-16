@@ -127,7 +127,8 @@ public:
     // in 3 places: this function, BimaleServeConf.cpp, and Query.cpp.
     // Unify them.
     TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
-                    Term *term, float prefixMatchPenalty = 0.95 , bool shouldIterateToLeafNodes = true);
+                    Term *term, float prefixMatchPenalty = 0.95 , float shouldIterateToLeafNodesAndScoreOfTopRecord = -1);
+
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
     void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
@@ -154,6 +155,9 @@ public:
         return totalLen;
     }*/
 
+    bool isTermVirtualListDisabled();
+    bool getScoreOfTopRecordWhenListIsDisabled();
+
     inline unsigned getTermSearchableAttributeIdToFilterTermHits() const {
         return this->term->getAttributeToFilterTermHits();
     }
@@ -176,7 +180,7 @@ public:
     int bitSetSize;
 
     //
-    bool isTermVirtualListDisabled;
+    float topRecordScoreWhenListIsDisabled;
 private:
 
     PrefixActiveNodeSet *prefixActiveNodeSet;

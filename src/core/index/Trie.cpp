@@ -37,7 +37,7 @@ TrieNode::TrieNode()
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
-    this->nodeSubTrieValue = 0;
+    this->setNodeHistogramValue(0);
     this->invertedListOffset = 0;
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -55,7 +55,7 @@ TrieNode::TrieNode(bool create_root)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
-    this->nodeSubTrieValue = 0;
+    this->setNodeHistogramValue(0);
     this->invertedListOffset = 0;
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -70,7 +70,7 @@ TrieNode::TrieNode(int depth, CharType character)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
-    this->nodeSubTrieValue = 0;
+    this->setNodeHistogramValue(0);
     this->invertedListOffset = 0;
     this->character = character;
 
@@ -85,7 +85,7 @@ TrieNode::TrieNode(const TrieNode *src)
 {
     this->character = src->character;
     this->id = src->id;
-    this->nodeSubTrieValue = src->nodeSubTrieValue;
+    this->setNodeHistogramValue(src->getNodeHistogramValue());
     this->invertedListOffset = src->invertedListOffset;
     this->leftMostDescendant = src->leftMostDescendant;
     this->rightMostDescendant = src->rightMostDescendant;
@@ -143,7 +143,7 @@ void TrieNode::print_TrieNode() const
 }
 
 bool trieNodeComparatorBasedOnHistogramValue(const TrieNode * left , const TrieNode * right){
-	return left->nodeSubTrieValue > right->nodeSubTrieValue;
+	return left->getNodeHistogramValue() > right->getNodeHistogramValue();
 }
 
 void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > ,const TrieNode *> > & suggestions,
@@ -155,7 +155,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair<
 	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
 		const TrieNode * child = this->getChild(childIterator);
 		if(child->isTerminalNode()){
-			suggestions.push_back(make_pair(make_pair(child->nodeSubTrieValue , ed) , child ));
+			suggestions.push_back(make_pair(make_pair(child->getNodeHistogramValue() , ed) , child ));
 		}else{
 			nonTerminalChildrenHeap.push_back(child);
 		}
@@ -226,7 +226,7 @@ int TrieNode::findChildNodePosition(CharType childCharacter) const
 
 unsigned TrieNode::getByteSizeOfCurrentNode() const
 {
-    return (sizeof(terminalFlag1bDepth7b) + sizeof(character) + sizeof(nodeSubTrieValue) + sizeof(invertedListOffset) +
+    return (sizeof(terminalFlag1bDepth7b) + sizeof(character) + sizeof(this->getNodeHistogramValue()) + sizeof(invertedListOffset) +
             //sizeof(hitCount) +
             sizeof(id)+ sizeof(leftMostDescendant)+ sizeof(rightMostDescendant) + sizeof(childrenPointerList));
 }
@@ -1272,73 +1272,80 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 }
 
 
-void Trie::calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateTrieNodeHistogramValues(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);
     TrieNode *root = trieRootNode_ReadView->root;
     if(root == NULL){
     	return;
     }
-    calculateTrieNodeSubTrieValuesForANode(root, invertedIndex , totalNumberOfRecords);
-    std::vector<CharType> prefix;
-//    printTrieNodeSubTrieValues(prefix, trieRootNode_ReadView->root);
+    calculateTrieNodeHistogramValuesRecursive(root, invertedIndex , totalNumberOfRecords);
 }
 
-void Trie::calculateTrieNodeSubTrieValuesForANode(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateTrieNodeHistogramValuesRecursive(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
-    unsigned childIterator = 0;
-    for(; childIterator < node->getChildrenCount() ; childIterator ++){
-    	calculateTrieNodeSubTrieValuesForANode(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
+    for(unsigned childIterator = 0; childIterator < node->getChildrenCount() ; childIterator ++){
+    	calculateTrieNodeHistogramValuesRecursive(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
     }
+
+    // now we should initialized the value of this node
+    if(node->isTerminalNode()){
+    	if(invertedIndex == NULL){ // this case happens in M1
+            // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
+            node->setNodeHistogramValue(1);
+    	}else{ // this is the case of A1
+			shared_ptr<vectorview<unsigned> > invertedListReadView;
+			invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
+
+
+			/*********  This code uses the score of the top record as the terminal node value  **************
+			 ****************** We keep this code in case we want to use it in future. **********************
+
+			float termRecordStaticScore = 0;
+			unsigned termAttributeBitmap = 0;
+			// move on inverted list to find the first record which is valid
+			unsigned invertedListCursor = 0;
+			while(invertedListCursor < invertedListReadView->size()){
+				unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
+				unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
+				if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+					break;
+				}
+			}
+			// now that we have the static score, add the static score to the value of this node
+			node->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
+			return;
+
+			*************************************************************************************************
+			*************************************************************************************************/
+
+			// we use the probability of this terminal node to occur in a record as the initial value
+			if(totalNumberOfRecords == 0){
+				node->setNodeHistogramValue(1);
+			}else{
+				float pTerminalNode = (1.0 * invertedListReadView->size()) / totalNumberOfRecords ;
+				node->setNodeHistogramValue(pTerminalNode);
+			}
+    	}
+    }else{ // non-terminal node, if it's non-terminal, it still needs to be initialized.
+    	if(invertedIndex == NULL){ // it is the case of M1
+			node->initializeInternalNodeHistogramValue(HistogramAggregationTypeSummation);
+    	}else{ // it is the case of A1
+    		node->initializeInternalNodeHistogramValue(HistogramAggregationTypeJointProbability);
+    	}
+    }
+
     // now update the value of this node from its children
     if(! node->isTerminalNode()){
-		node->updateNodeSubTrieValueAggregatedValueByUsingJointProbability();
-    }
-    // now if this node is a terminal node, use inverted index to add the score of
-    // the top record of its inverted list to nodeSubTrieValue
-    if(node->isTerminalNode()){
     	if(invertedIndex == NULL){
-            // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
-            node->addNewNodeSubTrieValueToAggregatedValue(1);
-            return;
+    		node->updateInternalNodeHistogramValue(HistogramAggregationTypeSummation);
+    	}else{
+			node->updateInternalNodeHistogramValue(HistogramAggregationTypeJointProbability);
     	}
-        shared_ptr<vectorview<unsigned> > invertedListReadView;
-        invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
-
-
-        /*********  This code uses the score of the top record as the terminal node value  **************
-         ****************** We keep this code in case we want to use it in future. **********************
-
-        float termRecordStaticScore = 0;
-        unsigned termAttributeBitmap = 0;
-        // move on inverted list to find the first record which is valid
-        unsigned invertedListCursor = 0;
-        while(invertedListCursor < invertedListReadView->size()){
-			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-			unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
-			if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
-				break;
-			}
-        }
-        // now that we have the static score, add the static score to the value of this node
-        node->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
-        return;
-
-        *************************************************************************************************
-        *************************************************************************************************/
-
-        // we use the probability of this terminal node to occur in a record as the initial value
-        if(totalNumberOfRecords == 0){
-        	node->addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(1);
-        	return;
-        }
-        float pTerminalNode = (1.0 * invertedListReadView->size()) / totalNumberOfRecords ;
-        node->addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(pTerminalNode);
-        return;
     }
     return;
 }
@@ -1349,7 +1356,7 @@ void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode 
 	}
 	prefix.push_back(root->getCharacter());
 	string str = getUtf8String(prefix);
-	std::cout << str << "(" << root->nodeSubTrieValue << ")" << std::endl;
+	std::cout << str << "(" << root->getNodeHistogramValue() << ")" << std::endl;
 	if(! root->isTerminalNode()){
 	    unsigned childIterator = 0;
 	    for(; childIterator < root->getChildrenCount() ; childIterator ++){
@@ -1360,13 +1367,13 @@ void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode 
 }
 
 
-void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram)
+void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
-		this->calculateTrieNodeSubTrieValues(invertedIndex , totalNumberOfResults);
+		this->calculateTrieNodeHistogramValues(invertedIndex , totalNumberOfRecords);
 	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
@@ -1418,7 +1425,7 @@ void Trie::commit()
 
 void Trie::finalCommit(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
 	// traverse the trie in preorder to calculate nodeSubTrieValue
-	calculateTrieNodeSubTrieValues(invertedIndex , totalNumberOfResults);
+	calculateTrieNodeHistogramValues(invertedIndex , totalNumberOfResults);
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }
@@ -1717,7 +1724,7 @@ void Trie::printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned
         return;
     string temp;
     this->getPrefixString(root, node, temp);
-    Logger::debug("(%d,%f,%s)", node->getId() , node->nodeSubTrieValue , temp.c_str());
+    Logger::debug("(%d,%f,%s)", node->getId() , node->getNodeHistogramValue() , temp.c_str());
     if ( node->isTerminalNode() ) {
         if (!keywordIds.count(node->getId()))
             keywordIds.insert(node->getId());

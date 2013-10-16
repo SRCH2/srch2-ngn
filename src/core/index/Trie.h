@@ -136,7 +136,7 @@ public:
     CharType character;
 
     // Node sub-trie value
-    float nodeSubTrieValue;
+    float nodeHistogramValue;
     /// Terminal-node members
     unsigned id;
     unsigned invertedListOffset;
@@ -204,7 +204,7 @@ private:
     void serialize(Archive & ar, const unsigned int version) {
         ar & terminalFlag1bDepth7b;
         ar & character;
-        ar & nodeSubTrieValue;
+        ar & nodeHistogramValue;
         ar & id;
         ar & invertedListOffset;
         ar & leftMostDescendant;
@@ -318,58 +318,66 @@ public:
         this->id = id;
     }
 
-    inline float getNodeSubTrieValue() {
-    	return this->nodeSubTrieValue;
+    inline float getNodeHistogramValue() const{
+    	return this->nodeHistogramValue;
     }
 
-    inline void setNodeSubTrieValue(float nodeSubTrieValue) {
-    	this->nodeSubTrieValue = nodeSubTrieValue;
+    inline void setNodeHistogramValue(float nodeHistogramValue) {
+    	this->nodeHistogramValue = nodeHistogramValue;
     }
 
-    void addNewNodeSubTrieValueToAggregatedValue(float newValue){
-    	this->setNodeSubTrieValue(this->getNodeSubTrieValue() + newValue);
+    inline float aggregateHistogramValueBySummation(float a , float b){
+    	return a + b;
     }
 
-    void addNewNodeSubTrieValueToAggregatedValueByUsingJointProbability(float newP){
-    	// P(A or B) = P(A) + P(B) - P(A and B) = P(A) + P(B) - P(A)*P(B) // estimating P(A and B) with P(A)*P(B)
-    	this->setNodeSubTrieValue(this->getNodeSubTrieValue() + newP - this->getNodeSubTrieValue() * newP);
+    inline float aggregateHistogramValueByJointProbability(float p1, float p2){
+    	return (p1 + p2) - (p1 * p2);
     }
-    void updateNodeSubTrieValueAggregatedValue(){
+
+    void updateInternalNodeHistogramValue(HistogramAggregationType aggrType){
+
+    	if(this->getChildrenCount() == 0) return;
+
+    	float aggregatedValueSoFar = this->getChild(0)->getNodeHistogramValue();
     	// iterate on children and aggregate the values
-        unsigned int childIterator = 0;
-        float updatedAggregatedValue = 0;
-        for ( ; childIterator < this->getChildrenCount(); childIterator++ ) {
-            updatedAggregatedValue += this->getChild(childIterator)->getNodeSubTrieValue();
+        for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
+            switch (aggrType) {
+				case HistogramAggregationTypeSummation:
+					aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+					break;
+				case HistogramAggregationTypeJointProbability:
+					aggregatedValueSoFar =
+							aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+					break;
+			}
         }
-        // set the result in the class member
-        this->setNodeSubTrieValue(updatedAggregatedValue);
-    }
-
-    void updateNodeSubTrieValueAggregatedValueByUsingJointProbability(){
-    	if(this->getChildrenCount() == 0){
-    		return;
-    	}
-    	// P(A or B or C or ... or F) =
-    	//                     P(A) + P(B or C .. or F) - P(A) + P(B or C .. or F) = ... (RECURSIVE)
-    	// iterate on children and aggregate the values
-    	float startingChildProbability = this->getChild(0)->nodeSubTrieValue;
-    	float restOfNodesJointProbability = nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(1);
+        // and also use the value that this node currently has
+        switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getNodeHistogramValue());
+				break;
+			case HistogramAggregationTypeJointProbability:
+				aggregatedValueSoFar =
+						aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getNodeHistogramValue());
+				break;
+		}
 
         // set the result in the class member
-        // P(A)+P(B)+...+P(F) - P(A)*P(B)*...*P(F)
-        this->setNodeSubTrieValue(startingChildProbability + restOfNodesJointProbability - startingChildProbability*restOfNodesJointProbability);
+        this->setNodeHistogramValue(aggregatedValueSoFar);
     }
 
-    float nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(unsigned startingChild = 0){
-    	if(startingChild >= this->getChildrenCount()){
-    		return 0;
-    	}
-    	float startingChildProbability = this->getChild(startingChild)->nodeSubTrieValue;
-    	float restOfNodesJointProbability = nodeSubTrieValueAggregatedValueByUsingJointProbabilityRecursive(startingChild + 1);
-    	return startingChildProbability + restOfNodesJointProbability - startingChildProbability*restOfNodesJointProbability;
+    void initializeInternalNodeHistogramValue(HistogramAggregationType aggrType){
+    	float initValue = 0;
+        switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				initValue = 0;
+				break;
+			case HistogramAggregationTypeJointProbability:
+				initValue = 0;
+				break;
+		}
+        this->setNodeHistogramValue(initValue);
     }
-
-
 
     void findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
 
@@ -669,8 +677,8 @@ public:
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
 
-    void calculateTrieNodeSubTrieValues(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
-    void calculateTrieNodeSubTrieValuesForANode(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void calculateTrieNodeHistogramValues(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+    void calculateTrieNodeHistogramValuesRecursive(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
     void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 
     void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
