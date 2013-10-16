@@ -65,9 +65,7 @@
 
 ##1. Overview:##{id="overview"}
 
-The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample [configuration file](example-demo/srch2-config.xml).  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
-
-Tag names and tag attribute names (but not values) are case insensitive.
+The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample [configuration file](example-demo/srch2-config.xml).  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.  Tag names and tag attribute names (but not values) are case insensitive.
 
 ##2. SRCH2 Home Directory, Required##{id="srch2Home"}
 
