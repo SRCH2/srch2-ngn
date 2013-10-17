@@ -1233,14 +1233,22 @@ float IndexSearcherInternal::findTopRunTimeScoreOfMostPopularSuggestion(Term *te
 	float topScore = 0;
 	// now iterate on active nodes and find suggestions for each on of them
     ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
+    unsigned distanceToUseForRunTimeScore = 0;
     for (; !iter.isDone(); iter.next()) {
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
         if(trieNode->getMaximumScoreOfLeafNodes() > topScore){
         	topScore = trieNode->getMaximumScoreOfLeafNodes();
+        	distanceToUseForRunTimeScore = distance;
         }
     }
+
+    topScore = DefaultTopKRanker::computeTermRecordRuntimeScore(topScore ,
+            distanceToUseForRunTimeScore,
+            term->getKeyword()->size(),
+            true,
+            prefixMatchPenalty , term->getSimilarityBoost());
 
 	return topScore;
 

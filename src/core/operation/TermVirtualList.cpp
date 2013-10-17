@@ -173,10 +173,12 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
             this->maxScoreForBitSetCase = -1;
+            unsigned distanceToUseForScore;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(prefixNode, leafNode, distance);
                 if(leafNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
                 	this->maxScoreForBitSetCase = leafNode->getMaximumScoreOfLeafNodes();
+                	distanceToUseForScore = distance;
                 }
                 unsigned invertedListId = leafNode->getInvertedListOffset();
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
@@ -192,7 +194,14 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             if(this->maxScoreForBitSetCase == -1){
             	// default value in case there is no leaf node.
             	this->maxScoreForBitSetCase = 1;
+            }else{
+				this->maxScoreForBitSetCase = DefaultTopKRanker::computeTermRecordRuntimeScore(this->maxScoreForBitSetCase,
+						distanceToUseForScore,
+						term->getKeyword()->size(),
+						true,
+						this->prefixMatchPenalty , term->getSimilarityBoost());
             }
+
             bitSetIter = bitSet.iterator();
         } else { // If we don't use a bitset, we use the TA algorithm
             cursorVector.reserve(iter.size());
@@ -217,6 +226,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
             this->maxScoreForBitSetCase = -1;
+            unsigned distanceToUseForScore;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
                 if(trieNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
@@ -229,7 +239,14 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             if(this->maxScoreForBitSetCase == -1){
             	// default value in case there is no leaf node.
             	this->maxScoreForBitSetCase = 1;
+            }else{
+                this->maxScoreForBitSetCase = DefaultTopKRanker::computeTermRecordRuntimeScore(this->maxScoreForBitSetCase,
+                        distanceToUseForScore,
+                        term->getKeyword()->size(),
+                        false,
+                        this->prefixMatchPenalty , term->getSimilarityBoost());
             }
+
             //cout << "term count:" << numberOfLeafNodes << endl;
             //cout << "record count:" << totalInveretListLength  << endl;
             bitSetIter = bitSet.iterator();
