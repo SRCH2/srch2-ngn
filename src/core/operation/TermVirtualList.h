@@ -178,6 +178,8 @@ public:
     bool usingBitset;
     // the number of records in the bitset, which is the total number of records in the data set
     int bitSetSize;
+    // the maximum score of leaf nodes to be used in topK
+    float maxScoreForBitSetCase;
 
     //
     float topRecordScoreWhenListIsDisabled;

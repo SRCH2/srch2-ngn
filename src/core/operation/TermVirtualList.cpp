@@ -149,6 +149,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentRecordID = -1;
     this->usingBitset = false;
     this->bitSetSize = 0;
+    this->maxScoreForBitSetCase = 1;
     // this flag indicates whether this TVL is for a tooPopular term or not.
     // If it is a TVL of a too popular term, this TVL is disabled, meaning it should not be used for iteration over
     // heapItems. In this case shouldIterateToLeafNodesAndScoreOfTopRecord is not equal to -1
@@ -171,8 +172,12 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
+            this->maxScoreForBitSetCase = -1;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(prefixNode, leafNode, distance);
+                if(leafNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
+                	this->maxScoreForBitSetCase = leafNode->getMaximumScoreOfLeafNodes();
+                }
                 unsigned invertedListId = leafNode->getInvertedListOffset();
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
                 // loop the inverted list to add it to the Bitset
@@ -183,6 +188,10 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 }
                 //termCount++;
                 //totalInveretListLength  += invertedListReadView->size();
+            }
+            if(this->maxScoreForBitSetCase == -1){
+            	// default value in case there is no leaf node.
+            	this->maxScoreForBitSetCase = 1;
             }
             bitSetIter = bitSet.iterator();
         } else { // If we don't use a bitset, we use the TA algorithm
@@ -207,11 +216,19 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
+            this->maxScoreForBitSetCase = -1;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
+                if(trieNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
+                	this->maxScoreForBitSetCase = trieNode->getMaximumScoreOfLeafNodes();
+                }
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 // loop the distance depth of the tire to add the term invertedlist to Bitset
                 depthInitializeBitSet(trieNode, distance, term->getThreshold());
+            }
+            if(this->maxScoreForBitSetCase == -1){
+            	// default value in case there is no leaf node.
+            	this->maxScoreForBitSetCase = 1;
             }
             //cout << "term count:" << numberOfLeafNodes << endl;
             //cout << "record count:" << totalInveretListLength  << endl;
@@ -295,7 +312,7 @@ bool TermVirtualList::_addItemsToPartialHeap()
 bool TermVirtualList::getMaxScore(float & score)
 {
     if (this->usingBitset) {
-        score = 1.0;
+        score = this->maxScoreForBitSetCase;
         return true;
     } else {
         //If heapVector is empty
