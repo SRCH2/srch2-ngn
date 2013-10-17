@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Ranking</title>
 </head>
@@ -74,7 +74,7 @@
 <p>Formally, let <i>Q</i> be a query with terms (keywords) <i>t_1</i>, <i>t_2</i>, ..., <i>t_k</i>. Let <i>r</i> be a record. We compute the score of <i>r</i> for <i>Q</i> as follows:</p>
 <p><center> score(<i>r</i>, <i>Q</i>) = TermScore(<i>r</i>, <i>t_1</i>) + TermScore(<i>r</i>, <i>t_2</i>) + ... + TermScore(<i>r</i>, <i>t_k</i>).</center></p>
 <p>For each term <i>t_i</i>, let <i>w_i</i> be a keyword in <i>r</i> that matches <i>t_i</i> (exactly or fuzzily). The TermScore(<i>r</i>, <i>t_i</i>) is computed as follows:</p>
-<p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * FuzzyMatchPenalty.</center></p>
+<p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * PrefixMatchPenalty.</center></p>
 <p>The formula uses the following parameters:</p>
 <p><b>1. NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It is calculated as follows:</p>
 <p><center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * FuzzyMatchPenalty^ed. </center></p>
