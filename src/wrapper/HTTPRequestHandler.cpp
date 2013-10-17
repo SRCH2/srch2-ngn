@@ -627,9 +627,11 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
-// resetLoggerCommand : Reopen the logger file.
+// The purpose of this function is to allow a Logrotate utility to rename the log file to
+// another file, and the search engine can write new log records to the same, reopened file.
+// The old log records are consumed by the utility.
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
-	//  TODO: maybe concurrent control
+	//  TODO: we will need to consider concurrency control next.
 	switch(req->type) {
 	case EVHTTP_REQ_POST: {
 		FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
@@ -645,7 +647,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
 	    }
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The logger file repointing has done successfully\", \"log\":["
+                "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
                          + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
         break;
 	}

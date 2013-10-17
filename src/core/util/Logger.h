@@ -54,6 +54,7 @@ public:
 	static inline void closeOutputFile() {
 		if(_out_file != NULL) {
 			fclose(_out_file);
+			_out_file = NULL;
 		}else{
 			Logger::warn("The Logger::_out_file is NULL");
 		}
