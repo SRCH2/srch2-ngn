@@ -273,7 +273,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             {
                 const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
                 ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-                this->invertedIndex->addRecord(forwardList, this->rankerExpression,
+                this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
                         internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
             }
         }

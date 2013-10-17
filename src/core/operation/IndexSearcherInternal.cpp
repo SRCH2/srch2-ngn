@@ -29,6 +29,7 @@
 #include "operation/TermVirtualList.h"
 #include "query/QueryResultsInternal.h"
 #include "index/Trie.h"
+#include "index/InvertedIndex.h"
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
@@ -517,6 +518,11 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     	vector<PrefixActiveNodeSet *> activeNodesVector;
     	// this vector is passed to computeTermVirtualList to see if
     	// term virtual lists should be constructed completely or partially.
+    	// if the value of this float for a keyword is -1, it means this keyword is NOT
+    	// too popular and normal TVL should be made for it.
+    	// otherwise, this value is the runtime score of the top record of inverted list of the most
+    	// popular completion of this keyword. This score will be used in topK termination criterion.
+    	// TODO constant for -1
     	vector<float> isTermTooPopularVectorAndScoresOfTopRecords ;
     	// this vector keeps the popularity values of terms to be used in case
     	// we need to find the least popular one
@@ -1220,40 +1226,21 @@ bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * 
 
 float IndexSearcherInternal::findTopRunTimeScoreOfMostPopularSuggestion(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const{
 
-	// First find the TrieNode of the most popular suggestion
-	// iterate on active nodes and find suggestions for each on of them until we find one best suggestion
-    std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
-    findKMostPopularSuggestionsSorted(term , activeNodes , 1 , suggestionPairs);
-
-    // if there is not suggestion, top score is 0
-    if(suggestionPairs.size() == 0) return 0;
-
-    // now find the top score of the best suggestion
-    TrieNodePointer node = suggestionPairs.at(0).second;
-    unsigned ed = suggestionPairs.at(0).first.second;
-	float topScore = 0;
-
-	// move on inverted list to find the first record which is valid
-	shared_ptr<vectorview<unsigned> > invertedListReadView;
-	this->indexData->invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
-	unsigned invertedListCursor = 0;
-	while(invertedListCursor < invertedListReadView->size()){
-		float termRecordStaticScore = 0;
-		unsigned termAttributeBitmap = 0;
-		unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-		unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
-		if (this->indexData->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
-				0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
-            // prepare score
-            topScore =
-                    DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
-                            ed,
-                            term->getKeyword()->size(),
-                            true,
-                            prefixMatchPenalty , term->getSimilarityBoost());
-            break;
-		}
+	if(activeNodes == NULL){
+		return 0;
 	}
+
+	float topScore = 0;
+	// now iterate on active nodes and find suggestions for each on of them
+    ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
+    for (; !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+        if(trieNode->getMaximumScoreOfLeafNodes() > topScore){
+        	topScore = trieNode->getMaximumScoreOfLeafNodes();
+        }
+    }
 
 	return topScore;
 

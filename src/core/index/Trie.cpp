@@ -3,7 +3,7 @@
  * Trie.cpp
  *
  *  Created on: 2013-4-6
- *      Author: Jiaying Want
+ *      Author: Jiaying Wang
  */
 
 /*
@@ -26,6 +26,8 @@
 #include "index/Trie.h"
 #include "util/Logger.h"
 using srch2::util::Logger;
+// we need to include inverted index in here to get information about list frequencies to do query suggestions
+#include "index/InvertedIndex.h"
 
 namespace srch2
 {
@@ -38,6 +40,7 @@ TrieNode::TrieNode()
     this->rightMostDescendant = NULL;
     this->id = 0;
     this->setNodeHistogramValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -56,6 +59,7 @@ TrieNode::TrieNode(bool create_root)
     this->rightMostDescendant = NULL;
     this->id = 0;
     this->setNodeHistogramValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -71,6 +75,7 @@ TrieNode::TrieNode(int depth, CharType character)
     this->rightMostDescendant = NULL;
     this->id = 0;
     this->setNodeHistogramValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     this->character = character;
 
@@ -86,6 +91,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->character = src->character;
     this->id = src->id;
     this->setNodeHistogramValue(src->getNodeHistogramValue());
+    this->setMaximumScoreOfLeafNodes(src->getMaximumScoreOfLeafNodes());
     this->invertedListOffset = src->invertedListOffset;
     this->leftMostDescendant = src->leftMostDescendant;
     this->rightMostDescendant = src->rightMostDescendant;
@@ -279,7 +285,7 @@ unsigned TrieNode::getfinalKeywordIdCounter() const
     }
 }
 
-const TrieNode *TrieNode::findLowerBoundChildByMinId(unsigned minId) const
+TrieNode *TrieNode::findLowerBoundChildByMinId(unsigned minId) const
 {
     int childPosition = findLowerBoundChildNodePositionByMinId(minId);
     if (childPosition >= 0) // if it is already there, do nothing
@@ -1272,37 +1278,35 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 }
 
 
-void Trie::calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);
     TrieNode *root = trieRootNode_ReadView->root;
     if(root == NULL){
     	return;
     }
-    calculateNodeHistogramValuesFromChildrenRecursive(root, invertedIndex , totalNumberOfRecords);
+    calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildrenRecursive(root, invertedIndex , totalNumberOfRecords);
 }
 
-void Trie::calculateNodeHistogramValuesFromChildrenRecursive(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildrenRecursive(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
     if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
     for(unsigned childIterator = 0; childIterator < node->getChildrenCount() ; childIterator ++){
-    	calculateNodeHistogramValuesFromChildrenRecursive(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
+    	calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildrenRecursive(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
     }
 
     // now we should initialized the value of this node
     if(node->isTerminalNode()){
+    	// this case means this node is a terminal node
+    	// NOTE: this node can still have children because internal nodes in this trie can also be terminal nodes.
     	if(invertedIndex == NULL){ // this case happens in M1
             // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
-            node->setNodeHistogramValue(1);
+            node->initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeSummation, 1);
     	}else{ // this is the case of A1
 			shared_ptr<vectorview<unsigned> > invertedListReadView;
 			invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
-
-
-			/*********  This code uses the score of the top record as the terminal node value  **************
-			 ****************** We keep this code in case we want to use it in future. **********************
 
 			float termRecordStaticScore = 0;
 			unsigned termAttributeBitmap = 0;
@@ -1317,82 +1321,112 @@ void Trie::calculateNodeHistogramValuesFromChildrenRecursive(TrieNode *node, con
 				}
 			}
 			// now that we have the static score, add the static score to the value of this node
-			node->addNewNodeSubTrieValueToAggregatedValue(termRecordStaticScore);
-			return;
-
-			*************************************************************************************************
-			*************************************************************************************************/
 
 			// we use the probability of this terminal node to occur in a record as the initial value
 			if(totalNumberOfRecords == 0){
-				node->setNodeHistogramValue(1);
+				// if there no records at all, termRecordStaticScore must be zero here
+				ASSERT(termRecordStaticScore == 0);
+				node->initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability, 0 , (half)0);
 			}else{
 				float pTerminalNode = (1.0 * invertedListReadView->size()) / totalNumberOfRecords ;
-				node->setNodeHistogramValue(pTerminalNode);
+				node->initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability, pTerminalNode , (half)termRecordStaticScore);
 			}
     	}
     }else{ // non-terminal node, if it's non-terminal, it still needs to be initialized.
     	if(invertedIndex == NULL){ // it is the case of M1
-			node->initializeInternalNodeHistogramValue(HistogramAggregationTypeSummation);
+			node->initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeSummation);
     	}else{ // it is the case of A1
-    		node->initializeInternalNodeHistogramValue(HistogramAggregationTypeJointProbability);
+    		node->initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability);
     	}
     }
 
     // now update the value of this node from its children
-    if(! node->isTerminalNode()){
-    	if(invertedIndex == NULL){
-    		node->updateInternalNodeHistogramValue(HistogramAggregationTypeSummation);
-    	}else{
-			node->updateInternalNodeHistogramValue(HistogramAggregationTypeJointProbability);
-    	}
+    if(invertedIndex == NULL){
+    	node->updateInternalNodeHistogramValueAndMaximumScoreOfLeafNodes(HistogramAggregationTypeSummation);
+    }else{
+    	node->updateInternalNodeHistogramValueAndMaximumScoreOfLeafNodes(HistogramAggregationTypeJointProbability);
     }
     return;
 }
 
-void TrieNode::updateInternalNodeHistogramValue(HistogramAggregationType aggrType){
+void TrieNode::updateInternalNodeHistogramValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType){
 
 	if(this->getChildrenCount() == 0) return;
 
-	float aggregatedValueSoFar = this->getChild(0)->getNodeHistogramValue();
+	float aggregatedHistogramValueSoFar = this->getChild(0)->getNodeHistogramValue();
 	// iterate on children and aggregate the values
     for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
         switch (aggrType) {
 			case HistogramAggregationTypeSummation:
-				aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+				aggregatedHistogramValueSoFar = aggregateValueBySummation(aggregatedHistogramValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
 				break;
 			case HistogramAggregationTypeJointProbability:
-				aggregatedValueSoFar =
-						aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
+				aggregatedHistogramValueSoFar =
+						aggregateValueByJointProbability(aggregatedHistogramValueSoFar , this->getChild(childIterator)->getNodeHistogramValue());
 				break;
 		}
     }
     // and also use the value that this node currently has
     switch (aggrType) {
 		case HistogramAggregationTypeSummation:
-			aggregatedValueSoFar = aggregateHistogramValueBySummation(aggregatedValueSoFar , this->getNodeHistogramValue());
+			aggregatedHistogramValueSoFar = aggregateValueBySummation(aggregatedHistogramValueSoFar , this->getNodeHistogramValue());
 			break;
 		case HistogramAggregationTypeJointProbability:
-			aggregatedValueSoFar =
-					aggregateHistogramValueByJointProbability(aggregatedValueSoFar , this->getNodeHistogramValue());
+			aggregatedHistogramValueSoFar =
+					aggregateValueByJointProbability(aggregatedHistogramValueSoFar , this->getNodeHistogramValue());
 			break;
 	}
 
     // set the result in the class member
-    this->setNodeHistogramValue(aggregatedValueSoFar);
+    this->setNodeHistogramValue(aggregatedHistogramValueSoFar);
+
+    // also update the maximumScoreOfLeafNodes
+    this->updateInternalNodeMaximumScoreOfLeafNodes();
 }
 
-void TrieNode::initializeInternalNodeHistogramValue(HistogramAggregationType aggrType){
+
+// updates the maximum score of leaf nodes based on the values coming from children and
+// and returns true if anything changes and should be propagated up the trie
+bool TrieNode::updateInternalNodeMaximumScoreOfLeafNodes(){
+	if(this->getChildrenCount() == 0) return false;
+
+	half aggregatedMaximumScoreForLeafNodesSoFar = this->getChild(0)->getMaximumScoreOfLeafNodes();
+	// iterate on children and aggregate the values
+	for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
+		// aggregate the maximum score of leaf nodes by taking the maximum of scores of children
+		aggregatedMaximumScoreForLeafNodesSoFar = aggregateValueByTakingMaximum(aggregatedMaximumScoreForLeafNodesSoFar ,
+        		this->getChild(childIterator)->getMaximumScoreOfLeafNodes());
+    }
+    // aggregate the maximum score of leaf nodes by taking the maximum of scores of children and the current score of this node
+    aggregatedMaximumScoreForLeafNodesSoFar = aggregateValueByTakingMaximum(aggregatedMaximumScoreForLeafNodesSoFar ,
+    		this->getMaximumScoreOfLeafNodes());
+
+    // set the result in the class member
+    if(aggregatedMaximumScoreForLeafNodesSoFar > this->getMaximumScoreOfLeafNodes()){
+		this->setMaximumScoreOfLeafNodes(aggregatedMaximumScoreForLeafNodesSoFar);
+    	return true;
+    }
+    return false;
+}
+void TrieNode::initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
+		float initValueFromArg,
+		half initValueFromArgForMaxScore){
 	float initValue = 0;
-    switch (aggrType) {
-		case HistogramAggregationTypeSummation:
-			initValue = 0;
-			break;
-		case HistogramAggregationTypeJointProbability:
-			initValue = 0;
-			break;
+	if(initValueFromArg != -1){
+		initValue = initValueFromArg;
+	}else{
+		switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				initValue = 0;
+				break;
+			case HistogramAggregationTypeJointProbability:
+				initValue = 0;
+				break;
+		}
 	}
     this->setNodeHistogramValue(initValue);
+    // initialize the maximum score of leaf nodes
+    this->setMaximumScoreOfLeafNodes(initValueFromArgForMaxScore);
 }
 
 void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth){
@@ -1418,7 +1452,7 @@ void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumbe
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
-		this->calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfRecords);
+		this->calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildren(invertedIndex , totalNumberOfRecords);
 	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
@@ -1470,7 +1504,7 @@ void Trie::commit()
 
 void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
 	// traverse the trie in preorder to calculate nodeSubTrieValue
-	calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfResults);
+	calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildren(invertedIndex , totalNumberOfResults);
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }
@@ -1686,6 +1720,61 @@ void Trie::getKeywordMinMaxIdLength_WriteView(unsigned keywordId, unsigned &minI
     maxId = MAX_ALLOCATED_KEYWORD_ID;
     length = 0;
     return;
+}
+
+// for WriteView
+// Finds the node corresponding to the keywordId and returns its mindId, maxId.
+// If keywordId not found path is empty.
+// otherwise, it's guaranteed that first element in path is root and last element is the corresponding trie node.
+void Trie::getKeywordCorrespondentPathToTrieNode_WriteView(unsigned keywordId, TrieNodePath * trieNodePath) const
+{
+	// path should be empty in the beginning
+	ASSERT(trieNodePath != NULL || trieNodePath->path->size() == 0);
+    // get root node
+    TrieNode* node = this->getTrieRootNode_WriteView();
+    // traverse down the trie
+    while (node != NULL) {
+		trieNodePath->path->push_back(node);
+        node = node->findLowerBoundChildByMinId(keywordId);
+        if (node != NULL && node->isTerminalNode() && keywordId == node->getMinId()) {
+        	trieNodePath->path->push_back(node);
+            return;
+        }
+    }
+
+    trieNodePath->path->clear();
+    return;
+}
+
+void Trie::updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId , half newScore){
+	// first find the trie node of keywordId
+	TrieNodePath pathToCorrespondentTrieNodeWithKeywordId;
+	getKeywordCorrespondentPathToTrieNode_WriteView(keywordId , &pathToCorrespondentTrieNodeWithKeywordId);
+
+	// check to see if keywordId was valid and we actually have a correspondent trie node
+	if(pathToCorrespondentTrieNodeWithKeywordId.path->size() == 0){
+		return;
+	}
+
+	// now update the node and propagate the change up
+	TrieNode * correspondentNode =
+			pathToCorrespondentTrieNodeWithKeywordId.path->at(pathToCorrespondentTrieNodeWithKeywordId.path->size()-1);
+	half newScoreAfterAggregation = correspondentNode->aggregateValueByTakingMaximum(correspondentNode->getMaximumScoreOfLeafNodes() , newScore);
+	if(newScoreAfterAggregation	> correspondentNode->getMaximumScoreOfLeafNodes()){ // this trie node must be updated
+		correspondentNode->setMaximumScoreOfLeafNodes(newScoreAfterAggregation);
+	}else{
+		// not need to propagate any change up the trie
+		return;
+	}
+	// propagating the changes up the trie
+	for(unsigned ancestorIter = pathToCorrespondentTrieNodeWithKeywordId.path->size()-2 ;
+			ancestorIter >= 0 ; --ancestorIter){
+		// if the score of this node does not change, we can break because no change needs to be propagated up
+		if(pathToCorrespondentTrieNodeWithKeywordId.path->at(ancestorIter)->updateInternalNodeMaximumScoreOfLeafNodes() == false){
+			break;
+		}
+	}
+
 }
 
 // Finds the node corresponding to the keywordId and returns its mindId, maxId.

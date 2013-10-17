@@ -24,11 +24,13 @@
 
 #include "util/cowvector/cowvector.h"
 #include "index/ForwardIndex.h"
+
 //#include <instantsearch/Schema.h>
 #include <instantsearch/Ranker.h>
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "util/RankerExpression.h"
+#include "util/half.h"
 
 #include <fstream>
 #include <algorithm>
@@ -45,11 +47,14 @@ using std::string;
 using std::ifstream;
 using std::ofstream;
 using srch2::util::Logger;
+using namespace half_float;
 
 namespace srch2
 {
 namespace instantsearch
 {
+
+class Trie;
 
 struct InvertedListElement {
     unsigned recordId;
@@ -210,7 +215,7 @@ public:
      */
     void incrementHitCount(unsigned invertedIndexDirectoryIndex);
     void incrementDummyHitCount(unsigned invertedIndexDirectoryIndex);// For Trie Bootstrap
-    void addRecord(ForwardList* forwardList, RankerExpression *rankerExpression,
+    void addRecord(ForwardList* forwardList, Trie * trie, RankerExpression *rankerExpression,
             const unsigned forwardListOffset, const SchemaInternal *schema,
             const Record *record, const unsigned totalNumberOfDocuments, const KeywordIdKeywordStringInvertedListIdTriple &keywordIdList);
 

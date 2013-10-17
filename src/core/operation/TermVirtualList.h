@@ -156,7 +156,7 @@ public:
     }*/
 
     bool isTermVirtualListDisabled();
-    bool getScoreOfTopRecordWhenListIsDisabled();
+    float getScoreOfTopRecordWhenListIsDisabled();
 
     inline unsigned getTermSearchableAttributeIdToFilterTermHits() const {
         return this->term->getAttributeToFilterTermHits();

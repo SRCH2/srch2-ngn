@@ -19,6 +19,7 @@
  */
 
 #include "index/InvertedIndex.h"
+#include "index/Trie.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include <math.h>
@@ -286,7 +287,7 @@ void InvertedIndex::merge()
 }
 
 // recordInternalId is same as forwardIndeOffset
-void InvertedIndex::addRecord(ForwardList* forwardList,
+void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
                               RankerExpression *rankerExpression,
                               const unsigned forwardListOffset, const SchemaInternal *schema,
                               const Record *record, const unsigned totalNumberOfDocuments,
@@ -318,6 +319,9 @@ void InvertedIndex::addRecord(ForwardList* forwardList,
             float idf = this->getIdf(totalNumberOfDocuments, invertedListId);
             float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, tf, idf, sumOfFieldBoost);
 
+            // now we should update the trie by this score
+            trie->updateMaximumScoreOfLeafNodesForKeyword_WriteView(keywordId , (half)score);
+            // and update the scores in forward index
             forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }

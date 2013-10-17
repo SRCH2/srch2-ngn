@@ -236,7 +236,7 @@ bool TermVirtualList::isTermVirtualListDisabled(){
 	return (this->topRecordScoreWhenListIsDisabled != -1);
 }
 
-bool TermVirtualList::getScoreOfTopRecordWhenListIsDisabled(){
+float TermVirtualList::getScoreOfTopRecordWhenListIsDisabled(){
 	ASSERT(this->topRecordScoreWhenListIsDisabled != -1);
 	return this->topRecordScoreWhenListIsDisabled;
 }
