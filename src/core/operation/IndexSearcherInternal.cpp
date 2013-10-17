@@ -1251,6 +1251,7 @@ float IndexSearcherInternal::findTopRunTimeScoreOfMostPopularSuggestion(Term *te
                             term->getKeyword()->size(),
                             true,
                             prefixMatchPenalty , term->getSimilarityBoost());
+            break;
 		}
 	}
 
