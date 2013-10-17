@@ -45,7 +45,7 @@ namespace srch2
 namespace instantsearch
 {
 
-const unsigned IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD = 50000;
+const unsigned IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD = 20000;
 
 IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
 {
