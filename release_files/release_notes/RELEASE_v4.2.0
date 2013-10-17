@@ -4,4 +4,4 @@
 *------------------------------------------------------------------
 
 Changes over version 4.1.0:
-* Tag names and attribute names are no longer case sensitive.
+* Tag names and attribute names are now case insensitive.
