@@ -205,6 +205,7 @@ const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::st
 void QueryResults::copyForPostProcessing(QueryResults * sourceQueryResults) const {
     this->impl->sortedFinalResults = sourceQueryResults->impl->sortedFinalResults ;
     this->impl->facetResults = sourceQueryResults->impl->facetResults ;
+    this->impl->resultsApproximated = sourceQueryResults->impl->resultsApproximated;
 }
 
 void QueryResults::clear(){
@@ -212,6 +213,10 @@ void QueryResults::clear(){
 	this->impl->sortedFinalResults.clear();
 	this->impl->facetResults.clear();
 
+}
+
+bool QueryResults::isResultsApproximated() const{
+	return this->impl->resultsApproximated;
 }
 
 //TODO: These three functions for internal debugging. remove from the header

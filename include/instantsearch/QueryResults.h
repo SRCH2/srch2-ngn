@@ -164,6 +164,8 @@ public:
 
     void clear();
 
+    bool isResultsApproximated() const;
+
     //TODO: These three functions for internal debugging. remove from the header
     void printStats() const ;
 

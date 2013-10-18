@@ -45,6 +45,7 @@ QueryResultsInternal::QueryResultsInternal() {
     Logger::info("Query Results internal created.");
     this->virtualListVector = NULL;
     this->stat = NULL;
+    this->resultsApproximated = false;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
@@ -55,6 +56,7 @@ void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
     this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
+    this->resultsApproximated = false;
 }
 
 QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
@@ -64,6 +66,7 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
     this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
+    this->resultsApproximated = false;
 }
 
 // DEBUG function. Used in CacheIntegration_Test
