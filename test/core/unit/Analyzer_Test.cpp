@@ -869,6 +869,8 @@ void testAnalyzerSerilization(string dataDir) {
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     string INDEX_DIR = ".";
 
     /*
@@ -893,7 +895,10 @@ void testAnalyzerSerilization(string dataDir) {
             SYNONYM_KEEP_ORIGIN, "", SIMPLE_ANALYZER);
 
 
-    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
 
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -913,7 +918,10 @@ void testAnalyzerSerilization(string dataDir) {
     delete indexMetaData;
 
     // LOADING
-    IndexMetaData *indexMetaData2 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData2 = new IndexMetaData( GlobalCache::create(1000,1000),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     IndexReaderWriter *indexReaderWriter = new IndexReaderWriter(indexMetaData2);
 
     delete indexReaderWriter;
@@ -942,7 +950,10 @@ void testAnalyzerSerilization(string dataDir) {
             dataDir + "/synonymFile.txt",
             SYNONYM_DONOT_KEEP_ORIGIN, "", STANDARD_ANALYZER);
 
-    IndexMetaData *indexMetaData3 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData3 = new IndexMetaData( GlobalCache::create(1000,1000),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
 
     Indexer *index2 = Indexer::create(indexMetaData3, analyzer2, schema2);
 
@@ -962,7 +973,10 @@ void testAnalyzerSerilization(string dataDir) {
     delete indexMetaData3;
 
     // LOADING
-    IndexMetaData *indexMetaData4 = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData4 = new IndexMetaData( GlobalCache::create(1000,1000),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     IndexReaderWriter *indexReaderWriter2 = new IndexReaderWriter(indexMetaData4);
 
     delete indexReaderWriter2;

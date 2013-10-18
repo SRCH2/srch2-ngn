@@ -66,7 +66,12 @@ void buildLocalIndex(string INDEX_DIR)
     Cache *cache = new Cache();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
@@ -119,7 +124,12 @@ void test1()
     Cache *cache = new Cache();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(true);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
@@ -223,7 +233,12 @@ void test2()
     Cache *cache = new Cache();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(false);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);

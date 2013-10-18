@@ -140,6 +140,7 @@ bool QueryValidator::validate() {
     return true;
 }
 
+
 bool QueryValidator::validateExistenceOfAttributesInFieldList() {
     if (paramContainer->hasParameterInQuery(FieldFilter)) { // field filter list is not empty
 

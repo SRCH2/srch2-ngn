@@ -67,7 +67,12 @@ void addSimpleRecords()
     // Create an index writer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges , updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
     
@@ -313,7 +318,12 @@ void test0()
     // create an index
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData1);
 
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
@@ -354,7 +364,12 @@ void test1()
     // create an indexer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer * indexer = Indexer::load(indexMetaData1);
 
     threadReaders1 = (pthread_t *) malloc(n * sizeof(*threadReaders1));
@@ -415,7 +430,12 @@ void test2()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer* indexer = Indexer::load(indexMetaData1);
     
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));

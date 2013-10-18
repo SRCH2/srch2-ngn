@@ -357,6 +357,45 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 }
 
 
+void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &headers,
+		const vector<string> & suggestions,
+		const srch2is::Indexer *indexer,
+		const string & message,
+		const unsigned ts1,
+		struct timespec &tstart, struct timespec &tend){
+
+    Json::FastWriter writer;
+    Json::Value root;
+
+    // For logging
+    string logQueries;
+
+    root["searcher_time"] = ts1;
+    root["suggestions"].resize(suggestions.size());
+
+    clock_gettime(CLOCK_REALTIME, &tstart);
+
+    for (unsigned i = 0; i < suggestions.size(); ++i) {
+
+        root["suggestions"][i] = suggestions.at(i);
+    }
+
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    root["payload_access_time"] = ts2;
+
+    // return some meta data
+
+    root["suggestions_found"] = (unsigned)suggestions.size();
+
+    root["message"] = message;
+    Logger::info(
+            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
+            req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+}
+
 
 void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         Srch2Server *server) {
@@ -849,6 +888,75 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     delete finalResults;
     delete resultsFactory;
 }
+
+void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server){
+    // start the timer for search
+    struct timespec tstart;
+    clock_gettime(CLOCK_REALTIME, &tstart);
+
+
+    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+
+    // 1. first parse the headers
+    evkeyvalq headers;
+    evhttp_parse_query(req->uri, &headers);
+
+    QueryParser qp(headers);
+
+    string keyword;
+    float fuzzyMatchPenalty;
+    int numberOfSuggestionsToReturn;
+    std::vector<std::pair<MessageType, std::string> > messages;
+    bool isSyntaxValid = qp.parseForSuggestions(keyword, fuzzyMatchPenalty, numberOfSuggestionsToReturn, messages);
+
+    // prepare the messages.
+    std::string messagesString = "";
+    for (std::vector<std::pair<MessageType, std::string> >::iterator m =
+            messages.begin(); m != messages.end(); ++m) {
+        switch (m->first) {
+        case MessageError:
+        	messagesString += "ERROR : " + m->second + "\n";
+            break;
+        case MessageWarning:
+        	messagesString += "WARNING : " + m->second + "\n";
+            break;
+        }
+    }
+
+    if(! isSyntaxValid){
+		// if the query is not valid, print the error message to the response
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+				messagesString, headers);
+		return;
+    }
+
+
+    // 2. second, use configuration file if some information is missing
+    if(numberOfSuggestionsToReturn == -1){
+    	numberOfSuggestionsToReturn = indexDataContainerConf->getDefaultNumberOfSuggestionsToReturn();
+    }
+    if(fuzzyMatchPenalty == -1){
+    	fuzzyMatchPenalty = indexDataContainerConf->getFuzzyMatchPenalty();
+    }
+
+
+    // 3. now search for suggestions
+    IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+    vector<string> suggestions ;
+    int numberOfSuggestionsFound = indexSearcher->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn , suggestions);
+    delete indexSearcher;
+
+    // compute elapsed time in ms , end the timer
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+
+    // 4. Print the results
+    printSuggestions(req , headers , suggestions , server->indexer , messagesString , ts1 , tstart , tend);
+
+}
+
 void HTTPRequestHandler::handleException(evhttp_request *req) {
     const string INTERNAL_SERVER_ERROR_MSG =
             "{\"error:\" Ooops!! The engine failed to process this request. Please check srch2 server logs for more details. If the problem persists please contact srch2 inc.}";

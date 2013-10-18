@@ -98,8 +98,12 @@ void addRecords() {
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(NULL,
-            mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+            mergeEveryNSeconds, mergeEveryMWrites,
+            updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+            INDEX_DIR, "");
     srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer,
             schema);
 
@@ -921,8 +925,12 @@ void Searcher_Tests() {
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
-            new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+            new Cache(), mergeEveryNSeconds, mergeEveryMWrites,
+            updateHistogramEveryPMerges , updateHistogramEveryQWrites,
+            INDEX_DIR, "");
 
     Indexer* indexer = Indexer::load(indexMetaData);
 

@@ -55,9 +55,13 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
+	static const unsigned HISTOGRAM_POPULARITY_THRESHOLD;
+
     //Get Schema pointer from IndexSearcherInternal
     IndexSearcherInternal(IndexReaderWriter *indexer);
     virtual ~IndexSearcherInternal() {};
+
+    int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
 
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
@@ -86,7 +90,18 @@ public:
     }
 
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
-    void computeTermVirtualList(QueryResults *queryResults) const;
+    void computeTermVirtualList(QueryResults *queryResults ,
+    		vector<PrefixActiveNodeSet *> * activeNodes = NULL ,
+    		const vector<float> * scoreOfTopRecords = NULL) const;
+
+    // This function uses the histogram information of the trie to estimate the number of records which have this term
+    unsigned getEstimatedNumberOfRecordsWithThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const;
+
+    // This functions defined the policy of estimating the results or computing them.
+    bool isTermTooPopular(Term *term, PrefixActiveNodeSet * activeNodes, unsigned & popularity ) const;
+
+    // This function find the runtime score of the top record of the inverted list of most popular suggestion of this term
+    float findTopRunTimeScoreOfLeafNodes(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex() {
@@ -126,6 +141,8 @@ private:
     int searchTopKQuery(const Query *query, const int offset,
                         const int nextK, QueryResults* queryResults);
 
+    int searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query, PrefixActiveNodeSet * activeNodes, unsigned k, QueryResults * queryResults);
+
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
@@ -138,6 +155,13 @@ private:
 
     // return the next record that exists in all the virtual lists ("AND of these keyword lists). If there are no more records, return NO_MORE_RECORDS
     int getNextRecordID(vector<TermVirtualList* >* virtualListVector);
+
+    // this functions traverses the trie to find the most popular suggestions of a term
+    // returns the number of suggestions found.
+    void findKMostPopularSuggestionsSorted(Term *term ,
+    		PrefixActiveNodeSet * activeNodes,
+    		unsigned numberOfSuggestionsToReturn ,
+    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 };
 
 }

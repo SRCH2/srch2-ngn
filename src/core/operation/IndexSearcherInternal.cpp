@@ -29,6 +29,7 @@
 #include "operation/TermVirtualList.h"
 #include "query/QueryResultsInternal.h"
 #include "index/Trie.h"
+#include "index/InvertedIndex.h"
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
@@ -44,6 +45,8 @@ namespace srch2
 {
 namespace instantsearch
 {
+
+const unsigned IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD = 20000;
 
 IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
 {
@@ -96,9 +99,62 @@ int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualLis
 // pagination. Returns the number of records found
 int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults)
 {
-    //TODO: check the queryResults was create using query.
-    //TODO: Use edit distance and length in ranking
-    this->computeTermVirtualList(queryResults);
+
+	// iterate on terms and find the estimated number of results for each term
+	// if a term is too popular no term virtual list should be made for it
+	// if all terms are too popular find the least popular and only make TVL for that one
+
+	// this vector is passed to computeTermVirtualList to be used
+	vector<PrefixActiveNodeSet *> activeNodesVector;
+	// this vector is passed to computeTermVirtualList to see if
+	// term virtual lists should be constructed completely or partially.
+	vector<float> isTermTooPopularVectorAndScoresOfTopRecords ;
+	// this vector keeps the popularity values of terms to be used in case
+	// we need to find the least popular one
+	vector<unsigned> termPopularities;
+	// this flag will be set if there is no term which is not too popular
+	bool thereIsAtLeastOneUnpopularTerm = false;
+
+	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
+	for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
+			vectorIterator != query->getQueryTerms()->end();
+			++vectorIterator) {
+		Term *term = *vectorIterator;
+		// compute activenodes
+		PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+		activeNodesVector.push_back(activeNodes);
+		// see how popular the term is
+		unsigned popularity = 0;
+		bool isPopular = this->isTermTooPopular(term , activeNodes , popularity);
+		// By default the value of topRecordScore is -1. If this term is too popular, this value will be the score of the
+		// the top record of the most popular suggestion inverted list
+		float topRecordScoreIfTooPopular = -1;
+		if(isPopular){
+			topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
+		}else{
+			thereIsAtLeastOneUnpopularTerm = true;
+		}
+		termPopularities.push_back(popularity);
+		isTermTooPopularVectorAndScoresOfTopRecords.push_back(topRecordScoreIfTooPopular);
+
+	}
+
+	if(thereIsAtLeastOneUnpopularTerm == false){
+		// for example : q="to be or not to be"
+		// if there is more than one keyword, we find the least popular term and compute term virtual list only
+		// for that one
+		unsigned minPopularityIndex = 0;
+		for(int termIndex = 1 ; termIndex != query->getQueryTerms()->size() ; ++termIndex){
+			if(termPopularities.at(termIndex) < termPopularities.at(minPopularityIndex)){
+				minPopularityIndex = termIndex;
+			}
+		}
+		// isTermTooPopularVector is a vector of true values, we should set the value of
+		// least popular term top record score to -1
+		isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
+	}
+
+	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
 
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
     // get the std::vector of virtual lists of each term
@@ -124,11 +180,21 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
     HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
 
     //find the smallest virtualList
-    unsigned smallestVirtualListVectorId = 0;
-    unsigned smallestVirtualListVectorSize = virtualListVector->at(0)->getVirtualListTotalLength();
-    for (unsigned int iter = 1; iter < virtualListVector->size(); ++iter) {
+    unsigned smallestVirtualListVectorId = -1; // -1 for unsigned is a very big number
+    unsigned smallestVirtualListVectorSize = -1;
+    for (unsigned int iter = 0; iter < virtualListVector->size(); ++iter) {
+    	if(virtualListVector->at(iter)->isTermVirtualListDisabled() == false){
+    		smallestVirtualListVectorId = iter;
+    		unsigned smallestVirtualListVectorSize = virtualListVector->at(iter)->getVirtualListTotalLength();
+    	}
+    }
+    ASSERT(smallestVirtualListVectorId != (unsigned)-1);
+    for (unsigned int iter = 0; iter < virtualListVector->size(); ++iter) {
+    	if(virtualListVector->at(iter)->isTermVirtualListDisabled() == true){
+    		continue;
+    	}
         unsigned currentSize = virtualListVector->at(iter)->getVirtualListTotalLength();
-        if ( smallestVirtualListVectorSize > currentSize ) {
+        if (smallestVirtualListVectorSize > currentSize ) {
             smallestVirtualListVectorId = iter;
             smallestVirtualListVectorSize = currentSize;
         }
@@ -441,7 +507,81 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::set<unsigned> visitedList;
         queryResultsInternal->fillVisitedList(visitedList);
 
-        this->computeTermVirtualList(queryResults);
+
+    	// iterate on terms and find the estimated number of results for each term
+    	// if a term is too popular no term virtual list should be made for it
+    	// if all terms are too popular find the least popular and only make TVL for that one
+
+    	// this vector is passed to computeTermVirtualList to be used
+    	vector<PrefixActiveNodeSet *> activeNodesVector;
+    	// this vector is passed to computeTermVirtualList to see if
+    	// term virtual lists should be constructed completely or partially.
+    	// if the value of this float for a keyword is -1, it means this keyword is NOT
+    	// too popular and normal TVL should be made for it.
+    	// otherwise, this value is the runtime score of the top record of inverted list of the most
+    	// popular completion of this keyword. This score will be used in topK termination criterion.
+    	// TODO constant for -1
+    	vector<float> isTermTooPopularVectorAndScoresOfTopRecords ;
+    	// this vector keeps the popularity values of terms to be used in case
+    	// we need to find the least popular one
+    	vector<unsigned> termPopularities;
+    	// this flag will be set if there is no term which is not too popular
+    	bool thereIsAtLeastOneUnpopularTerm = false;
+
+    	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
+        for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
+                vectorIterator != query->getQueryTerms()->end();
+                ++vectorIterator) {
+            Term *term = *vectorIterator;
+            // compute activenodes
+            PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+            activeNodesVector.push_back(activeNodes);
+            // see how popular the term is
+            unsigned popularity = 0;
+            bool isPopular = this->isTermTooPopular(term , activeNodes , popularity);
+            // By default the value of topRecordScore is -1. If this term is too popular, this value will be the score of the
+            // the top record of the most popular suggestion inverted list
+            float topRecordScoreIfTooPopular = -1;
+            if(isPopular){
+            	topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
+            }else{
+            	thereIsAtLeastOneUnpopularTerm = true;
+            }
+            termPopularities.push_back(popularity);
+            isTermTooPopularVectorAndScoresOfTopRecords.push_back(topRecordScoreIfTooPopular);
+
+        }
+
+        if(thereIsAtLeastOneUnpopularTerm == false){
+        	// if there is only one keyword (which is too popular)
+        	// we only estimate the results.
+        	if(query->getQueryTerms()->size() == 1){ // for example : q=a
+        		unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
+        				offset + nextK - queryResults->getNumberOfResults() , queryResults);
+        	    if (activeNodesVector.at(0)->isResultsCached() == true){
+        	    	activeNodesVector.at(0)->busyBit->setFree();
+        	    }else{
+            		delete activeNodesVector.at(0);
+        	    }
+                queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
+        		return numberOfResults;
+        	}
+        	// for example : q="to be or not to be"
+        	// if there is more than one keyword, we find the least popular term and compute term virtual list only
+        	// for that one
+        	unsigned minPopularityIndex = 0;
+            for(int termIndex = 1 ; termIndex != query->getQueryTerms()->size() ; ++termIndex){
+        		if(termPopularities.at(termIndex) < termPopularities.at(minPopularityIndex)){
+        			minPopularityIndex = termIndex;
+        		}
+        	}
+            // isTermTooPopularVector is a vector of true values, we should set the value of
+            // least popular term top record score to -1
+            isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
+        }
+
+    	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
+
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
@@ -536,16 +676,30 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
                 float score;
 
-                if (!virtualListVector->at(i)->getMaxScore(score)) {
-                    stop = true;
-                    break;
+                if(virtualListVector->at(i)->isTermVirtualListDisabled() == true){
+                	// when the list is disabled, the highest score is always the score of the top record in the beginning
+                	// to make sure early termination does not produce incorrect results.
+                	score = virtualListVector->at(i)->getScoreOfTopRecordWhenListIsDisabled();
+                }else{
+					if (!virtualListVector->at(i)->getMaxScore(score)) {
+						stop = true;
+						break;
+					}
                 }
+
                 maxScoreForUnvisitedRecords =
                     query->getRanker()->aggregateBoostedTermRuntimeScore(maxScoreForUnvisitedRecords,
                             query->getQueryTerms()->at(i)->getBoost(), score) ;
             }
             // round robin: go through all the virtual lists
             for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
+
+                if(virtualListVector->at(i)->isTermVirtualListDisabled() == true){
+                	// This means term i is too popular and no term virtual list is actually created for it.
+                	// so we ignore it because we cannot get next heap item from it
+                	continue;
+                }
+
                 // Step 2
                 // get one element from one virtual list
                 // if the term virtual list has no more item, stop
@@ -700,6 +854,130 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     return queryResults->getNumberOfResults() - offset;
 }
 
+
+bool suggestionComparator(const pair<std::pair< float , unsigned > , const TrieNode *> & left ,
+		const pair<std::pair< float , unsigned > , const TrieNode *> & right ){
+	return left.first.first > right.first.first;
+}
+
+// This function estimates the results for a single very popular (probably short prefix)
+int IndexSearcherInternal::searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query,
+		PrefixActiveNodeSet * activeNodes , unsigned k , QueryResults * queryResults){
+	ASSERT(query->getQueryTerms()->size() == 1);
+
+	Term * term = query->getQueryTerms()->at(0);
+
+	// 1. first iterate on active nodes and find best estimated leaf nodes.
+    std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
+    findKMostPopularSuggestionsSorted(term , activeNodes , k , suggestionPairs);
+
+    // 3. now iterate on leaf nodes and add records to the result set
+    unsigned numberOfResults = 0;
+    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    		suggestion != suggestionPairs.end() && numberOfResults < k ; ++suggestion){
+
+		shared_ptr<vectorview<unsigned> > invertedListReadView;
+		this->indexData->invertedIndex->getInvertedListReadView(suggestion->second->getInvertedListOffset(), invertedListReadView);
+        unsigned termAttributeBitmap = 0;
+        float termRecordStaticScore = 0;
+        // move on inverted list and add the records which are valid
+        unsigned invertedListCursor = 0;
+        while(invertedListCursor < invertedListReadView->size()){
+			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
+			unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, suggestion->second->getInvertedListOffset());
+			if (this->indexData->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+                QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+                // prepare query results matching keywords
+                std::vector<std::string> queryResultMatchingKeywords;
+            	string suggestionString ;
+                this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                                       suggestion->second, suggestionString);
+                queryResultMatchingKeywords.push_back(suggestionString);
+
+                // prepare edit distances
+                std::vector<unsigned> editDistances;
+                editDistances.push_back(suggestion->first.second);
+                // prepare attribute bitmaps
+                std::vector<unsigned> attributeBitmaps;
+                attributeBitmaps.push_back(0x7fffffff);
+                // prepare score
+                std::vector<float> queryTermResultScores;
+                queryTermResultScores.push_back(
+                		query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, suggestion->first.second,
+                                                term->getKeyword()->size(),
+                                                true,
+                                                query->getPrefixMatchPenalty() , term->getSimilarityBoost() ) );
+                queryResult->internalRecordId = recordId;
+                queryResult->matchingKeywords = queryResultMatchingKeywords;
+                queryResult->editDistances = editDistances;
+                queryResult->attributeBitmaps = attributeBitmaps;
+                queryResult->_score.setTypedValue(query->getRanker()->computeOverallRecordScore(query, queryTermResultScores));
+                queryResults->impl->insertResult(queryResult);
+				numberOfResults ++;
+				if(numberOfResults >= k){
+					break;
+				}
+			}
+        }
+    }
+	return numberOfResults;
+
+
+}
+
+int IndexSearcherInternal::suggest(const string & keyword,
+		float fuzzyMatchPenalty ,
+		const unsigned numberOfSuggestionsToReturn ,
+		vector<string> & suggestions){
+
+	// non valid cases for input
+	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
+		return 0;
+	}
+    if (this->indexData->isCommited() == false){
+        return -1;
+    }
+
+	// make sure fuzzyMatchPenalty is in [0,1]
+	if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
+		fuzzyMatchPenalty = 0.5;
+	}
+	// calculate editDistanceThreshold
+	// TODO use Ranker to implement this logic
+	unsigned editDistanceThreshold = keyword.length() * (1 - fuzzyMatchPenalty);
+
+	// compute active nodes
+	// 1. first we must create term object which is used to compute activenodes.
+	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
+	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
+	// 2. compute active nodes.
+	PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+	// 3. we don't need the term anymore
+	delete term;
+
+	// 4. now iterate on active nodes and find suggestions for each on of them
+    std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
+    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn , suggestionPairs);
+
+    int suggestionCount = 0;
+    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
+    	string suggestionString ;
+        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                               suggestion->second, suggestionString);
+    	suggestions.push_back(suggestionString);
+    }
+	// 5. now delete activenode set
+    if (termActiveNodeSet->isResultsCached() == true)
+    	termActiveNodeSet->busyBit->setFree();
+    else
+        delete termActiveNodeSet;
+	return 0;
+}
+
+
+
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
 {
     int returnValue = -1;
@@ -790,11 +1068,14 @@ void IndexSearcherInternal::search(const std::string & primaryKey, QueryResults 
 
 }
 
-void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) const
+void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults ,
+		vector<PrefixActiveNodeSet *> * activeNodes,
+		const vector<float> * scoreOfTopRecords) const
 {
     const Query *query = queryResults->impl->getQuery();
     const vector<Term* > *queryTerms = query->getQueryTerms();
     if (query->getQueryType() != SearchTypeMapQuery) {
+    	unsigned termIndex = 0;
         for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
                 vectorIterator != queryTerms->end();
                 vectorIterator++ ) {
@@ -808,7 +1089,23 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
             /*timespec t1;
             timespec t2;
             clock_gettime(CLOCK_REALTIME, &t1);*/
-            PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+
+            // By default this function computes the active nodes itself. But if a vector of pointers to
+            // activeNodeSets is available, it uses that vector instead of computing them from scratch.
+            PrefixActiveNodeSet *termActiveNodeSet;
+            if(activeNodes == NULL){
+            	termActiveNodeSet = this->computeActiveNodeSet(term);
+            }else{
+            	termActiveNodeSet = activeNodes->at(termIndex);
+            }
+
+            // By default no term is too popular. If the vector of tooPopular flags is available, we use this vector
+            // to get the value for this term
+            float scoreOfTopRecord = -1;
+            if(scoreOfTopRecords != NULL){
+            	scoreOfTopRecord = scoreOfTopRecords->at(termIndex);
+            }
+
             /*clock_gettime(CLOCK_REALTIME, &t2);
             double time_span = (double)((t2.tv_sec - t1.tv_sec) * 1000) + ((double)(t2.tv_nsec - t1.tv_nsec)) / 1000000.0;
             cout << "compute active node set cost: " << time_span << " milliseconds." << endl;*/
@@ -818,7 +1115,7 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
             // compute the virtual list for this term
             float prefixMatchPenalty = query->getPrefixMatchPenalty();
             TermVirtualList *termVirtualList = new TermVirtualList(this->indexData->invertedIndex, termActiveNodeSet,
-                    term, prefixMatchPenalty);
+                    term, prefixMatchPenalty , scoreOfTopRecord);
             queryResults->addMessage("TermVList computed");
 
             ///check if termActiveNodeSet is cached, if not delete it to prevent memory leaks.
@@ -826,7 +1123,10 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults) c
             //    delete termActiveNodeSet;
 
             queryResults->impl->virtualListVector->push_back(termVirtualList);
+            //
+            termIndex ++;
         }
+        std::cout << std::endl;
     }
 }
 
@@ -882,6 +1182,98 @@ PrefixActiveNodeSet *IndexSearcherInternal::computeActiveNodeSet(Term *term) con
     // Possible memory leak due to last prefixActiveNodeSet not being cached. This is checked for
     // and deleted by the caller "QueryResultsInternal()"
     return prefixActiveNodeSet;
+}
+
+
+// This function uses the histogram information of the trie to estimate the number of records which have this term
+// it uses the most popular active node to estimate this value
+// NOTE : we cannot add all active node popularity values together because some of them are descendants of another ones ...
+unsigned IndexSearcherInternal::getEstimatedNumberOfRecordsWithThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const{
+
+	if(activeNodes == NULL){
+		ASSERT(false);
+		return 0;
+	}
+	TrieNodePointer mostPopularTrieNode = NULL;
+	// Iterate on active nodes and find the one with the largest histogramValue
+    for (ActiveNodeSetIterator iter(activeNodes, term->getThreshold()); !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+        if(mostPopularTrieNode == NULL){
+        	mostPopularTrieNode = trieNode;
+        	continue;
+        }
+        // logic of finding the maximum popularity/frequency value
+        if(trieNode->getNodeProbabilityValue() > mostPopularTrieNode->getNodeProbabilityValue()){
+        	mostPopularTrieNode = trieNode;
+        }
+    }
+    if(mostPopularTrieNode == NULL){
+    	return 0;
+    }
+    return this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView() * mostPopularTrieNode->getNodeProbabilityValue();
+}
+
+bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * activeNodes , unsigned & popularity) const{
+	if(term == NULL){
+		popularity = 0;
+		return false;
+	}
+	popularity = getEstimatedNumberOfRecordsWithThisTerm(term , activeNodes);
+
+	return (popularity > IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD);
+
+}
+
+float IndexSearcherInternal::findTopRunTimeScoreOfLeafNodes(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const{
+
+	if(activeNodes == NULL){
+		return 0;
+	}
+
+	float topScore = 0;
+	// now iterate on active nodes and find suggestions for each on of them
+    ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
+    for (; !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+        float runTimeScoreOfThisTrieNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes() ,
+                distance,
+                term->getKeyword()->size(),
+                true,
+                prefixMatchPenalty , term->getSimilarityBoost());
+        if(runTimeScoreOfThisTrieNode > topScore){
+        	topScore = runTimeScoreOfThisTrieNode;
+        }
+    }
+
+	return topScore;
+
+}
+
+void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
+		PrefixActiveNodeSet * activeNodes,
+		unsigned numberOfSuggestionsToReturn ,
+		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const{
+	// first make sure input is OK
+	if(term == NULL || activeNodes == NULL) return;
+
+	// now iterate on active nodes and find suggestions for each on of them
+    ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
+    for (; !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+        trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+        if(suggestionPairs.size() >= numberOfSuggestionsToReturn){
+        	break;
+        }
+    }
+
+    // now sort the suggestions
+    std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 
 /**

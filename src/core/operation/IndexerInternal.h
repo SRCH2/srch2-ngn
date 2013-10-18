@@ -122,7 +122,10 @@ public:
         this->cache = dynamic_cast<Cache*>(indexMetaData->cache);
         this->mergeEveryNSeconds = indexMetaData->mergeEveryNSeconds;
         this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
-        this->writesCounter_forMerge = 0;
+        this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;
+        this->updateHistogramEveryQWrites = indexMetaData->updateHistogramEveryQWrites;
+        this->writesCounterForMerge = 0;
+        this->mergeCounterForUpdatingHistogram = 0;
 
         this->mergeThreadStarted = false; // No threads running
         this->rwMutexForWriter = new ReadWriteMutex(100);
@@ -222,9 +225,25 @@ public:
     
     const bool isCommited() const { return this->index->isCommited(); }
 
+
+    // histogram update is triggered if :
+    // A : we have had updateHistogramEveryQWrites writes since the last histogram update
+    // or B : we have had updateHistogramEveryPMerges merges since the last histogram update
+    bool shouldUpdateHistogram(){
+    	if(writesCounterForMerge >= this->updateHistogramEveryQWrites ||
+    			mergeCounterForUpdatingHistogram >= this->updateHistogramEveryPMerges){
+    		return true;
+    	}
+    	return false;
+    }
+
+    void resetMergeCounterForHistogram(){
+    	this->mergeCounterForUpdatingHistogram = 0;
+    }
+
     void merge_ForTesting()
     {
-        this->merge();
+        this->merge(false);
     }
 
     QuadTree *getQuadTree() const { return this->index->quadTree; }
@@ -241,11 +260,15 @@ private:
     pthread_t mergerThread;
     pthread_attr_t attr;
 
-    volatile unsigned writesCounter_forMerge;
+    volatile unsigned writesCounterForMerge;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
 
-    INDEXWRITE_RETVAL merge();
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
+    volatile unsigned mergeCounterForUpdatingHistogram;
+
+    INDEXWRITE_RETVAL merge(bool updateHistogram);
 
     void mergeThreadLoop();
 
@@ -264,7 +287,7 @@ private:
     void writeunlock()
     {
         //indexHealthInfo.notifyWrite();
-        if (this->mergeThreadStarted && writesCounter_forMerge >= mergeEveryMWrites)
+        if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites)
         {
             rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
         }
