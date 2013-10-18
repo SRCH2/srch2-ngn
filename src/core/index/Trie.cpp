@@ -1729,10 +1729,12 @@ void Trie::getKeywordCorrespondingPathToTrieNode_WriteView(unsigned keywordId, T
 void Trie::updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId , half newScore){
 	// first find the trie node of keywordId
 	TrieNodePath pathToCorrespondingTrieNodeWithKeywordId;
+	pathToCorrespondingTrieNodeWithKeywordId.path = new vector<TrieNode *>();
 	getKeywordCorrespondingPathToTrieNode_WriteView(keywordId , &pathToCorrespondingTrieNodeWithKeywordId);
 
 	// check to see if keywordId was valid and we actually have a corresponding trie node
 	if(pathToCorrespondingTrieNodeWithKeywordId.path->size() == 0){
+		delete pathToCorrespondingTrieNodeWithKeywordId.path
 		return;
 	}
 
@@ -1748,9 +1750,11 @@ void Trie::updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId 
 			ancestorNode->setMaximumScoreOfLeafNodes(newScore);
 		}else{
 			// no need to propagate any change up the trie
+			delete pathToCorrespondingTrieNodeWithKeywordId.path;
 			return;
 		}
 	}
+	delete pathToCorrespondingTrieNodeWithKeywordId.path;
 }
 
 // Finds the node corresponding to the keywordId and returns its mindId, maxId.
