@@ -198,6 +198,8 @@ private:
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
 
+    void lowerCaseNodeNames(xml_node &node);
+
 public:
     ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
@@ -329,6 +331,89 @@ public:
     	return defaultNumberOfSuggestions;
     }
 
+private:
+
+// configuration file tag and attribute names for ConfigManager
+    static const char* const accessLogFileString;
+    static const char* const analyzerString;
+    static const char* const cacheSizeString;
+    static const char* const collectionString;
+    static const char* const configString;
+    static const char* const dataDirString;
+    static const char* const dataFileString;
+    static const char* const dataSourceTypeString;
+    static const char* const dbString;
+    static const char* const defaultString;
+    static const char* const defaultQueryTermBoostString;
+    static const char* const dictionaryString;
+    static const char* const enablePositionIndexString;
+    static const char* const expandString;
+    static const char* const facetEnabledString;
+    static const char* const facetEndString;
+    static const char* const facetFieldString;
+    static const char* const facetFieldsString;
+    static const char* const facetGapString;
+    static const char* const facetStartString;
+    static const char* const facetTypeString;
+    static const char* const fieldString;
+    static const char* const fieldBasedSearchString;
+    static const char* const fieldBoostString;
+    static const char* const fieldsString;
+    static const char* const fieldTypeString;
+    static const char* const filterString;
+    static const char* const fuzzyMatchPenaltyString;
+    static const char* const hostString;
+    static const char* const indexConfigString;
+    static const char* const indexedString;
+    static const char* const indexTypeString;
+    static const char* const licenseFileString;
+    static const char* const listenerWaitTimeString;
+    static const char* const listeningHostStringString;
+    static const char* const listeningPortString;
+    static const char* const locationLatitudeString;
+    static const char* const locationLongitudeString;
+    static const char* const logLevelString;
+    static const char* const maxDocsString;
+    static const char* const maxMemoryString;
+    static const char* const maxRetryOnFailureString;
+    static const char* const maxSearchThreadsString;
+    static const char* const mergeEveryMWritesString;
+    static const char* const mergeEveryNSecondsString;
+    static const char* const mergePolicyString;
+    static const char* const mongoDbString;
+    static const char* const nameString;
+    static const char* const portString;
+    static const char* const porterStemFilterString;
+    static const char* const prefixMatchPenaltyString;
+    static const char* const queryString;
+    static const char* const queryResponseWriterString;
+    static const char* const queryTermLengthBoostString;
+    static const char* const queryTermMatchTypeString;
+    static const char* const queryTermSimilarityThresholdString;
+    static const char* const queryTermTypeString;
+    static const char* const rankingAlgorithmString;
+    static const char* const recordBoostFieldString;
+    static const char* const recordScoreExpressionString;
+    static const char* const refiningString;
+    static const char* const requiredString;
+    static const char* const responseContentString;
+    static const char* const responseFormatString;
+    static const char* const rowsString;
+    static const char* const schemaString;
+    static const char* const searchableString;
+    static const char* const searcherTypeString;
+    static const char* const srch2HomeString;
+    static const char* const stopFilterString;
+    static const char* const supportSwapInEditDistanceString;
+    static const char* const synonymFilterString;
+    static const char* const synonymsString;
+    static const char* const textEnString;
+    static const char* const typeString;
+    static const char* const typesString;
+    static const char* const uniqueKeyString;
+    static const char* const updateHandlerString;
+    static const char* const updateLogString;
+    static const char* const wordsString;
 };
 
 }
