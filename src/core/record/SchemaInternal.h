@@ -169,27 +169,6 @@ public:
      */
     virtual ~SchemaInternal();
 
-    /**
-     * Internal functions
-     */
-    static void load(SchemaInternal &schemaInternal,
-            const std::string &schemaFullPathFileName) {
-        // read the ForwardIndex from the file
-        std::ifstream ifs(schemaFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> schemaInternal;
-        ifs.close();
-    }
-    ;
-
-    static void save(const SchemaInternal &schemaInternal,
-            const std::string &schemaFullPathFileName) {
-        std::ofstream ofs(schemaFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_oarchive oa(ofs);
-        oa << schemaInternal;
-        ofs.close();
-    }
-    ;
 
 private:
     std::string primaryKey;

@@ -1,10 +1,10 @@
 *------------------------------------------------------------------
-*  RELEASE NOTES Version 4.0.1
-*  Date: MONTH DAY, 2013 
+*  RELEASE NOTES Version 4.1.0
+*  Date: October 14, 2013 
 *------------------------------------------------------------------
-
-Improvements over version 4.0.0:
-* Improved documentation
 
 Changes over version 4.0.0:
 * queryTermFuzzyPenalty is changed to fuzzyMatchPenalty
+* reduced index size
+* fixed bugs in facet search query syntax
+* fixed issue with datetime formatting 

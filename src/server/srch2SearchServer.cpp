@@ -21,6 +21,10 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#ifdef __MACH__
+// This header is used only in mac osx related code
+#include <arpa/inet.h>
+#endif
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 #include "license/LicenseVerifier.h"
@@ -38,7 +42,6 @@
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
-
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -578,7 +581,20 @@ int main(int argc, char** argv) {
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
     //load the index from the data source
-    server.init(serverConf);
+    try{
+    	server.init(serverConf);
+    }catch(exception& ex) {
+    	/*
+    	 *  We got some fatal error during server initialization. Print the error message and
+    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
+    	 *  exception reaches at this point. All exceptions reached here are considered fatal
+    	 *  and server will stop.
+    	 */
+    	Logger::error(ex.what());
+        if (logFile)
+            fclose(logFile);
+    	exit(-1);
+    }
     //cout << "srch2 server started." << endl;
     if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
     	// set current time as cut off time for further updates

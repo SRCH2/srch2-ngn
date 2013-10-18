@@ -1,25 +1,3 @@
-
-<table style="width:100%;table-layout:fixed" ><tr>
-	
-<td id="sideBarTd" style="width:25%"> 
-
-<div id="sidebar"> <!-- Sidebar -->
-
-<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
-<table><tbody><tr><td>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
-</td></tr></tbody></table>
-<span ><a  href="http://www.srch2.com" target="_blankt"><img  style="width:100px" src="images/logo.png" /></a></span></br></br>
-</div> <!-- Links to main pages, id=linkpool-->
-<hr/>
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
@@ -39,7 +17,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingalgorithm">8.1. Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">8.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">8.2. Fuzzy Match Penalty</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">8.3. Term Similarity Threshold</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">8.4. Support Swap in Edit Distance</a></br><br>
@@ -83,7 +61,7 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Configuration</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview:##{id="overview"}
 
@@ -210,14 +188,14 @@ The following tag includes parameters related to queries.
 ...
 </query>
 ```
-###8.1. Ranking:{id="rankingalgorithm"}
+###8.1. Ranking:{id="rankingAlgorithm"}
 
 The following tags and parameters are related to ranking. 
 
 ```
-<rankingalgorithm>
+<rankingAlgorithm>
      <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-</rankingalgorithm>
+</rankingAlgorithm>
 ```
 This expression is used to compute the static score of a record with respect to a term.  It is computed during index construction and stored in the indexes statically.  It can use the following parameters:
 
@@ -503,21 +481,3 @@ It specifies a file of stop words that are ignored by the engine. Providing an e
 ```
 <filter name="StopFilter" words="stop-words.txt" />
 ```
-<hr/>
-<link rel="stylesheet" type="text/css" href="documentation.css">
-
-<script type="text/javascript" src="setSizes.js"></script>
-<script>
-
-setSizes();
-window.onresize = setSizes
-</script>
-
-<script language="javascript"> 
-months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
-var theDate = new Date(document.lastModified); 
-theDate.setHours(theDate.getHours() - 7)
-with (theDate) { 
-document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
-} 
-</script>

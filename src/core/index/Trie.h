@@ -502,7 +502,7 @@ private:
     std::vector<unsigned> *oldIdToNewIdMapVector;
 
     bool commited;
-    bool merge_required;
+    bool mergeRequired;
 
     friend class boost::serialization::access;
 
@@ -593,10 +593,6 @@ public:
 
     const TrieNode *getTrieNode(const TrieNode* rootReadView, const std::vector<CharType> &keyword) const;
 
-    static void load(Trie &trie, const std::string &trieFullPathFileName);
-
-    static void save(Trie &trie, const std::string &trieFullPathFileName);
-
     int getNumberOfBytes() const;
 
     int getNumberOfNodes() const;
@@ -678,6 +674,7 @@ public:
     // invertedIndex and totalNumberOfResults are used to update histogram information on the trie
     // updateHistogram is the flag which tells us if we should update histogram or not.
     void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
+    bool isMergeRequired() { return mergeRequired; }
 
     void commit();
 

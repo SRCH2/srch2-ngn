@@ -19,7 +19,7 @@
 
 #include "index/Trie.h"
 #include "util/Assert.h"
-
+#include "serialization/Serializer.h"
 #include <iostream>
 #include <functional>
 #include <vector>
@@ -61,7 +61,7 @@ void test1()
     const string filenameTrie("testTrieSerialize");
     string prefix1;
     string prefix2;
-
+    Serializer serializer;
     Trie *trie1 = new Trie();
 
     string keyword1, keyword2, keyword3, keyword4, keyword5;
@@ -186,13 +186,13 @@ void test1()
 
     cout << "-------------" << endl;
 
-    Trie::save(*trie1,filenameTrie);
+    serializer.save(*trie1,filenameTrie);
     if (terminalNodeOfKeywordId!=NULL)
         delete terminalNodeOfKeywordId;
     delete trie1;
 
     Trie *trie2 = new Trie();
-    Trie::load(*trie2,filenameTrie);
+    serializer.load(*trie2,filenameTrie);
     trie1 = trie2;
 
     trie1->getTrieRootNode_ReadView(rootSharedPtr1);
@@ -596,6 +596,7 @@ void test3()
 
 void test4()
 {
+	Serializer serializer;
     cout << "\n\nTrie Update with serialization" << endl;
     const string filenameTrie("testTrieSerialize");
     Trie *trie1 = new Trie();
@@ -621,11 +622,11 @@ void test4()
     trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
-    Trie::save(*trie1,filenameTrie);
+    serializer.save(*trie1,filenameTrie);
     delete trie1;
 
     Trie *trie2 = new Trie();
-    Trie::load(*trie2,filenameTrie);
+    serializer.load(*trie2,filenameTrie);
 
     cout<<"\nBefore Commit:" << std::endl;
     trie2->addKeyword("steve", invertedIndexOffset);

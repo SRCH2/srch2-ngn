@@ -56,13 +56,13 @@
   
   
     <query>
-        <rankingalgorithm>
+        <rankingAlgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingalgorithm>
+        </rankingAlgorithm>
  
-        <queryTermFuzzyPenalty>0.5</queryTermFuzzyPenalty>
+        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
 
-	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
          
         <prefixMatchPenalty>0.95</prefixMatchPenalty>
  

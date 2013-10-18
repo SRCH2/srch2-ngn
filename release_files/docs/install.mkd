@@ -1,23 +1,3 @@
-<table style="width:100%;table-layout:fixed" ><tr>
-<td id="sideBarTd" style="width:25%">
-<div id="sidebar"> <!-- Sidebar -->
-<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
-<table><tbody><tr><td>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
-</td></tr></tbody></table>
-
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"/></a></span></br></br>
-</div> <!-- Links to main pages, id=linkpool-->
-<hr/>
-
 <div id="content" > <!-- Table of content, id=content-->
 
 <table><tbody><tr><td>
@@ -55,7 +35,7 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.0.0, Date: September 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie recrods, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
@@ -141,22 +121,3 @@ The screen has the following regions:
 6. It shows the facet results.
 
 <b>Note</b>: Each time we make changes to some conditions, make sure to move the focus to the search box and move the cursor to reissue the search query to the server in order to see the new results.
-
-<hr/>
-<link rel="stylesheet" type="text/css" href="documentation.css">
-
-<script type="text/javascript" src="setSizes.js"></script>
-<script>
-
-setSizes();
-window.onresize = setSizes
-</script>
-
-<script language="javascript"> 
-months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
-var theDate = new Date(document.lastModified); 
-theDate.setHours(theDate.getHours() - 7)
-with (theDate) { 
-document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
-} 
-</script>

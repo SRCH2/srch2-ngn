@@ -474,24 +474,6 @@ public:
     // calculate the memory usage of CFilters and QuadTree
     void getNumberOfBytes(unsigned &cFilterBytes, unsigned &oFilterBytes, unsigned &treeBytes, unsigned &totalNumOfKeywordsInCFilter, unsigned &totalNumOfKeywordsInOFilter);
 
-    // serialize the QuadTree
-    static void save(const QuadTree &quadTree, const string &quadTreeFullPathFileName)
-    {
-        ofstream ofs(quadTreeFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_oarchive oa(ofs);
-        oa << quadTree;
-        ofs.close();
-    };
-
-    // deserialize the QuadTree
-    static void load(QuadTree &quadTree, const string &quadTreeFullPathFileName)
-    {
-        ifstream ifs(quadTreeFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> quadTree;
-        ifs.close();
-    };
-
     QuadNode* getRoot()
     {
         return this->root;

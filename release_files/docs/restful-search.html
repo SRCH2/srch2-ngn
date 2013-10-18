@@ -2,16 +2,17 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText 4.0.0">
-<title>restful-search</title>
+<meta name="generator" content="ReText Webpages generator 4.0.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>SRCH2: Search API</title>
 </head>
+
 <body>
-<table style="width:100%;table-layout:fixed" ><tr>
 
-<td id="sideBarTd" style="width:25%"> 
-
+<table style="width:100%;table-layout:fixed" >
+<tr>
+<td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
-
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
@@ -20,13 +21,16 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
 </td></tr></tbody></table>
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png" /></a></span></br></br>
+
+<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
 </div> <!-- Links to main pages, id=linkpool-->
-<hr/>
+
+<hr>
+
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
@@ -62,7 +66,10 @@
 
 </td></tr></tbody></table>
 
-<p></div> <!-- Table of content, id=content--></p>
+</div>
+
+<!-- Table of content, id=content-->
+
 <p></div> <!-- Sidebar --></p>
 </td>
 
@@ -75,10 +82,11 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.0.0, September 27, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, October 13, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
 <p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
+<p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="sampleQueries">2. Sample queries</h2>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
 <pre><code>f1) curl -i &quot;http://localhost:8081/search?q=algorithm&quot;
@@ -329,10 +337,13 @@ Invalid query 3) q=algorithm~.6*
 </code></pre>
 
 <p>which returns the record with "123" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.</p>
-<p><hr/>
-<link rel="stylesheet" type="text/css" href="documentation.css"></p>
-<script type="text/javascript" src="setSizes.js"></script>
 
+</table>
+<hr>
+
+<link rel="stylesheet" type="text/css" href="documentation.css">
+
+<script type="text/javascript" src="setSizes.js"></script>
 <script>
 
 setSizes();
@@ -347,5 +358,6 @@ with (theDate) {
 document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
 } 
 </script>
+
 </body>
 </html>

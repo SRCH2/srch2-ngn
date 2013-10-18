@@ -249,30 +249,6 @@ public:
     void print_test() const;
     int getNumberOfBytes() const;
 
-    static void load(InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
-    {
-        // read the InvertedIndex from the file
-        ifstream ifs(invertedIndexFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> invertedIndex;
-        ifs.close();
-        // after we load the InvertedIndex from the disk to the memory,
-        // the readview and writeview of each InvertedList and the InvertedIndexVector are not separated.
-        // so we need to call finalCommit() to separate them.
-        // We do not need to sort each inverted list since it's already sorted.  So we pass a "false" flag.
-     };
-
-    static void save(InvertedIndex &invertedIndex, const string &invertedIndexFullPathFileName)
-    {
-        if(invertedIndex.mergeRequired())
-            invertedIndex.merge();
-        ofstream ofs(invertedIndexFullPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_oarchive oa(ofs);
-        oa << invertedIndex;
-        ofs.close();
-    };
-
-
     void printInvList(const unsigned invertedListId) const
     {
         shared_ptr<vectorview<InvertedListContainerPtr> > readView;
@@ -299,6 +275,9 @@ public:
     	return keywordIds;
 	}
 
+    // Merge is required if the list is not empty
+    bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
+
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
@@ -319,9 +298,6 @@ private:
 
     // Used by InvertedIndex::merge()
     set<unsigned> invertedListSetToMerge;
-
-    // Merge is required if the list is not empty
-    bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
 
     friend class boost::serialization::access;
     template<class Archive>
