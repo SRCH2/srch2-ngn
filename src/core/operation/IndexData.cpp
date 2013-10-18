@@ -138,7 +138,7 @@ IndexData::IndexData(const string& directoryName)
 
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to
 // verify the correctness of the assumption that keywordIdList is alphabetaically sorted
-bool isSorted(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
+bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
 
 	if (keywordIdList.size() < 2)
 		return true;   // 0 or 1 element array is considered sorted
@@ -259,9 +259,9 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         //
         // std::sort( keywordIdList.begin(), keywordIdList.end());
 
-        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see is_sorted()
+        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see isSorted()
         // function above.
-        ASSERT(isSorted(keywordIdList));
+        ASSERT(isSortedAlphabetically(keywordIdList));
 
         unsigned internalRecordId;
         this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);

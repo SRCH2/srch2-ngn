@@ -99,8 +99,6 @@ int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualLis
 // pagination. Returns the number of records found
 int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults)
 {
-    //TODO: check the queryResults was create using query.
-    //TODO: Use edit distance and length in ranking
 
 	// iterate on terms and find the estimated number of results for each term
 	// if a term is too popular no term virtual list should be made for it
@@ -132,7 +130,7 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 		// the top record of the most popular suggestion inverted list
 		float topRecordScoreIfTooPopular = -1;
 		if(isPopular){
-			topRecordScoreIfTooPopular = findTopRunTimeScoreOfMostPopularSuggestion(term ,  query->getPrefixMatchPenalty() , activeNodes);
+			topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
 		}else{
 			thereIsAtLeastOneUnpopularTerm = true;
 		}
@@ -545,7 +543,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // the top record of the most popular suggestion inverted list
             float topRecordScoreIfTooPopular = -1;
             if(isPopular){
-            	topRecordScoreIfTooPopular = findTopRunTimeScoreOfMostPopularSuggestion(term ,  query->getPrefixMatchPenalty() , activeNodes);
+            	topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
             }else{
             	thereIsAtLeastOneUnpopularTerm = true;
             }
@@ -1203,14 +1201,14 @@ unsigned IndexSearcherInternal::getEstimatedNumberOfRecordsWithThisTerm(Term *te
         	continue;
         }
         // logic of finding the maximum popularity/frequency value
-        if(trieNode->getNodeHistogramValue() > mostPopularTrieNode->getNodeHistogramValue()){
+        if(trieNode->getNodeProbabilityValue() > mostPopularTrieNode->getNodeProbabilityValue()){
         	mostPopularTrieNode = trieNode;
         }
     }
     if(mostPopularTrieNode == NULL){
     	return 0;
     }
-    return this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView() * mostPopularTrieNode->getNodeHistogramValue();
+    return this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView() * mostPopularTrieNode->getNodeProbabilityValue();
 }
 
 bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * activeNodes , unsigned & popularity) const{
@@ -1224,7 +1222,7 @@ bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * 
 
 }
 
-float IndexSearcherInternal::findTopRunTimeScoreOfMostPopularSuggestion(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const{
+float IndexSearcherInternal::findTopRunTimeScoreOfLeafNodes(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const{
 
 	if(activeNodes == NULL){
 		return 0;
@@ -1233,22 +1231,19 @@ float IndexSearcherInternal::findTopRunTimeScoreOfMostPopularSuggestion(Term *te
 	float topScore = 0;
 	// now iterate on active nodes and find suggestions for each on of them
     ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
-    unsigned distanceToUseForRunTimeScore = 0;
     for (; !iter.isDone(); iter.next()) {
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
-        if(trieNode->getMaximumScoreOfLeafNodes() > topScore){
-        	topScore = trieNode->getMaximumScoreOfLeafNodes();
-        	distanceToUseForRunTimeScore = distance;
+        float runTimeScoreOfThisTrieNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes() ,
+                distance,
+                term->getKeyword()->size(),
+                true,
+                prefixMatchPenalty , term->getSimilarityBoost());
+        if(runTimeScoreOfThisTrieNode > topScore){
+        	topScore = runTimeScoreOfThisTrieNode;
         }
     }
-
-    topScore = DefaultTopKRanker::computeTermRecordRuntimeScore(topScore ,
-            distanceToUseForRunTimeScore,
-            term->getKeyword()->size(),
-            true,
-            prefixMatchPenalty , term->getSimilarityBoost());
 
 	return topScore;
 

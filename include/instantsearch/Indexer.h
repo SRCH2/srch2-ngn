@@ -75,7 +75,7 @@ public:
         if(_updateHistogramEveryQWrites == 0){
         	_updateHistogramEveryQWrites = 50;
         }
-        updateHistogramEveryQWrites = _updateHistogramEveryQWrites;
+        updateHistogramEveryQWrites = _updateHistogramEveryPMerges * _mergeEveryMWrites;
 
         directoryName = _directoryName;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;

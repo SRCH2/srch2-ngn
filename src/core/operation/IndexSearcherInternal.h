@@ -101,7 +101,7 @@ public:
     bool isTermTooPopular(Term *term, PrefixActiveNodeSet * activeNodes, unsigned & popularity ) const;
 
     // This function find the runtime score of the top record of the inverted list of most popular suggestion of this term
-    float findTopRunTimeScoreOfMostPopularSuggestion(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const;
+    float findTopRunTimeScoreOfLeafNodes(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex() {

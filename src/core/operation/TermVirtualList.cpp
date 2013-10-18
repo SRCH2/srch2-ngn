@@ -149,7 +149,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
     this->currentRecordID = -1;
     this->usingBitset = false;
     this->bitSetSize = 0;
-    this->maxScoreForBitSetCase = 1;
+    this->maxScoreForBitSetCase = 0;
     // this flag indicates whether this TVL is for a tooPopular term or not.
     // If it is a TVL of a too popular term, this TVL is disabled, meaning it should not be used for iteration over
     // heapItems. In this case shouldIterateToLeafNodesAndScoreOfTopRecord is not equal to -1
@@ -172,13 +172,16 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
-            this->maxScoreForBitSetCase = -1;
-            unsigned distanceToUseForScore;
+            this->maxScoreForBitSetCase = 0;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(prefixNode, leafNode, distance);
-                if(leafNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
-                	this->maxScoreForBitSetCase = leafNode->getMaximumScoreOfLeafNodes();
-                	distanceToUseForScore = distance;
+                float runTimeScoreOfThisLeafNode = DefaultTopKRanker::computeTermRecordRuntimeScore(leafNode->getMaximumScoreOfLeafNodes(),
+    					distance,
+    					term->getKeyword()->size(),
+    					true,
+    					this->prefixMatchPenalty , term->getSimilarityBoost());
+                if( runTimeScoreOfThisLeafNode > this->maxScoreForBitSetCase){
+                	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
                 unsigned invertedListId = leafNode->getInvertedListOffset();
                 this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
@@ -190,16 +193,6 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 }
                 //termCount++;
                 //totalInveretListLength  += invertedListReadView->size();
-            }
-            if(this->maxScoreForBitSetCase == -1){
-            	// default value in case there is no leaf node.
-            	this->maxScoreForBitSetCase = 1;
-            }else{
-				this->maxScoreForBitSetCase = DefaultTopKRanker::computeTermRecordRuntimeScore(this->maxScoreForBitSetCase,
-						distanceToUseForScore,
-						term->getKeyword()->size(),
-						true,
-						this->prefixMatchPenalty , term->getSimilarityBoost());
             }
 
             bitSetIter = bitSet.iterator();
@@ -225,26 +218,20 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             unsigned distance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
-            this->maxScoreForBitSetCase = -1;
-            unsigned distanceToUseForScore;
+            this->maxScoreForBitSetCase = 0;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
-                if(trieNode->getMaximumScoreOfLeafNodes() > this->maxScoreForBitSetCase){
-                	this->maxScoreForBitSetCase = trieNode->getMaximumScoreOfLeafNodes();
-                }
                 distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                float runTimeScoreOfThisLeafNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes(),
+    					distance,
+    					term->getKeyword()->size(),
+    					false,
+    					this->prefixMatchPenalty , term->getSimilarityBoost());
+                if( runTimeScoreOfThisLeafNode > this->maxScoreForBitSetCase){
+                	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
+                }
                 // loop the distance depth of the tire to add the term invertedlist to Bitset
                 depthInitializeBitSet(trieNode, distance, term->getThreshold());
-            }
-            if(this->maxScoreForBitSetCase == -1){
-            	// default value in case there is no leaf node.
-            	this->maxScoreForBitSetCase = 1;
-            }else{
-                this->maxScoreForBitSetCase = DefaultTopKRanker::computeTermRecordRuntimeScore(this->maxScoreForBitSetCase,
-                        distanceToUseForScore,
-                        term->getKeyword()->size(),
-                        false,
-                        this->prefixMatchPenalty , term->getSimilarityBoost());
             }
 
             //cout << "term count:" << numberOfLeafNodes << endl;

@@ -326,11 +326,11 @@ public:
         this->id = id;
     }
 
-    inline float getNodeHistogramValue() const{
+    inline float getNodeProbabilityValue() const{
     	return this->nodeHistogramValue;
     }
 
-    inline void setNodeHistogramValue(float nodeHistogramValue) {
+    inline void setNodeProbabilityValue(float nodeHistogramValue) {
     	this->nodeHistogramValue = nodeHistogramValue;
     }
 
@@ -358,14 +358,14 @@ public:
     }
 
     // it updates the histogram value of this node based on the information coming from the children
-    void updateInternalNodeHistogramValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType);
+    void updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType);
 
     // updates the maximum score of leaf nodes based on the values coming from children and
     // and returns true if anything changes and should be propagated up the trie
     bool updateInternalNodeMaximumScoreOfLeafNodes();
 
     // initializes the histogram value of this trie node
-    void initializeInternalNodeHistogramValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
+    void initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
     		float initValue = -1,
     		half initValueFromArgForMaxScore = (half)0);
 
@@ -529,6 +529,8 @@ private:
         boost::serialization::split_member(ar, *this, file_version);
     }
 
+    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+
 public:
 
     Trie();
@@ -669,8 +671,8 @@ public:
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
 
-    void calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
-    void calculateNodeHistogramValuesAndMaximumScoreOfLeafNodesFromChildrenRecursive(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+
     void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 
     // invertedIndex and totalNumberOfResults are used to update histogram information on the trie
@@ -724,7 +726,7 @@ public:
     // Finds the node corresponding to the keywordId and returns its mindId, maxId.
     // If keywordId not found path is empty.
     // otherwise, it's guaranteed that first element in path is root and last element is the corresponding trie node.
-    void getKeywordCorrespondentPathToTrieNode_WriteView(unsigned keywordId, TrieNodePath * path) const;
+    void getKeywordCorrespondingPathToTrieNode_WriteView(unsigned keywordId, TrieNodePath * path) const;
 
     // if the newScore is larger than the maximumScoreOfLeafNodes of the correspondent trie node with keywordId,
     // then the maximumScoreOfLeafNodes variable will be updated and this update will be propagated to the root
