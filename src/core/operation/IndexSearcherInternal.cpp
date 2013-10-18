@@ -558,7 +558,11 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         	if(query->getQueryTerms()->size() == 1){ // for example : q=a
         		unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
         				offset + nextK - queryResults->getNumberOfResults() , queryResults);
-        		delete activeNodesVector.at(0);
+        	    if (activeNodesVector.at(0)->isResultsCached() == true){
+        	    	activeNodesVector.at(0)->busyBit->setFree();
+        	    }else{
+            		delete activeNodesVector.at(0);
+        	    }
                 queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
         		return numberOfResults;
         	}
