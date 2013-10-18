@@ -663,23 +663,51 @@ void IndexData::_save(const string &directoryName) const
     if (this->trie->isMergeRequired())
         this->trie->merge(NULL , 0 , false);
     // serialize the data structures to disk
-    serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    try {
+        serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
+	// can keep running - don't rethrow exception
+    }
     //this->forwardIndex->print_test();
     //this->invertedIndex->print_test();
     if(this->forwardIndex->isMergeRequired())
         this->forwardIndex->merge();
-    serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
-    serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
+
+    try {
+        serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing forward index file: %s/%s", directoryName.c_str(), IndexConfig::forwardIndexFileName);
+    }
+
+    try {
+        serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing schema index file: %s/%s", directoryName.c_str(), IndexConfig::schemaFileName);
+    }
+
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
     	 if(this->invertedIndex->mergeRequired())
     		 this->invertedIndex->merge();
-    	 serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+	 try {
+	     serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+	 } catch (exception &ex) {
+	     Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
+	 }
     }
     else {
-    	serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+        try {
+	    serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+	} catch (exception &ex) {
+	    Logger::error("Error writing quad tree index file: %s/%s", directoryName.c_str(), IndexConfig::quadTreeFileName);
+	}
     }
 
-    this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
+    try {
+        this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
+    }
 }
 
 void IndexData::printNumberOfBytes() const

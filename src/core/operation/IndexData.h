@@ -239,6 +239,7 @@ private:
     void saveCounts(const std::string &indeDataPathFileName) const
     {
         std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
+	if (! ofs.good()) throw std::runtime_error("Error opening " + indeDataPathFileName);
         boost::archive::binary_oarchive oa(ofs);
         uint64_t readCount_tmp = this->readCounter->getCount();
         uint32_t writeCount_tmp = this->writeCounter->getCount();
