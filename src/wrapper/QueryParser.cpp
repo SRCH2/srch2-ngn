@@ -29,6 +29,7 @@ const char* const QueryParser::orderParamName = "orderby"; //srch2
 const char* const QueryParser::orderDescending = "desc"; //srch2
 const char* const QueryParser::orderAscending = "asc"; //srch2
 const char* const QueryParser::keywordQueryParamName = "q"; //solr
+const char* const QueryParser::suggestionKeywordParamName = "k"; //solr
 const char* const QueryParser::lengthBoostParamName = "lengthBoost"; //srch2
 const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
 const char* const QueryParser::filterQueryParamName = "fq"; //solr
@@ -78,6 +79,78 @@ QueryParser::QueryParser(const evkeyvalq &headers,
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
     this->isSearchTypeSet = false;
+}
+
+QueryParser::QueryParser(const evkeyvalq &headers) :
+	headers(headers) {
+
+}
+
+bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
+		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages){
+	   // 1. get the keyword string.
+	    Logger::info("parsing the main query.");
+	    const char * keywordTmp = evhttp_find_header(&headers,
+	            QueryParser::suggestionKeywordParamName);
+	    if (keywordTmp) { // if this parameter exists
+	        size_t st;
+	        string keywordStr = evhttp_uridecode(keywordTmp, 0, &st);
+	        boost::algorithm::trim(keywordStr); // trim the keywordString.
+	        bool hasParserSuccessfully = parseKeyword(keywordStr,keyword);
+	        if(!hasParserSuccessfully){
+	        	messages.push_back(std::make_pair(MessageError, " No keyword is recognized for computing suggestions."));
+	        	return false;
+	        }
+	        boost::algorithm::trim(keywordStr); // trim the keywordString.
+
+	        if(keywordStr.length() == 0){
+	        	fuzzyMatchPenalty = 1; // 1 indicates that the user want the suggestions to be exact, example: k=can
+	        }else{
+				string normalizerString;
+				hasParserSuccessfully = parseFuzzyModifier(keywordStr ,normalizerString );
+				if(! hasParserSuccessfully){
+		        	messages.push_back(std::make_pair(MessageWarning, "Bad format is used for edit distance normalizer. No fuzzy suggestions will be returned."));
+				}else{
+					if(normalizerString.length() == 1){ // fuzzy modifier is only '~' w/o any values
+						fuzzyMatchPenalty = -1; // -1 indicates that used did not enter any values for this one, example: k=can
+					}else{
+						fuzzyMatchPenalty = atof(normalizerString.c_str() + 1);
+					}
+				}
+	        }
+	    }else{
+        	messages.push_back(std::make_pair(MessageError, "No keyword is recognized for computing suggestions."));
+        	return false;
+	    }
+
+	    //2. get number of suggestions to be returned
+	    /* aka: rows parser
+	     * if there is a number of results
+	     * fills the container up
+	     *
+	     * example: rows=20
+	     */
+	    const char * rowsTemp = evhttp_find_header(&headers,
+	    		QueryParser::rowsParamName);
+	    if (rowsTemp) { // if this parameter exists
+	    	Logger::debug("rowsTemp parameter found, parsing it.");
+	    	size_t st;
+	    	string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+	    	// convert the rowsStr to integer. e.g. rowsStr will contain string 20
+	    	if (isUnsigned(rowsStr)) {
+	    		numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+	    	} else {
+	    		numberOfSuggestionsToReturn = -1; // -1 indicates that this parameter is not given by the user
+	            // raise error
+	            this->container->messages.push_back(
+	                    make_pair(MessageWarning,
+	                            "rows parameter should be a positive integer. We will use the default value for this parameter."));
+	        }
+	    }else{
+        	numberOfSuggestionsToReturn = -1; // -1 indicates that this parameter is not given by the user
+	    }
+	    Logger::debug("returning from numberOfResultsParser function");
+	    return true;
 }
 
 // parses the URL to a query object

@@ -139,7 +139,7 @@ IndexData::IndexData(const string& directoryName)
 
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to
 // verify the correctness of the assumption that keywordIdList is alphabetaically sorted
-bool isSorted(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
+bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
 
 	if (keywordIdList.size() < 2)
 		return true;   // 0 or 1 element array is considered sorted
@@ -260,9 +260,9 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         //
         // std::sort( keywordIdList.begin(), keywordIdList.end());
 
-        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see is_sorted()
+        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see isSorted()
         // function above.
-        ASSERT(isSorted(keywordIdList));
+        ASSERT(isSortedAlphabetically(keywordIdList));
 
         unsigned internalRecordId;
         this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
@@ -274,7 +274,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             {
                 const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
                 ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-                this->invertedIndex->addRecord(forwardList, this->rankerExpression,
+                this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
                         internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
             }
         }
@@ -419,8 +419,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
     if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         isLocational = true;
 
-    if (this->commited == false)
-    {
+    if (this->commited == false){
         //cout << "here: index commit" << endl;
         /*
          * For the text only Index:
@@ -450,8 +449,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
 
-        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
-        {
+        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter){
             ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(forwardIndexIter);
             vector<NewKeywordIdKeywordOffsetTriple> newKeywordIdKeywordOffsetTriple;
             //this->forwardIndex->commit(forwardList, oldIdToNewIdMapVector, newKeywordIdKeywordOffsetTriple);
@@ -462,16 +460,13 @@ INDEXWRITE_RETVAL IndexData::_commit()
         }
         this->forwardIndex->finalCommit();
 //        this->forwardIndex->print_size();
-        if (isLocational)
-        {
+        if (isLocational){
             //time_t begin,end;
             //time(&begin);
             this->quadTree->createFilters();
             //time(&end);
             //std::cout << "CFilters and OFilters creating time elapsed: " << difftime(end, begin) << " seconds"<< std::endl;
-        }
-        else
-        {
+        }else{
             this->invertedIndex->setForwardIndex(this->forwardIndex);
             this->invertedIndex->finalCommit();
         }
@@ -479,18 +474,26 @@ INDEXWRITE_RETVAL IndexData::_commit()
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
 
+
+        /*
+         * Since we don't have inverted index for M1, we send NULL.
+         * NULL will make the component to compute simple frequency
+         * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
+         */
+        if (isLocational){
+			this->trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+        }else{
+			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+        }
         //this->trie->print_Trie();
         this->commited = true;
         return OP_SUCCESS;
-    }
-    else
-    {
+    }else{
         return OP_FAIL;
     }
 }
 
-INDEXWRITE_RETVAL IndexData::_merge()
-{
+INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     Logger::debug("Merge begins--------------------------------"); 
 
     if (!this->mergeRequired)
@@ -498,9 +501,7 @@ INDEXWRITE_RETVAL IndexData::_merge()
     
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);
-    
-    this->trie->merge();
-    
+
     // struct timespec tend;
     // clock_gettime(CLOCK_REALTIME, &tend);
     // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -511,6 +512,17 @@ INDEXWRITE_RETVAL IndexData::_merge()
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
     
+    // Since trie is the entry point of every search, trie merge should be done after all other merges.
+    // If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
+    // the index.
+    // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
+    // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
+    const InvertedIndex * invertedIndex = NULL;
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+    	invertedIndex = this->invertedIndex;
+    }
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
 
@@ -649,7 +661,7 @@ void IndexData::_save(const string &directoryName) const
 {
 	Serializer serializer;
     if (this->trie->isMergeRequired())
-        this->trie->merge();
+        this->trie->merge(NULL , 0 , false);
     // serialize the data structures to disk
     serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
     //this->forwardIndex->print_test();

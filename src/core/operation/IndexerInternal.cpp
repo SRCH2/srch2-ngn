@@ -47,7 +47,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     writelock();
     
     INDEXWRITE_RETVAL commitReturnValue = this->index->_commit();
-    this->writesCounter_forMerge = 0;
+    this->writesCounterForMerge = 0;
     
     writeunlock();
 
@@ -59,7 +59,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
 INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer)
 {
     writelock();
-    this->writesCounter_forMerge++;
+    this->writesCounterForMerge++;
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
 
     writeunlock();
@@ -70,7 +70,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
     writelock();
-    this->writesCounter_forMerge++;
+    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
     
@@ -82,7 +82,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
     writelock();
-    this->writesCounter_forMerge++;
+    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
 
@@ -94,7 +94,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
 INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId)
 {
     writelock();
-    this->writesCounter_forMerge++;
+    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
 
@@ -124,8 +124,9 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     writelock();
 
     // merge the index
-    this->merge();
-    writesCounter_forMerge = 0;
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
+    writesCounterForMerge = 0;
 
     //get the export data
     this->index->_exportData(exportedDataFileName);
@@ -138,8 +139,9 @@ void IndexReaderWriter::save()
 {
     writelock();
 
-    this->merge();
-    writesCounter_forMerge = 0;
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
+    writesCounterForMerge = 0;
 
     this->index->_save();
 
@@ -150,8 +152,9 @@ void IndexReaderWriter::save(const std::string& directoryName)
 {
     writelock();
 
-    this->merge();
-    writesCounter_forMerge = 0;
+    // we don't have to update histogram information when we want to export.
+    this->merge(false);
+    writesCounterForMerge = 0;
 
     this->index->_save(directoryName);
 
@@ -159,15 +162,18 @@ void IndexReaderWriter::save(const std::string& directoryName)
 }
 
 
-INDEXWRITE_RETVAL IndexReaderWriter::merge()
+INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
     if (this->cache != NULL)
         this->cache->clear();
 
+    // increment the mergeCounterForUpdatingHistogram
+    this->mergeCounterForUpdatingHistogram ++;
+
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge();
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
 
 
     struct timespec tend;
@@ -201,8 +207,14 @@ void IndexReaderWriter::mergeThreadLoop()
             break;
         else
         {
-            this->merge();
-            writesCounter_forMerge = 0;
+        	// check to see if it's the time to update histogram information
+        	// if so, reset the merge counter for future.
+            bool updateHistogramFlag = shouldUpdateHistogram();
+            if(updateHistogramFlag == true){
+            	this->resetMergeCounterForHistogram();
+            }
+            this->merge(updateHistogramFlag);
+            writesCounterForMerge = 0;
             rwMutexForWriter->unlockWrite();
         }
     }

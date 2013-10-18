@@ -182,8 +182,13 @@ int main(int argc, char *argv[])
     // create an indexer
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     indexerDataContainer.cache = new srch2is::Cache(134217728,20000); // 134217728 bytes = 1GB
-    IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     indexerDataContainer.indexer = Indexer::load(indexMetaData1);
     indexerDataContainer.analyzer = getAnalyzer();
 

@@ -206,6 +206,24 @@ void cb_bmsearch(evhttp_request *req, void *arg) {
 }
 
 /**
+ * 'suggest' callback function
+ * @param req evhttp request object
+ * @param arg optional argument
+ */
+void cb_bmsuggest(evhttp_request *req, void *arg) {
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    try {
+        srch2http::HTTPRequestHandler::suggestCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
+
+/**
  * 'lookup' callback function
  * @param req evhttp request object
  * @param arg optional argument
@@ -692,6 +710,9 @@ int main(int argc, char** argv) {
 
         //http_server = evhttp_start(http_addr, http_port);
         evhttp_set_cb(http_server, "/search", cb_bmsearch, &server);
+
+        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, &server);
+
         //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, &server);
         evhttp_set_cb(http_server, "/info", cb_bminfo, &server);
 

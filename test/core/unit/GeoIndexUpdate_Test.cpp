@@ -18,6 +18,8 @@ using namespace srch2::instantsearch;
 
 const unsigned mergeEveryNSeconds = 10;
 const unsigned mergeEveryMWrites = 5;
+const unsigned updateHistogramEveryPMerges = 1;
+const unsigned updateHistogramEveryQWrites = 5;
 
 // convert a string to an integer.  similar to "atoi()"
 bool parseUnsigned(string &line, unsigned &pk)
@@ -558,7 +560,10 @@ void testDeletion(vector< pair<string, pair<string, Point> > > &recordsToSearch,
 void testSmallInitLargeInsertion(const string directoryName)
 {
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		directoryName, "");
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -615,7 +620,10 @@ void testSmallInitLargeInsertion(const string directoryName)
 void testIncrementalUpdateGeoIndex(const string directoryName)
 {
     Cache *cache = new Cache(134217728,20000);
-    IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, directoryName, "");
+    IndexMetaData *indexMetaData = new IndexMetaData(cache,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		directoryName, "");
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);

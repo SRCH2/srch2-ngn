@@ -50,6 +50,12 @@ public:
      */
     static IndexSearcher *create(Indexer *indexer);
 
+    /*
+     * Finds the suggestions for a keyword based on fuzzyMatchPenalty.
+     * Returns the number of suggestions found.
+     */
+    virtual int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;
+
     /**
      * Finds the next topK answers starting from
      * offset. This function can be used to support pagination of

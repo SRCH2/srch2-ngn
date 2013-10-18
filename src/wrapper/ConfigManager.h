@@ -62,6 +62,8 @@ private:
 	bool exactFuzzy;
 	bool queryTermType;
 
+	unsigned defaultNumberOfSuggestions;
+
 
 	// <config><query><queryResponseWriter>
 	int searchResponseJsonFormat;
@@ -80,6 +82,10 @@ private:
 	// <config><updatehandler><mergePolicy>
 	unsigned mergeEveryNSeconds;
 	unsigned mergeEveryMWrites;
+
+	// no config option for this yet
+	unsigned updateHistogramEveryPMerges;
+	unsigned updateHistogramEveryQWrites;
 
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
@@ -246,6 +252,9 @@ public:
 	uint32_t getMergeEveryNSeconds() const;
 	uint32_t getMergeEveryMWrites() const;
 
+	uint32_t getUpdateHistogramEveryPMerges() const;
+	uint32_t getUpdateHistogramEveryQWrites() const;
+
 	int getNumberOfThreads() const;
 
 	DataSourceType getDataSourceType() const;
@@ -315,6 +324,10 @@ public:
     void setFilePath(const string& dataFile);
 
     bool isPositionIndexEnabled() const;
+
+    unsigned getDefaultNumberOfSuggestionsToReturn() const {
+    	return defaultNumberOfSuggestions;
+    }
 
 };
 

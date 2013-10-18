@@ -186,6 +186,12 @@ typedef enum
 	FacetAggregationTypeCount
 }FacetAggregationType;
 
+typedef enum
+{
+	HistogramAggregationTypeSummation,
+	HistogramAggregationTypeJointProbability
+} HistogramAggregationType;
+
 }
 }
 
