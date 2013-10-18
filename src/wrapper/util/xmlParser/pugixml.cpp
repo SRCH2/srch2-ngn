@@ -4021,12 +4021,12 @@ namespace pugi
 		return (_root && _root->value) ? _root->value : PUGIXML_TEXT("");
 	}
 	
-       PUGI__FN xml_node xml_node::child(const char_t* name_) const
+	PUGI__FN xml_node xml_node::child(const char_t* name_) const
 	{
 		if (!_root) return xml_node();
 
 		for (xml_node_struct* i = _root->first_child; i; i = i->next_sibling)
-		   if (i->name && impl::strequal(name_, i->name)) return xml_node(i);
+			if (i->name && impl::strequal(name_, i->name)) return xml_node(i);
 
 		return xml_node();
 	}
