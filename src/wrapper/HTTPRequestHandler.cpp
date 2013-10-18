@@ -229,6 +229,10 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //                    {
     root["results_found"] = retrievedResults;
 
+    if(queryResults->isResultsApproximated() == true){
+    	root["result_set_approximation"] = true;
+    }
+
 //    }
 
     const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =

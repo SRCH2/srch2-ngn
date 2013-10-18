@@ -157,6 +157,9 @@ public:
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     
+    // This flag indicates whether the results are approximated
+    bool resultsApproximated;
+
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
     /*
