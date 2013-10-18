@@ -512,6 +512,9 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
     
+    // Since trie is the entry point of every search, trie merge should be done after all other merges.
+    // If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
+    // the index.
     // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
     // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
     const InvertedIndex * invertedIndex = NULL;

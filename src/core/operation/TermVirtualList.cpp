@@ -230,7 +230,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 if( runTimeScoreOfThisLeafNode > this->maxScoreForBitSetCase){
                 	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
-                // loop the distance depth of the tire to add the term invertedlist to Bitset
+                // loop the distance depth of the trie to add the term invertedlist to Bitset
                 depthInitializeBitSet(trieNode, distance, term->getThreshold());
             }
 

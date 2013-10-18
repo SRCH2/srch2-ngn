@@ -143,14 +143,6 @@ public:
         /////
     	this->positionIndexSize = positionIndexDataVector.size();
         //
-
-    	unsigned keywordAttributeBitMapSize = 0;
-    	if(shouldAttributeBitMapBeAllocated == true){
-    		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
-    		/*
-    		 * Still keywordAttributeBitMapSize can be 0 which is the case of empty record.
-    		 */
-    	}
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +

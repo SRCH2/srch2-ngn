@@ -1734,7 +1734,7 @@ void Trie::updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId 
 
 	// check to see if keywordId was valid and we actually have a corresponding trie node
 	if(pathToCorrespondingTrieNodeWithKeywordId.path->size() == 0){
-		delete pathToCorrespondingTrieNodeWithKeywordId.path
+		delete pathToCorrespondingTrieNodeWithKeywordId.path;
 		return;
 	}
 
