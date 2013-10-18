@@ -502,14 +502,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);
 
-    // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
-    // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
-    const InvertedIndex * invertedIndex = NULL;
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-    	invertedIndex = this->invertedIndex;
-    }
-    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
-    
     // struct timespec tend;
     // clock_gettime(CLOCK_REALTIME, &tend);
     // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -520,6 +512,14 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
     
+    // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
+    // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
+    const InvertedIndex * invertedIndex = NULL;
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+    	invertedIndex = this->invertedIndex;
+    }
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
 
