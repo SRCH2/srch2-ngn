@@ -1665,7 +1665,7 @@ void QueryParser::populateBoostInfo(bool isParsed, string &input) {
     }
 }
 bool QueryParser::parseFuzzyModifier(string &input, string &output) {
-    boost::regex re(FUZZE_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    boost::regex re(FUZZY_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
 bool QueryParser::parseProximityModifier(string &input, string &output) {
