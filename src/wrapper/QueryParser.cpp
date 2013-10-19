@@ -250,7 +250,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
     Logger::info("parsing the main query.");
     const char * mainQueryTmp = evhttp_find_header(&headers,
             QueryParser::keywordQueryParamName);
-    if (mainQueryTmp) { // if this parameter exists
+    if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
         size_t st;
         string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
         boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
