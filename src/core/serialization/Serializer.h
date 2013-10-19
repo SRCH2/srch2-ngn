@@ -102,6 +102,7 @@ public:
 	template<class T>
 	void save(const T& dataObject, const string& serializedFileName) {
 		std::ofstream ofs(serializedFileName.c_str(), std::ios::binary);
+		if (! ofs.good()) throw std::runtime_error("Error opening " + serializedFileName);
 		boost::archive::binary_oarchive oa(ofs);
 		oa << IndexVersion::currentVersion;
 		oa << dataObject;
