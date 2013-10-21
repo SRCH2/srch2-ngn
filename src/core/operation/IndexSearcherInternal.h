@@ -162,6 +162,8 @@ private:
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
     		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
+
+    unsigned estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const;
 };
 
 }

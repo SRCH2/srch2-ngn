@@ -1278,6 +1278,9 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     // now sort the suggestions
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
+unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const{
+	return 20; // TODO ; must be merged with master later....
+}
 
 /**
  * skip is the index for TermVirtualList iterator. If one of the TermVirtualLists is popped up during Fagin's algorithm, it should be skipped during Random Access.
