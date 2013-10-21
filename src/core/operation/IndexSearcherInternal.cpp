@@ -1279,6 +1279,74 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 
+unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *> activeNodes) const{
+
+	float aggregatedProbability = 1;
+	for(int i=0; i< query->getQueryTerms()->size() ; i++){
+		aggregatedProbability *=
+				getPrefixHistogramPopularityProbability(activeNodes.at(i) , query->getQueryTerms()->at(i)->getThreshold());
+	}
+	// now we should multiply the total probability and the total number of records.
+	return aggregatedProbability * this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+}
+
+float IndexSearcherInternal::getPrefixHistogramPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+	std::vector<TrieNodePointer> topTrieNodes;
+	// iterate on active nodes and keep the top level ones
+    ActiveNodeSetIterator iter(activeNodes, threshold);
+    for (; !iter.isDone(); iter.next()) {
+    	// first get the new trie node
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+
+        // now move on all top trieNodes and see if this new trieNode is also a top one or not
+        std::vector<TrieNodePointer> newTopTrieNodes;
+        bool isThisTrieNodeCopied = false;
+        for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
+        	TrieNodePointer trieNodeInVector = *trieNodeIter;
+        	if(trieNodeInVector->isChildOf(trieNode)){
+        		// if this new node is a parent copy it into the new set
+        		// and remember this copy not to do this again
+        		if(isThisTrieNodeCopied == false){
+					newTopTrieNodes.push_back(trieNode);
+        			isThisTrieNodeCopied = true;
+        		}
+        	}else if(trieNode->isChildOf(trieNodeInVector)){
+        		// if this trie node is a child of an old node, copy the old node
+        		newTopTrieNodes.push_back(trieNodeInVector);
+        	}else{
+        		// if none of them is a child of other one, copy both and remember copying of the new trie node
+        		// not to copy it twice
+        		if(isThisTrieNodeCopied == false){
+					newTopTrieNodes.push_back(trieNode);
+        			isThisTrieNodeCopied = true;
+        		}
+        		newTopTrieNodes.push_back(trieNodeInVector);
+        	}
+        }
+        if(topTrieNodes.size() == 0){
+        	// if nothing was in topTrieNodes before, just insert the new one
+        	topTrieNodes.push_back(trieNode);
+        }else{
+        	// clear the old content of topTrieNodes and copy newTopTrieNodes into topTrieNodes
+        	topTrieNodes.clear();
+        	topTrieNodes.insert(topTrieNodes.begin() , newTopTrieNodes.begin() , newTopTrieNodes.end());
+        }
+    }
+
+    // now we have the top level trieNodes
+    // we move on all top trie nodes and aggregate their probability by using Joint Probability formula
+    float aggregatedResult = 0;
+    for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
+    	TrieNodePointer topTrieNode = *trieNodeIter;
+    	aggregatedResult = aggregatedResult + topTrieNode->getNodeProbabilityValue() -
+    			(aggregatedResult * topTrieNode->getNodeProbabilityValue());
+    }
+
+    return aggregatedResult;
+}
+
 /**
  * skip is the index for TermVirtualList iterator. If one of the TermVirtualLists is popped up during Fagin's algorithm, it should be skipped during Random Access.
  * Start is the start index of the random Access. Say for query a1 a2 a3 a4, "a1 a2" is in cache, we have to do random access on "a3 a4", so skip is start-1, start is 2

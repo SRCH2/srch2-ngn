@@ -319,6 +319,10 @@ public:
         return child->getCharacter() == childrenPointerList.back()->getCharacter();
     }
 
+    inline bool isChildOf(const TrieNode * node) const {
+    	return (this->getMinId() >= node->getMinId()) && (this->getMaxId() <= node->getMaxId());
+    }
+
     inline unsigned getId() const {  /*assert(this!= NULL);*/
         return this->id;
     }
