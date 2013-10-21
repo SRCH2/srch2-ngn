@@ -585,6 +585,8 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
     	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
 
+    	queryResultsInternal->estimatedNumberOfResults = this->estimateNumberOfResults(query, activeNodesVector );
+
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
@@ -980,6 +982,37 @@ int IndexSearcherInternal::suggest(const string & keyword,
 }
 
 
+unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query){
+    // Empty Query case
+    if (query->getQueryTerms()->size() == 0) {
+        return 0;
+    }
+	// this vector is passed to computeTermVirtualList to be used
+	vector<PrefixActiveNodeSet *> activeNodesVector;
+	// iterate on terms and compute active nodes
+    for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
+            vectorIterator != query->getQueryTerms()->end();
+            ++vectorIterator) {
+        Term *term = *vectorIterator;
+        // compute activenodes
+        PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+        activeNodesVector.push_back(activeNodes);
+    }
+    unsigned numberOfresults = this->estimateNumberOfResults(query, activeNodesVector);
+
+    // deallocate all active nodes
+    for(vector<PrefixActiveNodeSet *>::iterator activeNodeIter = activeNodesVector.begin() ; activeNodeIter != activeNodesVector.end() ; ++activeNodeIter){
+    	PrefixActiveNodeSet * activeNode = *activeNodeIter;
+		if (activeNode->isResultsCached() == true)
+			activeNode->busyBit->setFree();
+		else
+			delete activeNode;
+    }
+
+    return numberOfresults;
+
+}
+
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
 {
@@ -1279,7 +1312,7 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 
-unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *> activeNodes) const{
+unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const{
 
 	float aggregatedProbability = 1;
 	for(int i=0; i< query->getQueryTerms()->size() ; i++){

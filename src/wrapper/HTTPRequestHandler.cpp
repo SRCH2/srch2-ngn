@@ -229,6 +229,10 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //                    {
     root["results_found"] = retrievedResults;
 
+    unsigned estimatedNumberOfResults = 0;
+    if(queryResults->getEstimatedNumberOfResults(estimatedNumberOfResults)){
+    	root["estimated_number_of_results"] = estimatedNumberOfResults;
+    }
     if(queryResults->isResultsApproximated() == true){
     	root["result_set_approximation"] = true;
     }

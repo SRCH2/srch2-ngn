@@ -206,6 +206,7 @@ void QueryResults::copyForPostProcessing(QueryResults * sourceQueryResults) cons
     this->impl->sortedFinalResults = sourceQueryResults->impl->sortedFinalResults ;
     this->impl->facetResults = sourceQueryResults->impl->facetResults ;
     this->impl->resultsApproximated = sourceQueryResults->impl->resultsApproximated;
+    this->impl->estimatedNumberOfResults = sourceQueryResults->impl->estimatedNumberOfResults;
 }
 
 void QueryResults::clear(){
@@ -217,6 +218,15 @@ void QueryResults::clear(){
 
 bool QueryResults::isResultsApproximated() const{
 	return this->impl->resultsApproximated;
+}
+
+bool QueryResults::getEstimatedNumberOfResults(unsigned & numberOfResults) const{
+	if(this->impl->estimatedNumberOfResults == -1){
+		return false;
+	}else{
+		numberOfResults = this->impl->estimatedNumberOfResults;
+		return true;
+	}
 }
 
 //TODO: These three functions for internal debugging. remove from the header

@@ -127,7 +127,14 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
             }
             fuzzyQueryResultsIter++;
         }
+        exactQueryResultsInternal->estimatedNumberOfResults = fuzzyQueryResultsInternal->estimatedNumberOfResults;
         delete fuzzyQueryResults;
+    }else if (this->queryPlan.isFuzzy()){
+    	// this branch is the case that we have enough results for exact so we do not want to perform a
+    	// complete search for fuzzy, but still we need to get the estimated number of results for fuzzy query.
+        QueryResultsInternal *exactQueryResultsInternal =
+                exactQueryResults->impl;
+    	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());
     }
 
     // this post processing plan will be applied on exactQueryResults object and

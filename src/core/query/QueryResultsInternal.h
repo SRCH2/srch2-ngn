@@ -160,6 +160,8 @@ public:
     // This flag indicates whether the results are approximated
     bool resultsApproximated;
 
+    // This member keeps the estimated number of results in case of top k, if all results are actually calculated, this value is -1
+    long int estimatedNumberOfResults;
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
     /*

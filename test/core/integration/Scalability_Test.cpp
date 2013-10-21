@@ -336,7 +336,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
         cout << "Read data from " << dataFile << endl;
         cout << "Save index to " << indexDir << endl;
 
-        buildIndex(dataFile, indexDir);
+        //buildIndex(dataFile, indexDir);
     } else {
         string geoDataFile = indexDir + "/geo_data.txt";
 
