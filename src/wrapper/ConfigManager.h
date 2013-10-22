@@ -60,7 +60,7 @@ private:
 	int numberOfThreads;
 	int searchType;
 	bool exactFuzzy;
-	bool queryTermType;
+	bool queryTermPrefixType;
 
 	unsigned defaultNumberOfSuggestions;
 
@@ -183,8 +183,8 @@ private:
     bool isValidMaxSearchThreads(string& maxSearchThreads);
     bool isValidBooleanValue(string& fieldBasedSearch);
 
-    bool isValidQueryTermMatchType(string& queryTermMatchType);
-    bool isValidQueryTermType(string& queryTermType);
+    bool isValidQueryTermFuzzyType(string& queryTermFuzzyType);
+    bool isValidQueryTermPrefixType(string& queryTermPrefixType);
     bool isValidResponseFormat(string& responseFormat);
     bool isValidResponseContentType(string responseContentType);
     bool isValidMaxDoc(string& maxDoc);
@@ -233,7 +233,7 @@ public:
 	int getSearchType() const;
 	int getIsPrimSearchable() const;
 	bool getIsFuzzyTermsQuery() const;
-	bool getQueryTermType() const;
+	bool getQueryTermPrefixType() const;
 	bool getStemmerFlag() const;
 	string getSynonymFilePath() const;
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
@@ -388,9 +388,9 @@ private:
     static const char* const queryString;
     static const char* const queryResponseWriterString;
     static const char* const queryTermLengthBoostString;
-    static const char* const queryTermMatchTypeString;
+    static const char* const queryTermFuzzyTypeString;
     static const char* const queryTermSimilarityThresholdString;
-    static const char* const queryTermTypeString;
+    static const char* const queryTermPrefixTypeString;
     static const char* const rankingAlgorithmString;
     static const char* const recordBoostFieldString;
     static const char* const recordScoreExpressionString;
