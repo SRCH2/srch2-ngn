@@ -136,7 +136,7 @@ public:
      * and setKeywordAttributeBitmap(...) API calls.
      */
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
-    		const vector<string> & nonSearchableAttributeValues,
+    		const vector<vector<string> > & nonSearchableAttributeValues,
     		bool shouldAttributeBitMapBeAllocated,
     		vector<uint8_t>& positionIndexDataVector){
     	this->nonSearchableAttributeValuesDataSize = VariableLengthAttributeContainer::getSizeNeededForAllocation(schema, nonSearchableAttributeValues);

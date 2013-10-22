@@ -77,8 +77,10 @@ void test_1(){
 	std::string record1[10] =
 	{"John Smith" , "23" , "2344567" , "Doctor" , "70.4567" , "12000" , "John" , "Smith" , "12345" , "34567"};
 	vector<string> nonSearchableAttributeValues;
+	vector<vector<string > > nonSearchableAttributeValuesWrapper;
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record1,record1 + 10);
-	VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues , vlac , vlacSize);
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+	VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValuesWrapper , vlac , vlacSize);
 	for(int i=0;i<10;i++){
 	    if(record1[i] != VariableLengthAttributeContainer::getAttribute(i , schema, vlac)){
 	        ASSERT(false);
@@ -91,7 +93,9 @@ void test_1(){
 	nonSearchableAttributeValues.clear();
 	VariableLengthAttributeContainer::clear(vlac , vlacSize );
 	nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record2 , record2+10);
-	VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac , vlacSize);
+	nonSearchableAttributeValuesWrapper.clear();
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+	VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValuesWrapper, vlac , vlacSize);
 	for(int i=0;i<10;i++){
 		ASSERT( record2[i] == VariableLengthAttributeContainer::getAttribute(i , schema, vlac) );
 	}
@@ -102,7 +106,9 @@ void test_1(){
     nonSearchableAttributeValues.clear();
     VariableLengthAttributeContainer::clear(vlac, vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record3 , record3+10);
-    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues , vlac, vlacSize);
+	nonSearchableAttributeValuesWrapper.clear();
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValuesWrapper , vlac, vlacSize);
 	for(int i=0;i<10;i++){
 		ASSERT( record3[i] == VariableLengthAttributeContainer::getAttribute(i , schema,vlac) );
 	}
@@ -113,7 +119,9 @@ void test_1(){
     nonSearchableAttributeValues.clear();
     VariableLengthAttributeContainer::clear(vlac , vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record4 , record4+10);
-    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac, vlacSize);
+	nonSearchableAttributeValuesWrapper.clear();
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValuesWrapper, vlac, vlacSize);
 	ASSERT(VariableLengthAttributeContainer::getFloatAttribute(4,schema,vlac) == float(70.4567));
 	ASSERT(VariableLengthAttributeContainer::getUnsignedAttribute(8,schema,vlac) == 9835);
 	ASSERT(VariableLengthAttributeContainer::getTextAttribute(3,schema,vlac) == "Professor");
@@ -125,7 +133,9 @@ void test_1(){
     nonSearchableAttributeValues.clear();
     VariableLengthAttributeContainer::clear(vlac, vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record5 , record5+10);
-    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac, vlacSize);
+	nonSearchableAttributeValuesWrapper.clear();
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValuesWrapper, vlac, vlacSize);
 	ASSERT(VariableLengthAttributeContainer::getFloatAttribute(4,schema,vlac) == float(70.4567));
 	ASSERT(VariableLengthAttributeContainer::getUnsignedAttribute(8,schema,vlac) == 9835);
 	ASSERT(VariableLengthAttributeContainer::getTextAttribute(3,schema,vlac) == "Professor");
@@ -137,7 +147,9 @@ void test_1(){
     nonSearchableAttributeValues.clear();
     VariableLengthAttributeContainer::clear(vlac,vlacSize);
     nonSearchableAttributeValues.insert(nonSearchableAttributeValues.begin() , record6 , record6+10);
-    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues,vlac,vlacSize);
+	nonSearchableAttributeValuesWrapper.clear();
+	nonSearchableAttributeValuesWrapper.push_back(nonSearchableAttributeValues);
+    VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValuesWrapper,vlac,vlacSize);
 	std::vector<TypedValue> results;
 	std::vector<unsigned> attributes;
 	attributes.push_back(2);

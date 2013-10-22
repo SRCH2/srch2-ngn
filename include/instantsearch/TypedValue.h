@@ -28,6 +28,7 @@
 #include <ctime>
 #include <instantsearch/Schema.h>
 #include <instantsearch/DateTime.h>
+#include <vector>
 using namespace std;
 
 using srch2::instantsearch::TimeDuration;
@@ -56,7 +57,12 @@ namespace srch2
     	void setTypedValue(double doubleTypeValue);
     	void setTypedValue(string stringTypeValue);
     	void setTypedValue(long timeTypeValue);
-    	void setTypedValue(const srch2::instantsearch::TimeDuration & duration);
+    	void setTypedValue(vector< unsigned> intTypeValue);
+    	void setTypedValue(vector<float> floatTypeValue);
+    	void setTypedValue(vector<string> stringTypeValue);
+    	void setTypedValue(vector<long> timeTypeValue);
+
+    	void setTypedValue(const srch2::instantsearch::TimeDuration & dugetDoubleTypedValueration);
     	void setTypedValue(const TypedValue& typeValue);
     	void setTypedValue(FilterType type , string value);
 
@@ -69,6 +75,11 @@ namespace srch2
     	double getDoubleTypedValue() const;
     	string getTextTypedValue() const;
     	long getTimeTypedValue() const;
+    	vector<unsigned> getMultiIntTypedValue() const;
+    	vector<float> getMultiFloatTypedValue() const;
+    	vector<string> getMultiTextTypedValue() const;
+    	vector<long> getMultiTimeTypedValue() const;
+
     	TimeDuration getTimeDuration() const;
 
 
@@ -76,12 +87,15 @@ namespace srch2
 
     	float castToFloat();
 
+    	void breakMultiValueIntoSingleValueTypedValueObjects(vector<TypedValue> * output) const;
+
     	/*
     	 * returns 0 if this < start
     	 * otherwise, returns floor((this - start) / gap)+1
     	 */
     	unsigned findIndexOfContainingInterval(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
+    	vector<unsigned> findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
     	string toString() const;
 
@@ -92,6 +106,11 @@ namespace srch2
     	float floatTypedValue;
     	string stringTypedValue;
     	long timeTypedValue;
+    	vector<unsigned> intTypedValueMulti;
+    	vector<float> floatTypedValueMulti;
+    	vector<string> stringTypedValueMulti;
+    	vector<long> timeTypedValueMulti;
+    	//
     	TimeDuration timeDurationTypedValue;
     };
 
