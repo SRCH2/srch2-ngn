@@ -69,7 +69,8 @@ public:
      *
      * returns the number of records found (at most topK).
      */
-    virtual int search(const Query *query, QueryResults *queryResults, const int offset, const int nextK) = 0;
+    virtual int search(const Query *query, QueryResults *queryResults, const int offset, const int nextK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll = 10000 , unsigned numberOfEstimatedResultsToFindGetAll = 2000) = 0;
 
     ///Added for stemmer
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int offset, const int topK, bool &isStemmed) = 0;
@@ -78,7 +79,8 @@ public:
     /**
      * Finds the first topK best answers.
      */
-    virtual int search(const Query *query, QueryResults *queryResults, const int topK) = 0;
+    virtual int search(const Query *query, QueryResults *queryResults, const int topK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000) = 0;
 
     /**
      * Does Map Search

@@ -65,10 +65,12 @@ public:
 
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK);
+    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll = 10000 , unsigned numberOfEstimatedResultsToFindGetAll = 2000);
 
     // find top-k answer. returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int topK);
+    int search(const Query *query, QueryResults* queryResults, const int topK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
     // Added for stemmer
     // For GetAllResultsQuery
@@ -136,7 +138,8 @@ private:
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
 
-    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults);
+    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
     int searchTopKQuery(const Query *query, const int offset,
                         const int nextK, QueryResults* queryResults);

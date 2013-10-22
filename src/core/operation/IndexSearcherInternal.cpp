@@ -97,7 +97,8 @@ int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualLis
 
 // find the next k answer starting from "offset". Can be used for
 // pagination. Returns the number of records found
-int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults)
+int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
 
 	// iterate on terms and find the estimated number of results for each term
@@ -981,7 +982,8 @@ int IndexSearcherInternal::suggest(const string & keyword,
 
 
 
-int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
+int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK ,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
     int returnValue = -1;
 
@@ -994,7 +996,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
         this->indexData->rwMutexForIdReassign->unlockRead();
     } else if (query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
-        returnValue = this->searchGetAllResultsQuery(query, queryResults);
+        returnValue = this->searchGetAllResultsQuery(query, queryResults , estimatedNumberOfResultsThresholdGetAll , numberOfEstimatedResultsToFindGetAll);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
     //queryResults->printResult();
@@ -1003,9 +1005,10 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 }
 
 // find top-k answer. returns the number of records found
-int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int topK)
+int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int topK,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
-    return search(query, queryResults, 0, topK);
+    return search(query, queryResults, 0, topK , estimatedNumberOfResultsThresholdGetAll , numberOfEstimatedResultsToFindGetAll);
 }
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults)
