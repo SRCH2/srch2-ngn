@@ -118,14 +118,14 @@ private:
 
 	//vector<string> searchableAttributes;
 
-    // < name, <required, <default, <offset, boost> > > >
-    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
+    // < name, <required, <default, <offset, <boost,isMultiValued> > > > >
+    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > > searchableAttributesInfo;
 
 	string attributeRecordBoost;
 
 
 	// < name, <type, <default, isSortable>>>
-	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
+	map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > nonSearchableAttributesInfo;
 
 
 
@@ -167,7 +167,7 @@ private:
     bool isFloat(string str);
     //Validate Functions
     bool isValidFieldType(string& fieldType, bool isSearchable);
-    bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType);
+    bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType, bool isMultiValued);
     bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
     bool isValidBool(string& fieldType);
     bool isValidBoostFields(map <string, unsigned>& boosts);
@@ -216,9 +216,9 @@ public:
 	const std::string& getFilePath() const;
 	const std::string& getPrimaryKey() const;
 
-	const map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > * getSearchableAttributes() const;
+	const map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > > * getSearchableAttributes() const;
 
-	const map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > * getNonSearchableAttributes() const;
+	const map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > * getNonSearchableAttributes() const;
 
     const vector<string> * getAttributesToReturnName() const;
 
@@ -365,6 +365,7 @@ private:
     static const char* const hostString;
     static const char* const indexConfigString;
     static const char* const indexedString;
+    static const char* const multiValuedString;
     static const char* const indexTypeString;
     static const char* const licenseFileString;
     static const char* const listenerWaitTimeString;
