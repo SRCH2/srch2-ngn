@@ -142,7 +142,7 @@ private:
     		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
     int searchTopKQuery(const Query *query, const int offset,
-                        const int nextK, QueryResults* queryResults);
+                        const int nextK, QueryResults* queryResults , vector<PrefixActiveNodeSet *> * activeNodesVector = NULL);
 
     int searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query, PrefixActiveNodeSet * activeNodes, unsigned k, QueryResults * queryResults);
 

@@ -155,6 +155,14 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 		isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
 	}
 
+	// before preparing termVirtualLists for actual search, we estimate the number of results.
+	// If the number of results is going to be too big, we call topK to find just a number of records.
+	unsigned estimatedNumberOfResults = this->estimateNumberOfResults(query , activeNodesVector);
+	if(estimatedNumberOfResults > estimatedNumberOfResultsThresholdGetAll){
+		// we must call top k here
+		return searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
+	}
+
 	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
 
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
@@ -430,12 +438,15 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
  *
  */
 int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
-        const int nextK, QueryResults* queryResults)
+        const int nextK, QueryResults* queryResults, vector<PrefixActiveNodeSet *> * activeNodesVectorFromArgs)
 {
     // Empty Query case
     if (query->getQueryTerms()->size() == 0) {
         return 0;
     }
+
+    // there must be one activeNodeSet for each term.
+    ASSERT(activeNodesVectorFromArgs == NULL || query->getQueryTerms()->size() == activeNodesVectorFromArgs->size());
 
     //TODO: Corner case: check that queryResults was created using the query.
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
@@ -530,12 +541,20 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     	bool thereIsAtLeastOneUnpopularTerm = false;
 
     	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
+    	unsigned termIndex = 0;
         for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
                 vectorIterator != query->getQueryTerms()->end();
-                ++vectorIterator) {
+                ++vectorIterator, ++termIndex) {
             Term *term = *vectorIterator;
             // compute activenodes
-            PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+            PrefixActiveNodeSet * activeNodes = NULL;
+            // if active nodes are passed by arguments we should not compute them again.
+            if(activeNodesVectorFromArgs == NULL){
+            	activeNodes = this->computeActiveNodeSet(term);;
+            }else{
+            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
+            }
+
             activeNodesVector.push_back(activeNodes);
             // see how popular the term is
             unsigned popularity = 0;
@@ -1282,7 +1301,7 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const{
-	return 20; // TODO ; must be merged with master later....
+	return 10001; // TODO ; must be merged with master later....
 }
 
 /**
