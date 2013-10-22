@@ -21,6 +21,9 @@
 #include "AnalyzerFactory.h"
 #include "util/DateAndTimeHandler.h"
 
+#include "boost/algorithm/string/split.hpp"
+#include "boost/algorithm/string/classification.hpp"
+
 using namespace snappy;
 
 using namespace std;
@@ -109,7 +112,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     }
 
 
-    for (map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator attributeIter
+    for (map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
@@ -134,7 +137,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     }
 
 
-    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator attributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator attributeIter =
+    		indexDataContainerConf->getNonSearchableAttributes()->begin();
             attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
             ++attributeIter)
     {
@@ -144,7 +148,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         // if type is date/time, check the syntax
         if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes");
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.second.second.second);
         	if(attributeStringValue==""){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -153,7 +157,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 if (attributeStringValue.compare("NULL") != 0){
                     record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
-                    if(attributeIter->second.second.second){
+                    if(attributeIter->second.second.second.first){
                         // ERROR
                         error << "\nRequired refining attribute is null.";
                         return false;// Raise Error
@@ -174,7 +178,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
                 record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
-                if(attributeIter->second.second.second){
+                if(attributeIter->second.second.second.first){
                     // ERROR
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
@@ -299,23 +303,27 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     }
 
     // Set SearchableAttributes
-    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
-        schema->setSearchableAttribute(searchableAttributeIter->first, searchableAttributeIter->second.second.second.second); // searchable text
+        schema->setSearchableAttribute(searchableAttributeIter->first,
+        		searchableAttributeIter->second.second.second.second.first ,
+        		searchableAttributeIter->second.second.second.second.second ); // searchable text
     }
 
 
     // Set NonSearchableAttributes
-    map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >::const_iterator
+    map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator
     	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
 
     for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first, nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first);
+        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first,
+        		nonSearchableAttributeIter->second.first ,
+        		nonSearchableAttributeIter->second.second.first,
+        		nonSearchableAttributeIter->second.second.second.second);
     }
 
 
@@ -411,7 +419,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
 	    	{
 	    		convertValueToString(*iter, stringValue);
-	    		stringValue += " ";
+	    		stringValue += ",";
 	    	}
 	    }else if (value.isObject()){
 	    	// for certain data sources such as mongo db, the field value may be
@@ -420,7 +428,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	vector<string> keys = value.getMemberNames();
 	    	for (int i= 0; i < keys.size(); ++i) {
 	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
-	    		stringValue += " ";
+	    		stringValue += ",";
 	    	}
 	    }
 	    else // if the type is not string, set it to the empty string
@@ -453,7 +461,7 @@ void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 		const std::string &key,
 		std::string &stringValue,
-		const string &configName){
+		const string &configName, bool isMultiValued){
 	if(!jsonValue.isMember(key)){
 		stringValue = "";
 		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
@@ -463,15 +471,33 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	Json::Value value = jsonValue.get(key, "NULL");
 	convertValueToString(value, temp);
 
-	// now check to see if it has proper date/time format
 	boost::algorithm::trim(temp);
-	stringValue = "";
-	if(srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypePointOfTime)
-			|| srch2is::DateAndTimeHandler::verifyDateTimeString(temp , srch2is::DateTimeTypeDurationOfTime) ){
-		stringstream buffer;
-		buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temp);
-		stringValue = buffer.str();
+	// now check to see if it has proper date/time format
+	vector<string> valueTokens;
+	if(isMultiValued == false){
+		valueTokens.push_back(temp);
+	}else{
+		boost::split(valueTokens , temp , boost::is_any_of(",") , boost::token_compress_on );
 	}
+
+	stringValue = "";
+	for(vector<string>::iterator valueToken = valueTokens.begin() ; valueToken != valueTokens.end() ; ++valueToken){
+		if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
+				|| srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
+			stringstream buffer;
+			buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
+			if(valueToken == valueTokens.begin()){
+				stringValue = buffer.str();
+			}else{
+				stringValue = ","+buffer.str();
+			}
+
+		}else{
+			stringValue = "";
+			return;
+		}
+	}
+
     return;
 
 }

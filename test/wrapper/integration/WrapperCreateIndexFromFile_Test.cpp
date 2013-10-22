@@ -248,11 +248,11 @@ void test1(int argc, char** argv) {
     message << "MergeEveryMWrites: " << serverConf->getMergeEveryMWrites() << "\n";
     message << "ScoringExpressionString: " << serverConf->getScoringExpressionString() << "\n";
 
-    const map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > > * searchableAttributes = serverConf->getSearchableAttributes();
-    map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > >::const_iterator iter;
+    const map<string, pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > > > * searchableAttributes = serverConf->getSearchableAttributes();
+    map<string, pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > > >::const_iterator iter;
     message << "Searchable Attributes:\n";
     for (iter = searchableAttributes->begin(); iter != searchableAttributes->end(); iter++) {
-        message << iter->first << "  " << iter->second.second.second.first << "  " << iter->second.second.second.second << "\n";
+        message << iter->first << "  " << iter->second.second.second.first << "  " << iter->second.second.second.second.first << "\n";
     }
 
     const vector<string> * attToReturn = serverConf->getAttributesToReturnName();

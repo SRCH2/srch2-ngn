@@ -490,7 +490,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 		vector<string> defaultValueTokens;
                                 		splitString(tempUse , "," , defaultValueTokens);
                                 		for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
-                                				defaultValueToken != defaultValueTokens.end() ; +defaultValueToken){
+                                				defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
     										long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
     										std::stringstream buffer;
     										buffer << timeValue;
@@ -881,14 +881,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             searchableAttributesRequiredFlagVector[i],
                             pair<string, pair<unsigned, pair<unsigned,bool> > >(
                                     searchableAttributesDefaultVector[i],
-                                    pair<unsigned, pair<unsigned,bool>>(0,pair<unsigned,bool>(1, searchableAttributesIsMultiValued[i]))));
+                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(1, searchableAttributesIsMultiValued[i]))));
         } else {
             searchableAttributesInfo[searchableFieldsVector[i]] =
                     pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(
                             searchableAttributesRequiredFlagVector[i],
                             pair<string, pair<unsigned, pair<unsigned,bool> > >(
                                     searchableAttributesDefaultVector[i],
-                                    pair<unsigned, pair<unsigned,bool>>(0,pair<unsigned,bool>(boostsMap[searchableFieldsVector[i]],
+                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(boostsMap[searchableFieldsVector[i]],
                                     		searchableAttributesIsMultiValued[i]))));
         }
     }
@@ -1644,7 +1644,7 @@ bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instan
 	// if it is the case of multivalued, default value is a comma separated list of default values.
 	vector<string> defaultValueTokens;
 	splitString(defaultValue , "," , defaultValueTokens);
-	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; +defaultValueToken){
+	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
 		if( validateValueWithType(fieldType , *defaultValueToken) == false){
 			return false;
 		}
