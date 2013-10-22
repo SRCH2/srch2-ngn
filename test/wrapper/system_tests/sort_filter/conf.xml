@@ -210,7 +210,7 @@
             1: fuzzy match
             Defaults to 0
         -->
-        <queryTermMatchType>1</queryTermMatchType>
+        <queryTermFuzzyType>1</queryTermFuzzyType>
          
                      
              
@@ -223,7 +223,7 @@
             1: a term is treated as a complete term;
             Defaults to 0
         -->
-        <queryTermType>0</queryTermType>
+        <queryTermPrefixType>0</queryTermPrefixType>
  
          
         <queryResponseWriter>
