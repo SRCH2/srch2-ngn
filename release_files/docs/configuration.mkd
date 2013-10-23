@@ -280,7 +280,7 @@ Its default value is 0.<br>
 ```
 <queryTermFuzzyType>1</queryTermFuzzyType>
 ```
-It specifies how to treat a term by default with respect to match fuzzyness.
+It specifies how to treat a term by default with respect to match fuzziness.
 > 0: exact match;<br>
 > 1: fuzzy match.<br>
 
