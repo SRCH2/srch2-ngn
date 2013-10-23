@@ -320,7 +320,10 @@ public:
     }
 
     inline bool isDescendantOf(const TrieNode * node) const {
-    	if (this->getMinId() == node->getMinId() && (this->getMaxId() == node->getMaxId())){
+    	// The only copy which can happen is when we copy a node for a new writeview,
+    	// but since we always use readview OR writeview (never together) we can just test pointer values for
+    	// equality.
+    	if (this == node){
 			 return false;
     	}
     	return (this->getMinId() >= node->getMinId()) && (this->getMaxId() <= node->getMaxId());
