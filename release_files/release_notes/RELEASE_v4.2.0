@@ -6,4 +6,4 @@
 Changes over version 4.1.0:
 * Tag names and attribute names are now case insensitive.
 * Tag "queryTermType" is now changed to "queryTermPrefixType"
-* Tag "queryTermMatchType" is now changed to "queryTermFuzyType"
+* Tag "queryTermMatchType" is now changed to "queryTermFuzzyType"
