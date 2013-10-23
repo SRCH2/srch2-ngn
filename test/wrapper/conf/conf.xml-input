@@ -254,7 +254,7 @@
             # OPTIONAL. Defaults to 0
             old: default-query-term-match-type=0
         -->
-        <queryTermMatchType>0</queryTermMatchType>
+        <queryTermFuzzyType>0</queryTermFuzzyType>
         
                     
             
@@ -265,7 +265,7 @@
             # OPTIONAL. Defaults to 0
             old: default-query-term-type
         -->
-        <queryTermType>0</queryTermType>
+        <queryTermPrefixType>0</queryTermPrefixType>
         
 
     

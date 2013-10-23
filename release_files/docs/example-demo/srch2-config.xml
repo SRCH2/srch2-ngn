@@ -76,9 +76,9 @@
          
         <searcherType>0</searcherType>
          
-        <queryTermMatchType>1</queryTermMatchType>
+        <queryTermFuzzyType>1</queryTermFuzzyType>
          
-        <queryTermType>0</queryTermType>
+        <queryTermPrefixType>0</queryTermPrefixType>
  
         <queryResponseWriter>
 

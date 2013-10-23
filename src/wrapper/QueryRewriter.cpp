@@ -101,7 +101,7 @@ void QueryRewriter::prepareKeywordInfo() {
                 && paramContainer->keywordPrefixComplete.at(k)
                         == srch2is::TERM_TYPE_NOT_SPECIFIED) {
             paramContainer->keywordPrefixComplete.at(k) =
-                    indexDataContainerConf->getQueryTermType() ?
+                    indexDataContainerConf->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX;
             // true means complete

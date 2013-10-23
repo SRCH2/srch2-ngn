@@ -84,9 +84,9 @@ const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty"
 const char* const ConfigManager::queryString = "query";
 const char* const ConfigManager::queryResponseWriterString = "queryresponsewriter";
 const char* const ConfigManager::queryTermLengthBoostString = "querytermlengthboost";
-const char* const ConfigManager::queryTermMatchTypeString = "querytermmatchtype";
+const char* const ConfigManager::queryTermFuzzyTypeString = "querytermfuzzytype";
 const char* const ConfigManager::queryTermSimilarityThresholdString = "querytermsimilaritythreshold";
-const char* const ConfigManager::queryTermTypeString = "querytermtype";
+const char* const ConfigManager::queryTermPrefixTypeString = "querytermprefixtype";
 const char* const ConfigManager::rankingAlgorithmString = "rankingalgorithm";
 const char* const ConfigManager::recordBoostFieldString = "recordboostfield";
 const char* const ConfigManager::recordScoreExpressionString = "recordscoreexpression";
@@ -1039,27 +1039,27 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         this->supportAttributeBasedSearch = true;
     }
 
-    // queryTermMatchType is an optional field
+    // queryTermFuzzyType is an optional field
     this->exactFuzzy = false; // by default it is false
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermMatchTypeString);
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermFuzzyTypeString);
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
-        if (this->isValidQueryTermMatchType(qtmt)) {
+        if (this->isValidQueryTermFuzzyType(qtmt)) {
             this->exactFuzzy = configAttribute.text().as_bool();
         } else {
-            parseError << "The queryTermMatchType that is provided is not valid";
+            parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
             return;
         }
     }
 
-    // queryTermType is an optional field
-    this->queryTermType = false;
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermTypeString);
+    // queryTermPrefixType is an optional field
+    this->queryTermPrefixType = false;
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermPrefixTypeString);
     if (configAttribute && configAttribute.text()) {
         string qt = configAttribute.text().get();
-        if (this->isValidQueryTermType(qt)) {
-            this->queryTermType = configAttribute.text().as_bool();
+        if (this->isValidQueryTermPrefixType(qt)) {
+            this->queryTermPrefixType = configAttribute.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -1450,8 +1450,8 @@ bool ConfigManager::getIsFuzzyTermsQuery() const {
     return exactFuzzy;
 }
 
-bool ConfigManager::getQueryTermType() const {
-    return queryTermType;
+bool ConfigManager::getQueryTermPrefixType() const {
+    return queryTermPrefixType;
 }
 
 unsigned ConfigManager::getQueryTermBoost() const {
@@ -1706,15 +1706,15 @@ bool ConfigManager::isValidBooleanValue(string& fieldValue) {
     return false;
 }
 
-bool ConfigManager::isValidQueryTermMatchType(string& queryTermMatchType) {
-    if (queryTermMatchType.compare("0") == 0 || queryTermMatchType.compare("1") == 0) {
+bool ConfigManager::isValidQueryTermFuzzyType(string& queryTermFuzzyType) {
+    if (queryTermFuzzyType.compare("0") == 0 || queryTermFuzzyType.compare("1") == 0) {
         return true;
     }
     return false;
 }
 
-bool ConfigManager::isValidQueryTermType(string& queryTermType) {
-    if (queryTermType.compare("0") == 0 || queryTermType.compare("1") == 0) {
+bool ConfigManager::isValidQueryTermPrefixType(string& queryTermPrefixType) {
+    if (queryTermPrefixType.compare("0") == 0 || queryTermPrefixType.compare("1") == 0) {
         return true;
     }
     return false;

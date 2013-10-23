@@ -279,7 +279,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
             keywordPrefixComplete.push_back(
-                    indexDataContainerConf->getQueryTermType() ?
+                    indexDataContainerConf->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX);
             // true means COMPLETE
