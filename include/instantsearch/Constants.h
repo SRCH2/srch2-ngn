@@ -139,6 +139,8 @@ typedef enum
     ATTRIBUTE_TYPE_TEXT ,
     ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
          // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    // TypedValue class uses these constants to understand if it is dealing with a single-valued attribute
+    // or a multi-valued one.
     ATTRIBUTE_TYPE_MULTI_UNSIGNED,
     ATTRIBUTE_TYPE_MULTI_FLOAT,
     ATTRIBUTE_TYPE_MULTI_TEXT,

@@ -37,7 +37,7 @@ unsigned VariableLengthAttributeContainer::getSizeNeededForAllocation(
     for (int i = 0; i < schema->getNumberOfNonSearchableAttributes(); ++i) { // iterate on attributes in schema
         // find the type of ith attribute
         FilterType type = getAttributeType(i, schema);
-        // find out if the ith attribute is multivalued
+        // find out if the i-th attribute is multivalued
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
         if(isMultiValued == true){
 			switch (type) {
@@ -154,7 +154,7 @@ std::string VariableLengthAttributeContainer::getAttribute(
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
             return convertByteArrayToString(type ,startOffset,data );
-        }else{ // skip this attribute
+        }else{ // skip this attribute because we are looking for a certain attribute which is not this one
             unsigned numberOfBytesToSkip = getSizeOfNonSearchableAttributeValueInData(type , isMultiValued , startOffset , data);
             startOffset += numberOfBytesToSkip;
         }
@@ -589,6 +589,9 @@ void VariableLengthAttributeContainer::convertStringToByteArray(FilterType type,
 
 }
 
+// This function converts a list of values of a multi-valued attribute to a byte array and saves them in output
+// Example : <"hello", "goodbye"> =>
+// 4 bytes for value 2 | 4 bytes for value 5 | 5 bytes for hello | 4 bytes for value 7 | 7 bytes for goodbye
 void VariableLengthAttributeContainer::convertStringToByteArrayMultiValued(FilterType type,
 		vector< string > values, Byte * output, unsigned startOffset,
         unsigned & sizeInBytes) {
@@ -684,7 +687,7 @@ void VariableLengthAttributeContainer::convertByteArrayToTypedValue(FilterType t
 			ASSERT(false);
 			break;
 		}
-	}else{ // case of multi value
+	}else{ // case of multi value : move on bytes and read single values one by one
 		unsigned numberOfValues;
 		numberOfValues = convertByteArrayToUnsigned(startOffset,data);
 		startOffset += sizeof(numberOfValues);

@@ -124,7 +124,7 @@ private:
 	string attributeRecordBoost;
 
 
-	// < name, <type, <default, isSortable>>>
+	// < name, <type, <default, <isSortable,isMultiValued>>>>
 	map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > nonSearchableAttributesInfo;
 
 

@@ -62,7 +62,7 @@ namespace srch2
     	void setTypedValue(vector<string> stringTypeValue);
     	void setTypedValue(vector<long> timeTypeValue);
 
-    	void setTypedValue(const srch2::instantsearch::TimeDuration & dugetDoubleTypedValueration);
+    	void setTypedValue(const srch2::instantsearch::TimeDuration & duration);
     	void setTypedValue(const TypedValue& typeValue);
     	void setTypedValue(FilterType type , string value);
 
@@ -87,6 +87,13 @@ namespace srch2
 
     	float castToFloat();
 
+    	/*
+    	 * This function is used findIndicesOfContainingIntervals
+    	 * This function is called only for multi-valued types. It breaks the multi-values object and
+    	 * returns a list of single-values.
+    	 * For example : if the multi value is <"tag1","tag2","tag3">, it returns three objects with values
+    	 * tag1, tag2 and tag3.
+    	 */
     	void breakMultiValueIntoSingleValueTypedValueObjects(vector<TypedValue> * output) const;
 
     	/*
@@ -95,6 +102,11 @@ namespace srch2
     	 */
     	unsigned findIndexOfContainingInterval(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
+    	/*
+    	 * If an attribute is multi-valued, it can be counted for more than one category or interval, so we need a function
+    	 * which returns a list of indices (also refer to findIndexOfContainingInterval)
+    	 * Example: <1,3,5> will cause calling findIndexOfContainingInterval for 1, 3 and 5 three times.
+    	 */
     	vector<unsigned> findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
     	string toString() const;
@@ -106,10 +118,10 @@ namespace srch2
     	float floatTypedValue;
     	string stringTypedValue;
     	long timeTypedValue;
-    	vector<unsigned> intTypedValueMulti;
-    	vector<float> floatTypedValueMulti;
-    	vector<string> stringTypedValueMulti;
-    	vector<long> timeTypedValueMulti;
+    	vector<unsigned> intTypedMultiValue;
+    	vector<float> floatTypedMultiValue;
+    	vector<string> stringTypedMultiValue;
+    	vector<long> timeTypedMultiValue;
     	//
     	TimeDuration timeDurationTypedValue;
     };

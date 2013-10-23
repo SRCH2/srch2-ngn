@@ -78,6 +78,7 @@ void test_1(){
 	{"John Smith" , "23" , "2344567" , "Doctor" , "70.4567" , "12000" , "John" , "Smith" , "12345" , "34567"};
 	vector<vector<string> > nonSearchableAttributeValues;
 	for(int i=0;i<10;i++){
+		// since no attribute is multi-valued here, we just pass vectors of size one (single value)
 		vector<string> temp;
 		temp.push_back(record1[i]);
 		nonSearchableAttributeValues.push_back(temp);

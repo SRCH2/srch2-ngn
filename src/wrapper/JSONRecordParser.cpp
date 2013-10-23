@@ -418,8 +418,10 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    {
 	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
 	    	{
+	    		if(iter != value.begin()){
+					stringValue += ",";
+	    		}
 	    		convertValueToString(*iter, stringValue);
-	    		stringValue += ",";
 	    	}
 	    }else if (value.isObject()){
 	    	// for certain data sources such as mongo db, the field value may be
@@ -427,8 +429,10 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	// For JSON object, recursively concatenate all keys' value
 	    	vector<string> keys = value.getMemberNames();
 	    	for (int i= 0; i < keys.size(); ++i) {
+	    		if(i != 0){
+					stringValue += ",";
+	    		}
 	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
-	    		stringValue += ",";
 	    	}
 	    }
 	    else // if the type is not string, set it to the empty string
@@ -473,6 +477,12 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 
 	boost::algorithm::trim(temp);
 	// now check to see if it has proper date/time format
+	// if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
+	// "12:34:45,12:34:24,12:02:45".
+	// Now we should
+	// 1. tokenize it
+	// 2. convert it to unix time
+	// 3. prepare the string again to become something like "1234245,3654665,56456687"
 	vector<string> valueTokens;
 	if(isMultiValued == false){
 		valueTokens.push_back(temp);
@@ -489,7 +499,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 			if(valueToken == valueTokens.begin()){
 				stringValue = buffer.str();
 			}else{
-				stringValue = ","+buffer.str();
+				stringValue += ","+buffer.str();
 			}
 
 		}else{

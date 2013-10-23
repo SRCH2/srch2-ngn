@@ -305,7 +305,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
 
             	/*
-            	 * The following code decides whether this field is multivalue or not.
+            	 * The following code decides whether this field is multi-valued or not.
+            	 * If multivalued="true" in field tag, this field is multi-valued.
             	 */
             	bool isMultiValued = false;
                 if(string(field.attribute(multiValuedString).value()).compare("") != 0){
@@ -455,7 +456,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }else{
                             searchableAttributesRequiredFlagVector.push_back(false);
                         }
-						searchableAttributesIsMultiValued.push_back(isMultiValued);
+                        searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){ // it is a refining field
@@ -481,19 +482,20 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
                                 if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
                                 	if(isMultiValued == false){
-										long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-										std::stringstream buffer;
-										buffer << timeValue;
-										tempUse = buffer.str();
-                                	}else{ // in the case of multivalued data and time we need to convert all values and reconstruct the list
-                                		string convertedDefaultValues = "";
-                                		vector<string> defaultValueTokens;
-                                		splitString(tempUse , "," , defaultValueTokens);
-                                		for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
-                                				defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
-    										long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
-    										std::stringstream buffer;
-    										buffer << timeValue;
+                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+                                        std::stringstream buffer;
+                                        buffer << timeValue;
+                                        tempUse = buffer.str();
+                                }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+                                	// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+                                        string convertedDefaultValues = "";
+                                        vector<string> defaultValueTokens;
+                                        splitString(tempUse , "," , defaultValueTokens);
+                                        for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
+                                                 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+    									    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+    									    std::stringstream buffer;
+                                            buffer << timeValue;
     										if(defaultValueToken == defaultValueTokens.begin()){
     											convertedDefaultValues = buffer.str();
     										}else{
@@ -1641,7 +1643,7 @@ bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instan
 		return validateValueWithType(fieldType , defaultValue);
 	}
 
-	// if it is the case of multivalued, default value is a comma separated list of default values.
+	// if it is a multi-valued attribute, default value is a comma separated list of default values. example : "tag1,tag2,tag3"
 	vector<string> defaultValueTokens;
 	splitString(defaultValue , "," , defaultValueTokens);
 	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){

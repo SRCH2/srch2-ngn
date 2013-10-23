@@ -42,8 +42,10 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_UNSIGNED:
+					// comparing single-valued vs. single-valued : Example : 1 == 1
 						return intTypedValue == typedValue.intTypedValue;
 					case ATTRIBUTE_TYPE_MULTI_UNSIGNED:{
+				    	// comparing single-valued vs. multi-valued. Example : 1 == <1,3,23>
 						vector<unsigned> values = typedValue.getMultiIntTypedValue();
 						return std::find(values.begin() , values.end() , intTypedValue) != values.end();
 					}
@@ -57,8 +59,10 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_FLOAT:
+						// comparing single-valued vs. single-valued : Example : 1.4 == 1.4
 						return floatTypedValue == typedValue.floatTypedValue;
 					case ATTRIBUTE_TYPE_MULTI_FLOAT:{
+				    	// comparing single-valued vs. multi-valued. Example : 1.4 == <1.3,3.2,23.0>
 						vector<float> values = typedValue.getMultiFloatTypedValue();
 						return std::find(values.begin() , values.end() , floatTypedValue) != values.end();
 					}
@@ -72,8 +76,10 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TEXT:
+						// comparing single-valued vs. single-valued : Example : tag1 == tag1
 						return (stringTypedValue.compare(typedValue.stringTypedValue) == 0);
 					case ATTRIBUTE_TYPE_MULTI_TEXT:{
+				    	// comparing single-valued vs. multi-valued. Example : tag1 == <tag1,tag3,tag23>
 						vector<string> values = typedValue.getMultiTextTypedValue();
 						return std::find(values.begin() , values.end() , stringTypedValue) != values.end();
 					}
@@ -87,8 +93,10 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TIME:
+						// comparing single-valued vs. single-valued : Example : 12343245 == 2424244
 						return timeTypedValue == typedValue.timeTypedValue;
 					case ATTRIBUTE_TYPE_MULTI_TIME:{
+				    	// comparing single-valued vs. multi-valued. Example : 13213132 == <13213132,2435433,5345532623>
 						vector<long> values = typedValue.getMultiTimeTypedValue();
 						return std::find(values.begin() , values.end() , timeTypedValue) != values.end();
 					}
@@ -102,6 +110,7 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_UNSIGNED:{
+						// comparing multi-valued vs. single-valued. Example : <1,3,3> == 2
 						vector<unsigned> values = this->getMultiIntTypedValue();
 						return std::find(values.begin() , values.end() , typedValue.intTypedValue) != values.end();
 					}
@@ -115,6 +124,7 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_FLOAT:{
+						// comparing multi-valued vs. single-valued. Example : <1.3,3.4,3.45> == 2.4
 						vector<float> values = this->getMultiFloatTypedValue();
 						return std::find(values.begin() , values.end() , typedValue.floatTypedValue) != values.end();
 					}
@@ -128,6 +138,7 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TEXT:{
+						// comparing multi-valued vs. single-valued. Example : <tag1,tag3,tag23> == tag1
 						vector<string> values = this->getMultiTextTypedValue();
 						return std::find(values.begin() , values.end() , typedValue.stringTypedValue) != values.end();
 					}
@@ -141,6 +152,7 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TIME:{
+						// comparing multi-valued vs. single-valued. Example : <13213132,2435433,5345532623> == 13213132
 						vector<long> values = this->getMultiTimeTypedValue();
 						return std::find(values.begin() , values.end() , typedValue.timeTypedValue) != values.end();
 					}
@@ -425,19 +437,19 @@ namespace srch2
 
 	void TypedValue::setTypedValue(vector< unsigned> intTypeValue){
 		valueType = ATTRIBUTE_TYPE_MULTI_UNSIGNED;
-		this->intTypedValueMulti = intTypeValue;
+		this->intTypedMultiValue = intTypeValue;
 	}
 	void TypedValue::setTypedValue(vector<float> floatTypeValue){
 		valueType = ATTRIBUTE_TYPE_MULTI_FLOAT;
-		this->floatTypedValueMulti = floatTypeValue;
+		this->floatTypedMultiValue = floatTypeValue;
 	}
 	void TypedValue::setTypedValue(vector<string> stringTypeValue){
 		valueType = ATTRIBUTE_TYPE_MULTI_TEXT;
-		this->stringTypedValueMulti = stringTypeValue;
+		this->stringTypedMultiValue = stringTypeValue;
 	}
 	void TypedValue::setTypedValue(vector<long> timeTypeValue){
 		valueType = ATTRIBUTE_TYPE_MULTI_TIME;
-		this->timeTypedValueMulti = timeTypeValue;
+		this->timeTypedMultiValue = timeTypeValue;
 	}
 
 
@@ -465,16 +477,16 @@ namespace srch2
 				timeDurationTypedValue = typedValue.timeDurationTypedValue;
 				break;
 			case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
-				intTypedValueMulti = typedValue.intTypedValueMulti;
+				intTypedMultiValue = typedValue.intTypedMultiValue;
 				break;
 			case ATTRIBUTE_TYPE_MULTI_FLOAT:
-				floatTypedValueMulti = typedValue.floatTypedValueMulti;
+				floatTypedMultiValue = typedValue.floatTypedMultiValue;
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TEXT:
-				stringTypedValueMulti = typedValue.stringTypedValueMulti;
+				stringTypedMultiValue = typedValue.stringTypedMultiValue;
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TIME:
-				timeTypedValueMulti = typedValue.timeTypedValueMulti;
+				timeTypedMultiValue = typedValue.timeTypedMultiValue;
 				break;
 		}
 	}
@@ -499,8 +511,17 @@ namespace srch2
 			case ATTRIBUTE_TYPE_DURATION:
 				this->setTypedValue(DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(value));
 				break;
-			default :
-				ASSERT(false);
+			case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
+				this->setTypedValue(ATTRIBUTE_TYPE_UNSIGNED , value);
+				break;
+			case ATTRIBUTE_TYPE_MULTI_FLOAT:
+				this->setTypedValue(ATTRIBUTE_TYPE_FLOAT , value);
+				break;
+			case ATTRIBUTE_TYPE_MULTI_TEXT:
+				this->setTypedValue(ATTRIBUTE_TYPE_TEXT , value);
+				break;
+			case ATTRIBUTE_TYPE_MULTI_TIME:
+				this->setTypedValue(ATTRIBUTE_TYPE_TIME , value);
 				break;
 		}
 	}
@@ -521,16 +542,16 @@ namespace srch2
 		return timeTypedValue;
 	}
 	vector<unsigned> TypedValue::getMultiIntTypedValue() const{
-		return intTypedValueMulti;
+		return intTypedMultiValue;
 	}
 	vector<float> TypedValue::getMultiFloatTypedValue() const{
-		return floatTypedValueMulti;
+		return floatTypedMultiValue;
 	}
 	vector<string> TypedValue::getMultiTextTypedValue() const{
-		return stringTypedValueMulti;
+		return stringTypedMultiValue;
 	}
 	vector<long> TypedValue::getMultiTimeTypedValue() const{
-		return timeTypedValueMulti;
+		return timeTypedMultiValue;
 	}
 
 	TimeDuration TypedValue::getTimeDuration() const{
@@ -599,28 +620,28 @@ namespace srch2
 
 		switch (this->valueType) {
 			case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
-				for(vector<unsigned>::const_iterator value = intTypedValueMulti.begin(); value != intTypedValueMulti.end() ; ++value){
+				for(vector<unsigned>::const_iterator value = intTypedMultiValue.begin(); value != intTypedMultiValue.end() ; ++value){
 					TypedValue singleValue;
 					singleValue.setTypedValue(*value);
 					output->push_back(singleValue);
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_FLOAT:
-				for(vector<float>::const_iterator value = floatTypedValueMulti.begin(); value != floatTypedValueMulti.end() ; ++value){
+				for(vector<float>::const_iterator value = floatTypedMultiValue.begin(); value != floatTypedMultiValue.end() ; ++value){
 					TypedValue singleValue;
 					singleValue.setTypedValue(*value);
 					output->push_back(singleValue);
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TEXT:
-				for(vector<string>::const_iterator value = stringTypedValueMulti.begin(); value != stringTypedValueMulti.end() ; ++value){
+				for(vector<string>::const_iterator value = stringTypedMultiValue.begin(); value != stringTypedMultiValue.end() ; ++value){
 					TypedValue singleValue;
 					singleValue.setTypedValue(*value);
 					output->push_back(singleValue);
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TIME:
-				for(vector<long>::const_iterator value = timeTypedValueMulti.begin(); value != timeTypedValueMulti.end() ; ++value){
+				for(vector<long>::const_iterator value = timeTypedMultiValue.begin(); value != timeTypedMultiValue.end() ; ++value){
 					TypedValue singleValue;
 					singleValue.setTypedValue(*value);
 					output->push_back(singleValue);
@@ -731,8 +752,8 @@ namespace srch2
 				ss << this->getTimeDuration().toString();
 				break;
 			case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
-				for(vector<unsigned>::const_iterator value = intTypedValueMulti.begin() ; value != intTypedValueMulti.end() ; ++value){
-					if(value == intTypedValueMulti.begin()){
+				for(vector<unsigned>::const_iterator value = intTypedMultiValue.begin() ; value != intTypedMultiValue.end() ; ++value){
+					if(value == intTypedMultiValue.begin()){
 						ss << *value ;
 					}else{
 						ss << "," << *value ;
@@ -740,8 +761,8 @@ namespace srch2
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_FLOAT:
-				for(vector<float>::const_iterator value = floatTypedValueMulti.begin() ; value != floatTypedValueMulti.end() ; ++value){
-					if(value == floatTypedValueMulti.begin()){
+				for(vector<float>::const_iterator value = floatTypedMultiValue.begin() ; value != floatTypedMultiValue.end() ; ++value){
+					if(value == floatTypedMultiValue.begin()){
 						ss << *value ;
 					}else{
 						ss << "," << *value ;
@@ -749,8 +770,8 @@ namespace srch2
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TEXT:
-				for(vector<string>::const_iterator value = stringTypedValueMulti.begin() ; value != stringTypedValueMulti.end() ; ++value){
-					if(value == stringTypedValueMulti.begin()){
+				for(vector<string>::const_iterator value = stringTypedMultiValue.begin() ; value != stringTypedMultiValue.end() ; ++value){
+					if(value == stringTypedMultiValue.begin()){
 						ss << *value ;
 					}else{
 						ss << "," << *value ;
@@ -758,8 +779,8 @@ namespace srch2
 				}
 				break;
 			case ATTRIBUTE_TYPE_MULTI_TIME:
-				for(vector<long>::const_iterator value = timeTypedValueMulti.begin() ; value != timeTypedValueMulti.end() ; ++value){
-					if(value == timeTypedValueMulti.begin()){
+				for(vector<long>::const_iterator value = timeTypedMultiValue.begin() ; value != timeTypedMultiValue.end() ; ++value){
+					if(value == timeTypedMultiValue.begin()){
 						ss << *value ;
 					}else{
 						ss << "," << *value ;

@@ -329,6 +329,9 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         const string * nonSearchableAttributeValueStringTokens = record
                 ->getNonSearchableAttributeValue(iter);
         vector<string> nonSearchableAttributeValueStringTokensVector;
+        // If this attribute is multi-valued, we tokenize the value and prepate the vector
+        // otherwise, we just insert one value into the vector.
+        // Example: <"tag1","tag2","tag3"> vs. <"tag1">
         if(this->schemaInternal->isNonSearchableAttributeMultiValued(iter) == true){
 			boost::split(nonSearchableAttributeValueStringTokensVector , *nonSearchableAttributeValueStringTokens , boost::is_any_of(",") , boost::token_compress_on );
         }else{

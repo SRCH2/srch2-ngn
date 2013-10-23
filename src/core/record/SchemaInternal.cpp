@@ -215,7 +215,7 @@ bool SchemaInternal::isNonSearchableAttributeMultiValued(const unsigned nonSearc
     if (nonSearchableAttributeNameId
             >= this->nonSearchableAttributeIsMultiValuedVector.size() ) {
         ASSERT(false);
-        return false; // TODO default is text, is it ok?
+        return false;
     }
     return this->nonSearchableAttributeIsMultiValuedVector[nonSearchableAttributeNameId];
 }
@@ -236,6 +236,7 @@ bool SchemaInternal::isSearchableAttributeMultiValued(const unsigned searchableA
     if (searchableAttributeNameId < this->searchableAttributeBoostVector.size()) {
         return this->searchableAttributeIsMultiValuedVector[searchableAttributeNameId];
     } else {
+    	ASSERT(false);
         return false;
     }
 }

@@ -8,6 +8,16 @@ cd $SYSTEM_TEST_DIR
 
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
+
+echo '----do multi valued attribute test--------------'
+python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt
+
+if [ $? -gt 0 ]; then
+    echo " --- error ---"
+    exit -1
+fi
+
+
 echo '----do phrase search test--------------'
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt
 if [ $? -gt 0 ]; then
