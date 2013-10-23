@@ -88,8 +88,8 @@ namespace srch2
     	float castToFloat();
 
     	/*
-    	 * This function is used findIndicesOfContainingIntervals
-    	 * This function is called only for multi-valued types. It breaks the multi-values object and
+    	 * This function is used for example in findIndicesOfContainingIntervals
+    	 * and is only called only for multi-valued types. It breaks the multi-valued object and
     	 * returns a list of single-values.
     	 * For example : if the multi value is <"tag1","tag2","tag3">, it returns three objects with values
     	 * tag1, tag2 and tag3.

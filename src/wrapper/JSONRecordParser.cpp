@@ -419,7 +419,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
 	    	{
 	    		if(iter != value.begin()){
-					stringValue += ",";
+					stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
 	    		}
 	    		convertValueToString(*iter, stringValue);
 	    	}
@@ -430,7 +430,7 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	vector<string> keys = value.getMemberNames();
 	    	for (int i= 0; i < keys.size(); ++i) {
 	    		if(i != 0){
-					stringValue += ",";
+					stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
 	    		}
 	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
 	    	}
@@ -487,7 +487,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 	if(isMultiValued == false){
 		valueTokens.push_back(temp);
 	}else{
-		boost::split(valueTokens , temp , boost::is_any_of(",") , boost::token_compress_on );
+		boost::split(valueTokens , temp , boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
 	}
 
 	stringValue = "";
@@ -499,7 +499,7 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 			if(valueToken == valueTokens.begin()){
 				stringValue = buffer.str();
 			}else{
-				stringValue += ","+buffer.str();
+				stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER+buffer.str();
 			}
 
 		}else{

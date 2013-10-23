@@ -318,8 +318,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         configSuccess = false;
                         return;
                 	}
-                }//else{
-                //} // multivalued property is not there so this field is not a multivalued field (false by default)
+                }// We do not need the "else" part since multivalued property is not
+                 // there so this field is not a multivalued field (false by default)
             	/*
             	 * The following code decides whether this field is searchable/refining or not.
             	 * It uses this logic:

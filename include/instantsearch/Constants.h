@@ -21,14 +21,14 @@
 #define __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
 
 
-
+#include "string"
 
 
 namespace srch2 {
 namespace instantsearch {
 
 
-
+const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
 /// Analyzer related constants
 typedef enum {

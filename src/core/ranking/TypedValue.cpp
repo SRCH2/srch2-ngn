@@ -76,10 +76,10 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TEXT:
-						// comparing single-valued vs. single-valued : Example : tag1 == tag1
+						// comparing single-valued vs. single-valued : Example : "toyota == toyota"
 						return (stringTypedValue.compare(typedValue.stringTypedValue) == 0);
 					case ATTRIBUTE_TYPE_MULTI_TEXT:{
-				    	// comparing single-valued vs. multi-valued. Example : tag1 == <tag1,tag3,tag23>
+				    	// comparing single-valued vs. multi-valued. Example : "toyota" == <"toyota", "honda", "ford">
 						vector<string> values = typedValue.getMultiTextTypedValue();
 						return std::find(values.begin() , values.end() , stringTypedValue) != values.end();
 					}
@@ -138,7 +138,7 @@ namespace srch2
 
 		    	switch (typedValue.valueType) {
 					case ATTRIBUTE_TYPE_TEXT:{
-						// comparing multi-valued vs. single-valued. Example : <tag1,tag3,tag23> == tag1
+						// comparing multi-valued vs. single-valued. Example : <"toyota", "honda", "ford"> == "toyota"
 						vector<string> values = this->getMultiTextTypedValue();
 						return std::find(values.begin() , values.end() , typedValue.stringTypedValue) != values.end();
 					}
@@ -752,6 +752,7 @@ namespace srch2
 				ss << this->getTimeDuration().toString();
 				break;
 			case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
+				// example of multivalued unsigned : [12,14,25,54,32,1] , toString will return "12,14,25,54,32,1"
 				for(vector<unsigned>::const_iterator value = intTypedMultiValue.begin() ; value != intTypedMultiValue.end() ; ++value){
 					if(value == intTypedMultiValue.begin()){
 						ss << *value ;

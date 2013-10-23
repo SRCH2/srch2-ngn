@@ -591,7 +591,7 @@ void VariableLengthAttributeContainer::convertStringToByteArray(FilterType type,
 
 // This function converts a list of values of a multi-valued attribute to a byte array and saves them in output
 // Example : <"hello", "goodbye"> =>
-// 4 bytes for value 2 | 4 bytes for value 5 | 5 bytes for hello | 4 bytes for value 7 | 7 bytes for goodbye
+// 4 bytes for value 2(number of values) | 4 bytes for value 5 | 5 bytes for hello | 4 bytes for value 7 | 7 bytes for goodbye
 void VariableLengthAttributeContainer::convertStringToByteArrayMultiValued(FilterType type,
 		vector< string > values, Byte * output, unsigned startOffset,
         unsigned & sizeInBytes) {
