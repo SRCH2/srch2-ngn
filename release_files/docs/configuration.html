@@ -2,35 +2,10 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
-<link rel="stylesheet" type="text/css" href="style.css">
-<title>SRCH2: Configuration</title>
+<meta name="generator" content="ReText 4.0.1">
+<title>configuration</title>
 </head>
-
 <body>
-
-<table style="width:100%;table-layout:fixed" >
-<tr>
-<td id="sideBarTd" style="width:25%">
-<div id="sidebar"> <!-- Sidebar -->
-<div id="linkpool" > <!-- Links to main pages, id=linkpool-->
-<table><tbody><tr><td>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
-</td></tr></tbody></table>
-
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
-</div> <!-- Links to main pages, id=linkpool-->
-
-<hr>
-
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
@@ -60,7 +35,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">8.8. Searcher Threads</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.9. Enabling Field Based Search</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">8.11. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.11. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.12. Term Prefix Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
@@ -99,9 +75,7 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, Date: October 13, 2013</center></h6>
 <h2 id="overview">1. Overview:</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
-
-<p>  Tag names and tag attribute names (but not values) are case insensitive.</p>
-
+<p>Tag names and tag attribute names (but not values) are case insensitive.</p>
 <h2 id="srch2Home">2. SRCH2 Home Directory, Required</h2>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
@@ -270,14 +244,24 @@ example shows how to enable this indexing:</p>
 1: finding all matching results. <br></p>
 </blockquote>
 <p>Its default value is 0.<br></p>
-<h3 id="queryTermType">8.11. Query Term Match Type, Optional</h3>
-<pre><code>&lt;queryTermType&gt;1&lt;/queryTermType&gt;
+<h3 id="queryTermFuzzyType">8.11. Query Term Fuzzy Type, Optional</h3>
+<pre><code>&lt;queryTermFuzzyType&gt;1&lt;/queryTermFuzzyType&gt;
 </code></pre>
 
-<p>It specifies how to treat a term by default.</p>
+<p>It specifies how to treat a term by default with respect to match fuzziness.</p>
 <blockquote>
 <p>0: exact match;<br>
 1: fuzzy match.<br></p>
+</blockquote>
+<p>Its default value is 0.</p>
+<h3 id="queryTermPrefixType">8.12. Query Term Prefix Type, Optional</h3>
+<pre><code>&lt;queryTermPrefixType&gt;1&lt;/queryTermPrefixType&gt;
+</code></pre>
+
+<p>It specifies how to treat a term by default with respect to match completeness.</p>
+<blockquote>
+<p>0: prefix match;<br>
+1: complete match.<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
 <h2 id="queryResponseWriter">9. Response Writer:</h2>
@@ -458,27 +442,5 @@ example shows how to enable this indexing:</p>
 <p>It specifies a file of stop words that are ignored by the engine. Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
 </code></pre>
-
-</table>
-<hr>
-
-<link rel="stylesheet" type="text/css" href="documentation.css">
-
-<script type="text/javascript" src="setSizes.js"></script>
-<script>
-
-setSizes();
-window.onresize = setSizes
-</script>
-
-<script language="javascript"> 
-months = ['January', 'Febraury', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; 
-var theDate = new Date(document.lastModified); 
-theDate.setHours(theDate.getHours() - 7)
-with (theDate) { 
-document.write("<div align=right>Last Updated: " + months[getMonth()] + ' ' + getDate()  +', ' + getFullYear() +', ' + getHours() + ':' + ("0" + getMinutes()).slice(-2) + " PST  </div>") 
-} 
-</script>
-
 </body>
 </html>
