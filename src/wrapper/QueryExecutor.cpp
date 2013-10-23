@@ -28,6 +28,8 @@
 namespace srch2 {
 namespace httpwrapper {
 
+// we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
+// in the case of getAllResults.
 QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
         QueryResultFactory * resultsFactory, Srch2Server *server, const ConfigManager * configManager) :
         queryPlan(queryPlan), configManager(configManager) {
