@@ -167,8 +167,8 @@ public:
     bool isResultsApproximated() const;
 
     // This function copies the estimated number of results if this number is calculated  and returns true (for example in case of topk).
-    // If this number is not available, this function returns false (and does not set numberOfResults)
-    bool getEstimatedNumberOfResults(unsigned & numberOfResults) const;
+    // If this number is not available, this function returns -1
+    long int getEstimatedNumberOfResults() const;
 
 
     //TODO: These three functions for internal debugging. remove from the header

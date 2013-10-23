@@ -998,7 +998,7 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query){
         PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
         activeNodesVector.push_back(activeNodes);
     }
-    unsigned numberOfresults = this->estimateNumberOfResults(query, activeNodesVector);
+    unsigned estimatedNumberOfresults = this->estimateNumberOfResults(query, activeNodesVector);
 
     // deallocate all active nodes
     for(vector<PrefixActiveNodeSet *>::iterator activeNodeIter = activeNodesVector.begin() ; activeNodeIter != activeNodesVector.end() ; ++activeNodeIter){
@@ -1009,7 +1009,7 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query){
 			delete activeNode;
     }
 
-    return numberOfresults;
+    return estimatedNumberOfresults;
 
 }
 
@@ -1317,35 +1317,34 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std:
 	float aggregatedProbability = 1;
 	for(int i=0; i< query->getQueryTerms()->size() ; i++){
 		aggregatedProbability *=
-				getPrefixHistogramPopularityProbability(activeNodes.at(i) , query->getQueryTerms()->at(i)->getThreshold());
+				getPrefixPopularityProbability(activeNodes.at(i) , query->getQueryTerms()->at(i)->getThreshold());
 	}
 	// now we should multiply the total probability and the total number of records.
-	return aggregatedProbability * this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+	return (unsigned)(aggregatedProbability * this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
 }
 
-float IndexSearcherInternal::getPrefixHistogramPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
 	std::vector<TrieNodePointer> topTrieNodes;
 	// iterate on active nodes and keep the top level ones
-    ActiveNodeSetIterator iter(activeNodes, threshold);
-    for (; !iter.isDone(); iter.next()) {
+    for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
     	// first get the new trie node
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
 
-        // now move on all top trieNodes and see if this new trieNode is also a top one or not
+        // now iterate through these top trie nodes and see if this new trieNode is also a top one or not
         std::vector<TrieNodePointer> newTopTrieNodes;
         bool isThisTrieNodeCopied = false;
         for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
         	TrieNodePointer trieNodeInVector = *trieNodeIter;
-        	if(trieNodeInVector->isChildOf(trieNode)){
+        	if(trieNodeInVector->isDescendantOf(trieNode)){
         		// if this new node is a parent copy it into the new set
         		// and remember this copy not to do this again
         		if(isThisTrieNodeCopied == false){
 					newTopTrieNodes.push_back(trieNode);
         			isThisTrieNodeCopied = true;
         		}
-        	}else if(trieNode->isChildOf(trieNodeInVector)){
+        	}else if(trieNode->isDescendantOf(trieNodeInVector)){
         		// if this trie node is a child of an old node, copy the old node
         		newTopTrieNodes.push_back(trieNodeInVector);
         	}else{
@@ -1370,14 +1369,13 @@ float IndexSearcherInternal::getPrefixHistogramPopularityProbability(PrefixActiv
 
     // now we have the top level trieNodes
     // we move on all top trie nodes and aggregate their probability by using Joint Probability formula
-    float aggregatedResult = 0;
+    float aggregatedProbability = 0;
     for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
     	TrieNodePointer topTrieNode = *trieNodeIter;
-    	aggregatedResult = aggregatedResult + topTrieNode->getNodeProbabilityValue() -
-    			(aggregatedResult * topTrieNode->getNodeProbabilityValue());
+    	aggregatedProbability = topTrieNode->aggregateValueByJointProbability(aggregatedProbability , topTrieNode->getNodeProbabilityValue());
     }
 
-    return aggregatedResult;
+    return aggregatedProbability;
 }
 
 /**

@@ -131,7 +131,10 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
         delete fuzzyQueryResults;
     }else if (this->queryPlan.isFuzzy()){
     	// this branch is the case that we have enough results for exact so we do not want to perform a
-    	// complete search for fuzzy, but still we need to get the estimated number of results for fuzzy query.
+    	// fuzzy search, but still we need to get the estimated number of results for fuzzy query.
+    	// The reason is that regardless of our policy (first exact, then fuzzy) we should always return a correct estimation
+    	// of number of results. If we don't use fuzzy query to estimate this number, we get a very smaller number for this estimation
+    	// which is incorrect.
         QueryResultsInternal *exactQueryResultsInternal =
                 exactQueryResults->impl;
     	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());

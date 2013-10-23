@@ -319,7 +319,10 @@ public:
         return child->getCharacter() == childrenPointerList.back()->getCharacter();
     }
 
-    inline bool isChildOf(const TrieNode * node) const {
+    inline bool isDescendantOf(const TrieNode * node) const {
+    	if (this->getMinId() == node->getMinId() && (this->getMaxId() == node->getMaxId())){
+			 return false;
+    	}
     	return (this->getMinId() >= node->getMinId()) && (this->getMaxId() <= node->getMaxId());
     }
 
@@ -357,7 +360,7 @@ public:
     	return b;
     }
 
-    inline float aggregateValueByJointProbability(float p1, float p2){
+    inline float aggregateValueByJointProbability(float p1, float p2) const{
     	return (p1 + p2) - (p1 * p2);
     }
 
