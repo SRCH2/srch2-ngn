@@ -27,7 +27,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">8.8. Searcher Threads</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.9. Enabling Field Based Search</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">8.11. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.11. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.12. Term Prefix Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
@@ -275,13 +276,23 @@ It sets the default search type of a query to the engine. <br>
 
 Its default value is 0.<br>
 
-###8.11. Query Term Match Type, Optional{id="queryTermType"}
+###8.11. Query Term Fuzzy Type, Optional{id="queryTermFuzzyType"}
 ```
-<queryTermType>1</queryTermType>
+<queryTermFuzzyType>1</queryTermFuzzyType>
 ```
-It specifies how to treat a term by default.
+It specifies how to treat a term by default with respect to match fuzzyness.
 > 0: exact match;<br>
 > 1: fuzzy match.<br>
+
+Its default value is 0.
+
+###8.12. Query Term Prefix Type, Optional{id="queryTermPrefixType"}
+```
+<queryTermPrefixType>1</queryTermPrefixType>
+```
+It specifies how to treat a term by default with respect to match completeness.
+> 0: prefix match;<br>
+> 1: complete match.<br>
 
 Its default value is 0.
 

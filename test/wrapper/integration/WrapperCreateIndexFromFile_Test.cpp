@@ -201,7 +201,7 @@ void test1(int argc, char** argv) {
     message << "PrimaryKey: " << serverConf->getPrimaryKey() << "\n";
     message << "IsPrimSearchable: " << serverConf->getIsPrimSearchable() << "\n";
     message << "IsFuzzyTermsQuery: " << serverConf->getIsFuzzyTermsQuery() << "\n";
-    message << "QueryTermType: " << serverConf->getQueryTermPrefixType() << "\n";
+    message << "QueryTermPrefixType: " << serverConf->getQueryTermPrefixType() << "\n";
     message << "\n";
 
     message << "IndexType: " << serverConf->getIndexType() << "\n";
