@@ -226,8 +226,8 @@ unsigned VariableLengthAttributeContainer::getUnsignedAttribute(const unsigned n
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == false);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_UNSIGNED);
             if(type != ATTRIBUTE_TYPE_UNSIGNED) return 0; // zero is returned in case the type is not unsigned
             return convertByteArrayToUnsigned(startOffset,data);
@@ -246,8 +246,8 @@ float VariableLengthAttributeContainer::getFloatAttribute(const unsigned nonSear
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == false);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_FLOAT);
             return convertByteArrayToFloat(startOffset,data);
         }else{ // skip this attribute
@@ -269,8 +269,8 @@ std::string VariableLengthAttributeContainer::getTextAttribute(const unsigned no
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == false);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_TEXT);
             if(type != ATTRIBUTE_TYPE_TEXT) return "";
             return convertByteArrayToString(type, startOffset,data);
@@ -290,8 +290,8 @@ long VariableLengthAttributeContainer::getTimeAttribute(const unsigned nonSearch
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == false);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_TIME);
             return convertByteArrayToLong( startOffset,data);
         }else{ // skip this attribute
@@ -314,8 +314,8 @@ vector<unsigned> VariableLengthAttributeContainer::getMultiUnsignedAttribute(con
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == true);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_UNSIGNED);
             unsigned numberOfValues = convertByteArrayToUnsigned(startOffset , data);
             startOffset += sizeof(unsigned);
@@ -342,8 +342,8 @@ vector<float> VariableLengthAttributeContainer::getMultiFloatAttribute(const uns
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == true);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_FLOAT);
             unsigned numberOfValues = convertByteArrayToUnsigned(startOffset , data);
             startOffset += sizeof(unsigned);
@@ -369,15 +369,15 @@ vector<std::string> VariableLengthAttributeContainer::getMultiTextAttribute(cons
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == true);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_TEXT);
             unsigned numberOfValues = convertByteArrayToUnsigned(startOffset , data);
             startOffset += sizeof(unsigned);
             for(int i=0; i< numberOfValues ; i++){
             	string value = convertByteArrayToString(ATTRIBUTE_TYPE_TEXT, startOffset,data);
             	values.push_back(value);
-            	startOffset += sizeof(value.size() + sizeof(unsigned));
+            	startOffset += value.size() + sizeof(unsigned);
             }
             return values;
         }else{ // skip this attribute
@@ -397,8 +397,8 @@ vector<long> VariableLengthAttributeContainer::getMultiTimeAttribute(const unsig
     for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
         bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
-        ASSERT(isMultiValued == true);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
+			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_TIME);
             unsigned numberOfValues = convertByteArrayToUnsigned(startOffset , data);
             startOffset += sizeof(unsigned);
@@ -602,6 +602,7 @@ void VariableLengthAttributeContainer::convertStringToByteArrayMultiValued(Filte
     	unsigned usedSizeForSingleValue;
     	convertStringToByteArray(type , *unsignedValue , output , startOffset , usedSizeForSingleValue);
     	sizeInBytes += usedSizeForSingleValue;
+    	startOffset += usedSizeForSingleValue;
     }
 }
 
