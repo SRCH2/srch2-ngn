@@ -394,6 +394,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                 if(string(field.attribute(nameString).value()).compare(this->primaryKey) == 0){
                     if(isSearchable){
                         this->isPrimSearchable = 1;
+                        searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        // there is no need for default value for primary key
+                        searchableAttributesDefaultVector.push_back("");
+                        // primary key is always required.
+                        searchableAttributesRequiredFlagVector.push_back(true);
                     }
 
                     if(isRefining){
