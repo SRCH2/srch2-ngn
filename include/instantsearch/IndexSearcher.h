@@ -56,6 +56,11 @@ public:
      */
     virtual int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;
 
+    /*
+     * Returns the estimated number of results
+     */
+    virtual unsigned estimateNumberOfResults(const Query *query) = 0;
+
     /**
      * Finds the next topK answers starting from
      * offset. This function can be used to support pagination of

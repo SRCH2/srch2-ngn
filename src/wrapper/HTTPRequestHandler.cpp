@@ -229,6 +229,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //                    {
     root["results_found"] = retrievedResults;
 
+    long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
+    if(estimatedNumberOfResults != -1){
+    	// at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
+    	// it to unsigned (because the thirdparty library we use here does not accept long integers.)
+    	root["estimated_number_of_results"] = (unsigned)estimatedNumberOfResults;
+    }
     if(queryResults->isResultsApproximated() == true){
     	root["result_set_approximation"] = true;
     }

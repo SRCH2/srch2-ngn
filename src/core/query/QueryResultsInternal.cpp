@@ -46,6 +46,7 @@ QueryResultsInternal::QueryResultsInternal() {
     this->virtualListVector = NULL;
     this->stat = NULL;
     this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
@@ -57,6 +58,7 @@ void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
     this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
@@ -67,6 +69,7 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
     this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 // DEBUG function. Used in CacheIntegration_Test
