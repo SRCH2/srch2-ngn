@@ -262,6 +262,9 @@ const size_t DateAndTimeHandler::localeFormatsDurationOfTime =
 
 // This regex array is parallel to localeInputsPointOfTime and that variable is a good
 // explanation for this array
+// NOTE relate to multi-valued attributes :
+// Date/Time formats should NOT contain ',' in them.
+// ',' is kept in constant Constant.h::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER
 const string DateAndTimeHandler::regexInputsPointOfTime[] = {
 		"^\\d{2}:\\d{2}:\\d{2}$",
         "^\\d{2}/\\d{2}/\\d{4}$",
