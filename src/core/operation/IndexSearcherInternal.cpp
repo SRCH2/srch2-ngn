@@ -605,6 +605,8 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
     	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
 
+    	queryResultsInternal->estimatedNumberOfResults = this->estimateNumberOfResults(query, activeNodesVector );
+
         // get the std::vector of virtual lists of each term
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
@@ -1000,6 +1002,37 @@ int IndexSearcherInternal::suggest(const string & keyword,
 }
 
 
+unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query){
+    // Empty Query case
+    if (query->getQueryTerms()->size() == 0) {
+        return 0;
+    }
+	// this vector is passed to computeTermVirtualList to be used
+	vector<PrefixActiveNodeSet *> activeNodesVector;
+	// iterate on terms and compute active nodes
+    for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
+            vectorIterator != query->getQueryTerms()->end();
+            ++vectorIterator) {
+        Term *term = *vectorIterator;
+        // compute activenodes
+        PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+        activeNodesVector.push_back(activeNodes);
+    }
+    unsigned estimatedNumberOfresults = this->estimateNumberOfResults(query, activeNodesVector);
+
+    // deallocate all active nodes
+    for(vector<PrefixActiveNodeSet *>::iterator activeNodeIter = activeNodesVector.begin() ; activeNodeIter != activeNodesVector.end() ; ++activeNodeIter){
+    	PrefixActiveNodeSet * activeNode = *activeNodeIter;
+		if (activeNode->isResultsCached() == true)
+			activeNode->busyBit->setFree();
+		else
+			delete activeNode;
+    }
+
+    return estimatedNumberOfresults;
+
+}
+
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK ,
 		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
@@ -1301,7 +1334,69 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const{
-	return 10001; // TODO ; must be merged with master later....
+
+	float aggregatedProbability = 1;
+	for(int i=0; i< query->getQueryTerms()->size() ; i++){
+		aggregatedProbability *=
+				getPrefixPopularityProbability(activeNodes.at(i) , query->getQueryTerms()->at(i)->getThreshold());
+	}
+	// now we should multiply the total probability and the total number of records.
+	return (unsigned)(aggregatedProbability * this->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+}
+
+float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+	std::vector<TrieNodePointer> topTrieNodes;
+	// iterate on active nodes and keep the top level ones
+    for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
+    	// first get the new trie node
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+
+        // now iterate through these top trie nodes and see if this new trieNode is also a top one or not
+        std::vector<TrieNodePointer> newTopTrieNodes;
+        bool isThisTrieNodeCopied = false;
+        for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
+        	TrieNodePointer trieNodeInVector = *trieNodeIter;
+        	if(trieNodeInVector->isDescendantOf(trieNode)){
+        		// if this new node is a parent copy it into the new set
+        		// and remember this copy not to do this again
+        		if(isThisTrieNodeCopied == false){
+					newTopTrieNodes.push_back(trieNode);
+        			isThisTrieNodeCopied = true;
+        		}
+        	}else if(trieNode->isDescendantOf(trieNodeInVector)){
+        		// if this trie node is a child of an old node, copy the old node
+        		newTopTrieNodes.push_back(trieNodeInVector);
+        	}else{
+        		// if none of them is a child of other one, copy both and remember copying of the new trie node
+        		// not to copy it twice
+        		if(isThisTrieNodeCopied == false){
+					newTopTrieNodes.push_back(trieNode);
+        			isThisTrieNodeCopied = true;
+        		}
+        		newTopTrieNodes.push_back(trieNodeInVector);
+        	}
+        }
+        if(topTrieNodes.size() == 0){
+        	// if nothing was in topTrieNodes before, just insert the new one
+        	topTrieNodes.push_back(trieNode);
+        }else{
+        	// clear the old content of topTrieNodes and copy newTopTrieNodes into topTrieNodes
+        	topTrieNodes.clear();
+        	topTrieNodes.insert(topTrieNodes.begin() , newTopTrieNodes.begin() , newTopTrieNodes.end());
+        }
+    }
+
+    // now we have the top level trieNodes
+    // we move on all top trie nodes and aggregate their probability by using Joint Probability formula
+    float aggregatedProbability = 0;
+    for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
+    	TrieNodePointer topTrieNode = *trieNodeIter;
+    	aggregatedProbability = topTrieNode->aggregateValueByJointProbability(aggregatedProbability , topTrieNode->getNodeProbabilityValue());
+    }
+
+    return aggregatedProbability;
 }
 
 /**

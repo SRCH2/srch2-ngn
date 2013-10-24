@@ -63,6 +63,8 @@ public:
 
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
 
+    unsigned estimateNumberOfResults(const Query *query);
+
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
     int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK,
@@ -178,6 +180,7 @@ private:
     		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 
     unsigned estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const;
+    float getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const;
 };
 
 }
