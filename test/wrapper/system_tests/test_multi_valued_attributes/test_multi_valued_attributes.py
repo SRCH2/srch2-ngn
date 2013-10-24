@@ -1,4 +1,9 @@
 #using python fuzzy_A1.py queriesAndResults.txt
+# Overview of this test case :
+# This test case is a copy of faceted_search test case with the following changes:
+# The attributes 'model' and 'expiration' are changed to be multi-valued by adding multivalued="true" in their config file definition. Also in the data (newData.json) which has 10 records, multiple new values are added to these attributes for each record. For example, the first record has values ['bmw','toyota','mazda', 'honda'] for attribute model.
+# The goal of this test case is to fire a facet query and check the results to make sure multi-valued attributes are used properly in calculating facet results.
+# like other test cases, queriesAndResults.txt and facetResults.txt contain the query and results of that query to be checked with.
 
 import sys, urllib2, json, time, subprocess, os, commands,signal, argparse
 
