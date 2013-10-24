@@ -21,14 +21,14 @@
 #define __INCLUDE_INSTANTSEARCH__CONSTANTS_H__
 
 
-
+#include "string"
 
 
 namespace srch2 {
 namespace instantsearch {
 
 
-
+const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
 /// Analyzer related constants
 typedef enum {
@@ -139,6 +139,12 @@ typedef enum
     ATTRIBUTE_TYPE_TEXT ,
     ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
          // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    // TypedValue class uses these constants to understand if it is dealing with a single-valued attribute
+    // or a multi-valued one.
+    ATTRIBUTE_TYPE_MULTI_UNSIGNED,
+    ATTRIBUTE_TYPE_MULTI_FLOAT,
+    ATTRIBUTE_TYPE_MULTI_TEXT,
+    ATTRIBUTE_TYPE_MULTI_TIME,
     ATTRIBUTE_TYPE_DURATION
 } FilterType;
 

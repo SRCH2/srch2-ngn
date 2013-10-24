@@ -27,6 +27,8 @@
 #include "util/Logger.h"
 #include "util/Assert.h"
 
+#include "boost/algorithm/string/split.hpp"
+#include "boost/algorithm/string/classification.hpp"
 #include <boost/array.hpp>
 using srch2::util::Logger;
 using std::string;
@@ -224,26 +226,49 @@ TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
 
     FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(
             schemaNonSearchableAttributeId);
+    bool isMultiValued = schemaInternal->isNonSearchableAttributeMultiValued(schemaNonSearchableAttributeId);
 
     TypedValue typedValue;
 
-    switch (filterType) {
-		case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
-			break;
-		case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
-			break;
-		case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
-			break;
-		case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-			typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
-			break;
-		case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
-			ASSERT(false);
-			break;
-	}
+    if(isMultiValued == false){ // single value
+		switch (filterType) {
+			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
+			default :break;
+		}
+    }else{ // multi value
+		switch (filterType) {
+			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
+			default:break;
+		}
+    }
 
     return typedValue;
 
@@ -296,14 +321,25 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
     //Adding Non searchable Attribute list
-    vector<string> nonSearchableAttributeValues;
+    vector<vector<string> > nonSearchableAttributeValues;
     for (unsigned iter = 0;
             iter < this->schemaInternal->getNumberOfNonSearchableAttributes();
             ++iter) {
 
-        const string * nonSearchableAttributeValueString = record
+        const string * nonSearchableAttributeValueStringTokens = record
                 ->getNonSearchableAttributeValue(iter);
-        nonSearchableAttributeValues.push_back(*nonSearchableAttributeValueString);
+        vector<string> nonSearchableAttributeValueStringTokensVector;
+        // If this attribute is multi-valued, we tokenize the value and prepate the vector
+        // otherwise, we just insert one value into the vector.
+        // Example: <"tag1","tag2","tag3"> vs. <"tag1">
+        if(this->schemaInternal->isNonSearchableAttributeMultiValued(iter) == true){
+			boost::split(nonSearchableAttributeValueStringTokensVector , *nonSearchableAttributeValueStringTokens ,
+					boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
+        }else{
+        	nonSearchableAttributeValueStringTokensVector.push_back(*nonSearchableAttributeValueStringTokens);
+        }
+
+        nonSearchableAttributeValues.push_back(nonSearchableAttributeValueStringTokensVector);
     }
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;

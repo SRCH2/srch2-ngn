@@ -71,6 +71,9 @@ string DateAndTimeHandler::convertSecondsFromEpochToDateTimeString(register cons
  * This functions verifies whether the input string is compatible with time formats that we have or not.
  */
 bool DateAndTimeHandler::verifyDateTimeString(const string & timeStringInput, DateTimeType dateTimeType){
+	if(timeStringInput.compare("") == 0){
+		return false;
+	}
 	string timeString = boost::to_upper_copy(timeStringInput);
     switch (dateTimeType) {
     	// timeString == NOW
@@ -151,7 +154,7 @@ TimeDuration DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(c
     // 1. if it is a constant, parse and save as a TimeDuration object
 	vector<string>::const_iterator constantIter = std::find(DURATION_OF_TIME_CONSTANTS.begin() , DURATION_OF_TIME_CONSTANTS.end() , timeString);
 	if(constantIter != DURATION_OF_TIME_CONSTANTS.end()){
-		timeString = "1"+timeStringInput;
+		timeString = "1"+timeString;
 	}
     // 2. if it's a combination of number and constant
     // first make the regex string
@@ -259,6 +262,9 @@ const size_t DateAndTimeHandler::localeFormatsDurationOfTime =
 
 // This regex array is parallel to localeInputsPointOfTime and that variable is a good
 // explanation for this array
+// NOTE related to multi-valued attributes :
+// Date/Time formats should NOT contain ',' in them.
+// ',' is kept in constant Constant.h::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER
 const string DateAndTimeHandler::regexInputsPointOfTime[] = {
 		"^\\d{2}:\\d{2}:\\d{2}$",
         "^\\d{2}/\\d{2}/\\d{4}$",

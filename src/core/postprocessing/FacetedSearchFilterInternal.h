@@ -41,6 +41,8 @@ class FacetHelper
 {
 public:
 	virtual std::pair<unsigned , std::string> generateIDAndName(const TypedValue & attributeValue) = 0;
+	void generateIDAndNameForMultiValued(const TypedValue & attributeValue,
+			std::vector< std::pair<unsigned , std::string> > & resultIdsAndNames);
 	virtual void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) = 0;
 	virtual void initialize(const std::string * facetInfoForInitialization , const Schema * schema) = 0;
 

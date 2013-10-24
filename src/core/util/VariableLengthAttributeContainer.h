@@ -50,14 +50,14 @@ class VariableLengthAttributeContainer {
 public:
 
 	// it calculates and returns the number of bytes that this list will need
-	static unsigned getSizeNeededForAllocation(const Schema * schema,const vector<string> & nonSearchableAttributeValues);
+	static unsigned getSizeNeededForAllocation(const Schema * schema,const vector<vector< string> > & nonSearchableAttributeValues);
 
     // fills the container with the values
-    static void fillWithoutAllocation(const Schema * schema,const vector<string> & nonSearchableAttributeValues, Byte * data);
+    static void fillWithoutAllocation(const Schema * schema,const vector<vector< string> > & nonSearchableAttributeValues, Byte * data);
 
     // fills the container with the values
 	// Byte *& data is a pass by reference of a pointer variable, data will be allocated and set in this function.
-    static void fill(const Schema * schema,const vector<string> & nonSearchableAttributeValues, Byte *& data, unsigned & dataSize);
+    static void fill(const Schema * schema,const vector<vector<string> > & nonSearchableAttributeValues, Byte *& data, unsigned & dataSize);
 
     // deallocates the data and clears the container. After calling this function it can be filled again.
 	// Byte *& data is a pass by reference of a pointer variable, data will be deallocated and set to NULL in this function.
@@ -86,17 +86,26 @@ public:
     static long getTimeAttribute(const unsigned nonSearchableAttributeIndex,
             const Schema * schema, const Byte * data) ;
 
+    static vector<unsigned> getMultiUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data);
+    static vector<float> getMultiFloatAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schem, const Byte * data);
+    static vector<std::string> getMultiTextAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data) ;
+    static vector<long> getMultiTimeAttribute(const unsigned nonSearchableAttributeIndex,
+            const Schema * schema, const Byte * data) ;
+
 private:
 
     // initializes the data array
     static void allocate(const Schema * schema,
-            const vector<string> & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize);
+            const vector<vector<string> > & nonSearchableAttributeValues, Byte *& data , unsigned & dataSize);
     // uses Schema interface to get the type of an attribute indexed by iter
     static FilterType getAttributeType(unsigned iter, const Schema * schema) ;
 
     // this function tells us the number of bytes used in the data for the attribute starting from startOffset
     // 4 bytes for size is included for TEXT case ...
-    static unsigned getSizeOfNonSearchableAttributeValueInData(FilterType type,
+    static unsigned getSizeOfNonSearchableAttributeValueInData(FilterType type,bool isMultiValued,
             unsigned startOffset, const Byte * data) ;
 
     // Converting unsigned and char vector together.
@@ -116,14 +125,18 @@ private:
 
     // Based on the type, converts the string representation of the value to char vector
     // appends the results to the output
-    static void convertStringToByteArray(FilterType type, std::string value,
+    static void convertStringToByteArray(FilterType type, string value,
             Byte * output, unsigned startOffset, unsigned & size) ;
+    static void convertStringToByteArrayMultiValued(FilterType type, vector<string> value,
+            Byte * output, unsigned startOffset, unsigned & size) ;
+
+
 
     // Based on type, converts char vector to the string representation of the value, can also be used to convert charvector to string
     static std::string convertByteArrayToString(FilterType type,
             unsigned stringOffset, const Byte * data) ;
 
-    static void convertByteArrayToTypedValue(FilterType type, unsigned startOffset, const Byte * data,
+    static void convertByteArrayToTypedValue(FilterType type, bool isMultiValued, unsigned startOffset, const Byte * data,
             TypedValue * result) ;
 
 };
