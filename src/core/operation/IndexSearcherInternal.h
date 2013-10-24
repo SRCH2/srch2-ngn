@@ -67,10 +67,12 @@ public:
 
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK);
+    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll = 10000 , unsigned numberOfEstimatedResultsToFindGetAll = 2000);
 
     // find top-k answer. returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int topK);
+    int search(const Query *query, QueryResults* queryResults, const int topK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
     // Added for stemmer
     // For GetAllResultsQuery
@@ -138,10 +140,22 @@ private:
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
 
-    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults);
+    /*
+     * estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll :
+     * If the estimated number of results for a query is larger than the value of this argument,
+     * this function decides to estimate the results by finding topK. In this case
+     * this function uses numberOfEstimatedResultsToFindGetAll as K.
+     */
+    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
+    /*
+     * if vector<PrefixActiveNodeSet *> * activeNodesVector is passed to this function, it uses the value instead of
+     * re-computing all active nodes. If the value is NULL, it computes the activenodes itself.
+     *
+     */
     int searchTopKQuery(const Query *query, const int offset,
-                        const int nextK, QueryResults* queryResults);
+                        const int nextK, QueryResults* queryResults , vector<PrefixActiveNodeSet *> * activeNodesVector = NULL);
 
     int searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query, PrefixActiveNodeSet * activeNodes, unsigned k, QueryResults * queryResults);
 

@@ -39,7 +39,7 @@ class QueryExecutor
 
 public:
 
-	QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server );
+	QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const ConfigManager * configManager );
 
 	void execute(QueryResults * finalResults);
 	void executeTopK(QueryResults * finalResults);
@@ -55,6 +55,7 @@ private:
 	QueryResultFactory * queryResultFactory;
 	Srch2Server * server;
 	IndexSearcher * indexSearcher;
+	const ConfigManager * configManager;
 };
 
 }

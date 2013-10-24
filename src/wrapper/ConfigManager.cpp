@@ -1324,6 +1324,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // set default number of suggestions because we don't have any config options for this yet
     this->defaultNumberOfSuggestions = 5;
+
+    // setting default values for getAllResults optimization parameters
+	this->getAllResultsNumberOfResultsThreshold = 10000;
+	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {

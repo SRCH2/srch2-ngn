@@ -159,6 +159,12 @@ private:
 	// stores the value of maximum allowed retries when MongoDB listener encounters some problem.
 	unsigned mongoListenerMaxRetryOnFailure;
 
+	// related to optimizing getAllResults. If the estimated number of results is
+	// greater than getAllResultsNumberOfResultsThreshold, getAllResults only find
+	// getAllResultsNumberOfResultsToFindInEstimationMode results.
+	unsigned getAllResultsNumberOfResultsThreshold;
+	unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
+
 
     void splitString(string str, const string& delimiter, vector<string>& result);
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
@@ -322,6 +328,15 @@ public:
     const unsigned getMongoListnerMaxRetryCount() const {
     	return mongoListenerMaxRetryOnFailure;
     }
+
+    const unsigned getGetAllResultsNumberOfResultsThreshold() const {
+    	return this->getAllResultsNumberOfResultsThreshold;
+    }
+
+    const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const {
+    	return this->getAllResultsNumberOfResultsToFindInEstimationMode;
+    }
+
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
 

@@ -97,7 +97,8 @@ int IndexSearcherInternal::getNextRecordID(vector<TermVirtualList* >* virtualLis
 
 // find the next k answer starting from "offset". Can be used for
 // pagination. Returns the number of records found
-int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults)
+int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
 
 	// iterate on terms and find the estimated number of results for each term
@@ -152,6 +153,14 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 		// isTermTooPopularVector is a vector of true values, we should set the value of
 		// least popular term top record score to -1
 		isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
+	}
+
+	// before preparing termVirtualLists for actual search, we estimate the number of results.
+	// If the number of results is going to be too big, we call topK to find just a number of records.
+	unsigned estimatedNumberOfResults = this->estimateNumberOfResults(query , activeNodesVector);
+	if(estimatedNumberOfResults > estimatedNumberOfResultsThresholdGetAll){
+		// we must call top k here
+		return searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
 	}
 
 	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
@@ -429,12 +438,15 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
  *
  */
 int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
-        const int nextK, QueryResults* queryResults)
+        const int nextK, QueryResults* queryResults, vector<PrefixActiveNodeSet *> * activeNodesVectorFromArgs)
 {
     // Empty Query case
     if (query->getQueryTerms()->size() == 0) {
         return 0;
     }
+
+    // there must be one activeNodeSet for each term.
+    ASSERT(activeNodesVectorFromArgs == NULL || query->getQueryTerms()->size() == activeNodesVectorFromArgs->size());
 
     //TODO: Corner case: check that queryResults was created using the query.
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
@@ -529,12 +541,20 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     	bool thereIsAtLeastOneUnpopularTerm = false;
 
     	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
+    	unsigned termIndex = 0;
         for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
                 vectorIterator != query->getQueryTerms()->end();
-                ++vectorIterator) {
+                ++vectorIterator, ++termIndex) {
             Term *term = *vectorIterator;
             // compute activenodes
-            PrefixActiveNodeSet * activeNodes =  this->computeActiveNodeSet(term);
+            PrefixActiveNodeSet * activeNodes = NULL;
+            // if active nodes are passed by arguments we should not compute them again.
+            if(activeNodesVectorFromArgs == NULL){
+            	activeNodes = this->computeActiveNodeSet(term);;
+            }else{
+            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
+            }
+
             activeNodesVector.push_back(activeNodes);
             // see how popular the term is
             unsigned popularity = 0;
@@ -1014,7 +1034,8 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query){
 }
 
 
-int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK)
+int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int offset, const int nextK ,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
     int returnValue = -1;
 
@@ -1027,7 +1048,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
         this->indexData->rwMutexForIdReassign->unlockRead();
     } else if (query->getQueryType() == srch2::instantsearch::SearchTypeGetAllResultsQuery) {
         this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
-        returnValue = this->searchGetAllResultsQuery(query, queryResults);
+        returnValue = this->searchGetAllResultsQuery(query, queryResults , estimatedNumberOfResultsThresholdGetAll , numberOfEstimatedResultsToFindGetAll);
         this->indexData->rwMutexForIdReassign->unlockRead();
     }
     //queryResults->printResult();
@@ -1036,9 +1057,10 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 }
 
 // find top-k answer. returns the number of records found
-int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int topK)
+int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults, const int topK,
+		unsigned estimatedNumberOfResultsThresholdGetAll , unsigned numberOfEstimatedResultsToFindGetAll)
 {
-    return search(query, queryResults, 0, topK);
+    return search(query, queryResults, 0, topK , estimatedNumberOfResultsThresholdGetAll , numberOfEstimatedResultsToFindGetAll);
 }
 
 int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults)
@@ -1311,7 +1333,6 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
     // now sort the suggestions
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
-
 unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const{
 
 	float aggregatedProbability = 1;
@@ -1324,47 +1345,65 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std:
 }
 
 float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+
+	/*
+	 * Example :
+	 *                          --t(112,112,112)$              ---- t ----- ***e ----- e ----- n(96,96,96)$
+	 *    root                  |                              |  (96,96)   (96,96)  (96,96)
+	 *      |                   |                              |
+	 *      |       (32,112) (32,112)        (32,32,96)$       |---- s(80,80,80)$
+	 *      ----------- c ----- a------------ ***n ------------|
+	 *      |                                                  |---- ***c ----- e ----- r(64,64,64)$
+	 *      |                                                  |     (64,64)  (64,64)
+	 *      ***a(16,16)                                        |
+	 *      |                                                  ---- a ----- d ----- a(48,48,48)$
+	 *      |                                                     (48,48) (48,48)
+	 *      n(16,16)
+	 *      |
+	 *      |
+	 *      ***d(16,16,16)$
+	 *
+	 * and suppose those trie nodes that have *** next to them are activeNodes. (n,a,c,d, and e)
+	 *
+	 * After sorting in pre-order, the order of these active nodes will be :
+	 * a , d , n , e , c
+	 *
+	 * and if we always compare the currentNode with the last top node:
+	 * 1. 'a' is added to topNodes
+	 * 2. 'd' is ignored because it's a descendant of 'a'
+	 * 3. 'n' has no relationship with 'a' so it's added to topNodes.
+	 * 4. 'e' is ignored because it's a descendant of 'n'
+	 * 5. 'c' is ignored because it's a descendant of 'n'
+	 * so we will have <a,n>
+	 *
+	 * and then we use joint probability to aggregate 'a' and 'n' values.
+	 *
+	 */
 	std::vector<TrieNodePointer> topTrieNodes;
-	// iterate on active nodes and keep the top level ones
+	std::vector<TrieNodePointer> preOrderSortedTrieNodes;
+	// iterate on active nodes and keep them in preOrderSortedTrieNodes to be sorted in next step
     for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
-    	// first get the new trie node
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
+        preOrderSortedTrieNodes.push_back(trieNode);
+    }
+    // now sort them in preOrder
+    std::sort(preOrderSortedTrieNodes.begin() , preOrderSortedTrieNodes.end() , TrieNodePreOrderComparator());
 
-        // now iterate through these top trie nodes and see if this new trieNode is also a top one or not
-        std::vector<TrieNodePointer> newTopTrieNodes;
-        bool isThisTrieNodeCopied = false;
-        for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
-        	TrieNodePointer trieNodeInVector = *trieNodeIter;
-        	if(trieNodeInVector->isDescendantOf(trieNode)){
-        		// if this new node is a parent copy it into the new set
-        		// and remember this copy not to do this again
-        		if(isThisTrieNodeCopied == false){
-					newTopTrieNodes.push_back(trieNode);
-        			isThisTrieNodeCopied = true;
-        		}
-        	}else if(trieNode->isDescendantOf(trieNodeInVector)){
-        		// if this trie node is a child of an old node, copy the old node
-        		newTopTrieNodes.push_back(trieNodeInVector);
-        	}else{
-        		// if none of them is a child of other one, copy both and remember copying of the new trie node
-        		// not to copy it twice
-        		if(isThisTrieNodeCopied == false){
-					newTopTrieNodes.push_back(trieNode);
-        			isThisTrieNodeCopied = true;
-        		}
-        		newTopTrieNodes.push_back(trieNodeInVector);
-        	}
-        }
-        if(topTrieNodes.size() == 0){
-        	// if nothing was in topTrieNodes before, just insert the new one
-        	topTrieNodes.push_back(trieNode);
-        }else{
-        	// clear the old content of topTrieNodes and copy newTopTrieNodes into topTrieNodes
-        	topTrieNodes.clear();
-        	topTrieNodes.insert(topTrieNodes.begin() , newTopTrieNodes.begin() , newTopTrieNodes.end());
-        }
+    // now move from left to right and always compare the current node with the last node in topTrieNodes
+    for(unsigned trieNodeIter = 0 ; trieNodeIter < preOrderSortedTrieNodes.size() ; ++trieNodeIter){
+    	TrieNodePointer currentTrieNode = preOrderSortedTrieNodes.at(trieNodeIter);
+    	if(topTrieNodes.size() == 0){ // We always push the first node into topTrieNodes.
+    		topTrieNodes.push_back(currentTrieNode);
+    		continue;
+    	}
+    	/// since trie nodes are coming in preOrder, currentTrieNode is either a descendant of the last node in topTrieNodes,
+    	// or it has no relationship with that node. In the former case, we ignore currentTrieNode. In the latter case, we append it to topTrieNodes.
+    	if(currentTrieNode->isDescendantOf(topTrieNodes.at(topTrieNodes.size()-1)) == false){ // if it's not descendant
+    		topTrieNodes.push_back(currentTrieNode);
+    	}// else : if it's a descendant we don't have to do anything
+
     }
 
     // now we have the top level trieNodes

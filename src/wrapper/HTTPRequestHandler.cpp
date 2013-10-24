@@ -831,7 +831,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();
     // TODO : is it possible to make executor and planGen singleton ?
-    QueryExecutor qe(queryPlan, resultsFactory, server);
+    QueryExecutor qe(queryPlan, resultsFactory, server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
