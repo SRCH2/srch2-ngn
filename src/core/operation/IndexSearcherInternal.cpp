@@ -1348,24 +1348,20 @@ float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet 
 
 	/*
 	 * Example :
-	 *
-	 *    root                  | t(112,112,112)$
-	 *      |                   |
-	 *      |       (32,112) (32,112)
-	 *      ----------- c ----- a---- ***n (32,32,96)$
-	 *      |                            |
-	 *      |                            |
-	 *      ***a(16,16)                  ---- a ----- d ----- a(48,48,48)$
-	 *      |                            |  (48,48) (48,48)
-	 *      |                            |
-	 *      n(16,16)                     ---- ***c ----- e ----- r(64,64,64)$
-	 *      |                            |   (64,64) (64,64)
-	 *      |                            |
-	 *      ***d(16,16,16)$              ---- s(80,80,80)$
-	 *                                   |
-	 *                                   |
-	 *                                   ---- t ----- ***e ----- e ----- n(96,96,96)$
-	 *                                     (96,96)  (96,96) (96,96)
+	 *                          --t(112,112,112)$              ---- t ----- ***e ----- e ----- n(96,96,96)$
+	 *    root                  |                              |  (96,96)   (96,96)  (96,96)
+	 *      |                   |                              |
+	 *      |       (32,112) (32,112)        (32,32,96)$       |---- s(80,80,80)$
+	 *      ----------- c ----- a------------ ***n ------------|
+	 *      |                                                  |---- ***c ----- e ----- r(64,64,64)$
+	 *      |                                                  |     (64,64)  (64,64)
+	 *      ***a(16,16)                                        |
+	 *      |                                                  ---- a ----- d ----- a(48,48,48)$
+	 *      |                                                     (48,48) (48,48)
+	 *      n(16,16)
+	 *      |
+	 *      |
+	 *      ***d(16,16,16)$
 	 *
 	 * and suppose those trie nodes that have *** next to them are activeNodes. (n,a,c,d, and e)
 	 *
@@ -1374,10 +1370,10 @@ float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet 
 	 *
 	 * and if we always compare the currentNode with the last top node:
 	 * 1. 'a' is added to topNodes
-	 * 2. 'd' is ignore because it's a descendant of 'a'
+	 * 2. 'd' is ignored because it's a descendant of 'a'
 	 * 3. 'n' has no relationship with 'a' so it's added to topNodes.
-	 * 4. 'e' is ignore because it's a descendant of 'n'
-	 * 5. 'c' is ignore because it's a descendant of 'n'
+	 * 4. 'e' is ignored because it's a descendant of 'n'
+	 * 5. 'c' is ignored because it's a descendant of 'n'
 	 * so we will have <a,n>
 	 *
 	 * and then we use joint probability to aggregate 'a' and 'n' values.
@@ -1398,12 +1394,12 @@ float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet 
     // now move from left to right and always compare the current node with the last node in topTrieNodes
     for(unsigned trieNodeIter = 0 ; trieNodeIter < preOrderSortedTrieNodes.size() ; ++trieNodeIter){
     	TrieNodePointer currentTrieNode = preOrderSortedTrieNodes.at(trieNodeIter);
-    	if(topTrieNodes.size() == 0){
+    	if(topTrieNodes.size() == 0){ // We always push the first node into topTrieNodes.
     		topTrieNodes.push_back(currentTrieNode);
     		continue;
     	}
-    	// since trie nodes are coming in preOrder, currentTrieNode is either descendant of last node or it has no relationship with it
-    	// if it's a descendant we ignore it, if no relationship, we append it.
+    	/// since trie nodes are coming in preOrder, currentTrieNode is either a descendant of the last node in topTrieNodes,
+    	// or it has no relationship with that node. In the former case, we ignore currentTrieNode. In the latter case, we append it to topTrieNodes.
     	if(currentTrieNode->isDescendantOf(topTrieNodes.at(topTrieNodes.size()-1)) == false){ // if it's not descendant
     		topTrieNodes.push_back(currentTrieNode);
     	}// else : if it's a descendant we don't have to do anything
