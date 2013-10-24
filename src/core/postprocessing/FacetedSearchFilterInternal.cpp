@@ -108,6 +108,24 @@ std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(cons
 	}
 	return std::make_pair(categoryValueToBucketIdMap[attributeValueLowerCase] , attributeValueLowerCase);
 }
+
+
+void FacetHelper::generateIDAndNameForMultiValued(const TypedValue & attributeValue ,
+		std::vector< std::pair<unsigned , std::string> > & resultIdsAndNames){
+	ASSERT(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME);
+	std::vector<TypedValue> singleValues;
+	attributeValue.breakMultiValueIntoSingleValueTypedValueObjects(&singleValues);
+	for(std::vector<TypedValue>::iterator singleValue = singleValues.begin() ; singleValue != singleValues.end() ; ++singleValue){
+		std::pair<unsigned, std::string>  idAndNamePair = generateIDAndName(*singleValue);
+		if(std::find(resultIdsAndNames.begin() , resultIdsAndNames.end() , idAndNamePair) == resultIdsAndNames.end()){
+			resultIdsAndNames.push_back(idAndNamePair);
+		}
+	}
+}
+
 void CategoricalFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames){
 	// This function should not be called.
 	ASSERT(false);
@@ -134,6 +152,7 @@ std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const Type
     }
     return std::make_pair(bucketId , "");
 }
+
 /*
  * Example :
  * If we have two attributes : price,model (facet type : range, categorical)
@@ -318,8 +337,19 @@ void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
 	}
 }
 void FacetedSearchFilterInternal::doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex){
-	std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
-	this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+	if(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME){
+		std::vector<std::pair<unsigned , std::string> > idsAndNames;
+		this->facetHelpers.at(facetFieldIndex)->generateIDAndNameForMultiValued(attributeValue , idsAndNames);
+		for(std::vector<std::pair<unsigned , std::string> >::iterator idAndName = idsAndNames.begin() ; idAndName != idsAndNames.end() ; ++idAndName){
+			this->facetResults.at(facetFieldIndex).second->addResultToBucket(idAndName->first , idAndName->second , FacetAggregationTypeCount);
+		}
+	}else{ // single value
+		std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
+		this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+	}
 }
 
 void FacetedSearchFilterInternal::initialize(std::vector<FacetType> & facetTypes,

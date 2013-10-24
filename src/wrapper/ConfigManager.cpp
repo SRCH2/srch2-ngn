@@ -19,6 +19,8 @@
 #include "ParserUtility.h"
 #include "util/Assert.h"
 
+#include "boost/algorithm/string_regex.hpp"
+
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace pugi;
@@ -61,6 +63,7 @@ const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
 const char* const ConfigManager::hostString = "host";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
+const char* const ConfigManager::multiValuedString = "multivalued";
 const char* const ConfigManager::indexTypeString = "indextype";
 const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
@@ -285,11 +288,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     vector<bool> searchableFieldIndexsVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
+    vector<bool> searchableAttributesIsMultiValued;
 
     vector<string> nonSearchableFieldsVector;
     vector<srch2::instantsearch::FilterType> nonSearchableFieldTypesVector;
     vector<bool> nonSearchableAttributesRequiredFlagVector;
     vector<string> nonSearchableAttributesDefaultVector;
+    vector<bool> nonSearchableAttributesIsMultiValued;
 
     this->isPrimSearchable = 0;
 
@@ -298,6 +303,23 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare(fieldString) == 0) {
 
+
+            	/*
+            	 * The following code decides whether this field is multi-valued or not.
+            	 * If multivalued="true" in field tag, this field is multi-valued.
+            	 */
+            	bool isMultiValued = false;
+                if(string(field.attribute(multiValuedString).value()).compare("") != 0){
+                	tempUse = string(field.attribute(multiValuedString).value());
+                	if(isValidBool(tempUse)){
+                		isMultiValued = field.attribute(multiValuedString).as_bool();
+                	}else{
+                        parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
+                        configSuccess = false;
+                        return;
+                	}
+                }// We do not need the "else" part since multivalued property is not
+                 // there so this field is not a multivalued field (false by default)
             	/*
             	 * The following code decides whether this field is searchable/refining or not.
             	 * It uses this logic:
@@ -323,7 +345,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             if(string(field.attribute(searchableString).value()).compare("") != 0){
                                 tempUse = string(field.attribute(searchableString).value());
                                 if(isValidBool(tempUse)){
-                                    if(field.attribute("searchable").as_bool()){
+                                    if(field.attribute(searchableString).as_bool()){
                                         isSearchable = true;
                                     }else{
                                         isSearchable = false;
@@ -439,6 +461,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }else{
                             searchableAttributesRequiredFlagVector.push_back(false);
                         }
+                        searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){ // it is a refining field
@@ -460,13 +483,32 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         // Check the validity of field default value based on it's type
                         if (string(field.attribute(defaultString).value()).compare("") != 0){
                             tempUse = string(field.attribute("default").value());
-                            if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
+                            if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) , isMultiValued)){
 
                                 if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-                                    std::stringstream buffer;
-                                    buffer << timeValue;
-                                    tempUse = buffer.str();
+                                	if(isMultiValued == false){
+                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+                                        std::stringstream buffer;
+                                        buffer << timeValue;
+                                        tempUse = buffer.str();
+                                }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+                                	// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+                                        string convertedDefaultValues = "";
+                                        vector<string> defaultValueTokens;
+                                        splitString(tempUse , "," , defaultValueTokens);
+                                        for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
+                                                 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+    									    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+    									    std::stringstream buffer;
+                                            buffer << timeValue;
+    										if(defaultValueToken == defaultValueTokens.begin()){
+    											convertedDefaultValues = buffer.str();
+    										}else{
+    											convertedDefaultValues = ","+buffer.str();
+    										}
+
+                                		}
+                                	}
                                 }
                             }else{
                                 parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
@@ -483,6 +525,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }else{
                             nonSearchableAttributesRequiredFlagVector.push_back(false);
                         }
+
+                        nonSearchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
@@ -519,13 +563,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     if(nonSearchableFieldsVector.size() != 0){
         for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
 
-            /// map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >
+            /// map<string, pair< srch2::instantsearch::FilterType, pair<string, pair< bool, bool> > > >
             nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
                     pair<srch2::instantsearch::FilterType,
-                            pair<string, bool> >(nonSearchableFieldTypesVector[iter],
-                            pair<string, bool>(
+                            pair<string,  pair<bool,bool> > >(nonSearchableFieldTypesVector[iter],
+                            pair<string, pair<bool,bool> >(
                                     nonSearchableAttributesDefaultVector[iter],
-                                    nonSearchableAttributesRequiredFlagVector[iter]));
+                                    pair<bool,bool>(nonSearchableAttributesRequiredFlagVector[iter],nonSearchableAttributesIsMultiValued[iter])));
         }
     }
 
@@ -840,18 +884,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     for (int i = 0; i < searchableFieldsVector.size(); i++) {
         if (boostsMap.find(searchableFieldsVector[i]) == boostsMap.end()) {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
+                    pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(
                             searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, unsigned> >(
+                            pair<string, pair<unsigned, pair<unsigned,bool> > >(
                                     searchableAttributesDefaultVector[i],
-                                    pair<unsigned, unsigned>(0,1)));
+                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(1, searchableAttributesIsMultiValued[i]))));
         } else {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
+                    pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(
                             searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, unsigned> >(
+                            pair<string, pair<unsigned, pair<unsigned,bool> > >(
                                     searchableAttributesDefaultVector[i],
-                                    pair<unsigned, unsigned>(0,boostsMap[searchableFieldsVector[i]])));
+                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(boostsMap[searchableFieldsVector[i]],
+                                    		searchableAttributesIsMultiValued[i]))));
         }
     }
 
@@ -872,7 +917,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // should be consistent with the id in the schema
     unsigned idIter = 0;
 
-    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
+    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
     for(; searchableAttributeIter != searchableAttributesInfo.end(); searchableAttributeIter++){
         searchableAttributeIter->second.second.second.first = idIter;
         idIter ++;
@@ -1284,8 +1329,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
         searchableAttributesInfo[searchableAttributesVector[iter]] =
-                pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
-                        pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
+                pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(false,
+                        pair<string, pair<unsigned, pair<unsigned,bool> > >("" ,
+                        		pair<unsigned, pair<unsigned,bool> >(iter,
+                        				pair<unsigned,bool>(1,false)) ) );
     }
 }
 
@@ -1360,11 +1407,11 @@ const string& ConfigManager::getFilePath() const {
 const string& ConfigManager::getPrimaryKey() const {
     return primaryKey;
 }
-const map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > > * ConfigManager::getSearchableAttributes() const {
+const map<string, pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > > > * ConfigManager::getSearchableAttributes() const {
     return &searchableAttributesInfo;
 }
 
-const map<string, pair<srch2::instantsearch::FilterType, pair<string, bool> > > * ConfigManager::getNonSearchableAttributes() const {
+const map<string, pair<srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > * ConfigManager::getNonSearchableAttributes() const {
     return &nonSearchableAttributesInfo;
 }
 
@@ -1596,8 +1643,20 @@ bool ConfigManager::isValidFieldType(string& fieldType , bool isSearchable) {
     }
 }
 
-bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType){
-    return validateValueWithType(fieldType , defaultValue);
+bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType , bool isMultiValued){
+	if(isMultiValued == false){
+		return validateValueWithType(fieldType , defaultValue);
+	}
+
+	// if it is a multi-valued attribute, default value is a comma separated list of default values. example : "tag1,tag2,tag3"
+	vector<string> defaultValueTokens;
+	splitString(defaultValue , "," , defaultValueTokens);
+	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+		if( validateValueWithType(fieldType , *defaultValueToken) == false){
+			return false;
+		}
+	}
+	return true;
 }
 
 bool ConfigManager::isValidBool(string& fieldType) {
