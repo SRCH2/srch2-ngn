@@ -320,6 +320,8 @@ The above query defines the gap between each consecutive faceted value of the fa
 
 Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.
 
+*Note:* if the number of results of a query is greater than 10K, facet results are made based on the best 2000 results.
+
 ## 8. searchType{id="searchType"}
 
 The engine offers three different strategies for searching records:
@@ -336,6 +338,7 @@ The following are examples of using searchType:
 4) searchType=getAll&sort=author
 ```
 *Note:* if searchType is not included in the query, it is set to topK by default. However, if any facet or sort parameter is included in the query, the search type will be getAll.
+*Note:* If searchType is getAll and the number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.
 
 ## 9. sort{id="sort"}
 
@@ -344,6 +347,7 @@ The engine's default behavior is to sort the results using a descending order by
 sort=author,price,title
 ```
 *Note:* if a sort request is included in the query, the returned records' scores are still those calculated scores by the engine, but the order of the results corresponds to the user specification.
+*Note:* if the number of results of a query is greater than 10K, ranking function is used to find the best 2000 results which are then sorted based on sort parameter and returned.
 
 ## 10. orderby{id="orderby"}
 

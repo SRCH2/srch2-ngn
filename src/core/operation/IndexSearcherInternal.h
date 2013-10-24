@@ -141,7 +141,7 @@ private:
     /*
      * estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll :
      * If the estimated number of results for a query is larger than the value of this argument,
-     * this function decides to estimate the results by finding tokK. In this case
+     * this function decides to estimate the results by finding topK. In this case
      * this function uses numberOfEstimatedResultsToFindGetAll as K.
      */
     int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
