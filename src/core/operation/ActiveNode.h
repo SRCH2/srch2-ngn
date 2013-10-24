@@ -55,7 +55,7 @@ struct ResultNode {
 };
 
 // this comparison is based on preorder.
-struct trieNodeComparision {
+struct TrieNodePreOrderComparator {
     bool operator() (const TrieNode* t1, const TrieNode* t2) {
         return t1->getMinId() < t2->getMinId() || (t1->getMinId() == t2->getMinId() && t1->getMaxId() > t2->getMaxId());
     }
@@ -441,7 +441,7 @@ public:
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
 
-        map<const TrieNode*, unsigned, trieNodeComparision> activeNodes;
+        map<const TrieNode*, unsigned, TrieNodePreOrderComparator> activeNodes;
         const TrieNode *currentNode;
         unsigned distance;
 

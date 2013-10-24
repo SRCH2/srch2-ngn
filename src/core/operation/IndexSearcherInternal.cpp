@@ -1345,47 +1345,69 @@ unsigned IndexSearcherInternal::estimateNumberOfResults(const Query *query, std:
 }
 
 float IndexSearcherInternal::getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+
+	/*
+	 * Example :
+	 *
+	 *    root                  | t(112,112,112)$
+	 *      |                   |
+	 *      |       (32,112) (32,112)
+	 *      ----------- c ----- a---- ***n (32,32,96)$
+	 *      |                            |
+	 *      |                            |
+	 *      ***a(16,16)                  ---- a ----- d ----- a(48,48,48)$
+	 *      |                            |  (48,48) (48,48)
+	 *      |                            |
+	 *      n(16,16)                     ---- ***c ----- e ----- r(64,64,64)$
+	 *      |                            |   (64,64) (64,64)
+	 *      |                            |
+	 *      ***d(16,16,16)$              ---- s(80,80,80)$
+	 *                                   |
+	 *                                   |
+	 *                                   ---- t ----- ***e ----- e ----- n(96,96,96)$
+	 *                                     (96,96)  (96,96) (96,96)
+	 *
+	 * and suppose those trie nodes that have *** next to them are activeNodes. (n,a,c,d, and e)
+	 *
+	 * After sorting in pre-order, the order of these active nodes will be :
+	 * a , d , n , e , c
+	 *
+	 * and if we always compare the currentNode with the last top node:
+	 * 1. 'a' is added to topNodes
+	 * 2. 'd' is ignore because it's a descendant of 'a'
+	 * 3. 'n' has no relationship with 'a' so it's added to topNodes.
+	 * 4. 'e' is ignore because it's a descendant of 'n'
+	 * 5. 'c' is ignore because it's a descendant of 'n'
+	 * so we will have <a,n>
+	 *
+	 * and then we use joint probability to aggregate 'a' and 'n' values.
+	 *
+	 */
 	std::vector<TrieNodePointer> topTrieNodes;
-	// iterate on active nodes and keep the top level ones
+	std::vector<TrieNodePointer> preOrderSortedTrieNodes;
+	// iterate on active nodes and keep them in preOrderSortedTrieNodes to be sorted in next step
     for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
-    	// first get the new trie node
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
+        preOrderSortedTrieNodes.push_back(trieNode);
+    }
+    // now sort them in preOrder
+    std::sort(preOrderSortedTrieNodes.begin() , preOrderSortedTrieNodes.end() , TrieNodePreOrderComparator());
 
-        // now iterate through these top trie nodes and see if this new trieNode is also a top one or not
-        std::vector<TrieNodePointer> newTopTrieNodes;
-        bool isThisTrieNodeCopied = false;
-        for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
-        	TrieNodePointer trieNodeInVector = *trieNodeIter;
-        	if(trieNodeInVector->isDescendantOf(trieNode)){
-        		// if this new node is a parent copy it into the new set
-        		// and remember this copy not to do this again
-        		if(isThisTrieNodeCopied == false){
-					newTopTrieNodes.push_back(trieNode);
-        			isThisTrieNodeCopied = true;
-        		}
-        	}else if(trieNode->isDescendantOf(trieNodeInVector)){
-        		// if this trie node is a child of an old node, copy the old node
-        		newTopTrieNodes.push_back(trieNodeInVector);
-        	}else{
-        		// if none of them is a child of other one, copy both and remember copying of the new trie node
-        		// not to copy it twice
-        		if(isThisTrieNodeCopied == false){
-					newTopTrieNodes.push_back(trieNode);
-        			isThisTrieNodeCopied = true;
-        		}
-        		newTopTrieNodes.push_back(trieNodeInVector);
-        	}
-        }
-        if(topTrieNodes.size() == 0){
-        	// if nothing was in topTrieNodes before, just insert the new one
-        	topTrieNodes.push_back(trieNode);
-        }else{
-        	// clear the old content of topTrieNodes and copy newTopTrieNodes into topTrieNodes
-        	topTrieNodes.clear();
-        	topTrieNodes.insert(topTrieNodes.begin() , newTopTrieNodes.begin() , newTopTrieNodes.end());
-        }
+    // now move from left to right and always compare the current node with the last node in topTrieNodes
+    for(unsigned trieNodeIter = 0 ; trieNodeIter < preOrderSortedTrieNodes.size() ; ++trieNodeIter){
+    	TrieNodePointer currentTrieNode = preOrderSortedTrieNodes.at(trieNodeIter);
+    	if(topTrieNodes.size() == 0){
+    		topTrieNodes.push_back(currentTrieNode);
+    		continue;
+    	}
+    	// since trie nodes are coming in preOrder, currentTrieNode is either descendant of last node or it has no relationship with it
+    	// if it's a descendant we ignore it, if no relationship, we append it.
+    	if(currentTrieNode->isDescendantOf(topTrieNodes.at(topTrieNodes.size()-1)) == false){ // if it's not descendant
+    		topTrieNodes.push_back(currentTrieNode);
+    	}// else : if it's a descendant we don't have to do anything
+
     }
 
     // now we have the top level trieNodes
