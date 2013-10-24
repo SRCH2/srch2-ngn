@@ -5,6 +5,6 @@
 
 Changes over version 4.1.0:
 * Tag names and attribute names are now case insensitive.
-* GetAll search type is optimized.
+* GetAll search type is optimized. If the number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.
 * Tag "queryTermType" is now changed to "queryTermPrefixType"
 * Tag "queryTermMatchType" is now changed to "queryTermFuzzyType"
