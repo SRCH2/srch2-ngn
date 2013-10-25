@@ -33,8 +33,8 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
 
     if (commitReturnValue == OP_FAIL && this->mergeThreadStarted == false) {
     	/*
-    	 *  If _commit fails, then we are past bulk load stage.So we should probably merge if and
-    	 *  only if there is NO dedicated merge thread already running. Merge thread can be
+    	 *  If _commit fails, then we are in past bulk load stage. We should call merge function but
+    	 *  only if there is NO dedicated merge thread running. Merge thread can be
     	 *  instantiated by a wrapper layer which allows it to not call commit (or merge) explicitly.
     	 */
     	bool updateHistogramFlag = shouldUpdateHistogram();

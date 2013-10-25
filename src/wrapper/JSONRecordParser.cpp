@@ -334,6 +334,9 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     return schema;
 }
 
+/*
+ *  Create indexes using records from json file and return the total indexed records.
+ */
 unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
@@ -348,7 +351,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-    unsigned indexedCounter = 0;
+    unsigned indexedRecordsCount = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
@@ -364,7 +367,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
                 indexer->addRecord(record, analyzer);
-                indexedCounter++;
+                indexedRecordsCount++;
             }
             else
             {
@@ -381,12 +384,12 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
         }
     }
     std::cout<<"                                                     \r";
-    Logger::console("Indexed %d / %d records.", indexedCounter, lineCounter);
+    Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
 
     in.close();
 
     delete analyzer;
-    return indexedCounter;
+    return indexedRecordsCount;
 }
 
 // convert other types to string

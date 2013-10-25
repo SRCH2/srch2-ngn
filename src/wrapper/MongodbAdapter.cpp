@@ -46,7 +46,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Conf
 
         unsigned collectionCount = mongoConnector->conn().count(dbNameWithCollection);
         // We fetch data from mongo db only if there are some records to be processed
-        unsigned indexCnt = 0;
+        unsigned indexedRecordsCount = 0;
         if (collectionCount > 0) {
             srch2is::Record *record = new srch2is::Record(indexer->getSchema());
             // create new analyzer
@@ -63,13 +63,13 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Conf
                 bool result = BSONParser::parse(record, bsonObj, configManager);
                 if (result) {
                     indexer->addRecord(record, analyzer);
-                    ++indexCnt;
+                    ++indexedRecordsCount;
                 }
                 record->clear();
-                if (indexCnt && (indexCnt % 1000) == 0)
-                    Logger::console("Indexed %d records so far ...", indexCnt);
+                if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
+                    Logger::console("Indexed %d records so far ...", indexedRecordsCount);
             }
-            Logger::console("Total indexed %d / %d records.", indexCnt, collectionCount);
+            Logger::console("Total indexed %d / %d records.", indexedRecordsCount, collectionCount);
 
             delete analyzer;
             delete record;
@@ -78,7 +78,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Conf
             Logger::console("No data found in the collection %s", dbNameWithCollection.c_str());
         }
         mongoConnector->done();
-        return indexCnt;
+        return indexedRecordsCount;
     } catch( const mongo::DBException &e ) {
         Logger::console("MongoDb Exception : %s", e.what());
         exit(-1);

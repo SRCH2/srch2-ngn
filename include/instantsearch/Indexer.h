@@ -143,13 +143,13 @@ public:
 
     /**
      * Builds the index. The records are made searchable after the first commit.
-     * It is advised to call the commit in batch mode. First commit should we be called when the
-     * bulk loading of initial records is done. Subsequent commits should be called based on
-     * different criteria. For example. you may call commit after N amount of records have been
-     * added to index ( not yet searchable) or N seconds have past since last commit or when a
-     * certain event occurs.
-     * Note:- In order to avoid explicit commits after first commit, you could choose to call
-     *        startMergeThreadLoop() function.
+     * It is advised to call the commit in a batch mode. The first commit should be called when
+     * the bulk loading of initial records is done. Subsequent commits should be called based on
+     * different criteria. For example, we may call "commit()" after a certain number of records
+     * have been added to indexes (not yet searchable) or another certain number of seconds have
+     * passed since last the commit or when a certain event occurs.
+     * Note:- In order to avoid explicit commits after the first commit, we could choose to call
+     * startMergeThreadLoop() function.
      */
     virtual INDEXWRITE_RETVAL commit() = 0;
     
@@ -171,9 +171,9 @@ public:
     //virtual int merge() = 0;
 
     /*
-     *  This is a blocking function which starts a conditional wait loop. It performs incremental
-     *  insert/update/delete operations on the index based on a certain condition.
-     *  Condition:  N records have been added or N seconds have passed ( whichever occurs first)
+     *  Starts a conditional wait loop and merges all the incremental changes to indexes when a
+     *  certain condition occurs.
+     *  Condition:  n records have been added or t seconds have passed ( whichever occurs first)
      *  Note: This function must be called from a separate dedicated thread. Otherwise it will
      *  block the current calling thread.
      */

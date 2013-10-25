@@ -44,8 +44,8 @@ class Srch2Server
 public:
 	Indexer *indexer;
 	const ConfigManager *indexDataContainerConf;
-	pthread_t mergerThread;
-	pthread_attr_t attr;
+	pthread_t mergerThread;  // stores thread identifier.
+	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 
 	/* Fields used only for stats */
 	time_t stat_starttime;          /* Server start time */
@@ -140,6 +140,10 @@ public:
 						// Create from JSON and save to index-dir
 						Logger::console("Creating indexes from JSON file...");
 						unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						/*
+						 *  commit the indexes once bulk load is done and then save it to the disk only
+						 *  if number of indexed record is > 0.
+						 */
 					    indexer->commit();
 					    if (indexedCounter > 0) {
 					    	Logger::console("Saving Indexes.....");
@@ -151,9 +155,9 @@ public:
 					case srch2http::DATA_SOURCE_MONGO_DB:
 					{
 						Logger::console("Creating indexes from a MongoDb instance...");
-						unsigned indexCnt = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+						unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
 				        indexer->commit();
-				        if (indexCnt > 0) {
+				        if (indexedCounter > 0) {
 				            Logger::console("Saving Indexes.....");
 				            indexer->save();
 				            Logger::console("Indexes saved.");
@@ -191,15 +195,19 @@ public:
 		startMergerThread();
 	}
 
+	/*
+	 *  set new thread's attribute as joinable and then call pthread_create() to instantiate the
+	 *  thread.
+	 */
 	void startMergerThread()
 	{
-	        pthread_attr_init(&attr);
-	        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	        pthread_create(&mergerThread, &attr, dispatchMergeThread, indexer);
+	        pthread_attr_init(&mergeThreadAttributes);
+	        pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
+	        pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, indexer);
 	}
 
 	/*
-	 *  Static method which serves as entry point for merger thread.
+	 *  Static method which serves as an entry point for merger thread.
 	 */
 	static void * dispatchMergeThread(void * indexer) {
 		(reinterpret_cast <Indexer *>(indexer))->startMergeThreadLoop();
