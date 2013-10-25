@@ -29,7 +29,7 @@ namespace httpwrapper {
 pthread_t * MongoDataSource::mongoListenerThread = new pthread_t;
 time_t MongoDataSource::bulkLoadEndTime = 0;
 
-void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager) {
+unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager) {
 
     string dbNameWithCollection = configManager->getMongoDbName() +
             "."  + configManager->getMongoCollection();
@@ -77,13 +77,8 @@ void MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigMa
         } else {
             Logger::console("No data found in the collection %s", dbNameWithCollection.c_str());
         }
-        indexer->commit();
-        if (indexCnt > 0) {
-            Logger::console("Saving Indexes.....");
-            indexer->save();
-            Logger::console("Indexes saved.");
-        }
         mongoConnector->done();
+        return indexCnt;
     } catch( const mongo::DBException &e ) {
         Logger::console("MongoDb Exception : %s", e.what());
         exit(-1);

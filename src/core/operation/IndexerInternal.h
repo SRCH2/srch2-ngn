@@ -114,7 +114,7 @@ public:
         // LOAD Index
         this->index = IndexData::load(indexMetaData->directoryName);
         this->initIndexReaderWriter(indexMetaData);
-        this->startMergerThreads();
+        //this->startMergerThreads();
     };
 
     void initIndexReaderWriter(IndexMetaData* indexMetaData)
@@ -135,16 +135,9 @@ public:
     {
         this->rwMutexForWriter->lockWrite();
         this->mergeThreadStarted = false;
+        pthread_cond_signal(&countThresholdConditionVariable);
         this->rwMutexForWriter->unlockWrite();
-
-        while (not  this->mergeThreadStarted )
-            pthread_cond_signal(&countThresholdConditionVariable);
-
-        pthread_join(this->mergerThread, NULL);
         delete this->index;
-
-        pthread_attr_destroy(&attr);
-        pthread_cond_destroy(&countThresholdConditionVariable);
         delete this->rwMutexForWriter;
     };
 
@@ -152,9 +145,6 @@ public:
     {
         return this->index->_getNumberOfDocumentsInIndex();
     }
-
-    // start the background merge thread
-    void startMergerThreads();
 
     /**
      * Builds the index. After commit(), the records are made searchable after the first commit.
@@ -257,8 +247,8 @@ private:
     pthread_cond_t countThresholdConditionVariable;
     volatile bool mergeThreadStarted;
 
-    pthread_t mergerThread;
-    pthread_attr_t attr;
+    //pthread_t mergerThread;
+    //pthread_attr_t attr;
 
     volatile unsigned writesCounterForMerge;
     unsigned mergeEveryNSeconds;
@@ -270,14 +260,7 @@ private:
 
     INDEXWRITE_RETVAL merge(bool updateHistogram);
 
-    void mergeThreadLoop();
-
-    static void *startBackgroundMergerThread(void *obj)
-    {
-        //All we do here is call the mergeThreadLoop() function
-        reinterpret_cast<IndexReaderWriter *>(obj)->mergeThreadLoop();
-        return NULL;
-    }
+    void startMergeThreadLoop();
 
     void writelock()
     {

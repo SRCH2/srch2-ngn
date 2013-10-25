@@ -142,10 +142,14 @@ public:
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;
 
     /**
-     * Builds the index. After commit(), the records are made searchable after the first commit.
-     *
-     * After the first commit, the call to commit does nothing.
-     *
+     * Builds the index. The records are made searchable after the first commit.
+     * It is advised to call the commit in batch mode. First commit should we be called when the
+     * bulk loading of initial records is done. Subsequent commits should be called based on
+     * different criteria. For example. you may call commit after N amount of records have been
+     * added to index ( not yet searchable) or N seconds have past since last commit or when a
+     * certain event occurs.
+     * Note:- In order to avoid explicit commits after first commit, you could choose to call
+     *        startMergeThreadLoop() function.
      */
     virtual INDEXWRITE_RETVAL commit() = 0;
     
@@ -165,6 +169,15 @@ public:
     * Deletes all the records.*/
     /*virtual int deleteAll() = 0;*/
     //virtual int merge() = 0;
+
+    /*
+     *  This is a blocking function which starts a conditional wait loop. It performs incremental
+     *  insert/update/delete operations on the index based on a certain condition.
+     *  Condition:  N records have been added or N seconds have passed ( whichever occurs first)
+     *  Note: This function must be called from a separate dedicated thread. Otherwise it will
+     *  block the current calling thread.
+     */
+    virtual void startMergeThreadLoop() = 0;
 };
 
 }}

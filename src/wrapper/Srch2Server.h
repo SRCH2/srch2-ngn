@@ -44,6 +44,8 @@ class Srch2Server
 public:
 	Indexer *indexer;
 	const ConfigManager *indexDataContainerConf;
+	pthread_t mergerThread;
+	pthread_attr_t attr;
 
 	/* Fields used only for stats */
 	time_t stat_starttime;          /* Server start time */
@@ -137,13 +139,25 @@ public:
 					{
 						// Create from JSON and save to index-dir
 						Logger::console("Creating indexes from JSON file...");
-						DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+					    indexer->commit();
+					    if (indexedCounter > 0) {
+					    	Logger::console("Saving Indexes.....");
+					    	indexer->save();
+					    	Logger::console("Indexes saved.");
+					    }
 						break;
 					}
 					case srch2http::DATA_SOURCE_MONGO_DB:
 					{
 						Logger::console("Creating indexes from a MongoDb instance...");
-						MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+						unsigned indexCnt = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+				        indexer->commit();
+				        if (indexCnt > 0) {
+				            Logger::console("Saving Indexes.....");
+				            indexer->save();
+				            Logger::console("Indexes saved.");
+				        }
 						break;
 					}
 					default:
@@ -173,6 +187,23 @@ public:
 				break;
 			}
 		}
+	    // start merger thread
+		startMergerThread();
+	}
+
+	void startMergerThread()
+	{
+	        pthread_attr_init(&attr);
+	        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	        pthread_create(&mergerThread, &attr, dispatchMergeThread, indexer);
+	}
+
+	/*
+	 *  Static method which serves as entry point for merger thread.
+	 */
+	static void * dispatchMergeThread(void * indexer) {
+		(reinterpret_cast <Indexer *>(indexer))->startMergeThreadLoop();
+		pthread_exit(0);
 	}
 
 	virtual ~Srch2Server(){}

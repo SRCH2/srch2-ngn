@@ -24,34 +24,28 @@ namespace srch2
 {
 namespace instantsearch
 {
-
-void IndexReaderWriter::startMergerThreads()
-{
-    if (not this->mergeThreadStarted)
-    {
-        this->mergeThreadStarted = true; // Threads running
-
-        pthread_cond_init (&countThresholdConditionVariable, NULL);
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-        void *(*backgroundMergeThread) (void*);
-        backgroundMergeThread = &IndexReaderWriter::startBackgroundMergerThread;
-
-        pthread_create(&mergerThread, &attr, backgroundMergeThread, this);
-    }
-}
     
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
     writelock();
     
     INDEXWRITE_RETVAL commitReturnValue = this->index->_commit();
+
+    if (commitReturnValue == OP_FAIL && this->mergeThreadStarted == false) {
+    	/*
+    	 *  If _commit fails, then we are past bulk load stage.So we should probably merge if and
+    	 *  only if there is NO dedicated merge thread already running. Merge thread can be
+    	 *  instantiated by a wrapper layer which allows it to not call commit (or merge) explicitly.
+    	 */
+    	bool updateHistogramFlag = shouldUpdateHistogram();
+    	if(updateHistogramFlag == true){
+    		this->resetMergeCounterForHistogram();
+    	}
+    	this->merge(updateHistogramFlag);
+    }
     this->writesCounterForMerge = 0;
     
     writeunlock();
-
-    this->startMergerThreads(); // No-op if threads already started.
 
     return commitReturnValue;
 }
@@ -161,6 +155,10 @@ void IndexReaderWriter::save(const std::string& directoryName)
     writeunlock();
 }
 
+/*
+ *  This function is not thread safe. Caller of this function should hold valid lock. This
+ *  function should not be exposed outside core.
+ */
 
 INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
@@ -187,11 +185,32 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 }
 
 //http://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=%2Fapis%2Fusers_77.htm
-void IndexReaderWriter::mergeThreadLoop()
+void IndexReaderWriter::startMergeThreadLoop()
 {
     int               rc;
     struct timespec   ts;
     struct timeval    tp;
+
+    /*
+     *  There should be only one merger thread per indexer object
+     */
+    rwMutexForWriter->lockWrite();
+    if (mergeThreadStarted) {
+    	rwMutexForWriter->unlockWrite();
+    	Logger::warn("Only one merge thread per index is supported!");
+    	return;
+    }
+    if (!this->index->isCommited()) {
+        	rwMutexForWriter->unlockWrite();
+        	Logger::warn("Merge thread can be called only after first commit!");
+        	return;
+    }
+    rwMutexForWriter->unlockWrite();
+    mergeThreadStarted = true;
+    /*
+     *  Initialize condition variable for the first time before loop starts.
+     */
+    pthread_cond_init(&countThresholdConditionVariable, NULL);
 
     while (1)
     {
@@ -218,9 +237,9 @@ void IndexReaderWriter::mergeThreadLoop()
             rwMutexForWriter->unlockWrite();
         }
     }
-    mergeThreadStarted = true;
+    pthread_cond_destroy(&countThresholdConditionVariable);
     rwMutexForWriter->unlockWrite();
-    pthread_exit(0);
+    return;
 }
 
 

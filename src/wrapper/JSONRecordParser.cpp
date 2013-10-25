@@ -334,14 +334,14 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
         Logger::error("DataSource file not found at: %s", filePath.c_str());
-        return;
+        return 0;
     }
 
     string line;
@@ -385,16 +385,8 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
 
     in.close();
 
-    // Step 4: Commit the index, after which no more records can
-    // be added
-    indexer->commit();
-
-    if (indexedCounter > 0) {
-    	Logger::console("Saving Indexes.....");
-    	indexer->save();
-    	Logger::console("Indexes saved.");
-    }
     delete analyzer;
+    return indexedCounter;
 }
 
 // convert other types to string
