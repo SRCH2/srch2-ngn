@@ -484,7 +484,6 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
         }else{
 			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
-        //this->trie->print_Trie();
         this->flagBulkLoadDone = true;
         return OP_SUCCESS;
     }else{

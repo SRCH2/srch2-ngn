@@ -1272,7 +1272,7 @@ void testFrench() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
-	Indexer *index = Indexer::load(indexMetaData1);\
+	Indexer *index = Indexer::load(indexMetaData1);
 	startMergerThread(index);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
