@@ -27,7 +27,7 @@ namespace instantsearch
     
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
-    writelock();
+    rwMutexForWriter->lockWrite();
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
     	commitReturnValue = this->index->finishBulkLoad();
@@ -45,14 +45,14 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     }
     this->writesCounterForMerge = 0;
     
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
 
     return commitReturnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer)
 {
-    writelock();
+    rwMutexForWriter->lockWrite();
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
@@ -61,13 +61,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     	}
     }
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
-    writelock();
+    rwMutexForWriter->lockWrite();
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
     if (returnValue == OP_SUCCESS) {
@@ -77,13 +77,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
     	}
     }
     
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
-    writelock();
+    rwMutexForWriter->lockWrite();
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
@@ -93,13 +93,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     	}
     }
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId)
 {
-    writelock();
+    rwMutexForWriter->lockWrite();
 
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
@@ -109,7 +109,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     	}
     }
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
     return returnValue;
 }
 
@@ -119,11 +119,11 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
     // we need to acquire the writelock
     // but do NOT need to increase the merge counter
 
-    writelock(); 
+    rwMutexForWriter->lockWrite();
     
     INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID);
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
 
     return returnValue;
 }
@@ -131,7 +131,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
 void IndexReaderWriter::exportData(const string &exportedDataFileName)
 {
     // add write lock
-    writelock();
+    rwMutexForWriter->lockWrite();
 
     // merge the index
     // we don't have to update histogram information when we want to export.
@@ -142,12 +142,12 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     this->index->_exportData(exportedDataFileName);
 
     // free write lock
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
 }
 
 void IndexReaderWriter::save()
 {
-    writelock();
+    rwMutexForWriter->lockWrite();
 
     // we don't have to update histogram information when we want to export.
     this->merge(false);
@@ -155,12 +155,12 @@ void IndexReaderWriter::save()
 
     this->index->_save();
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
 }
 
 void IndexReaderWriter::save(const std::string& directoryName)
 {
-    writelock();
+	rwMutexForWriter->lockWrite();
 
     // we don't have to update histogram information when we want to export.
     this->merge(false);
@@ -168,7 +168,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
     this->index->_save(directoryName);
 
-    writeunlock();
+    rwMutexForWriter->unlockWrite();
 }
 
 /*

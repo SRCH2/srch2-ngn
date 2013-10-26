@@ -262,16 +262,6 @@ private:
 
     void startMergeThreadLoop();
 
-    void writelock()
-    {
-        rwMutexForWriter->lockWrite();
-    }
-
-    void writeunlock()
-    {
-        //indexHealthInfo.notifyWrite();
-    	rwMutexForWriter->unlockWrite();
-    }
 };
 
 }}
