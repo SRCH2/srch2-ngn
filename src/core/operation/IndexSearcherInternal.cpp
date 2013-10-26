@@ -960,7 +960,7 @@ int IndexSearcherInternal::suggest(const string & keyword,
 	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
 		return 0;
 	}
-    if (this->indexData->isCommited() == false){
+    if (this->indexData->isBulkLoadDone() == false){
         return -1;
     }
 
@@ -1039,7 +1039,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 {
     int returnValue = -1;
 
-    if (this->indexData->isCommited() == false)
+    if (this->indexData->isBulkLoadDone() == false)
         return returnValue;
 
     if (query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {

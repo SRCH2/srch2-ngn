@@ -28,20 +28,20 @@ namespace instantsearch
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
     writelock();
-    
-    INDEXWRITE_RETVAL commitReturnValue = this->index->_commit();
-
-    if (commitReturnValue == OP_FAIL && this->mergeThreadStarted == false) {
+    INDEXWRITE_RETVAL commitReturnValue;
+    if (!this->index->isBulkLoadDone()) {
+    	commitReturnValue = this->index->finishBulkLoad();
+    } else {
     	/*
-    	 *  If _commit fails, then we are in past bulk load stage. We should call merge function but
-    	 *  only if there is NO dedicated merge thread running. Merge thread can be
-    	 *  instantiated by a wrapper layer which allows it to not call commit (or merge) explicitly.
+    	 *  If bulk load is done, then we are in past bulk load stage. We should call merge function
+    	 *  even if dedicated merge thread running. The rwMutexLock will take care of concurrency.
     	 */
     	bool updateHistogramFlag = shouldUpdateHistogram();
     	if(updateHistogramFlag == true){
     		this->resetMergeCounterForHistogram();
     	}
-    	this->merge(updateHistogramFlag);
+    	commitReturnValue =this->merge(updateHistogramFlag);
+
     }
     this->writesCounterForMerge = 0;
     
@@ -53,47 +53,63 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
 INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer)
 {
     writelock();
-    this->writesCounterForMerge++;
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
+    		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
+    	}
+    }
 
     writeunlock();
-    
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
     writelock();
-    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
+    		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
+    	}
+    }
     
     writeunlock();
-    
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
     writelock();
-    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites){
+    		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
+    	}
+    }
 
     writeunlock();
-
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId)
 {
     writelock();
-    this->writesCounterForMerge++;
 
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
+    		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
+    	}
+    }
 
     writeunlock();
-
     return returnValue;
 }
 
@@ -173,12 +189,9 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 
     INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
 
-
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-
-    // std::cout << "{\"merge\":\"success\",\"time\":\""<< time <<"\"}" << std::endl;
 
     indexHealthInfo.notifyMerge(time,  this->index->_getNumberOfDocumentsInIndex());
     return returnValue;
@@ -200,7 +213,7 @@ void IndexReaderWriter::startMergeThreadLoop()
     	Logger::warn("Only one merge thread per index is supported!");
     	return;
     }
-    if (!this->index->isCommited()) {
+    if (!this->index->isBulkLoadDone()) {
         	rwMutexForWriter->unlockWrite();
         	Logger::warn("Merge thread can be called only after first commit!");
         	return;
@@ -220,7 +233,7 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-        rwMutexForWriter->cond_timedwait(&countThresholdConditionVariable, &ts);
+        rwMutexForWriter->writeLockWithCondTimedWait(&countThresholdConditionVariable, &ts);
 
         if (mergeThreadStarted == false)
             break;

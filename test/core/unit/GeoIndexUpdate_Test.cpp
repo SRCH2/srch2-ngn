@@ -21,6 +21,16 @@ const unsigned mergeEveryMWrites = 5;
 const unsigned updateHistogramEveryPMerges = 1;
 const unsigned updateHistogramEveryQWrites = 5;
 
+void * dispatchMegerThread(void * indexer) {
+	(reinterpret_cast<Indexer *>(indexer))->startMergeThreadLoop();
+	return NULL;
+}
+
+void startMergerThread(void * indexer) {
+	pthread_t mergerThread;
+	pthread_create(&mergerThread, NULL, dispatchMegerThread, indexer);
+}
+
 // convert a string to an integer.  similar to "atoi()"
 bool parseUnsigned(string &line, unsigned &pk)
 {
@@ -583,6 +593,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000004, "lie to me", 39.955758, -82.719177);
     addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000005, "afro", 41.667911, -71.53612);
     indexer->commit();
+    startMergerThread(indexer);
     searchRecords(recordsToSearch, indexer, analyzer);
     cout << "Small init index built correctly." << endl;
     readSingleAttrRecordsFromFile(recordsToSearch, indexer, schema, analyzer, directoryName+"/geo_update/aLotRecords");
@@ -595,9 +606,11 @@ void testSmallInitLargeInsertion(const string directoryName)
 
     // Save the current index
     indexer->save();
+    delete indexer;
 
     // Load the index again
     Indexer *loadedIndexer = Indexer::load(indexMetaData);
+    startMergerThread(loadedIndexer);
 
     // Search the loaded index
     searchRecords(recordsToSearch, loadedIndexer, analyzer);
@@ -611,7 +624,6 @@ void testSmallInitLargeInsertion(const string directoryName)
 
     // clear memory
     delete loadedIndexer;
-    delete indexer;
     delete analyzer;
     delete schema;
     delete indexMetaData;
@@ -643,6 +655,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
 
     // Commit the index
     indexer->commit();
+    startMergerThread(indexer);
 
     cout << "init data committed" << endl;
 
@@ -659,10 +672,10 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
 
     // Save the current index
     indexer->save();
-
+    delete indexer;
     // Load the index again
     Indexer *loadedIndexer = Indexer::load(indexMetaData);
-
+    startMergerThread(loadedIndexer);
     // Search the loaded index
     searchRecords(recordsToSearch, loadedIndexer, analyzer);
 
@@ -673,7 +686,6 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
 
     // Clear the memory
     delete loadedIndexer;
-    delete indexer;
     delete analyzer;
     delete schema;
     delete indexMetaData;

@@ -222,6 +222,17 @@ void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *a
     cout << "Failed queries number: " << failedCounter << endl;
     ASSERT(failedCounter == 0);
 }
+
+void * dispatchMegerThread(void * indexer) {
+	(reinterpret_cast<Indexer *>(indexer))->startMergeThreadLoop();
+	return NULL;
+}
+
+void startMergerThread(void * indexer) {
+	pthread_t mergerThread;
+	pthread_create(&mergerThread, NULL, dispatchMegerThread, indexer);
+}
+
 int main(int argc, char **argv)
 {
     cout << "Test begins." << endl;
@@ -250,6 +261,7 @@ int main(int argc, char **argv)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
+    startMergerThread(index);
 
     cout << "Index loaded." << endl;
 

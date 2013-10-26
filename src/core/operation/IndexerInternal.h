@@ -213,7 +213,7 @@ public:
         return str.str();
     }
     
-    const bool isCommited() const { return this->index->isCommited(); }
+    const bool isCommited() const { return this->index->isBulkLoadDone(); }
 
 
     // histogram update is triggered if :
@@ -270,11 +270,7 @@ private:
     void writeunlock()
     {
         //indexHealthInfo.notifyWrite();
-        if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites)
-        {
-            rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
-        }
-        rwMutexForWriter->unlockWrite();
+    	rwMutexForWriter->unlockWrite();
     }
 };
 
