@@ -8,3 +8,5 @@ Changes over version 4.1.0:
 * GetAll search type is optimized. If the number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.
 * Tag "queryTermType" is now changed to "queryTermPrefixType"
 * Tag "queryTermMatchType" is now changed to "queryTermFuzzyType"
+* Support of multivalued attributes is added. Attributes can be declared as multivalued and contain a JSON array as their value in the data file.
+* Optimization is done for short prefixes. If a query is a single prefix that is very popular (e.g., "q=a"), a heuristic is used to increase the performance by first computing the most likely completions and then using them to compute answers.
