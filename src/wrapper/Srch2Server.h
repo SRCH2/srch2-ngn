@@ -44,8 +44,6 @@ class Srch2Server
 public:
 	Indexer *indexer;
 	const ConfigManager *indexDataContainerConf;
-	pthread_t mergerThread;  // stores thread identifier.
-	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 
 	/* Fields used only for stats */
 	time_t stat_starttime;          /* Server start time */
@@ -192,26 +190,7 @@ public:
 			}
 		}
 	    // start merger thread
-		startMergerThread();
-	}
-
-	/*
-	 *  set new thread's attribute as joinable and then call pthread_create() to instantiate the
-	 *  thread.
-	 */
-	void startMergerThread()
-	{
-	        pthread_attr_init(&mergeThreadAttributes);
-	        pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
-	        pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, indexer);
-	}
-
-	/*
-	 *  Static method which serves as an entry point for merger thread.
-	 */
-	static void * dispatchMergeThread(void * indexer) {
-		(reinterpret_cast <Indexer *>(indexer))->startMergeThreadLoop();
-		pthread_exit(0);
+		indexer->createAndStartMergeThreadLoop();
 	}
 
 	virtual ~Srch2Server(){}

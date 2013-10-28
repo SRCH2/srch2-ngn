@@ -45,15 +45,6 @@ using namespace srch2is;
 
 string INDEX_DIR = getenv("index_dir");
 
-void * dispatchMegerThread(void * indexer) {
-	(reinterpret_cast<Indexer *>(indexer))->startMergeThreadLoop();
-	return NULL;
-}
-void startMergerThread(void * indexer) {
-	pthread_t mergerThread;
-	pthread_create(&mergerThread, NULL, dispatchMegerThread, indexer);
-}
-
 void addSimpleRecords()
 {
     ///Create Schema
@@ -188,7 +179,7 @@ void test1()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -285,7 +276,7 @@ void test2()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -374,7 +365,7 @@ void test3()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -455,7 +446,7 @@ void test4()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -514,7 +505,7 @@ void test5()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -578,7 +569,7 @@ void test6()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -687,7 +678,7 @@ void test8()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
     Analyzer *analyzer = getAnalyzer();
@@ -770,7 +761,7 @@ void test9()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -851,7 +842,7 @@ void test10()
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -959,7 +950,7 @@ void test11()
     // This commit should not fail even if there is no record in the index.
     ASSERT(index->commit() != 0);
     // start merger thread after first commit
-    startMergerThread(index);
+    index->createAndStartMergeThreadLoop();
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");

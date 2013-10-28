@@ -238,6 +238,9 @@ public:
 
     QuadTree *getQuadTree() const { return this->index->quadTree; }
 
+    pthread_t createAndStartMergeThreadLoop();
+    void startMergeThreadLoop();
+
 private:
     IndexData *index;
     Cache *cache;
@@ -247,8 +250,8 @@ private:
     pthread_cond_t countThresholdConditionVariable;
     volatile bool mergeThreadStarted;
 
-    //pthread_t mergerThread;
-    //pthread_attr_t attr;
+	pthread_t mergerThread;  // stores thread identifier.
+	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 
     volatile unsigned writesCounterForMerge;
     unsigned mergeEveryNSeconds;
@@ -260,7 +263,6 @@ private:
 
     INDEXWRITE_RETVAL merge(bool updateHistogram);
 
-    void startMergeThreadLoop();
 
 };
 

@@ -174,10 +174,9 @@ public:
      *  Starts a conditional wait loop and merges all the incremental changes to indexes when a
      *  certain condition occurs.
      *  Condition:  n records have been added or t seconds have passed ( whichever occurs first)
-     *  Note: This function must be called from a separate dedicated thread. Otherwise it will
-     *  block the current calling thread.
+     *  Note: This function starts a separate dedicated thread and returns thread id
      */
-    virtual void startMergeThreadLoop() = 0;
+    virtual pthread_t createAndStartMergeThreadLoop() = 0;
 };
 
 }}

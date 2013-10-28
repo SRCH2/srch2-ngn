@@ -197,6 +197,19 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     return returnValue;
 }
 
+void * dispatchMergeThread(void *indexer) {
+	(reinterpret_cast <IndexReaderWriter *>(indexer))->startMergeThreadLoop();
+	pthread_exit(0);
+}
+
+pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
+	pthread_attr_init(&mergeThreadAttributes);
+	pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
+	pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, this);
+	pthread_attr_destroy(&mergeThreadAttributes);
+	return mergerThread;
+}
+
 //http://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=%2Fapis%2Fusers_77.htm
 void IndexReaderWriter::startMergeThreadLoop()
 {
