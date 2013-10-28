@@ -63,7 +63,7 @@ void *threadfunc(void *parm)
 
         while (!workToDo) {
             printf("Thread blocked\n");
-            rc = rw_mutex.cond_timedwait(&cond, &ts);
+            rc = rw_mutex.writeLockWithCondTimedWait(&cond, &ts);
             /* If the wait timed out, in this example, the work is complete, and   */
             /* the thread will end.                                                */
             /* In reality, a timeout must be accompanied by some sort of checking  */

@@ -334,21 +334,24 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
+/*
+ *  Create indexes using records from json file and return the total indexed records.
+ */
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
         Logger::error("DataSource file not found at: %s", filePath.c_str());
-        return;
+        return 0;
     }
 
     string line;
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-    unsigned indexedCounter = 0;
+    unsigned indexedRecordsCount = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
@@ -364,7 +367,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
                 indexer->addRecord(record, analyzer);
-                indexedCounter++;
+                indexedRecordsCount++;
             }
             else
             {
@@ -381,20 +384,12 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         }
     }
     std::cout<<"                                                     \r";
-    Logger::console("Indexed %d / %d records.", indexedCounter, lineCounter);
+    Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
 
     in.close();
 
-    // Step 4: Commit the index, after which no more records can
-    // be added
-    indexer->commit();
-
-    if (indexedCounter > 0) {
-    	Logger::console("Saving Indexes.....");
-    	indexer->save();
-    	Logger::console("Indexes saved.");
-    }
     delete analyzer;
+    return indexedRecordsCount;
 }
 
 // convert other types to string

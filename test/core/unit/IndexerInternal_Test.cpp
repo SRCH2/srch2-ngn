@@ -72,7 +72,7 @@ void testIndexData()
     record->setRecordBoost(90);
     indexData->_addRecord(record, analyzer);
 
-    indexData->_commit();
+    indexData->finishBulkLoad();
     //index->print_Index();
 
     record->clear();

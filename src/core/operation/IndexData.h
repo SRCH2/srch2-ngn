@@ -211,7 +211,7 @@ private:
 
     //To save the directory name to save the trieIndex
     string directoryName;
-    bool commited;
+    bool flagBulkLoadDone;
     bool mergeRequired;
     std::string licenseFileNameWithPath;
 
@@ -308,9 +308,9 @@ public:
     INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId) const;
 
     // build the index. After commit(), no more records can be added
-    INDEXWRITE_RETVAL _commit();
+    INDEXWRITE_RETVAL finishBulkLoad();
 
-    const bool isCommited() const { return this->commited; }
+    const bool isBulkLoadDone() const { return this->flagBulkLoadDone; }
 
     void _exportData(const string& exportedDataFileName) const;
 

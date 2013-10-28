@@ -205,7 +205,7 @@ int main(int argc, char **argv)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
-
+    index->createAndStartMergeThreadLoop();
     cout << "Index loaded." << endl;
 
     updateIndexAndLookupRecord(update_data_file, index);

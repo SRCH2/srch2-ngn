@@ -328,7 +328,7 @@ bool test2(int argc, char** argv) {
     cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
     srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
-
+    indexer->commit();
     srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
     ii->getTrie()->print_Trie();
 

@@ -37,7 +37,7 @@ class JSONRecordParser
 class DaemonDataSource
 {
 	public:
-		static void createNewIndexFromFile(srch2is::Indexer *indexer, const ConfigManager *indexDataContainerConf);
+		static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, const ConfigManager *indexDataContainerConf);
 };
 
 

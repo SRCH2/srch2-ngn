@@ -204,6 +204,7 @@ void testSimpleChinese() {
 
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 	//We use popular Chinese poems and their authors to test if the engine can support Chinese characters. The data was obtained from www.baidu.com search "中国 诗词名句"
@@ -599,6 +600,7 @@ void testSimpleZhuyin() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -966,6 +968,7 @@ void testJapanese() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 	//We use popular English novel and translate into Japanese,using the content and their titles to test if the engine can support Chinese characters. The data was obtained from www.baidu.com search "中国 诗词名句"
@@ -1261,6 +1264,7 @@ void testFrench() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -1507,6 +1511,7 @@ void testTranditionalChinese() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -1661,6 +1666,7 @@ void testBulgarian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -1797,6 +1803,7 @@ void testPinyinChinese() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -1966,6 +1973,7 @@ void testZhuyinChinese() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2140,6 +2148,7 @@ void testCroatian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2294,6 +2303,7 @@ void testCzech() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2447,6 +2457,7 @@ void testDanish() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2599,6 +2610,7 @@ void testDutch() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2749,6 +2761,7 @@ void testEstonian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -2885,6 +2898,7 @@ void testFinnish() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3038,6 +3052,7 @@ void testGerman() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3190,6 +3205,7 @@ void testGreek() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3334,6 +3350,7 @@ void testHungarian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3485,6 +3502,7 @@ void testIndonesia() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3620,6 +3638,7 @@ void testItalian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3768,6 +3787,7 @@ void testKorean() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -3915,6 +3935,7 @@ void testLatvian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -4048,6 +4069,7 @@ void testLithuanian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 
@@ -4182,6 +4204,7 @@ void testNorwegian() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
+	index->createAndStartMergeThreadLoop();
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
 	Analyzer *analyzer = getAnalyzer();
 

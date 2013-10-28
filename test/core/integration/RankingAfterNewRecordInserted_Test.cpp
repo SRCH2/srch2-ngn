@@ -222,6 +222,7 @@ void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *a
     cout << "Failed queries number: " << failedCounter << endl;
     ASSERT(failedCounter == 0);
 }
+
 int main(int argc, char **argv)
 {
     cout << "Test begins." << endl;
@@ -250,6 +251,7 @@ int main(int argc, char **argv)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
+    index->createAndStartMergeThreadLoop();
 
     cout << "Index loaded." << endl;
 
