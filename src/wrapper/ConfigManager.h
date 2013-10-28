@@ -60,6 +60,37 @@ public:
     bool isMultiValued;
 };
 
+class RefiningAttributeInfoContainer {
+public:
+	RefiningAttributeInfoContainer(){
+		name = "";
+		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
+		type = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+		defaultValue = "";
+		required = false;
+		isMultiValued = false;
+	}
+	RefiningAttributeInfoContainer(const string & name,
+			srch2::instantsearch::FilterType type,
+				const string & defaultValue,
+				const bool required,
+				const bool isMultiValued){
+		this->name = name;
+		this->type = type;
+		this->defaultValue = defaultValue;
+		this->required = required;
+		this->isMultiValued = isMultiValued;
+	}
+ 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+	// VALUES AND HAS NO BEHAVIOUR
+	string name;
+	srch2::instantsearch::FilterType type;
+	string defaultValue;
+	bool required;
+	bool isMultiValued;
+};
+
 class ConfigManager {
 private:
 
@@ -154,15 +185,10 @@ private:
 
 	//vector<string> searchableAttributes;
 
-    // < name, <required, <default, <offset, <boost,isMultiValued> > > > >
-//    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > > searchableAttributesInfo;
-
     map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
 	string attributeRecordBoost;
 
-
-	// < name, <type, <default, <isSortable,isMultiValued>>>>
-	map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > nonSearchableAttributesInfo;
+	map<string , RefiningAttributeInfoContainer > nonSearchableAttributesInfo;
 
 
 
@@ -261,7 +287,7 @@ public:
 
 	const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes() const;
 
-	const map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > * getNonSearchableAttributes() const;
+	const map<string, RefiningAttributeInfoContainer > * getNonSearchableAttributes() const;
 
     const vector<string> * getAttributesToReturnName() const;
 

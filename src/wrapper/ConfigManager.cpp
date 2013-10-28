@@ -562,14 +562,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     if(nonSearchableFieldsVector.size() != 0){
         for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
-
-            /// map<string, pair< srch2::instantsearch::FilterType, pair<string, pair< bool, bool> > > >
             nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
-                    pair<srch2::instantsearch::FilterType,
-                            pair<string,  pair<bool,bool> > >(nonSearchableFieldTypesVector[iter],
-                            pair<string, pair<bool,bool> >(
-                                    nonSearchableAttributesDefaultVector[iter],
-                                    pair<bool,bool>(nonSearchableAttributesRequiredFlagVector[iter],nonSearchableAttributesIsMultiValued[iter])));
+            		RefiningAttributeInfoContainer(nonSearchableFieldsVector[iter] ,
+            				nonSearchableFieldTypesVector[iter] ,
+            				nonSearchableAttributesDefaultVector[iter] ,
+            				nonSearchableAttributesRequiredFlagVector[iter],
+            				nonSearchableAttributesIsMultiValued[iter]);
         }
     }
 
@@ -628,7 +626,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             string facetAttributeString = string(field.attribute(nameString).value());
                             srch2::instantsearch::FilterType facetAttributeType ;
                             if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.first;
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -652,7 +650,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             // insert end
                             string endTextValue = string(field.attribute(facetEndString).value());
                             if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.first;
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -676,7 +674,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             // insert gap
                             string gapTextValue = string(field.attribute(facetGapString).value());
                             if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.first;
+                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -1406,7 +1404,7 @@ const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearcha
     return &searchableAttributesInfo;
 }
 
-const map<string, pair<srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > * ConfigManager::getNonSearchableAttributes() const {
+const map<string, RefiningAttributeInfoContainer > * ConfigManager::getNonSearchableAttributes() const {
     return &nonSearchableAttributesInfo;
 }
 

@@ -136,7 +136,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     }
 
 
-    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator attributeIter =
+    for (map<string, RefiningAttributeInfoContainer >::const_iterator attributeIter =
     		indexDataContainerConf->getNonSearchableAttributes()->begin();
             attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
             ++attributeIter)
@@ -145,9 +145,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         string attributeKeyName = attributeIter->first;
 
         // if type is date/time, check the syntax
-        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
+        if( attributeIter->second.type == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.second.second.second);
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.isMultiValued);
         	if(attributeStringValue==""){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -156,13 +156,13 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 if (attributeStringValue.compare("NULL") != 0){
                     record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
-                    if(attributeIter->second.second.second.first){
+                    if(attributeIter->second.required){
                         // ERROR
                         error << "\nRequired refining attribute is null.";
                         return false;// Raise Error
                     }else{
                         // set the default value
-                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
                     }
                 }
         	}
@@ -177,13 +177,13 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
                 record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
-                if(attributeIter->second.second.second.first){
+                if(attributeIter->second.required){
                     // ERROR
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
                     // set the default value
-    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				std::string attributeStringValueLowercase = attributeIter->second.defaultValue;
     				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
                     record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
@@ -314,16 +314,16 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 
 
     // Set NonSearchableAttributes
-    map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator
+    map<string, RefiningAttributeInfoContainer >::const_iterator
     	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
 
     for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
         schema->setNonSearchableAttribute(nonSearchableAttributeIter->first,
-        		nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first,
-        		nonSearchableAttributeIter->second.second.second.second);
+        		nonSearchableAttributeIter->second.type,
+        		nonSearchableAttributeIter->second.defaultValue,
+        		nonSearchableAttributeIter->second.isMultiValued);
     }
 
 
