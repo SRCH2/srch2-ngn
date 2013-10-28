@@ -111,8 +111,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         record->setInMemoryData(compressedInputLine);
     }
 
-
-    for (map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::const_iterator attributeIter
+    for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
@@ -125,13 +124,13 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         {
             record->setSearchableAttributeValue(attributeKeyName,attributeStringValue);
         }else{ // error if required or set to default
-        	if(attributeIter->second.first){ // true means required
+        	if(attributeIter->second.required){ // true means required
         		// ERROR
                 error << "\nRequired field has a null value.";
                 return false;// Raise Error
         	}else{
         		// passing the default value from config file
-        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
         	}
         }
     }
@@ -303,13 +302,14 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     }
 
     // Set SearchableAttributes
-    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
+    map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
         schema->setSearchableAttribute(searchableAttributeIter->first,
-        		searchableAttributeIter->second.second.second.second.first ,
-        		searchableAttributeIter->second.second.second.second.second ); // searchable text
+        		searchableAttributeIter->second.boost ,
+        		searchableAttributeIter->second.isMultiValued ); // searchable text
     }
 
 

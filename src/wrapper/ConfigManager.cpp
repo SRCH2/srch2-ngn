@@ -884,19 +884,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     for (int i = 0; i < searchableFieldsVector.size(); i++) {
         if (boostsMap.find(searchableFieldsVector[i]) == boostsMap.end()) {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(
-                            searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, pair<unsigned,bool> > >(
-                                    searchableAttributesDefaultVector[i],
-                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(1, searchableAttributesIsMultiValued[i]))));
+            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
+            				searchableAttributesRequiredFlagVector[i] ,
+            				searchableAttributesDefaultVector[i] ,
+            				0 , 1 , searchableAttributesIsMultiValued[i]);
         } else {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(
-                            searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, pair<unsigned,bool> > >(
-                                    searchableAttributesDefaultVector[i],
-                                    pair<unsigned, pair<unsigned,bool> >(0,pair<unsigned,bool>(boostsMap[searchableFieldsVector[i]],
-                                    		searchableAttributesIsMultiValued[i]))));
+            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
+            				searchableAttributesRequiredFlagVector[i] ,
+            				searchableAttributesDefaultVector[i] ,
+            				0 , boostsMap[searchableFieldsVector[i]] , searchableAttributesIsMultiValued[i]);
         }
     }
 
@@ -915,12 +912,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // give each searchable attribute an id based on the order in the info map
     // should be consistent with the id in the schema
-    unsigned idIter = 0;
-
-    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
-    for(; searchableAttributeIter != searchableAttributesInfo.end(); searchableAttributeIter++){
-        searchableAttributeIter->second.second.second.first = idIter;
-        idIter ++;
+    map<string, SearchableAttributeInfoContainer>::iterator searchableAttributeIter = searchableAttributesInfo.begin();
+    for(unsigned idIter = 0; searchableAttributeIter != searchableAttributesInfo.end() ; ++searchableAttributeIter, ++idIter){
+    	searchableAttributeIter->second.offset = idIter;
     }
 
     // recordBoostField is an optional field
@@ -1333,10 +1327,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
         searchableAttributesInfo[searchableAttributesVector[iter]] =
-                pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > >(false,
-                        pair<string, pair<unsigned, pair<unsigned,bool> > >("" ,
-                        		pair<unsigned, pair<unsigned,bool> >(iter,
-                        				pair<unsigned,bool>(1,false)) ) );
+        		SearchableAttributeInfoContainer(searchableAttributesVector[iter] , false, "" , iter , 1 , false);
     }
 }
 
@@ -1411,7 +1402,7 @@ const string& ConfigManager::getFilePath() const {
 const string& ConfigManager::getPrimaryKey() const {
     return primaryKey;
 }
-const map<string, pair<bool, pair<string, pair<unsigned, pair<unsigned,bool> > > > > * ConfigManager::getSearchableAttributes() const {
+const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes() const {
     return &searchableAttributesInfo;
 }
 
