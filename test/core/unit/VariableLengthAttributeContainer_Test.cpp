@@ -56,16 +56,16 @@ void test_1(){
     ///Create Schema
     Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 
-    schema->setNonSearchableAttribute("text1_name" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text1");
-    schema->setNonSearchableAttribute("int1_unsigned", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "1" );
-    schema->setNonSearchableAttribute("time1_bdate", srch2::instantsearch::ATTRIBUTE_TYPE_TIME, "0" );
-    schema->setNonSearchableAttribute("text2_title", srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text2" );
-    schema->setNonSearchableAttribute("float1_weight", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "0.1" );
-    schema->setNonSearchableAttribute("int2_salary", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "2" );
-    schema->setNonSearchableAttribute("text3_fname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text3");
-    schema->setNonSearchableAttribute("text4_lname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text4");
-    schema->setNonSearchableAttribute("int3_id", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "3" );
-    schema->setNonSearchableAttribute("int4_eid", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "4" );
+    schema->setRefiningAttribute("text1_name" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text1");
+    schema->setRefiningAttribute("int1_unsigned", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "1" );
+    schema->setRefiningAttribute("time1_bdate", srch2::instantsearch::ATTRIBUTE_TYPE_TIME, "0" );
+    schema->setRefiningAttribute("text2_title", srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text2" );
+    schema->setRefiningAttribute("float1_weight", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "0.1" );
+    schema->setRefiningAttribute("int2_salary", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "2" );
+    schema->setRefiningAttribute("text3_fname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text3");
+    schema->setRefiningAttribute("text4_lname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text4");
+    schema->setRefiningAttribute("int3_id", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "3" );
+    schema->setRefiningAttribute("int4_eid", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "4" );
     schema->setSearchableAttribute("searchable_name" , 2);
     schema->setSearchableAttribute("text1_name" , 2);
 
@@ -186,16 +186,16 @@ void test_2(){
     ///Create Schema
     Schema *schema = Schema::create(srch2::instantsearch::DefaultIndex);
 
-    schema->setNonSearchableAttribute("text1_name" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text1");
-    schema->setNonSearchableAttribute("int1_unsigned", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "1" );
-    schema->setNonSearchableAttribute("time1_bdate", srch2::instantsearch::ATTRIBUTE_TYPE_TIME, "0" );
-    schema->setNonSearchableAttribute("text2_title", srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text2" , true );
-    schema->setNonSearchableAttribute("float1_weight", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "0.1" );
-    schema->setNonSearchableAttribute("int2_salary", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "2" );
-    schema->setNonSearchableAttribute("text3_fname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text3");
-    schema->setNonSearchableAttribute("text4_lname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text4");
-    schema->setNonSearchableAttribute("int3_id", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "3" );
-    schema->setNonSearchableAttribute("int4_eid", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "4" , true);
+    schema->setRefiningAttribute("text1_name" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text1");
+    schema->setRefiningAttribute("int1_unsigned", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "1" );
+    schema->setRefiningAttribute("time1_bdate", srch2::instantsearch::ATTRIBUTE_TYPE_TIME, "0" );
+    schema->setRefiningAttribute("text2_title", srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text2" , true );
+    schema->setRefiningAttribute("float1_weight", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "0.1" );
+    schema->setRefiningAttribute("int2_salary", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "2" );
+    schema->setRefiningAttribute("text3_fname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text3");
+    schema->setRefiningAttribute("text4_lname" , srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, "text4");
+    schema->setRefiningAttribute("int3_id", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "3" );
+    schema->setRefiningAttribute("int4_eid", srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "4" , true);
     schema->setSearchableAttribute("searchable_name" , 2);
     schema->setSearchableAttribute("text1_name" , 2);
 
@@ -209,11 +209,11 @@ void test_2(){
 	for(int i=0;i<10;i++){
 		vector<string> temp;
 		temp.push_back(record1[i]);
-		if(i == schema->getNonSearchableAttributeId("text2_title")){ // /*and also "Pilot" "Teacher"*/
+		if(i == schema->getRefiningAttributeId("text2_title")){ // /*and also "Pilot" "Teacher"*/
 			temp.push_back("Pilot");
 			temp.push_back("Teacher");
 		}
-		if(i == schema->getNonSearchableAttributeId("int4_eid")){ // /*and also "34568" "34569"*/
+		if(i == schema->getRefiningAttributeId("int4_eid")){ // /*and also "34568" "34569"*/
 			temp.push_back("34568");
 			temp.push_back("34569");
 		}
@@ -221,7 +221,7 @@ void test_2(){
 	}
 	VariableLengthAttributeContainer::fill(schema, nonSearchableAttributeValues , vlac , vlacSize);
 	for(int i=0;i<10;i++){
-		if(i == schema->getNonSearchableAttributeId("text2_title")){
+		if(i == schema->getRefiningAttributeId("text2_title")){
 			vector<string> jobs = VariableLengthAttributeContainer::getMultiTextAttribute(i , schema , vlac);
 			ASSERT(jobs.size() == 3);
 			ASSERT(jobs.at(0).compare("Doctor") == 0);
@@ -229,7 +229,7 @@ void test_2(){
 			ASSERT(jobs.at(2).compare("Teacher") == 0);
 			continue;
 		}
-		if(i == schema->getNonSearchableAttributeId("int4_eid")){
+		if(i == schema->getRefiningAttributeId("int4_eid")){
 			vector<unsigned> numbers = VariableLengthAttributeContainer::getMultiUnsignedAttribute(i , schema , vlac);
 			ASSERT(numbers.size() == 3);
 			ASSERT(numbers.at(0) == 34567);
@@ -255,13 +255,13 @@ void test_2(){
 	}
 	VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues, vlac , vlacSize);
 	for(int i=0;i<10;i++){
-		if(i == schema->getNonSearchableAttributeId("text2_title")){
+		if(i == schema->getRefiningAttributeId("text2_title")){
 			vector<string> jobs = VariableLengthAttributeContainer::getMultiTextAttribute(i , schema , vlac);
 			ASSERT(jobs.size() == 1);
 			ASSERT(jobs.at(0).compare("Professor") == 0);
 			continue;
 		}
-		if(i == schema->getNonSearchableAttributeId("int4_eid")){
+		if(i == schema->getRefiningAttributeId("int4_eid")){
 			vector<unsigned> numbers = VariableLengthAttributeContainer::getMultiUnsignedAttribute(i , schema , vlac);
 			ASSERT(numbers.size() == 1);
 			ASSERT(numbers.at(0) == 3467);
@@ -277,11 +277,11 @@ void test_2(){
     VariableLengthAttributeContainer::clear(vlac, vlacSize);
 	for(int i=0;i<10;i++){
 		vector<string> temp;
-		if(i == schema->getNonSearchableAttributeId("text2_title")){ // /*and also "Pilot" "Teacher"*/
+		if(i == schema->getRefiningAttributeId("text2_title")){ // /*and also "Pilot" "Teacher"*/
 			temp.push_back(record3[i]);
 			temp.push_back("Pilot");
 			temp.push_back("Teacher");
-		}else if(i != schema->getNonSearchableAttributeId("int4_eid")){ //
+		}else if(i != schema->getRefiningAttributeId("int4_eid")){ //
 			temp.push_back(record3[i]);
 		}
 		nonSearchableAttributeValues.push_back(temp);
@@ -289,7 +289,7 @@ void test_2(){
 	}
     VariableLengthAttributeContainer::fill(schema,nonSearchableAttributeValues , vlac, vlacSize);
 	for(int i=0;i<10;i++){
-		if(i == schema->getNonSearchableAttributeId("text2_title")){
+		if(i == schema->getRefiningAttributeId("text2_title")){
 			vector<string> jobs = VariableLengthAttributeContainer::getMultiTextAttribute(i , schema , vlac);
 			ASSERT(jobs.size() == 3);
 			ASSERT(jobs.at(0).compare("Professor") == 0);
@@ -297,7 +297,7 @@ void test_2(){
 			ASSERT(jobs.at(2).compare("Teacher") == 0);
 			continue;
 		}
-		if(i == schema->getNonSearchableAttributeId("int4_eid")){
+		if(i == schema->getRefiningAttributeId("int4_eid")){
 			vector<unsigned> numbers = VariableLengthAttributeContainer::getMultiUnsignedAttribute(i , schema , vlac);
 			ASSERT(numbers.size() == 0);
 			continue;
@@ -312,7 +312,7 @@ void test_2(){
     VariableLengthAttributeContainer::clear(vlac , vlacSize);
 	for(int i=0;i<10;i++){
 		vector<string> temp;
-		if(i != schema->getNonSearchableAttributeId("int4_eid") && i != schema->getNonSearchableAttributeId("text2_title")){ //
+		if(i != schema->getRefiningAttributeId("int4_eid") && i != schema->getRefiningAttributeId("text2_title")){ //
 			temp.push_back(record4[i]);
 		}
 		nonSearchableAttributeValues.push_back(temp);

@@ -137,8 +137,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
 
     for (map<string, RefiningAttributeInfoContainer >::const_iterator attributeIter =
-    		indexDataContainerConf->getNonSearchableAttributes()->begin();
-            attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
+    		indexDataContainerConf->getRefiningAttributes()->begin();
+            attributeIter != indexDataContainerConf->getRefiningAttributes()->end();
             ++attributeIter)
     {
 
@@ -154,7 +154,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 return false;// Raise Error
         	}else{
                 if (attributeStringValue.compare("NULL") != 0){
-                    record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+                    record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
                     if(attributeIter->second.required){
                         // ERROR
@@ -162,7 +162,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                         return false;// Raise Error
                     }else{
                         // set the default value
-                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
+                        record->setRefiningAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
                     }
                 }
         	}
@@ -175,7 +175,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
             {
 				std::string attributeStringValueLowercase = attributeStringValue;
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
+                record->setRefiningAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
                 if(attributeIter->second.required){
                     // ERROR
@@ -185,7 +185,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     // set the default value
     				std::string attributeStringValueLowercase = attributeIter->second.defaultValue;
     				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
+                    record->setRefiningAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }
@@ -315,12 +315,12 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 
     // Set NonSearchableAttributes
     map<string, RefiningAttributeInfoContainer >::const_iterator
-    	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+    	nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
 
-    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first,
+        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
         		nonSearchableAttributeIter->second.type,
         		nonSearchableAttributeIter->second.defaultValue,
         		nonSearchableAttributeIter->second.isMultiValued);

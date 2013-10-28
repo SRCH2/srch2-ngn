@@ -290,11 +290,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
 
-    vector<string> nonSearchableFieldsVector;
-    vector<srch2::instantsearch::FilterType> nonSearchableFieldTypesVector;
-    vector<bool> nonSearchableAttributesRequiredFlagVector;
-    vector<string> nonSearchableAttributesDefaultVector;
-    vector<bool> nonSearchableAttributesIsMultiValued;
+    vector<string> RefiningFieldsVector;
+    vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
+    vector<bool> RefiningAttributesRequiredFlagVector;
+    vector<string> RefiningAttributesDefaultVector;
+    vector<bool> RefiningAttributesIsMultiValued;
 
     this->isPrimSearchable = 0;
 
@@ -424,10 +424,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                     }
 
                     if(isRefining){
-                        nonSearchableFieldsVector.push_back(this->primaryKey);
-                        nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-                        nonSearchableAttributesDefaultVector.push_back("");
-                        nonSearchableAttributesRequiredFlagVector.push_back(true);
+                        RefiningFieldsVector.push_back(this->primaryKey);
+                        RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
+                        RefiningAttributesDefaultVector.push_back("");
+                        RefiningAttributesRequiredFlagVector.push_back(true);
                     }
                     continue;
                 }
@@ -465,13 +465,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                     }
 
                     if(isRefining){ // it is a refining field
-                        nonSearchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
                         searchableFieldIndexsVector.push_back(false);
 
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
                         if (this->isValidFieldType(tempUse , false)) {
-                            nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
+                            RefiningFieldTypesVector.push_back(parseFieldType(tempUse));
                         } else {
                             parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
                             parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
@@ -483,9 +483,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         // Check the validity of field default value based on it's type
                         if (string(field.attribute(defaultString).value()).compare("") != 0){
                             tempUse = string(field.attribute("default").value());
-                            if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) , isMultiValued)){
+                            if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
 
-                                if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+                                if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
                                 	if(isMultiValued == false){
                                         long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
                                         std::stringstream buffer;
@@ -514,19 +514,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
                                 tempUse = "";
                             }
-                            nonSearchableAttributesDefaultVector.push_back(tempUse);
+                            RefiningAttributesDefaultVector.push_back(tempUse);
                         }else{
-                            nonSearchableAttributesDefaultVector.push_back("");
+                            RefiningAttributesDefaultVector.push_back("");
                         }
 
                         tempUse = string(field.attribute(requiredString).value());
                         if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
-                            nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                            RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
                         }else{
-                            nonSearchableAttributesRequiredFlagVector.push_back(false);
+                            RefiningAttributesRequiredFlagVector.push_back(false);
                         }
 
-                        nonSearchableAttributesIsMultiValued.push_back(isMultiValued);
+                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
@@ -560,14 +560,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    if(nonSearchableFieldsVector.size() != 0){
-        for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
-            nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
-            		RefiningAttributeInfoContainer(nonSearchableFieldsVector[iter] ,
-            				nonSearchableFieldTypesVector[iter] ,
-            				nonSearchableAttributesDefaultVector[iter] ,
-            				nonSearchableAttributesRequiredFlagVector[iter],
-            				nonSearchableAttributesIsMultiValued[iter]);
+    if(RefiningFieldsVector.size() != 0){
+        for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
+            RefiningAttributesInfo[RefiningFieldsVector[iter]] =
+            		RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
+            				RefiningFieldTypesVector[iter] ,
+            				RefiningAttributesDefaultVector[iter] ,
+            				RefiningAttributesRequiredFlagVector[iter],
+            				RefiningAttributesIsMultiValued[iter]);
         }
     }
 
@@ -625,8 +625,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             string startTextValue = string(field.attribute(facetStartString).value());
                             string facetAttributeString = string(field.attribute(nameString).value());
                             srch2::instantsearch::FilterType facetAttributeType ;
-                            if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -649,8 +649,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
                             // insert end
                             string endTextValue = string(field.attribute(facetEndString).value());
-                            if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -673,8 +673,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
                             // insert gap
                             string gapTextValue = string(field.attribute(facetGapString).value());
-                            if(nonSearchableAttributesInfo.find(facetAttributeString) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeString)->second.type;
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -1404,8 +1404,8 @@ const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearcha
     return &searchableAttributesInfo;
 }
 
-const map<string, RefiningAttributeInfoContainer > * ConfigManager::getNonSearchableAttributes() const {
-    return &nonSearchableAttributesInfo;
+const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes() const {
+    return &RefiningAttributesInfo;
 }
 
 const vector<string> * ConfigManager::getAttributesToReturnName() const {

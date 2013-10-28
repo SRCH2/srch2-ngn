@@ -107,7 +107,7 @@ public:
      * @param[in] attributeName name of the Attribute;
      * @param[in] attributeValue  text string for the Attribute.
      */
-    bool setNonSearchableAttributeValue(const std::string &attributeName,
+    bool setRefiningAttributeValue(const std::string &attributeName,
                 const std::string &attributeValue);
 
     /**
@@ -117,7 +117,7 @@ public:
      * @param attributeId The index of an attribute in the schema.
      * @param attributeValue The text string of this attribute.
      */
-    bool setNonSearchableAttributeValue(const unsigned attributeId,
+    bool setRefiningAttributeValue(const unsigned attributeId,
                     const std::string &attributeValue);
 
     /**
@@ -126,7 +126,7 @@ public:
     std::string *getSearchableAttributeValue(const unsigned attributeId) const;
 
 
-    std::string *getNonSearchableAttributeValue(const unsigned attributeId) const;
+    std::string *getRefiningAttributeValue(const unsigned attributeId) const;
 
     /**
      *

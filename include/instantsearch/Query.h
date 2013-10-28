@@ -139,12 +139,12 @@ public:
 
 
 
-    // TODO temperory functions, to test range search filter
-    void setNonSearchableAttributeName(std::string name);
-    std::string getNonSearchableAttributeName() const;
+    // Test functions, to test range search filter
+    void setRefiningAttributeName(std::string name);
+    std::string getRefiningAttributeName() const;
 
-    void setNonSearchableAttributeValue(std::string value);
-    std::string getNonSearchableAttributeValue() const;
+    void setRefiningAttributeValue(std::string value);
+    std::string getRefiningAttributeValue() const;
 
 
 

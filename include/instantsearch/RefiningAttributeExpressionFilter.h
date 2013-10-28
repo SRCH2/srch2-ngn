@@ -1,4 +1,4 @@
-//$Id: ResultsPostProcessor.h 3456 2013-06-26 02:11:13Z Jamshid $
+//$Id: NonSearchableAttributeExpressionFilter.h 3456 2013-07-10 02:11:13Z Jamshid $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -18,35 +18,41 @@
  */
 
 
-#ifndef __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
-#define __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
+#ifndef __CORE_POSTPROICESSING_REFININGATTRIBTEEXPRESSIONFILTER_H__
+#define __CORE_POSTPROICESSING_REFININGATTRIBTEEXPRESSIONFILTER_H__
 
-#include "instantsearch/Schema.h"
-#include "index/ForwardIndex.h"
-#include "query/QueryResultsInternal.h"
-#include "instantsearch/NonSearchableAttributeExpressionFilter.h"
+#include "instantsearch/ResultsPostProcessor.h"
+#include "instantsearch/IndexSearcher.h"
+#include "instantsearch/TypedValue.h"
+
 namespace srch2
 {
 namespace instantsearch
 {
+class RefiningAttributeExpressionFilterInternal;
 
-
-// Example:
-// fq=price:[* TO 100] AND model:JEEP AND boolexp$price - discount < 100$
-// This class checks to see if a result passes these criteria or not ...
-class NonSearchableAttributeExpressionFilterInternal
+class RefiningAttributeExpressionEvaluator
 {
-
 public:
-	NonSearchableAttributeExpressionFilterInternal(NonSearchableAttributeExpressionFilter * filter);
-	// evaluates expression object coming from query using result data to see
-	// if it passes the query criterion.
-	bool doPass(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result);
+	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
+	virtual ~RefiningAttributeExpressionEvaluator(){};
+};
+
+class RefiningAttributeExpressionFilter : public ResultsPostProcessorFilter
+{
+public:
+	RefiningAttributeExpressionFilter();
+	void doFilter(IndexSearcher * indexSearcher, const Query * query,
+			QueryResults * input, QueryResults * output);
+	~RefiningAttributeExpressionFilter();
+	// this object is allocated and de-allocated ourside this class.
+	RefiningAttributeExpressionEvaluator * evaluator;
 
 private:
-	NonSearchableAttributeExpressionFilter * filter ;
+	RefiningAttributeExpressionFilterInternal * impl;
 };
 
 }
 }
-#endif // __CORE_POSTPROCESSING_NONSEARCHABLEATTRIBUTEFILTERINTERNAL_H__
+#endif // __CORE_POSTPROICESSING_REFININGATTRIBTEEXPRESSIONFILTER_H__
+

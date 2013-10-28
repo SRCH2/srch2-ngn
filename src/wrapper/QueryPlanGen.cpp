@@ -74,8 +74,8 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
     plan->setPostProcessingPlan(new ResultsPostProcessorPlan());
     // 2. If there is a filter query, allocate the filter and add it to the plan
     if (paramsContainer.hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
-        srch2is::NonSearchableAttributeExpressionFilter * filterQuery =
-                new srch2is::NonSearchableAttributeExpressionFilter();
+        srch2is::RefiningAttributeExpressionFilter * filterQuery =
+                new srch2is::RefiningAttributeExpressionFilter();
         filterQuery->evaluator =
                 paramsContainer.filterQueryContainer->evaluator;
         plan->getPostProcessingPlan()->addFilterToPlan(filterQuery);

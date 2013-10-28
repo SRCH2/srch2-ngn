@@ -188,7 +188,7 @@ private:
     map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
 	string attributeRecordBoost;
 
-	map<string , RefiningAttributeInfoContainer > nonSearchableAttributesInfo;
+	map<string , RefiningAttributeInfoContainer > RefiningAttributesInfo;
 
 
 
@@ -287,7 +287,7 @@ public:
 
 	const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes() const;
 
-	const map<string, RefiningAttributeInfoContainer > * getNonSearchableAttributes() const;
+	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes() const;
 
     const vector<string> * getAttributesToReturnName() const;
 

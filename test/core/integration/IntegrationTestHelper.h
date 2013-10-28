@@ -861,7 +861,7 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
     sortFilter->evaluator = eval;
 	eval->order = srch2::instantsearch::SortOrderDescending;
     const std::map<std::string , unsigned> * nonSearchableAttributes =
-    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    		indexSearcherInternal->getSchema()->getRefiningAttributes();
     string attributeToSortName = "";
     for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
     		nSA != nonSearchableAttributes->end() ; nSA++){
@@ -912,7 +912,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *index
     else
 		eval->order = srch2::instantsearch::SortOrderAscending;
     const std::map<std::string , unsigned> * nonSearchableAttributes =
-    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    		indexSearcherInternal->getSchema()->getRefiningAttributes();
     string attributeToSortName = "";
     for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
     		nSA != nonSearchableAttributes->end() ; nSA++){
