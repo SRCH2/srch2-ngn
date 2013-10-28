@@ -145,7 +145,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         string attributeKeyName = attributeIter->first;
 
         // if type is date/time, check the syntax
-        if( attributeIter->second.type == srch2is::ATTRIBUTE_TYPE_TIME){
+        if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
         	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.isMultiValued);
         	if(attributeStringValue==""){
@@ -321,7 +321,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     {
 
         schema->setRefiningAttribute(nonSearchableAttributeIter->first,
-        		nonSearchableAttributeIter->second.type,
+        		nonSearchableAttributeIter->second.attributeType,
         		nonSearchableAttributeIter->second.defaultValue,
         		nonSearchableAttributeIter->second.isMultiValued);
     }

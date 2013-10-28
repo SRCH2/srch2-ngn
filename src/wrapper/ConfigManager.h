@@ -24,12 +24,12 @@ using namespace pugi;
 namespace srch2 {
 namespace httpwrapper {
 
-// This struct is used to collect information from the config file and pass them other modules
+// This class is used to collect information from the config file and pass them other modules
 // in the system.
 class SearchableAttributeInfoContainer {
 public:
 	SearchableAttributeInfoContainer(){
-		name = "";
+		attributeName = "";
 		required = false;
 		defaultValue = "";
 		offset = 0;
@@ -42,7 +42,7 @@ public:
 			const unsigned offset,
 			const unsigned boost,
 			const bool isMultiValued){
-		this->name = name;
+		this->attributeName = name;
 		this->required = required;
 		this->defaultValue = defaultValue;
 		this->offset = offset;
@@ -52,7 +52,7 @@ public:
  	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
 	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
 	// VALUES AND HAS NO BEHAVIOUR
-    string name;
+    string attributeName;
     bool required;
     string defaultValue;
     unsigned offset;
@@ -63,9 +63,9 @@ public:
 class RefiningAttributeInfoContainer {
 public:
 	RefiningAttributeInfoContainer(){
-		name = "";
+		attributeName = "";
 		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
-		type = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+		attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
 		defaultValue = "";
 		required = false;
 		isMultiValued = false;
@@ -75,8 +75,8 @@ public:
 				const string & defaultValue,
 				const bool required,
 				const bool isMultiValued){
-		this->name = name;
-		this->type = type;
+		this->attributeName = name;
+		this->attributeType = type;
 		this->defaultValue = defaultValue;
 		this->required = required;
 		this->isMultiValued = isMultiValued;
@@ -84,8 +84,8 @@ public:
  	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
 	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
 	// VALUES AND HAS NO BEHAVIOUR
-	string name;
-	srch2::instantsearch::FilterType type;
+	string attributeName;
+	srch2::instantsearch::FilterType attributeType;
 	string defaultValue;
 	bool required;
 	bool isMultiValued;

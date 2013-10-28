@@ -626,7 +626,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             string facetAttributeString = string(field.attribute(nameString).value());
                             srch2::instantsearch::FilterType facetAttributeType ;
                             if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -650,7 +650,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             // insert end
                             string endTextValue = string(field.attribute(facetEndString).value());
                             if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -674,7 +674,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             // insert gap
                             string gapTextValue = string(field.attribute(facetGapString).value());
                             if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.type;
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
