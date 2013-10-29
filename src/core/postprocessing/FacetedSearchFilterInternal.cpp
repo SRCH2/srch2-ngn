@@ -213,8 +213,8 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 	std::string gapString = facetInfoForInitialization[2];
 	std::string fieldName = facetInfoForInitialization[3];
 
-    attributeType = schema->getTypeOfNonSearchableAttribute(
-            schema->getNonSearchableAttributeId(fieldName));
+    attributeType = schema->getTypeOfRefiningAttribute(
+            schema->getRefiningAttributeId(fieldName));
     start.setTypedValue(attributeType, startString);
 
     end.setTypedValue(attributeType, endString);
@@ -258,7 +258,7 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
     std::vector<unsigned> attributeIds;
     for(std::vector<std::string>::iterator facetField = fields.begin();
             facetField != fields.end() ; ++facetField){
-        attributeIds.push_back(schema->getNonSearchableAttributeId(*facetField));
+        attributeIds.push_back(schema->getRefiningAttributeId(*facetField));
     }
 
     // move on the results once and do all facet calculations.
@@ -267,17 +267,17 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
             resultIter != output->impl->sortedFinalResults.end();
             ++resultIter) {
         QueryResult * queryResult = *resultIter;
-        // extract all facet related nonsearchable attribute values from this record
+        // extract all facet related refining attribute values from this record
         // by accessing the forward index only once.
         bool isValid = false;
         const ForwardList * list = forwardIndex->getForwardList(
                 queryResult->internalRecordId, isValid);
         ASSERT(isValid);
-        const Byte * nonSearchableAttributesData =
-                list->getNonSearchableAttributeContainerData();
+        const Byte * refiningAttributesData =
+                list->getRefiningAttributeContainerData();
         // this vector is parallel to attributeIds vector
         std::vector<TypedValue> attributeDataValues;
-        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,nonSearchableAttributesData, &attributeDataValues);
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData, &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
         for(std::vector<std::string>::iterator facetField = fields.begin();

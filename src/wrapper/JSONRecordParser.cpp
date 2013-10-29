@@ -111,8 +111,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         record->setInMemoryData(compressedInputLine);
     }
 
-
-    for (map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::const_iterator attributeIter
+    for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
@@ -125,45 +124,45 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         {
             record->setSearchableAttributeValue(attributeKeyName,attributeStringValue);
         }else{ // error if required or set to default
-        	if(attributeIter->second.first){ // true means required
+        	if(attributeIter->second.required){ // true means required
         		// ERROR
                 error << "\nRequired field has a null value.";
                 return false;// Raise Error
         	}else{
         		// passing the default value from config file
-        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
         	}
         }
     }
 
 
-    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator attributeIter =
-    		indexDataContainerConf->getNonSearchableAttributes()->begin();
-            attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
+    for (map<string, RefiningAttributeInfoContainer >::const_iterator attributeIter =
+    		indexDataContainerConf->getRefiningAttributes()->begin();
+            attributeIter != indexDataContainerConf->getRefiningAttributes()->end();
             ++attributeIter)
     {
 
         string attributeKeyName = attributeIter->first;
 
         // if type is date/time, check the syntax
-        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
+        if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
         	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.second.second.second);
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.isMultiValued);
         	if(attributeStringValue==""){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
                 return false;// Raise Error
         	}else{
                 if (attributeStringValue.compare("NULL") != 0){
-                    record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
+                    record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
                 }else{
-                    if(attributeIter->second.second.second.first){
+                    if(attributeIter->second.required){
                         // ERROR
                         error << "\nRequired refining attribute is null.";
                         return false;// Raise Error
                     }else{
                         // set the default value
-                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+                        record->setRefiningAttributeValue(attributeKeyName,attributeIter->second.defaultValue);
                     }
                 }
         	}
@@ -176,17 +175,17 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
             {
 				std::string attributeStringValueLowercase = attributeStringValue;
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
+                record->setRefiningAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
-                if(attributeIter->second.second.second.first){
+                if(attributeIter->second.required){
                     // ERROR
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
                     // set the default value
-    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				std::string attributeStringValueLowercase = attributeIter->second.defaultValue;
     				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
+                    record->setRefiningAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }
@@ -303,27 +302,28 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     }
 
     // Set SearchableAttributes
-    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
+    map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
         schema->setSearchableAttribute(searchableAttributeIter->first,
-        		searchableAttributeIter->second.second.second.second.first ,
-        		searchableAttributeIter->second.second.second.second.second ); // searchable text
+        		searchableAttributeIter->second.boost ,
+        		searchableAttributeIter->second.isMultiValued ); // searchable text
     }
 
 
     // Set NonSearchableAttributes
-    map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator
-    	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+    map<string, RefiningAttributeInfoContainer >::const_iterator
+    	nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
 
-    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first,
-        		nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first,
-        		nonSearchableAttributeIter->second.second.second.second);
+        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+        		nonSearchableAttributeIter->second.attributeType,
+        		nonSearchableAttributeIter->second.defaultValue,
+        		nonSearchableAttributeIter->second.isMultiValued);
     }
 
 

@@ -197,7 +197,7 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     for (std::vector<std::string>::iterator field =
             sortQueryContainer->evaluator->field.begin();
             field != sortQueryContainer->evaluator->field.end(); ++field) {
-        if (schema.getNonSearchableAttributeId(*field) < 0) { // field does not exist
+        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "Field " + *field
@@ -276,7 +276,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             field != facetQueryContainer->fields.end(); ++field) {
 
         //1. Validate the existence of attributes
-        if (schema.getNonSearchableAttributeId(*field) < 0) { // field does not exist
+        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
             // Warning : Facet will be canceled for this field.
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -289,8 +289,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         }
 
         //2. Range facets should be of type unsigned or float or date
-        FilterType fieldType = schema.getTypeOfNonSearchableAttribute(
-                schema.getNonSearchableAttributeId(*field));
+        FilterType fieldType = schema.getTypeOfRefiningAttribute(
+                schema.getRefiningAttributeId(*field));
 
         if (   !facetQueryContainer->types.empty()
             && facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeRange

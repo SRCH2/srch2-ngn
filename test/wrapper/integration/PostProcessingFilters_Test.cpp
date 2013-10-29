@@ -14,7 +14,7 @@
 #include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/SortFilter.h>
 #include <wrapper/SortFilterEvaluator.h>
-#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include <instantsearch/FacetedSearchFilter.h>
 //
 #include <iostream>
@@ -86,9 +86,9 @@ void addRecords() {
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
-    schema->setNonSearchableAttribute("citation", ATTRIBUTE_TYPE_UNSIGNED, "0");
-    schema->setNonSearchableAttribute("price", ATTRIBUTE_TYPE_FLOAT, "1.25");
-    schema->setNonSearchableAttribute("class", ATTRIBUTE_TYPE_TEXT, "Z");
+    schema->setRefiningAttribute("citation", ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setRefiningAttribute("price", ATTRIBUTE_TYPE_FLOAT, "1.25");
+    schema->setRefiningAttribute("class", ATTRIBUTE_TYPE_TEXT, "Z");
 
     Record *record = new Record(schema);
     Analyzer *analyzer = new Analyzer(
@@ -112,9 +112,9 @@ void addRecords() {
             "Tom Smith and Jack Lennon zzzzzz");
     record->setSearchableAttributeValue("article_title",
             "come Yesterday Once More");
-    record->setNonSearchableAttributeValue("citation", "1");
-    record->setNonSearchableAttributeValue("price", "10.34");
-    record->setNonSearchableAttributeValue("class", "A");
+    record->setRefiningAttributeValue("citation", "1");
+    record->setRefiningAttributeValue("price", "10.34");
+    record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(10);
     record->setInMemoryData("test string");
     index->addRecord(record, analyzer);
@@ -123,9 +123,9 @@ void addRecords() {
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(0, "George Harris zzzzzz");
     record->setSearchableAttributeValue(1, "Here comes the sun");
-    record->setNonSearchableAttributeValue("citation", "2");
-    record->setNonSearchableAttributeValue("price", "9.34");
-    record->setNonSearchableAttributeValue("class", "A");
+    record->setRefiningAttributeValue("citation", "2");
+    record->setRefiningAttributeValue("price", "9.34");
+    record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(20);
     record->setInMemoryData("test string");
     index->addRecord(record, analyzer);
@@ -134,9 +134,9 @@ void addRecords() {
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(0, "Pink Floyd zzzzzz");
     record->setSearchableAttributeValue(1, "Shine on you crazy diamond");
-    record->setNonSearchableAttributeValue("citation", "3");
-    record->setNonSearchableAttributeValue("price", "8.34");
-    record->setNonSearchableAttributeValue("class", "B");
+    record->setRefiningAttributeValue("citation", "3");
+    record->setRefiningAttributeValue("price", "8.34");
+    record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(30);
     record->setInMemoryData("test string");
     index->addRecord(record,analyzer);
@@ -145,9 +145,9 @@ void addRecords() {
     record->setPrimaryKey(1004);
     record->setSearchableAttributeValue(0, "Uriah Hepp zzzzzz");
     record->setSearchableAttributeValue(1, "Come Shine away Melinda ");
-    record->setNonSearchableAttributeValue("citation", "4");
-    record->setNonSearchableAttributeValue("price", "7.34");
-    record->setNonSearchableAttributeValue("class", "B");
+    record->setRefiningAttributeValue("citation", "4");
+    record->setRefiningAttributeValue("price", "7.34");
+    record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(40);
     record->setInMemoryData("test string");
     index->addRecord(record, analyzer);
@@ -157,9 +157,9 @@ void addRecords() {
     record->setSearchableAttributeValue(0, "Pinksyponzi Floydsyponzi zzzzzz");
     record->setSearchableAttributeValue(1,
             "Shinesyponzi on Wish you were here");
-    record->setNonSearchableAttributeValue("citation", "5");
-    record->setNonSearchableAttributeValue("price", "6.34");
-    record->setNonSearchableAttributeValue("class", "C");
+    record->setRefiningAttributeValue("citation", "5");
+    record->setRefiningAttributeValue("price", "6.34");
+    record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(50);
     record->setInMemoryData("test string");
     index->addRecord(record,analyzer);
@@ -168,9 +168,9 @@ void addRecords() {
     record->setPrimaryKey(1006);
     record->setSearchableAttributeValue(0, "U2 2345 Pink zzzzzz");
     record->setSearchableAttributeValue(1, "with or without you");
-    record->setNonSearchableAttributeValue("citation", "6");
-    record->setNonSearchableAttributeValue("price", "5.34");
-    record->setNonSearchableAttributeValue("class", "C");
+    record->setRefiningAttributeValue("citation", "6");
+    record->setRefiningAttributeValue("price", "5.34");
+    record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(60);
     index->addRecord(record, analyzer);
 
@@ -178,9 +178,9 @@ void addRecords() {
     record->setPrimaryKey(1007);
     record->setSearchableAttributeValue(0, "Led Zepplelin zzzzzz");
     record->setSearchableAttributeValue(1, "Stairway to Heaven pink floyd");
-    record->setNonSearchableAttributeValue("citation", "7");
-    record->setNonSearchableAttributeValue("price", "4.34");
-    record->setNonSearchableAttributeValue("class", "D");
+    record->setRefiningAttributeValue("citation", "7");
+    record->setRefiningAttributeValue("price", "4.34");
+    record->setRefiningAttributeValue("class", "D");
     record->setRecordBoost(80);
     index->addRecord(record, analyzer);
 
@@ -188,9 +188,9 @@ void addRecords() {
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix zzzzzz");
     record->setSearchableAttributeValue(1, "Little wing");
-    record->setNonSearchableAttributeValue("citation", "8");
-    record->setNonSearchableAttributeValue("price", "3.34");
-    record->setNonSearchableAttributeValue("class", "E");
+    record->setRefiningAttributeValue("citation", "8");
+    record->setRefiningAttributeValue("price", "3.34");
+    record->setRefiningAttributeValue("class", "E");
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 

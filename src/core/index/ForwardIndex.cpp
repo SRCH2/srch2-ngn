@@ -102,10 +102,10 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
 
     Logger::debug("External ID: %s", (fl->getExternalRecordId()).c_str());
     Logger::debug("RecordBoost: %.3f, Size: %d" , fl->getRecordBoost(), fl->getNumberOfKeywords());
-    Logger::debug("nonsearchableAttributeList:");
+    Logger::debug("refiningAttributeList:");
 
-	for (unsigned idx = 0; idx < schema->getNumberOfNonSearchableAttributes(); idx ++) {
-		Logger::debug("[%.5f]", fl->getNonSearchableAttributeValue(idx , schema).c_str());
+	for (unsigned idx = 0; idx < schema->getNumberOfRefiningAttributes(); idx ++) {
+		Logger::debug("[%.5f]", fl->getRefiningAttributeValue(idx , schema).c_str());
 	}
 	//keyword Id list
 	Logger::debug("keywordIdList: ");
@@ -216,33 +216,33 @@ ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 //TODO check bounds
 //   return this->keywordIdVector->at(cursor);
 //}
-TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
+TypedValue ForwardList::getForwardListRefiningAttributeTypedValue(
         const SchemaInternal* schemaInternal,
-        unsigned schemaNonSearchableAttributeId) const {
+        unsigned schemaRefiningAttributeId) const {
 
     ASSERT(
-            schemaNonSearchableAttributeId
-                    < schemaInternal->getNumberOfNonSearchableAttributes());
+            schemaRefiningAttributeId
+                    < schemaInternal->getNumberOfRefiningAttributes());
 
-    FilterType filterType = schemaInternal->getTypeOfNonSearchableAttribute(
-            schemaNonSearchableAttributeId);
-    bool isMultiValued = schemaInternal->isNonSearchableAttributeMultiValued(schemaNonSearchableAttributeId);
+    FilterType filterType = schemaInternal->getTypeOfRefiningAttribute(
+            schemaRefiningAttributeId);
+    bool isMultiValued = schemaInternal->isRefiningAttributeMultiValued(schemaRefiningAttributeId);
 
     TypedValue typedValue;
 
     if(isMultiValued == false){ // single value
 		switch (filterType) {
 			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 				ASSERT(false);
@@ -252,16 +252,16 @@ TypedValue ForwardList::getForwardListNonSearchableAttributeTypedValue(
     }else{ // multi value
 		switch (filterType) {
 			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaNonSearchableAttributeId, schemaInternal, getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaNonSearchableAttributeId, schemaInternal , getNonSearchableAttributeValuesDataPointer()));
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
 				break;
 			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
 				ASSERT(false);
@@ -321,25 +321,25 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
     //Adding Non searchable Attribute list
-    vector<vector<string> > nonSearchableAttributeValues;
+    vector<vector<string> > refiningAttributeValues;
     for (unsigned iter = 0;
-            iter < this->schemaInternal->getNumberOfNonSearchableAttributes();
+            iter < this->schemaInternal->getNumberOfRefiningAttributes();
             ++iter) {
 
-        const string * nonSearchableAttributeValueStringTokens = record
-                ->getNonSearchableAttributeValue(iter);
-        vector<string> nonSearchableAttributeValueStringTokensVector;
+        const string * refiningAttributeValueStringTokens = record
+                ->getRefiningAttributeValue(iter);
+        vector<string> refiningAttributeValueStringTokensVector;
         // If this attribute is multi-valued, we tokenize the value and prepate the vector
         // otherwise, we just insert one value into the vector.
         // Example: <"tag1","tag2","tag3"> vs. <"tag1">
-        if(this->schemaInternal->isNonSearchableAttributeMultiValued(iter) == true){
-			boost::split(nonSearchableAttributeValueStringTokensVector , *nonSearchableAttributeValueStringTokens ,
+        if(this->schemaInternal->isRefiningAttributeMultiValued(iter) == true){
+			boost::split(refiningAttributeValueStringTokensVector , *refiningAttributeValueStringTokens ,
 					boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
         }else{
-        	nonSearchableAttributeValueStringTokensVector.push_back(*nonSearchableAttributeValueStringTokens);
+        	refiningAttributeValueStringTokensVector.push_back(*refiningAttributeValueStringTokens);
         }
 
-        nonSearchableAttributeValues.push_back(nonSearchableAttributeValueStringTokensVector);
+        refiningAttributeValues.push_back(refiningAttributeValueStringTokensVector);
     }
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;
@@ -394,7 +394,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		nonSearchableAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer);
+    		refiningAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer);
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {

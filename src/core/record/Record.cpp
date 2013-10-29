@@ -42,7 +42,7 @@ struct Record::Impl
 {
     string primaryKey;
     std::vector<string> searchableAttributeValues;
-    std::vector<string> nonSearchableAttributeValues;
+    std::vector<string> refiningAttributeValues;
     float boost;
     const Schema *schema;
     std::string inMemoryRecordString;
@@ -56,7 +56,7 @@ Record::Record(const Schema *schema):impl(new Impl)
 {
     impl->schema = schema;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),"");
-    impl->nonSearchableAttributeValues.assign(impl->schema->getNumberOfNonSearchableAttributes(),"");
+    impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(),"");
     impl->boost = 1;
     impl->primaryKey = "";
     impl->point.x = 0;
@@ -95,25 +95,25 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
 
 
 
-bool Record::setNonSearchableAttributeValue(const std::string &attributeName,
+bool Record::setRefiningAttributeValue(const std::string &attributeName,
             const std::string &attributeValue){
-    int attributeId = impl->schema->getNonSearchableAttributeId(attributeName);
+    int attributeId = impl->schema->getRefiningAttributeId(attributeName);
     if (attributeId < 0) {
         return false;
     }
-    return setNonSearchableAttributeValue(attributeId, attributeValue);
+    return setRefiningAttributeValue(attributeId, attributeValue);
 }
 
 
 
 
-bool Record::setNonSearchableAttributeValue(const unsigned attributeId,
+bool Record::setRefiningAttributeValue(const unsigned attributeId,
                 const std::string &attributeValue){
-    if (attributeId >= impl->schema->getNumberOfNonSearchableAttributes()) {
+    if (attributeId >= impl->schema->getNumberOfRefiningAttributes()) {
         return false;
     }
 
-    impl->nonSearchableAttributeValues[attributeId] = attributeValue;
+    impl->refiningAttributeValues[attributeId] = attributeValue;
     return true;
 }
 
@@ -128,13 +128,13 @@ std::string *Record::getSearchableAttributeValue(const unsigned attributeId) con
 }
 
 
-std::string *Record::getNonSearchableAttributeValue(const unsigned attributeId) const
+std::string *Record::getRefiningAttributeValue(const unsigned attributeId) const
 {
-    if (attributeId >= impl->schema->getNumberOfNonSearchableAttributes())
+    if (attributeId >= impl->schema->getNumberOfRefiningAttributes())
     {
         return NULL;
     }
-    return &impl->nonSearchableAttributeValues[attributeId];
+    return &impl->refiningAttributeValues[attributeId];
 }
 
 // add the primary key value
@@ -218,7 +218,7 @@ std::pair<double,double> Record::getLocationAttributeValue() const
 void Record::clear()
 {
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),"");
-    impl->nonSearchableAttributeValues.assign(impl->schema->getNumberOfNonSearchableAttributes(), "");
+    impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(), "");
     impl->boost = 1;
     impl->primaryKey = "";
     impl->inMemoryRecordString = "";

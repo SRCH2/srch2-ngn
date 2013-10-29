@@ -22,8 +22,8 @@
 
 
 #include "instantsearch/ResultsPostProcessor.h"
-#include "instantsearch/NonSearchableAttributeExpressionFilter.h"
-#include "postprocessing/NonSearchableAttributeExpressionFilterInternal.h"
+#include "instantsearch/RefiningAttributeExpressionFilter.h"
+#include "postprocessing/RefiningAttributeExpressionFilterInternal.h"
 #include "instantsearch/IndexSearcher.h"
 #include "operation/IndexSearcherInternal.h"
 #include "instantsearch/Schema.h"
@@ -36,16 +36,16 @@ namespace srch2
 namespace instantsearch
 {
 
-NonSearchableAttributeExpressionFilter::NonSearchableAttributeExpressionFilter(){
-	impl = new NonSearchableAttributeExpressionFilterInternal(this);
+RefiningAttributeExpressionFilter::RefiningAttributeExpressionFilter(){
+	impl = new RefiningAttributeExpressionFilterInternal(this);
 }
 
-NonSearchableAttributeExpressionFilter::~NonSearchableAttributeExpressionFilter(){
+RefiningAttributeExpressionFilter::~RefiningAttributeExpressionFilter(){
 	delete evaluator; // this object is allocated in plan Generator
 	delete impl;
 }
 
-void NonSearchableAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
+void RefiningAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
 		QueryResults * input, QueryResults * output){
 
 	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
