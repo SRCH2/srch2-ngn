@@ -102,7 +102,7 @@ void addRecords() {
     unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(NULL,
             mergeEveryNSeconds, mergeEveryMWrites,
-            updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+            updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
             INDEX_DIR, "");
     srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer,
             schema);
@@ -929,7 +929,7 @@ void Searcher_Tests() {
     unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
             new Cache(), mergeEveryNSeconds, mergeEveryMWrites,
-            updateHistogramEveryPMerges , updateHistogramEveryQWrites,
+            updateHistogramEveryPMerges , updateHistogramEveryQWrites,50000,
             INDEX_DIR, "");
 
     Indexer* indexer = Indexer::load(indexMetaData);

@@ -44,7 +44,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -184,7 +184,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -389,7 +389,7 @@ void testDefaultIndex(string index_dir)
     Cache *cache = new Cache(134217728,20000);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		index_dir, "");
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
@@ -434,7 +434,7 @@ void testGeoIndex(string index_dir)
     Cache *cache = new Cache(134217728,20000);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		index_dir, "");
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);

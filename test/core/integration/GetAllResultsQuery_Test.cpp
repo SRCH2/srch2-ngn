@@ -46,7 +46,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 

@@ -52,7 +52,7 @@ void addRecords()
     string INDEX_DIR = ".";
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
@@ -220,7 +220,7 @@ bool test3()
     string INDEX_DIR = ".";
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
     
     Indexer *indexer = Indexer::load(indexMetaData);

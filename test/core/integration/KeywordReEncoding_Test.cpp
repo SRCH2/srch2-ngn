@@ -79,7 +79,7 @@ void addSimpleRecords()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
@@ -307,7 +307,7 @@ void test1()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
     indexer = Indexer::load(indexMetaData1);
 
