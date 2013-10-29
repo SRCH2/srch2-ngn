@@ -119,7 +119,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
                     paramsContainer.getAllResultsParameterContainer->facetQueryContainer;
             facetFilter->initialize(container->types, container->fields,
                     container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps);
+                    container->rangeGaps , container->numberOfTopGroupsToReturn);
 
             plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
         }
@@ -142,7 +142,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
                     paramsContainer.geoParameterContainer->facetQueryContainer;
             facetFilter->initialize(container->types, container->fields,
                     container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps);
+                    container->rangeGaps , container->numberOfTopGroupsToReturn);
 
             plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
         }
