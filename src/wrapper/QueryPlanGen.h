@@ -26,7 +26,7 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/FacetedSearchFilter.h>
-#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include <instantsearch/SortFilter.h>
 #include "QueryPlan.h"
 #include <algorithm>
