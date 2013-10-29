@@ -356,6 +356,33 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
         fqc.rangeEnds.push_back("");
         fqc.rangeGaps.push_back("");
         fqc.rangeStarts.push_back("");
+
+        // now see if there is a numberOfTopGroupsToReturn given by the user, if not
+        // use -1 which indicates returning all the facet groups
+        Logger::debug("inside populateParallelRangeVectors function");
+        const string numberOfGroupsKeyString = QueryParser::getFacetCategoricalNumberOfTopGroupsToReturn(*facetField);
+        const char* numberOfGroupsStrTemp = evhttp_find_header(&headers,
+        		numberOfGroupsKeyString.c_str());
+        if (numberOfGroupsStrTemp) {
+            Logger::debug("facetNumberOfGroups parameter found, parsing it.");
+            size_t st;
+            string facetNumberOfGroupsStr = evhttp_uridecode(numberOfGroupsStrTemp, 0, &st);
+
+            if(isUnsigned(facetNumberOfGroupsStr)){
+                Logger::debug(
+                        "facetNumberOfGroups parameter found, pushing it to numberOfTopGroupsToReturn to fqc");
+            	fqc.numberOfTopGroupsToReturn.push_back(atoi(facetNumberOfGroupsStr.c_str()));
+            }else{
+                this->container->messages.push_back(
+                        make_pair(MessageWarning,
+                                numberOfGroupsKeyString+" should get a valid unsigned number. Ignored."));
+            	fqc.numberOfTopGroupsToReturn.push_back(-1);
+            }
+        } else {
+            Logger::debug(
+                    "facetNumberOfGroups parameter not found, pushing -1 to numberOfTopGroupsToReturn to fqc");
+            fqc.numberOfTopGroupsToReturn.push_back(-1);
+        }
     }
     Logger::debug("returning from populateFacetFieldSimple");
 }
@@ -375,6 +402,8 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
         fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
         // populate parallel vectors with empty string
         populateParallelRangeVectors(fqc, *facetField);
+        // It's not possible to define a number of groups for range facets
+        fqc.numberOfTopGroupsToReturn.push_back(-1);
     }
     Logger::debug("returning from populateFacetFieldsRange function");
 }

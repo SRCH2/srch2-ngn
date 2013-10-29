@@ -148,6 +148,9 @@ private:
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
     }
+    static const string getFacetCategoricalNumberOfTopGroupsToReturn(const string &facetField){
+    	return "f."+facetField+".rows";
+    }
     //searchType
     static const char* const searchType;
 
