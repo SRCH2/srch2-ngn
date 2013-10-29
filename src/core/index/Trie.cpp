@@ -361,7 +361,7 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 }
 
 
-Trie::Trie()
+Trie::Trie(const unsigned keywordPopulartyThreshold)
 {
     // We create a root (for the write view) by copying the trie root of the read view.
     // Initially both root views have an empty trie with a "$" sign at the root.
@@ -374,6 +374,11 @@ Trie::Trie()
 
     this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1; // init the counter
     pthread_spin_init(&m_spinlock, 0);
+
+    this->keywordPopularityThreshold = keywordPopulartyThreshold;
+    if(this->keywordPopularityThreshold < 0){
+    	this->keywordPopularityThreshold = 50000;
+    }
 }
 
 Trie::~Trie()

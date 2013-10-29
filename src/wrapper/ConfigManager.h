@@ -154,6 +154,9 @@ private:
 	unsigned updateHistogramEveryPMerges;
 	unsigned updateHistogramEveryQWrites;
 
+	// <config><keywordPopularitythreshold>
+	unsigned keywordPopularityThreshold;
+
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
@@ -260,6 +263,7 @@ private:
     bool isValidMaxMemory(string& maxMemory);
     bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
     bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
+    bool isValidKeywordPopularityThreshold(string kpt);
     bool isValidLogLevel(string& logLevel);
     bool isValidIndexType(string& indexType);
     bool isValidSearcherType(string& searcherType);
@@ -325,6 +329,8 @@ public:
 
 	uint32_t getUpdateHistogramEveryPMerges() const;
 	uint32_t getUpdateHistogramEveryQWrites() const;
+
+	unsigned getKeywordPopularityThreshold() const ;
 
 	int getNumberOfThreads() const;
 
@@ -493,6 +499,7 @@ private:
     static const char* const updateHandlerString;
     static const char* const updateLogString;
     static const char* const wordsString;
+    static const char* const keywordPopularityThresholdString;
 };
 
 }

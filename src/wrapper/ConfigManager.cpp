@@ -113,6 +113,7 @@ const char* const ConfigManager::uniqueKeyString = "uniquekey";
 const char* const ConfigManager::updateHandlerString = "updatehandler";
 const char* const ConfigManager::updateLogString = "updatelog";
 const char* const ConfigManager::wordsString = "words";
+const char* const ConfigManager::keywordPopularityThresholdString = "keywordpopularitythreshold";
 
 
 ConfigManager::ConfigManager(const string& configFile) {
@@ -1320,6 +1321,21 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // setting default values for getAllResults optimization parameters
 	this->getAllResultsNumberOfResultsThreshold = 10000;
 	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
+
+
+    configAttribute = configDoc.child(configString).child(keywordPopularityThresholdString);
+    if (configAttribute && configAttribute.text()) {
+        string kpt = configAttribute.text().get();
+
+        if (this->isValidKeywordPopularityThreshold(kpt)) {
+            this->keywordPopularityThreshold = configAttribute.text().as_uint();
+        }else{
+        	parseError << "keywordPopularityThreshold has unsuitable format.\n";
+        	keywordPopularityThreshold = 50000;
+        }
+    }else{
+    	keywordPopularityThreshold = 50000;
+    }
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
@@ -1355,6 +1371,10 @@ uint32_t ConfigManager::getUpdateHistogramEveryPMerges() const {
 
 uint32_t ConfigManager::getUpdateHistogramEveryQWrites() const {
     return updateHistogramEveryQWrites;
+}
+
+unsigned ConfigManager::getKeywordPopularityThreshold() const {
+	return keywordPopularityThreshold;
 }
 
 int ConfigManager::getIndexType() const {
@@ -1807,6 +1827,15 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
         if (atoi(mergeEveryMWrites.c_str()) >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
+    if (this->isOnlyDigits(kpt)) {
+        if (atoi(kpt.c_str()) >= 1) {
             return true;
         }
     }

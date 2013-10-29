@@ -205,7 +205,8 @@ private:
     ///Added for stemmer integration
     IndexData(const string& directoryName, Analyzer *analyzer, Schema *schema,
             const string &trieBootstrapFileNameWithPath,
-            const StemmerNormalizerFlagType &stemmerFlag);
+            const StemmerNormalizerFlagType &stemmerFlag,
+            const unsigned keywordPopularityThreshold = 10000);
             
     IndexData(const string& directoryName);
 
@@ -218,6 +219,7 @@ private:
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;    
+
     
     /**
      * Internal functions
@@ -256,9 +258,10 @@ public:
     			Analyzer *analyzer,
                 Schema *schema,
                 const string &trieBootstrapFileNameWithPath,
-                const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
+                const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
+                const unsigned keywordPopularityThreshold = 10000)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag);
+        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag , keywordPopularityThreshold);
     }
     
     inline static IndexData* load(const string& directoryName)
