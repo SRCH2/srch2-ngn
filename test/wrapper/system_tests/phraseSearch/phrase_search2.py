@@ -6,7 +6,7 @@
 # Suppose we have one attribute "authors" which is multivalued and its value for record R1 is 
 # "authors":["John Smith" , "George Orwell"]. Now if the phrase is "John Smith", R1 must be found but if 
 # the phrase is "Smith George", it should not be found since "Smith" and "George" are not in the same value in R1.
-# According to this explanation, ps-test2.json is tailored so that record 2 be a results of "Smith Ronald" while record 1 is not.
+# According to this explanation, ps-test2.json is tailored so that record 2 is a results of "Smith Ronald" while record 1 is not.
 
 
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
