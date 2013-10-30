@@ -86,8 +86,17 @@ public:
      */
     bool setSearchableAttributeValue(const unsigned attributeId,
             const std::string &attributeValue);
+    /**
+     * Sets the values of a multi-valued attribute given its index in the list
+     * of attributes in the schema.
+     *
+     * @param attributeId The index of an attribute in the schema.
+     * @param attributeValues The text string vector of single valued of this attribute.
+     *
+     * Returns false when attributeId is not a valid index.
+     */
     bool setSearchableAttributeValue(const unsigned attributeId,
-    		const std::vector<std::string> &attributeValue);
+    		const std::vector<std::string> &attributeValues);
 
     /**
      * Set the value of an attribute.

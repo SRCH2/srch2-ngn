@@ -134,6 +134,11 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
+    	/*
+    	 * Example : Suppose the value of this attribute is <'A B C', 'D E F', 'G H'>
+    	 * After this iteration, the positions given to these tokens are
+    	 * Tokens : <A,1> <B,2> <C,3> <D,100004> <E,100005> <F, 100006> <G, 200007 > <H, 200008>
+    	 */
         vector<string> attributeValues;
         record->getSearchableAttributeValues(attributeIterator , attributeValues);
 
@@ -149,6 +154,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					charVector = tokenStream->getProcessedToken();
 					unsigned position = tokenStream->getProcessedTokenPosition();
 					charTypeVectorToUtf8String(charVector, currentToken);
+					// Bums are added to the positions after tokenizer gives us the values.
 					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTES_POSITION_BUMP};
 					tokens.push_back(pterm);
 				}

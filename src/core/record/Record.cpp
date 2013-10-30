@@ -51,11 +51,11 @@ struct Record::Impl
     Point point;
 };
 
-//TODO: check the default boost value and primary key
 Record::Record(const Schema *schema):impl(new Impl)
 {
     impl->schema = schema;
     vector<string> emptyStringVector;
+    // first we fill these two vectors with place holders.
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(), emptyStringVector);
     impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(),"");
     impl->boost = 1;
@@ -254,6 +254,7 @@ std::pair<double,double> Record::getLocationAttributeValue() const
 // clear the content of the record EXCEPT SCHEMA
 void Record::clear()
 {
+    // We fill these two vectors with place holders to have the correct size.
 	vector<string> emptyVector;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),emptyVector);
     impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(), "");

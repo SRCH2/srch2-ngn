@@ -30,7 +30,13 @@ namespace instantsearch {
 
 const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
-const unsigned MULTI_VALUED_ATTRIBUTES_POSITION_BUMP = 100000;
+/*
+ * Example: tags is a multi valued attribute. Suppose one record has this value for tags :
+ * ['C++ Coding Style','Java Concept Encapsulation','Programming Principles']
+ * The value of this variable is used when the position of each token is assigned. We add this bump to tokens of each value of a multi-valued attribute
+ * so that they are not matched in phrase-search. For example, adding this bump to 'Java' will prevent "Style Java" to match this record.
+ */
+const unsigned MULTI_VALUED_ATTRIBUTE_POSITION_BUMP = 100000;
 
 /// Analyzer related constants
 typedef enum {
