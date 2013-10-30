@@ -101,12 +101,13 @@ public:
 
 		// Create an IndexMetaData
 		srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( cache,
-								   indexDataContainerConf->getMergeEveryNSeconds(),
-								   indexDataContainerConf->getMergeEveryMWrites(),
-								   indexDataContainerConf->getUpdateHistogramEveryPMerges(),
-								   indexDataContainerConf->getUpdateHistogramEveryQWrites(),
-								   indexDataContainerConf->getIndexPath(),
-								   indexDataContainerConf->getTrieBootstrapDictFileName());
+				indexDataContainerConf->getMergeEveryNSeconds(),
+				indexDataContainerConf->getMergeEveryMWrites(),
+				indexDataContainerConf->getUpdateHistogramEveryPMerges(),
+				indexDataContainerConf->getUpdateHistogramEveryQWrites(),
+				indexDataContainerConf->getKeywordPopularityThreshold(),
+				indexDataContainerConf->getIndexPath(),
+				indexDataContainerConf->getTrieBootstrapDictFileName());
 
 		return indexMetaData;
 	}

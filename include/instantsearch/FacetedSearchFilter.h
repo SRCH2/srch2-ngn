@@ -50,7 +50,7 @@ public:
 			std::vector<std::string> & fields,
 			std::vector<std::string> & rangeStarts,
 			std::vector<std::string> & rangeEnds,
-			std::vector<std::string> & rangeGaps);
+			std::vector<std::string> & rangeGaps , std::vector<int> & numberOfGroupsToReturn);
 
 private:
 	FacetedSearchFilterInternal * impl;

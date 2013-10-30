@@ -134,29 +134,39 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
-        string *attributeValue = record->getSearchableAttributeValue(
-                attributeIterator);
-        if (attributeValue != NULL) {
-            tokens.clear();
-            this->tokenStream->fillInCharacters(*attributeValue);
-            string currentToken = "";
-            while (tokenStream->processToken()) //process the token one by one
-            {
-                vector<CharType> charVector;
-                charVector = tokenStream->getProcessedToken();
-                unsigned position = tokenStream->getProcessedTokenPosition();
-                charTypeVectorToUtf8String(charVector, currentToken);
-                PositionalTerm pterm = {currentToken, position};
-                tokens.push_back(pterm);
-            }
+    	/*
+    	 * Example : Suppose the value of this attribute is <'A B C', 'D E F', 'G H'>
+    	 * Assuming the bump value is 100000, after this iteration, the positions given to these tokens are
+    	 * Tokens : <A,1> <B,2> <C,3> <D,100004> <E,100005> <F, 100006> <G, 200007 > <H, 200008>
+    	 */
+        vector<string> attributeValues;
+        record->getSearchableAttributeValues(attributeIterator , attributeValues);
 
-            for (unsigned i = 0; i< tokens.size(); ++i) {
-                if (tokens[i].term.size()) {
-                    tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
-                            setAttributePositionBitVector(attributeIterator,
-                            		tokens[i].position));
-                }
-            }
+        if (!attributeValues.empty()) {
+			tokens.clear();
+        	for(unsigned valueOffset = 0 ; valueOffset != attributeValues.size() ; ++valueOffset){
+        		string attributeValue = attributeValues.at(valueOffset);
+				this->tokenStream->fillInCharacters(attributeValue);
+				string currentToken = "";
+				while (tokenStream->processToken()) //process the token one by one
+				{
+					vector<CharType> charVector;
+					charVector = tokenStream->getProcessedToken();
+					unsigned position = tokenStream->getProcessedTokenPosition();
+					charTypeVectorToUtf8String(charVector, currentToken);
+					// Bumps are added to the positions after tokenizer gives us the values.
+					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP};
+					tokens.push_back(pterm);
+				}
+
+        	}
+			for (unsigned i = 0; i< tokens.size(); ++i) {
+				if (tokens[i].term.size()) {
+					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
+							setAttributePositionBitVector(attributeIterator,
+									tokens[i].position));
+				}
+			}
 
         }
     }

@@ -150,11 +150,11 @@ int main(int argc, char **argv)
         
         IndexMetaData *indexMetaData1 = new IndexMetaData( cache1,
         		mergeEveryNSeconds, mergeEveryMWrites,
-        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
         		index_dir, "");
         IndexMetaData *indexMetaData2 = new IndexMetaData( cache2,
         		mergeEveryNSeconds, mergeEveryMWrites,
-        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
         		index_dir, "");
            
            Indexer *indexer1 = Indexer::load(indexMetaData1);

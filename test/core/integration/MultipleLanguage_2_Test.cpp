@@ -51,7 +51,7 @@ void addPolishRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -128,7 +128,7 @@ void testPolish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -182,7 +182,7 @@ void addPortugueseRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -261,7 +261,7 @@ void testPortuguese() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -332,7 +332,7 @@ void addRomanianRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -410,7 +410,7 @@ void testRomanian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -465,7 +465,7 @@ void addRussianRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -543,7 +543,7 @@ void testRussian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -600,7 +600,7 @@ void addSerbianRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -676,7 +676,7 @@ void testSerbian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -731,7 +731,7 @@ void addSlovakRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -809,7 +809,7 @@ void testSlovak() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -866,7 +866,7 @@ void addSlovenianRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -944,7 +944,7 @@ void testSlovenian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -999,7 +999,7 @@ void addSpanishRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1078,7 +1078,7 @@ void testSpanish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1148,7 +1148,7 @@ void addSwedishRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1227,7 +1227,7 @@ void testSwedish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1282,7 +1282,7 @@ void addThaiRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1361,7 +1361,7 @@ void testThai() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1416,7 +1416,7 @@ void addTurkishRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1494,7 +1494,7 @@ void testTurkish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1549,7 +1549,7 @@ void addUkrainianRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1626,7 +1626,7 @@ void testUkrainian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1681,7 +1681,7 @@ void addVietnameseRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1760,7 +1760,7 @@ void testVietnamese() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1815,7 +1815,7 @@ void addFarsiRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1877,7 +1877,7 @@ void testFarsi() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -1932,7 +1932,7 @@ void addArabicRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2085,7 +2085,7 @@ void testArabic() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2203,7 +2203,7 @@ void addHebrewRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2274,7 +2274,7 @@ void testHebrew() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2329,7 +2329,7 @@ void addKazakhRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2395,7 +2395,7 @@ void testKazakh()
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
-			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+			updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
 			INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
@@ -2437,7 +2437,7 @@ void addBurmeseRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2503,7 +2503,7 @@ void testBurmese()
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
-			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+			updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
 			INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
@@ -2544,7 +2544,7 @@ void addPortugueseBrazilRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2609,7 +2609,7 @@ void testPortugueseBrazil()
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	IndexSearcher *indexSearcher = IndexSearcher::create(index);
@@ -2649,7 +2649,7 @@ void addSpanishLatinRecords() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2715,7 +2715,7 @@ void testSpanishLatin()
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
-			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+			updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
 			INDEX_DIR, "");
 
 	Indexer *index = Indexer::load(indexMetaData1);
@@ -2758,7 +2758,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000, INDEX_DIR, "");
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 

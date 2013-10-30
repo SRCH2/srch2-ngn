@@ -55,8 +55,6 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
-	static const unsigned HISTOGRAM_POPULARITY_THRESHOLD;
-
     //Get Schema pointer from IndexSearcherInternal
     IndexSearcherInternal(IndexReaderWriter *indexer);
     virtual ~IndexSearcherInternal() {};
@@ -128,6 +126,10 @@ public:
     //For testing
     const Trie* getTrie() const {
         return this->indexData->trie;
+    }
+
+    const unsigned getKeywordPopularityThreshold() const {
+    	return indexData->trie->getKeywordPopularityThreshold();
     }
 
 private:
