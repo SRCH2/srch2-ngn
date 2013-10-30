@@ -155,7 +155,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					unsigned position = tokenStream->getProcessedTokenPosition();
 					charTypeVectorToUtf8String(charVector, currentToken);
 					// Bums are added to the positions after tokenizer gives us the values.
-					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTES_POSITION_BUMP};
+					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP};
 					tokens.push_back(pterm);
 				}
 
