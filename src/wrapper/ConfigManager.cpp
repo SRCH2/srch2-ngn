@@ -1330,7 +1330,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidKeywordPopularityThreshold(kpt)) {
             this->keywordPopularityThreshold = configAttribute.text().as_uint();
         }else{
-        	parseError << "keywordPopularityThreshold has unsuitable format.\n";
+        	parseError << "keywordPopularityThreshold has an invalid format.\n";
         	keywordPopularityThreshold = 50000;
         }
     }else{

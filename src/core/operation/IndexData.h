@@ -259,7 +259,7 @@ public:
                 Schema *schema,
                 const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-                const unsigned keywordPopularityThreshold = 10000)
+                const unsigned keywordPopularityThreshold = 50000)
     { 
         return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag , keywordPopularityThreshold);
     }

@@ -78,7 +78,7 @@ public:
         }
         updateHistogramEveryQWrites = _updateHistogramEveryPMerges * _mergeEveryMWrites;
 
-        // keywordPopularityThreshold is used in IndexSearcherInternal for short prefix h
+        // keywordPopularityThreshold is used in IndexSearcherInternal for short prefix heuristic
         keywordPopularityThreshold = _keywordPopularityThreshold;
 
         directoryName = _directoryName;
