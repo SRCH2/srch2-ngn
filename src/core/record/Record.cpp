@@ -255,7 +255,7 @@ std::pair<double,double> Record::getLocationAttributeValue() const
 void Record::clear()
 {
     // We fill these two vectors with place holders to have the correct size.
-	vector<string> emptyVector;
+    vector<string> emptyVector;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),emptyVector);
     impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(), "");
     impl->boost = 1;
