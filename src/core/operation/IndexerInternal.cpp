@@ -202,6 +202,48 @@ void * dispatchMergeThread(void *indexer) {
 	pthread_exit(0);
 }
 
+IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema)
+{
+     // CREATE NEW Index
+     this->index =  IndexData::create(indexMetaData->directoryName,
+     		                         analyzer,
+                                      schema,
+                                      indexMetaData->trieBootstrapFileNameWithPath,
+                                      srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
+                                      );
+     this->initIndexReaderWriter(indexMetaData);
+     // start merge threads after commit
+ }
+
+IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
+{
+    // LOAD Index
+    this->index = IndexData::load(indexMetaData->directoryName);
+    this->initIndexReaderWriter(indexMetaData);
+    //this->startMergerThreads();
+}
+
+void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
+ {
+     this->cache = dynamic_cast<Cache*>(indexMetaData->cache);
+     this->mergeEveryNSeconds = indexMetaData->mergeEveryNSeconds;
+     this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
+     this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;
+     this->updateHistogramEveryQWrites = indexMetaData->updateHistogramEveryQWrites;
+     this->writesCounterForMerge = 0;
+     this->mergeCounterForUpdatingHistogram = 0;
+
+     this->mergeThreadStarted = false; // No threads running
+     this->rwMutexForWriter = new ReadWriteMutex(100);
+ }
+
+uint32_t IndexReaderWriter::getNumberOfDocumentsInIndex() const
+{
+    return this->index->_getNumberOfDocumentsInIndex();
+}
+
+
+
 pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
 	pthread_attr_init(&mergeThreadAttributes);
 	pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
