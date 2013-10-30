@@ -1,5 +1,13 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#this test is used for phrase search  
+
+# In this test case we read the queries from queries2.txt and match the response with the list of results 
+# given in the same file.
+# The last 4 queries are to test phrase search with multivalued attributes. The idea of this test is the following:
+# Suppose we have one attribute "authors" which is multivalued and its value for record R1 is 
+# "authors":["John Smith" , "George Orwell"]. Now if the phrase is "John Smith", R1 must be found but if 
+# the phrase is "Smith George", it should not be found since "Smith" and "George" are not in the same value in R1.
+# According to this explanation, ps-test2.json is tailored so that record 2 be a results of "Smith Ronald" while record 1 is not.
+
 
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 
