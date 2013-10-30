@@ -309,9 +309,8 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
 		std::vector<std::pair< std::string, float > > results;
 		int numberOfGroupsToReturnForThisField = -1;
-		// we make sure that numberOfGroupsToReturnVector has the same size as the number of facet attributes.
-		// because if it doesn't have the same size (input to this function is not consistent) we use -1 and
-		// don't remove the tail.
+		// We make sure that numberOfGroupsToReturnVector has the same size as the number of facet attributes.
+		// If it doesn't have the same size (input to this function is not consistent), we use -1 and don't remove the tail.
 		if(this->numberOfGroupsToReturnVector.size() == fields.size()){
 			numberOfGroupsToReturnForThisField = this->numberOfGroupsToReturnVector.at(std::distance(facetResults.begin() , facetResultsPtr));
 		}
