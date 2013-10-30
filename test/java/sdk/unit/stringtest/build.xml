@@ -1,0 +1,15 @@
+<project default="compile">
+  <property name="test.dir" location="sdk"/>
+  <property name="src.dir" location="../../../../../src/java/sdk"/>
+  <property name="build.dir" location="build"/>
+  <echo message="${test.dir}"/>
+  <echo message="${src.dir}"/>
+  <echo message="${build.dir}"/>
+  <target name="compile">
+    <javac includeAntRuntime="false" verbose="true"
+      srcdir="${test.dir}:${src.dir}" destdir="${build.dir}">
+      <include name="com/srch2/*.java"/>
+    </javac>
+  </target>
+</project>
+
