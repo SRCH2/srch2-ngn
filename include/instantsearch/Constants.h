@@ -30,6 +30,8 @@ namespace instantsearch {
 
 const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
+const unsigned MULTI_VALUED_ATTRIBUTES_POSITION_BUMP = 100000;
+
 /// Analyzer related constants
 typedef enum {
     // there is no numbering for this enum. By default the numbers start from 0

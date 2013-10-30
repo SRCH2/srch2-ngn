@@ -24,6 +24,7 @@
 #include <instantsearch/Constants.h>
 
 #include <string>
+#include <vector>
 
 namespace srch2
 {
@@ -74,7 +75,8 @@ public:
      */
     bool setSearchableAttributeValue(const std::string &attributeName,
             const std::string &attributeValue);
-
+    bool setSearchableAttributeValue(const std::string &attributeName,
+            const std::vector<std::string> &attributeValue);
     /**
      * Sets the value of the attribute given its index in the list
      * of attributes in the schema.
@@ -84,6 +86,8 @@ public:
      */
     bool setSearchableAttributeValue(const unsigned attributeId,
             const std::string &attributeValue);
+    bool setSearchableAttributeValue(const unsigned attributeId,
+    		const std::vector<std::string> &attributeValue);
 
     /**
      * Set the value of an attribute.
@@ -123,8 +127,8 @@ public:
     /**
      * Returns the value of the attribute corresponding to the attributeId.
      */
-    std::string *getSearchableAttributeValue(const unsigned attributeId) const;
-
+    void getSearchableAttributeValue(const unsigned attributeId , std::string & attributeValue) const;
+    void getSearchableAttributeValues(const unsigned attributeId , std::vector<std::string> & attributeStringValues) const;
 
     std::string *getRefiningAttributeValue(const unsigned attributeId) const;
 

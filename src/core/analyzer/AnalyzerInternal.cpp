@@ -134,29 +134,33 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
-        string *attributeValue = record->getSearchableAttributeValue(
-                attributeIterator);
-        if (attributeValue != NULL) {
-            tokens.clear();
-            this->tokenStream->fillInCharacters(*attributeValue);
-            string currentToken = "";
-            while (tokenStream->processToken()) //process the token one by one
-            {
-                vector<CharType> charVector;
-                charVector = tokenStream->getProcessedToken();
-                unsigned position = tokenStream->getProcessedTokenPosition();
-                charTypeVectorToUtf8String(charVector, currentToken);
-                PositionalTerm pterm = {currentToken, position};
-                tokens.push_back(pterm);
-            }
+        vector<string> attributeValues;
+        record->getSearchableAttributeValues(attributeIterator , attributeValues);
 
-            for (unsigned i = 0; i< tokens.size(); ++i) {
-                if (tokens[i].term.size()) {
-                    tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
-                            setAttributePositionBitVector(attributeIterator,
-                            		tokens[i].position));
-                }
-            }
+        if (!attributeValues.empty()) {
+			tokens.clear();
+        	for(unsigned valueOffset = 0 ; valueOffset != attributeValues.size() ; ++valueOffset){
+        		string attributeValue = attributeValues.at(valueOffset);
+				this->tokenStream->fillInCharacters(attributeValue);
+				string currentToken = "";
+				while (tokenStream->processToken()) //process the token one by one
+				{
+					vector<CharType> charVector;
+					charVector = tokenStream->getProcessedToken();
+					unsigned position = tokenStream->getProcessedTokenPosition();
+					charTypeVectorToUtf8String(charVector, currentToken);
+					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTES_POSITION_BUMP};
+					tokens.push_back(pterm);
+				}
+
+        	}
+			for (unsigned i = 0; i< tokens.size(); ++i) {
+				if (tokens[i].term.size()) {
+					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
+							setAttributePositionBitVector(attributeIterator,
+									tokens[i].position));
+				}
+			}
 
         }
     }
