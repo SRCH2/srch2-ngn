@@ -133,10 +133,15 @@ public:
 
     virtual ~IndexReaderWriter()
     {
-        this->rwMutexForWriter->lockWrite();
-        this->mergeThreadStarted = false;
-        pthread_cond_signal(&countThresholdConditionVariable);
-        this->rwMutexForWriter->unlockWrite();
+    	if (this->mergeThreadStarted == true)
+    	{
+    		this->rwMutexForWriter->lockWrite();
+    		this->mergeThreadStarted = false;
+    		pthread_cond_signal(&countThresholdConditionVariable);
+    		this->rwMutexForWriter->unlockWrite();
+
+    		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    	}
         delete this->index;
         delete this->rwMutexForWriter;
     };
