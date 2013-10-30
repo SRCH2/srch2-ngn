@@ -76,7 +76,7 @@ void addRecords()
     string INDEX_DIR = ".";
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
@@ -460,7 +460,7 @@ void TermVirtualList_Tests()
     string INDEX_DIR = ".";
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
     		INDEX_DIR, "");
        Indexer *indexer = Indexer::load(indexMetaData);
     
