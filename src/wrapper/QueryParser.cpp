@@ -402,7 +402,7 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
         fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
         // populate parallel vectors with empty string
         populateParallelRangeVectors(fqc, *facetField);
-        // It's not possible to define a number of groups for range facets
+        // numberOfTopGroupsToReturn is only valid for categorial facets. For a range facet, we put a dummy value "-1"
         fqc.numberOfTopGroupsToReturn.push_back(-1);
     }
     Logger::debug("returning from populateFacetFieldsRange function");

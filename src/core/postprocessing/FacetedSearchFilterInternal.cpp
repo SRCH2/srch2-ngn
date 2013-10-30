@@ -76,7 +76,7 @@ void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< 
 	}
 	// now sort it
 	std::sort(results.begin() , results.end() , &compareFacetGroups);
-	// if we don't want all the results remove the tail
+	// if the query wants all the groups or the available groups are fewer than what the query asks for, we don't need to remove the tail
 	if(numberOfGroupsToReturn < 0 || numberOfGroupsToReturn > results.size()){
 		return;
 	}
@@ -309,6 +309,9 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
 		std::vector<std::pair< std::string, float > > results;
 		int numberOfGroupsToReturnForThisField = -1;
+		// we make sure that numberOfGroupsToReturnVector has the same size as the number of facet attributes.
+		// because if it doesn't have the same size (input to this function is not consistent) we use -1 and
+		// don't remove the tail.
 		if(this->numberOfGroupsToReturnVector.size() == fields.size()){
 			numberOfGroupsToReturnForThisField = this->numberOfGroupsToReturnVector.at(std::distance(facetResults.begin() , facetResultsPtr));
 		}
