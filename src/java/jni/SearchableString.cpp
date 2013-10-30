@@ -1,10 +1,10 @@
-#include "Srch2String.h"
-#include "unchecked.h"
-#include "utf16.h"
+#include "SearchableString.h"
+#include "util/utf8/unchecked.h"
+#include "util/utf16/utf16.h"
 
 
 
-std::string JNIClass::Srch2String::toString(jobject srch2String) const {
+std::string JNIClass::SearchableString::toString(jobject srch2String) const {
   jstring srch2StringValue=
    (jstring) env->CallObjectMethod(srch2String, getValue);
   const jchar *utf16CharStringValue=
@@ -22,11 +22,11 @@ std::string JNIClass::Srch2String::toString(jobject srch2String) const {
   return std::string(utf8Start, utf8End);
 }
 
-jboolean JNIClass::Srch2String::isInstance(jobject obj) const {
+jboolean JNIClass::SearchableString::isInstance(jobject obj) const {
   return env->IsAssignableFrom(env->GetObjectClass(obj), classPtr);
 }
 
-jobject JNIClass::Srch2String::createNew(std::string&) const {
+jobject JNIClass::SearchableString::createNew(std::string&) const {
   jchar uft16start[1024];
   jchar *uft16end= uft16start;
   
