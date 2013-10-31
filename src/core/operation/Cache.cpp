@@ -218,7 +218,8 @@ int Cache::clear()
 //PrefixActiveNodeSet *Cache::getPrefixActiveNodeSet(string &prefix)
 PrefixActiveNodeSet *ActiveNodeCache::_getPrefixActiveNodeSet(string &prefix, unsigned termThreshold)
 {
-    unsigned hashedQuery = Cache::_hashDJB2(prefix.c_str());
+    std::string exactOrFuzzy =  termThreshold == 0?"0":"1";
+    unsigned hashedQuery = Cache::_hashDJB2((prefix+exactOrFuzzy).c_str());
     map<unsigned, unsigned>::iterator mapIterator = this->cachedActiveNodeSetMap.find(hashedQuery);
     if (mapIterator != this->cachedActiveNodeSetMap.end()
             ///Boundary checks
@@ -323,7 +324,8 @@ int Cache::setPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet)
     {*/
         ASSERT(prefixActiveNodeSet != NULL);
         vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
-        unsigned hashedQuery = _hashDJB2(getUtf8String(*prefix).c_str());
+        std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
+        unsigned hashedQuery = _hashDJB2((getUtf8String(*prefix)+exactOrFuzzy).c_str());
         map<unsigned, unsigned>::iterator mapIterator = this->aCache->cachedActiveNodeSetMap.find(hashedQuery);
 
         ///Check If hashKey is present in Map
