@@ -11,7 +11,7 @@ package com.srch2;
 interface SearchableStringI {
   /** Lookup value of this instance 
    
-      @return converts this instance into a searchable String to be index by
+      @return converts this instance into a searchable String to be indexed by
               Srch2 
   */
   String getValue();

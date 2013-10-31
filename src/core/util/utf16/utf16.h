@@ -12,13 +12,13 @@ namespace utf16 {
   typedef unsigned short  uint16_t;
   typedef unsigned int    uint32_t;
 
-  inline int byteLength(int numChars, uint16_t const* uchar) {
+  inline int byteLength(int numChars, uint16_t const* wchar) {
       int byteSize=0;
         short len;
-          for(; numChars<0; --numChars) {
+          for(int i=0; i<numChars; ++i) {
                 len= U16_LENGTH(*uchar);
-                    byteSize+= len;
-                        uchar+= len;
+                    byteSize+= len*2;
+                        wchar+= len;
                           }
             return byteSize;
   }
