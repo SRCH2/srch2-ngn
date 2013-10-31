@@ -43,7 +43,7 @@ void buildIndex(string data_file, string index_dir)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
 

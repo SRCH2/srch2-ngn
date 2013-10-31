@@ -514,7 +514,6 @@ private:
     bool commited;
     bool mergeRequired;
 
-    unsigned keywordPopularityThreshold;
 
     friend class boost::serialization::access;
 
@@ -524,7 +523,6 @@ private:
         // We do NOT need to serialize the "oldIdToNewIdMapVector" since it's only used before the commit.
         ar << numberOfTerminalNodes;
         ar << root_readview;
-        ar << keywordPopularityThreshold;
     }
 
     template<class Archive>
@@ -534,7 +532,6 @@ private:
         // We do NOT need to read the "oldIdToNewIdMapVector" from the disk since it's only used before the commit and is no longer needed.
         commited = true;
         ar >> root_readview;
-        ar >> keywordPopularityThreshold;
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
     }
 
@@ -547,7 +544,7 @@ private:
 
 public:
 
-    Trie(const unsigned keywordPopulartyThreshold = 50000);
+    Trie();
 
     virtual ~Trie();
 
@@ -753,10 +750,6 @@ public:
     void getPrefixString_NotThreadSafe(const TrieNode* trieNode, std::vector<CharType> &in) const;
 
     void getPrefixString_NotThreadSafe(const TrieNode* trieNode, std::string &in) const;
-
-    unsigned getKeywordPopularityThreshold() const {
-    	return keywordPopularityThreshold;
-    }
 
     void printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned>& keywordIds) const;
 

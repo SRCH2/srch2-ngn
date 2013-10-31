@@ -562,7 +562,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     Cache *cache = new Cache(134217728,20000);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		directoryName, "");
     
     // Create a schema
@@ -624,7 +624,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     Cache *cache = new Cache(134217728,20000);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		directoryName, "");
     
     // Create a schema

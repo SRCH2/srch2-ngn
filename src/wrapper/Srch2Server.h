@@ -105,7 +105,6 @@ public:
 				indexDataContainerConf->getMergeEveryMWrites(),
 				indexDataContainerConf->getUpdateHistogramEveryPMerges(),
 				indexDataContainerConf->getUpdateHistogramEveryQWrites(),
-				indexDataContainerConf->getKeywordPopularityThreshold(),
 				indexDataContainerConf->getIndexPath(),
 				indexDataContainerConf->getTrieBootstrapDictFileName());
 

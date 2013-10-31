@@ -41,7 +41,8 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
-    this->indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+	IndexSearcherRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold());
+    this->indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters );
     //do the search
     switch (queryPlan.getSearchType()) {
     case TopKSearchType: //TopK

@@ -951,7 +951,8 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
 
 
     // 3. now search for suggestions
-    IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+    IndexSearcherRuntimeParametersContainer runTimeParameters(indexDataContainerConf->getKeywordPopularityThreshold());
+    IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters);
     vector<string> suggestions ;
     int numberOfSuggestionsFound = indexSearcher->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn , suggestions);
     delete indexSearcher;

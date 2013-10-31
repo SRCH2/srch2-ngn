@@ -47,8 +47,11 @@ namespace instantsearch
 {
 
 
-IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
+IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer , IndexSearcherRuntimeParametersContainer * parameters)
 {
+	if(parameters != NULL){
+		this->parameters = *parameters;
+	}
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;

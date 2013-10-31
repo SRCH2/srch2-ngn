@@ -48,7 +48,6 @@ public:
                    unsigned _mergeEveryMWrites,
                    unsigned _updateHistogramEveryPMerges,
                    unsigned _updateHistogramEveryQWrites,
-                   unsigned _keywordPopularityThreshold,
                    const std::string &_directoryName,
                    const std::string &_trieBootstrapFileNameWithPath)
     {
@@ -78,8 +77,6 @@ public:
         }
         updateHistogramEveryQWrites = _updateHistogramEveryPMerges * _mergeEveryMWrites;
 
-        // keywordPopularityThreshold is used in IndexSearcherInternal for short prefix heuristic
-        keywordPopularityThreshold = _keywordPopularityThreshold;
 
         directoryName = _directoryName;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
@@ -97,7 +94,6 @@ public:
     unsigned mergeEveryMWrites;
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
-    unsigned keywordPopularityThreshold;
 };
 
 

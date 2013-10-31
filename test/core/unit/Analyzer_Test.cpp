@@ -897,7 +897,7 @@ void testAnalyzerSerilization(string dataDir) {
 
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, 50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
 
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
@@ -920,7 +920,7 @@ void testAnalyzerSerilization(string dataDir) {
     // LOADING
     IndexMetaData *indexMetaData2 = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, 50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     IndexReaderWriter *indexReaderWriter = new IndexReaderWriter(indexMetaData2);
 
@@ -952,7 +952,7 @@ void testAnalyzerSerilization(string dataDir) {
 
     IndexMetaData *indexMetaData3 = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
 
     Indexer *index2 = Indexer::create(indexMetaData3, analyzer2, schema2);
@@ -975,7 +975,7 @@ void testAnalyzerSerilization(string dataDir) {
     // LOADING
     IndexMetaData *indexMetaData4 = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     IndexReaderWriter *indexReaderWriter2 = new IndexReaderWriter(indexMetaData4);
 

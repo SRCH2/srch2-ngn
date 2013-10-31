@@ -56,7 +56,7 @@ class IndexSearcherInternal : public IndexSearcher
 public:
 
     //Get Schema pointer from IndexSearcherInternal
-    IndexSearcherInternal(IndexReaderWriter *indexer);
+    IndexSearcherInternal(IndexReaderWriter *indexer, IndexSearcherRuntimeParametersContainer * parameters = NULL);
     virtual ~IndexSearcherInternal() {};
 
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
@@ -129,7 +129,7 @@ public:
     }
 
     const unsigned getKeywordPopularityThreshold() const {
-    	return indexData->trie->getKeywordPopularityThreshold();
+    	return this->parameters.keywordPopularityThreshold;
     }
 
 private:
@@ -138,6 +138,7 @@ private:
     IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
+    IndexSearcherRuntimeParametersContainer parameters;
     Cache *cacheManager;
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
