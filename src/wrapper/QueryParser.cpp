@@ -1684,7 +1684,7 @@ void QueryParser::setSimilarityThresholdInContainer(const float f) {
         this->container->keywordSimilarityThreshold.push_back(f);
     } else {
         // set fuzzy level to 0
-        this->container->keywordSimilarityThreshold.push_back(0.0f);
+        this->container->keywordSimilarityThreshold.push_back(1.0f);
     }
     Logger::debug("returning from setSimilarityThresholdInContainer");
 }
@@ -1794,7 +1794,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         }
     } else {
         Logger::debug("fuzzy value is not specified, use 0");
-        this->setSimilarityThresholdInContainer(0.0f);
+        this->setSimilarityThresholdInContainer(1.0f);
     }
 }
 
