@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
-			updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			"", index_dir);
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);

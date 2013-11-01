@@ -112,7 +112,7 @@ void buildIndex(string indexDir)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
@@ -203,7 +203,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     

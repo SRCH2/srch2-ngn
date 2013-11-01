@@ -27,9 +27,9 @@ namespace srch2
 namespace instantsearch
 {
 
-IndexSearcher *IndexSearcher::create(Indexer *indexer)
+IndexSearcher *IndexSearcher::create(Indexer *indexer, IndexSearcherRuntimeParametersContainer * parameters )
 {
-    return new IndexSearcherInternal(dynamic_cast<IndexReaderWriter *>(indexer));
+    return new IndexSearcherInternal(dynamic_cast<IndexReaderWriter *>(indexer) , parameters);
 }
 
 /*

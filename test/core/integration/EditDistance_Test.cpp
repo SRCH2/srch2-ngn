@@ -70,7 +70,7 @@ void buildLocalIndex(string INDEX_DIR)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -128,7 +128,7 @@ void test1()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(true);
@@ -237,7 +237,7 @@ void test2()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(false);

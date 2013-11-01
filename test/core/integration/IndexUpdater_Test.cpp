@@ -65,7 +65,7 @@ void addSimpleRecords()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
@@ -122,7 +122,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -175,7 +175,7 @@ void test1()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -272,7 +272,7 @@ void test2()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -361,7 +361,7 @@ void test3()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -442,7 +442,7 @@ void test4()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -501,7 +501,7 @@ void test5()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -565,7 +565,7 @@ void test6()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -674,7 +674,7 @@ void test8()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -757,7 +757,7 @@ void test9()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -838,7 +838,7 @@ void test10()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
@@ -942,7 +942,7 @@ void test11()
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,50000,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);

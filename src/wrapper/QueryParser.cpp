@@ -1683,10 +1683,10 @@ void QueryParser::setSimilarityThresholdInContainer(const float f) {
         // use the SimilarityThreshold provided with keyword
         this->container->keywordSimilarityThreshold.push_back(f);
     } else {
-        // set fuzzy level to 0
-        this->container->keywordSimilarityThreshold.push_back(0.0f);
+        // Similarity threshold is not specified, use 1
+        this->container->keywordSimilarityThreshold.push_back(1.0f);
     }
-    Logger::debug("returning from setSimilarityThresholdInContainer");
+    Logger::debug("Similarity threshold is not specified, use 1");
 }
 /*
  * parses the localparameter key from input string. It changes input string and populates the field
@@ -1794,7 +1794,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         }
     } else {
         Logger::debug("fuzzy value is not specified, use 0");
-        this->setSimilarityThresholdInContainer(0.0f);
+        this->setSimilarityThresholdInContainer(1.0f);
     }
 }
 

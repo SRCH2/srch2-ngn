@@ -103,8 +103,7 @@ public:
         		                         analyzer,
                                          schema,
                                          indexMetaData->trieBootstrapFileNameWithPath,
-                                         srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-                                         indexMetaData->keywordPopularityThreshold);
+                                         srch2::instantsearch::DISABLE_STEMMER_NORMALIZER);
         this->initIndexReaderWriter(indexMetaData);
         // start merge threads after commit
     };

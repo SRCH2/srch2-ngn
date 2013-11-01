@@ -55,8 +55,7 @@ IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
         const string &trieBootstrapFileNameWithPath,
-        const StemmerNormalizerFlagType &stemmerFlag,
-        const unsigned keywordPopularityThreshold)
+        const StemmerNormalizerFlagType &stemmerFlag)
 {
 
     this->directoryName = directoryName;
@@ -71,7 +70,7 @@ IndexData::IndexData(const string &directoryName,
 
     this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 
-    this->trie = new Trie_Internal(keywordPopularityThreshold);
+    this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
