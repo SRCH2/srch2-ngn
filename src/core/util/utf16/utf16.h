@@ -1,7 +1,7 @@
 #ifndef __UFT16_H
 #define __UFT16_H
 
-#define U16_LENGTH(c) ((uint32_t)(c)<=0xffff ? 1 : 2)
+#define U16_LENGTH(c) (((c)<0xD800 || (c)>0xDBFF) ? 1 : 2)
 
 namespace utf16 {
 
@@ -13,16 +13,15 @@ namespace utf16 {
   typedef unsigned int    uint32_t;
 
   inline int byteLength(int numChars, uint16_t const* wchar) {
-      int byteSize=0;
-        short len;
-          for(int i=0; i<numChars; ++i) {
-                len= U16_LENGTH(*wchar);
-                    byteSize+= len*2;
-                        wchar+= len;
-                          }
-            return byteSize;
+    int byteSize=0;
+    short len;
+    for(int i=0; i<numChars; ++i) {
+      len= U16_LENGTH(*wchar);
+      byteSize+= len*2;
+      wchar+= len;
+    }
+    return byteSize;
   }
-
 }
 
 #endif /* __UFT16_H */
