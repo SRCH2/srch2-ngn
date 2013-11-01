@@ -125,7 +125,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         if (!attributeStringValues.empty() &&
         		std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end())
         {
-            record->setSearchableAttributeValue(attributeKeyName,attributeStringValues);
+        	if (attributeIter->second.isMultiValued) {
+        		record->setSearchableAttributeValue(attributeKeyName,attributeStringValues);
+        	}
+        	else {
+                record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+        	}
         }else{ // error if required or set to default
         	if(attributeIter->second.required){ // true means required
         		// ERROR
@@ -138,7 +143,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         		}else{
 					std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
         		}
-        		record->setSearchableAttributeValue(attributeKeyName,attributeStringValues);
+        		if (attributeIter->second.isMultiValued) {
+        		    record->setSearchableAttributeValue(attributeKeyName,attributeStringValues);
+                }
+        		else {
+        		     record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+        		}
         	}
         }
     }

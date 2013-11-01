@@ -83,6 +83,7 @@ bool Record::setSearchableAttributeValue(const string &attributeName,
     }
     return setSearchableAttributeValue(attributeId, attributeValue);
 }
+
 bool Record::setSearchableAttributeValue(const string &attributeName,
 		const std::vector<std::string> &attributeValues)
 {
@@ -101,6 +102,9 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
         return false;
     }
 
+    // This function can only be called for a single-valued attribute
+    ASSERT(impl->schema->isSearchableAttributeMultiValued(attributeId) == false);
+
     // For a single-valued attribute, we check searchableAttributeValues[attributeId].size().
     // If it's 0, do the assignment; otherwise, do an assert() and assign it to
     // the 0-th value.
@@ -113,12 +117,17 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
 
     return true;
 }
+
 bool Record::setSearchableAttributeValue(const unsigned attributeId,
 		const std::vector<std::string> &attributeValues)
 {
     if (attributeId >= impl->schema->getNumberOfSearchableAttributes()) {
         return false;
     }
+
+    // This function can only be called for a multi-valued attribute
+     ASSERT(impl->schema->isSearchableAttributeMultiValued(attributeId) == true);
+
     impl->searchableAttributeValues[attributeId] = attributeValues;
     return true;
 }
