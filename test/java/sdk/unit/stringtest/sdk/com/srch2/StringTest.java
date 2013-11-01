@@ -1,12 +1,12 @@
 package com.srch2;
 
-import org.junit.Assert;
+import org.junit.*;
 
-class StringTest {
+public class StringTest {
 
   @Test
-  public void testASCIIString() {
-    SearchableString testString= new SearchableString();
+  public void testASCIIString() throws Exception {
+    SearchableString testString= new SearchableString("apple");
     StringEngine e= new StringEngine();
 
     e.setString(testString);
@@ -15,6 +15,6 @@ class StringTest {
     Assert.assertFalse("failure- SearchableString is the same String",
         result == testString);
     Assert.assertEquals("failure- Incorrect value",
-        result.getValue(), testString.getValue());
+        testString.getValue(), result.getValue());
   } 
 }

@@ -16,7 +16,7 @@ namespace utf16 {
       int byteSize=0;
         short len;
           for(int i=0; i<numChars; ++i) {
-                len= U16_LENGTH(*uchar);
+                len= U16_LENGTH(*wchar);
                     byteSize+= len*2;
                         wchar+= len;
                           }

@@ -1,8 +1,8 @@
-#include "Srch2String.h"
+#include "SearchableString.h"
 #include<string>
 #include<cassert>
 
-class SearchableEngine {
+class StringEngine {
  
   /** Encapsulates the instance language around a Java SearchableString object
       used by the particular JVM housing the Java side of this Engine */
@@ -20,9 +20,10 @@ class SearchableEngine {
    */
   JNIEnv *env;
 
-  Srch2EngineTest(jclass srch2StringClassPtr,
+  StringEngine(jclass searchableStringClassPtr,
       jmethodID getValue, jmethodID constructor)
-    : srch2String(this->env, srch2StringClassPtr, getValue, constructor) {}
+    : searchableString(this->env, 
+        searchableStringClassPtr, getValue, constructor) {}
 
   /* returns a Java SearchableString instance with value equivalent
      to the string contained this Engine. */

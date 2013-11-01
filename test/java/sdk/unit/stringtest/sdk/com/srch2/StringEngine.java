@@ -7,14 +7,15 @@ import java.lang.reflect.Constructor;
 class StringEngine {
   /** Performed each time Java Loads this Class */
   static {
-    /** Dynamically links in libsrch2_core.so to bind native methods */
-    java.lang.System.loadLibrary("srch2_core");
+    /** Dynamically links in libsrch2_string_core.so to bind native methods */
+    java.lang.System.loadLibrary("string_engine");
+ //   java.lang.System.loadLibrary("srch2_core");
   }
 
   /* A handle to the c++ part of this StringEngine */
   private long handle;
 
-  SearchableString() throws NoSuchMethodException {
+  StringEngine() throws NoSuchMethodException {
      /* Java handle to the SearchableString method getValue, invoking this
         handle with a SearchableString instance, namely,
 
@@ -36,7 +37,7 @@ class StringEngine {
      */
      Constructor makeSearchableString=
        SearchableString.class.getConstructor(String.class);
-     handle = createSearchableEngine(SearchableString.class, getString,
+     handle = createStringEngine(SearchableString.class, getString,
          makeSearchableString);
   }
 
@@ -67,7 +68,7 @@ class StringEngine {
 
   /** Returns a SearchableString from the StringEngine. This is used in
       testing the JNI handling of SearchableStrings */
-  public SearchableString getString(SearchableString string) {
+  public SearchableString getString() {
     return getString(handle);
   }
   /** Returns the SearchableString stored in the C++ part of this Engine,

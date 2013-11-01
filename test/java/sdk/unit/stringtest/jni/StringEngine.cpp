@@ -17,8 +17,7 @@ StringEngine* dereferenceStringEngineHandle(JNIEnv *env, jlong handle) {
    its Java counterpart, so that it can be used as a handle to directed future
    bridged function calls.
 */
-JNIEXPORT jlong JNICALL
-Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
+jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
     jobject, jclass searchableStringClassPtr,
     jobject searchableStringMethodgetValue,
     jobject searchableStringConstructor) {
@@ -43,19 +42,19 @@ Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
          the location remains constant, as long as its associated class
          persists, which is ensured by the above call.
        */
-      env->FromReflectedMethod(srch2StringMethodgetValue),
-      env->FromReflectedMethod(srch2StringConstructor));
+      env->FromReflectedMethod(searchableStringMethodgetValue),
+      env->FromReflectedMethod(searchableStringConstructor));
 }
 
 /** Stores the SearchableString value passed down from the Java side of
     StringEngine, in the c++ side reference by the given handle */
 void Java_com_srch2_StringEngine_setString
   (JNIEnv *env, jobject, jlong handle, jobject string) {
-  dereferncesHandle(env, handle)->setString(string);
+  dereferenceStringEngineHandle(env, handle)->setString(string);
 }
 /** Stores the given SearchableString's internalValue in this SearchableString
   */
-void StringEngine::setString(jobject string) y{
+void StringEngine::setString(jobject string) {
   assert(JNI_TRUE == searchableString.isInstance(string));
   this->value = searchableString.toString(string);
 }
@@ -66,11 +65,11 @@ void StringEngine::setString(jobject string) y{
 */ 
 jobject Java_com_srch2_StringEngine_getString (JNIEnv *env,
     jobject, jlong handle) {
-  return getSrch2TestFromHandle(env, handle)->getString();
+  return dereferenceStringEngineHandle(env, handle)->getString();
 }
 /** Return a SearchableString with value equivalant to the one stored by this
     StringEngine.
   */
-jobject Srch2EngineTest::getString() {
-  return srch2String.createNew(value);
+jobject StringEngine::getString() {
+  return searchableString.createNew(value);
 }
