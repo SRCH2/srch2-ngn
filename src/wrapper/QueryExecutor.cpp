@@ -41,7 +41,9 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
-	IndexSearcherRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold());
+    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
+    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
+    IndexSearcherRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold());
     this->indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters );
     //do the search
     switch (queryPlan.getSearchType()) {

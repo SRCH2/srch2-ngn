@@ -951,6 +951,8 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
 
 
     // 3. now search for suggestions
+    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
+    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
     IndexSearcherRuntimeParametersContainer runTimeParameters(indexDataContainerConf->getKeywordPopularityThreshold());
     IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters);
     vector<string> suggestions ;

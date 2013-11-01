@@ -49,6 +49,7 @@ namespace instantsearch
 
 IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer , IndexSearcherRuntimeParametersContainer * parameters)
 {
+	// if parameters is NULL, the default constructor of the object is used which has the default values for everything.
 	if(parameters != NULL){
 		this->parameters = *parameters;
 	}
