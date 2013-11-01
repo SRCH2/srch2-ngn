@@ -24,6 +24,7 @@
 
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
+#include "util/Assert.h"
 
 #include "LocationRecordUtil.h"
 
@@ -99,7 +100,17 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
     if (attributeId >= impl->schema->getNumberOfSearchableAttributes()) {
         return false;
     }
-    impl->searchableAttributeValues[attributeId].push_back(attributeValue);
+
+    // For a single-valued attribute, we check searchableAttributeValues[attributeId].size().
+    // If it's 0, do the assignment; otherwise, do an assert() and assign it to
+    // the 0-th value.
+    if (impl->searchableAttributeValues[attributeId].size() == 0) {
+    	impl->searchableAttributeValues[attributeId].push_back(attributeValue);
+    } else {
+    	ASSERT(impl->searchableAttributeValues[attributeId].size() == 1);
+    	impl->searchableAttributeValues[attributeId].at(0) = attributeValue;
+    }
+
     return true;
 }
 bool Record::setSearchableAttributeValue(const unsigned attributeId,

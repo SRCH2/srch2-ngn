@@ -25,7 +25,6 @@ using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
-string DBLP_INDEX_DIR = getenv("dblp_index_dir");
 string INDEX_DIR = getenv("small_index_dir");
 
 void addSimpleChineseRecords() {
@@ -343,6 +342,7 @@ void testSimpleChinese() {
 	record->setRecordBoost(90);
 	index->addRecord(record, analyzer);
 
+	record->clear();
 	record->setPrimaryKey(1998);
 	record->setSearchableAttributeValue(1, "孔子");
 	record->setSearchableAttributeValue(2, "登西山而小鲁，登泰山而小天下。");
@@ -742,6 +742,7 @@ void testSimpleZhuyin() {
 	record->setRecordBoost(90);
 	index->addRecord(record, analyzer);
 
+	record->clear();
 	record->setPrimaryKey(1998);
 	record->setSearchableAttributeValue(1, "ㄎㄨㄥ ㄗ");
 	record->setSearchableAttributeValue(2,
@@ -1094,6 +1095,7 @@ void testJapanese() {
 	record->setRecordBoost(90);
 	index->addRecord(record, analyzer);
 
+	record->clear();
 	record->setPrimaryKey(1998);
 	record->setSearchableAttributeValue(1, "マイ·ライフ·マイ·ライフのストーリー：ヘレン·ケラーの自伝");
 	record->setSearchableAttributeValue(2,
@@ -1380,6 +1382,7 @@ void testFrench() {
 	record->setRecordBoost(90);
 	index->addRecord(record, analyzer);
 
+	record->clear();
 	record->setPrimaryKey(1998);
 	record->setSearchableAttributeValue(1, "La chasse Prey nano");
 	record->setSearchableAttributeValue(2,

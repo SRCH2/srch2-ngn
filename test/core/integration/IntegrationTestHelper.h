@@ -704,12 +704,13 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
 
     if (numberofHits != queryResults->getNumberOfResults())
     {
+    /*
     	cout << numberofHits << " | " << queryResults->getNumberOfResults() << endl;
     	for (unsigned resultCounter = 0;
     	                resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
     	{
     		cout<<(unsigned)atoi(queryResults->getRecordId(resultCounter).c_str())<<endl;
-    	}
+    	}*/
         return false;
     }
     else
