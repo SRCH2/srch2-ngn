@@ -51,13 +51,14 @@ public:
 			Logger::warn("The given logger file is NULL");
 		}
 	}
-	static inline void closeOutputFile() {
-		if(_out_file != NULL) {
-			fclose(_out_file);
-			_out_file = NULL;
-		}else{
-			Logger::warn("The Logger::_out_file is NULL");
+	static inline FILE* swapLoggerFile(FILE * newLoggerPt) {
+		if(newLoggerPt == NULL) {
+			Logger::error("The given logger file is NULL!!!");
+			return NULL;
 		}
+		FILE* res = _out_file;
+		_out_file = newLoggerPt;
+		return res;
 	}
 
 	static inline void setLogLevel(LogLevel logLevel) {

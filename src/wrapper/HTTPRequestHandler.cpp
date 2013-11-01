@@ -633,22 +633,23 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
 	//  TODO: we will need to consider concurrency control next.
 	switch(req->type) {
-	case EVHTTP_REQ_POST: {
+	case EVHTTP_REQ_PUT: {
 		FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
 		            "a");
 
-		Logger::closeOutputFile();
 	    if (logFile == NULL) {
-	        Logger::setOutputFile(stdout);
 	        Logger::error("Reopen Log file %s failed.",
 	        		server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str());
+	        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
+                "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
+                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
 	    } else {
-	        Logger::setOutputFile(logFile);
-	    }
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+	    	FILE * oldLoggerPt = Logger::swapLoggerFile(logFile);
+	        fclose(oldLoggerPt);
+	        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
                          + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+	    }
         break;
 	}
     default: {
