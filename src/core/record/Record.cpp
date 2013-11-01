@@ -84,14 +84,14 @@ bool Record::setSearchableAttributeValue(const string &attributeName,
     return setSearchableAttributeValue(attributeId, attributeValue);
 }
 
-bool Record::setSearchableAttributeValue(const string &attributeName,
+bool Record::setSearchableAttributeValues(const string &attributeName,
 		const std::vector<std::string> &attributeValues)
 {
     int attributeId = impl->schema->getSearchableAttributeId(attributeName);
     if (attributeId < 0) {
         return false;
     }
-    return setSearchableAttributeValue(attributeId, attributeValues);
+    return setSearchableAttributeValues(attributeId, attributeValues);
 }
 
 
@@ -118,7 +118,7 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
     return true;
 }
 
-bool Record::setSearchableAttributeValue(const unsigned attributeId,
+bool Record::setSearchableAttributeValues(const unsigned attributeId,
 		const std::vector<std::string> &attributeValues)
 {
     if (attributeId >= impl->schema->getNumberOfSearchableAttributes()) {
