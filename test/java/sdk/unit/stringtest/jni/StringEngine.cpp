@@ -73,3 +73,9 @@ jobject Java_com_srch2_StringEngine_getString (JNIEnv *env,
 jobject StringEngine::getString() {
   return searchableString.createNew(value);
 }
+
+/** Deletes the c++ part of the StringEngine pointed to by the given handle */
+void Java_com_srch2_StringEngine_deleteStringEngine(JNIEnv *env, jobject,
+    jlong handle) {
+  delete dereferenceStringEngineHandle(env, handle);
+}

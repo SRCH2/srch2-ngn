@@ -29,6 +29,10 @@ namespace JNIClass {
     /** creates a new SearchableString java instance, encoded in UTF16,
         with the equivalant value of the given c++ string encoded in UTF8 */
     jobject createNew(std::string&) const;
+
+    ~SearchableString() {
+      env->DeleteGlobalRef(classPtr);
+    }
   };
 }
 

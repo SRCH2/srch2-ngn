@@ -9,7 +9,6 @@ class StringEngine {
   static {
     /** Dynamically links in libsrch2_string_core.so to bind native methods */
     java.lang.System.loadLibrary("string_engine");
- //   java.lang.System.loadLibrary("srch2_core");
   }
 
   /* A handle to the c++ part of this StringEngine */
@@ -74,4 +73,7 @@ class StringEngine {
   /** Returns the SearchableString stored in the C++ part of this Engine,
       reference by the passed handle */
   private native SearchableString getString(long handle);
+
+  /** Free the heap memory storing the c++ side of this StringEngine */
+  private native void deleteStringEngine(long handle);
 }

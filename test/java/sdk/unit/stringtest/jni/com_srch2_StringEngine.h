@@ -31,6 +31,13 @@ JNIEXPORT void JNICALL Java_com_srch2_StringEngine_setString
  */
 JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getString
   (JNIEnv *, jobject, jlong);
+/*
+ * Class:     com_srch2_StringEngine
+ * Method:    deleteSearchableEngine
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_srch2_StringEngine_deleteStringEngine
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }
