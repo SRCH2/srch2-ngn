@@ -24,6 +24,7 @@
 
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
+#include "util/Assert.h"
 
 #include "LocationRecordUtil.h"
 
@@ -82,14 +83,15 @@ bool Record::setSearchableAttributeValue(const string &attributeName,
     }
     return setSearchableAttributeValue(attributeId, attributeValue);
 }
-bool Record::setSearchableAttributeValue(const string &attributeName,
+
+bool Record::setSearchableAttributeValues(const string &attributeName,
 		const std::vector<std::string> &attributeValues)
 {
     int attributeId = impl->schema->getSearchableAttributeId(attributeName);
     if (attributeId < 0) {
         return false;
     }
-    return setSearchableAttributeValue(attributeId, attributeValues);
+    return setSearchableAttributeValues(attributeId, attributeValues);
 }
 
 
@@ -99,15 +101,33 @@ bool Record::setSearchableAttributeValue(const unsigned attributeId,
     if (attributeId >= impl->schema->getNumberOfSearchableAttributes()) {
         return false;
     }
-    impl->searchableAttributeValues[attributeId].push_back(attributeValue);
+
+    // This function can only be called for a single-valued attribute
+    ASSERT(impl->schema->isSearchableAttributeMultiValued(attributeId) == false);
+
+    // For a single-valued attribute, we check searchableAttributeValues[attributeId].size().
+    // If it's 0, do the assignment; otherwise, do an assert() and assign it to
+    // the 0-th value.
+    if (impl->searchableAttributeValues[attributeId].size() == 0) {
+    	impl->searchableAttributeValues[attributeId].push_back(attributeValue);
+    } else {
+    	ASSERT(impl->searchableAttributeValues[attributeId].size() == 1);
+    	impl->searchableAttributeValues[attributeId].at(0) = attributeValue;
+    }
+
     return true;
 }
-bool Record::setSearchableAttributeValue(const unsigned attributeId,
+
+bool Record::setSearchableAttributeValues(const unsigned attributeId,
 		const std::vector<std::string> &attributeValues)
 {
     if (attributeId >= impl->schema->getNumberOfSearchableAttributes()) {
         return false;
     }
+
+    // This function can only be called for a multi-valued attribute
+     ASSERT(impl->schema->isSearchableAttributeMultiValued(attributeId) == true);
+
     impl->searchableAttributeValues[attributeId] = attributeValues;
     return true;
 }

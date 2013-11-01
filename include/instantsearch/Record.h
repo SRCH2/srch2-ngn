@@ -75,8 +75,8 @@ public:
      */
     bool setSearchableAttributeValue(const std::string &attributeName,
             const std::string &attributeValue);
-    bool setSearchableAttributeValue(const std::string &attributeName,
-            const std::vector<std::string> &attributeValue);
+    bool setSearchableAttributeValues(const std::string &attributeName,
+            const std::vector<std::string> &attributeValues);
     /**
      * Sets the value of the attribute given its index in the list
      * of attributes in the schema.
@@ -95,7 +95,7 @@ public:
      *
      * Returns false when attributeId is not a valid index.
      */
-    bool setSearchableAttributeValue(const unsigned attributeId,
+    bool setSearchableAttributeValues(const unsigned attributeId,
     		const std::vector<std::string> &attributeValues);
 
     /**
