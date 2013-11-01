@@ -144,10 +144,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 					std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
         		}
         		if (attributeIter->second.isMultiValued) {
-        		    record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
-                }
-        		else {
-        		     record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+        			record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+        		} else {
+        			record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
         		}
         	}
         }
