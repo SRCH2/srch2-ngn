@@ -12,6 +12,8 @@ public class StringTest {
     e.setString(testString);
     SearchableString result= e.getString();
 
+    /* Asserts that the the results object is not the same object as the test
+       input object; this is java's equivalent of comparing pointers */
     Assert.assertFalse("failure- SearchableString is the same String",
         result == testString);
     Assert.assertEquals("failure- Incorrect value",
