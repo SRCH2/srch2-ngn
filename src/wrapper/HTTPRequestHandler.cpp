@@ -627,13 +627,15 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
-// The purpose of this function is to allow a Logrotate utility to rename the log file to
-// another file, and the search engine can write new log records to the same, reopened file.
-// The old log records are consumed by the utility.
+// The purpose of this function is to help rotate logger files by repointing logger file.
+// When rotating log file, "logrotate(a 3rd-party program)" will rename the old "logger.txt" file to "logger.txt.1" and create a new file called "logger.txt"
+// But srch2 engine currently still point to and write into the old file "logger.txt.1"
+// The purpose of this function is to let srch2 engine point to the new-created logger file "logger.txt"
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
 	//  TODO: we will need to consider concurrency control next.
 	switch(req->type) {
 	case EVHTTP_REQ_PUT: {
+		// create a FILE* pointer to point to the new logger file "logger.txt"
 		FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
 		            "a");
 
@@ -644,8 +646,8 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
                 "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
                          + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
 	    } else {
-	    	FILE * oldLoggerPt = Logger::swapLoggerFile(logFile);
-	        fclose(oldLoggerPt);
+	    	FILE * oldLogger = Logger::swapLoggerFile(logFile);
+	        fclose(oldLogger);
 	        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
                          + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");

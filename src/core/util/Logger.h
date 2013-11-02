@@ -51,16 +51,6 @@ public:
 			Logger::warn("The given logger file is NULL");
 		}
 	}
-	static inline FILE* swapLoggerFile(FILE * newLoggerPt) {
-		if(newLoggerPt == NULL) {
-			Logger::error("The given logger file is NULL!!!");
-			return NULL;
-		}
-		FILE* res = _out_file;
-		_out_file = newLoggerPt;
-		return res;
-	}
-
 	static inline void setLogLevel(LogLevel logLevel) {
 		_logLevel = logLevel;
 	}
@@ -73,6 +63,7 @@ public:
 	static void warn(const char *format, ...);
 	static void info(const char *format, ...);
 	static void debug(const char *format, ...);
+	static FILE* swapLoggerFile(FILE * newLogger);
 };
 
 }
