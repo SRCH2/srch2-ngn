@@ -89,7 +89,7 @@ QueryParser::QueryParser(const evkeyvalq &headers) :
 bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
 		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages){
 	   // 1. get the keyword string.
-	    Logger::info("parsing the main query.");
+	    Logger::debug("parsing the main query.");
 	    const char * keywordTmp = evhttp_find_header(&headers,
 	            QueryParser::suggestionKeywordParamName);
 	    if (keywordTmp) { // if this parameter exists
@@ -247,7 +247,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
      * 2. calls the termParser();
      */
     // 1. get the mainQuery string.
-    Logger::info("parsing the main query.");
+    Logger::debug("parsing the main query.");
     const char * mainQueryTmp = evhttp_find_header(&headers,
             QueryParser::keywordQueryParamName);
     if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
@@ -1086,7 +1086,7 @@ bool QueryParser::termParser(string &input) {
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    Logger::info("inside term parser.");
+    Logger::debug("inside term parser.");
     Logger::debug("input received is %s", input.c_str());
     /*
      *
@@ -1220,7 +1220,7 @@ bool QueryParser::termParser(string &input) {
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
         this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
-    Logger::info("returning from  termParser.");
+    Logger::debug("returning from the termParser.");
     return true;
 
 }
