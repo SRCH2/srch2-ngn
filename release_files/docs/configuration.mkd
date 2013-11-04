@@ -406,6 +406,7 @@ Here is an example:
 <field name="model" default="benz" required="true" type="text" refining="true"/>
 <field name="price" default="200" required="true" type="float" refining="true"/>
 <field name="likes" default="0" required="true" type="integer" refining="true"/>
+<field name="seller_id" default="12324,546436,576864" required="false" type="integer" refining="true" multivalued="true">
 ```
 
 These parameters give information about each field, including its name, type, and certain properties. <br>
@@ -431,8 +432,9 @@ Each field has certain properties:
  - <b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
  - <b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
  - <b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
+ - <b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
 
-In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", and "likes".
+In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".
 
 Note:
 

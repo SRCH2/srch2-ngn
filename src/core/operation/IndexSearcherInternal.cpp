@@ -46,10 +46,13 @@ namespace srch2
 namespace instantsearch
 {
 
-const unsigned IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD = 700000;
 
-IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
+IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer , IndexSearcherRuntimeParametersContainer * parameters)
 {
+	// if parameters is NULL, the default constructor of the object is used which has the default values for everything.
+	if(parameters != NULL){
+		this->parameters = *parameters;
+	}
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;
@@ -960,7 +963,7 @@ int IndexSearcherInternal::suggest(const string & keyword,
 	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
 		return 0;
 	}
-    if (this->indexData->isCommited() == false){
+    if (this->indexData->isBulkLoadDone() == false){
         return -1;
     }
 
@@ -1039,7 +1042,7 @@ int IndexSearcherInternal::search(const Query *query, QueryResults* queryResults
 {
     int returnValue = -1;
 
-    if (this->indexData->isCommited() == false)
+    if (this->indexData->isBulkLoadDone() == false)
         return returnValue;
 
     if (query->getQueryType() == srch2::instantsearch::SearchTypeTopKQuery) {
@@ -1280,7 +1283,7 @@ bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * 
 	}
 	popularity = getEstimatedNumberOfRecordsWithThisTerm(term , activeNodes);
 
-	return (popularity > IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD);
+	return (popularity > this->getKeywordPopularityThreshold());
 
 }
 

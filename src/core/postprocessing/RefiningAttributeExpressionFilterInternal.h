@@ -1,4 +1,4 @@
-//$Id: FacetedSearchFilter.h 3456 2013-07-10 02:11:13Z Jamshid $
+//$Id: ResultsPostProcessor.h 3456 2013-06-26 02:11:13Z Jamshid $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -18,44 +18,35 @@
  */
 
 
-#ifndef __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__
-#define __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__
+#ifndef __CORE_POSTPROCESSING_REFININGATTRIBUTEFILTERINTERNAL_H__
+#define __CORE_POSTPROCESSING_REFININGATTRIBUTEFILTERINTERNAL_H__
 
-#include <vector>
-#include <map>
-#include <string>
-#include <algorithm>
-#include "ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
-#include "instantsearch/TypedValue.h"
-#include "instantsearch/IndexSearcher.h"
-#include <instantsearch/Constants.h>
-
+#include "index/ForwardIndex.h"
+#include "query/QueryResultsInternal.h"
+#include "instantsearch/RefiningAttributeExpressionFilter.h"
 namespace srch2
 {
 namespace instantsearch
 {
 
-class FacetedSearchFilterInternal;
-class FacetedSearchFilter : public ResultsPostProcessorFilter
+
+// Example:
+// fq=price:[* TO 100] AND model:JEEP AND boolexp$price - discount < 100$
+// This class checks to see if a result passes these criteria or not ...
+class RefiningAttributeExpressionFilterInternal
 {
 
 public:
-	FacetedSearchFilter();
-	// TODO : we don't need query in new design
-	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
-			QueryResults * input, QueryResults * output);
-	~FacetedSearchFilter();
-	void initialize(std::vector<FacetType> & facetTypes,
-			std::vector<std::string> & fields,
-			std::vector<std::string> & rangeStarts,
-			std::vector<std::string> & rangeEnds,
-			std::vector<std::string> & rangeGaps , std::vector<int> & numberOfGroupsToReturn);
+	RefiningAttributeExpressionFilterInternal(RefiningAttributeExpressionFilter * filter);
+	// evaluates expression object coming from query using result data to see
+	// if it passes the query criterion.
+	bool doPass(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result);
 
 private:
-	FacetedSearchFilterInternal * impl;
+	RefiningAttributeExpressionFilter * filter ;
 };
 
 }
 }
-#endif // __CORE_POSTPROCESSING_FACETEDSEARCHFILTER_H__
+#endif // __CORE_POSTPROCESSING_RefiningATTRIBUTEFILTERINTERNAL_H__

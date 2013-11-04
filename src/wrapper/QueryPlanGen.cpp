@@ -21,7 +21,7 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/FacetedSearchFilter.h>
-#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include <instantsearch/SortFilter.h>
 #include "QueryPlan.h"
 #include <algorithm>
@@ -74,8 +74,8 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
     plan->setPostProcessingPlan(new ResultsPostProcessorPlan());
     // 2. If there is a filter query, allocate the filter and add it to the plan
     if (paramsContainer.hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
-        srch2is::NonSearchableAttributeExpressionFilter * filterQuery =
-                new srch2is::NonSearchableAttributeExpressionFilter();
+        srch2is::RefiningAttributeExpressionFilter * filterQuery =
+                new srch2is::RefiningAttributeExpressionFilter();
         filterQuery->evaluator =
                 paramsContainer.filterQueryContainer->evaluator;
         plan->getPostProcessingPlan()->addFilterToPlan(filterQuery);
@@ -119,7 +119,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
                     paramsContainer.getAllResultsParameterContainer->facetQueryContainer;
             facetFilter->initialize(container->types, container->fields,
                     container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps);
+                    container->rangeGaps , container->numberOfTopGroupsToReturn);
 
             plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
         }
@@ -142,7 +142,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
                     paramsContainer.geoParameterContainer->facetQueryContainer;
             facetFilter->initialize(container->types, container->fields,
                     container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps);
+                    container->rangeGaps , container->numberOfTopGroupsToReturn);
 
             plan->getPostProcessingPlan()->addFilterToPlan(facetFilter);
         }

@@ -89,7 +89,7 @@ public:
         pthread_mutex_unlock(&mutex);
     }
 
-    int cond_timedwait(pthread_cond_t *cond, const struct timespec *ts) {
+    int writeLockWithCondTimedWait(pthread_cond_t *cond, const struct timespec *ts) {
         int rc;
 
         pthread_mutex_lock(&mutex);

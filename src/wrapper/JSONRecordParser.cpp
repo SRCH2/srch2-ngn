@@ -65,11 +65,13 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
     //string primaryKeyStringValue = root.get(primaryKeyName, "NULL").asString(); // CHENLI
-    string primaryKeyStringValue;
-    getJsonValueString(root, primaryKeyName, primaryKeyStringValue, "primary-key");
+    std::vector<string> stringValues;
+    getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
 
-    if (primaryKeyStringValue.compare("NULL") != 0 && primaryKeyStringValue.compare("") != 0)
+    if (stringValues.empty() || (
+    		stringValues.at(0).compare("NULL") != 0 && stringValues.at(0).compare("") != 0 ))
     {
+		string primaryKeyStringValue = stringValues.at(0);
     	// trim to avoid any mismatch due to leading and trailing white space
     	boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
@@ -111,82 +113,123 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         record->setInMemoryData(compressedInputLine);
     }
 
-
-    for (map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > >::const_iterator attributeIter
+    for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
     {
     	string attributeKeyName = attributeIter->first;
 
-        string attributeStringValue;
-        getJsonValueString(root, attributeKeyName, attributeStringValue, "attributes-search");
+        vector<string> attributeStringValues;
+        getJsonValueString(root, attributeKeyName, attributeStringValues, "attributes-search");
 
-        if (attributeStringValue.compare("NULL") != 0)
+        if (!attributeStringValues.empty() &&
+        		std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end())
         {
-            record->setSearchableAttributeValue(attributeKeyName,attributeStringValue);
+        	if (attributeIter->second.isMultiValued) {
+        		record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+        	}
+        	else {
+                record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+        	}
         }else{ // error if required or set to default
-        	if(attributeIter->second.first){ // true means required
+        	if(attributeIter->second.required){ // true means required
         		// ERROR
                 error << "\nRequired field has a null value.";
                 return false;// Raise Error
         	}else{
         		// passing the default value from config file
-        		record->setSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
+        		if(attributeStringValues.empty()){
+        			attributeStringValues.push_back(attributeIter->second.defaultValue);
+        		}else{
+					std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+        		}
+        		if (attributeIter->second.isMultiValued) {
+        			record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+        		} else {
+        			record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+        		}
         	}
         }
     }
 
 
-    for (map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator attributeIter =
-    		indexDataContainerConf->getNonSearchableAttributes()->begin();
-            attributeIter != indexDataContainerConf->getNonSearchableAttributes()->end();
+    for (map<string, RefiningAttributeInfoContainer >::const_iterator attributeIter =
+    		indexDataContainerConf->getRefiningAttributes()->begin();
+            attributeIter != indexDataContainerConf->getRefiningAttributes()->end();
             ++attributeIter)
     {
 
         string attributeKeyName = attributeIter->first;
 
         // if type is date/time, check the syntax
-        if( attributeIter->second.first == srch2is::ATTRIBUTE_TYPE_TIME){
-        	string attributeStringValue;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValue,"refining-attributes" , attributeIter->second.second.second.second);
-        	if(attributeStringValue==""){
+        if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+        	vector<string> attributeStringValues;
+        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
+        	if(attributeStringValues.empty()){
         		// ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
                 return false;// Raise Error
         	}else{
-                if (attributeStringValue.compare("NULL") != 0){
-                    record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValue);
-                }else{
-                    if(attributeIter->second.second.second.first){
-                        // ERROR
-                        error << "\nRequired refining attribute is null.";
-                        return false;// Raise Error
-                    }else{
-                        // set the default value
-                        record->setNonSearchableAttributeValue(attributeKeyName,attributeIter->second.second.first);
-                    }
+                if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end() &&
+                		attributeIter->second.required ){
+                    // ERROR
+                    error << "\nRequired refining attribute is null.";
+                    return false;// Raise Error
                 }
+                if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end()){
+                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                }
+				string attributeStringValue = "";
+				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+					if(stringValueIter != attributeStringValues.begin()){
+						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+					}
+					attributeStringValue += *stringValueIter;
+				}
+					// set the default value
+				record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
         	}
         }else{
 
-            string attributeStringValue;
-            getJsonValueString(root, attributeKeyName, attributeStringValue, "refining-attributes");
+            vector<string> attributeStringValues;
+            getJsonValueString(root, attributeKeyName, attributeStringValues, "refining-attributes");
 
-            if (attributeStringValue.compare("NULL") != 0 && attributeStringValue.compare("") != 0)
+            if (!attributeStringValues.empty() &&
+            		std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end()
+            		&& std::find(attributeStringValues.begin() , attributeStringValues.end() , "") == attributeStringValues.end())
             {
+				string attributeStringValue = "";
+				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+					if(stringValueIter != attributeStringValues.begin()){
+						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+					}
+					attributeStringValue += *stringValueIter;
+				}
 				std::string attributeStringValueLowercase = attributeStringValue;
 				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                record->setNonSearchableAttributeValue(attributeKeyName, attributeStringValueLowercase);
+                record->setRefiningAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
-                if(attributeIter->second.second.second.first){
+                if(attributeIter->second.required){
                     // ERROR
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
+                	if(attributeStringValues.empty()){
+                		attributeStringValues.push_back("");
+                	}
+                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"" , attributeIter->second.defaultValue);
                     // set the default value
-    				std::string attributeStringValueLowercase = attributeIter->second.second.first;
+    				string attributeStringValue = "";
+    				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+    					if(stringValueIter != attributeStringValues.begin()){
+    						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+    					}
+    					attributeStringValue += *stringValueIter;
+    				}
+    				std::string attributeStringValueLowercase = attributeStringValue;
     				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                    record->setNonSearchableAttributeValue(attributeKeyName,attributeStringValueLowercase);
+                    record->setRefiningAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
         }
@@ -303,27 +346,28 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     }
 
     // Set SearchableAttributes
-    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
+    map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
         schema->setSearchableAttribute(searchableAttributeIter->first,
-        		searchableAttributeIter->second.second.second.second.first ,
-        		searchableAttributeIter->second.second.second.second.second ); // searchable text
+        		searchableAttributeIter->second.boost ,
+        		searchableAttributeIter->second.isMultiValued ); // searchable text
     }
 
 
     // Set NonSearchableAttributes
-    map<string, pair< srch2::instantsearch::FilterType, pair<string, pair<bool,bool> > > >::const_iterator
-    	nonSearchableAttributeIter = indexDataContainerConf->getNonSearchableAttributes()->begin();
+    map<string, RefiningAttributeInfoContainer >::const_iterator
+    	nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
 
-    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getNonSearchableAttributes()->end(); ++nonSearchableAttributeIter)
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setNonSearchableAttribute(nonSearchableAttributeIter->first,
-        		nonSearchableAttributeIter->second.first ,
-        		nonSearchableAttributeIter->second.second.first,
-        		nonSearchableAttributeIter->second.second.second.second);
+        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+        		nonSearchableAttributeIter->second.attributeType,
+        		nonSearchableAttributeIter->second.defaultValue,
+        		nonSearchableAttributeIter->second.isMultiValued);
     }
 
 
@@ -334,21 +378,24 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
     return schema;
 }
 
-void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
+/*
+ *  Create indexes using records from json file and return the total indexed records.
+ */
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
         Logger::error("DataSource file not found at: %s", filePath.c_str());
-        return;
+        return 0;
     }
 
     string line;
     srch2is::Record *record = new srch2is::Record(indexer->getSchema());
 
     unsigned lineCounter = 0;
-    unsigned indexedCounter = 0;
+    unsigned indexedRecordsCount = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
     if(in.good()){
@@ -364,7 +411,7 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
                 // Add the record to the index
                 //indexer->addRecordBeforeCommit(record, 0);
                 indexer->addRecord(record, analyzer);
-                indexedCounter++;
+                indexedRecordsCount++;
             }
             else
             {
@@ -381,20 +428,12 @@ void DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const C
         }
     }
     std::cout<<"                                                     \r";
-    Logger::console("Indexed %d / %d records.", indexedCounter, lineCounter);
+    Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
 
     in.close();
 
-    // Step 4: Commit the index, after which no more records can
-    // be added
-    indexer->commit();
-
-    if (indexedCounter > 0) {
-    	Logger::console("Saving Indexes.....");
-    	indexer->save();
-    	Logger::console("Indexes saved.");
-    }
     delete analyzer;
+    return indexedRecordsCount;
 }
 
 // convert other types to string
@@ -407,21 +446,18 @@ string convertToStr(T value) {
 }
 
 // convert a Json value to string
-void convertValueToString(Json::Value value, string &stringValue){
+void convertValueToString(Json::Value value, vector< string > &stringValues){
 	if (value.isString())
-	    	stringValue += value.asString();
+	    	stringValues.push_back(value.asString()) ;
 	    else if(value.isDouble())
-	    	stringValue += convertToStr<double>(value.asDouble());
+	    	stringValues.push_back(convertToStr<double>(value.asDouble()));
 	    else if(value.isInt())
-	    	stringValue += convertToStr<int>(value.asInt());
+	    	stringValues.push_back(convertToStr<int>(value.asInt()));
 	    else if(value.isArray())
 	    {
 	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
 	    	{
-	    		if(iter != value.begin()){
-					stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
-	    		}
-	    		convertValueToString(*iter, stringValue);
+	    		convertValueToString(*iter, stringValues);
 	    	}
 	    }else if (value.isObject()){
 	    	// for certain data sources such as mongo db, the field value may be
@@ -429,14 +465,11 @@ void convertValueToString(Json::Value value, string &stringValue){
 	    	// For JSON object, recursively concatenate all keys' value
 	    	vector<string> keys = value.getMemberNames();
 	    	for (int i= 0; i < keys.size(); ++i) {
-	    		if(i != 0){
-					stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
-	    		}
-	    		convertValueToString(value.get(keys[i], "NULL"), stringValue);
+	    		convertValueToString(value.get(keys[i], "NULL"), stringValues);
 	    	}
 	    }
 	    else // if the type is not string, set it to the empty string
-	    	stringValue += "";
+	    	stringValues.clear();
 }
 
   // get the string from a json value based on a key value.  Check the type first before
@@ -446,17 +479,17 @@ void convertValueToString(Json::Value value, string &stringValue){
   // parameter configName is used to be included in error/warning messages to make them meaningful ...
 void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		const std::string &key,
-		std::string &stringValue,
+		std::vector<std::string> &stringValues,
 		const string &configName)
 {
 	if(!jsonValue.isMember(key))
 	{
-		stringValue = "";
+		stringValues.clear();
 		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
 		return;
 	}
 	Json::Value value = jsonValue.get(key, "NULL");
-	convertValueToString(value, stringValue);
+	convertValueToString(value, stringValues);
 }
 
 
@@ -464,50 +497,39 @@ void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 // check to see if it is proper date/time format.
 void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 		const std::string &key,
-		std::string &stringValue,
-		const string &configName, bool isMultiValued){
+		vector< std::string> &stringValues,
+		const string &configName){
 	if(!jsonValue.isMember(key)){
-		stringValue = "";
+
+		stringValues.clear();
 		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
 		return;
 	}
-	string temp;
+	vector<string> temp;
 	Json::Value value = jsonValue.get(key, "NULL");
 	convertValueToString(value, temp);
 
-	boost::algorithm::trim(temp);
 	// now check to see if it has proper date/time format
 	// if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
-	// "12:34:45,12:34:24,12:02:45".
+	// vector : <12:34:45,12:34:24,12:02:45>.
 	// Now we should
-	// 1. tokenize it
+	// 1. iterate on vector
 	// 2. convert it to unix time
 	// 3. prepare the string again to become something like "1234245,3654665,56456687"
-	vector<string> valueTokens;
-	if(isMultiValued == false){
-		valueTokens.push_back(temp);
-	}else{
-		boost::split(valueTokens , temp , boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
-	}
 
-	stringValue = "";
-	for(vector<string>::iterator valueToken = valueTokens.begin() ; valueToken != valueTokens.end() ; ++valueToken){
+	string stringValue = "";
+	for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
+		boost::algorithm::trim(*valueToken);
 		if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
 				|| srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
 			stringstream buffer;
 			buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
-			if(valueToken == valueTokens.begin()){
-				stringValue = buffer.str();
-			}else{
-				stringValue += srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER+buffer.str();
-			}
-
+			stringValues.push_back(buffer.str());
 		}else{
-			stringValue = "";
+			stringValues.clear();
 			return;
 		}
 	}
-
     return;
 
 }

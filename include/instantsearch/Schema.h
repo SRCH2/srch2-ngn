@@ -99,7 +99,7 @@ public:
 
 
 
-    virtual int setNonSearchableAttribute(const std::string &attributeName,
+    virtual int setRefiningAttribute(const std::string &attributeName,
             FilterType type, const std::string & defaultValue, bool isMultiValued = false) = 0;
 
     /**
@@ -150,12 +150,12 @@ public:
 
 
     // non Searchable attributes
-    virtual const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const = 0;
-    virtual FilterType getTypeOfNonSearchableAttribute(const unsigned nonSearchableAttributeNameId) const = 0;
-    virtual int getNonSearchableAttributeId(const std::string &nonSearchableAttributeName) const = 0;
-    virtual unsigned getNumberOfNonSearchableAttributes() const = 0;
-    virtual const std::map<std::string , unsigned> * getNonSearchableAttributes() const  = 0;
-    virtual bool isNonSearchableAttributeMultiValued(const unsigned nonSearchableAttributeNameId) const = 0;
+    virtual const std::string* getDefaultValueOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
+    virtual FilterType getTypeOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
+    virtual int getRefiningAttributeId(const std::string &refiningAttributeName) const = 0;
+    virtual unsigned getNumberOfRefiningAttributes() const = 0;
+    virtual const std::map<std::string , unsigned> * getRefiningAttributes() const  = 0;
+    virtual bool isRefiningAttributeMultiValued(const unsigned refiningAttributeNameId) const = 0;
 
 
 

@@ -80,7 +80,7 @@ IndexData::IndexData(const string &directoryName,
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
-    this->commited = false;
+    this->flagBulkLoadDone = false;
 
     this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
 
@@ -128,7 +128,7 @@ IndexData::IndexData(const string& directoryName)
     	}
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
-    	this->commited = true;
+    	this->flagBulkLoadDone = true;
     }catch(exception& ex){
     	Logger::error("Error while loading the index files ...");
     	throw ex;
@@ -183,7 +183,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         // only used for committed geo index
         vector<unsigned> *keywordIdVector = NULL;
         if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
-                && this->commited == true)
+                && this->flagBulkLoadDone == true)
         {
             keywordIdVector = new vector<unsigned> ();
         }
@@ -208,7 +208,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             unsigned breakLeftOrRight = 0;
             vector<Prefix> *oldParentOrSelfAndAncs = NULL;
 
-            if (this->commited == false) // not committed yet
+            if (this->flagBulkLoadDone == false) // not committed yet
             	//transform string to vector<CharType>
                 keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
             else
@@ -232,7 +232,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                 this->invertedIndex->incrementHitCount(invertedIndexOffset);
             }
             else // geo index (M1). Add the flag to the map only if the indexes have been committed
-                if (this->commited == true)
+                if (this->flagBulkLoadDone == true)
             {
                 unsigned keywordStatus = 0;
                 if (isNewTrieNode) // is a new trie leaf node
@@ -270,7 +270,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
 
         if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex )
         {
-            if ( this->commited == true )
+            if ( this->flagBulkLoadDone == true )
             {
                 const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
                 ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
@@ -294,7 +294,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                 fl->setKeywordRecordStaticScore(counter, score);
             }
 
-            if ( this->commited == false ) // batch load
+            if ( this->flagBulkLoadDone == false ) // batch load
             {
                 this->quadTree->addRecordBeforeCommit(record, internalRecordId);
             }
@@ -413,14 +413,13 @@ INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId)
  *    a) No records in index.
  *    b) Index had been already commited.
  */
-INDEXWRITE_RETVAL IndexData::_commit()
+INDEXWRITE_RETVAL IndexData::finishBulkLoad()
 {
     bool isLocational = false;
     if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         isLocational = true;
 
-    if (this->commited == false){
-        //cout << "here: index commit" << endl;
+    if (this->flagBulkLoadDone == false){
         /*
          * For the text only Index:
          * 1. Initialize the size of Inverted Index vector as size of Forward Index vector.
@@ -485,8 +484,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         }else{
 			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
-        //this->trie->print_Trie();
-        this->commited = true;
+        this->flagBulkLoadDone = true;
         return OP_SUCCESS;
     }else{
         return OP_FAIL;

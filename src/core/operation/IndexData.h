@@ -211,13 +211,14 @@ private:
 
     //To save the directory name to save the trieIndex
     string directoryName;
-    bool commited;
+    bool flagBulkLoadDone;
     bool mergeRequired;
     std::string licenseFileNameWithPath;
 
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;    
+
     
     /**
      * Internal functions
@@ -258,7 +259,7 @@ public:
                 const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag);
+        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag );
     }
     
     inline static IndexData* load(const string& directoryName)
@@ -308,9 +309,9 @@ public:
     INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId) const;
 
     // build the index. After commit(), no more records can be added
-    INDEXWRITE_RETVAL _commit();
+    INDEXWRITE_RETVAL finishBulkLoad();
 
-    const bool isCommited() const { return this->commited; }
+    const bool isBulkLoadDone() const { return this->flagBulkLoadDone; }
 
     void _exportData(const string& exportedDataFileName) const;
 

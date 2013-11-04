@@ -386,6 +386,7 @@ example shows how to enable this indexing:</p>
 &lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; refining=&quot;true&quot;/&gt;
+&lt;field name=&quot;seller_id&quot; default=&quot;12324,546436,576864&quot; required=&quot;false&quot; type=&quot;integer&quot; refining=&quot;true&quot; multivalued=&quot;true&quot;&gt;
 </code></pre>
 
 <p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
@@ -410,8 +411,9 @@ example shows how to enable this indexing:</p>
 <li><b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br></li>
 <li><b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
 <li><b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br></li>
+<li><b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
 </ul>
-<p>In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", and "likes".</p>
+<p>In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".</p>
 <p>Note:</p>
 <ul>
 <li>For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br></li>

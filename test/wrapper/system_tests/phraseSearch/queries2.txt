@@ -20,3 +20,7 @@
 name:"Sina Keshtkar" AND body:"Jianfeng Jia"~2||10 20
 name:"Sina Keshtkar" AND body:"Jianfeng Jia"~1||
 "Machinery Jianfeng" AND "Jianfeng foobar"||10
+"Smith Ronald"||2
+authors:"Granger Albus"||4
+"Hermione Granger" AND "Smith Ronald"||2
+"Hermione Granger Albus"||

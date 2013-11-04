@@ -514,6 +514,7 @@ private:
     bool commited;
     bool mergeRequired;
 
+
     friend class boost::serialization::access;
 
     template<class Archive>

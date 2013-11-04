@@ -29,7 +29,7 @@ namespace httpwrapper {
 class Srch2Server;
 class MongoDataSource {
 public:
-    static void createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager);
+    static unsigned createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager);
     static void spawnUpdateListener( Srch2Server * server);
     static time_t bulkLoadEndTime;
 private:
