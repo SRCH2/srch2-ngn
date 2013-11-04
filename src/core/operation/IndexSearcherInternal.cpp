@@ -1411,7 +1411,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
                 queryResultMatchingKeywords.at(j) = "";         // the matching term is the same to the query term, we just ignore it
                 queryResultBitmaps.at(j) = 0;                   // we lose this bitmap
                 queryResultEditDistances.at(j) = 0;             // we lose the edit distance
-                queryResultTermScores.at(j) = 1.0;              // we assign the same score for it
+                virtualListVector->at(j)->getMaxScore(queryResultTermScores.at(j));              // we assign the same score for it
             }
         } else {  //do the verification
             PrefixActiveNodeSet *prefixActiveNodeSet;
