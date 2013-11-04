@@ -6,7 +6,7 @@ package com.srch2;
   the dataspace, namely records, containing certain neighbourhoods of a given
   String as this Attribute's value.
   */
-public class SearchableString implements SearchableStringI {
+public class SearchableString implements SearchableStringInterface {
   private final String value;
   /** Create a new instance surrounding this String value. The String value
       now can be used to find the instance of a given class containing this

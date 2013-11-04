@@ -17,8 +17,6 @@ public class StringTest {
         result == testString);
     Assert.assertEquals("failure- Incorrect value",
         testString.getValue(), result.getValue());
-    System.out.println(result.getValue());
-
   }
   @Test
   public void testJimiHendrix() throws NoSuchMethodException {

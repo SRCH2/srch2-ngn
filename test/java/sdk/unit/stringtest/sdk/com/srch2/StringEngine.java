@@ -24,7 +24,7 @@ class StringEngine {
            
            searchableStringInstance.getValue();
      */
-     Method getString = SearchableStringI.class.getMethod("getValue");
+     Method getString = SearchableStringInterface.class.getMethod("getValue");
      /* Java handle to the SearchableString constructor, invoking this
         handle with a UTF16 encoded string, namely
 

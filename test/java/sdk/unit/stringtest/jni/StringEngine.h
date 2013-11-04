@@ -13,7 +13,7 @@ class StringEngine {
 
  public:
   /* Warning: this variable make this class thread unsafe, only
-     a single thread my access a given instance of this class.
+     a single thread may access a given instance of this class.
   
      The JVM context of the Java side of this Engine on a particular bridged
      call.

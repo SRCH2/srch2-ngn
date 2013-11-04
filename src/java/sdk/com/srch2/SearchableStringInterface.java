@@ -8,7 +8,7 @@ package com.srch2;
   a field of this type, for certain neighbourhoods of a this String, as that
   field's value. 
 */
-interface SearchableStringI {
+interface SearchableStringInterface {
   /** Lookup value of this instance 
    
       @return converts this instance into a searchable String to be indexed by
