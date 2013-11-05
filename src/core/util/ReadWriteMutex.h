@@ -42,7 +42,7 @@ namespace instantsearch
 class ReadWriteMutex
 {
 public:
-    ReadWriteMutex(int maxReaders = 1000) {
+	inline ReadWriteMutex(int maxReaders = 1000) {
         max_readers = maxReaders;
         //As we can see in the following link. sem_init is not supported on the mac. So in order to create semaphores we should use sem_open.
         //http://stackoverflow.com/questions/1413785/sem-init-on-os-x
@@ -63,15 +63,15 @@ public:
         pthread_mutex_init(&mutex, 0);
     }
 
-    void lockRead() {
+    inline void lockRead() {
         sem_wait(m_semaphore);
     }
 
-    void unlockRead() {
+    inline void unlockRead() {
         sem_post(m_semaphore);
     }
 
-    void lockWrite() {
+    inline void lockWrite() {
         //pthread_spin_lock(&m_spinlock);
         pthread_mutex_lock(&mutex);
 
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    void unlockWrite() {
+    inline void unlockWrite() {
         for (int i = 0; i < max_readers; i++) {
             sem_post(m_semaphore);
         }
@@ -89,7 +89,7 @@ public:
         pthread_mutex_unlock(&mutex);
     }
 
-    int writeLockWithCondTimedWait(pthread_cond_t *cond, const struct timespec *ts) {
+    inline int writeLockWithCondTimedWait(pthread_cond_t *cond, const struct timespec *ts) {
         int rc;
 
         pthread_mutex_lock(&mutex);
@@ -103,7 +103,7 @@ public:
         return rc;
     }
 
-    void cond_signal(pthread_cond_t *cond) {
+    inline void cond_signal(pthread_cond_t *cond) {
         pthread_cond_signal(cond);
     }
 
@@ -131,7 +131,7 @@ private:
     //pthread_spinlock_t m_spinlock;
     pthread_mutex_t mutex;
 
-    void gen_random_name(char *s) {
+    inline void gen_random_name(char *s) {
         static const char alphanum[] =
             "0123456789"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

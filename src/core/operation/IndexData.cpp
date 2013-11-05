@@ -728,6 +728,35 @@ Schema* IndexData::getSchema()
     return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
+
+void IndexData::loadCounts(const std::string &indeDataPathFileName)
+{
+    std::ifstream ifs(indeDataPathFileName.c_str(), std::ios::binary);
+    boost::archive::binary_iarchive ia(ifs);
+    uint64_t readCount_tmp;
+    uint32_t writeCount_tmp, numDocs_tmp;
+    ia >> readCount_tmp;
+    ia >> writeCount_tmp;
+    ia >> numDocs_tmp;
+    this->readCounter = new ReadCounter(readCount_tmp);
+    this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
+    ifs.close();
+}
+
+void IndexData::saveCounts(const std::string &indeDataPathFileName) const
+{
+    std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
+if (! ofs.good()) throw std::runtime_error("Error opening " + indeDataPathFileName);
+    boost::archive::binary_oarchive oa(ofs);
+    uint64_t readCount_tmp = this->readCounter->getCount();
+    uint32_t writeCount_tmp = this->writeCounter->getCount();
+    uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
+    oa << readCount_tmp;
+    oa << writeCount_tmp;
+    oa << numDocs_tmp;
+    ofs.close();
+}
+
 IndexData::~IndexData()
 {
     delete this->trie;
@@ -743,5 +772,8 @@ IndexData::~IndexData()
     delete this->schemaInternal;
     delete this->rwMutexForIdReassign;
 }
+
+
+
 
 }}
