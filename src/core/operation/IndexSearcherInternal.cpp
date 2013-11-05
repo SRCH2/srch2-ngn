@@ -549,28 +549,28 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         // case of single keyword: if term is too popular we "estimate" the results
         if(query->getQueryTerms()->size() == 1){ // example : q=a
 			// see how popular the term is
-			unsigned popularity = 0;
-			bool isPopular = this->isTermTooPopular(query->getQueryTerms()->at(0) , activeNodesVector.at(0) , popularity);
+		    unsigned popularity = 0;
+		    bool isPopular = this->isTermTooPopular(query->getQueryTerms()->at(0) , activeNodesVector.at(0) , popularity);
 
-			if(isPopular){
-        		unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
-        				offset + nextK - queryResults->getNumberOfResults() , queryResults);
-        		// By setting this flag, we inform the user that results are approximated.
+		    if(isPopular){
+                unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
+                                            offset + nextK - queryResults->getNumberOfResults() , queryResults);
+                // By setting this flag, we inform the user that results are approximated.
         		queryResultsInternal->resultsApproximated = true;
 
-        	    if (activeNodesVector.at(0)->isResultsCached() == true){
-        	    	activeNodesVector.at(0)->busyBit->setFree();
-        	    }else{
-            		delete activeNodesVector.at(0);
+                if (activeNodesVector.at(0)->isResultsCached() == true){
+                    activeNodesVector.at(0)->busyBit->setFree();
+                }else{
+        	        delete activeNodesVector.at(0);
         	    }
                 queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-        		return numberOfResults;
-			}
+                return numberOfResults;
+           }
 
         }
 
 
-        // NULL is passes as the third argument to notify TermVirtualList constructor that TVLs must be created for everything.
+        // NULL is passed as the third argument to notify TermVirtualList constructor that TVLs must be created for everything.
     	this->computeTermVirtualList(queryResults, &activeNodesVector, NULL);
 
     	queryResultsInternal->estimatedNumberOfResults = this->estimateNumberOfResults(query, activeNodesVector );
