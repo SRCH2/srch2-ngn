@@ -4,6 +4,8 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-records">3. Serializing Records to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reset-log">4. Resetting Log File</a><br><br>
+
 
 </td></tr></tbody></table>
 
@@ -69,3 +71,32 @@ $ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
 
 The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".
 
+##4. Reseting Log File##{id="reset-log"}
+
+
+
+This API is used by a third-party tool such as
+[logrotate](http://linuxcommand.org/man_pages/logrotate8.html) to manage the log file. Suppose the "logrotate" tool has renamed the log file "srch2-log.txt" to another file "srch2-log.txt.1".
+The tool also has re-created a file with the original name "srch2-log.txt".  The SRCH2 engine is still writing log messages to the file "srch2-log.txt.1".
+Now "logrotate" sends the following message:
+
+```
+$ curl -i "http://localhost:8081/resetLogger" -X PUT
+```
+
+It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "lograte":
+
+```
+"/home/joe/srch2/logs/srch2-log.txt" {
+    weekly
+    missingok
+    rotate 52
+    notifempty
+    sharedscripts
+    postrotate
+            curl -i "http://localhost:8081/resetLogger" -X PUT
+    endscript
+    prerotate
+    endscript
+}
+```
