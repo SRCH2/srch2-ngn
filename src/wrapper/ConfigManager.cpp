@@ -1333,7 +1333,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         	this->getAllResultsNumberOfResultsThreshold = 10000;
         }
     }else{
-    	this->getAllResultsNumberOfResultsThreshold = 50000;
+    	this->getAllResultsNumberOfResultsThreshold = 10000;
     }
 
     // <getAllResultsKAlternative>2000</getAllResultsKAlternative>
