@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 94
+Date: Mon, 04 Nov 2013 20:46:49 GMT
+
+{"message":"The logger file repointing is done successfully", "log":[././logs/srch2-log.txt]}

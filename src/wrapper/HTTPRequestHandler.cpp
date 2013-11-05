@@ -628,7 +628,8 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
 }
 
 // The purpose of this function is to help rotate logger files by repointing logger file.
-// When rotating log file, "logrotate(a 3rd-party program)" will rename the old "logger.txt" file to "logger.txt.1" and create a new file called "logger.txt"
+// When rotating log file, "logrotate(a 3rd-party program)" will rename the old "logger.txt" file to "logger.txt.1"
+// and create a new file called "logger.txt"
 // But srch2 engine currently still point to and write into the old file "logger.txt.1"
 // The purpose of this function is to let srch2 engine point to the new-created logger file "logger.txt"
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
