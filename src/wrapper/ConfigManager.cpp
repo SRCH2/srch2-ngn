@@ -1329,7 +1329,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidGetAllResultsMaxResultsThreshold(kpt)) {
             this->getAllResultsNumberOfResultsThreshold = configAttribute.text().as_uint();
         }else{
-        	parseError << "getAllResultsMaxResultsThreshold has an invalid format.\n";
+        	parseError << "getAllResultsMaxResultsThreshold has an invalid format. Use 10000 as its value.\n";
         	this->getAllResultsNumberOfResultsThreshold = 10000;
         }
     }else{
@@ -1344,7 +1344,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidGetAllResultsKAlternative(kpt)) {
             this->getAllResultsNumberOfResultsToFindInEstimationMode = configAttribute.text().as_uint();
         }else{
-        	parseError << "getAllResultsKAlternative has an invalid format.\n";
+        	parseError << "getAllResultsKAlternative has an invalid format. Use 2000 as its value.\n";
         	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
         }
     }else{
@@ -1359,7 +1359,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         if (this->isValidKeywordPopularityThreshold(kpt)) {
             this->keywordPopularityThreshold = configAttribute.text().as_uint();
         }else{
-        	parseError << "keywordPopularityThreshold has an invalid format.\n";
+        	parseError << "keywordPopularityThreshold has an invalid format. Use 50000 as its value. \n";
         	keywordPopularityThreshold = 50000;
         }
     }else{
