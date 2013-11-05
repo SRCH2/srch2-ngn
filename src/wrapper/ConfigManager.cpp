@@ -114,6 +114,8 @@ const char* const ConfigManager::updateHandlerString = "updatehandler";
 const char* const ConfigManager::updateLogString = "updatelog";
 const char* const ConfigManager::wordsString = "words";
 const char* const ConfigManager::keywordPopularityThresholdString = "keywordpopularitythreshold";
+const char* const ConfigManager::getAllResultsMaxResultsThreshold = "getallresultsmaxresultsthreshold";
+const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalternative";
 
 
 ConfigManager::ConfigManager(const string& configFile) {
@@ -1319,8 +1321,35 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->defaultNumberOfSuggestions = 5;
 
     // setting default values for getAllResults optimization parameters
-	this->getAllResultsNumberOfResultsThreshold = 10000;
-	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
+    // <getAllResultsMaxResultsThreshold>10000</getAllResultsMaxResultsThreshold>
+    configAttribute = configDoc.child(configString).child(getAllResultsMaxResultsThreshold);
+    if (configAttribute && configAttribute.text()) {
+        string kpt = configAttribute.text().get();
+
+        if (this->isValidGetAllResultsMaxResultsThreshold(kpt)) {
+            this->getAllResultsNumberOfResultsThreshold = configAttribute.text().as_uint();
+        }else{
+        	parseError << "getAllResultsMaxResultsThreshold has an invalid format.\n";
+        	this->getAllResultsNumberOfResultsThreshold = 10000;
+        }
+    }else{
+    	this->getAllResultsNumberOfResultsThreshold = 50000;
+    }
+
+    // <getAllResultsKAlternative>2000</getAllResultsKAlternative>
+    configAttribute = configDoc.child(configString).child(getAllResultsKAlternative);
+    if (configAttribute && configAttribute.text()) {
+        string kpt = configAttribute.text().get();
+
+        if (this->isValidGetAllResultsKAlternative(kpt)) {
+            this->getAllResultsNumberOfResultsToFindInEstimationMode = configAttribute.text().as_uint();
+        }else{
+        	parseError << "getAllResultsKAlternative has an invalid format.\n";
+        	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
+        }
+    }else{
+    	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
+    }
 
 
     configAttribute = configDoc.child(configString).child(keywordPopularityThresholdString);
@@ -1841,6 +1870,25 @@ bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
     }
     return false;
 }
+
+bool ConfigManager::isValidGetAllResultsMaxResultsThreshold(string kpt){
+    if (this->isOnlyDigits(kpt)) {
+        if (atoi(kpt.c_str()) >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
+    if (this->isOnlyDigits(kpt)) {
+        if (atoi(kpt.c_str()) >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 bool ConfigManager::isValidLogLevel(string& logLevel) {
     if (logLevel.compare("0") == 0 || logLevel.compare("1") == 0 || logLevel.compare("2") == 0

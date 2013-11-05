@@ -264,6 +264,8 @@ private:
     bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
     bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
     bool isValidKeywordPopularityThreshold(string kpt);
+    bool isValidGetAllResultsMaxResultsThreshold(string kpt);
+    bool isValidGetAllResultsKAlternative(string kpt);
     bool isValidLogLevel(string& logLevel);
     bool isValidIndexType(string& indexType);
     bool isValidSearcherType(string& searcherType);
@@ -500,6 +502,8 @@ private:
     static const char* const updateLogString;
     static const char* const wordsString;
     static const char* const keywordPopularityThresholdString;
+    static const char* const getAllResultsMaxResultsThreshold;
+    static const char* const getAllResultsKAlternative;
 };
 
 }
