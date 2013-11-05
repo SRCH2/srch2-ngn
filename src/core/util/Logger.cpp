@@ -106,6 +106,18 @@ void Logger::info(const char *format, ...) {
 	}
 }
 
+// make the static FILE * point to the new logger file and return the old FILE*
+FILE* Logger::swapLoggerFile(FILE * newLogger) {
+	// TODO: concurrent control
+	if(newLogger == NULL) {
+		Logger::error("The given logger file is NULL!!!");
+		return NULL;
+	}
+	FILE* oldLogger = _out_file;
+	_out_file = newLogger;
+	return oldLogger;
+}
+
 void Logger::debug(const char *format, ...) {
 #ifndef SRCH2_SHIPPING
 	if (_logLevel >= Logger::SRCH2_LOG_DEBUG) {

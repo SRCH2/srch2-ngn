@@ -524,26 +524,12 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
 
     	// iterate on terms and find the estimated number of results for each term
-    	// if a term is too popular no term virtual list should be made for it
-    	// if all terms are too popular find the least popular and only make TVL for that one
+    	// if query has a single term and the term is too popular no term virtual list should be made for it
+    	// otherwise, we just continue doing normal topK.
 
     	// this vector is passed to computeTermVirtualList to be used
     	vector<PrefixActiveNodeSet *> activeNodesVector;
-    	// this vector is passed to computeTermVirtualList to see if
-    	// term virtual lists should be constructed completely or partially.
-    	// if the value of this float for a keyword is -1, it means this keyword is NOT
-    	// too popular and normal TVL should be made for it.
-    	// otherwise, this value is the runtime score of the top record of inverted list of the most
-    	// popular completion of this keyword. This score will be used in topK termination criterion.
-    	// TODO constant for -1
-    	vector<float> isTermTooPopularVectorAndScoresOfTopRecords ;
-    	// this vector keeps the popularity values of terms to be used in case
-    	// we need to find the least popular one
-    	vector<unsigned> termPopularities;
-    	// this flag will be set if there is no term which is not too popular
-    	bool thereIsAtLeastOneUnpopularTerm = false;
-
-    	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
+    	// iterate on terms and compute active nodes
     	unsigned termIndex = 0;
         for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
                 vectorIterator != query->getQueryTerms()->end();
@@ -557,56 +543,35 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             }else{
             	activeNodes = activeNodesVectorFromArgs->at(termIndex);
             }
-
             activeNodesVector.push_back(activeNodes);
-            // see how popular the term is
-            unsigned popularity = 0;
-            bool isPopular = this->isTermTooPopular(term , activeNodes , popularity);
-            // By default the value of topRecordScore is -1. If this term is too popular, this value will be the score of the
-            // the top record of the most popular suggestion inverted list
-            float topRecordScoreIfTooPopular = -1;
-            if(isPopular){
-            	topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
-            }else{
-            	thereIsAtLeastOneUnpopularTerm = true;
-            }
-            termPopularities.push_back(popularity);
-            isTermTooPopularVectorAndScoresOfTopRecords.push_back(topRecordScoreIfTooPopular);
-
         }
 
-        if(thereIsAtLeastOneUnpopularTerm == false){
-        	// if there is only one keyword (which is too popular)
-        	// we only estimate the results.
-        	if(query->getQueryTerms()->size() == 1){ // for example : q=a
-        		unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
-        				offset + nextK - queryResults->getNumberOfResults() , queryResults);
-        		// By setting this flag, we inform the user that results are approximated.
+        // case of single keyword: if term is too popular we "estimate" the results
+        if(query->getQueryTerms()->size() == 1){ // example : q=a
+			// see how popular the term is
+		    unsigned popularity = 0;
+		    bool isPopular = this->isTermTooPopular(query->getQueryTerms()->at(0) , activeNodesVector.at(0) , popularity);
+
+		    if(isPopular){
+                unsigned numberOfResults = searchTopKFindResultsForOnlyOnePopularKeyword(query, activeNodesVector.at(0) ,
+                                            offset + nextK - queryResults->getNumberOfResults() , queryResults);
+                // By setting this flag, we inform the user that results are approximated.
         		queryResultsInternal->resultsApproximated = true;
 
-        	    if (activeNodesVector.at(0)->isResultsCached() == true){
-        	    	activeNodesVector.at(0)->busyBit->setFree();
-        	    }else{
-            		delete activeNodesVector.at(0);
+                if (activeNodesVector.at(0)->isResultsCached() == true){
+                    activeNodesVector.at(0)->busyBit->setFree();
+                }else{
+        	        delete activeNodesVector.at(0);
         	    }
                 queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-        		return numberOfResults;
-        	}
-        	// for example : q="to be or not to be"
-        	// if there is more than one keyword, we find the least popular term and compute term virtual list only
-        	// for that one
-        	unsigned minPopularityIndex = 0;
-            for(int termIndex = 1 ; termIndex != query->getQueryTerms()->size() ; ++termIndex){
-        		if(termPopularities.at(termIndex) < termPopularities.at(minPopularityIndex)){
-        			minPopularityIndex = termIndex;
-        		}
-        	}
-            // isTermTooPopularVector is a vector of true values, we should set the value of
-            // least popular term top record score to -1
-            isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
+                return numberOfResults;
+           }
+
         }
 
-    	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
+
+        // NULL is passed as the third argument to notify TermVirtualList constructor that TVLs must be created for everything.
+    	this->computeTermVirtualList(queryResults, &activeNodesVector, NULL);
 
     	queryResultsInternal->estimatedNumberOfResults = this->estimateNumberOfResults(query, activeNodesVector );
 
@@ -1446,7 +1411,7 @@ bool IndexSearcherInternal::randomAccess(std::vector<TermVirtualList* > *virtual
                 queryResultMatchingKeywords.at(j) = "";         // the matching term is the same to the query term, we just ignore it
                 queryResultBitmaps.at(j) = 0;                   // we lose this bitmap
                 queryResultEditDistances.at(j) = 0;             // we lose the edit distance
-                queryResultTermScores.at(j) = 1.0;              // we assign the same score for it
+                virtualListVector->at(j)->getMaxScore(queryResultTermScores.at(j));              // we assign the same score for it
             }
         } else {  //do the verification
             PrefixActiveNodeSet *prefixActiveNodeSet;
