@@ -42,7 +42,7 @@ class TermVirtualList;
 /////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
 
 QueryResultsInternal::QueryResultsInternal() {
-    Logger::info("Query Results internal created.");
+    Logger::debug("Query Results internal created.");
     this->virtualListVector = NULL;
     this->stat = NULL;
     this->resultsApproximated = false;
@@ -51,7 +51,7 @@ QueryResultsInternal::QueryResultsInternal() {
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
         const IndexSearcherInternal *indexSearcherInternal, Query *query) {
-    Logger::info("Query Results internal initialized.");
+    Logger::debug("Query Results internal initialized.");
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;

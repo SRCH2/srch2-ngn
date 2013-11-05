@@ -218,6 +218,7 @@ private:
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;    
+
     
     /**
      * Internal functions
@@ -233,7 +234,7 @@ public:
                 const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag);
+        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag );
     }
     
     inline static IndexData* load(const string& directoryName)

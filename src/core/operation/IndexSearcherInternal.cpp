@@ -46,10 +46,13 @@ namespace srch2
 namespace instantsearch
 {
 
-const unsigned IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD = 700000;
 
-IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer)
+IndexSearcherInternal::IndexSearcherInternal(IndexReaderWriter *indexer , IndexSearcherRuntimeParametersContainer * parameters)
 {
+	// if parameters is NULL, the default constructor of the object is used which has the default values for everything.
+	if(parameters != NULL){
+		this->parameters = *parameters;
+	}
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;
@@ -1280,7 +1283,7 @@ bool IndexSearcherInternal::isTermTooPopular(Term *term , PrefixActiveNodeSet * 
 	}
 	popularity = getEstimatedNumberOfRecordsWithThisTerm(term , activeNodes);
 
-	return (popularity > IndexSearcherInternal::HISTOGRAM_POPULARITY_THRESHOLD);
+	return (popularity > this->getKeywordPopularityThreshold());
 
 }
 

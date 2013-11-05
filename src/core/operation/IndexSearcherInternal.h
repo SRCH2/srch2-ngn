@@ -55,10 +55,8 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
-	static const unsigned HISTOGRAM_POPULARITY_THRESHOLD;
-
     //Get Schema pointer from IndexSearcherInternal
-    IndexSearcherInternal(IndexReaderWriter *indexer);
+    IndexSearcherInternal(IndexReaderWriter *indexer, IndexSearcherRuntimeParametersContainer * parameters = NULL);
     virtual ~IndexSearcherInternal() {};
 
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
@@ -130,12 +128,17 @@ public:
         return this->indexData->trie;
     }
 
+    const unsigned getKeywordPopularityThreshold() const {
+    	return this->parameters.keywordPopularityThreshold;
+    }
+
 private:
 
     const IndexData *indexData;
     IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
+    IndexSearcherRuntimeParametersContainer parameters;
     Cache *cacheManager;
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;

@@ -799,6 +799,7 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfGroups;
 
     types.push_back(srch2::instantsearch::FacetTypeCategorical);
     fields.push_back("class");
@@ -806,7 +807,7 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     rangeEnds.push_back("");
     rangeGaps.push_back("");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps);
+    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps , numberOfGroups);
 
     plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
@@ -853,7 +854,7 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     rangeEnds.push_back("5");
     rangeGaps.push_back("4");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps);
+    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps, numberOfGroups);
 
     plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
@@ -902,7 +903,7 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     rangeEnds.push_back("1");
     rangeGaps.push_back("0");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps);
+    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps, numberOfGroups);
 
     plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);

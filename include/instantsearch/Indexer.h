@@ -77,6 +77,7 @@ public:
         }
         updateHistogramEveryQWrites = _updateHistogramEveryPMerges * _mergeEveryMWrites;
 
+
         directoryName = _directoryName;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
     }

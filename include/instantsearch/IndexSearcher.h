@@ -36,6 +36,24 @@ class Indexer;
 class Query;
 class QueryResults;
 
+
+class IndexSearcherRuntimeParametersContainer{
+public:
+	unsigned keywordPopularityThreshold;
+
+	IndexSearcherRuntimeParametersContainer(){
+		keywordPopularityThreshold = 50000;
+	}
+
+	IndexSearcherRuntimeParametersContainer(unsigned keywordPopularityThreshold){
+		this->keywordPopularityThreshold = keywordPopularityThreshold;
+	}
+
+	IndexSearcherRuntimeParametersContainer(const IndexSearcherRuntimeParametersContainer & copy){
+		this->keywordPopularityThreshold = copy.keywordPopularityThreshold;
+	}
+};
+
 /**
  * IndexSearcher provides an interface to do search using the
  * index. The IndexSearcher internally is a wrapper around the
@@ -48,7 +66,7 @@ public:
      * Creates an IndexSearcher object.
      * @param indexer - An object holding the index structures and cache.
      */
-    static IndexSearcher *create(Indexer *indexer);
+    static IndexSearcher *create(Indexer *indexer , IndexSearcherRuntimeParametersContainer * parameters = NULL);
 
     /*
      * Finds the suggestions for a keyword based on fuzzyMatchPenalty.

@@ -102,16 +102,24 @@ public:
 
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
-     {
-         this->rwMutexForWriter->lockWrite();
-         this->mergeThreadStarted = false;
-         pthread_cond_signal(&countThresholdConditionVariable);
-         this->rwMutexForWriter->unlockWrite();
-         delete this->index;
-         delete this->rwMutexForWriter;
-     }
+    {
+    	if (this->mergeThreadStarted == true)
+    	{
+    		this->rwMutexForWriter->lockWrite();
+    		this->mergeThreadStarted = false;
+    		pthread_cond_signal(&countThresholdConditionVariable);
+    		this->rwMutexForWriter->unlockWrite();
 
-    uint32_t getNumberOfDocumentsInIndex() const;
+    		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    	}
+        delete this->index;
+        delete this->rwMutexForWriter;
+    };
+
+    uint32_t getNumberOfDocumentsInIndex() const
+    {
+        return this->index->_getNumberOfDocumentsInIndex();
+    }
 
     /**
      * Builds the index. After commit(), the records are made searchable after the first commit.

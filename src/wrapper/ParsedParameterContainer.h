@@ -76,6 +76,7 @@ public:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfTopGroupsToReturn;
 };
 
 class TopKParameterContainer {

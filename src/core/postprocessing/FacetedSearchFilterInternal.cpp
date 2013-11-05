@@ -30,6 +30,9 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+bool compareFacetGroups(const std::pair<std::string, float> & first , const std::pair<std::string, float> & second){
+	return first.second > second.second ;
+}
 
 float FacetResultsContainer::initAggregation(FacetAggregationType  aggregationType){
 	switch (aggregationType) {
@@ -65,11 +68,22 @@ void CategoricalFacetResultsContainer::addResultToBucket(const unsigned bucketId
 	}
 
 }
-void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn ){
+	// we use 'results' to copy the data from the map and sort it
 	for(std::map<unsigned, std::pair<std::string, float> >::iterator bucketPtr = bucketsInfo.begin() ;
 			bucketPtr != bucketsInfo.end() ; ++bucketPtr){
 		results.push_back(std::make_pair(bucketPtr->second.first , bucketPtr->second.second));
 	}
+	// now sort it
+	std::sort(results.begin() , results.end() , &compareFacetGroups);
+	// if the query wants all the groups or the available groups are fewer than what the query asks for, we don't need to remove the tail
+	if(numberOfGroupsToReturn < 0 || numberOfGroupsToReturn > results.size()){
+		return;
+	}
+	// remove the tail
+	std::vector<std::pair< std::string, float > >::iterator startOfTailToRemove = results.begin();
+	startOfTailToRemove += numberOfGroupsToReturn;
+	results.erase(startOfTailToRemove , results.end());
 }
 
 
@@ -94,7 +108,7 @@ void RangeFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAgg
 void RangeFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
 	bucketsInfo.at(bucketId).second = doAggregation(bucketsInfo.at(bucketId).second , aggregationType);
 }
-void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn){
 	results.insert(results.begin(), bucketsInfo.begin() , bucketsInfo.end());
 }
 
@@ -294,7 +308,13 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 	for(std::vector<std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
 			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
 		std::vector<std::pair< std::string, float > > results;
-		facetResultsPtr->second->getNamesAndValues(results);
+		int numberOfGroupsToReturnForThisField = -1;
+		// We make sure that numberOfGroupsToReturnVector has the same size as the number of facet attributes.
+		// If it doesn't have the same size (input to this function is not consistent), we use -1 and don't remove the tail.
+		if(this->numberOfGroupsToReturnVector.size() == fields.size()){
+			numberOfGroupsToReturnForThisField = this->numberOfGroupsToReturnVector.at(std::distance(facetResults.begin() , facetResultsPtr));
+		}
+		facetResultsPtr->second->getNamesAndValues(results, numberOfGroupsToReturnForThisField);
 		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
 	}
 
@@ -355,12 +375,13 @@ void FacetedSearchFilterInternal::doProcessOneResult(const TypedValue & attribut
 void FacetedSearchFilterInternal::initialize(std::vector<FacetType> & facetTypes,
         std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
         std::vector<std::string> & rangeEnds,
-        std::vector<std::string> & rangeGaps){
+        std::vector<std::string> & rangeGaps, std::vector<int> & numberOfGroupsToReturn){
     this->fields = fields;
     this->facetTypes = facetTypes;
     this->rangeStarts = rangeStarts;
     this->rangeEnds = rangeEnds;
     this->rangeGaps = rangeGaps;
+    this->numberOfGroupsToReturnVector = numberOfGroupsToReturn;
 }
 
 }
