@@ -320,6 +320,25 @@ void cb_bmexport(evhttp_request *req, void *arg)
 }
 
 /**
+ *  'reset logger file' callback function
+ *  @param req evhttp request object
+ *  @param arg optional argument
+ */
+void cb_bmresetLogger(evhttp_request *req, void *arg) {
+    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    try {
+    	HTTPRequestHandler::resetLoggerCommand(req, server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
+
+
+/**
  * 'write/v2/' callback function
  * @param req evhttp request object
  * @param arg optional argument
@@ -649,6 +668,8 @@ int main(int argc, char** argv) {
         evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
 
         evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+
+        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
     }
 
     /* 4). bind socket */
@@ -730,6 +751,8 @@ int main(int argc, char** argv) {
             evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
 
             evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+
+            evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
