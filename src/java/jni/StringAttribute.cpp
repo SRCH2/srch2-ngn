@@ -1,4 +1,3 @@
-
 /*****************************************************************************
  *                                                                           *
  *              AUTHOR : RJ ATWAL                                            *
@@ -33,15 +32,15 @@ jboolean JNIClass::StringAttribute::isInstance(jobject obj) const {
   return env->IsAssignableFrom(env->GetObjectClass(obj), classPtr);
 }
 
-jobject JNIClass::StringAttribute::createNew(std::string& content) const {
-  jchar uft16start[1024];
-  
+jobject inline creatNew(std::string& content, jchar* buffer,
+    JNIEnv &env, jclass classPtr, jmethodID constructor) {
+  jchar *end;
+
   /* convert a UTF8 string to a UTF16 encoded array*/
-  jchar *uft16end= 
-    utf8::unchecked::utf8to16(content.begin(), content.end(), uft16start);
+  end= utf8::unchecked::utf8to16(content.begin(), content.end(), buffer);
 
   /* Creates a new String on the Java heap */
-  jstring internalString= env->NewString(uft16start, uft16end-uft16start);
+  jstring internalString= env.NewString(buffer, end - buffer);
 
   /* Creates a new Object of StringAttribute type on the java heap using
      the constructor specified with internalString as an argument.
@@ -50,6 +49,24 @@ jobject JNIClass::StringAttribute::createNew(std::string& content) const {
          new StringAttribute(internalString)
 
      in the JVM, and returns a handle to the new object */
-  return env->NewObject(this->classPtr, constructor, internalString);
+  return env.NewObject(classPtr, constructor, internalString);
+
 }
 
+jobject JNIClass::SearchableString::createNew(std::string& content) const {
+  /* Checks the size of input string to see if it can be handled on the stack*/
+  jchar *buffer;
+  if((content.length() < 512)) {
+    jchar uft16start[1024];
+    buffer= uft16start;
+  }
+  else {
+    buffer= new jchar[content.length() * 2];
+  }
+  return creatNew(content, buffer,
+      *(this->env), this->classPtr, this->constructor);
+  
+  /* free heap memory if needed */
+  if((content.length() < 512)) 
+    delete buffer;
+}

@@ -1,3 +1,5 @@
+#ifndef __SEARCHABLE_STRING_H__
+#define __SEARCHABLE_STRING_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -7,6 +9,8 @@
   ****************************************************************************/
 
 #include "StringAttribute.h"
+#include<jni.h>
+#include<string>
 
 namespace JNIClass {
   struct SearchableString : StringAttribute {
@@ -17,3 +21,4 @@ namespace JNIClass {
   };
 }
 
+#endif /* __SEARCHABLE_STRING_H__ */

@@ -1,4 +1,3 @@
-
 /*****************************************************************************
  *                                                                           *
  *              AUTHOR : RJ ATWAL                                            *
@@ -18,4 +17,3 @@ package com.srch2;
 */
 public interface SearchableStringInterface
 extends Attribute<String>, Searchable {}
-

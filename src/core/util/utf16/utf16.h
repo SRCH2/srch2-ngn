@@ -1,5 +1,5 @@
-#ifndef __UFT16_H
-#define __UFT16_H
+#ifndef __UFT16_H__
+#define __UFT16_H__
 
 #define U16_LENGTH(c) (((c)<0xD800 || (c)>0xDBFF) ? 1 : 2)
 

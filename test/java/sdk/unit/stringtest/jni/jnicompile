@@ -1,0 +1,10 @@
+
+# *****************************************************************************
+# *                                                                           *
+# *              AUTHOR : RJ ATWAL                                            *
+# *                                                                           *
+# *                                                                           * 
+#  ****************************************************************************
+
+g++ *.cpp -g -I /home/rj/srch2/srch2-ngn/build/src/core/ -I /home/rj/srch2/srch2-ngn/src/core/ -I . -I /usr/lib/jvm/java-7-openjdk-amd64/include/ -I /home/rj/srch2/srch2-ngn/src/java/jni/ -L/home/rj/srch2/srch2-ngn/build/src/core -lsrch2_core -shared -Wl,-soname,libstring_engine.so -o libstring_engine.so -fPIC 
+

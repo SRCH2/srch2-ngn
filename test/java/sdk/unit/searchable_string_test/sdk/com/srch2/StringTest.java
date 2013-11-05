@@ -13,8 +13,8 @@ import org.junit.*;
 public class StringTest {
   
   private void testString(String test) throws NoSuchMethodException {
-    SearchableString testString= new SearchableString(test);
     StringEngine e= new StringEngine();
+    SearchableString testString= new SearchableString(test);
 
     e.setString(testString);
     SearchableString result= e.getString();
