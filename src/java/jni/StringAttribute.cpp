@@ -53,7 +53,7 @@ jobject inline creatNew(std::string& content, jchar* buffer,
 
 }
 
-jobject JNIClass::SearchableString::createNew(std::string& content) const {
+jobject JNIClass::StringAttribute::createNew(std::string& content) const {
   /* Checks the size of input string to see if it can be handled on the stack*/
   jchar *buffer;
   if((content.length() < 512)) {
@@ -67,6 +67,6 @@ jobject JNIClass::SearchableString::createNew(std::string& content) const {
       *(this->env), this->classPtr, this->constructor);
   
   /* free heap memory if needed */
-  if((content.length() < 512)) 
+  if((content.length() >= 512)) 
     delete buffer;
 }
