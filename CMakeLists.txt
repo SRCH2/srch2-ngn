@@ -54,8 +54,14 @@ ENDIF(COMMAND cmake_policy)
 SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
+SET(BUILD_JNI OFF CACHE BOOL
+    "Build in hooks for Java to interact Srch2 Core. Defaults to OFF.")
+SET(BUILD_SERVER ON CACHE BOOL
+    "Build the Srch2Server executable. Defaults to ON")
 IF(ANDROID)
     SET(BUILD_STATIC OFF)
+    SET(BUILD_JNI ON)
+    SET(BUILD_SERVER OFF)
 ENDIF()
 
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
@@ -212,6 +218,10 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	ADD_SUBDIRECTORY(include/instantsearch)
 	ADD_SUBDIRECTORY(src/core)
 
+  IF(BUILD_JNI) 
+    ADD_SUBDIRECTORY(src/java)
+  ENDIF()
+
 	# Building the wrapper layer in static build mode.
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
@@ -224,7 +234,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
             ENDIF()
 	ENDIF()
 
-    IF (NOT ANDROID)
+    IF (BUILD_SERVER)
         ADD_SUBDIRECTORY(src/wrapper)
         ADD_SUBDIRECTORY(src/server)
     	IF (BUILD_TEST)
