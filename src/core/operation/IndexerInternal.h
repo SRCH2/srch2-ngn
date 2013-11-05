@@ -116,10 +116,7 @@ public:
         delete this->rwMutexForWriter;
     };
 
-    uint32_t getNumberOfDocumentsInIndex() const
-    {
-        return this->index->_getNumberOfDocumentsInIndex();
-    }
+    uint32_t getNumberOfDocumentsInIndex() const;
 
     /**
      * Builds the index. After commit(), the records are made searchable after the first commit.
