@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 #include "com_srch2_StringEngine.h"
 #include "StringEngine.h"
 
@@ -79,3 +87,4 @@ void Java_com_srch2_StringEngine_deleteStringEngine(JNIEnv *env, jobject,
     jlong handle) {
   delete dereferenceStringEngineHandle(env, handle);
 }
+

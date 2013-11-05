@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 package com.srch2;
 
 public class RefiningString implements RefiningStringInterface {
@@ -14,3 +22,4 @@ public class RefiningString implements RefiningStringInterface {
     return this.value;
   }
 }
+

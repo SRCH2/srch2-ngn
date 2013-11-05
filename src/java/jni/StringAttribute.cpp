@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 #include "StringAttribute.h"
 #include "util/utf8/unchecked.h"
 #include "util/utf16/utf16.h"
@@ -44,3 +52,4 @@ jobject JNIClass::StringAttribute::createNew(std::string& content) const {
      in the JVM, and returns a handle to the new object */
   return env->NewObject(this->classPtr, constructor, internalString);
 }
+

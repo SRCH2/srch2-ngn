@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 package com.srch2;
 
 /**
@@ -20,3 +28,4 @@ public class SearchableString implements SearchableStringInterface {
     return this.value;
   }
 }
+

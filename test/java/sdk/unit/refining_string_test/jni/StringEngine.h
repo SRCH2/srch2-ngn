@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 #include "RefiningString.h"
 #include<string>
 #include<cassert>
@@ -32,5 +40,4 @@ class StringEngine {
      RefiningString given. */
   void setString(jobject);
 };
-
 

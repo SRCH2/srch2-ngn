@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 #include "SearchableString.h"
 #include<string>
 #include<cassert>
@@ -32,5 +40,4 @@ class StringEngine {
      SearchableString given. */
   void setString(jobject);
 };
-
 

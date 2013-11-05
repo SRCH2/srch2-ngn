@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 #include "StringAttribute.h"
 
 namespace JNIClass {
@@ -7,3 +15,4 @@ namespace JNIClass {
       : StringAttribute(env, classPtr, getValue, constructor) {}
   };
 }
+

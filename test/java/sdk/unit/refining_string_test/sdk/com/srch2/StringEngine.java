@@ -1,3 +1,11 @@
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
 package com.srch2;
 
 import java.lang.reflect.Method;
@@ -77,3 +85,4 @@ class StringEngine {
   /** Free the heap memory storing the c++ side of this StringEngine */
   private native void deleteStringEngine(long handle);
 }
+
