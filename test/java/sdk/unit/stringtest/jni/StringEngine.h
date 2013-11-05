@@ -1,3 +1,5 @@
+#ifndef __STRING_ENGINE_H__
+#define __STRING_ENGINE_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -20,7 +22,7 @@ class StringEngine {
   std::string value;
 
  public:
-  /* Warning: this variable make this class thread unsafe, only
+  /* Warning: this variable makes this class thread unsafe, only
      a single thread may access a given instance of this class.
   
      The JVM context of the Java side of this Engine on a particular bridged
@@ -41,3 +43,4 @@ class StringEngine {
   void setString(jobject);
 };
 
+#endif /* __STRING_ENGINE_H__ */

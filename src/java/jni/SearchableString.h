@@ -1,3 +1,5 @@
+#ifndef __SEARCHABLE_STRING_H__
+#define __SEARCHABLE_STRING_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -5,6 +7,7 @@
  *                                                                           *
  *                                                                           * 
   ****************************************************************************/
+
 
 #include<jni.h>
 #include<string>
@@ -44,3 +47,4 @@ namespace JNIClass {
   };
 }
 
+#endif /* __SEARCHABLE_STRING_H__ */
