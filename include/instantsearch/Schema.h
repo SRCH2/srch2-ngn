@@ -94,13 +94,13 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     virtual int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1) = 0;
+            unsigned attributeBoost = 1, bool isMultiValued = false) = 0;
 
 
 
 
-    virtual int setNonSearchableAttribute(const std::string &attributeName,
-            FilterType type, const std::string & defaultValue) = 0;
+    virtual int setRefiningAttribute(const std::string &attributeName,
+            FilterType type, const std::string & defaultValue, bool isMultiValued = false) = 0;
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -132,6 +132,11 @@ public:
      */
     virtual unsigned getBoostOfSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
 
+    /*
+     * Returns true if this searchable attribute is multivalued
+     */
+    virtual bool isSearchableAttributeMultiValued(const unsigned searchableAttributeNameId) const = 0;
+
     /**
      * Gets the sum of all attribute boosts in the schema.  The
      * returned value can be used for the normalization of
@@ -145,12 +150,12 @@ public:
 
 
     // non Searchable attributes
-    virtual const std::string* getDefaultValueOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
-    virtual FilterType getTypeOfNonSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
-    virtual int getNonSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
-    virtual unsigned getNumberOfNonSearchableAttributes() const = 0;
-    virtual const std::map<std::string , unsigned> * getNonSearchableAttributes() const  = 0;
-
+    virtual const std::string* getDefaultValueOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
+    virtual FilterType getTypeOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
+    virtual int getRefiningAttributeId(const std::string &refiningAttributeName) const = 0;
+    virtual unsigned getNumberOfRefiningAttributes() const = 0;
+    virtual const std::map<std::string , unsigned> * getRefiningAttributes() const  = 0;
+    virtual bool isRefiningAttributeMultiValued(const unsigned refiningAttributeNameId) const = 0;
 
 
 

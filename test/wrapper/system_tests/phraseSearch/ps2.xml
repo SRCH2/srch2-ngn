@@ -215,7 +215,7 @@
             1: fuzzy match
             Defaults to 0
         -->
-        <queryTermMatchType>0</queryTermMatchType>
+        <queryTermFuzzyType>0</queryTermFuzzyType>
          
                      
              
@@ -228,7 +228,7 @@
             1: a term is treated as a complete term;
             Defaults to 0
         -->
-        <queryTermType>0</queryTermType>
+        <queryTermPrefixType>0</queryTermPrefixType>
  
          
         <queryResponseWriter>
@@ -358,6 +358,7 @@
             - 
    -->
    <field name="name" type="text" indexed="true" />
+   <field name="authors" type="text" searchable="true" multivalued="true" />
    <field name="body" type="text" indexed="true" />
    <field name="ranking" type="float" indexed="false" refining="true" />
  </fields>

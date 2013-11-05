@@ -211,43 +211,20 @@ private:
 
     //To save the directory name to save the trieIndex
     string directoryName;
-    bool commited;
+    bool flagBulkLoadDone;
     bool mergeRequired;
     std::string licenseFileNameWithPath;
 
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;    
+
     
     /**
      * Internal functions
      */
-    void loadCounts(const std::string &indeDataPathFileName)
-    {
-        std::ifstream ifs(indeDataPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        uint64_t readCount_tmp;
-        uint32_t writeCount_tmp, numDocs_tmp;
-        ia >> readCount_tmp;
-        ia >> writeCount_tmp;
-        ia >> numDocs_tmp;
-        this->readCounter = new ReadCounter(readCount_tmp);
-        this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
-        ifs.close();
-    };
-
-    void saveCounts(const std::string &indeDataPathFileName) const
-    {
-        std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_oarchive oa(ofs);
-        uint64_t readCount_tmp = this->readCounter->getCount();
-        uint32_t writeCount_tmp = this->writeCounter->getCount();
-        uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
-        oa << readCount_tmp;
-        oa << writeCount_tmp;
-        oa << numDocs_tmp;
-        ofs.close();
-    };
+    void loadCounts(const std::string &indeDataPathFileName);
+    void saveCounts(const std::string &indeDataPathFileName) const;
 
 public:
     
@@ -257,7 +234,7 @@ public:
                 const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag);
+        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag );
     }
     
     inline static IndexData* load(const string& directoryName)
@@ -293,7 +270,7 @@ public:
     void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
 
     // merge the index
-    INDEXWRITE_RETVAL _merge();
+    INDEXWRITE_RETVAL _merge(bool updateHistogram);
 
      // delete a record with a specific id
     INDEXWRITE_RETVAL _deleteRecord(const std::string &externalRecordId);
@@ -307,9 +284,9 @@ public:
     INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId) const;
 
     // build the index. After commit(), no more records can be added
-    INDEXWRITE_RETVAL _commit();
+    INDEXWRITE_RETVAL finishBulkLoad();
 
-    const bool isCommited() const { return this->commited; }
+    const bool isBulkLoadDone() const { return this->flagBulkLoadDone; }
 
     void _exportData(const string& exportedDataFileName) const;
 

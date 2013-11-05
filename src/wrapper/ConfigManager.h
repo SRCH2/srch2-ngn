@@ -24,6 +24,73 @@ using namespace pugi;
 namespace srch2 {
 namespace httpwrapper {
 
+// This class is used to collect information from the config file and pass them other modules
+// in the system.
+class SearchableAttributeInfoContainer {
+public:
+	SearchableAttributeInfoContainer(){
+		attributeName = "";
+		required = false;
+		defaultValue = "";
+		offset = 0;
+		boost = 1;
+		isMultiValued = false;
+	}
+	SearchableAttributeInfoContainer(const string & name,
+			const bool required,
+			const string & defaultValue ,
+			const unsigned offset,
+			const unsigned boost,
+			const bool isMultiValued){
+		this->attributeName = name;
+		this->required = required;
+		this->defaultValue = defaultValue;
+		this->offset = offset;
+		this->boost = boost;
+		this->isMultiValued = isMultiValued;
+	}
+ 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+	// VALUES AND HAS NO BEHAVIOUR
+    string attributeName;
+    bool required;
+    string defaultValue;
+    unsigned offset;
+    unsigned boost;
+    bool isMultiValued;
+};
+
+class RefiningAttributeInfoContainer {
+public:
+	RefiningAttributeInfoContainer(){
+		attributeName = "";
+		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
+		attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+		defaultValue = "";
+		required = false;
+		isMultiValued = false;
+	}
+	RefiningAttributeInfoContainer(const string & name,
+			srch2::instantsearch::FilterType type,
+				const string & defaultValue,
+				const bool required,
+				const bool isMultiValued){
+		this->attributeName = name;
+		this->attributeType = type;
+		this->defaultValue = defaultValue;
+		this->required = required;
+		this->isMultiValued = isMultiValued;
+	}
+ 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+	// VALUES AND HAS NO BEHAVIOUR
+	string attributeName;
+	srch2::instantsearch::FilterType attributeType;
+	string defaultValue;
+	bool required;
+	bool isMultiValued;
+};
+
 class ConfigManager {
 private:
 
@@ -60,7 +127,9 @@ private:
 	int numberOfThreads;
 	int searchType;
 	bool exactFuzzy;
-	bool queryTermType;
+	bool queryTermPrefixType;
+
+	unsigned defaultNumberOfSuggestions;
 
 
 	// <config><query><queryResponseWriter>
@@ -80,6 +149,13 @@ private:
 	// <config><updatehandler><mergePolicy>
 	unsigned mergeEveryNSeconds;
 	unsigned mergeEveryMWrites;
+
+	// no config option for this yet
+	unsigned updateHistogramEveryPMerges;
+	unsigned updateHistogramEveryQWrites;
+
+	// <config><keywordPopularitythreshold>
+	unsigned keywordPopularityThreshold;
 
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
@@ -112,14 +188,10 @@ private:
 
 	//vector<string> searchableAttributes;
 
-    // < name, <required, <default, <offset, boost> > > >
-    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > searchableAttributesInfo;
-
+    map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
 	string attributeRecordBoost;
 
-
-	// < name, <type, <default, isSortable>>>
-	map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > nonSearchableAttributesInfo;
+	map<string , RefiningAttributeInfoContainer > RefiningAttributesInfo;
 
 
 
@@ -153,6 +225,12 @@ private:
 	// stores the value of maximum allowed retries when MongoDB listener encounters some problem.
 	unsigned mongoListenerMaxRetryOnFailure;
 
+	// related to optimizing getAllResults. If the estimated number of results is
+	// greater than getAllResultsNumberOfResultsThreshold, getAllResults only find
+	// getAllResultsNumberOfResultsToFindInEstimationMode results.
+	unsigned getAllResultsNumberOfResultsThreshold;
+	unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
+
 
     void splitString(string str, const string& delimiter, vector<string>& result);
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
@@ -161,7 +239,7 @@ private:
     bool isFloat(string str);
     //Validate Functions
     bool isValidFieldType(string& fieldType, bool isSearchable);
-    bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType);
+    bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType, bool isMultiValued);
     bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
     bool isValidBool(string& fieldType);
     bool isValidBoostFields(map <string, unsigned>& boosts);
@@ -177,20 +255,23 @@ private:
     bool isValidMaxSearchThreads(string& maxSearchThreads);
     bool isValidBooleanValue(string& fieldBasedSearch);
 
-    bool isValidQueryTermMatchType(string& queryTermMatchType);
-    bool isValidQueryTermType(string& queryTermType);
+    bool isValidQueryTermFuzzyType(string& queryTermFuzzyType);
+    bool isValidQueryTermPrefixType(string& queryTermPrefixType);
     bool isValidResponseFormat(string& responseFormat);
     bool isValidResponseContentType(string responseContentType);
     bool isValidMaxDoc(string& maxDoc);
     bool isValidMaxMemory(string& maxMemory);
     bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
     bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
+    bool isValidKeywordPopularityThreshold(string kpt);
     bool isValidLogLevel(string& logLevel);
     bool isValidIndexType(string& indexType);
     bool isValidSearcherType(string& searcherType);
 
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
+
+    void lowerCaseNodeNames(xml_node &node);
 
 public:
     ConfigManager(const string& configfile);
@@ -208,9 +289,9 @@ public:
 	const std::string& getFilePath() const;
 	const std::string& getPrimaryKey() const;
 
-	const map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > > * getSearchableAttributes() const;
+	const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes() const;
 
-	const map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > > * getNonSearchableAttributes() const;
+	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes() const;
 
     const vector<string> * getAttributesToReturnName() const;
 
@@ -225,7 +306,7 @@ public:
 	int getSearchType() const;
 	int getIsPrimSearchable() const;
 	bool getIsFuzzyTermsQuery() const;
-	bool getQueryTermType() const;
+	bool getQueryTermPrefixType() const;
 	bool getStemmerFlag() const;
 	string getSynonymFilePath() const;
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
@@ -245,6 +326,11 @@ public:
 	uint32_t getCacheSizeInBytes() const;
 	uint32_t getMergeEveryNSeconds() const;
 	uint32_t getMergeEveryMWrites() const;
+
+	uint32_t getUpdateHistogramEveryPMerges() const;
+	uint32_t getUpdateHistogramEveryQWrites() const;
+
+	unsigned getKeywordPopularityThreshold() const ;
 
 	int getNumberOfThreads() const;
 
@@ -311,11 +397,109 @@ public:
     const unsigned getMongoListnerMaxRetryCount() const {
     	return mongoListenerMaxRetryOnFailure;
     }
+
+    const unsigned getGetAllResultsNumberOfResultsThreshold() const {
+    	return this->getAllResultsNumberOfResultsThreshold;
+    }
+
+    const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const {
+    	return this->getAllResultsNumberOfResultsToFindInEstimationMode;
+    }
+
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setFilePath(const string& dataFile);
 
     bool isPositionIndexEnabled() const;
 
+    unsigned getDefaultNumberOfSuggestionsToReturn() const {
+    	return defaultNumberOfSuggestions;
+    }
+
+private:
+
+// configuration file tag and attribute names for ConfigManager
+    static const char* const accessLogFileString;
+    static const char* const analyzerString;
+    static const char* const cacheSizeString;
+    static const char* const collectionString;
+    static const char* const configString;
+    static const char* const dataDirString;
+    static const char* const dataFileString;
+    static const char* const dataSourceTypeString;
+    static const char* const dbString;
+    static const char* const defaultString;
+    static const char* const defaultQueryTermBoostString;
+    static const char* const dictionaryString;
+    static const char* const enablePositionIndexString;
+    static const char* const expandString;
+    static const char* const facetEnabledString;
+    static const char* const facetEndString;
+    static const char* const facetFieldString;
+    static const char* const facetFieldsString;
+    static const char* const facetGapString;
+    static const char* const facetStartString;
+    static const char* const facetTypeString;
+    static const char* const fieldString;
+    static const char* const fieldBasedSearchString;
+    static const char* const fieldBoostString;
+    static const char* const fieldsString;
+    static const char* const fieldTypeString;
+    static const char* const filterString;
+    static const char* const fuzzyMatchPenaltyString;
+    static const char* const hostString;
+    static const char* const indexConfigString;
+    static const char* const indexedString;
+    static const char* const multiValuedString;
+    static const char* const indexTypeString;
+    static const char* const licenseFileString;
+    static const char* const listenerWaitTimeString;
+    static const char* const listeningHostStringString;
+    static const char* const listeningPortString;
+    static const char* const locationLatitudeString;
+    static const char* const locationLongitudeString;
+    static const char* const logLevelString;
+    static const char* const maxDocsString;
+    static const char* const maxMemoryString;
+    static const char* const maxRetryOnFailureString;
+    static const char* const maxSearchThreadsString;
+    static const char* const mergeEveryMWritesString;
+    static const char* const mergeEveryNSecondsString;
+    static const char* const mergePolicyString;
+    static const char* const mongoDbString;
+    static const char* const nameString;
+    static const char* const portString;
+    static const char* const porterStemFilterString;
+    static const char* const prefixMatchPenaltyString;
+    static const char* const queryString;
+    static const char* const queryResponseWriterString;
+    static const char* const queryTermLengthBoostString;
+    static const char* const queryTermFuzzyTypeString;
+    static const char* const queryTermSimilarityThresholdString;
+    static const char* const queryTermPrefixTypeString;
+    static const char* const rankingAlgorithmString;
+    static const char* const recordBoostFieldString;
+    static const char* const recordScoreExpressionString;
+    static const char* const refiningString;
+    static const char* const requiredString;
+    static const char* const responseContentString;
+    static const char* const responseFormatString;
+    static const char* const rowsString;
+    static const char* const schemaString;
+    static const char* const searchableString;
+    static const char* const searcherTypeString;
+    static const char* const srch2HomeString;
+    static const char* const stopFilterString;
+    static const char* const supportSwapInEditDistanceString;
+    static const char* const synonymFilterString;
+    static const char* const synonymsString;
+    static const char* const textEnString;
+    static const char* const typeString;
+    static const char* const typesString;
+    static const char* const uniqueKeyString;
+    static const char* const updateHandlerString;
+    static const char* const updateLogString;
+    static const char* const wordsString;
+    static const char* const keywordPopularityThresholdString;
 };
 
 }

@@ -42,19 +42,23 @@ class TermVirtualList;
 /////////////////////////////////////////// QueryResultsInternal Implementation ///////////////////////////////////////////////////////////////
 
 QueryResultsInternal::QueryResultsInternal() {
-    Logger::info("Query Results internal created.");
+    Logger::debug("Query Results internal created.");
     this->virtualListVector = NULL;
     this->stat = NULL;
+    this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
         const IndexSearcherInternal *indexSearcherInternal, Query *query) {
-    Logger::info("Query Results internal initialized.");
+    Logger::debug("Query Results internal initialized.");
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
+    this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
@@ -64,6 +68,8 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
     this->virtualListVector = new vector<TermVirtualList*>;
     this->indexSearcherInternal = indexSearcherInternal;
     this->stat = new Stat();
+    this->resultsApproximated = false;
+    this->estimatedNumberOfResults = -1;
 }
 
 // DEBUG function. Used in CacheIntegration_Test

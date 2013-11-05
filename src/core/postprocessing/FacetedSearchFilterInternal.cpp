@@ -30,6 +30,9 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+bool compareFacetGroups(const std::pair<std::string, float> & first , const std::pair<std::string, float> & second){
+	return first.second > second.second ;
+}
 
 float FacetResultsContainer::initAggregation(FacetAggregationType  aggregationType){
 	switch (aggregationType) {
@@ -65,11 +68,22 @@ void CategoricalFacetResultsContainer::addResultToBucket(const unsigned bucketId
 	}
 
 }
-void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+void CategoricalFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn ){
+	// we use 'results' to copy the data from the map and sort it
 	for(std::map<unsigned, std::pair<std::string, float> >::iterator bucketPtr = bucketsInfo.begin() ;
 			bucketPtr != bucketsInfo.end() ; ++bucketPtr){
 		results.push_back(std::make_pair(bucketPtr->second.first , bucketPtr->second.second));
 	}
+	// now sort it
+	std::sort(results.begin() , results.end() , &compareFacetGroups);
+	// if the query wants all the groups or the available groups are fewer than what the query asks for, we don't need to remove the tail
+	if(numberOfGroupsToReturn < 0 || numberOfGroupsToReturn > results.size()){
+		return;
+	}
+	// remove the tail
+	std::vector<std::pair< std::string, float > >::iterator startOfTailToRemove = results.begin();
+	startOfTailToRemove += numberOfGroupsToReturn;
+	results.erase(startOfTailToRemove , results.end());
 }
 
 
@@ -94,7 +108,7 @@ void RangeFacetResultsContainer::initialize(FacetHelper * facetHelper , FacetAgg
 void RangeFacetResultsContainer::addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType){
 	bucketsInfo.at(bucketId).second = doAggregation(bucketsInfo.at(bucketId).second , aggregationType);
 }
-void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results){
+void RangeFacetResultsContainer::getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn){
 	results.insert(results.begin(), bucketsInfo.begin() , bucketsInfo.end());
 }
 
@@ -108,6 +122,24 @@ std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(cons
 	}
 	return std::make_pair(categoryValueToBucketIdMap[attributeValueLowerCase] , attributeValueLowerCase);
 }
+
+
+void FacetHelper::generateIDAndNameForMultiValued(const TypedValue & attributeValue ,
+		std::vector< std::pair<unsigned , std::string> > & resultIdsAndNames){
+	ASSERT(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME);
+	std::vector<TypedValue> singleValues;
+	attributeValue.breakMultiValueIntoSingleValueTypedValueObjects(&singleValues);
+	for(std::vector<TypedValue>::iterator singleValue = singleValues.begin() ; singleValue != singleValues.end() ; ++singleValue){
+		std::pair<unsigned, std::string>  idAndNamePair = generateIDAndName(*singleValue);
+		if(std::find(resultIdsAndNames.begin() , resultIdsAndNames.end() , idAndNamePair) == resultIdsAndNames.end()){
+			resultIdsAndNames.push_back(idAndNamePair);
+		}
+	}
+}
+
 void CategoricalFacetHelper::generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames){
 	// This function should not be called.
 	ASSERT(false);
@@ -134,6 +166,7 @@ std::pair<unsigned , std::string> RangeFacetHelper::generateIDAndName(const Type
     }
     return std::make_pair(bucketId , "");
 }
+
 /*
  * Example :
  * If we have two attributes : price,model (facet type : range, categorical)
@@ -194,8 +227,8 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 	std::string gapString = facetInfoForInitialization[2];
 	std::string fieldName = facetInfoForInitialization[3];
 
-    attributeType = schema->getTypeOfNonSearchableAttribute(
-            schema->getNonSearchableAttributeId(fieldName));
+    attributeType = schema->getTypeOfRefiningAttribute(
+            schema->getRefiningAttributeId(fieldName));
     start.setTypedValue(attributeType, startString);
 
     end.setTypedValue(attributeType, endString);
@@ -239,7 +272,7 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
     std::vector<unsigned> attributeIds;
     for(std::vector<std::string>::iterator facetField = fields.begin();
             facetField != fields.end() ; ++facetField){
-        attributeIds.push_back(schema->getNonSearchableAttributeId(*facetField));
+        attributeIds.push_back(schema->getRefiningAttributeId(*facetField));
     }
 
     // move on the results once and do all facet calculations.
@@ -248,17 +281,17 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
             resultIter != output->impl->sortedFinalResults.end();
             ++resultIter) {
         QueryResult * queryResult = *resultIter;
-        // extract all facet related nonsearchable attribute values from this record
+        // extract all facet related refining attribute values from this record
         // by accessing the forward index only once.
         bool isValid = false;
         const ForwardList * list = forwardIndex->getForwardList(
                 queryResult->internalRecordId, isValid);
         ASSERT(isValid);
-        const Byte * nonSearchableAttributesData =
-                list->getNonSearchableAttributeContainerData();
+        const Byte * refiningAttributesData =
+                list->getRefiningAttributeContainerData();
         // this vector is parallel to attributeIds vector
         std::vector<TypedValue> attributeDataValues;
-        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,nonSearchableAttributesData, &attributeDataValues);
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData, &attributeDataValues);
 
         // now iterate on attributes and incrementally update the facet results
         for(std::vector<std::string>::iterator facetField = fields.begin();
@@ -275,7 +308,13 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 	for(std::vector<std::pair< FacetType , FacetResultsContainer * > >::iterator facetResultsPtr = facetResults.begin();
 			facetResultsPtr != facetResults.end(); ++facetResultsPtr){
 		std::vector<std::pair< std::string, float > > results;
-		facetResultsPtr->second->getNamesAndValues(results);
+		int numberOfGroupsToReturnForThisField = -1;
+		// We make sure that numberOfGroupsToReturnVector has the same size as the number of facet attributes.
+		// If it doesn't have the same size (input to this function is not consistent), we use -1 and don't remove the tail.
+		if(this->numberOfGroupsToReturnVector.size() == fields.size()){
+			numberOfGroupsToReturnForThisField = this->numberOfGroupsToReturnVector.at(std::distance(facetResults.begin() , facetResultsPtr));
+		}
+		facetResultsPtr->second->getNamesAndValues(results, numberOfGroupsToReturnForThisField);
 		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
 	}
 
@@ -318,19 +357,31 @@ void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
 	}
 }
 void FacetedSearchFilterInternal::doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex){
-	std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
-	this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+	if(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME){
+		std::vector<std::pair<unsigned , std::string> > idsAndNames;
+		this->facetHelpers.at(facetFieldIndex)->generateIDAndNameForMultiValued(attributeValue , idsAndNames);
+		for(std::vector<std::pair<unsigned , std::string> >::iterator idAndName = idsAndNames.begin() ; idAndName != idsAndNames.end() ; ++idAndName){
+			this->facetResults.at(facetFieldIndex).second->addResultToBucket(idAndName->first , idAndName->second , FacetAggregationTypeCount);
+		}
+	}else{ // single value
+		std::pair<unsigned , std::string> idandName = this->facetHelpers.at(facetFieldIndex)->generateIDAndName(attributeValue);
+		this->facetResults.at(facetFieldIndex).second->addResultToBucket(idandName.first , idandName.second , FacetAggregationTypeCount);
+	}
 }
 
 void FacetedSearchFilterInternal::initialize(std::vector<FacetType> & facetTypes,
         std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
         std::vector<std::string> & rangeEnds,
-        std::vector<std::string> & rangeGaps){
+        std::vector<std::string> & rangeGaps, std::vector<int> & numberOfGroupsToReturn){
     this->fields = fields;
     this->facetTypes = facetTypes;
     this->rangeStarts = rangeStarts;
     this->rangeEnds = rangeEnds;
     this->rangeGaps = rangeGaps;
+    this->numberOfGroupsToReturnVector = numberOfGroupsToReturn;
 }
 
 }

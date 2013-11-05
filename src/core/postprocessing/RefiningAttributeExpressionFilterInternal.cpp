@@ -17,7 +17,7 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "NonSearchableAttributeExpressionFilterInternal.h"
+#include "RefiningAttributeExpressionFilterInternal.h"
 #include "instantsearch/TypedValue.h"
 #include "query/QueryResultsInternal.h"
 #include "string"
@@ -30,17 +30,17 @@ namespace srch2
 namespace instantsearch
 {
 
-NonSearchableAttributeExpressionFilterInternal::NonSearchableAttributeExpressionFilterInternal(NonSearchableAttributeExpressionFilter * filter){
+RefiningAttributeExpressionFilterInternal::RefiningAttributeExpressionFilterInternal(RefiningAttributeExpressionFilter * filter){
     this->filter = filter;
 }
 // evaluates expression object coming from query using result data to see
 // if it passes the query criterion.
-bool NonSearchableAttributeExpressionFilterInternal::doPass(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result){
+bool RefiningAttributeExpressionFilterInternal::doPass(Schema * schema, ForwardIndex * forwardIndex , const QueryResult * result){
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
     vector<unsigned> attributeIds;
-    for(map<string,unsigned>::const_iterator attr = schema->getNonSearchableAttributes()->begin();
-            attr != schema->getNonSearchableAttributes()->end() ; ++attr ){
+    for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
+            attr != schema->getRefiningAttributes()->end() ; ++attr ){
         attributes.push_back(attr->first);
         attributeIds.push_back(attr->second);
     }
@@ -50,8 +50,8 @@ bool NonSearchableAttributeExpressionFilterInternal::doPass(Schema * schema, For
     bool isValid = false;
     const ForwardList * list = forwardIndex->getForwardList(result->internalRecordId , isValid);
     ASSERT(isValid);
-    const Byte * nonSearchableAttributesData = list->getNonSearchableAttributeContainerData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,nonSearchableAttributesData ,&typedValues);
+    const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
+    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]

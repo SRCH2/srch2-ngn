@@ -58,7 +58,7 @@ public:
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
-    std::map<std::string,TypedValue> valuesOfParticipatingNonSearchableAttributes;
+    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue getResultScore() const
@@ -157,6 +157,11 @@ public:
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     
+    // This flag indicates whether the results are approximated
+    bool resultsApproximated;
+
+    // This member keeps the estimated number of results in case of top k, if all results are actually calculated, this value is -1
+    long int estimatedNumberOfResults;
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
     /*

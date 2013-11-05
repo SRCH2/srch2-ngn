@@ -43,7 +43,10 @@ namespace httpwrapper {
 class QueryParser {
 public:
 
+	// this constructor is used for keyword search
     QueryParser(const evkeyvalq &headers, ParsedParameterContainer * container);
+    // this constructor is used for suggestions
+    QueryParser(const evkeyvalq &headers);
 
     /*
      * parses the URL to a query object , fills out the container
@@ -71,6 +74,13 @@ public:
      */
 
     bool parse();
+
+    // this parser function is used for suggestions. There are only two parameters for /suggest?
+    // example: /suggest?k=can~0.6&rows=5
+    // in this example keyword=can, editDistanceNormalizationFactor = 0.6 and numberOfSuggestionsToReturn = 5
+    bool parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
+    		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages);
+
     // add members related to local parameters
     //lpFieldFilterBooleanOperator is the boolean operator between the lpFieldFiter fields.
     bool isLpFieldFilterBooleanOperatorAssigned; // whether lpFieldFilterBooleanOperator is assigned or not.
@@ -104,6 +114,7 @@ private:
     static const char* const orderDescending; //srch2
     static const char* const orderAscending; //srch2
     static const char* const keywordQueryParamName; //solr
+    static const char* const suggestionKeywordParamName;
     static const char* const lengthBoostParamName; //srch2
     static const char* const prefixMatchPenaltyParamName; //srch2
     static const char* const filterQueryParamName; //solr
@@ -136,6 +147,9 @@ private:
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
+    }
+    static const string getFacetCategoricalNumberOfTopGroupsToReturn(const string &facetField){
+    	return "f."+facetField+".rows";
     }
     //searchType
     static const char* const searchType;

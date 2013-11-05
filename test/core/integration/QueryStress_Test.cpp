@@ -52,7 +52,12 @@ int main(int argc, char **argv)
   // Create an index writer
 	unsigned mergeEveryNSeconds = 3;	
 	unsigned mergeEveryMWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, "", index_dir);
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+			mergeEveryNSeconds, mergeEveryMWrites,
+			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+			"", index_dir);
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
 	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);

@@ -3,7 +3,7 @@
  * Trie.cpp
  *
  *  Created on: 2013-4-6
- *      Author: Jiaying Want
+ *      Author: Jiaying Wang
  */
 
 /*
@@ -26,6 +26,8 @@
 #include "index/Trie.h"
 #include "util/Logger.h"
 using srch2::util::Logger;
+// we need to include inverted index in here to get information about list frequencies to do query suggestions
+#include "index/InvertedIndex.h"
 
 namespace srch2
 {
@@ -37,6 +39,8 @@ TrieNode::TrieNode()
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->setNodeProbabilityValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -54,6 +58,8 @@ TrieNode::TrieNode(bool create_root)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->setNodeProbabilityValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
@@ -68,6 +74,8 @@ TrieNode::TrieNode(int depth, CharType character)
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
     this->id = 0;
+    this->setNodeProbabilityValue(0);
+    this->setMaximumScoreOfLeafNodes((half)0);
     this->invertedListOffset = 0;
     this->character = character;
 
@@ -82,6 +90,8 @@ TrieNode::TrieNode(const TrieNode *src)
 {
     this->character = src->character;
     this->id = src->id;
+    this->setNodeProbabilityValue(src->getNodeProbabilityValue());
+    this->setMaximumScoreOfLeafNodes(src->getMaximumScoreOfLeafNodes());
     this->invertedListOffset = src->invertedListOffset;
     this->leftMostDescendant = src->leftMostDescendant;
     this->rightMostDescendant = src->rightMostDescendant;
@@ -138,6 +148,40 @@ void TrieNode::print_TrieNode() const
     }
 }
 
+bool trieNodeComparatorBasedOnProbabilityValue(const TrieNode * left , const TrieNode * right){
+	return left->getNodeProbabilityValue() > right->getNodeProbabilityValue();
+}
+
+// this function uses a weighted DFS (which means children are visited based on their probabilityValue) and collects all frontier terminal nodes in its way.
+// stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToFind
+void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > ,const TrieNode *> > & suggestions,
+		const int numberOfSuggestionsToFind) const{
+
+	vector<const TrieNode *> nonTerminalChildrenVector;
+	//1. First iterate on children and add terminal children to suggestions.
+	// in the same time insert non-terminal nodes to a heap
+	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
+		const TrieNode * child = this->getChild(childIterator);
+		if(child->isTerminalNode()){
+			suggestions.push_back(make_pair(make_pair(child->getNodeProbabilityValue() , ed) , child ));
+		}else{
+			nonTerminalChildrenVector.push_back(child);
+		}
+	}
+	// sort the non-terminal nodes.
+	std::sort(nonTerminalChildrenVector.begin() , nonTerminalChildrenVector.end() , trieNodeComparatorBasedOnProbabilityValue);
+	// 2. Now move on non-terminal children in descending order based on their probability value
+	// and call this function (recursive call)
+	for(vector<const TrieNode *>::iterator nonTerminalChild = nonTerminalChildrenVector.begin() ;
+			nonTerminalChild != nonTerminalChildrenVector.end() ; ++nonTerminalChild){
+		(*nonTerminalChild)->findMostPopularSuggestionsInThisSubTrie(ed , suggestions , numberOfSuggestionsToFind);
+		if(suggestions.size() >= numberOfSuggestionsToFind){
+			return;
+		}
+
+	}
+	return;
+}
 
 
 void TrieNode::addChild(CharType character, TrieNode *childNode)
@@ -188,7 +232,7 @@ int TrieNode::findChildNodePosition(CharType childCharacter) const
 
 unsigned TrieNode::getByteSizeOfCurrentNode() const
 {
-    return (sizeof(terminalFlag1bDepth7b) + sizeof(character)  + sizeof(invertedListOffset) +
+    return (sizeof(terminalFlag1bDepth7b) + sizeof(character) + sizeof(this->getNodeProbabilityValue()) + sizeof(invertedListOffset) +
             //sizeof(hitCount) +
             sizeof(id)+ sizeof(leftMostDescendant)+ sizeof(rightMostDescendant) + sizeof(childrenPointerList));
 }
@@ -241,7 +285,7 @@ unsigned TrieNode::getfinalKeywordIdCounter() const
     }
 }
 
-const TrieNode *TrieNode::findLowerBoundChildByMinId(unsigned minId) const
+TrieNode *TrieNode::findLowerBoundChildByMinId(unsigned minId) const
 {
     int childPosition = findLowerBoundChildNodePositionByMinId(minId);
     if (childPosition >= 0) // if it is already there, do nothing
@@ -1212,8 +1256,183 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
     trieNodesToReassign.clear();
 }
 
-void Trie::merge()
+
+void Trie::calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+    boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+    this->getTrieRootNode_ReadView(trieRootNode_ReadView);
+    TrieNode *root = trieRootNode_ReadView->root;
+    if(root == NULL){
+    	return;
+    }
+    calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(root, invertedIndex , totalNumberOfRecords);
+}
+
+void Trie::calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+    if(node == NULL){
+    	return;
+    }
+    // first iterate on children an calculate this value for them
+    for(unsigned childIterator = 0; childIterator < node->getChildrenCount() ; childIterator ++){
+    	calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
+    }
+
+    // now we should initialize the value of this node
+    if(node->isTerminalNode()){
+    	// this case means this node is a terminal node
+    	// NOTE: this node can still have children because internal nodes in this trie can also be terminal nodes.
+    	if(invertedIndex == NULL){ // this case happens in M1
+            // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
+            node->initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeSummation, 1);
+    	}else{ // this is the case of A1
+			shared_ptr<vectorview<unsigned> > invertedListReadView;
+			invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
+
+			float termRecordStaticScore = 0;
+			unsigned termAttributeBitmap = 0;
+			// move on inverted list to find the first record which is valid
+			unsigned invertedListCursor = 0;
+			while(invertedListCursor < invertedListReadView->size()){
+				unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
+				unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
+				if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+					break;
+				}
+			}
+			// now that we have the static score, add the static score to the value of this node
+
+			// we use the probability of this terminal node to occur in a record as the initial value
+			if(totalNumberOfRecords == 0){
+				// if there no records at all, termRecordStaticScore must be zero here
+				ASSERT(termRecordStaticScore == 0);
+				node->initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability, 0 , (half)0);
+			}else{
+				float pTerminalNode = (1.0 * invertedListReadView->size()) / totalNumberOfRecords ;
+				node->initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability, pTerminalNode , (half)termRecordStaticScore);
+			}
+    	}
+    }else{ // non-terminal node, if it's non-terminal, it still needs to be initialized.
+    	if(invertedIndex == NULL){ // it is the case of M1
+			node->initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeSummation);
+    	}else{ // it is the case of A1
+    		node->initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationTypeJointProbability);
+    	}
+    }
+
+    // now update the value of this node from its children
+    if(invertedIndex == NULL){
+    	node->updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationTypeSummation);
+    }else{
+    	node->updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationTypeJointProbability);
+    }
+    return;
+}
+
+void TrieNode::updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType){
+
+	if(this->getChildrenCount() == 0) return;
+
+	float aggregatedProbabilityValueSoFar = this->getChild(0)->getNodeProbabilityValue();
+	// iterate on children and aggregate the values
+    for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
+        switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				aggregatedProbabilityValueSoFar = aggregateValueBySummation(aggregatedProbabilityValueSoFar , this->getChild(childIterator)->getNodeProbabilityValue());
+				break;
+			case HistogramAggregationTypeJointProbability:
+				aggregatedProbabilityValueSoFar =
+						aggregateValueByJointProbability(aggregatedProbabilityValueSoFar , this->getChild(childIterator)->getNodeProbabilityValue());
+				break;
+		}
+    }
+    // and also use the value that this node currently has
+    switch (aggrType) {
+		case HistogramAggregationTypeSummation:
+			aggregatedProbabilityValueSoFar = aggregateValueBySummation(aggregatedProbabilityValueSoFar , this->getNodeProbabilityValue());
+			break;
+		case HistogramAggregationTypeJointProbability:
+			aggregatedProbabilityValueSoFar =
+					aggregateValueByJointProbability(aggregatedProbabilityValueSoFar , this->getNodeProbabilityValue());
+			break;
+	}
+
+    // set the result in the class member
+    this->setNodeProbabilityValue(aggregatedProbabilityValueSoFar);
+
+    // also update the maximumScoreOfLeafNodes
+    this->updateInternalNodeMaximumScoreOfLeafNodes();
+}
+
+
+// updates the maximum score of leaf nodes based on the values coming from children and
+// and returns true if anything changes and should be propagated up the trie
+bool TrieNode::updateInternalNodeMaximumScoreOfLeafNodes(){
+	if(this->getChildrenCount() == 0) return false;
+
+	half aggregatedMaximumScoreForLeafNodesSoFar = this->getChild(0)->getMaximumScoreOfLeafNodes();
+	// iterate on children and aggregate the values
+	for (unsigned int childIterator = 1 ; childIterator < this->getChildrenCount(); childIterator++ ) {
+		// aggregate the maximum score of leaf nodes by taking the maximum of scores of children
+		aggregatedMaximumScoreForLeafNodesSoFar = aggregateValueByTakingMaximum(aggregatedMaximumScoreForLeafNodesSoFar ,
+        		this->getChild(childIterator)->getMaximumScoreOfLeafNodes());
+    }
+    // aggregate the maximum score of leaf nodes by taking the maximum of scores of children and the current score of this node
+    aggregatedMaximumScoreForLeafNodesSoFar = aggregateValueByTakingMaximum(aggregatedMaximumScoreForLeafNodesSoFar ,
+    		this->getMaximumScoreOfLeafNodes());
+
+    // set the result in the class member
+    if(aggregatedMaximumScoreForLeafNodesSoFar > this->getMaximumScoreOfLeafNodes()){
+		this->setMaximumScoreOfLeafNodes(aggregatedMaximumScoreForLeafNodesSoFar);
+    	return true;
+    }
+    return false;
+}
+void TrieNode::initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
+		float initValueFromArg,
+		half initValueFromArgForMaxScore){
+	float initValue = 0;
+	if(initValueFromArg != -1){
+		initValue = initValueFromArg;
+	}else{
+		switch (aggrType) {
+			case HistogramAggregationTypeSummation:
+				initValue = 0;
+				break;
+			case HistogramAggregationTypeJointProbability:
+				initValue = 0;
+				break;
+		}
+	}
+    this->setNodeProbabilityValue(initValue);
+    // initialize the maximum score of leaf nodes
+    this->setMaximumScoreOfLeafNodes(initValueFromArgForMaxScore);
+}
+
+void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth){
+	for(int i=0;i<depth ; i++){
+		std::cout << "-" ;
+	}
+	prefix.push_back(root->getCharacter());
+	string str = getUtf8String(prefix);
+	std::cout << str << "(" << root->getNodeProbabilityValue() << ")" << std::endl;
+	if(! root->isTerminalNode()){
+	    unsigned childIterator = 0;
+	    for(; childIterator < root->getChildrenCount() ; childIterator ++){
+	    	printTrieNodeSubTrieValues(prefix, root->getChild(childIterator) , depth+1);
+	    }
+	}
+	prefix.pop_back();
+}
+
+
+void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
+
+	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
+	// then update the histogram information in Trie.
+	if(updateHistogram == true){
+		this->calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(invertedIndex , totalNumberOfRecords);
+	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
     // in the order of their arrival. For each read view, we check its reference count.
@@ -1260,6 +1479,12 @@ void Trie::commit()
 
     unsigned finalKeywordIdCounter = 0;
     this->commitSubTrie(this->root_readview.get()->root, finalKeywordIdCounter, sparsityFactor);
+}
+
+void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
+	// traverse the trie in preorder to calculate nodeSubTrieValue
+	calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(invertedIndex , totalNumberOfResults);
+	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }
 
@@ -1453,6 +1678,7 @@ void Trie::getKeywordMinMaxIdLength(unsigned keywordId, unsigned &minId, unsigne
 // for WriteView
 // Finds the node corresponding to the keywordId and returns its mindId, maxId.
 // If keywordId not found returns (0, MAX_ALLOCATED_KEYWORD_ID).
+// TODO : If this function is no longer needed, remove it.
 void Trie::getKeywordMinMaxIdLength_WriteView(unsigned keywordId, unsigned &minId, unsigned &maxId,
         unsigned &length) const
 {
@@ -1474,6 +1700,61 @@ void Trie::getKeywordMinMaxIdLength_WriteView(unsigned keywordId, unsigned &minI
     maxId = MAX_ALLOCATED_KEYWORD_ID;
     length = 0;
     return;
+}
+
+// for WriteView
+// Finds the node corresponding to the keywordId and returns its mindId, maxId.
+//  If keywordId is not found, the path should be returned empty.
+// otherwise, it's guaranteed that first element in path is root and last element is the corresponding trie node.
+void Trie::getKeywordCorrespondingPathToTrieNode_WriteView(unsigned keywordId, TrieNodePath * trieNodePath) const
+{
+	// path should be empty in the beginning
+	ASSERT(trieNodePath != NULL || trieNodePath->path->size() == 0);
+    // get root node
+    TrieNode* node = this->getTrieRootNode_WriteView();
+    // traverse down the trie
+    while (node != NULL) {
+		trieNodePath->path->push_back(node);
+        node = node->findLowerBoundChildByMinId(keywordId);
+        if (node != NULL && node->isTerminalNode() && keywordId == node->getMinId()) {
+        	trieNodePath->path->push_back(node);
+            return;
+        }
+    }
+    //  If keywordId is not found, the path should be returned empty.
+    trieNodePath->path->clear();
+    return;
+}
+
+void Trie::updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId , half newScore){
+	// first find the trie node of keywordId
+	TrieNodePath pathToCorrespondingTrieNodeWithKeywordId;
+	pathToCorrespondingTrieNodeWithKeywordId.path = new vector<TrieNode *>();
+	getKeywordCorrespondingPathToTrieNode_WriteView(keywordId , &pathToCorrespondingTrieNodeWithKeywordId);
+
+	// check to see if keywordId was valid and we actually have a corresponding trie node
+	if(pathToCorrespondingTrieNodeWithKeywordId.path->size() == 0){
+		delete pathToCorrespondingTrieNodeWithKeywordId.path;
+		return;
+	}
+
+	// now update the node and propagate the change up
+	// propagating the changes up the trie
+	for(int ancestorIter = pathToCorrespondingTrieNodeWithKeywordId.path->size()-1 ; ancestorIter >= 0 ; --ancestorIter){
+		// get the ancestor trie node
+		TrieNode * ancestorNode = pathToCorrespondingTrieNodeWithKeywordId.path->at(ancestorIter);
+		// get the value after taking the maximum
+		half maxScore = ancestorNode->aggregateValueByTakingMaximum(ancestorNode->getMaximumScoreOfLeafNodes() , newScore);
+		// see if anything changes. If it does, set the new value
+		if(maxScore	> ancestorNode->getMaximumScoreOfLeafNodes()){ // this trie node must be updated, note that here maxScore is equal to newScore
+			ancestorNode->setMaximumScoreOfLeafNodes(newScore);
+		}else{
+			// no need to propagate any change up the trie
+			delete pathToCorrespondingTrieNodeWithKeywordId.path;
+			return;
+		}
+	}
+	delete pathToCorrespondingTrieNodeWithKeywordId.path;
 }
 
 // Finds the node corresponding to the keywordId and returns its mindId, maxId.
@@ -1555,6 +1836,9 @@ void Trie::printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned
     ASSERT (node != NULL);
     if (node == NULL)
         return;
+    string temp;
+    this->getPrefixString(root, node, temp);
+    Logger::debug("(%d,%f,%s)", node->getId() , node->getNodeProbabilityValue() , temp.c_str());
     if ( node->isTerminalNode() ) {
         if (!keywordIds.count(node->getId()))
             keywordIds.insert(node->getId());

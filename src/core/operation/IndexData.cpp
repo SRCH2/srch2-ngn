@@ -80,7 +80,7 @@ IndexData::IndexData(const string &directoryName,
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
-    this->commited = false;
+    this->flagBulkLoadDone = false;
 
     this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
 
@@ -128,7 +128,7 @@ IndexData::IndexData(const string& directoryName)
     	}
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
-    	this->commited = true;
+    	this->flagBulkLoadDone = true;
     }catch(exception& ex){
     	Logger::error("Error while loading the index files ...");
     	throw ex;
@@ -139,7 +139,7 @@ IndexData::IndexData(const string& directoryName)
 
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to
 // verify the correctness of the assumption that keywordIdList is alphabetaically sorted
-bool isSorted(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
+bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
 
 	if (keywordIdList.size() < 2)
 		return true;   // 0 or 1 element array is considered sorted
@@ -183,7 +183,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         // only used for committed geo index
         vector<unsigned> *keywordIdVector = NULL;
         if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
-                && this->commited == true)
+                && this->flagBulkLoadDone == true)
         {
             keywordIdVector = new vector<unsigned> ();
         }
@@ -208,7 +208,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             unsigned breakLeftOrRight = 0;
             vector<Prefix> *oldParentOrSelfAndAncs = NULL;
 
-            if (this->commited == false) // not committed yet
+            if (this->flagBulkLoadDone == false) // not committed yet
             	//transform string to vector<CharType>
                 keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
             else
@@ -232,7 +232,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                 this->invertedIndex->incrementHitCount(invertedIndexOffset);
             }
             else // geo index (M1). Add the flag to the map only if the indexes have been committed
-                if (this->commited == true)
+                if (this->flagBulkLoadDone == true)
             {
                 unsigned keywordStatus = 0;
                 if (isNewTrieNode) // is a new trie leaf node
@@ -260,9 +260,9 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         //
         // std::sort( keywordIdList.begin(), keywordIdList.end());
 
-        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see is_sorted()
+        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see isSorted()
         // function above.
-        ASSERT(isSorted(keywordIdList));
+        ASSERT(isSortedAlphabetically(keywordIdList));
 
         unsigned internalRecordId;
         this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
@@ -270,11 +270,11 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
 
         if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex )
         {
-            if ( this->commited == true )
+            if ( this->flagBulkLoadDone == true )
             {
                 const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
                 ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-                this->invertedIndex->addRecord(forwardList, this->rankerExpression,
+                this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
                         internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
             }
         }
@@ -294,7 +294,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
                 fl->setKeywordRecordStaticScore(counter, score);
             }
 
-            if ( this->commited == false ) // batch load
+            if ( this->flagBulkLoadDone == false ) // batch load
             {
                 this->quadTree->addRecordBeforeCommit(record, internalRecordId);
             }
@@ -413,15 +413,13 @@ INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId)
  *    a) No records in index.
  *    b) Index had been already commited.
  */
-INDEXWRITE_RETVAL IndexData::_commit()
+INDEXWRITE_RETVAL IndexData::finishBulkLoad()
 {
     bool isLocational = false;
     if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         isLocational = true;
 
-    if (this->commited == false)
-    {
-        //cout << "here: index commit" << endl;
+    if (this->flagBulkLoadDone == false){
         /*
          * For the text only Index:
          * 1. Initialize the size of Inverted Index vector as size of Forward Index vector.
@@ -450,8 +448,7 @@ INDEXWRITE_RETVAL IndexData::_commit()
         if(!isLocational)
             this->invertedIndex->initialiseInvertedIndexCommit();
 
-        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter)
-        {
+        for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter){
             ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(forwardIndexIter);
             vector<NewKeywordIdKeywordOffsetTriple> newKeywordIdKeywordOffsetTriple;
             //this->forwardIndex->commit(forwardList, oldIdToNewIdMapVector, newKeywordIdKeywordOffsetTriple);
@@ -462,16 +459,13 @@ INDEXWRITE_RETVAL IndexData::_commit()
         }
         this->forwardIndex->finalCommit();
 //        this->forwardIndex->print_size();
-        if (isLocational)
-        {
+        if (isLocational){
             //time_t begin,end;
             //time(&begin);
             this->quadTree->createFilters();
             //time(&end);
             //std::cout << "CFilters and OFilters creating time elapsed: " << difftime(end, begin) << " seconds"<< std::endl;
-        }
-        else
-        {
+        }else{
             this->invertedIndex->setForwardIndex(this->forwardIndex);
             this->invertedIndex->finalCommit();
         }
@@ -479,18 +473,25 @@ INDEXWRITE_RETVAL IndexData::_commit()
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
 
-        //this->trie->print_Trie();
-        this->commited = true;
+
+        /*
+         * Since we don't have inverted index for M1, we send NULL.
+         * NULL will make the component to compute simple frequency
+         * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
+         */
+        if (isLocational){
+			this->trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+        }else{
+			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+        }
+        this->flagBulkLoadDone = true;
         return OP_SUCCESS;
-    }
-    else
-    {
+    }else{
         return OP_FAIL;
     }
 }
 
-INDEXWRITE_RETVAL IndexData::_merge()
-{
+INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     Logger::debug("Merge begins--------------------------------"); 
 
     if (!this->mergeRequired)
@@ -498,9 +499,7 @@ INDEXWRITE_RETVAL IndexData::_merge()
     
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);
-    
-    this->trie->merge();
-    
+
     // struct timespec tend;
     // clock_gettime(CLOCK_REALTIME, &tend);
     // unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -511,6 +510,17 @@ INDEXWRITE_RETVAL IndexData::_merge()
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
     
+    // Since trie is the entry point of every search, trie merge should be done after all other merges.
+    // If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
+    // the index.
+    // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
+    // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
+    const InvertedIndex * invertedIndex = NULL;
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+    	invertedIndex = this->invertedIndex;
+    }
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
 
@@ -649,25 +659,53 @@ void IndexData::_save(const string &directoryName) const
 {
 	Serializer serializer;
     if (this->trie->isMergeRequired())
-        this->trie->merge();
+        this->trie->merge(NULL , 0 , false);
     // serialize the data structures to disk
-    serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    try {
+        serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
+	// can keep running - don't rethrow exception
+    }
     //this->forwardIndex->print_test();
     //this->invertedIndex->print_test();
     if(this->forwardIndex->isMergeRequired())
         this->forwardIndex->merge();
-    serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
-    serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
+
+    try {
+        serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing forward index file: %s/%s", directoryName.c_str(), IndexConfig::forwardIndexFileName);
+    }
+
+    try {
+        serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing schema index file: %s/%s", directoryName.c_str(), IndexConfig::schemaFileName);
+    }
+
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
     	 if(this->invertedIndex->mergeRequired())
     		 this->invertedIndex->merge();
-    	 serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+	 try {
+	     serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+	 } catch (exception &ex) {
+	     Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
+	 }
     }
     else {
-    	serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+        try {
+	    serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+	} catch (exception &ex) {
+	    Logger::error("Error writing quad tree index file: %s/%s", directoryName.c_str(), IndexConfig::quadTreeFileName);
+	}
     }
 
-    this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
+    try {
+        this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
+    }
 }
 
 void IndexData::printNumberOfBytes() const
@@ -690,6 +728,35 @@ Schema* IndexData::getSchema()
     return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
+
+void IndexData::loadCounts(const std::string &indeDataPathFileName)
+{
+    std::ifstream ifs(indeDataPathFileName.c_str(), std::ios::binary);
+    boost::archive::binary_iarchive ia(ifs);
+    uint64_t readCount_tmp;
+    uint32_t writeCount_tmp, numDocs_tmp;
+    ia >> readCount_tmp;
+    ia >> writeCount_tmp;
+    ia >> numDocs_tmp;
+    this->readCounter = new ReadCounter(readCount_tmp);
+    this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
+    ifs.close();
+}
+
+void IndexData::saveCounts(const std::string &indeDataPathFileName) const
+{
+    std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
+if (! ofs.good()) throw std::runtime_error("Error opening " + indeDataPathFileName);
+    boost::archive::binary_oarchive oa(ofs);
+    uint64_t readCount_tmp = this->readCounter->getCount();
+    uint32_t writeCount_tmp = this->writeCounter->getCount();
+    uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
+    oa << readCount_tmp;
+    oa << writeCount_tmp;
+    oa << numDocs_tmp;
+    ofs.close();
+}
+
 IndexData::~IndexData()
 {
     delete this->trie;
@@ -705,5 +772,8 @@ IndexData::~IndexData()
     delete this->schemaInternal;
     delete this->rwMutexForIdReassign;
 }
+
+
+
 
 }}

@@ -94,7 +94,10 @@ int main(int argc, char **argv)
         Cache *cache = new Cache();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
-        IndexMetaData *indexMetaData = new IndexMetaData(cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+        unsigned updateHistogramEveryPMerges = 1;
+        unsigned updateHistogramEveryQWrites = 5;
+        IndexMetaData *indexMetaData = new IndexMetaData(cache,
+        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
         const Analyzer *analyzer = getAnalyzer();
@@ -132,7 +135,10 @@ int main(int argc, char **argv)
         Cache *cache = new Cache();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
-        IndexMetaData *indexMetaData = new IndexMetaData( cache, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+        unsigned updateHistogramEveryPMerges = 1;
+        unsigned updateHistogramEveryQWrites = 5;
+        IndexMetaData *indexMetaData = new IndexMetaData( cache,
+        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
         Indexer *indexer = Indexer::load(indexMetaData);
         IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
         const Analyzer *analyzer = getAnalyzer();

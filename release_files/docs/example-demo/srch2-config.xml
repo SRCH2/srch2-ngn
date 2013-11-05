@@ -62,7 +62,7 @@
  
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
 
-	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
          
         <prefixMatchPenalty>0.95</prefixMatchPenalty>
  
@@ -76,9 +76,9 @@
          
         <searcherType>0</searcherType>
          
-        <queryTermMatchType>1</queryTermMatchType>
+        <queryTermFuzzyType>1</queryTermFuzzyType>
          
-        <queryTermType>0</queryTermType>
+        <queryTermPrefixType>0</queryTermPrefixType>
  
         <queryResponseWriter>
 

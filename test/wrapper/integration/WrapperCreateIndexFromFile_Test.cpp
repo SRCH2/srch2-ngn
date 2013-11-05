@@ -11,6 +11,7 @@
 #include "wrapper/Srch2Server.h"
 #include <map>
 #include <vector>
+#include <ConfigManager.h>
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -201,7 +202,7 @@ void test1(int argc, char** argv) {
     message << "PrimaryKey: " << serverConf->getPrimaryKey() << "\n";
     message << "IsPrimSearchable: " << serverConf->getIsPrimSearchable() << "\n";
     message << "IsFuzzyTermsQuery: " << serverConf->getIsFuzzyTermsQuery() << "\n";
-    message << "QueryTermType: " << serverConf->getQueryTermType() << "\n";
+    message << "QueryTermPrefixType: " << serverConf->getQueryTermPrefixType() << "\n";
     message << "\n";
 
     message << "IndexType: " << serverConf->getIndexType() << "\n";
@@ -248,11 +249,11 @@ void test1(int argc, char** argv) {
     message << "MergeEveryMWrites: " << serverConf->getMergeEveryMWrites() << "\n";
     message << "ScoringExpressionString: " << serverConf->getScoringExpressionString() << "\n";
 
-    const map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > > * searchableAttributes = serverConf->getSearchableAttributes();
-    map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > >::const_iterator iter;
+    const map<string, srch2http::SearchableAttributeInfoContainer > * searchableAttributes = serverConf->getSearchableAttributes();
+    map<string, srch2http::SearchableAttributeInfoContainer >::const_iterator iter;
     message << "Searchable Attributes:\n";
     for (iter = searchableAttributes->begin(); iter != searchableAttributes->end(); iter++) {
-        message << iter->first << "  " << iter->second.second.second.first << "  " << iter->second.second.second.second << "\n";
+        message << iter->first << "  " << iter->second.offset << "  " << iter->second.boost << "\n";
     }
 
     const vector<string> * attToReturn = serverConf->getAttributesToReturnName();
@@ -328,7 +329,7 @@ bool test2(int argc, char** argv) {
     cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
     srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
-
+    indexer->commit();
     srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
     ii->getTrie()->print_Trie();
 

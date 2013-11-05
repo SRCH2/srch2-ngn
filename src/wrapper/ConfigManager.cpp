@@ -19,6 +19,8 @@
 #include "ParserUtility.h"
 #include "util/Assert.h"
 
+#include "boost/algorithm/string_regex.hpp"
+
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace pugi;
@@ -27,10 +29,96 @@ using namespace pugi;
 using namespace srch2::instantsearch;
 
 namespace srch2 {
-namespace httpwrapper {
+namespace httpwrapper { 
+
+// configuration file tag and attribute names for ConfigManager
+const char* const ConfigManager::accessLogFileString = "accesslogfile";
+const char* const ConfigManager::analyzerString = "analyzer";
+const char* const ConfigManager::cacheSizeString = "cachesize";
+const char* const ConfigManager::collectionString = "collection";
+const char* const ConfigManager::configString = "config";
+const char* const ConfigManager::dataDirString = "datadir";
+const char* const ConfigManager::dataFileString = "datafile";
+const char* const ConfigManager::dataSourceTypeString = "datasourcetype";
+const char* const ConfigManager::dbString = "db";
+const char* const ConfigManager::defaultString = "default";
+const char* const ConfigManager::defaultQueryTermBoostString = "defaultquerytermboost";
+const char* const ConfigManager::dictionaryString = "dictionary";
+const char* const ConfigManager::enablePositionIndexString = "enablepositionindex";
+const char* const ConfigManager::expandString = "expand";
+const char* const ConfigManager::facetEnabledString = "facetenabled";
+const char* const ConfigManager::facetEndString = "facetend";
+const char* const ConfigManager::facetFieldString = "facetfield";
+const char* const ConfigManager::facetFieldsString = "facetfields";
+const char* const ConfigManager::facetGapString = "facetgap";
+const char* const ConfigManager::facetStartString = "facetstart";
+const char* const ConfigManager::facetTypeString = "facettype";
+const char* const ConfigManager::fieldString = "field";
+const char* const ConfigManager::fieldBasedSearchString = "fieldbasedsearch";
+const char* const ConfigManager::fieldBoostString = "fieldboost";
+const char* const ConfigManager::fieldsString = "fields";
+const char* const ConfigManager::fieldTypeString = "fieldtype";
+const char* const ConfigManager::filterString = "filter";
+const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
+const char* const ConfigManager::hostString = "host";
+const char* const ConfigManager::indexConfigString = "indexconfig";
+const char* const ConfigManager::indexedString = "indexed";
+const char* const ConfigManager::multiValuedString = "multivalued";
+const char* const ConfigManager::indexTypeString = "indextype";
+const char* const ConfigManager::licenseFileString = "licensefile";
+const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
+const char* const ConfigManager::listeningHostStringString = "listeninghostname";
+const char* const ConfigManager::listeningPortString = "listeningport";
+const char* const ConfigManager::locationLatitudeString = "location_latitude";
+const char* const ConfigManager::locationLongitudeString = "location_longitude";
+const char* const ConfigManager::logLevelString = "loglevel";
+const char* const ConfigManager::maxDocsString = "maxdocs";
+const char* const ConfigManager::maxMemoryString = "maxmemory";
+const char* const ConfigManager::maxRetryOnFailureString = "maxretryonfailure";
+const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
+const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
+const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
+const char* const ConfigManager::mergePolicyString = "mergepolicy";
+const char* const ConfigManager::mongoDbString = "mongodb";
+const char* const ConfigManager::nameString = "name";
+const char* const ConfigManager::portString = "port";
+const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
+const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
+const char* const ConfigManager::queryString = "query";
+const char* const ConfigManager::queryResponseWriterString = "queryresponsewriter";
+const char* const ConfigManager::queryTermLengthBoostString = "querytermlengthboost";
+const char* const ConfigManager::queryTermFuzzyTypeString = "querytermfuzzytype";
+const char* const ConfigManager::queryTermSimilarityThresholdString = "querytermsimilaritythreshold";
+const char* const ConfigManager::queryTermPrefixTypeString = "querytermprefixtype";
+const char* const ConfigManager::rankingAlgorithmString = "rankingalgorithm";
+const char* const ConfigManager::recordBoostFieldString = "recordboostfield";
+const char* const ConfigManager::recordScoreExpressionString = "recordscoreexpression";
+const char* const ConfigManager::refiningString = "refining";
+const char* const ConfigManager::requiredString = "required";
+const char* const ConfigManager::responseContentString = "responsecontent";
+const char* const ConfigManager::responseFormatString = "responseformat";
+const char* const ConfigManager::rowsString = "rows";
+const char* const ConfigManager::schemaString = "schema";
+const char* const ConfigManager::searchableString = "searchable";
+const char* const ConfigManager::searcherTypeString = "searchertype";
+const char* const ConfigManager::srch2HomeString = "srch2home";
+const char* const ConfigManager::stopFilterString = "StopFilter";
+const char* const ConfigManager::supportSwapInEditDistanceString = "supportswapineditdistance";
+const char* const ConfigManager::synonymFilterString = "SynonymFilter";
+const char* const ConfigManager::synonymsString = "synonyms";
+const char* const ConfigManager::textEnString = "text_en";
+const char* const ConfigManager::typeString = "type";
+const char* const ConfigManager::typesString = "types";
+const char* const ConfigManager::uniqueKeyString = "uniquekey";
+const char* const ConfigManager::updateHandlerString = "updatehandler";
+const char* const ConfigManager::updateLogString = "updatelog";
+const char* const ConfigManager::wordsString = "words";
+const char* const ConfigManager::keywordPopularityThresholdString = "keywordpopularitythreshold";
+
 
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
+
 }
 
 void ConfigManager::loadConfigFile() {
@@ -44,6 +132,9 @@ void ConfigManager::loadConfigFile() {
 		Logger::error("error: %s", result.description());
 		exit(-1);
     }
+
+    // make XML node names and attribute names lowercase so we are case insensitive
+    lowerCaseNodeNames(configDoc);
 
     bool configSuccess = true;
     std::stringstream parseError;
@@ -61,12 +152,66 @@ void ConfigManager::loadConfigFile() {
     }
 }
 
+class XmlLowerCaseWalker : public xml_tree_walker
+{
+public:
+    virtual bool for_each(xml_node &node);
+};
+
+// iterator calls this method once for each node in tree
+bool XmlLowerCaseWalker::for_each(xml_node &node)
+{
+    // lowercase the name of each node
+    const char_t *oldName = node.name();
+
+    if (oldName && oldName[0]) {
+        unsigned int length = strlen(oldName);
+
+	if (length > 0) {
+	    // duplicate name, but in lowercase
+	    char_t *newName = new char_t[length + 1];
+	    for (unsigned int i = 0; i < length; i++)
+	        newName[i] = tolower(oldName[i]);
+	    newName[length] = '\000';
+
+	    (void) node.set_name(newName); // discard return - no need to interrupt traversal
+	    delete[] newName;
+	}
+    }
+
+    // lowercase attribute names too
+    for (pugi::xml_attribute_iterator attribute = node.attributes_begin(); attribute != node.attributes_end(); ++attribute) {
+        oldName = attribute->name();
+	unsigned int length = strlen(oldName);
+
+	if (length > 0) {
+	    // duplicate name, but in lowercase
+	    char_t *newName = new char_t[length + 1];
+	    for (unsigned int i = 0; i < length; i++)
+	        newName[i] = tolower(oldName[i]);
+	    newName[length] = '\000';
+
+	    (void) attribute->set_name(newName);  // ignoring return value to avoid interrupting tree traversal
+	    delete[] newName;
+	}
+    }
+
+    return true;  // always allow tree traversal to continue uninterrupted
+}
+
+void ConfigManager::lowerCaseNodeNames(xml_node &document)
+{
+    XmlLowerCaseWalker nodeTraversal;
+
+    document.traverse(nodeTraversal);
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     string tempUse = ""; // This is just for temporary use.
 
     // srch2Home is a required field
-    xml_node configAttribute = configDoc.child("config").child("srch2Home");
+    xml_node configAttribute = configDoc.child(configString).child(srch2HomeString);
     if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
         this->srch2Home = string(configAttribute.text().get()) + "/";
     } else {
@@ -75,7 +220,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    configAttribute = configDoc.child("config").child("indexConfig").child("indexType");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(indexTypeString);
     if (configAttribute && configAttribute.text()) {
         string it = string(configAttribute.text().get());
         if (this->isValidIndexType(it)) {
@@ -92,11 +237,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     this->supportSwapInEditDistance = true; // by default it is true
-    configAttribute = configDoc.child("config").child("indexConfig").child("supportSwapInEditDistance");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(supportSwapInEditDistanceString);
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
-            this->supportSwapInEditDistance = configAttribute.text().as_bool();
+         
+   this->supportSwapInEditDistance = configAttribute.text().as_bool();
         } else {
             parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
@@ -105,7 +251,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     this->enablePositionIndex = false; // by default it is false
-    configAttribute = configDoc.child("config").child("indexConfig").child("enablePositionIndex");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(enablePositionIndexString);
     if (configAttribute && configAttribute.text()) {
         string configValue = configAttribute.text().get();
         if (this->isValidBooleanValue(configValue)) {
@@ -120,7 +266,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // uniqueKey is required
-    configAttribute = configDoc.child("config").child("schema").child("uniqueKey");
+    configAttribute = configDoc.child(configString).child(schemaString).child(uniqueKeyString);
     if (configAttribute && configAttribute.text()) {
         this->primaryKey = string(configAttribute.text().get());
     } else {
@@ -143,19 +289,38 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     vector<bool> searchableFieldIndexsVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
+    vector<bool> searchableAttributesIsMultiValued;
 
-    vector<string> nonSearchableFieldsVector;
-    vector<srch2::instantsearch::FilterType> nonSearchableFieldTypesVector;
-    vector<bool> nonSearchableAttributesRequiredFlagVector;
-    vector<string> nonSearchableAttributesDefaultVector;
+    vector<string> RefiningFieldsVector;
+    vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
+    vector<bool> RefiningAttributesRequiredFlagVector;
+    vector<string> RefiningAttributesDefaultVector;
+    vector<bool> RefiningAttributesIsMultiValued;
 
     this->isPrimSearchable = 0;
 
-    configAttribute = configDoc.child("config").child("schema").child("fields");
+    configAttribute = configDoc.child(configString).child(schemaString).child(fieldsString);
     if (configAttribute) {
         for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
-            if (string(field.name()).compare("field") == 0) {
+            if (string(field.name()).compare(fieldString) == 0) {
 
+
+            	/*
+            	 * The following code decides whether this field is multi-valued or not.
+            	 * If multivalued="true" in field tag, this field is multi-valued.
+            	 */
+            	bool isMultiValued = false;
+                if(string(field.attribute(multiValuedString).value()).compare("") != 0){
+                	tempUse = string(field.attribute(multiValuedString).value());
+                	if(isValidBool(tempUse)){
+                		isMultiValued = field.attribute(multiValuedString).as_bool();
+                	}else{
+                        parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
+                        configSuccess = false;
+                        return;
+                	}
+                }// We do not need the "else" part since multivalued property is not
+                 // there so this field is not a multivalued field (false by default)
             	/*
             	 * The following code decides whether this field is searchable/refining or not.
             	 * It uses this logic:
@@ -171,17 +336,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
             	 */
                 bool isSearchable = false;
                 bool isRefining = false;
-                if(string(field.attribute("indexed").value()).compare("") != 0){
-                    tempUse = string(field.attribute("indexed").value());
+                if(string(field.attribute(indexedString).value()).compare("") != 0){
+                    tempUse = string(field.attribute(indexedString).value());
                     if(isValidBool(tempUse)){
-                        if(field.attribute("indexed").as_bool()){ // indexed = true
+                        if(field.attribute(indexedString).as_bool()){ // indexed = true
                             isSearchable = true;
                             isRefining = true;
                         }else{ // indexed = false
-                            if(string(field.attribute("searchable").value()).compare("") != 0){
-                                tempUse = string(field.attribute("searchable").value());
+                            if(string(field.attribute(searchableString).value()).compare("") != 0){
+                                tempUse = string(field.attribute(searchableString).value());
                                 if(isValidBool(tempUse)){
-                                    if(field.attribute("searchable").as_bool()){
+                                    if(field.attribute(searchableString).as_bool()){
                                         isSearchable = true;
                                     }else{
                                         isSearchable = false;
@@ -193,10 +358,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 }
                             }
 
-                            if(string(field.attribute("refining").value()).compare("") != 0){
-                                tempUse = string(field.attribute("refining").value());
+                            if(string(field.attribute(refiningString).value()).compare("") != 0){
+                                tempUse = string(field.attribute(refiningString).value());
                                 if(isValidBool(tempUse)){
-                                    if(field.attribute("refining").as_bool()){
+                                    if(field.attribute(refiningString).as_bool()){
                                         isRefining = true;
                                     }else{
                                         isRefining = false;
@@ -214,10 +379,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         return;
                     }
                 }else{ // indexed property is not there ...
-                    if(string(field.attribute("searchable").value()).compare("") != 0){
-                        tempUse = string(field.attribute("searchable").value());
+                    if(string(field.attribute(searchableString).value()).compare("") != 0){
+                        tempUse = string(field.attribute(searchableString).value());
                         if(isValidBool(tempUse)){
-                            if(field.attribute("searchable").as_bool()){
+                            if(field.attribute(searchableString).as_bool()){
                                 isSearchable = true;
                             }else{
                                 isSearchable = false;
@@ -229,10 +394,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }
                     }
 
-                    if(string(field.attribute("refining").value()).compare("") != 0){
-                        tempUse = string(field.attribute("refining").value());
+                    if(string(field.attribute(refiningString).value()).compare("") != 0){
+                        tempUse = string(field.attribute(refiningString).value());
                         if(isValidBool(tempUse)){
-                            if(field.attribute("refining").as_bool()){
+                            if(field.attribute(refiningString).as_bool()){
                                 isRefining = true;
                             }else{
                                 isRefining = false;
@@ -249,28 +414,33 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                 // We want to set primaryKey as a searchable and/or refining field
                 // We assume the primary key is text, we don't get any type from user.
                 // And no default value is accepted from user.
-                if(string(field.attribute("name").value()).compare(this->primaryKey) == 0){
+                if(string(field.attribute(nameString).value()).compare(this->primaryKey) == 0){
                     if(isSearchable){
                         this->isPrimSearchable = 1;
+                        searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        // there is no need for default value for primary key
+                        searchableAttributesDefaultVector.push_back("");
+                        // primary key is always required.
+                        searchableAttributesRequiredFlagVector.push_back(true);
                     }
 
                     if(isRefining){
-                        nonSearchableFieldsVector.push_back(this->primaryKey);
-                        nonSearchableFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-                        nonSearchableAttributesDefaultVector.push_back("");
-                        nonSearchableAttributesRequiredFlagVector.push_back(true);
+                        RefiningFieldsVector.push_back(this->primaryKey);
+                        RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
+                        RefiningAttributesDefaultVector.push_back("");
+                        RefiningAttributesRequiredFlagVector.push_back(true);
                     }
                     continue;
                 }
                 // Checking if the values are empty or not
-                if (string(field.attribute("name").value()).compare("") != 0
-                        && string(field.attribute("type").value()).compare("") != 0) {
+                if (string(field.attribute(nameString).value()).compare("") != 0
+                        && string(field.attribute(typeString).value()).compare("") != 0) {
                     if(isSearchable){ // it is a searchable field
-                        searchableFieldsVector.push_back(string(field.attribute("name").value()));
+                        searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
                         searchableFieldIndexsVector.push_back(true);
 
                         // Checking the validity of field type
-                        tempUse = string(field.attribute("type").value());
+                        tempUse = string(field.attribute(typeString).value());
                         if (this->isValidFieldType(tempUse , true)) {
                             searchableFieldTypesVector.push_back(tempUse);
                         } else {
@@ -280,28 +450,29 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             return;
                         }
 
-                        if (string(field.attribute("default").value()).compare("") != 0){
-                            searchableAttributesDefaultVector.push_back(string(field.attribute("default").value()));
+                        if (string(field.attribute(defaultString).value()).compare("") != 0){
+                            searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
                         }else{
                             searchableAttributesDefaultVector.push_back("");
                         }
 
-                        tempUse = string(field.attribute("required").value());
+                        tempUse = string(field.attribute(requiredString).value());
                         if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
-                            searchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                            searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
                         }else{
                             searchableAttributesRequiredFlagVector.push_back(false);
                         }
+                        searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){ // it is a refining field
-                        nonSearchableFieldsVector.push_back(string(field.attribute("name").value()));
+                        RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
                         searchableFieldIndexsVector.push_back(false);
 
                         // Checking the validity of field type
-                        tempUse = string(field.attribute("type").value());
+                        tempUse = string(field.attribute(typeString).value());
                         if (this->isValidFieldType(tempUse , false)) {
-                            nonSearchableFieldTypesVector.push_back(parseFieldType(tempUse));
+                            RefiningFieldTypesVector.push_back(parseFieldType(tempUse));
                         } else {
                             parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
                             parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
@@ -311,41 +482,62 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
 
                         // Check the validity of field default value based on it's type
-                        if (string(field.attribute("default").value()).compare("") != 0){
+                        if (string(field.attribute(defaultString).value()).compare("") != 0){
                             tempUse = string(field.attribute("default").value());
-                            if(isValidFieldDefaultValue(tempUse , nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1))){
+                            if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
 
-                                if(nonSearchableFieldTypesVector.at(nonSearchableFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-                                    std::stringstream buffer;
-                                    buffer << timeValue;
-                                    tempUse = buffer.str();
+                                if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+                                	if(isMultiValued == false){
+                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+                                        std::stringstream buffer;
+                                        buffer << timeValue;
+                                        tempUse = buffer.str();
+                                }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+                                	// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+                                        string convertedDefaultValues = "";
+                                        vector<string> defaultValueTokens;
+                                        splitString(tempUse , "," , defaultValueTokens);
+                                        for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
+                                                 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+    									    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+    									    std::stringstream buffer;
+                                            buffer << timeValue;
+    										if(defaultValueToken == defaultValueTokens.begin()){
+    											convertedDefaultValues = buffer.str();
+    										}else{
+    											convertedDefaultValues = ","+buffer.str();
+    										}
+
+                                		}
+                                	}
                                 }
                             }else{
                                 parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
                                 tempUse = "";
                             }
-                            nonSearchableAttributesDefaultVector.push_back(tempUse);
+                            RefiningAttributesDefaultVector.push_back(tempUse);
                         }else{
-                            nonSearchableAttributesDefaultVector.push_back("");
+                            RefiningAttributesDefaultVector.push_back("");
                         }
 
-                        tempUse = string(field.attribute("required").value());
-                        if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
-                            nonSearchableAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+                        tempUse = string(field.attribute(requiredString).value());
+                        if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
+                            RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
                         }else{
-                            nonSearchableAttributesRequiredFlagVector.push_back(false);
+                            RefiningAttributesRequiredFlagVector.push_back(false);
                         }
+
+                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
-                    if (string(field.attribute("type").value()).compare("location_latitude") == 0) {
+                    if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
                         hasLatitude = true;
-                        this->fieldLatitude = string(field.attribute("name").value());
+                        this->fieldLatitude = string(field.attribute(nameString).value());
                     }
-                    if (string(field.attribute("type").value()).compare("location_longitude") == 0) {
+                    if (string(field.attribute(typeString).value()).compare(locationLongitudeString) == 0) {
                         hasLongitude = true;
-                        this->fieldLongitude = string(field.attribute("name").value());
+                        this->fieldLongitude = string(field.attribute(nameString).value());
                     }
 
                 } else { // if one of the values of name, type or indexed is empty
@@ -369,16 +561,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    if(nonSearchableFieldsVector.size() != 0){
-        for (unsigned iter = 0; iter < nonSearchableFieldsVector.size(); iter++) {
-
-            /// map<string, pair< srch2::instantsearch::FilterType, pair<string, bool> > >
-            nonSearchableAttributesInfo[nonSearchableFieldsVector[iter]] =
-                    pair<srch2::instantsearch::FilterType,
-                            pair<string, bool> >(nonSearchableFieldTypesVector[iter],
-                            pair<string, bool>(
-                                    nonSearchableAttributesDefaultVector[iter],
-                                    nonSearchableAttributesRequiredFlagVector[iter]));
+    if(RefiningFieldsVector.size() != 0){
+        for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
+            RefiningAttributesInfo[RefiningFieldsVector[iter]] =
+            		RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
+            				RefiningFieldTypesVector[iter] ,
+            				RefiningAttributesDefaultVector[iter] ,
+            				RefiningAttributesRequiredFlagVector[iter],
+            				RefiningAttributesIsMultiValued[iter]);
         }
     }
 
@@ -393,7 +583,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * <facetEnabled>  in config.xml file
      */
     this->facetEnabled = false; // by default it is false
-    configAttribute = configDoc.child("config").child("schema").child("facetEnabled");
+    configAttribute = configDoc.child(configString).child(schemaString).child(facetEnabledString);
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
         if (this->isValidBool(qtmt)) {
@@ -413,16 +603,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      */
 
     if(this->facetEnabled){
-        configAttribute = configDoc.child("config").child("schema").child("facetFields");
+      configAttribute = configDoc.child(configString).child(schemaString).child(facetFieldsString);
         if (configAttribute) {
             for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
-                if (string(field.name()).compare("facetField") == 0) {
-                    if (string(field.attribute("name").value()).compare("") != 0
-                            && string(field.attribute("facetType").value()).compare("") != 0){
+                if (string(field.name()).compare(facetFieldString) == 0) {
+		  if (string(field.attribute(nameString).value()).compare("") != 0
+                            && string(field.attribute(facetTypeString).value()).compare("") != 0){
                         // insert the name of the facet
-                        this->facetAttributes.push_back(string(field.attribute("name").value()));
+                        this->facetAttributes.push_back(string(field.attribute(nameString).value()));
                         // insert the type of the facet
-                        tempUse = string(field.attribute("facetType").value());
+                        tempUse = string(field.attribute(facetTypeString).value());
                         int facetType = parseFacetType(tempUse);
                         if(facetType == 0){ // categorical
                             this->facetTypes.push_back(facetType);
@@ -433,11 +623,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }else if(facetType == 1){ // range
                             this->facetTypes.push_back(facetType);
                             // insert start
-                            string startTextValue = string(field.attribute("facetStart").value());
-                            string facetAttributeName = string(field.attribute("name").value());
+                            string startTextValue = string(field.attribute(facetStartString).value());
+                            string facetAttributeString = string(field.attribute(nameString).value());
                             srch2::instantsearch::FilterType facetAttributeType ;
-                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -459,9 +649,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             this->facetStarts.push_back(startTextValue);
 
                             // insert end
-                            string endTextValue = string(field.attribute("facetEnd").value());
-                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            string endTextValue = string(field.attribute(facetEndString).value());
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -483,9 +673,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             this->facetEnds.push_back(endTextValue);
 
                             // insert gap
-                            string gapTextValue = string(field.attribute("facetGap").value());
-                            if(nonSearchableAttributesInfo.find(facetAttributeName) != nonSearchableAttributesInfo.end()){
-                                facetAttributeType = nonSearchableAttributesInfo.find(facetAttributeName)->second.first;
+                            string gapTextValue = string(field.attribute(facetGapString).value());
+                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
+                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
                                 facetEnabled = false;
@@ -531,7 +721,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         this->searchType = 0;
         this->fieldLongitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
         this->fieldLatitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
-        configAttribute = configDoc.child("config").child("query").child("searcherType");
+        configAttribute = configDoc.child(configString).child(queryString).child(searcherTypeString);
         if (configAttribute && configAttribute.text()) {
             string st = configAttribute.text().get();
             if (this->isValidSearcherType(st)) {
@@ -552,33 +742,33 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->synonymFilterFilePath = "";
     this->synonymKeepOrigFlag = false;
 
-    configAttribute = configDoc.child("config").child("schema").child("types");
+    configAttribute = configDoc.child(configString).child(schemaString).child(typesString);
     if (configAttribute) {        // Checks if <schema><types> exists or not
         for (xml_node fieldType = configAttribute.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
-            if ((string(fieldType.name()).compare("fieldType") == 0)) { // Finds the fieldTypes
-                if (string(fieldType.attribute("name").value()).compare("text_en") == 0) {
+            if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
+                if (string(fieldType.attribute(nameString).value()).compare(textEnString) == 0) {
                     // Checking if the values are empty or not
-                    xml_node configAttributeTemp = fieldType.child("analyzer"); // looks for analyzer
+                    xml_node configAttributeTemp = fieldType.child(analyzerString); // looks for analyzer
                     for (xml_node field = configAttributeTemp.first_child(); field; field = field.next_sibling()) {
-                        if (string(field.name()).compare("filter") == 0) {
-                            if (string(field.attribute("name").value()).compare("PorterStemFilter") == 0) { // STEMMER FILTER
-                                if (string(field.attribute("dictionary").value()).compare("") != 0) { // the dictionary for porter stemmer is set.
+                        if (string(field.name()).compare(filterString) == 0) {
+                            if (string(field.attribute("name").value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
+                                if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
                                     this->stemmerFlag = true;
-                                    this->stemmerFile = this->srch2Home + string(field.attribute("dictionary").value());
+                                    this->stemmerFile = this->srch2Home + string(field.attribute(dictionaryString).value());
                                 }
-                            } else if (string(field.attribute("name").value()).compare("StopFilter") == 0) { // STOP FILTER
-                                if (string(field.attribute("words").value()).compare("") != 0) { // the words file for stop filter is set.
+                            } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
+                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
                                     this->stopFilterFilePath = this->srch2Home
                                             + string(field.attribute("words").value());
                                 }
-                            } /*else if (string(field.attribute("name").value()).compare("SynonymFilter") == 0) {
-                                if (string(field.attribute("synonyms").value()).compare("") != 0) { // the dictionary file for synonyms is set
+                            } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
+                                if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
                                     this->synonymFilterFilePath = this->srch2Home
-                                            + string(field.attribute("synonyms").value());
+                                            + string(field.attribute(synonymsString).value());
                                     // checks the validity of boolean provided for 'expand'
-                                    tempUse = string(field.attribute("expand").value());
+                                    tempUse = string(field.attribute(expandString).value());
                                     if (this->isValidBool(tempUse)) {
-                                        this->synonymKeepOrigFlag = field.attribute("expand").as_bool();
+                                        this->synonymKeepOrigFlag = field.attribute(expandString).as_bool();
                                     } else {
                                         parseError << "Config File Error: can not convert from '" << tempUse
                                                 << "' to boolean\n";
@@ -603,7 +793,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * <Config> in config.xml file
      */
     // licenseFile is a required field
-    configAttribute = configDoc.child("config").child("licenseFile");
+    configAttribute = configDoc.child(configString).child(licenseFileString);
     if (configAttribute && configAttribute.text()) { // checks if config/licenseFile exists and have any text value or not
         this->licenseKeyFile = this->srch2Home + string(configAttribute.text().get());
     } else {
@@ -613,7 +803,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // listeningHostname is a required field
-    configAttribute = configDoc.child("config").child("listeningHostname");
+    configAttribute = configDoc.child(configString).child(listeningHostStringString);
     if (configAttribute && configAttribute.text()) { // checks if config/listeningHostname exists and have any text value or not
         this->httpServerListeningHostname = string(configAttribute.text().get());
     } else {
@@ -623,7 +813,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // listeningPort is a required field
-    configAttribute = configDoc.child("config").child("listeningPort");
+    configAttribute = configDoc.child(configString).child(listeningPortString);
     if (configAttribute && configAttribute.text()) { // checks if the config/listeningPort has any text in it or not
         this->httpServerListeningPort = string(configAttribute.text().get());
     } else {
@@ -632,7 +822,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
     // dataDir is a required field
-    configAttribute = configDoc.child("config").child("dataDir");
+    configAttribute = configDoc.child(configString).child(dataDirString);
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
         this->indexPath = this->srch2Home + string(configAttribute.text().get());
     } else {
@@ -642,7 +832,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    configAttribute = configDoc.child("config").child("dataSourceType");
+    configAttribute = configDoc.child(configString).child(dataSourceTypeString);
     if (configAttribute && configAttribute.text()) {
         int datasourceValue = configAttribute.text().as_int(DATA_SOURCE_JSON_FILE);
         switch(datasourceValue) {
@@ -656,7 +846,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         	this->dataSourceType = DATA_SOURCE_MONGO_DB;
         	break;
         default:
-        	// if user forgets to specify this option, we will assume data soruce is
+        	// if user forgets to specify this option, we will assume data source is
         	// JSON file
         	this->dataSourceType = DATA_SOURCE_JSON_FILE;
         	break;
@@ -666,7 +856,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
     if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
     	// dataFile is a required field only if JSON file is specified as data source.
-    	configAttribute = configDoc.child("config").child("dataFile");
+      configAttribute = configDoc.child(configString).child(dataFileString);
     	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
     		this->filePath = this->srch2Home + string(configAttribute.text().get());
     	}else {
@@ -680,7 +870,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // <config>
     //   <indexconfig>
     //        <fieldBoost>
-    configAttribute = configDoc.child("config").child("indexConfig").child("fieldBoost");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(fieldBoostString);
     map<string, unsigned> boostsMap;
     // spliting the field boost input and put them in boostsMap
     if (configAttribute && configAttribute.text()) {
@@ -693,18 +883,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     for (int i = 0; i < searchableFieldsVector.size(); i++) {
         if (boostsMap.find(searchableFieldsVector[i]) == boostsMap.end()) {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
-                            searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, unsigned> >(
-                                    searchableAttributesDefaultVector[i],
-                                    pair<unsigned, unsigned>(0,1)));
+            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
+            				searchableAttributesRequiredFlagVector[i] ,
+            				searchableAttributesDefaultVector[i] ,
+            				0 , 1 , searchableAttributesIsMultiValued[i]);
         } else {
             searchableAttributesInfo[searchableFieldsVector[i]] =
-                    pair<bool, pair<string, pair<unsigned, unsigned> > >(
-                            searchableAttributesRequiredFlagVector[i],
-                            pair<string, pair<unsigned, unsigned> >(
-                                    searchableAttributesDefaultVector[i],
-                                    pair<unsigned, unsigned>(0,boostsMap[searchableFieldsVector[i]])));
+            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
+            				searchableAttributesRequiredFlagVector[i] ,
+            				searchableAttributesDefaultVector[i] ,
+            				0 , boostsMap[searchableFieldsVector[i]] , searchableAttributesIsMultiValued[i]);
         }
     }
 
@@ -723,17 +911,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // give each searchable attribute an id based on the order in the info map
     // should be consistent with the id in the schema
-    unsigned idIter = 0;
-
-    map<string, pair<bool, pair<string, pair<unsigned,unsigned> > > >::iterator searchableAttributeIter = searchableAttributesInfo.begin();
-    for(; searchableAttributeIter != searchableAttributesInfo.end(); searchableAttributeIter++){
-        searchableAttributeIter->second.second.second.first = idIter;
-        idIter ++;
+    map<string, SearchableAttributeInfoContainer>::iterator searchableAttributeIter = searchableAttributesInfo.begin();
+    for(unsigned idIter = 0; searchableAttributeIter != searchableAttributesInfo.end() ; ++searchableAttributeIter, ++idIter){
+    	searchableAttributeIter->second.offset = idIter;
     }
 
     // recordBoostField is an optional field
     this->recordBoostFieldFlag = false;
-    configAttribute = configDoc.child("config").child("indexConfig").child("recordBoostField");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(recordBoostFieldString);
     if (configAttribute && configAttribute.text()) {
         this->recordBoostFieldFlag = true;
         this->recordBoostField = string(configAttribute.text().get());
@@ -741,7 +926,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // queryTermBoost is an optional field
     this->queryTermBoost = 1; // By default it is 1
-    configAttribute = configDoc.child("config").child("indexConfig").child("defaultQueryTermBoost");
+    configAttribute = configDoc.child(configString).child(indexConfigString).child(defaultQueryTermBoostString);
     if (configAttribute && configAttribute.text()) {
         string qtb = configAttribute.text().get();
         if (this->isValidQueryTermBoost(qtb)) {
@@ -755,7 +940,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
-    configAttribute = configDoc.child("config").child("query").child("rankingAlgorithm").child("recordScoreExpression");
+    configAttribute = configDoc.child(configString).child(queryString).child(rankingAlgorithmString).child(recordScoreExpressionString);
     if (configAttribute && configAttribute.text()) {
         string exp = configAttribute.text().get();
         boost::algorithm::trim(exp);
@@ -770,7 +955,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // fuzzyMatchPenalty is an optional field
     this->fuzzyMatchPenalty = 1; // By default it is 1
-    configAttribute = configDoc.child("config").child("query").child("fuzzyMatchPenalty");
+    configAttribute = configDoc.child(configString).child(queryString).child(fuzzyMatchPenaltyString);
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidFuzzyMatchPenalty(qtsb)) {
@@ -786,7 +971,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
     this->queryTermSimilarityThreshold = 0.5;
-    configAttribute = configDoc.child("config").child("query").child("queryTermSimilarityThreshold");
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermSimilarityThresholdString);
     if (configAttribute && configAttribute.text()) {
         string qtsb = configAttribute.text().get();
         if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
@@ -804,7 +989,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // queryTermLengthBoost is an optional field
     this->queryTermLengthBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child("queryTermLengthBoost");
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermLengthBoostString);
     if (configAttribute && configAttribute.text()) {
         string qtlb = configAttribute.text().get();
         if (this->isValidQueryTermLengthBoost(qtlb)) {
@@ -818,7 +1003,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // prefixMatchPenalty is an optional field.
     this->prefixMatchPenalty = 0.95; // By default it is 0.5
-    configAttribute = configDoc.child("config").child("query").child("prefixMatchPenalty");
+    configAttribute = configDoc.child(configString).child(queryString).child(prefixMatchPenaltyString);
     if (configAttribute && configAttribute.text()) {
         string pm = configAttribute.text().get();
 
@@ -833,7 +1018,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // cacheSize is an optional field
     this->cacheSizeInBytes = 50 * 1048576;
-    configAttribute = configDoc.child("config").child("query").child("cacheSize");
+    configAttribute = configDoc.child(configString).child(queryString).child(cacheSizeString);
     if (configAttribute && configAttribute.text()) {
         string cs = configAttribute.text().get();
         if (this->isValidCacheSize(cs)) {
@@ -847,7 +1032,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // rows is an optional field
     this->resultsToRetrieve = 10; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child("rows");
+    configAttribute = configDoc.child(configString).child(queryString).child(rowsString);
     if (configAttribute && configAttribute.text()) {
         string row = configAttribute.text().get();
         if (isValidRows(row)) {
@@ -861,7 +1046,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // maxSearchThreads is an optional field
     this->numberOfThreads = 1; // by default it is 1
-    configAttribute = configDoc.child("config").child("query").child("maxSearchThreads");
+    configAttribute = configDoc.child(configString).child(queryString).child(maxSearchThreadsString);
     if (configAttribute && configAttribute.text()) {
         string mst = configAttribute.text().get();
         if (isValidMaxSearchThreads(mst)) {
@@ -876,7 +1061,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // fieldBasedSearch is an optional field
     if (this->enablePositionIndex == false) {
         this->supportAttributeBasedSearch = false; // by default it is false
-        configAttribute = configDoc.child("config").child("query").child("fieldBasedSearch");
+        configAttribute = configDoc.child(configString).child(queryString).child(fieldBasedSearchString);
         if (configAttribute && configAttribute.text()) {
             string configValue = configAttribute.text().get();
             if (this->isValidBooleanValue(configValue)) {
@@ -892,27 +1077,27 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         this->supportAttributeBasedSearch = true;
     }
 
-    // queryTermMatchType is an optional field
+    // queryTermFuzzyType is an optional field
     this->exactFuzzy = false; // by default it is false
-    configAttribute = configDoc.child("config").child("query").child("queryTermMatchType");
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermFuzzyTypeString);
     if (configAttribute && configAttribute.text()) {
         string qtmt = configAttribute.text().get();
-        if (this->isValidQueryTermMatchType(qtmt)) {
+        if (this->isValidQueryTermFuzzyType(qtmt)) {
             this->exactFuzzy = configAttribute.text().as_bool();
         } else {
-            parseError << "The queryTermMatchType that is provided is not valid";
+            parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
             return;
         }
     }
 
-    // queryTermType is an optional field
-    this->queryTermType = false;
-    configAttribute = configDoc.child("config").child("query").child("queryTermType");
+    // queryTermPrefixType is an optional field
+    this->queryTermPrefixType = false;
+    configAttribute = configDoc.child(configString).child(queryString).child(queryTermPrefixTypeString);
     if (configAttribute && configAttribute.text()) {
         string qt = configAttribute.text().get();
-        if (this->isValidQueryTermType(qt)) {
-            this->queryTermType = configAttribute.text().as_bool();
+        if (this->isValidQueryTermPrefixType(qt)) {
+            this->queryTermPrefixType = configAttribute.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -922,7 +1107,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // responseFormat is an optional field
     this->searchResponseJsonFormat = 0; // by default it is 10
-    configAttribute = configDoc.child("config").child("query").child("queryResponseWriter").child("responseFormat");
+    configAttribute = configDoc.child(configString).child(queryString).child(queryResponseWriterString).child(responseFormatString);
     if (configAttribute && configAttribute.text()) {
         string rf = configAttribute.text().get();
         if (this->isValidResponseFormat(rf)) {
@@ -936,9 +1121,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // responseContent is an optional field
     this->searchResponseFormat = (ResponseType)0; // by default it is 0
-    configAttribute = configDoc.child("config").child("query").child("queryResponseWriter").child("responseContent");
+    configAttribute = configDoc.child(configString).child(queryString).child(queryResponseWriterString).child(responseContentString);
     if (configAttribute) {
-        string type = configAttribute.attribute("type").value();
+        string type = configAttribute.attribute(typeString).value();
         if (this->isValidResponseContentType(type)) {
             this->searchResponseFormat = (ResponseType)configAttribute.attribute("type").as_int();
         } else {
@@ -963,7 +1148,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->writeApiType = HTTPWRITEAPI;
 
-    configAttribute = configDoc.child("config").child("updatehandler").child("maxDocs");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(maxDocsString);
     bool mdflag = false;
     if (configAttribute && configAttribute.text()) {
         string md = configAttribute.text().get();
@@ -980,7 +1165,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->memoryLimit = 100000;
     bool mmflag = false;
-    configAttribute = configDoc.child("config").child("updatehandler").child("maxMemory");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(maxMemoryString);
     if (configAttribute && configAttribute.text()) {
         string mm = configAttribute.text().get();
         if (this->isValidMaxMemory(mm)) {
@@ -995,7 +1180,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // mergeEveryNSeconds
-    configAttribute = configDoc.child("config").child("updatehandler").child("mergePolicy").child("mergeEveryNSeconds");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(mergePolicyString).child(mergeEveryNSecondsString);
     bool mensflag = false;
     if (configAttribute && configAttribute.text()) {
         string mens = configAttribute.text().get();
@@ -1011,7 +1196,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // mergeEveryMWrites
-    configAttribute = configDoc.child("config").child("updatehandler").child("mergePolicy").child("mergeEveryMWrites");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(mergePolicyString).child(mergeEveryMWritesString);
     bool memwflag = false;
     if (configAttribute && configAttribute.text()) {
         string memw = configAttribute.text().get();
@@ -1029,7 +1214,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
-    configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("logLevel");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(logLevelString);
     bool llflag = true;
     if (configAttribute && configAttribute.text()) {
         string ll = configAttribute.text().get();
@@ -1046,7 +1231,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // accessLogFile is required
-    configAttribute = configDoc.child("config").child("updatehandler").child("updateLog").child("accessLogFile");
+    configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(accessLogFileString);
     if (configAttribute && configAttribute.text()) {
         this->httpServerAccessLogFile = this->srch2Home + string(configAttribute.text().get());
     } else {
@@ -1073,7 +1258,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->attributeToSort = 0;
 
     if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
-    	configAttribute = configDoc.child("config").child("mongodb").child("host");
+      configAttribute = configDoc.child(configString).child(mongoDbString).child(hostString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoHost = string(configAttribute.text().get());
     	}else {
@@ -1081,13 +1266,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child("config").child("mongodb").child("port");
+    	configAttribute = configDoc.child(configString).child(mongoDbString).child(portString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoPort = string(configAttribute.text().get());
     	}else {
     		this->mongoPort = ""; // use default port
     	}
-    	configAttribute = configDoc.child("config").child("mongodb").child("db");
+    	configAttribute = configDoc.child(configString).child(mongoDbString).child(dbString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoDbName = string(configAttribute.text().get());
     	}else {
@@ -1095,7 +1280,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child("config").child("mongodb").child("collection");
+    	configAttribute = configDoc.child(configString).child(mongoDbString).child(collectionString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoCollection = string(configAttribute.text().get());
     	}else {
@@ -1103,13 +1288,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child("config").child("mongodb").child("listenerWaitTime");
+    	configAttribute = configDoc.child(configString).child(mongoDbString).child(listenerWaitTimeString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoListenerWaitTime = configAttribute.text().as_uint(1);
     	}else {
     		this->mongoListenerWaitTime = 1;
     	}
-    	configAttribute = configDoc.child("config").child("mongodb").child("maxRetryOnFailure");
+    	configAttribute = configDoc.child(configString).child(mongoDbString).child(maxRetryOnFailureString);
     	if (configAttribute && configAttribute.text()) {
     		this->mongoListenerMaxRetryOnFailure = configAttribute.text().as_uint(3);
     	}else {
@@ -1121,13 +1306,42 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     	// and deletes in MongoDB can be identified by _id only.
     	this->primaryKey = "_id";
     }
+
+    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
+    // is no option in xml for this one yet
+    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
+    this->updateHistogramEveryPMerges = (unsigned)
+    		( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
+    this->updateHistogramEveryQWrites =
+    		(unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
+
+    // set default number of suggestions because we don't have any config options for this yet
+    this->defaultNumberOfSuggestions = 5;
+
+    // setting default values for getAllResults optimization parameters
+	this->getAllResultsNumberOfResultsThreshold = 10000;
+	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
+
+
+    configAttribute = configDoc.child(configString).child(keywordPopularityThresholdString);
+    if (configAttribute && configAttribute.text()) {
+        string kpt = configAttribute.text().get();
+
+        if (this->isValidKeywordPopularityThreshold(kpt)) {
+            this->keywordPopularityThreshold = configAttribute.text().as_uint();
+        }else{
+        	parseError << "keywordPopularityThreshold has an invalid format.\n";
+        	keywordPopularityThreshold = 50000;
+        }
+    }else{
+    	keywordPopularityThreshold = 50000;
+    }
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
         searchableAttributesInfo[searchableAttributesVector[iter]] =
-                pair<bool, pair<string, pair<unsigned, unsigned> > >(false,
-                        pair<string, pair<unsigned, unsigned> >("" , pair<unsigned, unsigned>(iter, 1) ) );
+        		SearchableAttributeInfoContainer(searchableAttributesVector[iter] , false, "" , iter , 1 , false);
     }
 }
 
@@ -1149,6 +1363,18 @@ uint32_t ConfigManager::getMergeEveryNSeconds() const {
 
 uint32_t ConfigManager::getMergeEveryMWrites() const {
     return mergeEveryMWrites;
+}
+
+uint32_t ConfigManager::getUpdateHistogramEveryPMerges() const {
+    return updateHistogramEveryPMerges;
+}
+
+uint32_t ConfigManager::getUpdateHistogramEveryQWrites() const {
+    return updateHistogramEveryQWrites;
+}
+
+unsigned ConfigManager::getKeywordPopularityThreshold() const {
+	return keywordPopularityThreshold;
 }
 
 int ConfigManager::getIndexType() const {
@@ -1194,12 +1420,12 @@ const string& ConfigManager::getFilePath() const {
 const string& ConfigManager::getPrimaryKey() const {
     return primaryKey;
 }
-const map<string, pair<bool, pair<string, pair<unsigned, unsigned> > > > * ConfigManager::getSearchableAttributes() const {
+const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes() const {
     return &searchableAttributesInfo;
 }
 
-const map<string, pair<srch2::instantsearch::FilterType, pair<string, bool> > > * ConfigManager::getNonSearchableAttributes() const {
-    return &nonSearchableAttributesInfo;
+const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes() const {
+    return &RefiningAttributesInfo;
 }
 
 const vector<string> * ConfigManager::getAttributesToReturnName() const {
@@ -1284,8 +1510,8 @@ bool ConfigManager::getIsFuzzyTermsQuery() const {
     return exactFuzzy;
 }
 
-bool ConfigManager::getQueryTermType() const {
-    return queryTermType;
+bool ConfigManager::getQueryTermPrefixType() const {
+    return queryTermPrefixType;
 }
 
 unsigned ConfigManager::getQueryTermBoost() const {
@@ -1415,7 +1641,7 @@ bool ConfigManager::isFloat(string str) {
 bool ConfigManager::isValidFieldType(string& fieldType , bool isSearchable) {
     if(isSearchable){
         // supported types are: text, location_latitude, location_longitude
-        if ((fieldType.compare("text") == 0) || (fieldType.compare("location_latitude") == 0)
+        if ((fieldType.compare("text") == 0) || (fieldType.compare(locationLatitudeString) == 0)
                 || (fieldType.compare("location_longitude") == 0)) {
             return true;
         }
@@ -1430,8 +1656,20 @@ bool ConfigManager::isValidFieldType(string& fieldType , bool isSearchable) {
     }
 }
 
-bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType){
-    return validateValueWithType(fieldType , defaultValue);
+bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType , bool isMultiValued){
+	if(isMultiValued == false){
+		return validateValueWithType(fieldType , defaultValue);
+	}
+
+	// if it is a multi-valued attribute, default value is a comma separated list of default values. example : "tag1,tag2,tag3"
+	vector<string> defaultValueTokens;
+	splitString(defaultValue , "," , defaultValueTokens);
+	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+		if( validateValueWithType(fieldType , *defaultValueToken) == false){
+			return false;
+		}
+	}
+	return true;
 }
 
 bool ConfigManager::isValidBool(string& fieldType) {
@@ -1540,15 +1778,15 @@ bool ConfigManager::isValidBooleanValue(string& fieldValue) {
     return false;
 }
 
-bool ConfigManager::isValidQueryTermMatchType(string& queryTermMatchType) {
-    if (queryTermMatchType.compare("0") == 0 || queryTermMatchType.compare("1") == 0) {
+bool ConfigManager::isValidQueryTermFuzzyType(string& queryTermFuzzyType) {
+    if (queryTermFuzzyType.compare("0") == 0 || queryTermFuzzyType.compare("1") == 0) {
         return true;
     }
     return false;
 }
 
-bool ConfigManager::isValidQueryTermType(string& queryTermType) {
-    if (queryTermType.compare("0") == 0 || queryTermType.compare("1") == 0) {
+bool ConfigManager::isValidQueryTermPrefixType(string& queryTermPrefixType) {
+    if (queryTermPrefixType.compare("0") == 0 || queryTermPrefixType.compare("1") == 0) {
         return true;
     }
     return false;
@@ -1589,6 +1827,15 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
         if (atoi(mergeEveryMWrites.c_str()) >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
+    if (this->isOnlyDigits(kpt)) {
+        if (atoi(kpt.c_str()) >= 1) {
             return true;
         }
     }

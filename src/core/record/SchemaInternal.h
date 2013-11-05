@@ -103,13 +103,13 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1);
+            unsigned attributeBoost = 1, bool isMultiValued = false);
 
     int setSortableAttribute(const std::string &attributeName, FilterType type,
             std::string defaultValue);
 
-    int setNonSearchableAttribute(const std::string &attributeName,
-            FilterType type, const std::string & defaultValue);
+    int setRefiningAttribute(const std::string &attributeName,
+            FilterType type, const std::string & defaultValue, bool isMultiValued = false);
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -123,6 +123,11 @@ public:
      */
     unsigned getBoostOfSearchableAttribute(
             const unsigned searchableAttributeNameId) const;
+    /*
+     * Returns true if this searchable attribute is multivalued
+     */
+    bool isSearchableAttributeMultiValued(const unsigned searchableAttributeNameId) const;
+
     const std::map<std::string, unsigned>& getSearchableAttribute() const;
     /**
      * Gets the sum of all attribute boosts in the schema.  The
@@ -144,14 +149,15 @@ public:
     int getSearchableAttributeId(
             const std::string &searchableAttributeName) const;
 
-    const std::string* getDefaultValueOfNonSearchableAttribute(
+    const std::string* getDefaultValueOfRefiningAttribute(
             const unsigned searchableAttributeNameId) const;
-    FilterType getTypeOfNonSearchableAttribute(
+    FilterType getTypeOfRefiningAttribute(
             const unsigned searchableAttributeNameId) const;
-    int getNonSearchableAttributeId(
+    int getRefiningAttributeId(
             const std::string &searchableAttributeName) const;
-    unsigned getNumberOfNonSearchableAttributes() const;
-    const std::map<std::string, unsigned> * getNonSearchableAttributes() const;
+    unsigned getNumberOfRefiningAttributes() const;
+    const std::map<std::string, unsigned> * getRefiningAttributes() const;
+    bool isRefiningAttributeMultiValued(const unsigned nonSearchableAttributeNameId) const;
 
     int commit() {
         this->commited = 1;
@@ -181,10 +187,12 @@ private:
     std::map<std::string, unsigned> searchableAttributeNameToId;
 
     std::vector<unsigned> searchableAttributeBoostVector;
+    std::vector<unsigned> searchableAttributeIsMultiValuedVector;
 
-    std::map<std::string, unsigned> nonSearchableAttributeNameToId;
-    std::vector<FilterType> nonSearchableAttributeTypeVector;
-    std::vector<std::string> nonSearchableAttributeDefaultValueVector;
+    std::map<std::string, unsigned> refiningAttributeNameToId;
+    std::vector<FilterType> refiningAttributeTypeVector;
+    std::vector<std::string> refiningAttributeDefaultValueVector;
+    std::vector<bool> refiningAttributeIsMultiValuedVector;
 
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -202,9 +210,11 @@ private:
         ar & scoringExpressionString;
         ar & searchableAttributeNameToId;
         ar & searchableAttributeBoostVector;
-        ar & nonSearchableAttributeNameToId;
-        ar & nonSearchableAttributeTypeVector;
-        ar & nonSearchableAttributeDefaultValueVector;
+        ar & searchableAttributeIsMultiValuedVector;
+        ar & refiningAttributeNameToId;
+        ar & refiningAttributeTypeVector;
+        ar & refiningAttributeDefaultValueVector;
+        ar & refiningAttributeIsMultiValuedVector;
         ar & indexType;
         ar & positionIndexType;
     }

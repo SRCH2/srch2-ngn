@@ -46,6 +46,8 @@ public:
     IndexMetaData( GlobalCache *_cache,
                    unsigned _mergeEveryNSeconds,
                    unsigned _mergeEveryMWrites,
+                   unsigned _updateHistogramEveryPMerges,
+                   unsigned _updateHistogramEveryQWrites,
                    const std::string &_directoryName,
                    const std::string &_trieBootstrapFileNameWithPath)
     {
@@ -63,6 +65,19 @@ public:
         }
         mergeEveryMWrites = _mergeEveryMWrites;
 
+        // we are going to update the histogram information every 10 merges.
+        if(_updateHistogramEveryPMerges == 0){
+        	_updateHistogramEveryPMerges = 10;
+        }
+        updateHistogramEveryPMerges = _updateHistogramEveryPMerges;
+
+        // we are going to update the histogram information every 50 writes
+        if(_updateHistogramEveryQWrites == 0){
+        	_updateHistogramEveryQWrites = 50;
+        }
+        updateHistogramEveryQWrites = _updateHistogramEveryPMerges * _mergeEveryMWrites;
+
+
         directoryName = _directoryName;
         trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
     }
@@ -77,6 +92,8 @@ public:
     GlobalCache *cache;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
 };
 
 
@@ -126,10 +143,14 @@ public:
     virtual std::string getInMemoryData(unsigned internalRecordId) const = 0;
 
     /**
-     * Builds the index. After commit(), the records are made searchable after the first commit.
-     *
-     * After the first commit, the call to commit does nothing.
-     *
+     * Builds the index. The records are made searchable after the first commit.
+     * It is advised to call the commit in a batch mode. The first commit should be called when
+     * the bulk loading of initial records is done. Subsequent commits should be called based on
+     * different criteria. For example, we may call "commit()" after a certain number of records
+     * have been added to indexes (not yet searchable) or another certain number of seconds have
+     * passed since last the commit or when a certain event occurs.
+     * Note:- In order to avoid explicit commits after the first commit, we could choose to call
+     * startMergeThreadLoop() function.
      */
     virtual INDEXWRITE_RETVAL commit() = 0;
     
@@ -149,6 +170,14 @@ public:
     * Deletes all the records.*/
     /*virtual int deleteAll() = 0;*/
     //virtual int merge() = 0;
+
+    /*
+     *  Starts a conditional wait loop and merges all the incremental changes to indexes when a
+     *  certain condition occurs.
+     *  Condition:  n records have been added or t seconds have passed ( whichever occurs first)
+     *  Note: This function starts a separate dedicated thread and returns thread id
+     */
+    virtual pthread_t createAndStartMergeThreadLoop() = 0;
 };
 
 }}

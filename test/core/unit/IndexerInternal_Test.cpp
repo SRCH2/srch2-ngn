@@ -72,7 +72,7 @@ void testIndexData()
     record->setRecordBoost(90);
     indexData->_addRecord(record, analyzer);
 
-    indexData->_commit();
+    indexData->finishBulkLoad();
     //index->print_Index();
 
     record->clear();
@@ -183,8 +183,13 @@ void test1()
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     string INDEX_DIR = "test";
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     Record *record = new Record(schema);
@@ -241,8 +246,13 @@ void addRecords()
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( NULL, mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( NULL,
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -292,8 +302,13 @@ void test3()
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
     string INDEX_DIR = ".";
-    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     
     Indexer *indexer = Indexer::load(indexMetaData);
 

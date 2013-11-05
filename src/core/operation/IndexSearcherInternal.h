@@ -56,15 +56,21 @@ class IndexSearcherInternal : public IndexSearcher
 public:
 
     //Get Schema pointer from IndexSearcherInternal
-    IndexSearcherInternal(IndexReaderWriter *indexer);
+    IndexSearcherInternal(IndexReaderWriter *indexer, IndexSearcherRuntimeParametersContainer * parameters = NULL);
     virtual ~IndexSearcherInternal() {};
+
+    int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
+
+    unsigned estimateNumberOfResults(const Query *query);
 
     // find the next k answer starting from "offset". Can be used for
     // pagination. Returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK);
+    int search(const Query *query, QueryResults* queryResults, const int offset, const int nextK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll = 10000 , unsigned numberOfEstimatedResultsToFindGetAll = 2000);
 
     // find top-k answer. returns the number of records found
-    int search(const Query *query, QueryResults* queryResults, const int topK);
+    int search(const Query *query, QueryResults* queryResults, const int topK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
     // Added for stemmer
     // For GetAllResultsQuery
@@ -86,7 +92,18 @@ public:
     }
 
     PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
-    void computeTermVirtualList(QueryResults *queryResults) const;
+    void computeTermVirtualList(QueryResults *queryResults ,
+    		vector<PrefixActiveNodeSet *> * activeNodes = NULL ,
+    		const vector<float> * scoreOfTopRecords = NULL) const;
+
+    // This function uses the histogram information of the trie to estimate the number of records which have this term
+    unsigned getEstimatedNumberOfRecordsWithThisTerm(Term *term , PrefixActiveNodeSet * activeNodes) const;
+
+    // This functions defined the policy of estimating the results or computing them.
+    bool isTermTooPopular(Term *term, PrefixActiveNodeSet * activeNodes, unsigned & popularity ) const;
+
+    // This function find the runtime score of the top record of the inverted list of most popular suggestion of this term
+    float findTopRunTimeScoreOfLeafNodes(Term *term , float prefixMatchPenalty , PrefixActiveNodeSet * activeNodes) const;
 
     ///Used by TermVirtualList
     const InvertedIndex *getInvertedIndex() {
@@ -111,20 +128,39 @@ public:
         return this->indexData->trie;
     }
 
+    const unsigned getKeywordPopularityThreshold() const {
+    	return this->parameters.keywordPopularityThreshold;
+    }
+
 private:
 
     const IndexData *indexData;
     IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
+    IndexSearcherRuntimeParametersContainer parameters;
     Cache *cacheManager;
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
 
-    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults);
+    /*
+     * estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll :
+     * If the estimated number of results for a query is larger than the value of this argument,
+     * this function decides to estimate the results by finding topK. In this case
+     * this function uses numberOfEstimatedResultsToFindGetAll as K.
+     */
+    int searchGetAllResultsQuery(const Query *query, QueryResults* queryResults,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000);
 
+    /*
+     * if vector<PrefixActiveNodeSet *> * activeNodesVector is passed to this function, it uses the value instead of
+     * re-computing all active nodes. If the value is NULL, it computes the activenodes itself.
+     *
+     */
     int searchTopKQuery(const Query *query, const int offset,
-                        const int nextK, QueryResults* queryResults);
+                        const int nextK, QueryResults* queryResults , vector<PrefixActiveNodeSet *> * activeNodesVector = NULL);
+
+    int searchTopKFindResultsForOnlyOnePopularKeyword(const Query *query, PrefixActiveNodeSet * activeNodes, unsigned k, QueryResults * queryResults);
 
     int searchMapQuery(const Query *query, QueryResults* queryResults);
 
@@ -138,6 +174,16 @@ private:
 
     // return the next record that exists in all the virtual lists ("AND of these keyword lists). If there are no more records, return NO_MORE_RECORDS
     int getNextRecordID(vector<TermVirtualList* >* virtualListVector);
+
+    // this functions traverses the trie to find the most popular suggestions of a term
+    // returns the number of suggestions found.
+    void findKMostPopularSuggestionsSorted(Term *term ,
+    		PrefixActiveNodeSet * activeNodes,
+    		unsigned numberOfSuggestionsToReturn ,
+    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
+
+    unsigned estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const;
+    float getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const;
 };
 
 }

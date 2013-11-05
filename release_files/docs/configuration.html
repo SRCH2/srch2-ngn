@@ -60,7 +60,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">8.8. Searcher Threads</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.9. Enabling Field Based Search</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">8.11. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.11. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.12. Term Prefix Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
@@ -99,6 +100,7 @@
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, Date: October 13, 2013</center></h6>
 <h2 id="overview">1. Overview:</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
+<p>Tag names and tag attribute names (but not values) are case insensitive.</p>
 <h2 id="srch2Home">2. SRCH2 Home Directory, Required</h2>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
@@ -267,14 +269,24 @@ example shows how to enable this indexing:</p>
 1: finding all matching results. <br></p>
 </blockquote>
 <p>Its default value is 0.<br></p>
-<h3 id="queryTermType">8.11. Query Term Match Type, Optional</h3>
-<pre><code>&lt;queryTermType&gt;1&lt;/queryTermType&gt;
+<h3 id="queryTermFuzzyType">8.11. Query Term Fuzzy Type, Optional</h3>
+<pre><code>&lt;queryTermFuzzyType&gt;1&lt;/queryTermFuzzyType&gt;
 </code></pre>
 
-<p>It specifies how to treat a term by default.</p>
+<p>It specifies how to treat a term by default with respect to match fuzziness.</p>
 <blockquote>
 <p>0: exact match;<br>
 1: fuzzy match.<br></p>
+</blockquote>
+<p>Its default value is 0.</p>
+<h3 id="queryTermPrefixType">8.12. Query Term Prefix Type, Optional</h3>
+<pre><code>&lt;queryTermPrefixType&gt;1&lt;/queryTermPrefixType&gt;
+</code></pre>
+
+<p>It specifies how to treat a term by default with respect to match completeness.</p>
+<blockquote>
+<p>0: prefix match;<br>
+1: complete match.<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
 <h2 id="queryResponseWriter">9. Response Writer:</h2>
@@ -374,6 +386,7 @@ example shows how to enable this indexing:</p>
 &lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; refining=&quot;true&quot;/&gt;
+&lt;field name=&quot;seller_id&quot; default=&quot;12324,546436,576864&quot; required=&quot;false&quot; type=&quot;integer&quot; refining=&quot;true&quot; multivalued=&quot;true&quot;&gt;
 </code></pre>
 
 <p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
@@ -398,8 +411,9 @@ example shows how to enable this indexing:</p>
 <li><b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br></li>
 <li><b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
 <li><b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br></li>
+<li><b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
 </ul>
-<p>In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", and "likes".</p>
+<p>In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".</p>
 <p>Note:</p>
 <ul>
 <li>For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br></li>

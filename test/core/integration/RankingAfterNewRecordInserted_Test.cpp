@@ -41,7 +41,12 @@ void buildIndex(string data_file, string index_dir)
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -217,6 +222,7 @@ void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *a
     cout << "Failed queries number: " << failedCounter << endl;
     ASSERT(failedCounter == 0);
 }
+
 int main(int argc, char **argv)
 {
     cout << "Test begins." << endl;
@@ -238,9 +244,14 @@ int main(int argc, char **argv)
 
     unsigned mergeEveryNSeconds = 10;
     unsigned mergeEveryMWrites = 5;
-
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
+    index->createAndStartMergeThreadLoop();
 
     cout << "Index loaded." << endl;
 

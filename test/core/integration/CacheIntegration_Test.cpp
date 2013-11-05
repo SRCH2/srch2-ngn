@@ -145,9 +145,17 @@ int main(int argc, char **argv)
 
         unsigned mergeEveryNSeconds = 3;    
         unsigned mergeEveryMWrites = 5;
+        unsigned updateHistogramEveryPMerges = 1;
+        unsigned updateHistogramEveryQWrites = 5;
         
-        IndexMetaData *indexMetaData1 = new IndexMetaData( cache1, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
-        IndexMetaData *indexMetaData2 = new IndexMetaData( cache2, mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+        IndexMetaData *indexMetaData1 = new IndexMetaData( cache1,
+        		mergeEveryNSeconds, mergeEveryMWrites,
+        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+        		index_dir, "");
+        IndexMetaData *indexMetaData2 = new IndexMetaData( cache2,
+        		mergeEveryNSeconds, mergeEveryMWrites,
+        		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+        		index_dir, "");
            
            Indexer *indexer1 = Indexer::load(indexMetaData1);
         Indexer *indexer2 = Indexer::load(indexMetaData2);

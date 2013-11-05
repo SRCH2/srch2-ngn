@@ -61,7 +61,12 @@ void addSimpleRecords()
     
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -104,8 +109,8 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
 
-    schema->setNonSearchableAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0");
-    schema->setNonSearchableAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
+    schema->setRefiningAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setRefiningAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     Record *record = new Record(schema);
 
@@ -113,23 +118,28 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
     record->setRecordBoost(90);
-    record->setNonSearchableAttributeValue(0, "100");
-    record->setNonSearchableAttributeValue(1, "9.1");
+    record->setRefiningAttributeValue(0, "100");
+    record->setRefiningAttributeValue(1, "9.1");
     index->addRecord(record, analyzer);
 
     record->clear();
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
-    record->setNonSearchableAttributeValue(0, "200");
-    record->setNonSearchableAttributeValue(1, "3.14159265");
+    record->setRefiningAttributeValue(0, "200");
+    record->setRefiningAttributeValue(1, "3.14159265");
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -137,8 +147,8 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
-    record->setNonSearchableAttributeValue(0, "300");
-    record->setNonSearchableAttributeValue(1, "4.234");
+    record->setRefiningAttributeValue(0, "300");
+    record->setRefiningAttributeValue(1, "4.234");
     record->setRecordBoost(10);
     index->addRecord(record, analyzer);
 
@@ -161,9 +171,15 @@ void test1()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -252,9 +268,15 @@ void test2()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -335,9 +357,15 @@ void test3()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -410,9 +438,15 @@ void test4()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -463,9 +497,15 @@ void test5()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -521,9 +561,15 @@ void test6()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -624,9 +670,15 @@ void test8()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 
     Analyzer *analyzer = getAnalyzer();
@@ -701,9 +753,15 @@ void test9()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -727,8 +785,8 @@ void test9()
     record->setPrimaryKey(1999);
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
-    record->setNonSearchableAttributeValue(0, "400");
-    record->setNonSearchableAttributeValue(1, "2.234");
+    record->setRefiningAttributeValue(0, "400");
+    record->setRefiningAttributeValue(1, "2.234");
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -776,9 +834,15 @@ void test10()
     // create an index searcher
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::load(indexMetaData1);
+    index->createAndStartMergeThreadLoop();
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
     Analyzer *analyzer = getAnalyzer();
 
@@ -874,12 +938,19 @@ void test11()
     		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "");
+    unsigned updateHistogramEveryPMerges = 1;
+    unsigned updateHistogramEveryQWrites = 5;
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		INDEX_DIR, "");
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
     // This commit should not fail even if there is no record in the index.
     ASSERT(index->commit() != 0);
+    // start merger thread after first commit
+    index->createAndStartMergeThreadLoop();
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -894,9 +965,9 @@ void test11()
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
-    // any commit henceforth should fail because the engine allows only one commit
-    // which actually means bulk load done.
-    ASSERT(index->commit() == 0);
+    // any commit henceforth should not fail because the engine allows multiple commit
+    // even after the bulk load done.
+    ASSERT(index->commit() != 0);
 
     record->clear();
     record->setPrimaryKey(1003);

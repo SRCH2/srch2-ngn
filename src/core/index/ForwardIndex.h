@@ -115,13 +115,13 @@ public:
         this->inMemoryData = inMemoryData;
     }
 
-    const std::string getNonSearchableAttributeValue(unsigned iter,
+    const std::string getRefiningAttributeValue(unsigned iter,
             const Schema * schema) const {
-        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getNonSearchableAttributeValuesDataPointer());
+        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getRefiningAttributeValuesDataPointer());
     }
 
-    const Byte * getNonSearchableAttributeContainerData() const {
-        return getNonSearchableAttributeValuesDataPointer();
+    const Byte * getRefiningAttributeContainerData() const {
+        return getRefiningAttributeValuesDataPointer();
     }
 
     /*
@@ -136,21 +136,13 @@ public:
      * and setKeywordAttributeBitmap(...) API calls.
      */
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
-    		const vector<string> & nonSearchableAttributeValues,
+    		const vector<vector<string> > & nonSearchableAttributeValues,
     		bool shouldAttributeBitMapBeAllocated,
     		vector<uint8_t>& positionIndexDataVector){
     	this->nonSearchableAttributeValuesDataSize = VariableLengthAttributeContainer::getSizeNeededForAllocation(schema, nonSearchableAttributeValues);
         /////
     	this->positionIndexSize = positionIndexDataVector.size();
         //
-
-    	unsigned keywordAttributeBitMapSize = 0;
-    	if(shouldAttributeBitMapBeAllocated == true){
-    		keywordAttributeBitMapSize =  this->getKeywordAttributeBitmapsSizeInBytes();
-    		/*
-    		 * Still keywordAttributeBitMapSize can be 0 which is the case of empty record.
-    		 */
-    	}
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
@@ -170,7 +162,7 @@ public:
     	dataSize = dataSize + this->getPositionIndexSize();
 
     	// now that memory is allocated and position index is copied we can fill nonSearchableData in place.
-    	VariableLengthAttributeContainer::fillWithoutAllocation(schema, nonSearchableAttributeValues, getNonSearchableAttributeValuesDataPointer() );
+    	VariableLengthAttributeContainer::fillWithoutAllocation(schema, nonSearchableAttributeValues, getRefiningAttributeValuesDataPointer() );
     }
 
     const unsigned* getKeywordIds() const {
@@ -237,7 +229,7 @@ public:
 
     //unsigned getForwardListElement(unsigned cursor) const;
 
-    TypedValue getForwardListNonSearchableAttributeTypedValue(
+    TypedValue getForwardListRefiningAttributeTypedValue(
             const SchemaInternal* schemaInternal,
             unsigned schemaNonSearchableAttributeId) const;
 
@@ -384,7 +376,7 @@ private:
 
 
     //////////////// Non Searchable Attribute Values Helper Function /////////////////////////
-    inline Byte * getNonSearchableAttributeValuesDataPointer() const{
+    inline Byte * getRefiningAttributeValuesDataPointer() const{
         /*
          * The format of data in this array is :
          * ------------------------------------------------------------------------------------------------------------------

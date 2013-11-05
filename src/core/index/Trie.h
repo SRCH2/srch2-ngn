@@ -51,6 +51,8 @@
 #include "util/mypthread.h"
 #include "util/Assert.h"
 #include "util/encoding.h"
+#include "util/half.h"
+#include "instantsearch/Constants.h"
 
 using std::endl;
 using std::set;
@@ -58,11 +60,14 @@ using std::vector;
 using std::map;
 using std::queue;
 using namespace boost::serialization;
+using namespace half_float;
 
 namespace srch2
 {
 namespace instantsearch
 {
+
+class InvertedIndex;
 
 // this character is reserved as a special symbol for the trie
 #define TRIE_MARKER_CHARACTER ('$')
@@ -193,6 +198,11 @@ public:
 private:
     // a compact representation of leftInsertCounter and rightInsertCounter
     unsigned insertCounters;
+    // Node histogram value
+    float nodeHistogramValue;
+    // Maximum score of leaf nodes
+    half maximumScoreOfLeafNodes;
+
 
 private:
     friend class boost::serialization::access;
@@ -201,6 +211,8 @@ private:
     void serialize(Archive & ar, const unsigned int version) {
         ar & terminalFlag1bDepth7b;
         ar & character;
+        ar & nodeHistogramValue;
+        ar & maximumScoreOfLeafNodes;
         ar & id;
         ar & invertedListOffset;
         ar & leftMostDescendant;
@@ -307,12 +319,69 @@ public:
         return child->getCharacter() == childrenPointerList.back()->getCharacter();
     }
 
+    inline bool isDescendantOf(const TrieNode * node) const {
+    	// The only copy which can happen is when we copy a node for a new writeview,
+    	// but since we always use readview OR writeview (never together) we can just test pointer values for
+    	// equality.
+    	if (this == node){
+			 return false;
+    	}
+    	return (this->getMinId() >= node->getMinId()) && (this->getMaxId() <= node->getMaxId());
+    }
+
     inline unsigned getId() const {  /*assert(this!= NULL);*/
         return this->id;
     }
     inline void setId( unsigned id ) { /*assert(this!= NULL);*/
         this->id = id;
     }
+
+    inline float getNodeProbabilityValue() const{
+    	return this->nodeHistogramValue;
+    }
+
+    inline void setNodeProbabilityValue(float nodeHistogramValue) {
+    	this->nodeHistogramValue = nodeHistogramValue;
+    }
+
+    inline half getMaximumScoreOfLeafNodes() const {
+    	return this->maximumScoreOfLeafNodes;
+    }
+
+    inline void setMaximumScoreOfLeafNodes(half maxScoreOfLeafNodes) {
+    	this->maximumScoreOfLeafNodes = maxScoreOfLeafNodes;
+    }
+
+    inline float aggregateValueBySummation(float a , float b){
+    	return a + b;
+    }
+
+    inline half aggregateValueByTakingMaximum(half a , half b){
+    	if(a > b){
+    		return a;
+    	}
+    	return b;
+    }
+
+    inline float aggregateValueByJointProbability(float p1, float p2) const{
+    	return (p1 + p2) - (p1 * p2);
+    }
+
+    // it updates the histogram value of this node based on the information coming from the children
+    void updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType);
+
+    // updates the maximum score of leaf nodes based on the values coming from children and
+    // and returns true if anything changes and should be propagated up the trie
+    bool updateInternalNodeMaximumScoreOfLeafNodes();
+
+    // initializes the histogram value of this trie node
+    void initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
+    		float initValue = -1,
+    		half initValueFromArgForMaxScore = (half)0);
+
+    // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
+    // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
+    void findMostPopularSuggestionsInThisSubTrie(unsigned ed, std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
 
@@ -334,7 +403,7 @@ public:
 
     unsigned getfinalKeywordIdCounter() const;
 
-    const TrieNode *findLowerBoundChildByMinId(unsigned minId) const;
+    TrieNode *findLowerBoundChildByMinId(unsigned minId) const;
 
     int findLowerBoundChildNodePositionByMinId(unsigned minId) const;
 
@@ -445,6 +514,7 @@ private:
     bool commited;
     bool mergeRequired;
 
+
     friend class boost::serialization::access;
 
     template<class Archive>
@@ -469,6 +539,8 @@ private:
     void serialize(Archive & ar, const unsigned int file_version) {
         boost::serialization::split_member(ar, *this, file_version);
     }
+
+    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
 
 public:
 
@@ -599,10 +671,30 @@ public:
      */
     void reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper);
 
+    /*
+     * These two functions are supposed to be called in the last step of commit (after nulk load)
+     * because they assume inverted and forward indices are ready. Unless invertedIndex
+     * is NULL, in which case this value is actually just the frequency of leaf nodes in each subtrie.
+     * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
+     */
+
+    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+
+    void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
+
+    // invertedIndex and totalNumberOfResults are used to update histogram information on the trie
+    // updateHistogram is the flag which tells us if we should update histogram or not.
+    void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
     bool isMergeRequired() { return mergeRequired; }
-    void merge();
 
     void commit();
+
+    /*
+     * Calls calculateTrieNodeSubTrieValues and sets commit flag of trie to true
+     * Final commit must be called after InvertedInde and ForwardIndex commits are done unless invertedIndex
+     * is NULL (which is the case of M1), in which case this value is actually just the frequency of leaf nodes in each subtrie.
+     */
+    void finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults );
 
     const std::vector<unsigned> *getOldIdToNewIdMapVector() const;
 
@@ -637,6 +729,16 @@ public:
     // If keywordId not found returns (0, MAX_ALLOCATED_KEYWORD_ID).
     void getKeywordMinMaxIdLength_WriteView(unsigned keywordId, unsigned &minId, unsigned &maxId,
                                             unsigned &length) const;
+
+    // for WriteView
+    // Finds the node corresponding to the keywordId and returns its mindId, maxId.
+    // If keywordId not found path is empty.
+    // otherwise, it's guaranteed that first element in path is root and last element is the corresponding trie node.
+    void getKeywordCorrespondingPathToTrieNode_WriteView(unsigned keywordId, TrieNodePath * path) const;
+
+    // if the newScore is larger than the maximumScoreOfLeafNodes of the correspondent trie node with keywordId,
+    // then the maximumScoreOfLeafNodes variable will be updated and this update will be propagated to the root
+    void updateMaximumScoreOfLeafNodesForKeyword_WriteView(unsigned keywordId , half newScore);
 
     // Finds the node corresponding to the keywordId and returns its mindId, maxId.
     // If keywordId not found returns (0, MAX_ALLOCATED_KEYWORD_ID).

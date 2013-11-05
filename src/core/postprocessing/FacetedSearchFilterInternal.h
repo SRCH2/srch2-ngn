@@ -41,6 +41,8 @@ class FacetHelper
 {
 public:
 	virtual std::pair<unsigned , std::string> generateIDAndName(const TypedValue & attributeValue) = 0;
+	void generateIDAndNameForMultiValued(const TypedValue & attributeValue,
+			std::vector< std::pair<unsigned , std::string> > & resultIdsAndNames);
 	virtual void generateListOfIdsAndNames(std::vector<std::pair<unsigned, std::string> > * idsAndNames) = 0;
 	virtual void initialize(const std::string * facetInfoForInitialization , const Schema * schema) = 0;
 
@@ -92,7 +94,7 @@ class FacetResultsContainer
 public:
 	virtual void initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType) = 0;
 	virtual void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType) = 0;
-	virtual void getNamesAndValues(std::vector<std::pair< std::string, float > > & results) = 0;
+	virtual void getNamesAndValues(std::vector<std::pair< std::string, float > > & results , int numberOfGroupsToReturn = -1) = 0;
 	virtual ~FacetResultsContainer() {};
 
 	float initAggregation(FacetAggregationType  aggregationType);
@@ -110,7 +112,7 @@ public:
 
 	void initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType);
 	void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType);
-	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results);
+	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn = -1);
 
 };
 
@@ -125,7 +127,7 @@ public:
 
 	void initialize(FacetHelper * facetHelper , FacetAggregationType  aggregationType);
 	void addResultToBucket(const unsigned bucketId, const std::string & bucketName, FacetAggregationType aggregationType);
-	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results);
+	void getNamesAndValues(std::vector<std::pair< std::string, float > > & results, int numberOfGroupsToReturn = -1);
 
 };
 
@@ -162,13 +164,14 @@ public:
     void initialize(std::vector<FacetType> & facetTypes,
             std::vector<std::string> & fields, std::vector<std::string> & rangeStarts,
             std::vector<std::string> & rangeEnds,
-            std::vector<std::string> & rangeGaps);
+            std::vector<std::string> & rangeGaps , std::vector<int> & numberOfGroupsToReturn);
 
     std::vector<FacetType> facetTypes;
     std::vector<std::string> fields;
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfGroupsToReturnVector;
 
     // These two vectors are parallel with fields.
 	std::vector<FacetHelper *> facetHelpers;

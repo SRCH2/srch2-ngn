@@ -101,10 +101,12 @@ public:
 
 		// Create an IndexMetaData
 		srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( cache,
-								   indexDataContainerConf->getMergeEveryNSeconds(),
-								   indexDataContainerConf->getMergeEveryMWrites(),
-								   indexDataContainerConf->getIndexPath(),
-								   indexDataContainerConf->getTrieBootstrapDictFileName());
+				indexDataContainerConf->getMergeEveryNSeconds(),
+				indexDataContainerConf->getMergeEveryMWrites(),
+				indexDataContainerConf->getUpdateHistogramEveryPMerges(),
+				indexDataContainerConf->getUpdateHistogramEveryQWrites(),
+				indexDataContainerConf->getIndexPath(),
+				indexDataContainerConf->getTrieBootstrapDictFileName());
 
 		return indexMetaData;
 	}
@@ -135,13 +137,29 @@ public:
 					{
 						// Create from JSON and save to index-dir
 						Logger::console("Creating indexes from JSON file...");
-						DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						/*
+						 *  commit the indexes once bulk load is done and then save it to the disk only
+						 *  if number of indexed record is > 0.
+						 */
+					    indexer->commit();
+					    if (indexedCounter > 0) {
+					    	Logger::console("Saving Indexes.....");
+					    	indexer->save();
+					    	Logger::console("Indexes saved.");
+					    }
 						break;
 					}
 					case srch2http::DATA_SOURCE_MONGO_DB:
 					{
 						Logger::console("Creating indexes from a MongoDb instance...");
-						MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+						unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+				        indexer->commit();
+				        if (indexedCounter > 0) {
+				            Logger::console("Saving Indexes.....");
+				            indexer->save();
+				            Logger::console("Indexes saved.");
+				        }
 						break;
 					}
 					default:
@@ -171,6 +189,8 @@ public:
 				break;
 			}
 		}
+	    // start merger thread
+		indexer->createAndStartMergeThreadLoop();
 	}
 
 	virtual ~Srch2Server(){}

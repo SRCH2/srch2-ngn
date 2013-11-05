@@ -29,6 +29,7 @@ const char* const QueryParser::orderParamName = "orderby"; //srch2
 const char* const QueryParser::orderDescending = "desc"; //srch2
 const char* const QueryParser::orderAscending = "asc"; //srch2
 const char* const QueryParser::keywordQueryParamName = "q"; //solr
+const char* const QueryParser::suggestionKeywordParamName = "k"; //solr
 const char* const QueryParser::lengthBoostParamName = "lengthBoost"; //srch2
 const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
 const char* const QueryParser::filterQueryParamName = "fq"; //solr
@@ -78,6 +79,78 @@ QueryParser::QueryParser(const evkeyvalq &headers,
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
     this->isSearchTypeSet = false;
+}
+
+QueryParser::QueryParser(const evkeyvalq &headers) :
+	headers(headers) {
+
+}
+
+bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
+		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages){
+	   // 1. get the keyword string.
+	    Logger::debug("parsing the main query.");
+	    const char * keywordTmp = evhttp_find_header(&headers,
+	            QueryParser::suggestionKeywordParamName);
+	    if (keywordTmp) { // if this parameter exists
+	        size_t st;
+	        string keywordStr = evhttp_uridecode(keywordTmp, 0, &st);
+	        boost::algorithm::trim(keywordStr); // trim the keywordString.
+	        bool hasParserSuccessfully = parseKeyword(keywordStr,keyword);
+	        if(!hasParserSuccessfully){
+	        	messages.push_back(std::make_pair(MessageError, " No keyword is recognized for computing suggestions."));
+	        	return false;
+	        }
+	        boost::algorithm::trim(keywordStr); // trim the keywordString.
+
+	        if(keywordStr.length() == 0){
+	        	fuzzyMatchPenalty = 1; // 1 indicates that the user want the suggestions to be exact, example: k=can
+	        }else{
+				string normalizerString;
+				hasParserSuccessfully = parseFuzzyModifier(keywordStr ,normalizerString );
+				if(! hasParserSuccessfully){
+		        	messages.push_back(std::make_pair(MessageWarning, "Bad format is used for edit distance normalizer. No fuzzy suggestions will be returned."));
+				}else{
+					if(normalizerString.length() == 1){ // fuzzy modifier is only '~' w/o any values
+						fuzzyMatchPenalty = -1; // -1 indicates that used did not enter any values for this one, example: k=can
+					}else{
+						fuzzyMatchPenalty = atof(normalizerString.c_str() + 1);
+					}
+				}
+	        }
+	    }else{
+        	messages.push_back(std::make_pair(MessageError, "No keyword is recognized for computing suggestions."));
+        	return false;
+	    }
+
+	    //2. get number of suggestions to be returned
+	    /* aka: rows parser
+	     * if there is a number of results
+	     * fills the container up
+	     *
+	     * example: rows=20
+	     */
+	    const char * rowsTemp = evhttp_find_header(&headers,
+	    		QueryParser::rowsParamName);
+	    if (rowsTemp) { // if this parameter exists
+	    	Logger::debug("rowsTemp parameter found, parsing it.");
+	    	size_t st;
+	    	string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+	    	// convert the rowsStr to integer. e.g. rowsStr will contain string 20
+	    	if (isUnsigned(rowsStr)) {
+	    		numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+	    	} else {
+	    		numberOfSuggestionsToReturn = -1; // -1 indicates that this parameter is not given by the user
+	            // raise error
+	            this->container->messages.push_back(
+	                    make_pair(MessageWarning,
+	                            "rows parameter should be a positive integer. We will use the default value for this parameter."));
+	        }
+	    }else{
+        	numberOfSuggestionsToReturn = -1; // -1 indicates that this parameter is not given by the user
+	    }
+	    Logger::debug("returning from numberOfResultsParser function");
+	    return true;
 }
 
 // parses the URL to a query object
@@ -174,10 +247,10 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
      * 2. calls the termParser();
      */
     // 1. get the mainQuery string.
-    Logger::info("parsing the main query.");
+    Logger::debug("parsing the main query.");
     const char * mainQueryTmp = evhttp_find_header(&headers,
             QueryParser::keywordQueryParamName);
-    if (mainQueryTmp) { // if this parameter exists
+    if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
         size_t st;
         string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
         boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
@@ -283,6 +356,33 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
         fqc.rangeEnds.push_back("");
         fqc.rangeGaps.push_back("");
         fqc.rangeStarts.push_back("");
+
+        // now see if there is a numberOfTopGroupsToReturn given by the user, if not
+        // use -1 which indicates returning all the facet groups
+        Logger::debug("inside populateParallelRangeVectors function");
+        const string numberOfGroupsKeyString = QueryParser::getFacetCategoricalNumberOfTopGroupsToReturn(*facetField);
+        const char* numberOfGroupsStrTemp = evhttp_find_header(&headers,
+        		numberOfGroupsKeyString.c_str());
+        if (numberOfGroupsStrTemp) {
+            Logger::debug("facetNumberOfGroups parameter found, parsing it.");
+            size_t st;
+            string facetNumberOfGroupsStr = evhttp_uridecode(numberOfGroupsStrTemp, 0, &st);
+
+            if(isUnsigned(facetNumberOfGroupsStr)){
+                Logger::debug(
+                        "facetNumberOfGroups parameter found, pushing it to numberOfTopGroupsToReturn to fqc");
+            	fqc.numberOfTopGroupsToReturn.push_back(atoi(facetNumberOfGroupsStr.c_str()));
+            }else{
+                this->container->messages.push_back(
+                        make_pair(MessageWarning,
+                                numberOfGroupsKeyString+" should get a valid unsigned number. Ignored."));
+            	fqc.numberOfTopGroupsToReturn.push_back(-1);
+            }
+        } else {
+            Logger::debug(
+                    "facetNumberOfGroups parameter not found, pushing -1 to numberOfTopGroupsToReturn to fqc");
+            fqc.numberOfTopGroupsToReturn.push_back(-1);
+        }
     }
     Logger::debug("returning from populateFacetFieldSimple");
 }
@@ -302,6 +402,8 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
         fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
         // populate parallel vectors with empty string
         populateParallelRangeVectors(fqc, *facetField);
+        // numberOfTopGroupsToReturn is only valid for categorial facets. For a range facet, we put a dummy value "-1"
+        fqc.numberOfTopGroupsToReturn.push_back(-1);
     }
     Logger::debug("returning from populateFacetFieldsRange function");
 }
@@ -984,7 +1086,7 @@ bool QueryParser::termParser(string &input) {
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    Logger::info("inside term parser.");
+    Logger::debug("inside term parser.");
     Logger::debug("input received is %s", input.c_str());
     /*
      *
@@ -1118,7 +1220,7 @@ bool QueryParser::termParser(string &input) {
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
         this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
-    Logger::info("returning from  termParser.");
+    Logger::debug("returning from the termParser.");
     return true;
 
 }
@@ -1581,10 +1683,10 @@ void QueryParser::setSimilarityThresholdInContainer(const float f) {
         // use the SimilarityThreshold provided with keyword
         this->container->keywordSimilarityThreshold.push_back(f);
     } else {
-        // set fuzzy level to 0
-        this->container->keywordSimilarityThreshold.push_back(0.0f);
+        // Similarity threshold is not specified, use 1
+        this->container->keywordSimilarityThreshold.push_back(1.0f);
     }
-    Logger::debug("returning from setSimilarityThresholdInContainer");
+    Logger::debug("Similarity threshold is not specified, use 1");
 }
 /*
  * parses the localparameter key from input string. It changes input string and populates the field
@@ -1665,7 +1767,7 @@ void QueryParser::populateBoostInfo(bool isParsed, string &input) {
     }
 }
 bool QueryParser::parseFuzzyModifier(string &input, string &output) {
-    boost::regex re(FUZZE_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
+    boost::regex re(FUZZY_MODIFIER_REGEX_STRING); //TODO: compile this regex when the engine starts.
     return doParse(input, re, output);
 }
 bool QueryParser::parseProximityModifier(string &input, string &output) {
@@ -1692,7 +1794,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         }
     } else {
         Logger::debug("fuzzy value is not specified, use 0");
-        this->setSimilarityThresholdInContainer(0.0f);
+        this->setSimilarityThresholdInContainer(1.0f);
     }
 }
 

@@ -46,8 +46,8 @@ struct Query::Impl
     Shape *range;
     Ranker *ranker;
 
-    std::string nonSearchableAttributeName ;
-    std::string nonSearchableAttributeValue ;
+    std::string refiningAttributeName ;
+    std::string refiningAttributeValue ;
 
 
     ResultsPostProcessorPlan *  plan;
@@ -217,18 +217,18 @@ unsigned Query::getSortableAttributeId() const
 }
 
 // TODO temperory functions, to test range search filter
-void Query::setNonSearchableAttributeName(std::string name){
-	this->impl->nonSearchableAttributeName = name;
+void Query::setRefiningAttributeName(std::string name){
+	this->impl->refiningAttributeName = name;
 }
-std::string Query::getNonSearchableAttributeName() const{
-	return this->impl->nonSearchableAttributeName;
+std::string Query::getRefiningAttributeName() const{
+	return this->impl->refiningAttributeName;
 }
 
-void Query::setNonSearchableAttributeValue(std::string value){
-	this->impl->nonSearchableAttributeValue = value;
+void Query::setRefiningAttributeValue(std::string value){
+	this->impl->refiningAttributeValue = value;
 }
-std::string Query::getNonSearchableAttributeValue() const{
-	return this->impl->nonSearchableAttributeValue;
+std::string Query::getRefiningAttributeValue() const{
+	return this->impl->refiningAttributeValue;
 }
 
 

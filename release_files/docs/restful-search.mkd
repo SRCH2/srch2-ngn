@@ -20,6 +20,8 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetParams">7. Facet Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">7.1. Enabling Facet</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetField">7.2. Categorical Facet</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFieldAttribute">7.2.1 Categorical facet attribute</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFieldRows">7.2.2 Categorical facet rows </a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetByRange">7.3. Range Facet</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetStart">7.3.1 Facet Range Start</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnd">7.3.2 Facet Range End</a></br><br>
@@ -273,11 +275,18 @@ facet=true
 Please note: facet must also be enabled from the configuration file by setting the
  ["facetEnabled"](configuration.html##facetEnabled) tag to true.
 
-### 7.2. facet.field {id="facetField"}
+### 7.2. Facet by Category {id="facetField"}
+
+###7.2.1 facet.field {id="facetFieldAttribute"}
 
 This parameter specifies a field to be treated as a categorical facet. It finds the number of distinct values in the specified field and returns the number of records that match each value.This parameter can be specified multiple times to indicate multiple facet fields.
 ```
 facet=true&facet.field=category&facet.field=genre
+```
+### 7.2.2 facet.cateory.rows {id="facetFieldRows"}
+It is the number of categories with the maximal frequencies to be returned. All categories are returned by default. Example: adding the following parameter to the query will tell the engine to return the top 10 most popular models.
+```
+f.model.rows=10
 ```
 
 The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response.
@@ -320,6 +329,8 @@ The above query defines the gap between each consecutive faceted value of the fa
 
 Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.
 
+*Note:* if the expected number of results of a query is greater than 10K, facet results are made based on the best 2000 results.
+
 ## 8. searchType{id="searchType"}
 
 The engine offers three different strategies for searching records:
@@ -336,6 +347,7 @@ The following are examples of using searchType:
 4) searchType=getAll&sort=author
 ```
 *Note:* if searchType is not included in the query, it is set to topK by default. However, if any facet or sort parameter is included in the query, the search type will be getAll.
+*Note:* If searchType is 'getAll' and the expected number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.
 
 ## 9. sort{id="sort"}
 
@@ -344,6 +356,7 @@ The engine's default behavior is to sort the results using a descending order by
 sort=author,price,title
 ```
 *Note:* if a sort request is included in the query, the returned records' scores are still those calculated scores by the engine, but the order of the results corresponds to the user specification.
+*Note:* if the expected number of results of a query is greater than 10K, the ranking function is used to find the best 2000 results, which are then sorted based on the sort parameter and returned.
 
 ## 10. orderby{id="orderby"}
 

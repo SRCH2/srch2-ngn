@@ -19,12 +19,13 @@ wpgen.py updateall
 
 # replace the "title" tag with the correct value
 
-sed -e 's#<title>.*</title>#<title>SRCH2: Manual</title>#g' html/main.html > main.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Installation</title>#g' html/install.html > install.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Configuration</title>#g' html/configuration.html > configuration.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Search API</title>#g' html/restful-search.html > restful-search.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Insert/Update/Delete API</title>#g' html/restful-insert-update-delete.html > restful-insert-update-delete.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Control API</title>#g' html/restful-control.html > restful-control.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Ranking</title>#g' html/ranking.html > ranking.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: Geo Search</title>#g' html/geo.html > geo.html  
-sed -e 's#<title>.*</title>#<title>SRCH2: MongoDB Search</title>#g' html/mongodb.html > mongodb.html  
+echo "Replacing the HTML TITLE value from html/*.html files and producing new HTML files in the currnet folder"
+if [ -f html/main.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Manual</title>#g' html/main.html > main.html  ; fi
+if [ -f html/install.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Installation</title>#g' html/install.html > install.html  ; fi
+if [ -f html/configuration.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Configuration</title>#g' html/configuration.html > configuration.html  ; fi
+if [ -f html/restful-search.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Search API</title>#g' html/restful-search.html > restful-search.html  ; fi
+if [ -f html/restful-insert-update-delete.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Insert/Update/Delete API</title>#g' html/restful-insert-update-delete.html > restful-insert-update-delete.html  ; fi
+if [ -f html/restful-control.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Control API</title>#g' html/restful-control.html > restful-control.html  ; fi
+if [ -f html/ranking.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Ranking</title>#g' html/ranking.html > ranking.html  ; fi
+if [ -f html/geo.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Geo Search</title>#g' html/geo.html > geo.html  ; fi
+if [ -f html/mongodb.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: MongoDB Search</title>#g' html/mongodb.html > mongodb.html  ; fi

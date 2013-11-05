@@ -22,6 +22,8 @@ using namespace srch2is;
 
 unsigned mergeEveryNSeconds = 10;
 unsigned mergeEveryMWrites = 5;
+unsigned updateHistogramEveryPMerges = 1;
+unsigned updateHistogramEveryQWrites = 5;
 
 // Read data from file, build the index, and save the index to disk
 void buildIndex(string data_file, string index_dir)
@@ -37,7 +39,10 @@ void buildIndex(string data_file, string index_dir)
                 "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		index_dir, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -195,9 +200,12 @@ int main(int argc, char **argv)
 
     buildIndex(init_data_file, index_dir);
 
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(), mergeEveryNSeconds, mergeEveryMWrites, index_dir, "");
+    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    		mergeEveryNSeconds, mergeEveryMWrites,
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
+    		index_dir, "");
     Indexer *index = Indexer::load(indexMetaData);
-
+    index->createAndStartMergeThreadLoop();
     cout << "Index loaded." << endl;
 
     updateIndexAndLookupRecord(update_data_file, index);

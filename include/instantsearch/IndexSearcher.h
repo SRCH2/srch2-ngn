@@ -36,6 +36,24 @@ class Indexer;
 class Query;
 class QueryResults;
 
+
+class IndexSearcherRuntimeParametersContainer{
+public:
+	unsigned keywordPopularityThreshold;
+
+	IndexSearcherRuntimeParametersContainer(){
+		keywordPopularityThreshold = 50000;
+	}
+
+	IndexSearcherRuntimeParametersContainer(unsigned keywordPopularityThreshold){
+		this->keywordPopularityThreshold = keywordPopularityThreshold;
+	}
+
+	IndexSearcherRuntimeParametersContainer(const IndexSearcherRuntimeParametersContainer & copy){
+		this->keywordPopularityThreshold = copy.keywordPopularityThreshold;
+	}
+};
+
 /**
  * IndexSearcher provides an interface to do search using the
  * index. The IndexSearcher internally is a wrapper around the
@@ -48,7 +66,18 @@ public:
      * Creates an IndexSearcher object.
      * @param indexer - An object holding the index structures and cache.
      */
-    static IndexSearcher *create(Indexer *indexer);
+    static IndexSearcher *create(Indexer *indexer , IndexSearcherRuntimeParametersContainer * parameters = NULL);
+
+    /*
+     * Finds the suggestions for a keyword based on fuzzyMatchPenalty.
+     * Returns the number of suggestions found.
+     */
+    virtual int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ) = 0;
+
+    /*
+     * Returns the estimated number of results
+     */
+    virtual unsigned estimateNumberOfResults(const Query *query) = 0;
 
     /**
      * Finds the next topK answers starting from
@@ -59,7 +88,8 @@ public:
      *
      * returns the number of records found (at most topK).
      */
-    virtual int search(const Query *query, QueryResults *queryResults, const int offset, const int nextK) = 0;
+    virtual int search(const Query *query, QueryResults *queryResults, const int offset, const int nextK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll = 10000 , unsigned numberOfEstimatedResultsToFindGetAll = 2000) = 0;
 
     ///Added for stemmer
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int offset, const int topK, bool &isStemmed) = 0;
@@ -68,7 +98,8 @@ public:
     /**
      * Finds the first topK best answers.
      */
-    virtual int search(const Query *query, QueryResults *queryResults, const int topK) = 0;
+    virtual int search(const Query *query, QueryResults *queryResults, const int topK,
+    		unsigned estimatedNumberOfResultsThresholdGetAll=10000 , unsigned numberOfEstimatedResultsToFindGetAll=2000) = 0;
 
     /**
      * Does Map Search

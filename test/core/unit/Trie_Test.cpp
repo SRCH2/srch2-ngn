@@ -99,6 +99,7 @@ void test1()
     ASSERT(keywordId8 == 6);
 
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
@@ -373,6 +374,7 @@ void test2()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL , 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -398,7 +400,7 @@ void test2()
     trie1->addKeyword("00000000000", invertedIndexOffset);
     trie1->addKeyword("0000000000088", invertedIndexOffset);
 
-    trie1->merge();
+    trie1->merge(NULL, 0, false);
 
     cout<<"\nAfter Commit and Update:\n" << std::endl;
 
@@ -505,6 +507,7 @@ void test2_ThreadSafe()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -530,7 +533,7 @@ void test2_ThreadSafe()
     trie1->addKeyword_ThreadSafe("00000000000", invertedIndexOffset);
     trie1->addKeyword_ThreadSafe("0000000000088", invertedIndexOffset);
 
-    trie1->merge();
+    trie1->merge(NULL, 0, false);
 
     map<TrieNode *, unsigned> trieNodeIdMapper;
     trie1->reassignKeywordIds(trieNodeIdMapper);
@@ -573,6 +576,7 @@ void test3()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     cout<<"\nBefore Commit:" << std::endl;
@@ -615,6 +619,7 @@ void test4()
     trie1->addKeyword("little", invertedIndexOffset);
     trie1->addKeyword("wing", invertedIndexOffset);
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     serializer.save(*trie1,filenameTrie);
@@ -662,6 +667,7 @@ void test5()
     keywordId8 = trie1->addKeyword("cans", invertedIndexOffset);
 
     trie1->commit();
+    trie1->finalCommit_finalizeHistogramInformation(NULL, 0);
     trie1->print_Trie();
 
     /*
@@ -738,7 +744,7 @@ int main(int argc, char *argv[]) {
     if ( argc > 1 && strcmp(argv[1], "--verbose") == 0) {
         verbose = true;
     }
-
+//    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
     //TODO logic tests
     test1();
     cout << "test1 done" << endl;

@@ -22,14 +22,17 @@
 #include "ParsedParameterContainer.h" // only for ParameterName enum , FIXME : must be changed when we fix constants problem
 #include "query/QueryResultsInternal.h"
 #include "operation/IndexSearcherInternal.h"
+#include "ConfigManager.h"
 #include "util/Assert.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
+// we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
+// in the case of getAllResults.
 QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
-        QueryResultFactory * resultsFactory, Srch2Server *server) :
-        queryPlan(queryPlan) {
+        QueryResultFactory * resultsFactory, Srch2Server *server, const ConfigManager * configManager) :
+        queryPlan(queryPlan), configManager(configManager) {
     this->queryResultFactory = resultsFactory;
     this->server = server;
 }
@@ -38,7 +41,10 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
-    this->indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
+    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
+    IndexSearcherRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold());
+    this->indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters );
     //do the search
     switch (queryPlan.getSearchType()) {
     case TopKSearchType: //TopK
@@ -127,7 +133,17 @@ void QueryExecutor::executeTopK(QueryResults * finalResults) {
             }
             fuzzyQueryResultsIter++;
         }
+        exactQueryResultsInternal->estimatedNumberOfResults = fuzzyQueryResultsInternal->estimatedNumberOfResults;
         delete fuzzyQueryResults;
+    }else if (this->queryPlan.isFuzzy()){
+    	// this branch is the case that we have enough results for exact so we do not want to perform a
+    	// fuzzy search, but still we need to get the estimated number of results for fuzzy query.
+    	// The reason is that regardless of our policy (first exact, then fuzzy) we should always return a correct estimation
+    	// of number of results. If we don't use fuzzy query to estimate this number, we get a very smaller number for this estimation
+    	// which is incorrect.
+        QueryResultsInternal *exactQueryResultsInternal =
+                exactQueryResults->impl;
+    	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());
     }
 
     // this post processing plan will be applied on exactQueryResults object and
@@ -161,12 +177,14 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
         queryResults = new srch2is::QueryResults(this->queryResultFactory,
                 indexSearcher, this->queryPlan.getExactQuery());
         idsFound = indexSearcher->search(this->queryPlan.getExactQuery(),
-                queryResults, 0);
+                queryResults, 0 , this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
+                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
     } else {
         queryResults = new srch2is::QueryResults(this->queryResultFactory,
                 indexSearcher, this->queryPlan.getFuzzyQuery());
         idsFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
-                queryResults, 0);
+                queryResults, 0, this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
+                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
     }
 
 

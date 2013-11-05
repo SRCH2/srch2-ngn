@@ -8,14 +8,27 @@ cd $SYSTEM_TEST_DIR
 
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
+
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt > system_test.log 2>&1
+
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
     exit -1
 fi
 echo "-- PASSED: $test_id"
+
+test_id="multi valued attribute"
+echo "---------------------do $test_id-----------------------"
+python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
 
 test_id="save_shutdown_restart test"
 echo "---------------------do $test_id-----------------------"

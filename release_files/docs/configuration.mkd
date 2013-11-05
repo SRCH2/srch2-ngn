@@ -27,7 +27,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">8.8. Searcher Threads</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.9. Enabling Field Based Search</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermType">8.11. Term Match Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.11. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.12. Term Prefix Type</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
@@ -66,6 +67,8 @@
 ##1. Overview:##{id="overview"}
 
 The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample [configuration file](example-demo/srch2-config.xml).  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
+
+Tag names and tag attribute names (but not values) are case insensitive.
 
 ##2. SRCH2 Home Directory, Required##{id="srch2Home"}
 
@@ -273,13 +276,23 @@ It sets the default search type of a query to the engine. <br>
 
 Its default value is 0.<br>
 
-###8.11. Query Term Match Type, Optional{id="queryTermType"}
+###8.11. Query Term Fuzzy Type, Optional{id="queryTermFuzzyType"}
 ```
-<queryTermType>1</queryTermType>
+<queryTermFuzzyType>1</queryTermFuzzyType>
 ```
-It specifies how to treat a term by default.
+It specifies how to treat a term by default with respect to match fuzziness.
 > 0: exact match;<br>
 > 1: fuzzy match.<br>
+
+Its default value is 0.
+
+###8.12. Query Term Prefix Type, Optional{id="queryTermPrefixType"}
+```
+<queryTermPrefixType>1</queryTermPrefixType>
+```
+It specifies how to treat a term by default with respect to match completeness.
+> 0: prefix match;<br>
+> 1: complete match.<br>
 
 Its default value is 0.
 
@@ -393,6 +406,7 @@ Here is an example:
 <field name="model" default="benz" required="true" type="text" refining="true"/>
 <field name="price" default="200" required="true" type="float" refining="true"/>
 <field name="likes" default="0" required="true" type="integer" refining="true"/>
+<field name="seller_id" default="12324,546436,576864" required="false" type="integer" refining="true" multivalued="true">
 ```
 
 These parameters give information about each field, including its name, type, and certain properties. <br>
@@ -418,8 +432,9 @@ Each field has certain properties:
  - <b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
  - <b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
  - <b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
+ - <b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
 
-In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", and "likes".
+In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".
 
 Note:
 

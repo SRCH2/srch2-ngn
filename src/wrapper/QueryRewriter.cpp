@@ -101,7 +101,7 @@ void QueryRewriter::prepareKeywordInfo() {
                 && paramContainer->keywordPrefixComplete.at(k)
                         == srch2is::TERM_TYPE_NOT_SPECIFIED) {
             paramContainer->keywordPrefixComplete.at(k) =
-                    indexDataContainerConf->getQueryTermType() ?
+                    indexDataContainerConf->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX;
             // true means complete
@@ -377,8 +377,8 @@ void QueryRewriter::prepareFacetFilterInfo() {
             facetQueryContainer->rangeEnds.at(facetFieldIndex) = "";
             facetQueryContainer->rangeGaps.at(facetFieldIndex) = "";
         } else if (*type == srch2is::FacetTypeRange) { /// fills out the empty places
-            FilterType fieldType = schema.getTypeOfNonSearchableAttribute(
-                    schema.getNonSearchableAttributeId(facetQueryContainer->fields.at(facetFieldIndex)));
+            FilterType fieldType = schema.getTypeOfRefiningAttribute(
+                    schema.getRefiningAttributeId(facetQueryContainer->fields.at(facetFieldIndex)));
             if (facetQueryContainer->rangeStarts.at(facetFieldIndex).compare("") == 0) {
                 // should get the value from config
                 vector<string>::const_iterator facetIteratorInConfVector = find(
