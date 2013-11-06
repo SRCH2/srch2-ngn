@@ -7,6 +7,7 @@
   ****************************************************************************/
 
 #include "RefiningString.h"
+#include "SearchableString.h"
 #include<string>
 #include<cassert>
 
@@ -15,6 +16,7 @@ class StringEngine {
   /** Encapsulates the instance language around a Java RefiningString object
       used by the particular JVM housing the Java side of this Engine */
   const JNIClass::RefiningString refiningString;
+  const JNIClass::SearchableString searchableString;
 
   /*  The stored value of this Engine */
   std::string value;
@@ -28,16 +30,23 @@ class StringEngine {
    */
   JNIEnv *env;
 
-  StringEngine(jclass refiningStringClassPtr,
-      jmethodID getValue, jmethodID constructor)
-    : refiningString(this->env, 
-        refiningStringClassPtr, getValue, constructor) {}
+  StringEngine(jmethodID getValue,
+      jclass refiningStringClassPtr, jmethodID refiningConstructor,
+      jclass searchableStringClassPtr, jmethodID searchableConstructor)
+    : refiningString(this->env, refiningStringClassPtr,
+          getValue, searchableConstructor),
+      searchableString(this->env, searchableStringClassPtr,
+         getValue, searchableConstructor) {}
 
   /* returns a Java RefiningString instance with value equivalent
      to the string contained this Engine. */
-  jobject getString();
+  jobject getRefiningString();
+  /* returns a Java SearchableString instance with value equivalent
+     to the string contained this Engine. */
+  jobject getSearchableString();
+ 
   /* Stores a new string value in this Engine, equivalent to the value of
-     RefiningString given. */
+     given StringAttribute. */
   void setString(jobject);
 };
 

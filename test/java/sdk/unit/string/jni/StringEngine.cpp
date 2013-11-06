@@ -26,12 +26,20 @@ StringEngine* dereferenceStringEngineHandle(JNIEnv *env, jlong handle) {
    bridged function calls.
 */
 jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
-    jobject, jclass refiningStringClassPtr,
-    jobject refiningStringMethodgetValue,
-    jobject refiningStringConstructor) {
-  
+    jclass, jobject refiningStringMethodgetValue,
+    jclass searchableStringClassPtr, jobject searchableStringConstructor,
+    jclass refiningStringClassPtr, jobject refiningStringConstructor) {
+
+ 
   return 
     (jlong) new StringEngine(
+       /* Extracts the constant JNI location of the given Method parameter. The
+         parameter is a handle to a handle object which points to a given
+         method; the extracted JNI location directly maps the method, relative
+         to its associated class. This dramatically reduces lookup time; and, 
+         the location remains constant, as long as its associated class
+         persists, which is ensured by the above call. */
+      env->FromReflectedMethod(refiningStringMethodgetValue),
       /* Creates a new permanent handle to the RefiningString Class. The new
          global reference creates a new handle object on the heap which
          references the same location as java handle referenced in the
@@ -42,48 +50,57 @@ jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
          even when no instances are present, since, a strong reference to it 
          will always be present.
        */
-      (jclass) env->NewGlobalRef(refiningStringClassPtr),
-      /* Extracts the constant JNI location of the given Method parameter. The
-         parameter is a handle to a handle object which points to a given
-         method; the extracted JNI location directly maps the method, relative
-         to its associated class. This dramatically reduces lookup time; and, 
-         the location remains constant, as long as its associated class
-         persists, which is ensured by the above call.
-       */
-      env->FromReflectedMethod(refiningStringMethodgetValue),
+      (jclass) env->NewGlobalRef(searchableStringClassPtr), 
+      env->FromReflectedMethod(searchableStringConstructor),
+      (jclass) env->NewGlobalRef(refiningStringClassPtr), 
       env->FromReflectedMethod(refiningStringConstructor));
 }
 
-/** Stores the RefiningString value passed down from the Java side of
+/** Stores the String Attribute's value passed down from the Java side of
     StringEngine, in the c++ side reference by the given handle */
 void Java_com_srch2_StringEngine_setString
-  (JNIEnv *env, jobject, jlong handle, jobject string) {
+  (JNIEnv *env, jclass, jlong handle, jobject string) {
   dereferenceStringEngineHandle(env, handle)->setString(string);
 }
-/** Stores the given RefiningString's internalValue in this SearchableString
+/** Stores the given String Attributes's internalValue in this SearchableString
   */
 void StringEngine::setString(jobject string) {
-  assert(JNI_TRUE == refiningString.isInstance(string));
+  /* it does not matter that refiningString is used for all String Attributes
+     since they all share a common getValue method call */
   this->value = refiningString.toString(string);
 }
 
+/** Returns the SearchableString equivalant of the string value stored in the
+    c++ part of the StringEngine referenced by the given handle to the Java
+    side of the StringEngine.
+*/ 
+jobject Java_com_srch2_StringEngine_getSearchableString (JNIEnv *env,
+    jclass, jlong handle) {
+  return dereferenceStringEngineHandle(env, handle)->getSearchableString();
+}
+/** Return a SearchableString with value equivalant to the one stored by this
+    StringEngine.
+  */
+jobject StringEngine::getSearchableString() {
+  return searchableString.createNew(value);
+}
 /** Returns the RefiningString equivalant of the string value stored in the
     c++ part of the StringEngine referenced by the given handle to the Java
     side of the StringEngine.
 */ 
-jobject Java_com_srch2_StringEngine_getString (JNIEnv *env,
-    jobject, jlong handle) {
-  return dereferenceStringEngineHandle(env, handle)->getString();
+jobject Java_com_srch2_StringEngine_getRefiningString (JNIEnv *env,
+    jclass, jlong handle) {
+  return dereferenceStringEngineHandle(env, handle)->getRefiningString();
 }
 /** Return a RefiningString with value equivalant to the one stored by this
     StringEngine.
   */
-jobject StringEngine::getString() {
+jobject StringEngine::getRefiningString() {
   return refiningString.createNew(value);
 }
 
 /** Deletes the c++ part of the StringEngine pointed to by the given handle */
-void Java_com_srch2_StringEngine_deleteStringEngine(JNIEnv *env, jobject,
+void Java_com_srch2_StringEngine_deleteStringEngine(JNIEnv *env, jclass,
     jlong handle) {
   delete dereferenceStringEngineHandle(env, handle);
 }

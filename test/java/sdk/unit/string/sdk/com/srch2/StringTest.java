@@ -10,22 +10,59 @@ package com.srch2;
 
 import org.junit.*;
 
+interface TestCase {
+  Attribute getString(StringEngine e);
+  void setString(StringEngine e);
+  String getValue();
+  Attribute getTestValue();
+  String name();
+}
+
 public class StringTest {
+
+  private void testString(final String test) throws NoSuchMethodException {
+    dotest( 
+        new TestCase() {
+          RefiningString r= new RefiningString(test);
+          final String value= test;
+
+          public Attribute getString(StringEngine e) {
+            return e.getRefiningString();
+          }
+          public void setString(StringEngine e) { e.setString(r);}
+          public String getValue() {return value;}
+          public Attribute getTestValue() {return r;}
+          public String name() {return "RefiningString";}
+        });
+     dotest( 
+        new TestCase() {
+          SearchableString s= new SearchableString(test);
+          final String value= test;
+
+          public Attribute getString(StringEngine e) {
+           return e.getSearchableString();
+          }
+          public void setString(StringEngine e) { e.setString(s);}
+          public String getValue() {return value;}
+          public Attribute getTestValue() {return s;}
+          public String name() {return "SearchableString";}
+        });
+  }
   
-  private void testString(String test) throws NoSuchMethodException {
-    RefiningString testString= new RefiningString(test);
+  private void dotest(TestCase testCase) throws NoSuchMethodException {
     StringEngine e= new StringEngine();
 
-    e.setString(testString);
-    RefiningString result= e.getString();
+    testCase.setString(e);
+    Attribute result= e.getRefiningString();
 
     /* Asserts that the the results object is not the same object as the test
        input object; this is java's equivalent of comparing pointers */
-    Assert.assertFalse("failure- RefiningString is the same String",
-        result == testString);
-    Assert.assertEquals("failure- Incorrect value",
-        testString.getValue(), result.getValue());
-  }
+    Assert.assertFalse("failure- " + testCase.name() + "  is the same String",
+        result == testCase.getTestValue());
+    Assert.assertEquals("failure- " + testCase.name() + "has incorrect value",
+        testCase.getValue(), (String) result.getValue());
+  }  
+
   @Test
   public void testJimiHendrix() throws NoSuchMethodException {
     testString("JimiHendrix");

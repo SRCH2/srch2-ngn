@@ -8,7 +8,7 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "StringAttribute.h"
+#include "Attribute.h"
 #include<jni.h>
 #include<string>
 

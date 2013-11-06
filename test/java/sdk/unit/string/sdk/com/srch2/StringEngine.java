@@ -32,7 +32,7 @@ class StringEngine {
            
            searchableStringInstance.getValue();
      */
-     Method getString = RefiningStringInterface.class.getMethod("getValue");
+     Method getString = Attribute.class.getMethod("getValue");
      /* Java handle to the RefiningString constructor, invoking this
         handle with a UTF16 encoded string, namely
 
@@ -44,7 +44,21 @@ class StringEngine {
      */
      Constructor makeRefiningString=
        RefiningString.class.getConstructor(String.class);
-     handle = createStringEngine(RefiningString.class, getString,
+     /* Java handle to the SearchableString constructor, invoking this
+        handle with a UTF16 encoded string, namely
+
+        makeSearchableString.newInstance(String);
+
+          is equivalent to
+
+        SearchableString(String);
+     */
+
+     Constructor makeSearchableString=
+       SearchableString.class.getConstructor(String.class);
+
+     handle = createStringEngine(getString, SearchableString.class, 
+         makeSearchableString, RefiningString.class,
          makeRefiningString);
   }
 
@@ -59,28 +73,39 @@ class StringEngine {
       by the third parameter, is a constructor of a RefiningString object
       which takes a single argument, namely its UTF16 String value
   */
-  native long
-    createStringEngine(Class<RefiningString> searchableStringClass,
-        Method getString, Constructor createString);
+  native static long
+    createStringEngine(Method getString, 
+        Class<SearchableString> searchableStringClass,
+        Constructor createSearchableString,
+        Class<RefiningString> refiningStringClass,
+        Constructor createRefiningString);
 
-  /** Passing a RefiningString the StringEngine. This is used in testing the
-      JNI handling of RefiningStrings */
-  public void setString(RefiningString string) {
+  /** Passing a String Attribute to the StringEngine. This is used in testing
+      the JNI handling of String Attributes */
+  public void setString(Attribute<String> string) {
     setString(handle, string);
   }
-  /** Passes the RefiningString to the C++ part of this Engine, reference by
+  /** Passes the String Attribute to the C++ part of this Engine, reference by
       the passed handle, for storage */
-  private native void setString(long handle, RefiningString string);
+  private static native void setString(long handle, Attribute<String> string);
 
-
+/** Returns a SearchableString from the StringEngine. This is used in
+      testing the JNI handling of SearchableStrings */
+  public SearchableString getSearchableString() {
+    return getSearchableString(handle);
+  }
   /** Returns a RefiningString from the StringEngine. This is used in
       testing the JNI handling of RefiningStrings */
-  public RefiningString getString() {
-    return getString(handle);
+  public RefiningString getRefiningString() {
+    return getRefiningString(handle);
   }
+
+  /** Returns the SearchableString stored in the C++ part of this Engine,
+      reference by the passed handle */
+  private static native SearchableString getSearchableString(long handle);
   /** Returns the RefiningString stored in the C++ part of this Engine,
       reference by the passed handle */
-  private native RefiningString getString(long handle);
+  private static native RefiningString getRefiningString(long handle);
 
   /** Free the heap memory storing the c++ side of this StringEngine */
   private native void deleteStringEngine(long handle);
