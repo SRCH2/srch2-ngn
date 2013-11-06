@@ -58,7 +58,7 @@ class HTTPRequestHandler
 				const unsigned retrievedResults,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend);
+				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const QueryPlan &queryPlan,

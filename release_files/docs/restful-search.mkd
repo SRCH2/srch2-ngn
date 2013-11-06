@@ -267,10 +267,11 @@ Please note: the attributes used in "fq" must have the "refining" property set t
 
 ### 7.1. facet {id="facetEnabled"}
 
-It is either "true" or "false", indicating whether we want to enable faceting. To turn faceting on, we need to include the following
+It is either "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following
 ```
 facet=true
 ```
+Setting fact to "only" will make the engine only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
 
 Please note: facet must also be enabled from the configuration file by setting the
  ["facetEnabled"](configuration.html##facetEnabled) tag to true.
