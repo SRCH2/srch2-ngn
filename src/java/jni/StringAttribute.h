@@ -1,3 +1,5 @@
+#ifndef __STRING_ATTRIBUTE_H__
+#define __STRING_ATTRIBUTE_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -6,13 +8,30 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "SearchableString.h"
+#include "Attribute.h"
+#include<string>
+
+namespace JNIClass {
+  /* A wrapper around the java StringAttribute class */
+  struct StringAttribute : Attribute {
+    StringAttribute(JNIEnv*& env, jclass classPtr, jmethodID getValue,
+        jmethodID constructor)
+      : Attribute(env, classPtr, getValue, constructor) {}
+
+    /** converts a StringAttribute java instance, with the assumed encoding
+        of UTF16, into a c++ string, encoded in UTF8 */
+    std::string toString(jobject) const;
+    /** creates a new StringAttribute java instance, encoded in UTF16,
+        with the equivalant value of the given c++ string encoded in UTF8 */
+    jobject createNew(std::string&) const;
+  };
+}
+
 #include "util/utf8/unchecked.h"
 #include "util/utf16/utf16.h"
 
-
-
-std::string JNIClass::SearchableString::toString(jobject srch2String) const {
+std::string inline
+JNIClass::StringAttribute::toString(jobject srch2String) const {
   jstring srch2StringValue=
    (jstring) env->CallObjectMethod(srch2String, getValue);
   const jchar *utf16CharStringValue=
@@ -31,34 +50,25 @@ std::string JNIClass::SearchableString::toString(jobject srch2String) const {
   return std::string(utf8Start, utf8End);
 }
 
-jboolean JNIClass::SearchableString::isInstance(jobject obj) const {
-  return env->IsAssignableFrom(env->GetObjectClass(obj), classPtr);
-}
-
-jobject inline creatNew(std::string& content, jchar* buffer,
-    JNIEnv &env, jclass classPtr, jmethodID constructor) {
+void inline creatNew(std::string& content, jchar* buffer,
+    JNIEnv &env, jobject& internalString) {
   jchar *end;
 
   /* convert a UTF8 string to a UTF16 encoded array*/
   end= utf8::unchecked::utf8to16(content.begin(), content.end(), buffer);
 
   /* Creates a new String on the Java heap */
-  jstring internalString= env.NewString(buffer, end - buffer);
-
-  /* Creates a new Object of SearchableString type on the java heap using
-     the constructor specified with internalString as an argument.
-
-     Runs 
-         new SearchableString(internalString)
-
-     in the JVM, and returns a handle to the new object */
-  return env.NewObject(classPtr, constructor, internalString);
+  internalString= (jobject) env.NewString(buffer, end - buffer);
 
 }
 
-jobject JNIClass::SearchableString::createNew(std::string& content) const {
+jobject inline
+JNIClass::StringAttribute::createNew(std::string& content) const {
   /* Checks the size of input string to see if it can be handled on the stack*/
   jchar *buffer;
+  jvalue internalString;
+  jobject rtn;
+
   if((content.length() < 512)) {
     jchar uft16start[1024];
     buffer= uft16start;
@@ -66,11 +76,21 @@ jobject JNIClass::SearchableString::createNew(std::string& content) const {
   else {
     buffer= new jchar[content.length() * 2];
   }
-  return creatNew(content, buffer,
-      *(this->env), this->classPtr, this->constructor);
+  /* Creates a new Object of StringAttribute type on the java heap using
+     the constructor specified with internalString as an argument.
+
+     Runs 
+         new StringAttribute(internalString)
+
+     in the JVM, and returns a handle to the new object */
+  creatNew(content, buffer, *(this->env), internalString.l);
+  rtn= Attribute::createNew(internalString);
   
   /* free heap memory if needed */
-  if((content.length() < 512)) 
+  if((content.length() >= 512)) 
     delete buffer;
+
+  return rtn;
 }
 
+#endif /* __STRING_ATTRIBUTE_H__ */

@@ -1,5 +1,3 @@
-#ifndef __SEARCHABLE_STRING_H__
-#define __SEARCHABLE_STRING_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -8,17 +6,14 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "StringAttribute.h"
-#include<jni.h>
-#include<string>
+package com.srch2;
 
-namespace JNIClass {
-  struct SearchableString : StringAttribute {
-
-    SearchableString(JNIEnv*& env, jclass classPtr, jmethodID getValue,
-        jmethodID constructor)
-      : StringAttribute(env, classPtr, getValue, constructor) {}
-  };
+interface Attribute<T> {
+  /** Lookup value of this instance 
+   
+      @return converts this instance into a searchable String to be indexed by
+              Srch2 
+  */
+  T getValue();
 }
 
-#endif /* __SEARCHABLE_STRING_H__ */

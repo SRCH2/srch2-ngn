@@ -6,7 +6,7 @@ fi
 #-XshowSettings:properties \
 $prog \
 -Djava.library.path=\
-/home/rj/srch2/srch2-ngn/test/java/sdk/unit/stringtest/jni:\
+/home/rj/srch2/srch2-ngn/test/java/sdk/unit/string/jni:\
 /home/rj/srch2/srch2-ngn/build/src/core/ \
 -classpath \
 .:\

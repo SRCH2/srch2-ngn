@@ -1,5 +1,3 @@
-#ifndef __SEARCHABLE_STRING_H__
-#define __SEARCHABLE_STRING_H__
 
 /*****************************************************************************
  *                                                                           *
@@ -8,17 +6,20 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "StringAttribute.h"
-#include<jni.h>
-#include<string>
+package com.srch2;
 
-namespace JNIClass {
-  struct SearchableString : StringAttribute {
+public class RefiningString implements RefiningStringInterface {
+  private final String value;
+  /** Create a new instance surrounding this String value. The String value
+      now can be used to find the instance of a given class containing this
+      instance as a field */
+  public RefiningString(String value) {
+    this.value = value;
+  }
 
-    SearchableString(JNIEnv*& env, jclass classPtr, jmethodID getValue,
-        jmethodID constructor)
-      : StringAttribute(env, classPtr, getValue, constructor) {}
-  };
+  /** override */
+  public String getValue() {
+    return this.value;
+  }
 }
 
-#endif /* __SEARCHABLE_STRING_H__ */
