@@ -818,7 +818,7 @@ void QueryParser::facetParser() {
         string facet = evhttp_uridecode(facetTemp, 0, &st);
         // we have facet,
         //parse other facet related parameters if this is true
-        if (boost::iequals("true", facet)) {
+        if (boost::iequals("true", facet) || boost::iequals("only", facet)) {
             // facet param is true
             FacetQueryContainer *fqc = new FacetQueryContainer();
             populateFacetFieldsSimple(*fqc);
@@ -836,8 +836,13 @@ void QueryParser::facetParser() {
                 this->container->getAllResultsParameterContainer
                         ->facetQueryContainer = fqc;
             }
+
+            if( boost::iequals("only", facet)){
+            	this->container->onlyFacets = true;
+            }
+
             // parse other facet fields
-        } else if (boost::iequals("false", facet)) {
+        }else if (boost::iequals("false", facet)) {
             // facet is off. no need to parse any facet params
         } else {
             // unkonown value. raise warning and set facet to false
