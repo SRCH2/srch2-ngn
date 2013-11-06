@@ -6,12 +6,20 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "StringAttribute.h"
+package com.srch2;
 
-namespace JNIClass {
-  struct RefiningString : StringAttribute {
-    RefiningString(JNIEnv*& env, jclass classPtr, jmethodID getValue,
-        jmethodID constructor)
-      : StringAttribute(env, classPtr, getValue, constructor) {}
-  };
+public class IndexedString implements RefiningStringInterface {
+  private final String value;
+  /** Create a new instance surrounding this String value. The String value
+      now can be used to find the instance of a given class containing this
+      instance as a field */
+  public IndexedString(String value) {
+    this.value = value;
+  }
+
+  /** override */
+  public String getValue() {
+    return this.value;
+  }
 }
+

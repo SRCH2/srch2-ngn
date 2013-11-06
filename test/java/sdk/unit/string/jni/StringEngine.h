@@ -7,6 +7,8 @@
   ****************************************************************************/
 
 #include "RefiningString.h"
+#include "SearchableString.h"
+#include "IndexedString.h"
 #include<string>
 #include<cassert>
 
@@ -15,6 +17,8 @@ class StringEngine {
   /** Encapsulates the instance language around a Java RefiningString object
       used by the particular JVM housing the Java side of this Engine */
   const JNIClass::RefiningString refiningString;
+  const JNIClass::SearchableString searchableString;
+  const JNIClass::IndexedString indexedString;
 
   /*  The stored value of this Engine */
   std::string value;
@@ -28,16 +32,29 @@ class StringEngine {
    */
   JNIEnv *env;
 
-  StringEngine(jclass refiningStringClassPtr,
-      jmethodID getValue, jmethodID constructor)
-    : refiningString(this->env, 
-        refiningStringClassPtr, getValue, constructor) {}
+  StringEngine(jmethodID getValue,
+      jclass refiningStringClassPtr, jmethodID refiningConstructor,
+      jclass searchableStringClassPtr, jmethodID searchableConstructor,
+      jclass indexedStringClassPtr, jmethodID indexedConstructor)
+    : refiningString(this->env, refiningStringClassPtr,
+          getValue, searchableConstructor),
+      searchableString(this->env, searchableStringClassPtr,
+         getValue, searchableConstructor),
+      indexedString(this->env, indexedStringClassPtr,
+          getValue, indexedConstructor) {}
 
   /* returns a Java RefiningString instance with value equivalent
      to the string contained this Engine. */
-  jobject getString();
+  jobject getRefiningString();
+  /* returns a Java SearchableString instance with value equivalent
+     to the string contained this Engine. */
+  jobject getSearchableString();
+  /* returns a Java IndexedString instance with value equivalent
+     to the string contained this Engine. */
+  jobject getIndexedString();
+ 
   /* Stores a new string value in this Engine, equivalent to the value of
-     RefiningString given. */
+     given StringAttribute. */
   void setString(jobject);
 };
 

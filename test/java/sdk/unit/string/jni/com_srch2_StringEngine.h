@@ -17,35 +17,53 @@ extern "C" {
 #endif
 /*
  * Class:     com_srch2_StringEngine
- * Method:    createRefiningEngine
- * Signature: (Ljava/lang/Class;Ljava/lang/reflect/Method;
-               Ljava/lang/reflect/Constructor)J
+ * Method:    createStringEngine
+ * Signature: (Ljava/lang/reflect/Method;
+               Ljava/lang/Class; Ljava/lang/reflect/Constructor;
+               Ljava/lang/Class; Ljava/lang/reflect/Constructor)J
  */
 JNIEXPORT jlong JNICALL Java_com_srch2_StringEngine_createStringEngine
-  (JNIEnv *, jobject, jclass, jobject, jobject);
+<<<<<<< HEAD:test/java/sdk/unit/string/jni/com_srch2_StringEngine.h
+  (JNIEnv *, jclass, jobject,
+   jclass, jobject, jclass, jobject, jclass, jobject);
 
 /*
  * Class:     com_srch2_StringEngine
  * Method:    setString
- * Signature: (JLcom/srch2/RefiningString;)V
+ * Signature: (JLcom/srch2/Attribute;)V
  */
 JNIEXPORT void JNICALL Java_com_srch2_StringEngine_setString
-  (JNIEnv *, jobject, jlong, jobject);
+  (JNIEnv *, jclass, jlong, jobject);
 
 /*
  * Class:     com_srch2_StringEngine
- * Method:    getString
+ * Method:    getSearchableString
+ * Signature: (J)Lcom/srch2/SearchableString;
+ */
+JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getSearchableString
+  (JNIEnv *, jclass, jlong);
+/*
+ * Class:     com_srch2_StringEngine
+ * Method:    getRefiningString
  * Signature: (J)Lcom/srch2/RefiningString;
  */
-JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getString
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getRefiningString
+  (JNIEnv *, jclass, jlong);
+/*
+ * Class:     com_srch2_StringEngine
+ * Method:    getIndexedString
+ * Signature: (J)Lcom/srch2/IndexedString;
+ */
+JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getIndexedString
+  (JNIEnv *, jclass, jlong);
+
 /*
  * Class:     com_srch2_StringEngine
  * Method:    deleteRefiningEngine
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_srch2_StringEngine_deleteStringEngine
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }
