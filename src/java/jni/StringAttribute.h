@@ -1,3 +1,32 @@
+#ifndef __STRING_ATTRIBUTE_H__
+#define __STRING_ATTRIBUTE_H__
+
+/*****************************************************************************
+ *                                                                           *
+ *              AUTHOR : RJ ATWAL                                            *
+ *                                                                           *
+ *                                                                           * 
+  ****************************************************************************/
+
+#include "Attribute.h"
+#include<string>
+
+namespace JNIClass {
+  /* A wrapper around the java StringAttribute class */
+  struct StringAttribute : Attribute {
+    StringAttribute(JNIEnv*& env, jclass classPtr, jmethodID getValue,
+        jmethodID constructor)
+      : Attribute(env, classPtr, getValue, constructor) {}
+
+    /** converts a StringAttribute java instance, with the assumed encoding
+        of UTF16, into a c++ string, encoded in UTF8 */
+    std::string toString(jobject) const;
+    /** creates a new StringAttribute java instance, encoded in UTF16,
+        with the equivalant value of the given c++ string encoded in UTF8 */
+    jobject createNew(std::string&) const;
+  };
+}
+
 #include "util/utf8/unchecked.h"
 #include "util/utf16/utf16.h"
 
@@ -63,3 +92,5 @@ JNIClass::StringAttribute::createNew(std::string& content) const {
 
   return rtn;
 }
+
+#endif /* __STRING_ATTRIBUTE_H__ */

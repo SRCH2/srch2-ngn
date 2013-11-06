@@ -42,24 +42,14 @@ namespace JNIClass {
       env->DeleteGlobalRef(classPtr);
     }
   };
-
-
-  /* A wrapper around the java StringAttribute class */
-  struct StringAttribute : Attribute {
-    StringAttribute(JNIEnv*& env, jclass classPtr, jmethodID getValue,
-        jmethodID constructor)
-      : Attribute(env, classPtr, getValue, constructor) {}
-
-    /** converts a StringAttribute java instance, with the assumed encoding
-        of UTF16, into a c++ string, encoded in UTF8 */
-    std::string toString(jobject) const;
-    /** creates a new StringAttribute java instance, encoded in UTF16,
-        with the equivalant value of the given c++ string encoded in UTF8 */
-    jobject createNew(std::string&) const;
-  };
 }
 
-#include "attribute/Attribute.cpp"
-#include "attribute/StringAttribute.cpp"
+jboolean JNIClass::Attribute::isInstance(jobject obj) const {
+  return env->IsAssignableFrom(env->GetObjectClass(obj), classPtr);
+}
+
+jobject JNIClass::Attribute::createNew(jvalue& content) const {
+  return env->NewObject(classPtr, constructor, content);
+}
 
 #endif /* __ATTRIBUTE_H__ */

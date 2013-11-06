@@ -6,7 +6,7 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "Attribute.h"
+#include "StringAttribute.h"
 
 namespace JNIClass {
   struct RefiningString : StringAttribute {
