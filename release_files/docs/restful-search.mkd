@@ -271,7 +271,7 @@ It is either "true", "false" or "only", indicating whether we want to enable fac
 ```
 facet=true
 ```
-Setting fact to "only" will make the engine to only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
+Setting fact to "only" will make the engine only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
 
 Please note: facet must also be enabled from the configuration file by setting the
  ["facetEnabled"](configuration.html##facetEnabled) tag to true.

@@ -120,7 +120,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     root["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    if(onlyFacets == false){
+    if(onlyFacets == false){ // We send the matching records only if "facet != only".
         root["results"].resize(end - start);
         unsigned counter = 0;
         if (queryPlan.getSearchType() == GeoSearchType
