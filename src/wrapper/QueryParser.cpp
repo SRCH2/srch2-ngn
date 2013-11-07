@@ -1559,7 +1559,7 @@ void QueryParser::extractSearchType() {
                 } else {
                     // no searchType provided use topK
                     this->container->messages.push_back(
-                            make_pair(MessageWarning,
+                            make_pair(MessageNotice,
                                     "no searchType is provided, using topK"));
                     this->container->parametersInQuery.push_back(
                             TopKSearchType);
