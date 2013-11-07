@@ -23,7 +23,6 @@ extern "C" {
                Ljava/lang/Class; Ljava/lang/reflect/Constructor)J
  */
 JNIEXPORT jlong JNICALL Java_com_srch2_StringEngine_createStringEngine
-<<<<<<< HEAD:test/java/sdk/unit/string/jni/com_srch2_StringEngine.h
   (JNIEnv *, jclass, jobject,
    jclass, jobject, jclass, jobject, jclass, jobject);
 

@@ -30,7 +30,6 @@ jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
     jclass searchableStringClassPtr, jobject searchableStringConstructor,
     jclass refiningStringClassPtr, jobject refiningStringConstructor,
     jclass indexedStringClassPtr, jobject indexedStringConstructor) {
-
  
   return 
     (jlong) new StringEngine(
