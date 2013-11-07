@@ -45,4 +45,22 @@ public class IntTest {
   public void testMinInt() throws NoSuchMethodException {
     testInt(Integer.MIN_VALUE);
   }
+
+  @Test
+  public  void testIntegerClassConstructor() throws NoSuchMethodException {
+    int testValue= 5;
+    IntEngine e= new IntEngine();
+    MyRefiningInteger testInteger= new MyRefiningInteger(testValue);
+
+    e.setInt(testInteger);
+    Attribute<Integer> result= e.getRefiningInt();
+
+    /* Asserts that the the results object is not the same object as the test
+       input object; this is java's equivalent of comparing pointers */
+    Assert.assertNotSame("failure- returned RefiningInteger is the same",
+         result, testInteger);
+    Assert.assertEquals("failure- RefiningInteger has incorrect value",
+        testValue, (int) result.getValue());
+  }  
+
 }

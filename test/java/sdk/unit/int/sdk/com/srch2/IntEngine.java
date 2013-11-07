@@ -21,6 +21,16 @@ class IntEngine {
 
   /* A handle to the c++ part of this IntEngine */
   private long handle;
+  /* Java handle to the RefiningInt constructor, invoking this
+        handle with integer, namely
+
+        makeRefiningInt.newInstance(Integer);
+
+          is equivalent to
+
+        RefiningIntger(Integer);
+     */
+  Constructor makeRefiningInt;
 
   IntEngine() throws NoSuchMethodException {
      /* Java handle to the RefiningInteger method getValue, invoking this
@@ -34,17 +44,11 @@ class IntEngine {
      */
      Method getInt = RefiningIntegerInterface.class.getMethod("getInt");
 
-     /* Java handle to the RefiningInt constructor, invoking this
-        handle with integer, namely
-
-        makeRefiningInt.newInstance(Integer);
-
-          is equivalent to
-
-        RefiningIntger(Integer);
-     */
-     Constructor makeRefiningInt=
-       RefiningInteger.class.getConstructor(Integer.TYPE);
+     try {
+       makeRefiningInt = RefiningInteger.class.getConstructor(Integer.TYPE);
+     } catch(NoSuchMethodException ex) {
+       makeRefiningInt = MyRefiningInteger.class.getConstructor(Integer.class);
+     }
 
 
      handle = createIntEngine(getInt, RefiningInteger.class, makeRefiningInt);
