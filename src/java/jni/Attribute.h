@@ -51,3 +51,4 @@ jobject JNIClass::Attribute::createNew(jvalue& content) const {
   return env->NewObject(classPtr, constructor, content);
 }
 
+#endif /* __ATTRIBUTE_H__ */
