@@ -27,7 +27,22 @@ public class IntTest {
   }  
 
   @Test
-  public void testJimiHendrix() throws NoSuchMethodException {
+  public void testBasic() throws NoSuchMethodException {
     testInt(123);
+  }
+  @Test
+  public void testZero() throws NoSuchMethodException {
+    testInt(0);
+  }
+  @Test
+  public void testNegative() throws NoSuchMethodException {
+    testInt(-1);
+  }
+  @Test
+  public void testMaxInt() throws NoSuchMethodException {
+    testInt(Integer.MAX_VALUE);
+  }
+  public void testMinInt() throws NoSuchMethodException {
+    testInt(Integer.MIN_VALUE);
   }
 }
