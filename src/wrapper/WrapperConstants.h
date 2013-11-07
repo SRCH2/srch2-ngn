@@ -68,7 +68,7 @@ typedef enum {
 } ResponseResultsFormat;
 
 typedef enum {
-    MessageError, MessageWarning
+    MessageError, MessageWarning, MessageNotice
 } MessageType;
 
 /// Configuration related constants

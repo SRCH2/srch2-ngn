@@ -255,6 +255,9 @@ public:
             case MessageWarning:
                 result += "WARNING : " + m->second + "\n";
                 break;
+            case MessageNotice:
+            	result += "NOTICE : " + m->second + "\n";
+            	break;
             }
         }
         return result;
