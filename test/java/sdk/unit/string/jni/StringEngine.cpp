@@ -28,8 +28,8 @@ StringEngine* dereferenceStringEngineHandle(JNIEnv *env, jlong handle) {
 jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
     jclass, jobject refiningStringMethodgetValue,
     jclass searchableStringClassPtr, jobject searchableStringConstructor,
-    jclass refiningStringClassPtr, jobject refiningStringConstructor) {
-
+    jclass refiningStringClassPtr, jobject refiningStringConstructor,
+    jclass indexedStringClassPtr, jobject indexedStringConstructor) {
  
   return 
     (jlong) new StringEngine(
@@ -53,7 +53,9 @@ jlong Java_com_srch2_StringEngine_createStringEngine(JNIEnv *env,
       (jclass) env->NewGlobalRef(searchableStringClassPtr), 
       env->FromReflectedMethod(searchableStringConstructor),
       (jclass) env->NewGlobalRef(refiningStringClassPtr), 
-      env->FromReflectedMethod(refiningStringConstructor));
+      env->FromReflectedMethod(refiningStringConstructor),
+      (jclass) env->NewGlobalRef(indexedStringClassPtr), 
+      env->FromReflectedMethod(indexedStringConstructor));
 }
 
 /** Stores the String Attribute's value passed down from the Java side of
@@ -84,7 +86,8 @@ jobject Java_com_srch2_StringEngine_getSearchableString (JNIEnv *env,
 jobject StringEngine::getSearchableString() {
   return searchableString.createNew(value);
 }
-/** Returns the RefiningString equivalant of the string value stored in the
+
+/** Returns the RefiningString equivalent of the string value stored in the
     c++ part of the StringEngine referenced by the given handle to the Java
     side of the StringEngine.
 */ 
@@ -92,11 +95,23 @@ jobject Java_com_srch2_StringEngine_getRefiningString (JNIEnv *env,
     jclass, jlong handle) {
   return dereferenceStringEngineHandle(env, handle)->getRefiningString();
 }
-/** Return a RefiningString with value equivalant to the one stored by this
+
+/** Return a RefiningString with value equivalent to the one stored by this
     StringEngine.
   */
 jobject StringEngine::getRefiningString() {
   return refiningString.createNew(value);
+}
+
+jobject Java_com_srch2_StringEngine_getIndexedString (JNIEnv *env,
+    jclass, jlong handle) {
+  return dereferenceStringEngineHandle(env, handle)->getIndexedString();
+}
+/** Return a IndexedString with value equivalent to the one stored by this
+    StringEngine.
+  */
+jobject StringEngine::getIndexedString() {
+  return indexedString.createNew(value);
 }
 
 /** Deletes the c++ part of the StringEngine pointed to by the given handle */

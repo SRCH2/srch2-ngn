@@ -56,11 +56,23 @@ class StringEngine {
 
      Constructor makeSearchableString=
        SearchableString.class.getConstructor(String.class);
+     /* Java handle to the IndexedString constructor, invoking this
+        handle with a UTF16 encoded string, namely
+
+        makeIndexedString.newInstance(String);
+
+          is equivalent to
+
+        IndexedString(String);
+     */
+     Constructor makeIndexedString=
+       IndexedString.class.getConstructor(String.class);
+
 
      handle = createStringEngine(getString, SearchableString.class, 
          makeSearchableString, RefiningString.class,
-         makeRefiningString);
-  }
+         makeRefiningString, IndexedString.class, makeIndexedString);
+ }
 
   /** Sets up the c++ part of this StringEngine, informing it of language 
       used by the Java part, namely this instance, of this StringEngine. 
@@ -78,7 +90,9 @@ class StringEngine {
         Class<SearchableString> searchableStringClass,
         Constructor createSearchableString,
         Class<RefiningString> refiningStringClass,
-        Constructor createRefiningString);
+        Constructor createRefiningString,
+        Class<IndexedString> indexedStringClass,
+        Constructor createIndexedString);
 
   /** Passing a String Attribute to the StringEngine. This is used in testing
       the JNI handling of String Attributes */
@@ -99,6 +113,11 @@ class StringEngine {
   public RefiningString getRefiningString() {
     return getRefiningString(handle);
   }
+  /** Returns a IndexedString from the StringEngine. This is used in
+      testing the JNI handling of IndexedStrings */
+  public IndexedString getIndexedString() {
+    return getIndexedString(handle);
+  }
 
   /** Returns the SearchableString stored in the C++ part of this Engine,
       reference by the passed handle */
@@ -106,6 +125,9 @@ class StringEngine {
   /** Returns the RefiningString stored in the C++ part of this Engine,
       reference by the passed handle */
   private static native RefiningString getRefiningString(long handle);
+  /** Returns the IndexedString stored in the C++ part of this Engine,
+      reference by the passed handle */
+  private static native IndexedString getIndexedString(long handle);
 
   /** Free the heap memory storing the c++ side of this StringEngine */
   private native void deleteStringEngine(long handle);

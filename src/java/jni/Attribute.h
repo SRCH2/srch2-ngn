@@ -9,7 +9,6 @@
   ****************************************************************************/
 
 #include<jni.h>
-#include<string>
 
 namespace JNIClass {
   /* A wrapper around the java Attribute class */

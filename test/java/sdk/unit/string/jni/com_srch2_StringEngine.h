@@ -23,7 +23,8 @@ extern "C" {
                Ljava/lang/Class; Ljava/lang/reflect/Constructor)J
  */
 JNIEXPORT jlong JNICALL Java_com_srch2_StringEngine_createStringEngine
-  (JNIEnv *, jclass, jobject, jclass, jobject, jclass, jobject);
+  (JNIEnv *, jclass, jobject,
+   jclass, jobject, jclass, jobject, jclass, jobject);
 
 /*
  * Class:     com_srch2_StringEngine
@@ -46,6 +47,13 @@ JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getSearchableString
  * Signature: (J)Lcom/srch2/RefiningString;
  */
 JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getRefiningString
+  (JNIEnv *, jclass, jlong);
+/*
+ * Class:     com_srch2_StringEngine
+ * Method:    getIndexedString
+ * Signature: (J)Lcom/srch2/IndexedString;
+ */
+JNIEXPORT jobject JNICALL Java_com_srch2_StringEngine_getIndexedString
   (JNIEnv *, jclass, jlong);
 
 /*
