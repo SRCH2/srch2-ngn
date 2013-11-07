@@ -20,52 +20,61 @@ interface TestCase {
 public class StringTest {
 
   private void testString(final String test) throws NoSuchMethodException {
+    /* Test Refining String */
     dotest( 
         new TestCase() {
-          RefiningString r= new RefiningString(test);
-          final String value= test;
+          RefiningString testRefiningString = new RefiningString(test);
+          final String value = test;
 
           public Attribute getString(StringEngine e) {
             return e.getRefiningString();
           }
-          public void setString(StringEngine e) { e.setString(r);}
+          public void setString(StringEngine e) {
+            e.setString(testRefiningString);
+          }
           public String getValue() {return value;}
-          public Attribute getTestValue() {return r;}
+          public Attribute getTestValue() {return testRefiningString;}
           public String name() {return "RefiningString";}
         });
+    /* Test Searchable String */
      dotest( 
         new TestCase() {
-          SearchableString s= new SearchableString(test);
-          final String value= test;
+          SearchableString testSearchableString = new SearchableString(test);
+          final String value = test;
 
           public Attribute getString(StringEngine e) {
            return e.getSearchableString();
           }
-          public void setString(StringEngine e) { e.setString(s);}
+          public void setString(StringEngine e) {
+            e.setString(testSearchableString);
+          }
           public String getValue() {return value;}
-          public Attribute getTestValue() {return s;}
+          public Attribute getTestValue() {return testSearchableString;}
           public String name() {return "SearchableString";}
         });
+     /* Test Indexed String */
      dotest( 
         new TestCase() {
-          SearchableString i= new SearchableString(test);
-          final String value= test;
+          IndexedString testIndexedString = new IndexedString(test);
+          final String value = test;
 
           public Attribute getString(StringEngine e) {
            return e.getIndexedString();
           }
-          public void setString(StringEngine e) { e.setString(i);}
+          public void setString(StringEngine e) {
+            e.setString(testIndexedString);
+          }
           public String getValue() {return value;}
-          public Attribute getTestValue() {return i;}
+          public Attribute getTestValue() {return testIndexedString;}
           public String name() {return "IndexedString";}
         });
   }
   
   private void dotest(TestCase testCase) throws NoSuchMethodException {
-    StringEngine e= new StringEngine();
+    StringEngine e = new StringEngine();
 
     testCase.setString(e);
-    Attribute result= e.getRefiningString();
+    Attribute result = e.getRefiningString();
 
     /* Asserts that the the results object is not the same object as the test
        input object; this is java's equivalent of comparing pointers */
