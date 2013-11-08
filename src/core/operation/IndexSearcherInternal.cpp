@@ -153,7 +153,6 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 	// before preparing termVirtualLists for actual search, we estimate the number of results.
 	// If the number of results is going to be too big, we call topK to find just a number of records.
 	unsigned estimatedNumberOfResults = this->estimateNumberOfResults(query , activeNodesVector);
-	std::cout << "Estimated number of results : " << estimatedNumberOfResults << std::endl;
 	if(estimatedNumberOfResults > estimatedNumberOfResultsThresholdGetAll){
 		// we must call top k here
 		unsigned numberOfResultsFound = searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
@@ -444,15 +443,6 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         const int nextK, QueryResults* queryResults, vector<PrefixActiveNodeSet *> * activeNodesVectorFromArgs)
 {
 
-    struct timespec tstart;
-    clock_gettime(CLOCK_REALTIME, &tstart);
-
-    std::cout << "K for topK : " << nextK << std::endl;
-    std::cout << "Query keywords : " ;
-    for(int i=0;i<query->getQueryTerms()->size();i++){
-    	std::cout << query->getQueryTerms()->at(i)->getKeyword()->c_str() << (unsigned)query->getQueryTerms()->at(i)->getThreshold() << " ";
-    }
-    std::cout << std::endl;
     // Empty Query case
     if (query->getQueryTerms()->size() == 0) {
         return 0;
@@ -663,13 +653,6 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 delete conjunctionCacheResultsEntry;
         }
 
-        struct timespec tend;
-        clock_gettime(CLOCK_REALTIME, &tend);
-        unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-                + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-        std::cout << "Time for pre-topK : " << ts1 << std::endl;
-        clock_gettime(CLOCK_REALTIME, &tstart);
-
         // Fagin's Algorithm
         float maxScoreForUnvisitedRecords;
         bool stop = false;
@@ -680,9 +663,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
         HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
         queryResults->addMessage("Fagin's Loop Start");
-        unsigned roundRobinCounter = 0;
         while (!stop) {
-        	roundRobinCounter ++;
             // maxScoreForUnvisitedRecords is the upper bound of the scores of these unvisited records
             maxScoreForUnvisitedRecords = 0;
             for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
@@ -832,11 +813,6 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
         queryResults->addMessage("Finalised the results.");
 
-        clock_gettime(CLOCK_REALTIME, &tend);
-        ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-                + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-        std::cout << "Time for topK : " << ts1 << std::endl;
-        std::cout << "Round robin counter : " << roundRobinCounter << std::endl;
         /*
         // cache the candidateList and the cursors with the query terms
         // construct the cursors vector
