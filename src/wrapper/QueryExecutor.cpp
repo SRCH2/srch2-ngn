@@ -188,6 +188,9 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
 
     int idsFuzzyFound = 0;
 
+    // If we got less than getGetAllResultsNumberOfResultsToFindInEstimationMode (e.g. 500) results
+    // we should try fuzzy, otherwise we don't have to because H2 heuristic triggers topK to find
+    // getGetAllResultsNumberOfResultsToFindInEstimationMode results anyways.
     if (this->queryPlan.isFuzzy()
             && (idsExactFound < (int) this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode() )) {
         QueryResults *fuzzyQueryResults = new QueryResults(

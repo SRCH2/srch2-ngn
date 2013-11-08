@@ -157,6 +157,8 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 		// we must call top k here
 		unsigned numberOfResultsFound = searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
 		if(numberOfResultsFound >= numberOfEstimatedResultsToFindGetAll){
+			// since searchTopK also saves candidate results in sortedFinalResults, we need to remove them
+			// to prevent post-processing to process them.
 			std::vector<QueryResult *>::iterator startOfErase = queryResults->impl->sortedFinalResults.begin();
 			std::advance(startOfErase ,numberOfEstimatedResultsToFindGetAll);
 			queryResults->impl->sortedFinalResults.erase(startOfErase , queryResults->impl->sortedFinalResults.end());
