@@ -256,8 +256,6 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 
 void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
         const Query * query, QueryResults * input, QueryResults * output){
-    struct timespec tstart;
-    clock_gettime(CLOCK_REALTIME, &tstart);
     IndexSearcherInternal * indexSearcherInternal =
             dynamic_cast<IndexSearcherInternal *>(indexSearcher);
     Schema * schema = indexSearcherInternal->getSchema();
@@ -319,12 +317,6 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 		facetResultsPtr->second->getNamesAndValues(results, numberOfGroupsToReturnForThisField);
 		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
 	}
-
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    std::cout << "Time for computing facets for " << output->impl->sortedFinalResults.size() << " results : " << ts1 << std::endl;
 }
 
 void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
