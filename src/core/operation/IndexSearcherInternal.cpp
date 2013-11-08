@@ -116,8 +116,6 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 	// this vector keeps the popularity values of terms to be used in case
 	// we need to find the least popular one
 	vector<unsigned> termPopularities;
-	// this flag will be set if there is no term which is not too popular
-	bool thereIsAtLeastOneUnpopularTerm = false;
 
 	// iterate on terms and if a term is too popular, set the flag so that we don't traverse to leaf nodes for it
 	for (vector<Term*>::const_iterator vectorIterator = query->getQueryTerms()->begin();
@@ -133,34 +131,29 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 		// By default the value of topRecordScore is -1. If this term is too popular, this value will be the score of the
 		// the top record of the most popular suggestion inverted list
 		float topRecordScoreIfTooPopular = -1;
-		if(isPopular){
-			topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
-		}else{
-			thereIsAtLeastOneUnpopularTerm = true;
-		}
+		topRecordScoreIfTooPopular = findTopRunTimeScoreOfLeafNodes(term ,  query->getPrefixMatchPenalty() , activeNodes);
 		termPopularities.push_back(popularity);
 		isTermTooPopularVectorAndScoresOfTopRecords.push_back(topRecordScoreIfTooPopular);
 
 	}
 
-	if(thereIsAtLeastOneUnpopularTerm == false){
-		// for example : q="to be or not to be"
-		// if there is more than one keyword, we find the least popular term and compute term virtual list only
-		// for that one
-		unsigned minPopularityIndex = 0;
-		for(int termIndex = 1 ; termIndex != query->getQueryTerms()->size() ; ++termIndex){
-			if(termPopularities.at(termIndex) < termPopularities.at(minPopularityIndex)){
-				minPopularityIndex = termIndex;
-			}
+	// for example : q="to be or not to be"
+	// if there is more than one keyword, we find the least popular term and compute term virtual list only
+	// for that one
+	unsigned minPopularityIndex = 0;
+	for(int termIndex = 1 ; termIndex != query->getQueryTerms()->size() ; ++termIndex){
+		if(termPopularities.at(termIndex) < termPopularities.at(minPopularityIndex)){
+			minPopularityIndex = termIndex;
 		}
-		// isTermTooPopularVector is a vector of true values, we should set the value of
-		// least popular term top record score to -1
-		isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
 	}
+	// isTermTooPopularVector is a vector of true values, we should set the value of
+	// least popular term top record score to -1
+	isTermTooPopularVectorAndScoresOfTopRecords.at(minPopularityIndex) = -1;
 
 	// before preparing termVirtualLists for actual search, we estimate the number of results.
 	// If the number of results is going to be too big, we call topK to find just a number of records.
 	unsigned estimatedNumberOfResults = this->estimateNumberOfResults(query , activeNodesVector);
+	std::cout << "Estimated number of results : " << estimatedNumberOfResults << std::endl;
 	if(estimatedNumberOfResults > estimatedNumberOfResultsThresholdGetAll){
 		// we must call top k here
 		return searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
