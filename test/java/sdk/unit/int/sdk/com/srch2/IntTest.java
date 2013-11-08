@@ -46,6 +46,8 @@ public class IntTest {
     testInt(Integer.MIN_VALUE);
   }
 
+  /* Test RefiningInteger logic with an Integer class Constructor rather than
+     the int primative. */
   @Test
   public  void testIntegerClassConstructor() throws NoSuchMethodException {
     int testValue= 5;

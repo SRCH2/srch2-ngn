@@ -47,6 +47,8 @@ class IntEngine {
      try {
        makeRefiningInt = RefiningInteger.class.getConstructor(Integer.TYPE);
      } catch(NoSuchMethodException ex) {
+       /* Special Case logic used to test logic using both an Integer.class
+          and a java int primative */
        makeRefiningInt = MyRefiningInteger.class.getConstructor(Integer.class);
      }
 
