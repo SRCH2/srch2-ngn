@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Search API</title>
 </head>
@@ -91,59 +91,69 @@
 <p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="sampleQueries">2. Sample queries</h2>
 <p>Let us start with sample queries to give an idea of the query syntax.</p>
-<pre><code>f1) curl -i &quot;http://localhost:8081/search?q=algorithm&quot;
+<p>Query f1 searches for all records containing the word "terminator". The result set will contain all records with the word "terminator" in a <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
+<pre><code>f1) curl -i &quot;http://localhost:8081/search?q=terminator&quot;
 </code></pre>
 
-<p>In this query, we are searching for all records containing the word "algorithm". The result set will contain all records with the word "algorithm" in a <a href="configuration.html#fields">searchable field</a>, as specified in the configuration file.</p>
-<pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&quot;
+<p>Query f2 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron") gets records with the word "terminator" in its <i>title</i> field and the word "cameron" in its <i>director</i> field.</p>
+<pre><code>f2) curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&quot;
 </code></pre>
 
-<p>This query will get records with the word "algorithm" in its <i>title</i> field and the word "gnuth" in its <i>author</i> field.</p>
-<pre><code>f3) curl -i &quot;http://localhost:8081/search?q=title:algorithm AND author:gnuth&amp;fq=price:[10 TO 100]&quot;
+<p>Query f3 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=year:[1983 TO 1992]") (TODO)
+filters the results based on the <i>year</i> field, i.e., the <i>year</i> value needs to be between 1983 and 1992 (both inclusive).</p>
+<pre><code>f3) curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=year:%5B1983%20TO%201992%5D&quot;
 </code></pre>
 
-<p>This query is similar to the previous one. The only difference is that in <i>f3</i>, we filter the results based on the <i>price</i> field. So the result set contains records with the word "algorithm" in their <i>title</i> field, the word "gnuth" in their <i>author</i> field, and have a <i>price</i> between 10 and 100 (both inclusive).</p>
-<pre><code>f4) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $&quot;
+<p>Query f4 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=genre:action")
+filters the results based on the <i>genre</i> field.</p>
+<pre><code>f4) curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=genre:action&quot;
 </code></pre>
 
-<p>The query <i>f4</i> exhibits the engine's ability to filter records using boolean expressions, in addition to values and ranges. In <i>f4</i>, the engine further filters the results based on their field <i>discount</i> having a value greater than 10.</p>
-<pre><code>f5) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $ &amp;sort=category&amp;orderby=asc&quot;
+<p>Query f5 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=boolexp$ year&gt;1982 $") includes a filtering expression, as specified by the syntax "boolexp$ ... $", which selects movies made after 1982.</p>
+<pre><code>f5) curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=boolexp$%20year%3E1982%20$&quot;
 </code></pre>
 
-<p>This query is similar to <i>f4</i>. In <i>f5</i> we sort the result set of <i>f4</i> in an ascending order based on the record's <i>category</i> field.</p>
-<pre><code>f6) curl -i &quot;http://localhost:8081/search?q=title:algorithms AND author:gnuth&amp;fq=price:[10 TO 100] AND boolexp$ discount&gt;10 $&amp;facet=true&amp;facet.field=category&quot;
+<p>Query f6 sorts the results based on the year attribute in the ascending order.</p>
+<pre><code>f6) curl -i &quot;http://localhost:8081/search?q=cameron&amp;sort=year&amp;orderby=asc&quot;
 </code></pre>
 
-<p>This query, again, is similar to query <i>f4</i>, except that the new query requests the engine to return faceted information for the record's <i>category</i> field.</p>
-<p>Note: The response of each RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query URL. For example:</p>
-<pre><code>curl -i &quot;http://localhost:8081/search?q=algorithm&amp;callback=myfunc
+<p>Query f7 requests the engine to return faceted information for the record's <i>genre</i> field.</p>
+<pre><code>f7) curl -i &quot;http://localhost:8081/search?q=cameron&amp;facet=true&amp;facet.field=genre&quot;
+</code></pre>
+
+<p>Note: The response of a RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query URL. For example:</p>
+<pre><code>curl -i &quot;http://localhost:8081/search?q=terminator&amp;callback=myfunc
 </code></pre>
 
 <h2 id="basicConcepts">3. Basic Concepts</h2>
 <p>Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.</p>
 <h3 id="fields">3.1. Fields</h3>
-<p>When performing a search, we can either specify a field or use a default value. A field that is labeled as "<a href="configuration.html#fields">searchable</a>" or "<a href="configuration.html#fields">indexed</a>" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose that the data contains two fields, <i>title</i> and <i>text</i>. To find the records with "algo" and "structure" in "title" field, we can use the following query:</p>
-<pre><code>title:algo AND structure
+<p>When performing a search, we can either specify a field or use a default value. A field that is labeled as "<a href="configuration.html#fields">searchable</a>" or "<a href="configuration.html#fields">indexed</a>" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose the data contains two fields, <i>title</i> and <i>year</i>. To find the records with "star" and "wars" in "title" field, we can use the following query:</p>
+<pre><code>title:star AND wars
 </code></pre>
 
 <h3 id="terms">3.2. Terms</h3>
-<p>There are two types of terms: "single term" and "phrase." A single term is a single word such as <i>algorithm</i> or <i>gnuth</i>. A phrase is a group of words surrounded by double quotes such as <i>"new york city"</i>.</p>
+<p>There are two types of terms: "single term" and "phrase." A single term is a single word such as <i>terminator</i> or <i>cameron</i>. A phrase is a group of words surrounded by double quotes such as <i>"star wars"</i>.</p>
 <h3 id="termModifiers">3.3. Term Modifiers</h3>
 <p>The engine supports modifying query terms to provide a wide range of search options.</p>
 <h3 id="prefixSearch">3.3.1. Prefix Search</h3>
-<p>The engine supports prefix searches. For instance, the following query searches for records with a keyword that has the prefix "schwar":</p>
-<pre><code>q=schwar*
+<p>The engine supports prefix searches. For instance, the following query searches for records with a keyword that has the prefix "term*":</p>
+<pre><code>q=term*
 </code></pre>
 
 <h3 id="fuzzySearch">3.3.2. Fuzzy Search</h3>
-<p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula "floor((1-s) * length(keyword))" as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
-<pre><code>q=schwarazenneggar~0.8
+<p>The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula </p>
+<pre><code>    floor((1-s) * length(keyword))
 </code></pre>
 
-<p>The internal edit-distance threshold is floor((1-0.8) * length("schwarazenneggar")) = floor(0.2 * 16) = 3. So the engine will find records with a keyword whose edit distance to the term "schwarazenneggar" is at most three.</p>
+<p>as the edit-distance threshold to do the search. If "s=1", we do an exact search. As example, consider the following query:</p>
+<pre><code>q=spielburrg~0.8
+</code></pre>
+
+<p>The internal edit-distance threshold is floor((1-0.8) * length("spielburrg")) = floor(0.2 * 10) = 2. So the engine will find records with a keyword whose edit distance to the term "spielburrg" is at most two.</p>
 <p>The engine allows each fuzzy search term to specify its own similarity value.</p>
 <p>If a term does not have a similarity value, e.g.,</p>
-<pre><code>schwarazenneggar~
+<pre><code>spielburrg~
 </code></pre>
 
 <p>the engine will use the similarity threshold specified in the <a href="configuration.html##queryTermSimilarityThreshold">configuration file</a></p>
