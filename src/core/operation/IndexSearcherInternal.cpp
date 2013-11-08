@@ -447,6 +447,12 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
+    std::cout << "K for topK : " << nextK << std::endl;
+    std::cout << "Query keywords : " ;
+    for(int i=0;i<query->getQueryTerms()->size();i++){
+    	std::cout << query->getQueryTerms()->at(i)->getKeyword()->c_str() << query->getQueryTerms()->at(i)->getThreshold() << " ";
+    }
+    std::cout << std::endl;
     // Empty Query case
     if (query->getQueryTerms()->size() == 0) {
         return 0;
@@ -542,11 +548,11 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // compute activenodes
             PrefixActiveNodeSet * activeNodes = NULL;
             // if active nodes are passed by arguments we should not compute them again.
-//            if(activeNodesVectorFromArgs == NULL){
+            if(activeNodesVectorFromArgs == NULL){
             	activeNodes = this->computeActiveNodeSet(term);;
-//            }else{
-//            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
-//            }
+            }else{
+            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
+            }
             activeNodesVector.push_back(activeNodes);
         }
 
