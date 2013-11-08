@@ -89,7 +89,7 @@ QueryParser::QueryParser(const evkeyvalq &headers) :
 bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
 		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages){
 	   // 1. get the keyword string.
-	    Logger::info("parsing the main query.");
+	    Logger::debug("parsing the main query.");
 	    const char * keywordTmp = evhttp_find_header(&headers,
 	            QueryParser::suggestionKeywordParamName);
 	    if (keywordTmp) { // if this parameter exists
@@ -247,7 +247,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
      * 2. calls the termParser();
      */
     // 1. get the mainQuery string.
-    Logger::info("parsing the main query.");
+    Logger::debug("parsing the main query.");
     const char * mainQueryTmp = evhttp_find_header(&headers,
             QueryParser::keywordQueryParamName);
     if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
@@ -818,7 +818,7 @@ void QueryParser::facetParser() {
         string facet = evhttp_uridecode(facetTemp, 0, &st);
         // we have facet,
         //parse other facet related parameters if this is true
-        if (boost::iequals("true", facet)) {
+        if (boost::iequals("true", facet) || boost::iequals("only", facet)) {
             // facet param is true
             FacetQueryContainer *fqc = new FacetQueryContainer();
             populateFacetFieldsSimple(*fqc);
@@ -836,8 +836,13 @@ void QueryParser::facetParser() {
                 this->container->getAllResultsParameterContainer
                         ->facetQueryContainer = fqc;
             }
+
+            if( boost::iequals("only", facet)){
+            	this->container->onlyFacets = true;
+            }
+
             // parse other facet fields
-        } else if (boost::iequals("false", facet)) {
+        }else if (boost::iequals("false", facet)) {
             // facet is off. no need to parse any facet params
         } else {
             // unkonown value. raise warning and set facet to false
@@ -1086,7 +1091,7 @@ bool QueryParser::termParser(string &input) {
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    Logger::info("inside term parser.");
+    Logger::debug("inside term parser.");
     Logger::debug("input received is %s", input.c_str());
     /*
      *
@@ -1220,7 +1225,7 @@ bool QueryParser::termParser(string &input) {
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
         this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
-    Logger::info("returning from  termParser.");
+    Logger::debug("returning from the termParser.");
     return true;
 
 }
@@ -1554,7 +1559,7 @@ void QueryParser::extractSearchType() {
                 } else {
                     // no searchType provided use topK
                     this->container->messages.push_back(
-                            make_pair(MessageWarning,
+                            make_pair(MessageNotice,
                                     "no searchType is provided, using topK"));
                     this->container->parametersInQuery.push_back(
                             TopKSearchType);

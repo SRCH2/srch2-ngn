@@ -373,8 +373,7 @@ Its default value is 3.
 ```
 <accessLogFile>./indexes/log.txt</accessLogFile>
 ```
-It specifies the file to which the engine writes logging information.<br>
-
+It specifies the file to which the engine writes logging information.  We can use third-party tools such as [logrotate](http://linuxcommand.org/man_pages/logrotate8.html) to  manage the log messages.  Check [this page](restful-control.html#reset-log) for more information about how to manage this log file.<br>
 
 ##11. Data Schema:##{id="schemaTag"}
 
