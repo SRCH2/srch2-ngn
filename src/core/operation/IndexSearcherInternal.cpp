@@ -542,11 +542,11 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
             // compute activenodes
             PrefixActiveNodeSet * activeNodes = NULL;
             // if active nodes are passed by arguments we should not compute them again.
-            if(activeNodesVectorFromArgs == NULL){
+//            if(activeNodesVectorFromArgs == NULL){
             	activeNodes = this->computeActiveNodeSet(term);;
-            }else{
-            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
-            }
+//            }else{
+//            	activeNodes = activeNodesVectorFromArgs->at(termIndex);
+//            }
             activeNodesVector.push_back(activeNodes);
         }
 
@@ -1170,7 +1170,6 @@ void IndexSearcherInternal::computeTermVirtualList(QueryResults *queryResults ,
             //
             termIndex ++;
         }
-        std::cout << std::endl;
     }
 }
 
