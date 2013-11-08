@@ -793,7 +793,6 @@ int main(int argc, char** argv) {
     }
 
     delete[] threads;
-    Logger::console("Saving Indexes ...");
     server.indexer->save();
 // free resources before we exit
     for (int i = 0; i < MAX_THREADS; i++) {

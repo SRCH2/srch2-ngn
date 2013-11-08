@@ -144,7 +144,6 @@ public:
 						 */
 					    indexer->commit();
 					    if (indexedCounter > 0) {
-					    	Logger::console("Saving Indexes.....");
 					    	indexer->save();
 					    	Logger::console("Indexes saved.");
 					    }
@@ -156,7 +155,6 @@ public:
 						unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
 				        indexer->commit();
 				        if (indexedCounter > 0) {
-				            Logger::console("Saving Indexes.....");
 				            indexer->save();
 				            Logger::console("Indexes saved.");
 				        }
