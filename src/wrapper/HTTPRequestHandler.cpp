@@ -215,8 +215,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getSearchType() == GeoSearchType
-    			&& query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+    	if (queryPlan.getSearchType() != GeoSearchType
+    			&& query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             root["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
