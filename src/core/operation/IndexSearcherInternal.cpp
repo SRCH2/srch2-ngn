@@ -450,7 +450,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
     std::cout << "K for topK : " << nextK << std::endl;
     std::cout << "Query keywords : " ;
     for(int i=0;i<query->getQueryTerms()->size();i++){
-    	std::cout << query->getQueryTerms()->at(i)->getKeyword()->c_str() << query->getQueryTerms()->at(i)->getThreshold() << " ";
+    	std::cout << query->getQueryTerms()->at(i)->getKeyword()->c_str() << (unsigned)query->getQueryTerms()->at(i)->getThreshold() << " ";
     }
     std::cout << std::endl;
     // Empty Query case
