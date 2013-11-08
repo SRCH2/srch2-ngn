@@ -12,11 +12,11 @@ import org.junit.*;
 public class IntTest {
 
   private void testInt(final int testValue) throws NoSuchMethodException {
-    IntEngine e= new IntEngine();
-    RefiningInteger testInteger= new RefiningInteger(testValue);
+    IntEngine e = new IntEngine();
+    RefiningInteger testInteger = new RefiningInteger(testValue);
 
     e.setInt(testInteger);
-    Attribute<Integer> result= e.getRefiningInt();
+    Attribute<Integer> result = e.getRefiningInt();
 
     /* Asserts that the the results object is not the same object as the test
        input object; this is java's equivalent of comparing pointers */
@@ -47,15 +47,15 @@ public class IntTest {
   }
 
   /* Test RefiningInteger logic with an Integer class Constructor rather than
-     the int primative. */
+     the int primitive. */
   @Test
-  public  void testIntegerClassConstructor() throws NoSuchMethodException {
-    int testValue= 5;
-    IntEngine e= new IntEngine();
-    MyRefiningInteger testInteger= new MyRefiningInteger(testValue);
+  public void testIntegerClassConstructor() throws NoSuchMethodException {
+    int testValue = 5;
+    IntEngine e = new IntEngine();
+    MyRefiningInteger testInteger = new MyRefiningInteger(testValue);
 
     e.setInt(testInteger);
-    Attribute<Integer> result= e.getRefiningInt();
+    Attribute<Integer> result = e.getRefiningInt();
 
     /* Asserts that the the results object is not the same object as the test
        input object; this is java's equivalent of comparing pointers */
