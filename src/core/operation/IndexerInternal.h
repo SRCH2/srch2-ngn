@@ -226,6 +226,7 @@ private:
 	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 
     volatile unsigned writesCounterForMerge;
+    bool needToSaveIndexes;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
 

@@ -19,6 +19,7 @@
 
 
 #include "operation/IndexerInternal.h"
+#include "util/Logger.h"
 
 namespace srch2
 {
@@ -56,6 +57,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
     	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
     		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
     	}
@@ -72,6 +74,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
     	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
     		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
     	}
@@ -88,6 +91,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
     	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites){
     		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
     	}
@@ -104,6 +108,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
     	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
     		rwMutexForWriter->cond_signal(&countThresholdConditionVariable);
     	}
@@ -149,11 +154,24 @@ void IndexReaderWriter::save()
 {
     rwMutexForWriter->lockWrite();
 
+    // If no insert/delete/update is performed, we don't need to save.
+    if(this->needToSaveIndexes == false){
+    	rwMutexForWriter->unlockWrite();
+    	return;
+    }
+
     // we don't have to update histogram information when we want to export.
     this->merge(false);
     writesCounterForMerge = 0;
 
+    srch2::util::Logger::console("Saving Indexes ...");
     this->index->_save();
+
+    // Since one save is done, we need to set needToSaveIndexes back to false
+    // we need this line because of bulk-load. Because in normal save, the engine will be killed after save
+    // so we don't need this flag (the engine will die anyways); but in the save which happens after bulk-load,
+    // we should set this flag back to false for future save calls.
+    this->needToSaveIndexes = false;
 
     rwMutexForWriter->unlockWrite();
 }
@@ -232,6 +250,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->updateHistogramEveryQWrites = indexMetaData->updateHistogramEveryQWrites;
      this->writesCounterForMerge = 0;
      this->mergeCounterForUpdatingHistogram = 0;
+     this->needToSaveIndexes = false;
 
      this->mergeThreadStarted = false; // No threads running
      this->rwMutexForWriter = new ReadWriteMutex(100);
