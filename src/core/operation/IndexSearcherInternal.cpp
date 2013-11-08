@@ -674,7 +674,9 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 
         HeapItemForIndexSearcher *heapItem = new HeapItemForIndexSearcher();
         queryResults->addMessage("Fagin's Loop Start");
+        unsigned roundRobinCounter = 0;
         while (!stop) {
+        	roundRobinCounter ++;
             // maxScoreForUnvisitedRecords is the upper bound of the scores of these unvisited records
             maxScoreForUnvisitedRecords = 0;
             for (unsigned int i = 0; i < virtualListVector->size(); ++i) {
@@ -828,6 +830,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
                 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
         std::cout << "Time for topK : " << ts1 << std::endl;
+        std::cout << "Round robin counter : " << roundRobinCounter << std::endl;
         /*
         // cache the candidateList and the cursors with the query terms
         // construct the cursors vector
