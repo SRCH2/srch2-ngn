@@ -15,7 +15,7 @@ import java.lang.reflect.Constructor;
 class IntEngine {
   /** Performed each time Java Loads this Class */
   static {
-    /** Dynamically links in libsrch2_string_core.so to bind native methods */
+    /** Dynamically links in libint_core.so to bind native methods */
     java.lang.System.loadLibrary("int_engine");
   }
 
@@ -61,14 +61,14 @@ class IntEngine {
         Class<RefiningInteger> refiningIntClass,
         Constructor createRefiningInt);
 
-  /** Passing a Int Attribute to the StringEngine. This is used in testing
+  /** Passing an Int Attribute to the IntEngine. This is used in testing
       the JNI handling of Int Attributes */
-  public void setInt(Attribute<Integer> i) {
-    setInt(handle, i);
+  public void setInt(Attribute<Integer> intValue) {
+    setInt(handle, intValue);
   }
   /** Passes the Int Attribute to the C++ part of this Engine, reference by
       the passed handle, for storage */
-  private static native void setInt(long handle, Attribute<Integer> i);
+  private static native void setInt(long handle, Attribute<Integer> intValue);
 
   /** Returns a RefiningInt from the IntEngine. This is used in testing the
       JNI handling of RefiningInts */
