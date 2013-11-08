@@ -156,7 +156,14 @@ int IndexSearcherInternal::searchGetAllResultsQuery(const Query *query, QueryRes
 	std::cout << "Estimated number of results : " << estimatedNumberOfResults << std::endl;
 	if(estimatedNumberOfResults > estimatedNumberOfResultsThresholdGetAll){
 		// we must call top k here
-		return searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
+		unsigned numberOfResultsFound = searchTopKQuery(query , 0 , numberOfEstimatedResultsToFindGetAll , queryResults , &activeNodesVector);
+		if(numberOfResultsFound >= numberOfEstimatedResultsToFindGetAll){
+			std::vector<QueryResult *>::iterator startOfErase = queryResults->impl->sortedFinalResults.begin();
+			std::advance(startOfErase ,numberOfEstimatedResultsToFindGetAll);
+			queryResults->impl->sortedFinalResults.erase(startOfErase , queryResults->impl->sortedFinalResults.end());
+			numberOfResultsFound = numberOfEstimatedResultsToFindGetAll;
+		}
+		return numberOfResultsFound;
 	}
 
 	this->computeTermVirtualList(queryResults, &activeNodesVector, &isTermTooPopularVectorAndScoresOfTopRecords);
