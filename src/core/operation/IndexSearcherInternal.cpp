@@ -443,6 +443,10 @@ int IndexSearcherInternal::searchMapQuery(const Query *query, QueryResults* quer
 int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         const int nextK, QueryResults* queryResults, vector<PrefixActiveNodeSet *> * activeNodesVectorFromArgs)
 {
+
+    struct timespec tstart;
+    clock_gettime(CLOCK_REALTIME, &tstart);
+
     // Empty Query case
     if (query->getQueryTerms()->size() == 0) {
         return 0;
@@ -653,6 +657,13 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                 delete conjunctionCacheResultsEntry;
         }
 
+        struct timespec tend;
+        clock_gettime(CLOCK_REALTIME, &tend);
+        unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+                + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+        std::cout << "Time for pre-topK : " << ts1 << std::endl;
+        clock_gettime(CLOCK_REALTIME, &tstart);
+
         // Fagin's Algorithm
         float maxScoreForUnvisitedRecords;
         bool stop = false;
@@ -813,6 +824,10 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
         queryResults->addMessage("Finalised the results.");
 
+        clock_gettime(CLOCK_REALTIME, &tend);
+        ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+                + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+        std::cout << "Time for topK : " << ts1 << std::endl;
         /*
         // cache the candidateList and the cursors with the query terms
         // construct the cursors vector
