@@ -249,6 +249,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     root["results_found"] = retrievedResults;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
+    // Since estimation of number of results can return a wrong number, if this value is less
+    // than the actual number of found results, we use the real number.
+    if(estimatedNumberOfResults < (long int)retrievedResults){
+    	estimatedNumberOfResults = (long int)retrievedResults;
+    }
     if(estimatedNumberOfResults != -1){
         // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
         // it to unsigned (because the thirdparty library we use here does not accept long integers.)
