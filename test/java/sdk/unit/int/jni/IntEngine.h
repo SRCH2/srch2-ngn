@@ -6,13 +6,13 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "RefiningInteger.h"
+#include "Attribute.h"
 
 class IntEngine {
  
   /** Encapsulates the instance language around a Java RefiningInteger object
       used by the particular JVM housing the Java side of this Engine */
-  const JNIClass::RefiningInteger refiningInteger;
+  const JNIClass::Attribute<int> refiningInteger;
 
   /*  The stored value of this Engine */
   int value;

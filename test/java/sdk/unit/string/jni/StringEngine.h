@@ -6,9 +6,7 @@
  *                                                                           * 
   ****************************************************************************/
 
-#include "RefiningString.h"
-#include "SearchableString.h"
-#include "IndexedString.h"
+#include "Attribute.h"
 #include<string>
 #include<cassert>
 
@@ -16,9 +14,8 @@ class StringEngine {
  
   /** Encapsulates the instance language around a Java RefiningString object
       used by the particular JVM housing the Java side of this Engine */
-  const JNIClass::RefiningString refiningString;
-  const JNIClass::SearchableString searchableString;
-  const JNIClass::IndexedString indexedString;
+  const JNIClass::Attribute<std::string>
+    refiningString, searchableString, indexedString;
 
   /*  The stored value of this Engine */
   std::string value;
