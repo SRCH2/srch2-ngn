@@ -56,8 +56,8 @@ jlong Java_com_srch2_FloatEngine_createFloatEngine(JNIEnv *env,
 /** Stores the Float Attribute's value passed down from the Java side of
     FloatEngine, in the c++ side reference by the given handle */
 void Java_com_srch2_FloatEngine_setFloat
-  (JNIEnv *env, jclass, jlong handle, jobject string) {
-  dereferenceFloatEngineHandle(env, handle)->setFloat(string);
+  (JNIEnv *env, jclass, jlong handle, jobject floatValue) {
+  dereferenceFloatEngineHandle(env, handle)->setFloat(floatValue);
 }
 /** Stores the given Float Attributes's internalValue in this SearchableFloat
   */
@@ -67,7 +67,7 @@ void FloatEngine::setFloat(jobject floatValue) {
   this->value = refiningFloat.toValue(floatValue);
 }
 
-/** Returns the RefiningFloat equivalent of the string value stored in the
+/** Returns the RefiningFloat equivalent of the float value stored in the
     c++ part of the FloatEngine referenced by the given handle to the Java
     side of the FloatEngine.
 */ 

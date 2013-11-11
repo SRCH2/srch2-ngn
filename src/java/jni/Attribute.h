@@ -45,7 +45,7 @@ namespace JNIClass {
     jobject createNew(T& content) const;
 
     /** Converts the given Attribute java instance to an instance of the 
-        given c++ type using the provided Function: C::convertJavaToCPP */
+        given c++ type using the provided function: C::convertJavaToCPP */
     template <typename C> T toValue(jobject&) const;
     /** Directly constructs an instance of the given c++ type from the given
         Attribute java instance. */

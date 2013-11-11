@@ -35,7 +35,7 @@ class FloatEngine {
      to the float contained this Engine. */
   jobject getRefiningFloat();
  
-  /* Stores a new string value in this Engine, equivalent to the value of
+  /* Stores a new float value in this Engine, equivalent to the value of
      given FloatAttribute. */
   void setFloat(jobject);
 };
