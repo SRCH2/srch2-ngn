@@ -94,7 +94,9 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
 	            QueryParser::suggestionKeywordParamName);
 	    if (keywordTmp) { // if this parameter exists
 	        size_t st;
-	        string keywordStr = evhttp_uridecode(keywordTmp, 0, &st);
+            char * decodedKeywordStr = evhttp_uridecode(keywordTmp, 0, &st);
+	        string keywordStr(decodedKeywordStr);
+            free(decodedKeywordStr);
 	        boost::algorithm::trim(keywordStr); // trim the keywordString.
 	        bool hasParserSuccessfully = parseKeyword(keywordStr,keyword);
 	        if(!hasParserSuccessfully){
@@ -134,8 +136,10 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
 	    		QueryParser::rowsParamName);
 	    if (rowsTemp) { // if this parameter exists
 	    	Logger::debug("rowsTemp parameter found, parsing it.");
-	    	size_t st;
-	    	string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+            size_t st;
+            char * decodedRowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+	    	string rowsStr(decodedRowsStr);
+            free(decodedRowsStr);
 	    	// convert the rowsStr to integer. e.g. rowsStr will contain string 20
 	    	if (isUnsigned(rowsStr)) {
 	    		numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
@@ -229,7 +233,9 @@ bool QueryParser::docIdParser(){
     if (docIdTemp) { // if this parameter exists
         Logger::debug("docid parameter found");
         size_t st;
-        string docId = evhttp_uridecode(docIdTemp, 0, &st);
+        char * decodedDocIdStr = evhttp_uridecode(docIdTemp, 0, &st);
+        string docId(decodedDocIdStr);
+        free(decodedDocIdStr);
         this->container->docIdForRetrieveByIdSearchType = docId;
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::RetrieveByIdSearchType);
@@ -252,7 +258,9 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
             QueryParser::keywordQueryParamName);
     if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
         size_t st;
-        string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
+        char * decodedQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
+        string mainQueryStr(decodeQueryStr);
+        free(decodeQueryStr);
         boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
         // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
         // in LocalParamerterParser, we are logging the mainQuery String
@@ -319,7 +327,9 @@ void QueryParser::isFuzzyParser() {
     if (fuzzyTemp) { // if this parameter exists
         Logger::debug("fuzzy parameter found");
         size_t st;
-        string fuzzy = evhttp_uridecode(fuzzyTemp, 0, &st);
+        char * decodedFuzzyStr = evhttp_uridecode(fuzzyTemp, 0, &st);
+        string fuzzy(decodedFuzzyStr);
+        free(decodedFuzzyStr);
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::IsFuzzyFlag);
         if (boost::iequals("true", fuzzy)) {
@@ -366,7 +376,9 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
         if (numberOfGroupsStrTemp) {
             Logger::debug("facetNumberOfGroups parameter found, parsing it.");
             size_t st;
-            string facetNumberOfGroupsStr = evhttp_uridecode(numberOfGroupsStrTemp, 0, &st);
+            char * decodedfacetNumberOfGroupsStr = evhttp_uridecode(numberOfGroupsStrTemp, 0, &st);
+            string facetNumberOfGroupsStr(decodedfacetNumberOfGroupsStr);
+            free(decodedfacetNumberOfGroupsStr);
 
             if(isUnsigned(facetNumberOfGroupsStr)){
                 Logger::debug(
@@ -421,7 +433,9 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
     if (rangeStartTemp) {
         Logger::debug("rangeStart parameter found, parsing it.");
         size_t st;
-        string rangeStart = evhttp_uridecode(rangeStartTemp, 0, &st);
+        char * decodedRangeStart = evhttp_uridecode(rangeStartTemp, 0, &st);
+        string rangeStart(decodedRangeStart);
+        free(decodedRangeStart);
         fqc.rangeStarts.push_back(rangeStart);
     } else {
         Logger::debug(

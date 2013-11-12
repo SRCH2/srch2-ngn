@@ -581,7 +581,7 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
         std::vector<TermVirtualList* > *virtualListVector = queryResultsInternal->getVirtualListVector();
 
         // container for the records that contains all the terms in this query (for caching purposes)
-        vector<CandidateResult> *candidateList = new std::vector<CandidateResult>();
+        //vector<CandidateResult> *candidateList = new std::vector<CandidateResult>();
 
         // Cached results for the first k terms
         // TODO revive caching here
@@ -639,13 +639,13 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         queryResultsInternal->insertResult(queryResult);
 
                         // add this record to the candidate list for caching purposes
-                        CandidateResult candidate;
-                        candidate.internalRecordId = internalRecordId;
-                        candidate.termScores = queryResultTermScores;
-                        candidate.matchingKeywords = queryResultMatchingKeywords;
-                        candidate.attributeBitmaps = queryResultAttributeBitmaps;
-                        candidate.editDistances = queryResultEditDistances;
-                        candidateList->push_back(candidate);
+                        //CandidateResult candidate;
+                        //candidate.internalRecordId = internalRecordId;
+                        //candidate.termScores = queryResultTermScores;
+                        //candidate.matchingKeywords = queryResultMatchingKeywords;
+                        //candidate.attributeBitmaps = queryResultAttributeBitmaps;
+                        //candidate.editDistances = queryResultEditDistances;
+                        //candidateList->push_back(candidate);
                     }
                 }
             }
@@ -792,13 +792,13 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
                         queryResultsInternal->insertResult(queryResult);
 
                         //add this record to the candidate list for caching purposes
-                        CandidateResult candidate;
-                        candidate.internalRecordId = internalRecordId;
-                        candidate.termScores = queryResultTermScores;
-                        candidate.matchingKeywords = queryResultMatchingKeywords;
-                        candidate.attributeBitmaps = queryResultAttributeBitmaps;
-                        candidate.editDistances = queryResultEditDistances;
-                        candidateList->push_back(candidate);
+                        //CandidateResult candidate;
+                        //candidate.internalRecordId = internalRecordId;
+                        //candidate.termScores = queryResultTermScores;
+                        //candidate.matchingKeywords = queryResultMatchingKeywords;
+                        //candidate.attributeBitmaps = queryResultAttributeBitmaps;
+                        //candidate.editDistances = queryResultEditDistances;
+                        //candidateList->push_back(candidate);
                     }
                 }
 
