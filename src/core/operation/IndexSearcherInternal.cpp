@@ -863,23 +863,23 @@ int IndexSearcherInternal::searchTopKFindResultsForOnlyOnePopularKeyword(const Q
 	Term * term = query->getQueryTerms()->at(0);
 
 	// 1. first iterate on active nodes and find best estimated leaf nodes.
-    std::vector<SuggestionInfo > suggestionPairs;
-    findKMostPopularSuggestionsSorted(term , activeNodes , k , suggestionPairs);
+    std::vector<SuggestionInfo > suggestionInfos;
+    findKMostPopularSuggestionsSorted(term , activeNodes , k , suggestionInfos);
 
     // 3. now iterate on leaf nodes and add records to the result set
     unsigned numberOfResults = 0;
-    for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
-    		suggestion != suggestionPairs.end() && numberOfResults < k ; ++suggestion){
+    for(std::vector<SuggestionInfo >::iterator suggestion = suggestionInfos.begin() ;
+    		suggestion != suggestionInfos.end() && numberOfResults < k ; ++suggestion){
 
 		shared_ptr<vectorview<unsigned> > invertedListReadView;
-		this->indexData->invertedIndex->getInvertedListReadView(suggestion->suggestionEndNode->getInvertedListOffset(), invertedListReadView);
+		this->indexData->invertedIndex->getInvertedListReadView(suggestion->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
         unsigned termAttributeBitmap = 0;
         float termRecordStaticScore = 0;
         // move on inverted list and add the records which are valid
         unsigned invertedListCursor = 0;
         while(invertedListCursor < invertedListReadView->size()){
 			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-			unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, suggestion->suggestionEndNode->getInvertedListOffset());
+			unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, suggestion->suggestedCompleteTermNode->getInvertedListOffset());
 			if (this->indexData->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
                 QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
@@ -887,7 +887,7 @@ int IndexSearcherInternal::searchTopKFindResultsForOnlyOnePopularKeyword(const Q
                 std::vector<std::string> queryResultMatchingKeywords;
             	string suggestionString ;
                 this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                                       suggestion->suggestionPrefixEndNode, suggestionString);
+                                                       suggestion->queryTermNode, suggestionString);
                 queryResultMatchingKeywords.push_back(suggestionString);
 
                 // prepare edit distances
@@ -960,7 +960,7 @@ int IndexSearcherInternal::suggest(const string & keyword,
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
     	string suggestionString ;
         this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                               suggestion->suggestionEndNode, suggestionString);
+                                               suggestion->suggestedCompleteTermNode, suggestionString);
     	suggestions.push_back(suggestionString);
     }
 	// 5. now delete activenode set

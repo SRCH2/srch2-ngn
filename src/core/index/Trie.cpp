@@ -163,7 +163,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggesti
 	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
 		const TrieNode * child = this->getChild(childIterator);
 		if(child->isTerminalNode()){
-			suggestions.push_back(SuggestionInfo(ed , child->getNodeProbabilityValue() , child, suggestionActiveNode));
+			suggestions.push_back(SuggestionInfo(ed , child->getNodeProbabilityValue() , suggestionActiveNode, child));
 		}else{
 			nonTerminalChildrenVector.push_back(child);
 		}

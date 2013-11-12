@@ -138,12 +138,14 @@ class SuggestionInfo {
 public:
 	unsigned distance;
 	float probabilityValue;
-	const TrieNode * suggestionEndNode;
-	const TrieNode * suggestionPrefixEndNode;
+	// The path from root to this trie node gives the query keyword. For example : "you"
+	const TrieNode * queryTermNode;
+	// The path from root to this trie node gives the prefix which is the completed suggestion of query keyword. For example "your" for query "you"
+	const TrieNode * suggestedCompleteTermNode;
 	SuggestionInfo(unsigned distance,
 			float probabilityValue,
-			const TrieNode * suggestionEndNode,
-			const TrieNode * suggestionPrefixEndNode) : suggestionEndNode(suggestionEndNode) , suggestionPrefixEndNode(suggestionPrefixEndNode){
+			const TrieNode * queryTermNode,
+			const TrieNode * suggestedCompleteTermNode) : queryTermNode(queryTermNode), suggestedCompleteTermNode(suggestedCompleteTermNode) {
 		this->distance = distance;
 		this->probabilityValue = probabilityValue;
 	}
