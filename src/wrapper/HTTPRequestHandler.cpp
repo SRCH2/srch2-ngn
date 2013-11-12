@@ -211,6 +211,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     logQueries += "";
                 logQueries += term;
             }
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
+
 
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
@@ -226,7 +232,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     logQueries += "";
                 logQueries += term;
             }
-
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
             root["fuzzy"] = (int) queryPlan.isFuzzy();
     	}
     }
