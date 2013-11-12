@@ -8,14 +8,14 @@
 
 #include "Attribute.h"
 
-class IntEngine {
+class FloatEngine {
  
-  /** Encapsulates the instance language around a Java RefiningInteger object
+  /** Encapsulates the instance language around a Java RefiningFloat object
       used by the particular JVM housing the Java side of this Engine */
-  const JNIClass::Attribute<int> refiningInteger;
+  const JNIClass::Attribute<float> refiningFloat;
 
   /*  The stored value of this Engine */
-  int value;
+  float value;
 
  public:
   /* Warning: this variable make this class thread unsafe, only
@@ -26,17 +26,17 @@ class IntEngine {
    */
   JNIEnv *env;
 
-  IntEngine(jmethodID getValue,
-      jclass refiningIntegerClassPtr, jmethodID refiningConstructor)
-    : refiningInteger(this->env, refiningIntegerClassPtr,
+  FloatEngine(jmethodID getValue,
+      jclass refiningFloatClassPtr, jmethodID refiningConstructor)
+    : refiningFloat(this->env, refiningFloatClassPtr,
           getValue, refiningConstructor) {}
 
-  /* returns a Java RefiningInteger instance with value equivalent
-     to the int contained this Engine. */
-  jobject getRefiningInt();
+  /* returns a Java RefiningFloat instance with value equivalent
+     to the float contained this Engine. */
+  jobject getRefiningFloat();
  
-  /* Stores a new string value in this Engine, equivalent to the value of
-     given IntegerAttribute. */
-  void setInt(jobject);
+  /* Stores a new float value in this Engine, equivalent to the value of
+     given FloatAttribute. */
+  void setFloat(jobject);
 };
 
