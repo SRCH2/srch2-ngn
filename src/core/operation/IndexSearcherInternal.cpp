@@ -850,9 +850,9 @@ int IndexSearcherInternal::searchTopKQuery(const Query *query, const int offset,
 }
 
 
-bool suggestionComparator(const pair<std::pair< float , unsigned > , const TrieNode *> & left ,
-		const pair<std::pair< float , unsigned > , const TrieNode *> & right ){
-	return left.first.first > right.first.first;
+bool suggestionComparator(const SuggestionInfo & left ,
+		const SuggestionInfo & right ){
+	return left.probabilityValue > right.probabilityValue;
 }
 
 // This function estimates the results for a single very popular (probably short prefix)
@@ -863,23 +863,23 @@ int IndexSearcherInternal::searchTopKFindResultsForOnlyOnePopularKeyword(const Q
 	Term * term = query->getQueryTerms()->at(0);
 
 	// 1. first iterate on active nodes and find best estimated leaf nodes.
-    std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
+    std::vector<SuggestionInfo > suggestionPairs;
     findKMostPopularSuggestionsSorted(term , activeNodes , k , suggestionPairs);
 
     // 3. now iterate on leaf nodes and add records to the result set
     unsigned numberOfResults = 0;
-    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && numberOfResults < k ; ++suggestion){
 
 		shared_ptr<vectorview<unsigned> > invertedListReadView;
-		this->indexData->invertedIndex->getInvertedListReadView(suggestion->second->getInvertedListOffset(), invertedListReadView);
+		this->indexData->invertedIndex->getInvertedListReadView(suggestion->suggestionEndNode->getInvertedListOffset(), invertedListReadView);
         unsigned termAttributeBitmap = 0;
         float termRecordStaticScore = 0;
         // move on inverted list and add the records which are valid
         unsigned invertedListCursor = 0;
         while(invertedListCursor < invertedListReadView->size()){
 			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-			unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, suggestion->second->getInvertedListOffset());
+			unsigned recordOffset = this->indexData->invertedIndex->getKeywordOffset(recordId, suggestion->suggestionEndNode->getInvertedListOffset());
 			if (this->indexData->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
                 QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
@@ -887,19 +887,19 @@ int IndexSearcherInternal::searchTopKFindResultsForOnlyOnePopularKeyword(const Q
                 std::vector<std::string> queryResultMatchingKeywords;
             	string suggestionString ;
                 this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                                       suggestion->second, suggestionString);
+                                                       suggestion->suggestionPrefixEndNode, suggestionString);
                 queryResultMatchingKeywords.push_back(suggestionString);
 
                 // prepare edit distances
                 std::vector<unsigned> editDistances;
-                editDistances.push_back(suggestion->first.second);
+                editDistances.push_back(suggestion->distance);
                 // prepare attribute bitmaps
                 std::vector<unsigned> attributeBitmaps;
                 attributeBitmaps.push_back(0x7fffffff);
                 // prepare score
                 std::vector<float> queryTermResultScores;
                 queryTermResultScores.push_back(
-                		query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, suggestion->first.second,
+                		query->getRanker()->computeTermRecordRuntimeScore(termRecordStaticScore, suggestion->distance,
                                                 term->getKeyword()->size(),
                                                 true,
                                                 query->getPrefixMatchPenalty() , term->getSimilarityBoost() ) );
@@ -952,15 +952,15 @@ int IndexSearcherInternal::suggest(const string & keyword,
 	delete term;
 
 	// 4. now iterate on active nodes and find suggestions for each on of them
-    std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
-    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn , suggestionPairs);
+    std::vector<SuggestionInfo > suggestionPairs;
+    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn, suggestionPairs);
 
     int suggestionCount = 0;
-    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
     	string suggestionString ;
         this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
-                                               suggestion->second, suggestionString);
+                                               suggestion->suggestionEndNode, suggestionString);
     	suggestions.push_back(suggestionString);
     }
 	// 5. now delete activenode set
@@ -1283,7 +1283,7 @@ float IndexSearcherInternal::findTopRunTimeScoreOfLeafNodes(Term *term , float p
 void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
 		PrefixActiveNodeSet * activeNodes,
 		unsigned numberOfSuggestionsToReturn ,
-		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const{
+		std::vector<SuggestionInfo > & suggestionPairs) const{
 	// first make sure input is OK
 	if(term == NULL || activeNodes == NULL) return;
 
@@ -1297,10 +1297,10 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
         // If this keyword is prefix, we should traverse down the trie and find possible completions;
         // otherwise, we should just check to see if active node is terminal or not.
         if(term->getTermType() == TERM_TYPE_PREFIX){
-			trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+			trieNode->findMostPopularSuggestionsInThisSubTrie(trieNode , distance, suggestionPairs , numberOfSuggestionsToReturn);
         }else{
         	if(trieNode->isTerminalNode() == true){
-        		suggestionPairs.push_back(make_pair(make_pair(trieNode->getNodeProbabilityValue() , distance) , trieNode ));
+        		suggestionPairs.push_back(SuggestionInfo(distance , trieNode->getNodeProbabilityValue(), trieNode , trieNode));
         	}
         }
         if(suggestionPairs.size() >= numberOfSuggestionsToReturn){

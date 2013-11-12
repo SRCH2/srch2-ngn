@@ -132,6 +132,23 @@ private:
     }
 };
 
+class TrieNode;
+
+class SuggestionInfo {
+public:
+	unsigned distance;
+	float probabilityValue;
+	const TrieNode * suggestionEndNode;
+	const TrieNode * suggestionPrefixEndNode;
+	SuggestionInfo(unsigned distance,
+			float probabilityValue,
+			const TrieNode * suggestionEndNode,
+			const TrieNode * suggestionPrefixEndNode) : suggestionEndNode(suggestionEndNode) , suggestionPrefixEndNode(suggestionPrefixEndNode){
+		this->distance = distance;
+		this->probabilityValue = probabilityValue;
+	}
+};
+
 
 class TrieNode
 {
@@ -381,7 +398,8 @@ public:
 
     // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
     // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
-    void findMostPopularSuggestionsInThisSubTrie(unsigned ed, std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
+    void findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, std::vector<SuggestionInfo > & suggestions,
+    		const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
 
