@@ -1293,7 +1293,16 @@ void IndexSearcherInternal::findKMostPopularSuggestionsSorted(Term *term ,
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
-        trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+        // this function is only called if query has only one keyword.
+        // If this keyword is prefix, we should traverse down the trie and find possible completions;
+        // otherwise, we should just check to see if active node is terminal or not.
+        if(term->getTermType() == TERM_TYPE_PREFIX){
+			trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+        }else{
+        	if(trieNode->isTerminalNode() == true){
+        		suggestionPairs.push_back(make_pair(make_pair(trieNode->getNodeProbabilityValue() , distance) , trieNode ));
+        	}
+        }
         if(suggestionPairs.size() >= numberOfSuggestionsToReturn){
         	break;
         }
