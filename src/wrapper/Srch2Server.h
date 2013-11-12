@@ -131,6 +131,7 @@ public:
 				Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataContainerConf);
 				indexer = Indexer::create(indexMetaData, analyzer, schema);
 				delete analyzer;
+				delete schema;
 				switch(indexDataContainerConf->getDataSourceType())
 				{
 					case srch2http::DATA_SOURCE_JSON_FILE:

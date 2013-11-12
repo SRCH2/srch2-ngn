@@ -433,6 +433,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
     in.close();
 
     delete analyzer;
+    delete record;
     return indexedRecordsCount;
 }
 
