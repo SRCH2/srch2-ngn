@@ -154,7 +154,7 @@ bool trieNodeComparatorBasedOnProbabilityValue(const TrieNode * left , const Tri
 
 // this function uses a weighted DFS (which means children are visited based on their probabilityValue) and collects all frontier terminal nodes in its way.
 // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToFind
-void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair< pair< float , unsigned > ,const TrieNode *> > & suggestions,
+void TrieNode::findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, vector< SuggestionInfo > & suggestions,
 		const int numberOfSuggestionsToFind) const{
 
 	vector<const TrieNode *> nonTerminalChildrenVector;
@@ -163,7 +163,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair<
 	for(int childIterator =0; childIterator< this->getChildrenCount() ; childIterator ++){
 		const TrieNode * child = this->getChild(childIterator);
 		if(child->isTerminalNode()){
-			suggestions.push_back(make_pair(make_pair(child->getNodeProbabilityValue() , ed) , child ));
+			suggestions.push_back(SuggestionInfo(ed , child->getNodeProbabilityValue() , suggestionActiveNode, child));
 		}else{
 			nonTerminalChildrenVector.push_back(child);
 		}
@@ -174,7 +174,7 @@ void TrieNode::findMostPopularSuggestionsInThisSubTrie(unsigned ed, vector<pair<
 	// and call this function (recursive call)
 	for(vector<const TrieNode *>::iterator nonTerminalChild = nonTerminalChildrenVector.begin() ;
 			nonTerminalChild != nonTerminalChildrenVector.end() ; ++nonTerminalChild){
-		(*nonTerminalChild)->findMostPopularSuggestionsInThisSubTrie(ed , suggestions , numberOfSuggestionsToFind);
+		(*nonTerminalChild)->findMostPopularSuggestionsInThisSubTrie(suggestionActiveNode, ed , suggestions , numberOfSuggestionsToFind);
 		if(suggestions.size() >= numberOfSuggestionsToFind){
 			return;
 		}
