@@ -70,6 +70,11 @@ void decodeString(const char *inputStr, string& outputStr) {
 	size_t st;
 	char * decodedOutPut = evhttp_uridecode(inputStr, 0, &st);
 	outputStr.assign(decodedOutPut);
+	/*
+	 *  evhttp_uridecode allocates a new buffer for decoded string using an input string and
+	 *  returns the pointer to the new buffer. It is a responsibility of the caller to "free"
+	 *  the pointer returned by evhttp_uridecode
+	 */
 	free(decodedOutPut);
 }
 
@@ -141,8 +146,8 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
 	    		QueryParser::rowsParamName);
 	    if (rowsTemp) { // if this parameter exists
 	    	Logger::debug("rowsTemp parameter found, parsing it.");
-            string rowsStr;
-            decodeString(rowsTemp, rowsStr);
+	    	string rowsStr;
+	    	decodeString(rowsTemp, rowsStr);
 	    	// convert the rowsStr to integer. e.g. rowsStr will contain string 20
 	    	if (isUnsigned(rowsStr)) {
 	    		numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi

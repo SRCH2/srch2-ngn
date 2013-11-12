@@ -1452,6 +1452,9 @@ void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumbe
     while (!this->oldReadViewQueue.empty() && this->oldReadViewQueue.front().unique()) {
         this->oldReadViewQueue.pop();
     }
+    if (this->root_writeview) {
+        delete this->root_writeview;
+    }
     this->root_writeview = new TrieNode(this->root_readview.get()->root);
 }
 
