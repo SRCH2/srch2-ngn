@@ -164,7 +164,7 @@ The boost value must be a positive integer, and its default value is 1.
 
 *Note:* we can specify all three modifiers to a single term, but the order of modifiers must always be prefix, boost, and then fuzzy. The following are valid query examples:
 ```
-1) q=sta*^4~0.6 AND wars^~0.8
+1) q=sta*^4~0.6 AND wars^~0.8 (TODO)
 2) q=star^4~0.6 AND wars^~ AND cam*
 3) q=star~0.6 AND wars^5~0.8
 ```
@@ -180,7 +180,8 @@ The engine supports finding words that are within a specified proximity. To use 
 
 To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "algorithm" and "data" within 10 words of each other in a document:
 ```
-q="algorithm data"~10
+q="charlie chocolate"~10 (TODO)
+q="chocolate factory"~10
 ```
 
 Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
