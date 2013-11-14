@@ -39,6 +39,21 @@ QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
 
 void QueryExecutor::execute(QueryResults * finalResults) {
 
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * changes:
+	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
+	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
+	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
+	 * 4. No exact/fuzzy policy must be applied here.
+	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
+	 * 6. Post processing filters are applied on results list.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.

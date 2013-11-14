@@ -39,6 +39,18 @@ namespace srch2 {
 
 namespace httpwrapper {
 
+
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+/*
+ * This class will be removed and some parts of the code will be merged with query rewriter and query executor.
+ * post processing stuff should be moved to query executor
+ * preparing the query must be used on query rewriter.
+ * Exact/Fuzzy policy will be removed from here and pushed down to the code.
+ */
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+
 QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer,
         const ConfigManager *indexDataContainerConf) :
         paramsContainer(paramsContainer) {

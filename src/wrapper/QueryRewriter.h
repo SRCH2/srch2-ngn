@@ -56,6 +56,10 @@ private:
 	// this function creates the bit sequence needed for field filter based on the filter names
 	void prepareFieldFilters();
 	void prepareFacetFilterInfo();
+
+	void attachQueryTermsToLogicalPlan();
+
+	void rewriteLogicalPlanTree();
 };
 
 }

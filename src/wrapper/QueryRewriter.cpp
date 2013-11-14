@@ -76,6 +76,26 @@ void QueryRewriter::rewrite() {
     // The following code should e temporary.
     applyAnalyzer();
 
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * This function must be rewritten. In addition to keyword rewritings,
+	 * we must also validate the tree structure of LogicalPlan.
+	 * QueryPlanGen must be removed and merged with this class.
+	 * In here, we should
+	 * 1. Apply rewrite rules on parallel vectors (above function calls)
+	 * 2. Using the code which comes from query plan gen, we should attach Term objects to the LogicalPlanTree
+	 */
+    attachQueryTermsToLogicalPlan();
+    /*
+	 * 3. Apply rewrite rules to re-organize the tree.
+	 */
+    rewriteLogicalPlanTree();
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+
+
 }
 
 void QueryRewriter::prepareKeywordInfo() {
@@ -447,6 +467,29 @@ void QueryRewriter::prepareFacetFilterInfo() {
         facetFieldIndex++;
     }
 
+}
+
+
+void QueryRewriter::attachQueryTermsToLogicalPlan(){
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * Using the code which comes from query plan gen, we should attach Term objects to the LogicalPlanTree
+	 * which means replacing the place holders with actual terms
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+}
+
+void QueryRewriter::rewriteLogicalPlanTree(){
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * Basic policies like pushing down AND or copying down field filters are done here.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
 }
 
 }
