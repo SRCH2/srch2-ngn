@@ -984,6 +984,161 @@ void testAnalyzerSerilization(string dataDir) {
 
 }
 
+void testLastTokenAsStopWord(string dataDir){
+	cout << "#########################################################################" << endl;
+
+    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(
+            ENABLE_STEMMER_NORMALIZER,
+            "",
+            dataDir + "/stopWordsFile.txt",
+            "",
+            SYNONYM_DONOT_KEEP_ORIGIN);
+    TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
+
+	string src = "the"; //"the last word is theater"
+	tokenStream->fillInCharacters(src, true);
+	// to print out the results
+	vector<string> tokenizedWords;
+	tokenizedWords.push_back("the");
+
+
+	int i = 0;
+	while (tokenStream->processToken()) {
+		string token;
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, token);
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == token);
+		i++;
+	}
+	ASSERT(i == tokenizedWords.size());
+	// deleting the objects
+	delete tokenStream;
+	delete standardAnlyzer;
+
+}
+
+void testProtectedWords(string dataDir){
+	cout << "#########################################################################" << endl;
+
+    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(
+            ENABLE_STEMMER_NORMALIZER,
+            "",
+            "",
+            "",
+            SYNONYM_DONOT_KEEP_ORIGIN);
+    TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
+
+	string src = "C++ is successor of C. .NET Framework (pronounced dot net) is developed by Microsoft.";
+	tokenStream->fillInCharacters(src);
+	// to print out the results
+	vector<string> tokenizedWords;
+	tokenizedWords.push_back("c++");
+	tokenizedWords.push_back("is");
+	tokenizedWords.push_back("successor");
+	tokenizedWords.push_back("of");
+	tokenizedWords.push_back("c");
+	tokenizedWords.push_back(".net");
+	tokenizedWords.push_back("framework");
+	tokenizedWords.push_back("pronounced");
+	tokenizedWords.push_back("dot");
+	tokenizedWords.push_back("net");
+	tokenizedWords.push_back("is");
+	tokenizedWords.push_back("developed");
+	tokenizedWords.push_back("by");
+	tokenizedWords.push_back("microsoft");
+
+	int i = 0;
+	while (tokenStream->processToken()) {
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, src);
+		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == src);
+		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
+		i++;
+	}
+
+
+	src = "Node.js is built on Chrome's JavaScript engine";
+	tokenStream->fillInCharacters(src);
+	// to print out the results
+	tokenizedWords.clear();
+	tokenizedWords.push_back("node.js");
+	tokenizedWords.push_back("is");
+	tokenizedWords.push_back("built");
+	tokenizedWords.push_back("on");
+	tokenizedWords.push_back("chrome");
+	tokenizedWords.push_back("s");
+	tokenizedWords.push_back("javascript");
+	tokenizedWords.push_back("engine");
+
+
+	i = 0;
+	while (tokenStream->processToken()) {
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, src);
+		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == src);
+		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
+		i++;
+	}
+
+	src = "C# and Java-Script";
+	tokenStream->fillInCharacters(src);
+	// to print out the results
+	tokenizedWords.clear();
+	tokenizedWords.push_back("c#");
+	tokenizedWords.push_back("and");
+	tokenizedWords.push_back("java");
+	tokenizedWords.push_back("script");
+
+	i = 0;
+	while (tokenStream->processToken()) {
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, src);
+		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == src);
+		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
+		i++;
+	}
+
+
+	src = "Pro*C is embedded sql in C";
+	tokenStream->fillInCharacters(src);
+	// to print out the results
+	tokenizedWords.clear();
+	tokenizedWords.push_back("pro");
+	tokenizedWords.push_back("c");
+	tokenizedWords.push_back("is");
+	tokenizedWords.push_back("embedded");
+	tokenizedWords.push_back("sql");
+    tokenizedWords.push_back("in");
+    tokenizedWords.push_back("c");
+
+	i = 0;
+	while (tokenStream->processToken()) {
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, src);
+		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == src);
+		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
+		i++;
+	}
+
+	// deleting the objects
+	delete tokenStream;
+	delete standardAnlyzer;
+}
+
 
 int main() {
     if ((getenv("dataDir") == NULL) ) {
@@ -1023,5 +1178,13 @@ int main() {
 
     testAnalyzerSerilization(dataDir);
     cout << "Analyzer Serialization test passed" << endl;
+
+    testLastTokenAsStopWord(dataDir);
+    cout << "Last stopword is not dropped... test passed" << endl;
+
+    ProtectedWordsContainer::getInstance().initProtectedWordsContainer(dataDir + "/protectedWords.txt");
+    testProtectedWords(dataDir);
+    cout << "Protected words test passed" << endl;
+
     return 0;
 }
