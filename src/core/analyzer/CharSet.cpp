@@ -32,6 +32,8 @@ unsigned CharSet::getCharacterType(CharType c)
     if((c>= 65 && c <= 90) ||(c>= 97 && c <= 122)||(c >= 48 && c <= 57)||(128 <= c && c <= 591)
     		||std::find(recordAllowedSpecialCharacters.begin(), recordAllowedSpecialCharacters.end(), (char)c) != recordAllowedSpecialCharacters.end())
 		return LATIN_TYPE;
+    else if(c == 32 /*whitespace*/ || c == 9 /*tab*/)
+    	return WHITESPACE;
 	else if(c < 128)
 		return DELIMITER_TYPE;
 	else if(c >= 12549 && c <= 12588)
