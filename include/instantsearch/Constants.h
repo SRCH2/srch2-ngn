@@ -206,6 +206,35 @@ typedef enum
 	HistogramAggregationTypeJointProbability
 } HistogramAggregationType;
 
+typedef enum {
+	LogicalPlanNodeTypeAnd,
+	LogicalPlanNodeTypeOr,
+	LogicalPlanNodeTypeTerm,
+	LogicalPlanNodeTypePlaceHolder
+} LogicalPlanNodeType;
+
+typedef enum {
+	PhysicalPlanNode_SortById,
+	PhysicalPlanNode_MergeTopK,
+	PhysicalPlanNode_MergeSortedByIdTopK,
+	PhysicalPlanNode_MergeSortedById,
+	PhysicalPlanNode_MergeByShortestList,
+	PhysicalPlanNode_UnionSortedByIdTopK,
+	PhysicalPlanNode_UnionSortedById,
+	PhysicalPlanNode_UnionSortedByScoreTopK,
+	PhysicalPlanNode_UnionSortedByScore,
+	PhysicalPlanNode_UnionLowestLevelTermVirtualList,
+	PhysicalPlanNode_LowestLevelNull
+} PhysicalPlanNodeType;
+
+typedef enum {
+	PhysicalPlanIteratorProperty_SortById,
+	PhysicalPlanIteratorProperty_SortByScore,
+	// This value should not be included in output properties of any operator. It's a mechanism
+	/// to always push down TVL operator and NULL operator.
+	PhysicalPlanIteratorProperty_LowestLevel
+} PhysicalPlanIteratorProperty;
+
 }
 }
 
