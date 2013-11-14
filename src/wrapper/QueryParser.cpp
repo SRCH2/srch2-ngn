@@ -253,6 +253,16 @@ bool QueryParser::docIdParser(){
 }
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * The AND/OR/NOT structure of q must be parsed and saved in LogicalPlan tree
+	 * note that in this layer query keywords must still be kept in vectors and leaves of
+	 * logical plan tree must be dummy place holder nodes.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
     /*
      * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()

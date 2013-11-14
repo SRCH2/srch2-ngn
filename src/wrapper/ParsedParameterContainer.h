@@ -28,6 +28,8 @@
 #include "WrapperConstants.h"
 #include "FilterQueryEvaluator.h"
 #include "SortFilterEvaluator.h"
+#include "LogicalPlan.h"
+
 
 namespace srch2 {
 namespace httpwrapper {
@@ -207,6 +209,19 @@ public:
     std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
     std::vector<short>  PhraseSlops;   // vector to store proximity slops
     std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
+
+    // This object contains the boolean structure of terms. For example for query
+    // q= (A AND B)OR(C AND D)
+    // it contains a tree like this:
+    // OR ---> AND ---> PLACE_HOLDER
+    // |        |-----> PLACE_HOLDER
+    // |
+    // |-----> AND ---> PLACE_HOLDER
+    //          |-----> PLACE_HOLDER
+    //
+    // A,B,C and D are kept in the above parallel vectors by preserving their order.
+    LogicalPlan logicalQueryPlan;
+
     // debug query parser parameters
     bool isDebugEnabled;
     QueryDebugLevel queryDebugLevel; // variable to store the debug level. see enum QueryDebugLevel for details.
@@ -215,7 +230,7 @@ public:
     std::vector<std::string> responseAttributesList; // if not empty, response should have only these fields. else check config file.
 
     // start offset parser parameters
-    unsigned resultsStartOffset; // start offset in the response vector. usefull in pagination
+    unsigned resultsStartOffset; // start offset in the response vector. useful in pagination
 
     // number of results parser
     unsigned numberOfResults; // number of records to return in the response. usefull in pagination
