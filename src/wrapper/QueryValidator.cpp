@@ -106,6 +106,7 @@ bool QueryValidator::validate() {
         }
     }
 
+
     // validate filter list
     // Example : q= title,name:foo AND body.abstract:bar
     // title, name, body and abstract should be declared as searchable attributes.
@@ -135,6 +136,15 @@ bool QueryValidator::validate() {
     // price, model and discount should be non-searchable attributes.
     if(!validateFilterQuery()){
         return false;
+    }
+
+
+    // validate the structure of the boolean tree
+    // Example :
+    // q= NOT john  ==> this query is not acceptable
+    // q= john AND hello ==> this query is acceptable and correct
+    if(! validateLogicalPlanBooleanStructure()){
+    	return false;
     }
 
     return true;
@@ -488,6 +498,19 @@ bool QueryValidator::validateFilterQuery(){
         }
     }
     return true;
+}
+
+bool QueryValidator::validateLogicalPlanBooleanStructure(){
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * Logical plan first level validation should be implemented as a set of
+	 * functions which must be called here.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	return true;
 }
 
 }
