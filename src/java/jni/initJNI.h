@@ -1,5 +1,5 @@
-#ifndef SRCH2_JNI_INIT_H
-#define SRCH2_JNI_INIT_H
+#ifndef __SRCH2_JNI_INIT_H__
+#define __SRCH2_JNI_INIT_H__
 
 #include<jni.h>
 
@@ -42,7 +42,7 @@ struct JavaSDKClasses {
   jclass refiningIntervalClassPtr;
   jclass refiningStringClassPtr;
   jclass indexableStringClassPtr;
-  jclass attributeExClassPtr;
+  jclass attributeExeceptionClassPtr;
   struct FieldMapping {
     jclass ptr;
     jfieldID type;
@@ -68,10 +68,10 @@ struct JavaSDKClasses {
 
   /* Nested mappings, member of associated class, have a their classPtr mapped
      as 0, so their enum must start at 1 */
-  static const int CLASS_PTR=0;
-  enum {JAVA_LANG_CLASS_GETNAME=1, JAVA_LANG_CLASS_GETFIELDS};
-  enum {JAVA_REFLECT_FIELD_GET_TYPE=1};
-  enum {PARAMETER_MAPPING_FIELD=1, PARAMETER_MAPPING_VALUE};
+  static const int CLASS_PTR = 0;
+  enum {JAVA_LANG_CLASS_GETNAME = 1, JAVA_LANG_CLASS_GETFIELDS = 2};
+  enum {JAVA_REFLECT_FIELD_GET_TYPE = 1};
+  enum {PARAMETER_MAPPING_FIELD = 1, PARAMETER_MAPPING_VALUE = 2};
 
   JavaSDKClasses(JNIEnv &env, jobject javaClassMap, jclass mapClass,
       jmethodID lookupMethod) {
@@ -106,40 +106,45 @@ struct JavaSDKClasses {
      }
      inline jmethodID getMethod() { return env.FromReflectedMethod(field); }
      inline jfieldID getField() { return env.FromReflectedField(method); }
+
+     /* Gets a reference pointer and active Global reference to a java Class
+        object loaded by the active ClassLoader */
      inline jclass getPtr() { return (jclass) env.NewGlobalRef(ptr); }
-    } closure(lookupMethod, env, javaClassMap), cc;
+    } closure(lookupMethod, env, javaClassMap), containedClosure;
  
-    refiningClassPtr= closure.lookup(COM_SRCH2_REFINING).ptr;
-    searchableClassPtr= closure.lookup(COM_SRCH2_SEARCHABLE).ptr;
-    attributeClassPtr= closure.lookup(COM_SRCH2_ATTRIBUTE).ptr;
-    primaryKeyClassPtr= closure.lookup(COM_SRCH2_PRIMARY_KEY).ptr;
-    refiningFloatClassPtr= closure.lookup(COM_SRCH2_REFININGFLOAT).ptr;
-    refiningUnsignedClassPtr= closure.lookup(COM_SRCH2_REFININGUNSIGNED).ptr;
-    refiningDateClassPtr= closure.lookup(COM_SRCH2_REFININGDATE).ptr;
-    refiningIntervalClassPtr= closure.lookup(COM_SRCH2_REFININGINTERVAL).ptr;
-    refiningStringClassPtr= closure.lookup(COM_SRCH2_REFININGSTRING).ptr;
-    indexableStringClassPtr= closure.lookup(COM_SRCH2_INDEXABLESTRING).ptr;
-    attributeExClassPtr= closure.lookup(COM_SRCH2_ATTRIBUTE_EXECEPTION).ptr;
+    refiningClassPtr = closure.lookup(COM_SRCH2_REFINING).ptr;
+    searchableClassPtr = closure.lookup(COM_SRCH2_SEARCHABLE).ptr;
+    attributeClassPtr = closure.lookup(COM_SRCH2_ATTRIBUTE).ptr;
+    primaryKeyClassPtr = closure.lookup(COM_SRCH2_PRIMARY_KEY).ptr;
+    refiningFloatClassPtr = closure.lookup(COM_SRCH2_REFININGFLOAT).ptr;
+    refiningUnsignedClassPtr =
+      closure.lookup(COM_SRCH2_REFININGUNSIGNED).ptr;
+    refiningDateClassPtr = closure.lookup(COM_SRCH2_REFININGDATE).ptr;
+    refiningIntervalClassPtr =
+      closure.lookup(COM_SRCH2_REFININGINTERVAL).ptr;
+    refiningStringClassPtr = closure.lookup(COM_SRCH2_REFININGSTRING).ptr;
+    indexableStringClassPtr = closure.lookup(COM_SRCH2_INDEXABLESTRING).ptr;
+    attributeExClassPtr = closure.lookup(COM_SRCH2_ATTRIBUTE_EXECEPTION).ptr;
 
-    cc= closure.lookup(JAVA_REFLECT_FIELD);
-    javaFieldClassRef.ptr= cc.lookup(CLASS_PTR).ptr;
-    javaFieldClassRef.getType=
-      cc.lookup(JAVA_REFLECT_FIELD_GET_TYPE).getMethod();
+    containedClosure = closure.lookup(JAVA_REFLECT_FIELD);
+    javaFieldClassRef.ptr = containedClosure.lookup(CLASS_PTR).ptr;
+    javaFieldClassRef.getType =
+      containedClosure.lookup(JAVA_REFLECT_FIELD_GET_TYPE).getMethod();
 
-    cc= closure.lookup(JAVA_LANG_CLASS);
-    javaClassRef.ptr= cc.lookup(CLASS_PTR).ptr;
-    javaClassRef.getName= cc.lookup(JAVA_LANG_CLASS_GETNAME).getMethod();
-    javaClassRef.getFields= cc.lookup(JAVA_LANG_CLASS_GETFIELDS).getMethod();
+    containedClosure = closure.lookup(JAVA_LANG_CLASS);
+    javaClassRef.ptr = containedClosure.lookup(CLASS_PTR).ptr;
+    javaClassRef.getName =
+      containedClosure.lookup(JAVA_LANG_CLASS_GETNAME).getMethod();
+    javaClassRef.getFields =
+      containedClosure.lookup(JAVA_LANG_CLASS_GETFIELDS).getMethod();
 
-    cc= closure.lookup(COM_SRCH2_PARAMETER_MAPPING);
-    parameterMappingClassRef.ptr= cc.lookup(CLASS_PTR).ptr;
-    parameterMappingClassRef.value=
-      cc.lookup(PARAMETER_MAPPING_VALUE).getField();
+    containedClosure = closure.lookup(COM_SRCH2_PARAMETER_MAPPING);
+    parameterMappingClassRef.ptr = containedClosure.lookup(CLASS_PTR).ptr;
+    parameterMappingClassRef.value =
+      containedClosure.lookup(PARAMETER_MAPPING_VALUE).getField();
     parameterMappingClassRef.type=
-      cc.lookup(PARAMETER_MAPPING_FIELD).getField();
+      containedClosure.lookup(PARAMETER_MAPPING_FIELD).getField();
   }
 };
 
-/* Gets a reference pointer and active Global reference to a java Class
-   object loaded by the active ClassLoader */
 #endif /* SRCH2_JNI_INIT_H */
