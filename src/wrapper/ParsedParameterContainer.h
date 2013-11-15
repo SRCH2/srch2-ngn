@@ -76,6 +76,7 @@ public:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfTopGroupsToReturn;
 };
 
 class TopKParameterContainer {
@@ -157,6 +158,7 @@ public:
         topKParameterContainer = NULL;
         getAllResultsParameterContainer = NULL;
         geoParameterContainer = NULL;
+        onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
         isOmitHeader=false;
@@ -189,6 +191,7 @@ public:
 
     std::string docIdForRetrieveByIdSearchType; // if docid parameter is given in the query, this member keeps the value of primary_key to be used later to retrieve the record
 
+    bool onlyFacets; //This flag specifies whether the engine only returns the facets (without matching records) in the response.
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's SimilarityThreshold as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
@@ -252,6 +255,9 @@ public:
             case MessageWarning:
                 result += "WARNING : " + m->second + "\n";
                 break;
+            case MessageNotice:
+            	result += "NOTICE : " + m->second + "\n";
+            	break;
             }
         }
         return result;

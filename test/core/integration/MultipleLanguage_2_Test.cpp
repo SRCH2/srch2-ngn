@@ -2744,8 +2744,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
 	schema->setSearchableAttribute("article_sentence", 7); // searchable text
 
-	schema->setNonSearchableAttribute("price" , ATTRIBUTE_TYPE_UNSIGNED , "0" );
-	schema->setNonSearchableAttribute("class" , ATTRIBUTE_TYPE_TEXT , "الف" );
+	schema->setRefiningAttribute("price" , ATTRIBUTE_TYPE_UNSIGNED , "0" );
+	schema->setRefiningAttribute("class" , ATTRIBUTE_TYPE_TEXT , "الف" );
 
 
 	Record *record = new Record(schema);
@@ -2768,8 +2768,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 			"book Tom Smith and Jack Lennon");
 	record->setSearchableAttributeValue("article_sentence",
 			"Come Yesterday Once More");
-	record->setNonSearchableAttributeValue("price" , "1001");
-	record->setNonSearchableAttributeValue("class" , "الف");
+	record->setRefiningAttributeValue("price" , "1001");
+	record->setRefiningAttributeValue("class" , "الف");
 
 	record->setRecordBoost(90);
 
@@ -2780,8 +2780,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setSearchableAttributeValue(1, "Jimi Hendrix");
 	record->setSearchableAttributeValue(2, "Little wing");
 
-	record->setNonSearchableAttributeValue("price" , "1002");
-	record->setNonSearchableAttributeValue("class" , "ب");
+	record->setRefiningAttributeValue("price" , "1002");
+	record->setRefiningAttributeValue("class" , "ب");
 
 	record->setRecordBoost(90);
 
@@ -2792,8 +2792,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setSearchableAttributeValue(1, "Mr Smith and Miss Smith");
 	record->setSearchableAttributeValue(2, "Come Tomorrow Two More first");
 
-	record->setNonSearchableAttributeValue("price" , "1003");
-	record->setNonSearchableAttributeValue("class" , "C");
+	record->setRefiningAttributeValue("price" , "1003");
+	record->setRefiningAttributeValue("class" , "C");
 
 	record->setRecordBoost(10);
 	index->addRecord(record,analyzer);
@@ -2805,8 +2805,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setSearchableAttributeValue("article_sentence",
 			"اظهار نظر او که کلاغ به تدریج منقرض شدن");
 
-	record->setNonSearchableAttributeValue("price" , "1101");
-	record->setNonSearchableAttributeValue("class" , "ج");
+	record->setRefiningAttributeValue("price" , "1101");
+	record->setRefiningAttributeValue("class" , "ج");
 
 	record->setRecordBoost(90);
 	index->addRecord(record,analyzer);
@@ -2817,8 +2817,8 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	record->setSearchableAttributeValue(2,
 			"مواد منفجره، وکیل مدافع جوزف آنتونلی مورد از دست دادن هرگز - و یا پشت سر هم از وجدان");
 
-	record->setNonSearchableAttributeValue("price" , "1103");
-	record->setNonSearchableAttributeValue("class" , "د");
+	record->setRefiningAttributeValue("price" , "1103");
+	record->setRefiningAttributeValue("class" , "د");
 
 	record->setRecordBoost(90);
 	index->addRecord(record,analyzer);

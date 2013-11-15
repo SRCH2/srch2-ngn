@@ -33,6 +33,7 @@
 #include <../wrapper/SortFilterEvaluator.h>
 #include <operation/IndexSearcherInternal.h>
 #include "util/Assert.h"
+#include "util/Logger.h"
 
 #include <query/QueryResultsInternal.h>
 #include <operation/IndexSearcherInternal.h>
@@ -702,18 +703,14 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
 {
     bool returnvalue = false;
 
-    if (numberofHits != queryResults->getNumberOfResults())
-    {
-    	cout << numberofHits << " | " << queryResults->getNumberOfResults() << endl;
-    	for (unsigned resultCounter = 0;
-    	                resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
-    	{
-    		cout<<(unsigned)atoi(queryResults->getRecordId(resultCounter).c_str())<<endl;
-    	}
+    if (numberofHits != queryResults->getNumberOfResults()) {
+        Logger::debug("%u | %d", numberofHits, queryResults->getNumberOfResults());
+        for (unsigned resultCounter = 0;
+                        resultCounter < queryResults->getNumberOfResults(); resultCounter++ ) {
+                Logger::debug("%u", (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()));
+        }
         return false;
-    }
-    else
-    {
+    } else {
         returnvalue = true;
         for (unsigned resultCounter = 0;
                 resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
@@ -725,26 +722,8 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
 
             queryResults->getMatchingKeywords(resultCounter, matchingKeywords);
             queryResults->getEditDistances(resultCounter, editDistances);
-/*
-            for(it1=matchingKeywords.begin();it1!=matchingKeywords.end();it1++)
-            {
-                cout<<"matching keyword: "<<"["<<*it1<<"]"<<endl;
-            }
-
-            cout<<endl;
-
-            for(it2=editDistances.begin();it2 != editDistances.end();it2++)
-            {
-                cout<<"Edit distances: "<<"["<<*it2<<"]"<<endl;
-            }
-*/
-            //cout << "resultCounter = " << resultCounter << ";  ";
-            //cout << "queryResults->getRecordId(resultCounter) = " << queryResults->getRecordId(resultCounter);
-            //cout << "; recordIDs[resultcounter]: " << recordIDs[resultCounter] << endl;
-            //cout << "query results records id :"<< queryResults->getRecordId(resultCounter)<<endl;
 
             if ( (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()) == recordIDs[resultCounter])
-            //if (queryResults->getRecordId(resultCounter) == recordIDs[resultCounter])
             {
                 returnvalue = true;
             }
@@ -861,7 +840,7 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, IndexSearcher *indexSearch
     sortFilter->evaluator = eval;
 	eval->order = srch2::instantsearch::SortOrderDescending;
     const std::map<std::string , unsigned> * nonSearchableAttributes =
-    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    		indexSearcherInternal->getSchema()->getRefiningAttributes();
     string attributeToSortName = "";
     for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
     		nSA != nonSearchableAttributes->end() ; nSA++){
@@ -912,7 +891,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, IndexSearcher *index
     else
 		eval->order = srch2::instantsearch::SortOrderAscending;
     const std::map<std::string , unsigned> * nonSearchableAttributes =
-    		indexSearcherInternal->getSchema()->getNonSearchableAttributes();
+    		indexSearcherInternal->getSchema()->getRefiningAttributes();
     string attributeToSortName = "";
     for(std::map<std::string , unsigned>::const_iterator nSA = nonSearchableAttributes->begin();
     		nSA != nonSearchableAttributes->end() ; nSA++){

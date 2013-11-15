@@ -24,6 +24,73 @@ using namespace pugi;
 namespace srch2 {
 namespace httpwrapper {
 
+// This class is used to collect information from the config file and pass them other modules
+// in the system.
+class SearchableAttributeInfoContainer {
+public:
+	SearchableAttributeInfoContainer(){
+		attributeName = "";
+		required = false;
+		defaultValue = "";
+		offset = 0;
+		boost = 1;
+		isMultiValued = false;
+	}
+	SearchableAttributeInfoContainer(const string & name,
+			const bool required,
+			const string & defaultValue ,
+			const unsigned offset,
+			const unsigned boost,
+			const bool isMultiValued){
+		this->attributeName = name;
+		this->required = required;
+		this->defaultValue = defaultValue;
+		this->offset = offset;
+		this->boost = boost;
+		this->isMultiValued = isMultiValued;
+	}
+ 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+	// VALUES AND HAS NO BEHAVIOUR
+    string attributeName;
+    bool required;
+    string defaultValue;
+    unsigned offset;
+    unsigned boost;
+    bool isMultiValued;
+};
+
+class RefiningAttributeInfoContainer {
+public:
+	RefiningAttributeInfoContainer(){
+		attributeName = "";
+		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
+		attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+		defaultValue = "";
+		required = false;
+		isMultiValued = false;
+	}
+	RefiningAttributeInfoContainer(const string & name,
+			srch2::instantsearch::FilterType type,
+				const string & defaultValue,
+				const bool required,
+				const bool isMultiValued){
+		this->attributeName = name;
+		this->attributeType = type;
+		this->defaultValue = defaultValue;
+		this->required = required;
+		this->isMultiValued = isMultiValued;
+	}
+ 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+	// VALUES AND HAS NO BEHAVIOUR
+	string attributeName;
+	srch2::instantsearch::FilterType attributeType;
+	string defaultValue;
+	bool required;
+	bool isMultiValued;
+};
+
 class ConfigManager {
 private:
 
@@ -87,6 +154,9 @@ private:
 	unsigned updateHistogramEveryPMerges;
 	unsigned updateHistogramEveryQWrites;
 
+	// <config><keywordPopularitythreshold>
+	unsigned keywordPopularityThreshold;
+
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
@@ -118,14 +188,10 @@ private:
 
 	//vector<string> searchableAttributes;
 
-    // < name, <required, <default, <offset, <boost,isMultiValued> > > > >
-    map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > > searchableAttributesInfo;
-
+    map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
 	string attributeRecordBoost;
 
-
-	// < name, <type, <default, <isSortable,isMultiValued>>>>
-	map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > nonSearchableAttributesInfo;
+	map<string , RefiningAttributeInfoContainer > RefiningAttributesInfo;
 
 
 
@@ -197,6 +263,9 @@ private:
     bool isValidMaxMemory(string& maxMemory);
     bool isValidMergeEveryNSeconds(string& mergeEveryNSeconds);
     bool isValidMergeEveryMWrites(string& mergeEveryMWrites);
+    bool isValidKeywordPopularityThreshold(string kpt);
+    bool isValidGetAllResultsMaxResultsThreshold(string kpt);
+    bool isValidGetAllResultsKAlternative(string kpt);
     bool isValidLogLevel(string& logLevel);
     bool isValidIndexType(string& indexType);
     bool isValidSearcherType(string& searcherType);
@@ -222,9 +291,9 @@ public:
 	const std::string& getFilePath() const;
 	const std::string& getPrimaryKey() const;
 
-	const map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned,bool> > > > > * getSearchableAttributes() const;
+	const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes() const;
 
-	const map<string, pair< srch2::instantsearch::FilterType, pair<string,  pair<bool,bool> > > > * getNonSearchableAttributes() const;
+	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes() const;
 
     const vector<string> * getAttributesToReturnName() const;
 
@@ -262,6 +331,8 @@ public:
 
 	uint32_t getUpdateHistogramEveryPMerges() const;
 	uint32_t getUpdateHistogramEveryQWrites() const;
+
+	unsigned getKeywordPopularityThreshold() const ;
 
 	int getNumberOfThreads() const;
 
@@ -430,6 +501,9 @@ private:
     static const char* const updateHandlerString;
     static const char* const updateLogString;
     static const char* const wordsString;
+    static const char* const keywordPopularityThresholdString;
+    static const char* const getAllResultsMaxResultsThreshold;
+    static const char* const getAllResultsKAlternative;
 };
 
 }

@@ -110,7 +110,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
-        const unsigned ts1, struct timespec &tstart, struct timespec &tend) {
+        const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
     Json::FastWriter writer;
     Json::Value root;
 
@@ -118,101 +118,130 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     string logQueries;
 
     root["searcher_time"] = ts1;
-    root["results"].resize(end - start);
-
     clock_gettime(CLOCK_REALTIME, &tstart);
-    unsigned counter = 0;
-    if (queryPlan.getSearchType() == GeoSearchType
-            && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
-            {
-        for (unsigned i = start; i < end; ++i) {
-            root["results"][counter]["record_id"] = queryResults->getRecordId(
-                    i);
-            root["results"][counter]["score"] = (0
-                    - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
-            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                unsigned internalRecordId = queryResults->getInternalRecordId(
+
+    if(onlyFacets == false){ // We send the matching records only if "facet != only".
+        root["results"].resize(end - start);
+        unsigned counter = 0;
+        if (queryPlan.getSearchType() == GeoSearchType
+                && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+                {
+            for (unsigned i = start; i < end; ++i) {
+                root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
-                std::string compressedInMemoryRecordString = indexer
-                        ->getInMemoryData(internalRecordId);
+                root["results"][counter]["score"] = (0
+                        - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
+                if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                        || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                    unsigned internalRecordId = queryResults->getInternalRecordId(
+                            i);
+                    std::string compressedInMemoryRecordString = indexer
+                            ->getInMemoryData(internalRecordId);
 
-                std::string uncompressedInMemoryRecordString;
+                    std::string uncompressedInMemoryRecordString;
 
-                snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-                        compressedInMemoryRecordString.size(),
-                        &uncompressedInMemoryRecordString);
+                    snappy::Uncompress(compressedInMemoryRecordString.c_str(),
+                            compressedInMemoryRecordString.size(),
+                            &uncompressedInMemoryRecordString);
 
-                Json::Value in_mem_String;
-                Json::Reader reader;
-                reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                        false);
-                root["results"][counter]["record"] = in_mem_String;
-            }
-            ++counter;
-        }
-
-    } else // the query is including keywords:(1)only keywords (2)keywords+geo
-    {
-        for (unsigned i = start; i < end; ++i) {
-
-            root["results"][counter]["record_id"] = queryResults->getRecordId(
-                    i);
-            root["results"][counter]["score"] = queryResults->getResultScore(i)
-                    .getFloatTypedValue();
-
-            // print edit distance vector
-            vector<unsigned> editDistances;
-            queryResults->getEditDistances(i, editDistances);
-
-            root["results"][counter]["edit_dist"].resize(editDistances.size());
-            for (unsigned int j = 0; j < editDistances.size(); ++j) {
-                root["results"][counter]["edit_dist"][j] = editDistances[j];
+                    Json::Value in_mem_String;
+                    Json::Reader reader;
+                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
+                            false);
+                    root["results"][counter]["record"] = in_mem_String;
+                }
+                ++counter;
             }
 
-            // print matching keywords vector
-            vector<std::string> matchingKeywords;
-            queryResults->getMatchingKeywords(i, matchingKeywords);
+        } else // the query is including keywords:(1)only keywords (2)keywords+geo
+        {
+            for (unsigned i = start; i < end; ++i) {
 
-            root["results"][counter]["matching_prefix"].resize(
-                    matchingKeywords.size());
-            for (unsigned int j = 0; j < matchingKeywords.size(); ++j) {
-                root["results"][counter]["matching_prefix"][j] =
-                        matchingKeywords[j];
-            }
-
-            if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                    || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                unsigned internalRecordId = queryResults->getInternalRecordId(
+                root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
-                std::string compressedInMemoryRecordString = indexer
-                        ->getInMemoryData(internalRecordId);
+                root["results"][counter]["score"] = queryResults->getResultScore(i)
+                        .getFloatTypedValue();
 
-                std::string uncompressedInMemoryRecordString;
+                // print edit distance vector
+                vector<unsigned> editDistances;
+                queryResults->getEditDistances(i, editDistances);
 
-                snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-                        compressedInMemoryRecordString.size(),
-                        &uncompressedInMemoryRecordString);
+                root["results"][counter]["edit_dist"].resize(editDistances.size());
+                for (unsigned int j = 0; j < editDistances.size(); ++j) {
+                    root["results"][counter]["edit_dist"][j] = editDistances[j];
+                }
 
-                Json::Value in_mem_String;
-                Json::Reader reader;
-                reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                        false);
-                root["results"][counter]["record"] = in_mem_String;
+                // print matching keywords vector
+                vector<std::string> matchingKeywords;
+                queryResults->getMatchingKeywords(i, matchingKeywords);
+
+                root["results"][counter]["matching_prefix"].resize(
+                        matchingKeywords.size());
+                for (unsigned int j = 0; j < matchingKeywords.size(); ++j) {
+                    root["results"][counter]["matching_prefix"][j] =
+                            matchingKeywords[j];
+                }
+
+                if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                        || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                    unsigned internalRecordId = queryResults->getInternalRecordId(
+                            i);
+                    std::string compressedInMemoryRecordString = indexer
+                            ->getInMemoryData(internalRecordId);
+
+                    std::string uncompressedInMemoryRecordString;
+
+                    snappy::Uncompress(compressedInMemoryRecordString.c_str(),
+                            compressedInMemoryRecordString.size(),
+                            &uncompressedInMemoryRecordString);
+
+                    Json::Value in_mem_String;
+                    Json::Reader reader;
+                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
+                            false);
+                    root["results"][counter]["record"] = in_mem_String;
+                }
+                ++counter;
             }
-            ++counter;
-        }
-        root["query_keywords"].resize(query->getQueryTerms()->size());
-        for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
-            string &term = *(query->getQueryTerms()->at(i)->getKeyword());
-            root["query_keywords"][i] = term;
-            if (i)
-                logQueries += "";
-            logQueries += term;
-        }
+            root["query_keywords"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                string &term = *(query->getQueryTerms()->at(i)->getKeyword());
+                root["query_keywords"][i] = term;
+                if (i)
+                    logQueries += "";
+                logQueries += term;
+            }
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
 
-        root["fuzzy"] = (int) queryPlan.isFuzzy();
+
+            root["fuzzy"] = (int) queryPlan.isFuzzy();
+        }
+    }else{ // facet only case: we only want query information
+    	if (queryPlan.getSearchType() != GeoSearchType
+    			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
+    	{
+            root["query_keywords"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                string &term = *(query->getQueryTerms()->at(i)->getKeyword());
+                root["query_keywords"][i] = term;
+                if (i)
+                    logQueries += "";
+                logQueries += term;
+            }
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
+            root["fuzzy"] = (int) queryPlan.isFuzzy();
+    	}
     }
+
+
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
@@ -230,13 +259,18 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     root["results_found"] = retrievedResults;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
+    // Since estimation of number of results can return a wrong number, if this value is less
+    // than the actual number of found results, we use the real number.
+    if(estimatedNumberOfResults < (long int)retrievedResults){
+    	estimatedNumberOfResults = (long int)retrievedResults;
+    }
     if(estimatedNumberOfResults != -1){
-    	// at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
-    	// it to unsigned (because the thirdparty library we use here does not accept long integers.)
-    	root["estimated_number_of_results"] = (unsigned)estimatedNumberOfResults;
+        // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
+        // it to unsigned (because the thirdparty library we use here does not accept long integers.)
+        root["estimated_number_of_results"] = (unsigned)estimatedNumberOfResults;
     }
     if(queryResults->isResultsApproximated() == true){
-    	root["result_set_approximation"] = true;
+        root["result_set_approximation"] = true;
     }
 
 //    }
@@ -302,13 +336,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
  * Add the record information to the request.out string.
  */
 void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
-		const QueryPlan &queryPlan,
-		const ConfigManager *indexDataContainerConf,
-		const QueryResults *queryResults,
-		const srch2is::Indexer *indexer,
-		const string & message,
-		const unsigned ts1,
-		struct timespec &tstart, struct timespec &tend){
+        const QueryPlan &queryPlan,
+        const ConfigManager *indexDataContainerConf,
+        const QueryResults *queryResults,
+        const srch2is::Indexer *indexer,
+        const string & message,
+        const unsigned ts1,
+        struct timespec &tstart, struct timespec &tend){
 
     Json::FastWriter writer;
     Json::Value root;
@@ -368,11 +402,11 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
 
 void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &headers,
-		const vector<string> & suggestions,
-		const srch2is::Indexer *indexer,
-		const string & message,
-		const unsigned ts1,
-		struct timespec &tstart, struct timespec &tend){
+        const vector<string> & suggestions,
+        const srch2is::Indexer *indexer,
+        const string & message,
+        const unsigned ts1,
+        struct timespec &tstart, struct timespec &tend){
 
     Json::FastWriter writer;
     Json::Value root;
@@ -676,6 +710,44 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+// The purpose of this function is to help rotate logger files by repointing logger file.
+// When rotating log file, "logrotate(a 3rd-party program)" will rename the old "logger.txt" file to "logger.txt.1"
+// and create a new file called "logger.txt"
+// But srch2 engine currently still point to and write into the old file "logger.txt.1"
+// The purpose of this function is to let srch2 engine point to the new-created logger file "logger.txt"
+void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
+    //  TODO: we will need to consider concurrency control next.
+    switch(req->type) {
+    case EVHTTP_REQ_PUT: {
+        // create a FILE* pointer to point to the new logger file "logger.txt"
+        FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
+                    "a");
+
+        if (logFile == NULL) {
+            Logger::error("Reopen Log file %s failed.",
+                    server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str());
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
+                "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
+                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+        } else {
+            FILE * oldLogger = Logger::swapLoggerFile(logFile);
+            fclose(oldLogger);
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
+                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+        }
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+    };
+}
+
+
 // exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
 void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
@@ -866,7 +938,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     queryPlan.getExactQuery(), server->indexer,
                     queryPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend);
+                    paramContainer.getMessageString(), ts1, tstart, tend , paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, queryPlan,
                     indexDataContainerConf, finalResults,
@@ -874,20 +946,20 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     queryPlan.getOffset(),
                     queryPlan.getOffset() + queryPlan.getResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend);
+                    paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         }
         break;
     case RetrieveByIdSearchType:
-    	finalResults->printStats();
-    	HTTPRequestHandler::printOneResultRetrievedById(req,
-    			headers,
-    			queryPlan ,
-    			indexDataContainerConf,
-    			finalResults ,
-    			server->indexer ,
-    			paramContainer.getMessageString() ,
-    			ts1, tstart , tend);
-    	break;
+        finalResults->printStats();
+        HTTPRequestHandler::printOneResultRetrievedById(req,
+                headers,
+                queryPlan ,
+                indexDataContainerConf,
+                finalResults ,
+                server->indexer ,
+                paramContainer.getMessageString() ,
+                ts1, tstart , tend);
+        break;
     default:
         break;
     }
@@ -925,33 +997,36 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
             messages.begin(); m != messages.end(); ++m) {
         switch (m->first) {
         case MessageError:
-        	messagesString += "ERROR : " + m->second + "\n";
+            messagesString += "ERROR : " + m->second + "\n";
             break;
         case MessageWarning:
-        	messagesString += "WARNING : " + m->second + "\n";
+            messagesString += "WARNING : " + m->second + "\n";
             break;
         }
     }
 
     if(! isSyntaxValid){
-		// if the query is not valid, print the error message to the response
-		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-				messagesString, headers);
-		return;
+        // if the query is not valid, print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                messagesString, headers);
+        return;
     }
 
 
     // 2. second, use configuration file if some information is missing
     if(numberOfSuggestionsToReturn == -1){
-    	numberOfSuggestionsToReturn = indexDataContainerConf->getDefaultNumberOfSuggestionsToReturn();
+        numberOfSuggestionsToReturn = indexDataContainerConf->getDefaultNumberOfSuggestionsToReturn();
     }
     if(fuzzyMatchPenalty == -1){
-    	fuzzyMatchPenalty = indexDataContainerConf->getFuzzyMatchPenalty();
+        fuzzyMatchPenalty = indexDataContainerConf->getFuzzyMatchPenalty();
     }
 
 
     // 3. now search for suggestions
-    IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer);
+    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
+    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
+    IndexSearcherRuntimeParametersContainer runTimeParameters(indexDataContainerConf->getKeywordPopularityThreshold());
+    IndexSearcher * indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters);
     vector<string> suggestions ;
     int numberOfSuggestionsFound = indexSearcher->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn , suggestions);
     delete indexSearcher;

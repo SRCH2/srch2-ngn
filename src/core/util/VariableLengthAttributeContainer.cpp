@@ -32,13 +32,13 @@ namespace instantsearch {
 unsigned VariableLengthAttributeContainer::getSizeNeededForAllocation(
 		const Schema * schema,
 		const vector<vector< string> > & nonSearchableAttributeValues){
-	ASSERT(nonSearchableAttributeValues.size() == schema->getNumberOfNonSearchableAttributes());
+	ASSERT(nonSearchableAttributeValues.size() == schema->getNumberOfRefiningAttributes());
     unsigned totalLength = 0;
-    for (int i = 0; i < schema->getNumberOfNonSearchableAttributes(); ++i) { // iterate on attributes in schema
+    for (int i = 0; i < schema->getNumberOfRefiningAttributes(); ++i) { // iterate on attributes in schema
         // find the type of ith attribute
         FilterType type = getAttributeType(i, schema);
         // find out if the i-th attribute is multivalued
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(isMultiValued == true){
 			switch (type) {
 			case ATTRIBUTE_TYPE_UNSIGNED:
@@ -101,12 +101,12 @@ void VariableLengthAttributeContainer::fillWithoutAllocation(
     // iterate on nonsearchableAttributes and make a Byte vector
     unsigned startOffset = 0;
     for (int nSAIndex = 0;
-            nSAIndex < schema->getNumberOfNonSearchableAttributes();
+            nSAIndex < schema->getNumberOfRefiningAttributes();
             nSAIndex++) {
         // find the type of nSAIndex-th attribute
         FilterType type = getAttributeType(nSAIndex, schema);
         unsigned usedSizeForThisAttribute = 0;
-        if(schema->isNonSearchableAttributeMultiValued(nSAIndex) == false){ // single value
+        if(schema->isRefiningAttributeMultiValued(nSAIndex) == false){ // single value
 			convertStringToByteArray(type,
 					nonSearchableAttributeValues.at(nSAIndex).at(0), data,
 					startOffset, usedSizeForThisAttribute);
@@ -149,9 +149,9 @@ std::string VariableLengthAttributeContainer::getAttribute(
         unsigned nonSearchableAttributeIndex, const Schema * schema, const Byte * data)  {
 
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
             return convertByteArrayToString(type ,startOffset,data );
         }else{ // skip this attribute because we are looking for a certain attribute which is not this one
@@ -166,9 +166,9 @@ std::string VariableLengthAttributeContainer::getAttribute(
 void VariableLengthAttributeContainer::getAttribute(const unsigned nonSearchableAttributeIndex,
         const Schema * schema, const Byte * data, TypedValue * typedValue) {
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
             convertByteArrayToTypedValue(type , isMultiValued ,startOffset, data , typedValue );
             return;
@@ -192,9 +192,9 @@ void VariableLengthAttributeContainer::getBatchOfAttributes(
     std::sort(nonSearchableAttributeIndexes.begin() , nonSearchableAttributeIndexes.end());
     // now extract the scores
     unsigned startOffset = 0;
-    for(int nonSearchableAttributeIndex=0; nonSearchableAttributeIndex < schema->getNumberOfNonSearchableAttributes() ; nonSearchableAttributeIndex++){
+    for(int nonSearchableAttributeIndex=0; nonSearchableAttributeIndex < schema->getNumberOfRefiningAttributes() ; nonSearchableAttributeIndex++){
         FilterType type = getAttributeType(nonSearchableAttributeIndex , schema);
-        bool isMultivalued = schema->isNonSearchableAttributeMultiValued(nonSearchableAttributeIndex);
+        bool isMultivalued = schema->isRefiningAttributeMultiValued(nonSearchableAttributeIndex);
         if(find(nonSearchableAttributeIndexes.begin()
                 ,nonSearchableAttributeIndexes.end() , nonSearchableAttributeIndex) != nonSearchableAttributeIndexes.end()){ // index is among requested indexes
             TypedValue attributeValue;
@@ -223,9 +223,9 @@ void VariableLengthAttributeContainer::getBatchOfAttributes(
 unsigned VariableLengthAttributeContainer::getUnsignedAttribute(const unsigned nonSearchableAttributeIndex,
         const Schema * schema, const Byte * data)  {
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_UNSIGNED);
@@ -243,9 +243,9 @@ unsigned VariableLengthAttributeContainer::getUnsignedAttribute(const unsigned n
 float VariableLengthAttributeContainer::getFloatAttribute(const unsigned nonSearchableAttributeIndex,
         const Schema * schema, const Byte * data) {
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_FLOAT);
@@ -266,9 +266,9 @@ std::string VariableLengthAttributeContainer::getTextAttribute(const unsigned no
         const Schema * schema, const Byte * data) {
 
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_TEXT);
@@ -287,9 +287,9 @@ long VariableLengthAttributeContainer::getTimeAttribute(const unsigned nonSearch
         const Schema * schema, const Byte * data) {
 
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == false);
             ASSERT(type == ATTRIBUTE_TYPE_TIME);
@@ -311,9 +311,9 @@ vector<unsigned> VariableLengthAttributeContainer::getMultiUnsignedAttribute(con
 
 	vector<unsigned> values;
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_UNSIGNED);
@@ -339,9 +339,9 @@ vector<float> VariableLengthAttributeContainer::getMultiFloatAttribute(const uns
 
 	vector<float> values;
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_FLOAT);
@@ -366,9 +366,9 @@ vector<std::string> VariableLengthAttributeContainer::getMultiTextAttribute(cons
 
 	vector<string> values;
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_TEXT);
@@ -394,9 +394,9 @@ vector<long> VariableLengthAttributeContainer::getMultiTimeAttribute(const unsig
 
     vector<long> values;
     unsigned startOffset = 0;
-    for(int i=0; i < schema->getNumberOfNonSearchableAttributes() ; i++){
+    for(int i=0; i < schema->getNumberOfRefiningAttributes() ; i++){
         FilterType type = getAttributeType(i , schema);
-        bool isMultiValued = schema->isNonSearchableAttributeMultiValued(i);
+        bool isMultiValued = schema->isRefiningAttributeMultiValued(i);
         if(i == nonSearchableAttributeIndex) {// this is the wanted attribute
 			ASSERT(isMultiValued == true);
             ASSERT(type == ATTRIBUTE_TYPE_TIME);
@@ -430,8 +430,8 @@ void VariableLengthAttributeContainer::allocate(const Schema * schema,
 
 FilterType VariableLengthAttributeContainer::getAttributeType(unsigned iter,
         const Schema * schema) {
-    ASSERT(iter < schema->getNumberOfNonSearchableAttributes());
-    return schema->getTypeOfNonSearchableAttribute(iter);
+    ASSERT(iter < schema->getNumberOfRefiningAttributes());
+    return schema->getTypeOfRefiningAttribute(iter);
 }
 
 

@@ -39,6 +39,7 @@ class HTTPRequestHandler
         static void updateCommand(evhttp_request *req, Srch2Server *server);
         static void saveCommand(evhttp_request *req, Srch2Server *server);
         static void exportCommand(evhttp_request *req, Srch2Server *server);
+        static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
@@ -57,7 +58,7 @@ class HTTPRequestHandler
 				const unsigned retrievedResults,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend);
+				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const QueryPlan &queryPlan,

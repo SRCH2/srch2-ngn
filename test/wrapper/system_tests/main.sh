@@ -9,203 +9,263 @@ cd $SYSTEM_TEST_DIR
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
 
-echo '----do multi valued attribute test--------------'
-python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt
+test_id="phrase search test"
+echo "---------------------do $test_id-----------------------"
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt > system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-
-echo '----do phrase search test--------------'
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
-python ./phraseSearch/phrase_search2.py $SRCH2_ENGINE_DIR ./phraseSearch/queries2.txt
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
-
-echo '----do save_shutdown_restart_test--------------'
-python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE_DIR
+test_id="multi valued attribute"
+echo "---------------------do $test_id-----------------------"
+python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do empty_index_test--------------'
-python ./empty_index/empty_index.py $SRCH2_ENGINE_DIR
+
+test_id="save_shutdown_restart test"
+echo "---------------------do $test_id-----------------------"
+python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
+
+test_id="empty_index test"
+echo "---------------------do $test_id-----------------------"
+python ./empty_index/empty_index.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
+
+test_id="high_insert test"
+echo "---------------------do $test_id-----------------------"
+./high_insert_test/autotest.sh $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do high_insert_test--------------'
-./high_insert_test/autotest.sh $SRCH2_ENGINE_DIR
+test_id="exact_A1 test"
+echo "---------------------do $test_id-----------------------"
+python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do exact_A1 test--------------'
-python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt
+test_id="fuzzy_A1 test"
+echo "---------------------do $test_id-----------------------"
+python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE_DIR ./fuzzy_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do fuzzy_A1 test--------------'
-python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE_DIR ./fuzzy_a1/queriesAndResults.txt
+test_id="exact_M1 test"
+echo "---------------------do $test_id-----------------------"
+python ./exact_m1/exact_M1.py $SRCH2_ENGINE_DIR ./exact_m1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do exact_M1 test--------------'
-python ./exact_m1/exact_M1.py $SRCH2_ENGINE_DIR ./exact_m1/queriesAndResults.txt
+test_id="fuzzy_M1 test"
+echo "---------------------do $test_id-----------------------"
+python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE_DIR ./fuzzy_m1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do fuzzy_M1 test--------------'
-python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE_DIR ./fuzzy_m1/queriesAndResults.txt
+test_id="exact_Attribute_Based_Search test"
+echo "---------------------do $test_id-----------------------"
+python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
+test_id="fuzzy_Attribute_Based_Search test"
+echo "---------------------do $test_id-----------------------"
+python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
+test_id="exact_Attribute_Based_Search_Geo test"
+echo "---------------------do $test_id-----------------------"
+python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do exact_Attribute_Based_Search test--------------'
-python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search/queriesAndResults.txt
+test_id="fuzzy_Attribute_Based_Search_Geo test"
+echo "---------------------do $test_id-----------------------"
+python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do fuzzy_Attribute_Based_Search test--------------'
-python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search/queriesAndResults.txt
+test_id="facted search test"
+echo "---------------------do $test_id-----------------------"
+python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do exact_Attribute_Based_Search_Geo test--------------'
-python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search_geo/queriesAndResults.txt
+test_id="sort filter test"
+echo "---------------------do $test_id-----------------------"
+python ./sort_filter/sort_filter.py $SRCH2_ENGINE_DIR ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do fuzzy_Attribute_Based_Search_Geo test--------------'
-python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search_geo/queriesAndResults.txt
+test_id="filter query test"
+echo "---------------------do $test_id-----------------------"
+python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do facted search test--------------'
-python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt
+test_id="test_solr_compatible_query_syntax"
+echo "---------------------do $test_id-----------------------"
+python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE_DIR ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do sort filter test--------------'
-python ./sort_filter/sort_filter.py $SRCH2_ENGINE_DIR ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt
+test_id="test_search_by_id"
+echo "---------------------do $test_id-----------------------"
+python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED:$test_id"
 
-echo '----do filter query test--------------'
-python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt
+
+
+test_id="date and time implementation test"
+echo "---------------------do $test_id-----------------------"
+python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE_DIR ./date_time_new_features_test/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do test_solr_compatible_query_syntax-------------'
-python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE_DIR ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt
+
+test_id="geo test"
+echo "---------------------do $test_id-----------------------"
+python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do test_search_by_id-------------'
-python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE_DIR
+
+test_id="term type test"
+echo "---------------------do $test_id-----------------------"
+python ./term_type/term_type.py $SRCH2_ENGINE_DIR ./term_type/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
 
-echo '----do date and time implementation test--------------'
-python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE_DIR ./date_time_new_features_test/queriesAndResults.txt
+test_id="analyzer end to end test"
+echo "---------------------do $test_id-----------------------"
+python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE_DIR ./analyzer_exact_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do geo test--------------'
-python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt
+
+test_id="top_k test"
+echo "---------------------do $test_id-----------------------"
+python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE_DIR food 10 20 >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do term type test--------------'
-python ./term_type/term_type.py $SRCH2_ENGINE_DIR ./term_type/queriesAndResults.txt
+test_id="reset logger test"
+echo "---------------------do $test_id-----------------------"
+#python ./reset_logger/test_reset_logger.py ./reset_logger/srch2-search-server >> system_test.log 2>&1
+python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do analyzer end to end test--------------'
-python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE_DIR ./analyzer_exact_a1/queriesAndResults.txt
+test_id="tests_used_for_statemedia"
+echo "---------------------do $test_id-----------------------"
+./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo " --- error ---"
+    echo "FAILED: $test_id"
     exit -1
 fi
+echo "-- PASSED: $test_id"
 
-echo '----do top_k test--------------'
-python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE_DIR food 10 20
 
-if [ $? -gt 0 ]; then
-    echo " --- error ---"
-    exit -1
-fi
-
-echo '----do tests_used_for_statemedia--------------'
-./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR
-
-#if [ $? -gt 0 ]; then
-#    echo " --- error ---"
-#    exit -1
-#fi
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
     rm -rf data

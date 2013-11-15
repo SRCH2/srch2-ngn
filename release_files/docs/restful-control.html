@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
+<meta name="generator" content="ReText Webpages generator 4.0.1">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Control API</title>
 </head>
@@ -37,6 +37,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-records">3. Serializing Records to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reset-log">4. Resetting Log File</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -92,6 +93,28 @@ Date: Thu, 19 Sep 2013 18:52:52 GMT
 </code></pre>
 
 <p>The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".</p>
+<h2 id="reset-log">4. Reseting Log File</h2>
+<p>This API is used by a third-party tool such as
+<a href="http://linuxcommand.org/man_pages/logrotate8.html">logrotate</a> to manage the log file. Suppose the "logrotate" tool has renamed the log file "srch2-log.txt" to another file "srch2-log.txt.1".
+The tool also has re-created a file with the original name "srch2-log.txt".  The SRCH2 engine is still writing log messages to the file "srch2-log.txt.1".
+Now "logrotate" sends the following message:</p>
+<pre><code>$ curl -i &quot;http://localhost:8081/resetLogger&quot; -X PUT
+</code></pre>
+
+<p>It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "lograte":</p>
+<pre><code>&quot;/home/joe/srch2/logs/srch2-log.txt&quot; {
+    weekly
+    missingok
+    rotate 52
+    notifempty
+    sharedscripts
+    postrotate
+            curl -i &quot;http://localhost:8081/resetLogger&quot; -X PUT
+    endscript
+    prerotate
+    endscript
+}
+</code></pre>
 
 </table>
 <hr>

@@ -55,10 +55,8 @@ class IndexSearcherInternal : public IndexSearcher
 {
 public:
 
-	static const unsigned HISTOGRAM_POPULARITY_THRESHOLD;
-
     //Get Schema pointer from IndexSearcherInternal
-    IndexSearcherInternal(IndexReaderWriter *indexer);
+    IndexSearcherInternal(IndexReaderWriter *indexer, IndexSearcherRuntimeParametersContainer * parameters = NULL);
     virtual ~IndexSearcherInternal() {};
 
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions);
@@ -130,12 +128,17 @@ public:
         return this->indexData->trie;
     }
 
+    const unsigned getKeywordPopularityThreshold() const {
+    	return this->parameters.keywordPopularityThreshold;
+    }
+
 private:
 
     const IndexData *indexData;
     IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
+    IndexSearcherRuntimeParametersContainer parameters;
     Cache *cacheManager;
 
     bool isValidTermPositionHit(unsigned postitionIndexOffset,int searchableAttributeId) const;
@@ -177,7 +180,7 @@ private:
     void findKMostPopularSuggestionsSorted(Term *term ,
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
-    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
+    		std::vector<SuggestionInfo > & suggestionPairs) const;
 
     unsigned estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const;
     float getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const;

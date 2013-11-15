@@ -28,7 +28,7 @@
 #include "ParserUtility.h"
 #include <instantsearch/TypedValue.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/NonSearchableAttributeExpressionFilter.h>
+#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include "instantsearch/Schema.h"
 #include "WrapperConstants.h"
 #include "util/exprtk.hpp"
@@ -42,7 +42,7 @@
 using namespace std;
 using srch2::instantsearch::TypedValue;
 using srch2::instantsearch::FilterType;
-using srch2::instantsearch::NonSearchableAttributeExpressionEvaluator;
+using srch2::instantsearch::RefiningAttributeExpressionEvaluator;
 using srch2::instantsearch::BooleanOperation;
 using srch2::instantsearch::AttributeCriterionOperation;
 using srch2::instantsearch::Schema;
@@ -123,11 +123,11 @@ public:
 
     bool validate(const Schema & schema) {
         //1. Check to make sure attributeName is a non-searchable attribute
-        int attributeId = schema.getNonSearchableAttributeId(attributeName);
+        int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
         //2. Check to make sure lower and upper values are consistent with the type
-        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(
+        FilterType attributeType = schema.getTypeOfRefiningAttribute(
                 attributeId);
         if (attributeValueLower.compare("*") != 0) {
             if (!validateValueWithType(attributeType, attributeValueLower)) {
@@ -272,12 +272,12 @@ public:
 
     bool validate(const Schema & schema) {
         //1. Check to make sure attributeName is a non-searchable attribute
-        int attributeId = schema.getNonSearchableAttributeId(attributeName);
+        int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
 
         //2. Check the value to be consistent with type
-        FilterType attributeType = schema.getTypeOfNonSearchableAttribute(
+        FilterType attributeType = schema.getTypeOfRefiningAttribute(
                 attributeId);
         if (attributeValue.compare("*") != 0) {
             if (!validateValueWithType(attributeType, attributeValue)) {
@@ -379,7 +379,7 @@ public:
         // exprtk library do the validation
 
         const std::map<std::string, unsigned> * nonSearchableAttributes = schema
-                .getNonSearchableAttributes();
+                .getRefiningAttributes();
 
         for (std::map<std::string, unsigned>::const_iterator nonSearchableAttribute =
                 nonSearchableAttributes->begin();
@@ -388,10 +388,10 @@ public:
             // Since we only accept unsigned and float non-searchable attributes
             // this if-else statement only inserts these non-searchable-attributes into
             // the symbol table. This symbol table is passed to exprtk library.
-            if (schema.getTypeOfNonSearchableAttribute(
+            if (schema.getTypeOfRefiningAttribute(
                     nonSearchableAttribute->second)
                     == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED
-                    || schema.getTypeOfNonSearchableAttribute(
+                    || schema.getTypeOfRefiningAttribute(
                             nonSearchableAttribute->second)
                             == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT) {
                 symbolVariables.insert(
@@ -435,7 +435,7 @@ private:
     std::map<string, double> symbolVariables;
 
 };
-class FilterQueryEvaluator: public NonSearchableAttributeExpressionEvaluator {
+class FilterQueryEvaluator: public RefiningAttributeExpressionEvaluator {
 public:
 
     FilterQueryEvaluator(

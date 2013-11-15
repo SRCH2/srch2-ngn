@@ -29,15 +29,15 @@ class JSONRecordParser
   static srch2is::Schema* createAndPopulateSchema( const ConfigManager *indexDataContainerConf);
 
  private:
-  static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::string &stringValue, const string &configName);
-  static void getJsonValueDateAndTime(const Json::Value &jsonValue, const std::string &key, std::string &stringValue, const string &configName, bool isMultiValued);
+  static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
+  static void getJsonValueDateAndTime(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
   static void getJsonValueDouble(const Json::Value &jsonValue, const std::string &key, double &doubleValue, const string& configName);
 };
 
 class DaemonDataSource
 {
 	public:
-		static void createNewIndexFromFile(srch2is::Indexer *indexer, const ConfigManager *indexDataContainerConf);
+		static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, const ConfigManager *indexDataContainerConf);
 };
 
 

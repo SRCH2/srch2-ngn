@@ -66,6 +66,18 @@ const char* const QueryParser::facetRangeField = "facet.range";
 //searchType
 const char* const QueryParser::searchType = "searchType";
 
+void decodeString(const char *inputStr, string& outputStr) {
+	size_t st;
+	char * decodedOutPut = evhttp_uridecode(inputStr, 0, &st);
+	outputStr.assign(decodedOutPut);
+	/*
+	 *  evhttp_uridecode allocates a new buffer for decoded string using an input string and
+	 *  returns the pointer to the new buffer. It is a responsibility of the caller to "free"
+	 *  the pointer returned by evhttp_uridecode
+	 */
+	free(decodedOutPut);
+}
+
 QueryParser::QueryParser(const evkeyvalq &headers,
         ParsedParameterContainer * container) :
         headers(headers) {
@@ -89,12 +101,12 @@ QueryParser::QueryParser(const evkeyvalq &headers) :
 bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalty,
 		int & numberOfSuggestionsToReturn , std::vector<std::pair<MessageType, std::string> > & messages){
 	   // 1. get the keyword string.
-	    Logger::info("parsing the main query.");
+	    Logger::debug("parsing the main query.");
 	    const char * keywordTmp = evhttp_find_header(&headers,
 	            QueryParser::suggestionKeywordParamName);
 	    if (keywordTmp) { // if this parameter exists
-	        size_t st;
-	        string keywordStr = evhttp_uridecode(keywordTmp, 0, &st);
+	    	string keywordStr;
+	    	decodeString(keywordTmp, keywordStr);
 	        boost::algorithm::trim(keywordStr); // trim the keywordString.
 	        bool hasParserSuccessfully = parseKeyword(keywordStr,keyword);
 	        if(!hasParserSuccessfully){
@@ -134,8 +146,8 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
 	    		QueryParser::rowsParamName);
 	    if (rowsTemp) { // if this parameter exists
 	    	Logger::debug("rowsTemp parameter found, parsing it.");
-	    	size_t st;
-	    	string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+	    	string rowsStr;
+	    	decodeString(rowsTemp, rowsStr);
 	    	// convert the rowsStr to integer. e.g. rowsStr will contain string 20
 	    	if (isUnsigned(rowsStr)) {
 	    		numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
@@ -228,8 +240,8 @@ bool QueryParser::docIdParser(){
             QueryParser::docIdParamName);
     if (docIdTemp) { // if this parameter exists
         Logger::debug("docid parameter found");
-        size_t st;
-        string docId = evhttp_uridecode(docIdTemp, 0, &st);
+        string docId;
+        decodeString(docIdTemp, docId);
         this->container->docIdForRetrieveByIdSearchType = docId;
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::RetrieveByIdSearchType);
@@ -247,12 +259,12 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
      * 2. calls the termParser();
      */
     // 1. get the mainQuery string.
-    Logger::info("parsing the main query.");
+    Logger::debug("parsing the main query.");
     const char * mainQueryTmp = evhttp_find_header(&headers,
             QueryParser::keywordQueryParamName);
     if (mainQueryTmp && mainQueryTmp[0]) { // if this parameter exists
-        size_t st;
-        string mainQueryStr = evhttp_uridecode(mainQueryTmp, 0, &st);
+        string mainQueryStr;
+        decodeString(mainQueryTmp, mainQueryStr);
         boost::algorithm::trim(mainQueryStr); // trim the mainQueryString.
         // 2. call the localParameterParser(), this will remove and parse the local param info from the mainQueryStr
         // in LocalParamerterParser, we are logging the mainQuery String
@@ -318,8 +330,8 @@ void QueryParser::isFuzzyParser() {
             QueryParser::isFuzzyParamName);
     if (fuzzyTemp) { // if this parameter exists
         Logger::debug("fuzzy parameter found");
-        size_t st;
-        string fuzzy = evhttp_uridecode(fuzzyTemp, 0, &st);
+        string fuzzy;
+        decodeString(fuzzyTemp, fuzzy);
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::IsFuzzyFlag);
         if (boost::iequals("true", fuzzy)) {
@@ -356,6 +368,32 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
         fqc.rangeEnds.push_back("");
         fqc.rangeGaps.push_back("");
         fqc.rangeStarts.push_back("");
+
+        // now see if there is a numberOfTopGroupsToReturn given by the user, if not
+        // use -1 which indicates returning all the facet groups
+        Logger::debug("inside populateParallelRangeVectors function");
+        const string numberOfGroupsKeyString = QueryParser::getFacetCategoricalNumberOfTopGroupsToReturn(*facetField);
+        const char* numberOfGroupsStrTemp = evhttp_find_header(&headers,
+        		numberOfGroupsKeyString.c_str());
+        if (numberOfGroupsStrTemp) {
+            Logger::debug("facetNumberOfGroups parameter found, parsing it.");
+            string facetNumberOfGroupsStr;
+            decodeString(numberOfGroupsStrTemp, facetNumberOfGroupsStr);
+            if(isUnsigned(facetNumberOfGroupsStr)){
+                Logger::debug(
+                        "facetNumberOfGroups parameter found, pushing it to numberOfTopGroupsToReturn to fqc");
+            	fqc.numberOfTopGroupsToReturn.push_back(atoi(facetNumberOfGroupsStr.c_str()));
+            }else{
+                this->container->messages.push_back(
+                        make_pair(MessageWarning,
+                                numberOfGroupsKeyString+" should get a valid unsigned number. Ignored."));
+            	fqc.numberOfTopGroupsToReturn.push_back(-1);
+            }
+        } else {
+            Logger::debug(
+                    "facetNumberOfGroups parameter not found, pushing -1 to numberOfTopGroupsToReturn to fqc");
+            fqc.numberOfTopGroupsToReturn.push_back(-1);
+        }
     }
     Logger::debug("returning from populateFacetFieldSimple");
 }
@@ -375,6 +413,8 @@ void QueryParser::populateFacetFieldsRange(FacetQueryContainer &fqc) {
         fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
         // populate parallel vectors with empty string
         populateParallelRangeVectors(fqc, *facetField);
+        // numberOfTopGroupsToReturn is only valid for categorial facets. For a range facet, we put a dummy value "-1"
+        fqc.numberOfTopGroupsToReturn.push_back(-1);
     }
     Logger::debug("returning from populateFacetFieldsRange function");
 }
@@ -391,8 +431,8 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
             startKeyStr.c_str());
     if (rangeStartTemp) {
         Logger::debug("rangeStart parameter found, parsing it.");
-        size_t st;
-        string rangeStart = evhttp_uridecode(rangeStartTemp, 0, &st);
+        string rangeStart;
+        decodeString(rangeStartTemp, rangeStart);
         fqc.rangeStarts.push_back(rangeStart);
     } else {
         Logger::debug(
@@ -403,8 +443,8 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
     const char* rangeEndTemp = evhttp_find_header(&headers, endKeyStr.c_str());
     if (rangeEndTemp) {
         Logger::debug("rangeStart parameter found, parsing it");
-        size_t st;
-        string rangeEnd = evhttp_uridecode(rangeEndTemp, 0, &st);
+        string rangeEnd ;
+        decodeString(rangeEndTemp, rangeEnd);
         fqc.rangeEnds.push_back(rangeEnd);
     } else {
         Logger::debug(
@@ -415,8 +455,8 @@ void QueryParser::populateParallelRangeVectors(FacetQueryContainer &fqc,
     const char* rangeGapTemp = evhttp_find_header(&headers, gapKeyStr.c_str());
     if (rangeGapTemp) {
         Logger::debug("rangeGap parameter found, parsing it");
-        size_t st;
-        string rangeGap = evhttp_uridecode(rangeGapTemp, 0, &st);
+        string rangeGap;
+        decodeString(rangeGapTemp, rangeGap);
         fqc.rangeGaps.push_back(rangeGap);
     } else {
         Logger::debug(
@@ -435,8 +475,8 @@ void QueryParser::lengthBoostParser() {
             QueryParser::lengthBoostParamName);
     if (lengthBoostTmp) { // if this parameter exists
         Logger::debug("lengthBoostParser parameter found, parsing it.");
-        size_t st;
-        string lengthBoost = evhttp_uridecode(lengthBoostTmp, 0, &st);
+        string lengthBoost;
+        decodeString(lengthBoostTmp,lengthBoost);
         if (isFloat(lengthBoost)) {
             const float lboost = atof(lengthBoost.c_str());
             if (lboost <= 1 && lboost >= 0) {
@@ -472,9 +512,8 @@ void QueryParser::prefixMatchPenaltyParser() {
             QueryParser::prefixMatchPenaltyParamName);
     if (prefixMatchPenaltyTmp) { // if this parameter exists
         Logger::debug("prefixMatchPenalty parameter found, parsing it.");
-        size_t st;
-        string prefixMatchPenalty = evhttp_uridecode(prefixMatchPenaltyTmp, 0,
-                &st);
+        string prefixMatchPenalty;
+        decodeString(prefixMatchPenaltyTmp, prefixMatchPenalty);
         if (isFloat(prefixMatchPenalty)) {
             const float ppm = atof(prefixMatchPenalty.c_str());
             if (ppm <= 1 && ppm >= 0) {
@@ -513,8 +552,8 @@ void QueryParser::fieldListParser() {
             QueryParser::fieldListParamName);
     if (flTemp) { // if this parameter exists
         Logger::debug("field list parameter found, parsing it");
-        size_t st;
-        string fl = evhttp_uridecode(flTemp, 0, &st);
+        string fl;
+        decodeString(flTemp, fl);
         this->container->parametersInQuery.push_back(
                 srch2::httpwrapper::ReponseAttributesList);
         char * fieldStr = strdup(fl.c_str());
@@ -548,8 +587,8 @@ void QueryParser::debugQueryParser() {
             QueryParser::debugControlParamName);
     if (debugQueryTemp) { // if this parameter exists
         Logger::debug("debugQuery param found, parsing it");
-        size_t st;
-        string debugQuery = evhttp_uridecode(debugQueryTemp, 0, &st);
+        string debugQuery;
+        decodeString(debugQueryTemp, debugQuery);
         if (boost::iequals(debugQuery, "true")) {
             this->container->isDebugEnabled = true;
             this->container->parametersInQuery.push_back(IsDebugEnabled); // change the IsDebugEnabled to DebugEnabled in Enum ParameterName ?
@@ -557,8 +596,8 @@ void QueryParser::debugQueryParser() {
             const char * debugLevelTemp = evhttp_find_header(&headers,
                     QueryParser::debugParamName);
             if (debugLevelTemp) { // if this parameter exists
-                size_t st;
-                string debugLevel = evhttp_uridecode(debugLevelTemp, 0, &st);
+                string debugLevel;
+                decodeString(debugLevelTemp, debugLevel);
                 //check what is the debug level
                 if (boost::iequals("true", debugLevel)) {
                     this->container->queryDebugLevel =
@@ -602,8 +641,8 @@ void QueryParser::startOffsetParameterParser() {
             QueryParser::startParamName);
     if (startTemp) { // if this parameter exists
         Logger::debug("startOffset Parameter found");
-        size_t st;
-        string startStr = evhttp_uridecode(startTemp, 0, &st);
+        string startStr;
+        decodeString(startTemp, startStr);
 // convert the startStr to integer.
         if (isUnsigned(startStr)) {
             this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
@@ -633,8 +672,8 @@ void QueryParser::numberOfResultsParser() {
             QueryParser::rowsParamName);
     if (rowsTemp) { // if this parameter exists
         Logger::debug("rowsTemp parameter found, parsing it.");
-        size_t st;
-        string rowsStr = evhttp_uridecode(rowsTemp, 0, &st);
+        string rowsStr;
+        decodeString(rowsTemp, rowsStr);
 // convert the rowsStr to integer. e.g. rowsStr will contain string 20
         if (isUnsigned(rowsStr)) {
             this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
@@ -664,8 +703,8 @@ void QueryParser::timeAllowedParameterParser() {
             QueryParser::timeAllowedParamName);
     if (timeAllowedTemp) { // if this parameter exists
         Logger::debug("timeAllowed parameter found, parsing it.");
-        size_t st;
-        string timeAllowedStr = evhttp_uridecode(timeAllowedTemp, 0, &st);
+        string timeAllowedStr;
+        decodeString(timeAllowedTemp, timeAllowedStr);
 // convert the Str to integer.
         if (isUnsigned(timeAllowedStr)) {
             this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
@@ -694,8 +733,8 @@ void QueryParser::omitHeaderParameterParser() {
             QueryParser::ommitHeaderParamName);
     if (ommitHeaderTemp) { // if this parameter exists
         Logger::debug("ommitHeaderTemp parameter found, parsing it.");
-        size_t st;
-        string ommitHeader = evhttp_uridecode(ommitHeaderTemp, 0, &st);
+        string ommitHeader;
+        decodeString(ommitHeaderTemp, ommitHeader);
 // check if "true"
         if (boost::iequals("true", ommitHeader)) {
             this->container->isOmitHeader = true;
@@ -719,9 +758,8 @@ void QueryParser::responseWriteTypeParameterParser() {
             QueryParser::responseWriteTypeParamName);
     if (responseWriteTypeTemp) { // if this parameter exists
         Logger::debug("responseWriteTypeParameter found, parsing it");
-        size_t st;
-        string responseWriteType = evhttp_uridecode(responseWriteTypeTemp, 0,
-                &st);
+        string responseWriteType;
+        decodeString(responseWriteTypeTemp, responseWriteType);
 // check if "true"
         if (boost::iequals("json", responseWriteType)) {
             this->container->responseResultsFormat = JSON;
@@ -752,9 +790,8 @@ bool QueryParser::filterQueryParameterParser() {
     // read fq from headers
     if (fqTmp) {
         Logger::debug("filterQueryParameter found.");
-        size_t st;
-        // get fq from fqTmp after decoding it
-        string fq = evhttp_uridecode(fqTmp, 0, &st);
+        string fq;
+        decodeString(fqTmp, fq);
         // create filterQueryContainer object.
         FilterQueryContainer* filterQueryContainer = new FilterQueryContainer();
         // create FilterQueryEvaluator object, this will parse the fq string
@@ -785,11 +822,11 @@ void QueryParser::facetParser() {
             QueryParser::facetParamName);
     if (facetTemp) { // if this parameter exists
         Logger::debug("facet parameter found, parsing it");
-        size_t st;
-        string facet = evhttp_uridecode(facetTemp, 0, &st);
+        string facet;
+        decodeString(facetTemp, facet);
         // we have facet,
         //parse other facet related parameters if this is true
-        if (boost::iequals("true", facet)) {
+        if (boost::iequals("true", facet) || boost::iequals("only", facet)) {
             // facet param is true
             FacetQueryContainer *fqc = new FacetQueryContainer();
             populateFacetFieldsSimple(*fqc);
@@ -807,8 +844,13 @@ void QueryParser::facetParser() {
                 this->container->getAllResultsParameterContainer
                         ->facetQueryContainer = fqc;
             }
+
+            if( boost::iequals("only", facet)){
+            	this->container->onlyFacets = true;
+            }
+
             // parse other facet fields
-        } else if (boost::iequals("false", facet)) {
+        }else if (boost::iequals("false", facet)) {
             // facet is off. no need to parse any facet params
         } else {
             // unkonown value. raise warning and set facet to false
@@ -830,8 +872,8 @@ void QueryParser::sortParser() {
             QueryParser::sortParamName);
     if (sortTemp) { // if this parameter exists
         Logger::debug("sort parameter found, parsing it.");
-        size_t st;
-        string sortString = evhttp_uridecode(sortTemp, 0, &st);
+        string sortString;
+        decodeString(sortTemp, sortString);
         // we have sortString, we need to tokenize this string and populate the
         // parameters in SortQueryEvaluator class object.
         vector<string> fieldTokens;
@@ -888,8 +930,7 @@ string QueryParser::orderByParser() {
     string order = "";
     if (orderTemp) { // if this parameter exists
         Logger::debug("orderBy Parameter found, parsing it.");
-        size_t st;
-        order = evhttp_uridecode(orderTemp, 0, &st);
+        decodeString(orderTemp, order);
     }
     Logger::debug("returning from orderByParser function");
     return order;
@@ -1057,7 +1098,7 @@ bool QueryParser::termParser(string &input) {
      * example: 'Author:gnuth^3 AND algorithms AND java* AND py*^3 AND binary^2~.5'
      * output: fills up the container
      */
-    Logger::info("inside term parser.");
+    Logger::debug("inside term parser.");
     Logger::debug("input received is %s", input.c_str());
     /*
      *
@@ -1191,7 +1232,7 @@ bool QueryParser::termParser(string &input) {
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
         this->container->keywordSimilarityThreshold.push_back(0.0f);
     }
-    Logger::info("returning from  termParser.");
+    Logger::debug("returning from the termParser.");
     return true;
 
 }
@@ -1407,8 +1448,7 @@ void QueryParser::extractSearchType() {
     if (searchTypeTmp) { // if this parameter exists
         Logger::debug("searchType found, parsing it");
         this->isSearchTypeSet = true;
-        size_t st;
-        searchType = evhttp_uridecode(searchTypeTmp, 0, &st);
+        decodeString(searchTypeTmp, searchType);
     }
 // else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
     Logger::debug("inside extractSearchType, checking for geo parameter");
@@ -1525,7 +1565,7 @@ void QueryParser::extractSearchType() {
                 } else {
                     // no searchType provided use topK
                     this->container->messages.push_back(
-                            make_pair(MessageWarning,
+                            make_pair(MessageNotice,
                                     "no searchType is provided, using topK"));
                     this->container->parametersInQuery.push_back(
                             TopKSearchType);
@@ -1546,10 +1586,14 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
      */
     Logger::debug("inside extrasetGeoContainerProperties");
     size_t st1, st2, st3, st4;
-    string leftBottomLatStr = evhttp_uridecode(leftBottomLat, 0, &st1);
-    string leftBottomLongStr = evhttp_uridecode(leftBottomLong, 0, &st2);
-    string rightTopLatStr = evhttp_uridecode(rightTopLat, 0, &st3);
-    string rightTopLongStr = evhttp_uridecode(rightTopLong, 0, &st4);
+    string leftBottomLatStr;
+    decodeString(leftBottomLat, leftBottomLatStr);
+    string leftBottomLongStr;
+    decodeString(leftBottomLong, leftBottomLongStr);
+    string rightTopLatStr;
+    decodeString(rightTopLat, rightTopLatStr);
+    string rightTopLongStr;
+    decodeString(rightTopLong, rightTopLongStr);
 // convert the rowsStr to integer.
     if (isFloat(leftBottomLatStr)) {
         this->container->geoParameterContainer->leftBottomLatitude = atof(
@@ -1598,9 +1642,12 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
      */
     Logger::debug("inside setGeoContainerProperties");
     size_t st1, st2, st3;
-    string centerLatStr = evhttp_uridecode(centerLat, 0, &st1);
-    string centerLongStr = evhttp_uridecode(centerLong, 0, &st2);
-    string radiusParamStr = evhttp_uridecode(radiusParam, 0, &st3);
+    string centerLatStr;
+    decodeString(centerLat, centerLatStr);
+    string centerLongStr;
+    decodeString(centerLong, centerLongStr);
+    string radiusParamStr;
+    decodeString(radiusParam, radiusParamStr);
 // convert the rowsStr to integer.
     if (isFloat(centerLatStr)) {
         this->container->geoParameterContainer->centerLatitude = atof(
@@ -1654,10 +1701,10 @@ void QueryParser::setSimilarityThresholdInContainer(const float f) {
         // use the SimilarityThreshold provided with keyword
         this->container->keywordSimilarityThreshold.push_back(f);
     } else {
-        // set fuzzy level to 0
-        this->container->keywordSimilarityThreshold.push_back(0.0f);
+        // Similarity threshold is not specified, use 1
+        this->container->keywordSimilarityThreshold.push_back(1.0f);
     }
-    Logger::debug("returning from setSimilarityThresholdInContainer");
+    Logger::debug("Similarity threshold is not specified, use 1");
 }
 /*
  * parses the localparameter key from input string. It changes input string and populates the field
@@ -1765,7 +1812,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
         }
     } else {
         Logger::debug("fuzzy value is not specified, use 0");
-        this->setSimilarityThresholdInContainer(0.0f);
+        this->setSimilarityThresholdInContainer(1.0f);
     }
 }
 

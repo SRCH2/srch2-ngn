@@ -33,7 +33,7 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-class ResultNonSearchableAttributeComparator {
+class ResultRefiningAttributeComparator {
 private:
     ForwardIndex* forwardIndex;
     Schema * schema;
@@ -41,7 +41,7 @@ private:
     SortFilter * filter;
 
 public:
-    ResultNonSearchableAttributeComparator(SortFilter * filter,
+    ResultRefiningAttributeComparator(SortFilter * filter,
             ForwardIndex* forwardIndex, Schema * schema, const Query * query) {
         this->filter = filter;
         this->forwardIndex = forwardIndex;
@@ -52,8 +52,8 @@ public:
     // this operator should be consistent with two others in TermVirtualList.h and QueryResultsInternal.h
     bool operator()(const QueryResult * lhs, const QueryResult * rhs) const {
         // do the comparison
-        return filter->evaluator->compare(lhs->valuesOfParticipatingNonSearchableAttributes, lhs->internalRecordId,
-                rhs->valuesOfParticipatingNonSearchableAttributes, rhs->internalRecordId) > 0;
+        return filter->evaluator->compare(lhs->valuesOfParticipatingRefiningAttributes, lhs->internalRecordId,
+                rhs->valuesOfParticipatingRefiningAttributes, rhs->internalRecordId) > 0;
     }
 };
 
@@ -89,7 +89,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
     vector<unsigned> attributeIds;
     for (vector<string>::const_iterator attributeName = attributes->begin();
             attributeName != attributes->end(); ++attributeName) {
-        unsigned id = schema->getNonSearchableAttributeId(*attributeName);
+        unsigned id = schema->getRefiningAttributeId(*attributeName);
         attributeIds.push_back(id);
     }
     // 2. extract the data from forward index.
@@ -99,15 +99,15 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
         bool isValid = false;
         const ForwardList * list = forwardIndex->getForwardList(queryResult->internalRecordId, isValid);
         ASSERT(isValid);
-        const Byte * nonSearchableAttributesData =
-                list->getNonSearchableAttributeContainerData();
+        const Byte * refiningAttributesData =
+                list->getRefiningAttributeContainerData();
         // now parse the values by VariableLengthAttributeContainer
         vector<TypedValue> typedValues;
-        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , nonSearchableAttributesData,&typedValues);
+        VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);
         // save the values in QueryResult objects
         for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
                 attributesIterator != attributes->end() ; ++attributesIterator){
-            queryResult->valuesOfParticipatingNonSearchableAttributes[*attributesIterator] =
+            queryResult->valuesOfParticipatingRefiningAttributes[*attributesIterator] =
                     typedValues.at(std::distance(attributes->begin() , attributesIterator));
         }
     }
@@ -115,7 +115,7 @@ void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
     // 3. now sort the results based on the comparator
     std::sort(output->impl->sortedFinalResults.begin(),
             output->impl->sortedFinalResults.end(),
-            ResultNonSearchableAttributeComparator(this, forwardIndex, schema, query));
+            ResultRefiningAttributeComparator(this, forwardIndex, schema, query));
 }
 
 }
