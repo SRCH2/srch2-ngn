@@ -60,8 +60,9 @@ bool StopFilter::processToken() {
 		std::string currentToken = "";
 		// converts the charType to string
 		charTypeVectorToUtf8String(tokenStreamContainer->currentToken, currentToken);
-		// returns true if the currentToken is one of the stop words.
-		if (!this->isStopWord(currentToken)) {
+		// returns true if the currentToken is NOT the stop word. If it is a stop word then check
+		// whether it is a prefix. For a prefix, stop filter is not applied.
+		if (!this->isStopWord(currentToken) || this->tokenStreamContainer->isPrefix) {
 			return true;
 		}
 	}

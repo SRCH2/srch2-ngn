@@ -85,7 +85,11 @@ public:
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 
-	std::string applyFilters(std::string input);
+    /*
+     *  isPrefix is a way to inform the analyzer that stop filter should not be applied
+     *  the passed string.
+     */
+	std::string applyFilters(std::string input, bool isPrefix);
 
 	void tokenizeQuery(const std::string &queryString,
 			std::vector<PositionalTerm> &queryKeywords) const;

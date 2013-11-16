@@ -42,7 +42,7 @@ public:
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
 
 
-	string applyFilters(string input) ;
+	string applyFilters(string input, bool isPrefix) ;
 
 
     void setTokenStream(TokenStream* stream){

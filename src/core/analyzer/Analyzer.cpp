@@ -91,8 +91,8 @@ const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
     return this->analyzerInternal->getRecordAllowedSpecialCharacters();
 }
 
-std::string Analyzer::applyFilters(std::string input){
-    return this->analyzerInternal->applyFilters(input);
+std::string Analyzer::applyFilters(std::string input, bool isPrefix = false){
+    return this->analyzerInternal->applyFilters(input, isPrefix);
 }
 
 void Analyzer::tokenizeQuery(const std::string &queryString,

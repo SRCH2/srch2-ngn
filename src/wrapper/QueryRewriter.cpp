@@ -144,7 +144,8 @@ void QueryRewriter::applyAnalyzer() {
     		if (positionIndexes.size() > 0)
     			paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
     	}else{
-    		keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword);
+    		TermType termType = paramContainer->keywordPrefixComplete[keywordIndex];
+    		keywordAfterAnalyzer = analyzerNotConst.applyFilters(*keyword, termType == srch2is::TERM_TYPE_PREFIX);
     	}
         if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
             keywordIndexesToErase.push_back(keywordIndex);

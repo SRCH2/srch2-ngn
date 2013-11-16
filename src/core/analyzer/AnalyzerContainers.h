@@ -74,6 +74,24 @@ private:
 	void operator == (const StopWordContainer&){}
 };
 
+/*
+ *   This class is container which stores the protected words required by the protectedWordFilter.
+ */
+
+class ProtectedWordsContainer {
+public:
+	void initProtectedWordsContainer(const std::string filePath);
+	bool isProtected(const string& val) { return protectedWords.count(val) > 0; }
+	static ProtectedWordsContainer& getInstance();
+	static void free();
+private:
+	static ProtectedWordsContainer *protectedWordsContainer;
+	set<string> protectedWords;
+	ProtectedWordsContainer() {}
+	ProtectedWordsContainer(const ProtectedWordsContainer&) {}
+	void operator == (const ProtectedWordsContainer&){}
+};
+
 } // instantsearch
 } // namespace srch2
 #endif /* __CORE_ANALYZER_ANALYZERCONTAINERS_H__ */

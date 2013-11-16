@@ -94,11 +94,11 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 
 }
 
-string AnalyzerInternal::applyFilters(string input) {
+string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 
    // TokenStream * tokenStream = this->createOperatorFlow();
 
-    this->tokenStream->fillInCharacters(input);
+    this->tokenStream->fillInCharacters(input, isPrefix);
 
     string result = "";
     while (tokenStream->processToken()) {
