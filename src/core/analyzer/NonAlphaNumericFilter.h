@@ -5,8 +5,8 @@
  *      Author: sbisht
  */
 
-#ifndef XYZFILTER_H_
-#define XYZFILTER_H_
+#ifndef __CORE_ANALYZER_NONALPHANUMERICFILTER_H__
+#define __CORE_ANALYZER_NONALPHANUMERICFILTER_H__
 
 #include "TokenFilter.h"
 #include <set>
@@ -32,4 +32,4 @@ private:
 
 } /* namespace instanstsearch */
 } /* namespace srch2 */
-#endif /* XYZFILTER_H_ */
+#endif /* __CORE_ANALYZER_NONALPHANUMERICFILTER_H__ */

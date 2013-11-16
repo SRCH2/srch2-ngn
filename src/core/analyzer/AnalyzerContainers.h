@@ -74,6 +74,9 @@ private:
 	void operator == (const StopWordContainer&){}
 };
 
+/*
+ *   This class is container which stores the protected words required by the protectedWordFilter.
+ */
 
 class ProtectedWordsContainer {
 public:

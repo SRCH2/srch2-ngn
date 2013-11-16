@@ -781,7 +781,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     }
                               }
                             }*/
-                            else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) { // STOP FILTER
+                            else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
                                     this->protectedWordsFilePath = this->srch2Home
                                             + string(field.attribute("words").value());

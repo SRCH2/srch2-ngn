@@ -61,6 +61,11 @@ bool StandardTokenizer::incrementToken() {
             		currentCharacterType == CharSet::DELIMITER_TYPE) {
             	/*
             	 *  delimiters will go with both LATIN and BOPPMOFO types.
+            	 *  e.g for C++  C is Latin type and + is Delimiter type. We do not want to split
+            	 *  them into to C and ++.
+            	 *
+            	 *  We also do not want to tokenize "c+b" because NonalphaNumericFilter will tokenize
+            	 *  it later.
             	 */
             	(tokenStreamContainer->currentToken).push_back(currentChar);
             }else {

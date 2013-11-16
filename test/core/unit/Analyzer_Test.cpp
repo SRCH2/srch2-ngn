@@ -984,6 +984,23 @@ void testAnalyzerSerilization(string dataDir) {
 
 }
 
+/*
+ *   This common module runs analyzer to tokenize and filter the generated tokens.
+ *   All tokens are compared with expected tokens supplied by tokenizedWords vector
+ */
+void runAnalyzer(TokenStream * tokenStream , const vector<string>& tokenizedWords) {
+	int i = 0;
+	while (tokenStream->processToken()) {
+		string token;
+		vector<CharType> charVector;
+		charVector = tokenStream->getProcessedToken();
+		charTypeVectorToUtf8String(charVector, token);
+		ASSERT(i < tokenizedWords.size());
+		ASSERT(tokenizedWords[i] == token);
+		i++;
+	}
+	ASSERT(i == tokenizedWords.size());
+}
 void testLastTokenAsStopWord(string dataDir){
 	cout << "#########################################################################" << endl;
 
@@ -1001,18 +1018,8 @@ void testLastTokenAsStopWord(string dataDir){
 	vector<string> tokenizedWords;
 	tokenizedWords.push_back("the");
 
+	runAnalyzer(tokenStream, tokenizedWords);
 
-	int i = 0;
-	while (tokenStream->processToken()) {
-		string token;
-		vector<CharType> charVector;
-		charVector = tokenStream->getProcessedToken();
-		charTypeVectorToUtf8String(charVector, token);
-		ASSERT(i < tokenizedWords.size());
-		ASSERT(tokenizedWords[i] == token);
-		i++;
-	}
-	ASSERT(i == tokenizedWords.size());
 	// deleting the objects
 	delete tokenStream;
 	delete standardAnlyzer;
@@ -1049,18 +1056,7 @@ void testProtectedWords(string dataDir){
 	tokenizedWords.push_back("by");
 	tokenizedWords.push_back("microsoft");
 
-	int i = 0;
-	while (tokenStream->processToken()) {
-		vector<CharType> charVector;
-		charVector = tokenStream->getProcessedToken();
-		charTypeVectorToUtf8String(charVector, src);
-		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
-		ASSERT(i < tokenizedWords.size());
-		ASSERT(tokenizedWords[i] == src);
-		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
-		i++;
-	}
-
+	runAnalyzer(tokenStream, tokenizedWords);
 
 	src = "Node.js is built on Chrome's JavaScript engine";
 	tokenStream->fillInCharacters(src);
@@ -1076,17 +1072,7 @@ void testProtectedWords(string dataDir){
 	tokenizedWords.push_back("engine");
 
 
-	i = 0;
-	while (tokenStream->processToken()) {
-		vector<CharType> charVector;
-		charVector = tokenStream->getProcessedToken();
-		charTypeVectorToUtf8String(charVector, src);
-		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
-		ASSERT(i < tokenizedWords.size());
-		ASSERT(tokenizedWords[i] == src);
-		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
-		i++;
-	}
+	runAnalyzer(tokenStream, tokenizedWords);
 
 	src = "C# and Java-Script";
 	tokenStream->fillInCharacters(src);
@@ -1097,17 +1083,7 @@ void testProtectedWords(string dataDir){
 	tokenizedWords.push_back("java");
 	tokenizedWords.push_back("script");
 
-	i = 0;
-	while (tokenStream->processToken()) {
-		vector<CharType> charVector;
-		charVector = tokenStream->getProcessedToken();
-		charTypeVectorToUtf8String(charVector, src);
-		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
-		ASSERT(i < tokenizedWords.size());
-		ASSERT(tokenizedWords[i] == src);
-		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
-		i++;
-	}
+	runAnalyzer(tokenStream, tokenizedWords);
 
 
 	src = "Pro*C is embedded sql in C";
@@ -1122,17 +1098,7 @@ void testProtectedWords(string dataDir){
     tokenizedWords.push_back("in");
     tokenizedWords.push_back("c");
 
-	i = 0;
-	while (tokenStream->processToken()) {
-		vector<CharType> charVector;
-		charVector = tokenStream->getProcessedToken();
-		charTypeVectorToUtf8String(charVector, src);
-		cout << src << "--" << tokenStream->getProcessedTokenPosition() << endl;
-		ASSERT(i < tokenizedWords.size());
-		ASSERT(tokenizedWords[i] == src);
-		ASSERT(i+1 == tokenStream->getProcessedTokenPosition());
-		i++;
-	}
+    runAnalyzer(tokenStream, tokenizedWords);
 
 	// deleting the objects
 	delete tokenStream;
