@@ -495,3 +495,9 @@ It specifies a file of stop words that are ignored by the engine. Providing an e
 ```
 <filter name="StopFilter" words="stop-words.txt" />
 ```
+###11.5.3 Protect Words Filter, Optional{id="protectedKeyWordsFilter"}
+
+It specifies a file of special protected keywords that are preserved by analyzer. Providing an empty string ("") for the "words" parameter disables this filter.
+```
+<filter name="protectedKeyWordsFilter" words="protected-words.txt" />
+```
