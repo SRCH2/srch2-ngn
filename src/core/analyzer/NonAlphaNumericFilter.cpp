@@ -16,23 +16,23 @@ NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream):
 }
 
 /*
- *    This filter receives token from upstream filter/tokenizer and then further tokenizes
+ *    This filter receives tokens from upstream filter/tokenizer and then further tokenizes
  *    them based on delimiters. It is advised to have this filter right after the tokenizer.
  *
- *    1. If the token is a protected token then we do not analyze it further and send it downstream
- *       filters
+ *    1. If the token is a protected token, then we do not analyze it further. Instead, we just
+ *       send it downstream
  *    2. If the token is not a protected token then we try to tokenize it based on the delimiters
  *       and store the tokens in an internal buffer. This buffer should be flushed to downstream
- *       filters first before asking for new tokens from upstream tokenizer.
+ *       filters first before asking for new tokens from the upstream tokenizer.
  *
  *    input tokens = { I love c++ and java-script programming }
- *    output tokens = {  I love c++ and java-script programming }  , c++ is protected keyword
+ *    output tokens = {  I love c++ and java-script programming }  , c++ is a protected keyword
  *    but java-script is not a protected keyword.
  */
 bool NonAlphaNumericFilter::processToken() {
 	while(1) {
 		// if we have tokens in the filter's internal buffer then flush them out one by one before
-		// requesting new token from upstream.
+		// requesting a new token from the upstream.
 		if (internalTokenBuffer.size() == 0) {
 			if (!this->tokenStream->processToken()) {
 				return false;
@@ -71,7 +71,7 @@ bool NonAlphaNumericFilter::processToken() {
 			if (internalTokenBuffer.size() > 0) {
 				// put first element from the internal token buffer to a shared token buffer for other
 				// filters to consume.  e.g internal buffer = {java script}, put "java" to
-				// shared token.
+				// the shared token.
 				this->tokenStreamContainer->currentToken = internalTokenBuffer.front();
 				internalTokenBuffer.pop();
 				return true;
