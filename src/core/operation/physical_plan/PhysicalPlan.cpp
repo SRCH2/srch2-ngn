@@ -10,7 +10,7 @@ namespace instantsearch {
 // This function is called to determine whether the output properties of an operator
 // match the input properties of another one.
 bool IteratorProperties::isMatchAsInputTo(const IteratorProperties & prop){
-	for(vector<PhysicalPlanIteratorProperty>::iterator property = prop.properties.begin(); property != prop.properties.end() ; ++property){
+	for(vector<PhysicalPlanIteratorProperty>::const_iterator property = prop.properties.begin(); property != prop.properties.end() ; ++property){
 		if(find(this->properties.begin(),this->properties.end(), *property) == this->properties.end()){
 			return false;
 		}

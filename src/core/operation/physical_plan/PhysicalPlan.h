@@ -89,7 +89,6 @@ public:
 	void setParent(PhysicalPlanNode * parent);
 	PhysicalPlanNode * getParent();
 private:
-	virtual PhysicalPlanNode() = 0;
 	vector<PhysicalPlanNode *> children;
 	// We might want to change the tree to a DAG in future but currently it doesn't make sense
 	// since the lowest levels of the tree are the most cost-full parts and it's better not to duplicate keywords
