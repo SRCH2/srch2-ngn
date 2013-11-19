@@ -220,6 +220,11 @@ bool QueryParser::parse() {
         } else {
             this->topKParameterParser();
         }
+        bool attachedToParseTree = attachParseTreeAndMainQueryParallelVectors();
+        if(attachedToParseTree == false){
+        	return false;
+        }
+
     } catch (exception& e) {
         Logger::error(e.what());
         // error msg
@@ -253,16 +258,6 @@ bool QueryParser::docIdParser(){
 }
 
 void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect input/outputs
-
-	///////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////
-	/*
-	 * The AND/OR/NOT structure of q must be parsed and saved in LogicalPlan tree
-	 * note that in this layer query keywords must still be kept in vectors and leaves of
-	 * logical plan tree must be dummy place holder nodes.
-	 */
-	///////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////
     /*
      * example: q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* AND publisher:mac* AND lang:engl*^2~0.8
      * 1. calls localParameterParser()
@@ -280,46 +275,32 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         // in LocalParamerterParser, we are logging the mainQuery String
         // so it is ok to pass the mainQueryStr and no need to make a copy of this string
         if (this->localParameterParser(mainQueryStr)) {
-            // the mainQueryStr now doesn't have the lopcalparameter part.
-            // mainQueryStr modified to 'title:algo* AND publisher:mac* AND lang:engl*^2~0.8'
-            // 3. call the termParser().
-            bool parseNextTerm = true;
-            while (parseNextTerm) {
-                if (this->termParser(mainQueryStr)) {
-                    // this comment is only valid for first iteration in this while loop
-                    // mainQueryStr modified to 'AND publisher:mac* AND lang:engl*^2~0.8'
-                    string boolOperator = "";
-                    bool hasBoolOperator = parseTermBoolOperator(mainQueryStr,
-                            boolOperator);
-                    //// this comment is only valid for first iteration in this while loop
-                    // mainQueryStr modified to 'publisher:mac* AND lang:engl*^2~0.8'
-                    if (hasBoolOperator) {
-                        string msgStr = "boolean operator is " + boolOperator;
-                        Logger::debug(msgStr.c_str());
-                        parseNextTerm = true;
-                        Logger::debug("LOOPING AGAIN");
-                        // fill up boolean operator
-                    } else {
-                        // no boolean operator found.
-                        // if the input string length is >0 throw error.
-                        parseNextTerm = false;
-                        if (mainQueryStr.length() > 0) {
-                            // this can happen if the initial query was like
-                            // 'q={defaultSearchFields=Author defaultSimilarityThreshold=0.8}title:algo* publisher:mac* AND lang:engl*^2~0.8'
-                            // notice that there is no Boolean operator specified betwwen 'title:algo*' and 'publisher:mac*'
-                            // raise error message
-                            Logger::info(
-                                    " Parse error, expecting boolean operator while parsing terms.");
-                            this->container->messages.push_back(
-                                    make_pair(MessageError,
-                                            "Parse error, expecting boolean operator while parsing terms."));
-                            this->isParsedError = true;
-                        }
-                    }
-                } else {
-                    parseNextTerm = false;
-                }
-            }
+        	/*
+        	 * At this point we should first extract the AND/OR/NOT parse tree
+        	 */
+    		bool parsed = parseBooleanExpression( mainQueryStr, this->container->parseTreeRoot );
+    		if(parsed == false){
+				Logger::info(
+						" Parse error, Boolean operators and parentheses are not formatted correctly.");
+				this->container->messages.push_back(
+						make_pair(MessageError,
+								"Parse error, Boolean operators and parentheses are not formatted correctly."));
+				this->isParsedError = true;
+				return;
+    		}
+
+			ParseTreeNode * leafNode;
+			ParseTreeLeadNodeIterator termIterator(this->container->parseTreeRoot);
+    		while(termIterator.hasMore()){
+    			leafNode = termIterator.getNext();
+    			//
+    			if (this->termParser(leafNode->temporaryTerm->termQueryString)) {
+    				// term will be parsed and information will be saved in parallel vectors
+    			}else{
+    				break;
+    			}
+    		}
+
             // check if keywordSimilarityThreshold was set by parseTerms
             // true? set the isFuzzyFlag.
             // else , empty the keywordSimilarityThreshold vector
@@ -329,6 +310,47 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
         // no main query parameter present.
         Logger::debug(" parameter q not present.");
     }
+}
+
+bool QueryParser::attachParseTreeAndMainQueryParallelVectors(){
+	// iterate on leaf nodes and also on vectors and copy their information into the tree
+	ParseTreeNode * leafNode;
+	ParseTreeLeadNodeIterator termIterator(this->container->parseTreeRoot);
+	unsigned vectorsIndex = 0;
+	while(termIterator.hasMore()){
+		leafNode = termIterator.getNext();
+
+		// raw query keywords
+		if(this->rawQueryKeywords.size() < vectorsIndex){
+			return false;
+		}
+		leafNode->temporaryTerm->rawQueryKeyword = this->rawQueryKeywords.at(vectorsIndex);
+		// keyword similarity threshold
+	    if (this->container->hasParameterInQuery(KeywordSimilarityThreshold)) {
+	    	leafNode->temporaryTerm->keywordSimilarityThreshold = this->keywordSimilarityThreshold.at(vectorsIndex);
+	    }
+	    // KeywordBoostLevel
+	    if (this->container->hasParameterInQuery(KeywordBoostLevel)) {
+	    	leafNode->temporaryTerm->keywordBoostLevel = this->keywordBoostLevel.at(vectorsIndex);
+	    }
+	    // QueryPrefixCompleteFlag
+	    if (this->container->hasParameterInQuery(QueryPrefixCompleteFlag)) {
+	    	leafNode->temporaryTerm->keywordPrefixComplete = this->keywordPrefixComplete.at(vectorsIndex);
+	    }
+	    //FieldFilter
+	    if (this->container->hasParameterInQuery(FieldFilter)) {
+	        leafNode->temporaryTerm->fieldFilter = this->fieldFilter.at(vectorsIndex);
+	        leafNode->temporaryTerm->fieldFilterOp = this->fieldFilterOps.at(vectorsIndex);
+	    }
+	    // Phrase
+	    if (this->container->hasParameterInQuery(IsPhraseKeyword)) {
+	        leafNode->temporaryTerm->isPhraseKeywordFlag = this->isPhraseKeywordFlags.at(vectorsIndex);
+	        leafNode->temporaryTerm->phraseSlop = this->PhraseSlops.at(vectorsIndex);
+	    }
+		//
+		vectorsIndex ++;
+	}
+	return true;
 }
 
 void QueryParser::isFuzzyParser() {
@@ -1187,7 +1209,7 @@ bool QueryParser::termParser(string &input) {
     } else {
         hasParsedParameter = parseKeyword(input, keywordStr); // keywordStr will contain the parsed keyword, input will be modified
     }
-    this->container->isPhraseKeywordFlags.push_back(isPhraseKeyword);
+    this->isPhraseKeywordFlags.push_back(isPhraseKeyword);
     if (hasParsedParameter) {
         // keyword obtained, get modifiers, keywordStr is 'gnuth'
         // populate the rawKeyword vector in container
@@ -1219,11 +1241,11 @@ bool QueryParser::termParser(string &input) {
             this->setInQueryParametersIfNotSet(QueryPrefixCompleteFlag);
             // '*' is present
             Logger::debug("prefix modifier used in query");
-            this->container->keywordPrefixComplete.push_back(
+            this->keywordPrefixComplete.push_back(
                     srch2::instantsearch::TERM_TYPE_PREFIX); // use the lp variable value
         } else {
             // use the fallback specified in localparameters.
-            this->container->keywordPrefixComplete.push_back(
+            this->keywordPrefixComplete.push_back(
                     this->lpKeywordPrefixComplete);
         }
     }
@@ -1236,11 +1258,11 @@ bool QueryParser::termParser(string &input) {
     if (!isPhraseKeyword) {
         hasParsedParameter = parseFuzzyModifier(input, fuzzyModifier);
         this->populateFuzzyInfo(hasParsedParameter, fuzzyModifier);
-        this->container->PhraseSlops.push_back(0); // no slop for non phrase keywords
+        this->PhraseSlops.push_back(0); // no slop for non phrase keywords
     } else {
         hasParsedParameter = parseProximityModifier(input, fuzzyModifier);
         this->populateProximityInfo(hasParsedParameter, fuzzyModifier);
-        this->container->keywordSimilarityThreshold.push_back(0.0f);
+        this->keywordSimilarityThreshold.push_back(0.0f);
     }
     Logger::debug("returning from the termParser.");
     return true;
@@ -1289,7 +1311,7 @@ void QueryParser::populateRawKeywords(const string &input) {
     Logger::debug("indide populateRawKeywords, parsing for raw keywords");
     this->setInQueryParametersIfNotSet(RawQueryKeywords);
     Logger::debug("raw keyword found: %s", input.c_str());
-    this->container->rawQueryKeywords.push_back(input);
+    this->rawQueryKeywords.push_back(input);
     Logger::debug("returning from populateRawKeywords");
 }
 
@@ -1337,18 +1359,18 @@ void QueryParser::populateFieldFilterUsingLp() {
     if (!this->lpFieldFilter.empty()) {
         // lpFieldFilter is set. use this to create a vector
         this->setInQueryParametersIfNotSet(FieldFilter);
-        this->container->fieldFilter.push_back(this->lpFieldFilter);
+        this->fieldFilter.push_back(this->lpFieldFilter);
         if (this->isLpFieldFilterBooleanOperatorAssigned) {
             // LpFieldFilterBooleanOperator is assigned. fill
-            this->container->fieldFilterOps.push_back(
+            this->fieldFilterOps.push_back(
                     this->lpFieldFilterBooleanOperator);
         } else {
-            this->container->fieldFilterOps.push_back(
+            this->fieldFilterOps.push_back(
                     srch2::instantsearch::OP_NOT_SPECIFIED);
         }
     } else {
-        this->container->fieldFilter.push_back(vector<string>());
-        this->container->fieldFilterOps.push_back(
+        this->fieldFilter.push_back(vector<string>());
+        this->fieldFilterOps.push_back(
                 srch2::instantsearch::OP_NOT_SPECIFIED);
     }
     Logger::debug("returning from populateFieldFilterUsingLp");
@@ -1367,21 +1389,21 @@ void QueryParser::populateFieldFilterUsingQueryFields(const string &input) { // 
     if (input.find('.') != string::npos) {
         fieldBoolOpDelimeterRegexString =
                 FIELD_AND_BOOL_OP_DELIMETER_REGEX_STRING;
-        this->container->fieldFilterOps.push_back(
+        this->fieldFilterOps.push_back(
                 srch2::instantsearch::BooleanOperatorAND);
     } else if (input.find('+') != string::npos) {
         fieldBoolOpDelimeterRegexString =
                 FIELD_OR_BOOL_OP_DELIMETER_REGEX_STRING;
-        this->container->fieldFilterOps.push_back(
+        this->fieldFilterOps.push_back(
                 srch2::instantsearch::BooleanOperatorOR);
     } else {
         // no boolean operators here.
         // create a vector and add it to the container.
         vector<string> candidate;
         candidate.push_back(input); // this candidate can be any alphanumeric or *.
-        this->container->fieldFilter.push_back(candidate);
+        this->fieldFilter.push_back(candidate);
         // fill the corresponding fieldFilterOps parallel vector
-        this->container->fieldFilterOps.push_back(
+        this->fieldFilterOps.push_back(
                 srch2::instantsearch::OP_NOT_SPECIFIED);
         Logger::debug(
                 "returning from  populateFieldFilterUsingQueryFields as no boolean operators found");
@@ -1402,7 +1424,7 @@ void QueryParser::populateFieldFilterUsingQueryFields(const string &input) { // 
     }
     fields.push_back(input.substr(start)); // push back the last field in the string.
 // push back the fields vector in container.
-    this->container->fieldFilter.push_back(fields);
+    this->fieldFilter.push_back(fields);
     Logger::debug("returning from populateFieldFilterUsingQueryFields");
 }
 
@@ -1550,7 +1572,7 @@ void QueryParser::extractSearchType() {
                     } else if (boost::iequals(geoType, searchType)) {
                         Logger::info(
                                 "searchType provided in queryParamter is geo. Not all required geo paramters are provided. Evaluating falback options");
-                        if (!this->container->rawQueryKeywords.empty()) {
+                        if (!this->rawQueryKeywords.empty()) {
                             // keywords are provided, we can fall back to topK
                             this->container->messages.push_back(
                                     make_pair(MessageWarning,
@@ -1709,10 +1731,10 @@ void QueryParser::setSimilarityThresholdInContainer(const float f) {
 // this is set, fuzzyFlag came from  query parameter.
     if (this->container->isFuzzy) {
         // use the SimilarityThreshold provided with keyword
-        this->container->keywordSimilarityThreshold.push_back(f);
+        this->keywordSimilarityThreshold.push_back(f);
     } else {
         // Similarity threshold is not specified, use 1
-        this->container->keywordSimilarityThreshold.push_back(1.0f);
+        this->keywordSimilarityThreshold.push_back(1.0f);
     }
     Logger::debug("Similarity threshold is not specified, use 1");
 }
@@ -1781,17 +1803,17 @@ void QueryParser::populateBoostInfo(bool isParsed, string &input) {
             this->extractNumbers(matches[0].str(), numMatches);
             unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
             Logger::debug("boost value is %d", boostNum);
-            this->container->keywordBoostLevel.push_back(boostNum); // push to the container.
+            this->keywordBoostLevel.push_back(boostNum); // push to the container.
         } else {
             // there is no value specified
             Logger::debug(
                     "boost value is not specified, using the lp value or -1");
-            this->container->keywordBoostLevel.push_back(
+            this->keywordBoostLevel.push_back(
                     this->lpKeywordBoostLevel); // sets the localParameter specified value. it's initial value is -1.
         }
     } else {
         Logger::debug("boost value is not specified, using the lp value or -1");
-        this->container->keywordBoostLevel.push_back(this->lpKeywordBoostLevel); // selts the localParameter specified value
+        this->keywordBoostLevel.push_back(this->lpKeywordBoostLevel); // selts the localParameter specified value
     }
 }
 bool QueryParser::parseFuzzyModifier(string &input, string &output) {
@@ -1836,9 +1858,9 @@ void QueryParser::populateProximityInfo(bool isParsed, string &input) {
         this->extractNumbers(input, numMatches);
         unsigned proximityNum = atoi(numMatches[0].str().c_str()); // convert to float
         Logger::debug("proximity value is %d", proximityNum);
-        this->container->PhraseSlops.push_back(proximityNum);
+        this->PhraseSlops.push_back(proximityNum);
     } else {
-    	this->container->PhraseSlops.push_back(0);
+    	this->PhraseSlops.push_back(0);
     }
 }
 
@@ -1848,32 +1870,292 @@ void QueryParser::clearMainQueryParallelVectorsIfNeeded() {
         this->setInQueryParametersIfNotSet(IsFuzzyFlag);
         this->container->isFuzzy = true;
     } else {
-        this->container->keywordSimilarityThreshold.clear();
+        this->keywordSimilarityThreshold.clear();
         Logger::debug("keywordSimilarityThreshold paralel vector cleared.");
     }
 // check if KeywordBoostLevel was set
     if (!this->container->hasParameterInQuery(KeywordBoostLevel)) {
-        this->container->keywordBoostLevel.clear(); // clear the boost level vector.
+        this->keywordBoostLevel.clear(); // clear the boost level vector.
         Logger::debug("keywordBoostLevel paralel vector cleared.");
     }
 // check if QueryPrefixCompleteFlag was set
     if (!this->container->hasParameterInQuery(QueryPrefixCompleteFlag)) {
-        this->container->keywordPrefixComplete.clear();
+        this->keywordPrefixComplete.clear();
         Logger::debug("keywordPrefixComplete paralel vector cleared.");
     }
 // cehck if FieldFilter was set
     if (!this->container->hasParameterInQuery(FieldFilter)) {
         // clear filedFilter vector and filedFilterOps vector
-        this->container->fieldFilter.clear();
-        this->container->fieldFilterOps.clear();
+        this->fieldFilter.clear();
+        this->fieldFilterOps.clear();
         Logger::debug("fieldFilter and fieldFilterOps paralel vector cleared.");
     }
     // check if QueryPrefixCompleteFlag was set
     if (!this->container->hasParameterInQuery(IsPhraseKeyword)) {
-        this->container->isPhraseKeywordFlags.clear();
+        this->isPhraseKeywordFlags.clear();
         Logger::debug("isPhraseKeyword paralel vector cleared.");
     }
     Logger::debug("returning from clearMainQueryParallelVectorsIfNeeded().");
+}
+
+
+bool QueryParser::parseBooleanExpression(string input, ParseTreeNode *& root){
+	// Check correctness of parentheses
+	if(checkParentheses(input) == false){
+		return false;
+	}
+	// Parse the string and build the parse tree under root
+	return parseBooleanExpressionRecursive(NULL, input, root);
+}
+
+/*
+ * This function checks to see if open/close parentheses are well formatted.
+ */
+bool QueryParser::checkParentheses(const string & input){
+	// We initialize depth to zero and start moving on characters, every time we see '(' we increment depth, and
+	// every time we see ')' we decrement depth. Two criteria must meet:
+	// 1. Depth must always be positive
+	// 2. At the end, depth must be zero again.
+	int depthCounter = 0;
+	for(unsigned i=0; i < input.length() ; ++i){
+		if(input.at(i) == '('){
+			depthCounter ++;
+		}else if(input.at(i) == ')'){
+			depthCounter --;
+		}
+		if(depthCounter < 0) return false;
+	}
+	if(depthCounter != 0) return false;
+	return true;
+}
+
+/*
+ * This function is a recursive function to parse and build the parse tree of an expression
+ * which contains AND,OR,NOT and nested parentheses.
+ * Example: "(A OR1 B) AND1 NOT1 (C OR2 D) AND1 (E AND2 F) OR3 ((NOT2 G OR4 H) AND3 I)"
+ * The tree will look like:
+ * (NOTE : Numbers are just to help the reader map the query and the figure more easily.
+ * So AND1 and AND2 are both just simple ANDs)
+ * [AND1]__ [OR1]__ A
+ *   |        |____ B
+ *   |
+ *   |_____ [NOT1]__ [OR2]__ C
+ *   |                |____ D
+ *   |
+ *   |_____ [OR3] __ [AND2]__ E
+ *           |         |_____ F
+ *           |
+ *           |______ [AND3]__ [OR4]__ [NOT2]__ G
+ *                     |       |
+ *                     |       |_____ H
+ *                     |
+ *                     |_____ I
+ */
+bool QueryParser::parseBooleanExpressionRecursive(ParseTreeNode * parent, string input, ParseTreeNode *& expressionNode){
+
+	// 1. make sure parentheses are first and last character (if any) by trimming
+	boost::algorithm::trim(input);
+
+	// 2. Keep removing outer parentheses from the input
+	// Example : ((((EXP1) OR (EXP2)))) => (EXP1) OR (EXP2)
+	removeOuterParenthesis(input);
+
+	/*
+	* 3. Since AND has the highest priority, first we try to break the string by AND
+	* Example : "(A AND B) OR C AND (NOT D OR E)" =>
+	* [AND]_______ (A AND B) OR C
+	*  |
+	*  |__________ (NOT D OR E)
+	*/
+
+	vector<string> conjuncts;
+	tokenizeAndDontBreakParentheses(input, conjuncts , "AND");
+	if(conjuncts.size() >= 2){
+		// This AND operator object
+		expressionNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, parent);
+		for(vector<string>::iterator conjunct = conjuncts.begin() ; conjunct != conjuncts.end() ; ++conjunct){
+			ParseTreeNode * newChild = NULL;
+			// Call this function on each expression and put the result as a child of this AND operator
+			if(parseBooleanExpressionRecursive(expressionNode, *conjunct,  newChild) == false) {
+				delete expressionNode;
+				expressionNode = NULL;
+				return false;
+			}
+			expressionNode->children.push_back(newChild);
+		}
+		return true;
+	}
+
+	/*
+	* 4. OR has the next priority, so now we try to break the string by OR
+	* Example : "(A AND B) OR C AND (NOT D OR E)" =>
+	* ==== Step 3 :
+	* [AND]_______ (A AND B) OR C
+	*  |
+	*  |__________ (NOT D OR E)
+	* ==== This step :
+	* (A AND B) OR C =>
+	* [OR]____ (A AND B)
+	*  |
+	*  |______ C
+	* (NOT D OR E) => NOT D OR E =>
+	* [OR]____ NOT D
+	*  |
+	*  |______ E
+	*/
+	vector<string> disjuncts;
+	tokenizeAndDontBreakParentheses(input, disjuncts , "OR");
+	if(disjuncts.size() >= 2){
+		// This OR operator object
+		expressionNode = new ParseTreeNode(LogicalPlanNodeTypeOr, parent);
+		for(vector<string>::iterator disjunct = disjuncts.begin() ; disjunct != disjuncts.end() ; ++disjunct){
+			ParseTreeNode * newChild = NULL;
+			// Call this function on each expression and put the result as a child of this OR operator
+			if(parseBooleanExpressionRecursive(expressionNode, *disjunct, newChild) == false) {
+				delete expressionNode;
+				expressionNode = NULL;
+				return false;
+			}
+			expressionNode->children.push_back(newChild);
+		}
+		return true;
+	}
+
+
+	/*
+	* 5. If the string is not breakable by AND and OR, we try find NOT in the beginning.
+	* Example :
+	* NOT D =>
+	* [NOT]__ D
+	* Example 2:
+	* NOT (A OR B) =>
+	* [NOT]__ (A OR B)
+	*/
+	string beginningNotRegex = "^(NOT)\\s";
+	string inputWithoutNot;
+	boost::regex re2(beginningNotRegex);
+	if(doParse(input , re2, inputWithoutNot)){
+		// This NOT operator object
+		expressionNode = new ParseTreeNode(LogicalPlanNodeTypeNot, parent);
+		ParseTreeNode * newChild = NULL;
+		// Call this function on the following expression and put the result as the child of this NOT operator
+		if(parseBooleanExpressionRecursive(expressionNode, input, newChild) == false) {
+			delete expressionNode;
+			expressionNode = NULL;
+			return false;
+		}
+		expressionNode->children.push_back(newChild);
+
+	}else{
+		/*
+		 * 6. And finally if there is not a NOT, it's only a TERM which is left.
+		 */
+		expressionNode = new ParseTreeNode(LogicalPlanNodeTypeTerm, parent);
+		expressionNode->temporaryTerm = new TermIntermediateStructure();
+		expressionNode->temporaryTerm->termQueryString = input;
+	}
+
+	return true;
+}
+
+/*
+ * This function removes the outer parentheses of an expression
+ * Example : (((A AND B) OR C)) => (A AND B) OR C
+ * Assumption of this function is that parentheses are well formatted.
+ */
+void QueryParser::removeOuterParenthesis(string & input){
+	// ASSERT(checkParentheses(input));
+	while(true){
+		// simple length condition to avoid out-of-bound faults.
+		if(input.length() < 2) return;
+		// If the first and last characters are not '(' and ')' there is no point in continuing.
+		if(input.at(0) != '(' || input.at(input.length()-1) != ')') return;
+		// We keep incrementing and decrementing depth when we see '(' and ')'
+		// first and last characters are removed if
+		// 1. they are parentheses
+		// 2. when we reach to the end depth is zero
+		// 3. and depth is always greater than zero in the middle of string.
+		int depthCounter = 0;
+		for(int c = 0 ; c < input.length() ; ++c){
+			if(input.at(c) == '(') depthCounter ++;
+			else if(input.at(c) == ')') {
+				depthCounter --;
+				/*
+				* Except for the last character, any moment that
+				* we see a depth of zero we can stop because it means the
+				* first parentheses is not associated with the last one
+				* Example :                         (A AND B) OR (C AND D)
+				* Depth becomes zero at this point:         ^
+				* so we should NOT remove parentheses for this expression because if we do
+				* we get "A AND B) OR (C AND D" which is wrong.
+				*/
+				if(depthCounter == 0 && c != input.length()-1){
+					return;
+				}
+			}
+		}
+		if(depthCounter != 0) return;
+		// remove parentheses
+		input = input.substr(1, input.length()-2);
+	}
+}
+
+/*
+ * This function tokenizes a string by a string delimiter (e.g. 'AND') while it is
+ * careful not to break any pair of parentheses.
+ * For example,if we want to tokenize expression "(A AND B) OR C" by "AND", we shouldn't
+ * return "(A" and "B) OR C" and we should only return on token which is the expression itself.
+ * NOTE1 : Assumption of this function is that the input is well formatted in terms of
+ * parentheses.
+ */
+void QueryParser::tokenizeAndDontBreakParentheses(const string & inputArg , vector<string> & tokensArg, const string & delimiter){
+	// ASSERT(checkParentheses(input));
+	/*
+	 * Steps:
+	 * 0. Make sure there are two spaces around each parentheses, because we want to tokenize with space first.
+	 * 1. Break the string by space
+	 * 2. While moving on words, increment and decrement depth by also checking
+	 * --- the characters of each word.
+	 * 3. Every time we see a word=delimiter if depth is zero, we can break the string at that point.
+	 */
+
+	// 0. make sure ( and ) are separatable by parentheses
+	stringstream inputStream;
+	string input = "";
+	for(unsigned charIndex = 0 ; charIndex < inputArg.length(); ++charIndex){
+		if(inputArg.at(charIndex) == '(' || inputArg.at(charIndex) == ')'){
+			inputStream <<  " " << inputArg.at(charIndex) << " ";
+		}else{
+			inputStream << inputArg.at(charIndex) << "" ;
+		}
+	}
+	input = inputStream.str();
+	boost::algorithm::trim(input);
+
+	std::list<std::string> stringList;
+    boost::char_separator<char> sep(" ");
+    boost::tokenizer< boost::char_separator<char> > tokens(input, sep);
+    int depthCounter = 0;
+    // We always keep appending words to the last element of this temporary vector
+    // and when we see a new delimiter (e.g. "AND") we insert a new "" to this vector.
+    tokensArg.push_back("");
+    BOOST_FOREACH (const string& token, tokens) {
+    	if(token.compare(delimiter) == 0 && depthCounter == 0){
+    		boost::algorithm::trim(tokensArg.at(tokensArg.size()-1));
+    		tokensArg.push_back("");
+    		continue;
+    	}
+    	// append the new word
+    	tokensArg.at(tokensArg.size()-1) += token + " ";
+    	// move on characters of this word to update the depth
+    	for(unsigned charIndex = 0 ; charIndex < token.length() ; ++charIndex){
+    		if(token.at(charIndex) == '('){
+    			depthCounter ++;
+    		}else if(token.at(charIndex) == ')'){
+    			depthCounter --;
+    		}
+    	}
+    }
 }
 
 }
