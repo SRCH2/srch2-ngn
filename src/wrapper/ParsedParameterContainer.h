@@ -28,11 +28,214 @@
 #include "WrapperConstants.h"
 #include "FilterQueryEvaluator.h"
 #include "SortFilterEvaluator.h"
-#include "LogicalPlan.h"
+#include "instantsearch/LogicalPlan.h"
 
 
 namespace srch2 {
 namespace httpwrapper {
+
+class TermIntermediateStructure{
+public:
+	TermIntermediateStructure(){
+		fieldFilterNumber = 0;
+	}
+	string termQueryString;
+	string rawQueryKeyword;
+	float keywordSimilarityThreshold;
+	int keywordBoostLevel;
+	srch2::instantsearch::TermType keywordPrefixComplete;
+	vector<string> fieldFilter;
+	BooleanOperation fieldFilterOp;
+	bool isPhraseKeywordFlag ;
+	short phraseSlop;
+	unsigned fieldFilterNumber;
+
+	void print(){
+		Logger::console("Term : (%s %f %d %d) ",rawQueryKeyword.c_str(),keywordSimilarityThreshold,keywordBoostLevel,keywordPrefixComplete);
+	}
+};
+
+class ParseTreeNode{
+public:
+	LogicalPlanNodeType type;
+	ParseTreeNode * parent;
+	vector<ParseTreeNode *> children;
+	TermIntermediateStructure * temporaryTerm;
+
+//	static int objectCount;
+	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
+	 this->type = type;
+	 this->parent = parent;
+	 this->temporaryTerm = NULL;
+//	 objectCount++;
+	}
+	~ParseTreeNode(){
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			if(*child != NULL) delete *child;
+		}
+
+		if(temporaryTerm != NULL){
+			delete temporaryTerm;
+		}
+//		objectCount--;
+	}
+
+	string indentation(unsigned indent){
+		string result = "";
+		for(unsigned i=0;i<indent;i++){
+			result += "\t";
+		}
+		return result;
+	}
+
+	void print(unsigned indent = 0){
+		switch (type) {
+			case LogicalPlanNodeTypeAnd:
+				cout << indentation(indent) << "-- AND" << endl;
+				break;
+			case LogicalPlanNodeTypeOr:
+				cout << indentation(indent) << "-- OR" << endl;
+				break;
+			case LogicalPlanNodeTypeNot:
+				cout << indentation(indent) << "-- NOT" << endl;
+				break;
+			case LogicalPlanNodeTypeTerm:
+				cout << indentation(indent) << "-- TERM" << endl;
+				break;
+		}
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			(*child)->print(indent+1);
+		}
+		cout << indentation(indent) << "--" << endl;
+	}
+	bool checkValiditiyOfPointers(){
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			if ((*child)->parent != this) return false;
+		}
+		return true;
+	}
+
+};
+
+
+class ParseTreeLeadNodeIterator{
+public:
+	ParseTreeNode * root;
+	ParseTreeNode * currentLeafNode;
+	vector<vector<ParseTreeNode *> > dfsChildrenStack;
+	ParseTreeLeadNodeIterator(ParseTreeNode * root){
+		this->root = root;
+		this->currentLeafNode = NULL;
+		init();
+	}
+	~ParseTreeLeadNodeIterator(){}
+
+	bool hasMore(){
+		if(currentLeafNode == NULL){
+			return false;
+		}
+		return true;
+	}
+
+	/*
+	 * Initializing the iteration
+	 */
+	void init(){
+		// Clear all structures
+		this->currentLeafNode = NULL;
+		dfsChildrenStack.clear();
+		/*
+		 * Starting from root, we traverse down and keep the children in the stack
+		 */
+		if(this->root == NULL){
+			return;
+		}
+		// find the first leaf node to be returned by next call of getNext()
+		ParseTreeNode * currentNode = this->root;
+		while(true){
+			if(currentNode->type == LogicalPlanNodeTypeTerm){
+				break;
+			}
+			dfsChildrenStack.push_back(currentNode->children);
+			// each node must either be a TERM or have some children
+			//ASSERT(dfsChildrenStack.at(dfsChildrenStack.size()-1).size() > 0);
+			// set the currentNode to the first child and remove it from the children vector in stack
+			currentNode = dfsChildrenStack.at(dfsChildrenStack.size()-1).at(0);
+			removeFirstChildOfTopVectorInStack();
+		}
+
+		this->currentLeafNode = currentNode;
+	}
+
+	void removeFirstChildOfTopVectorInStack(){
+		dfsChildrenStack.at(dfsChildrenStack.size()-1).erase(
+				dfsChildrenStack.at(dfsChildrenStack.size()-1).begin(),
+				dfsChildrenStack.at(dfsChildrenStack.size()-1).begin()+1);
+	}
+
+	/*
+	 * Going on the next leaf node
+	 */
+	ParseTreeNode * getNext(){
+		/*
+		 * 0. save the node to which currentNode is pointing
+		 * 1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
+		 * 2.1. if this node is a TERM node, set it to next to node to be returned, remove it from vector and return node saved in 0
+		 * 2.2. else, continue pushing children rightmost children until we reach the
+		 * ---- leaf level again and go to 1 again.
+		 * 3. if children vector is empty, we pop the stack and go to 1. if stack is also empty set current node to NULL
+		 * 3. return the saved node in 0
+		 */
+
+		//0. save the node to which currentNode is pointing
+		ParseTreeNode * nextLeafNode = this->currentLeafNode;
+		//1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
+		while(true){
+			if(dfsChildrenStack.size() == 0){ // stack is empty, leaf nodes are finished.
+				this->currentLeafNode = NULL;
+				return nextLeafNode;
+			}
+			vector<ParseTreeNode *> & topChildrenVector = dfsChildrenStack.at(dfsChildrenStack.size()-1);
+			if(topChildrenVector.size() != 0){ // 1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
+				if(topChildrenVector.at(0)->type == LogicalPlanNodeTypeTerm){
+					// 2.1. if this node is a TERM node, set it to next to node to be returned, remove it from vector and return node saved in 0
+					this->currentLeafNode = topChildrenVector.at(0);
+					removeFirstChildOfTopVectorInStack();
+					return nextLeafNode;
+				}else{
+					// erase this node from children vector and keep pushing left most children to the stack
+					ParseTreeNode * firstChild = topChildrenVector.at(0);
+					// erase it from children vector
+					removeFirstChildOfTopVectorInStack();
+					// keep pushing left most children until first child is TERM
+					while(true){
+						// push children of this node
+						dfsChildrenStack.push_back(firstChild->children);
+						// this node shouldn't be terminal so it's children vector shouldn't be empty
+						//ASSERT(dfsChildrenStack.at(dfsChildrenStack.size()-1).size() > 0);
+						// get the first member of the new pushed vector (firstChild of the old firstChild)
+						firstChild = dfsChildrenStack.at(dfsChildrenStack.size()-1).at(0);
+						// remove the first child from top vector
+						removeFirstChildOfTopVectorInStack();
+						// if it's terminal we have found the next leaf node
+						if(firstChild->type == LogicalPlanNodeTypeTerm){
+							this->currentLeafNode = firstChild;
+							return nextLeafNode;
+						} // else : we should keep pushing children
+					}
+				}
+
+			}else{ // 3. if children vector is empty, we pop the stack and go to 1. if stack is also empty set current node to NULL
+				dfsChildrenStack.pop_back();
+			}
+		}
+
+	}
+
+
+
+};
+
 
 class FilterQueryContainer {
 public:
@@ -175,6 +378,7 @@ public:
         isFqBooleanOperatorSet=false;
         resultsStartOffset=0; // defaults to 0
         numberOfResults=10; // defaults to 10
+        parseTreeRoot = NULL;
     }
 
     ~ParsedParameterContainer() {
@@ -186,6 +390,9 @@ public:
             delete getAllResultsParameterContainer;
         if (geoParameterContainer != NULL)
             delete geoParameterContainer;
+        if(parseTreeRoot != NULL){
+        	delete parseTreeRoot;
+        }
     }
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
@@ -198,29 +405,17 @@ public:
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
 
-    // main query parser parameters
-    // the following six vectors must be parallel
-    std::vector<std::string> rawQueryKeywords; // stores the keywords in the query
-    std::vector<float> keywordSimilarityThreshold; // stores the fuzzy level of each keyword in the query
-    std::vector<int> keywordBoostLevel; // stores the boost level of each keyword in the query
-    std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
-    std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
-    std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.
-    std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
-    std::vector<short>  PhraseSlops;   // vector to store proximity slops
-    std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
-
     // This object contains the boolean structure of terms. For example for query
     // q= (A AND B)OR(C AND D)
     // it contains a tree like this:
-    // OR ---> AND ---> PLACE_HOLDER
-    // |        |-----> PLACE_HOLDER
+    // OR ---> AND ---> {A}
+    // |        |-----> {B}
     // |
-    // |-----> AND ---> PLACE_HOLDER
-    //          |-----> PLACE_HOLDER
+    // |-----> AND ---> {C}
+    //          |-----> {D}
     //
-    // A,B,C and D are kept in the above parallel vectors by preserving their order.
-    LogicalPlan logicalQueryPlan;
+    //
+    ParseTreeNode * parseTreeRoot;
 
     // debug query parser parameters
     bool isDebugEnabled;

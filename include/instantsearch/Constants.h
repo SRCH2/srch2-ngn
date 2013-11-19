@@ -210,7 +210,7 @@ typedef enum {
 	LogicalPlanNodeTypeAnd,
 	LogicalPlanNodeTypeOr,
 	LogicalPlanNodeTypeTerm,
-	LogicalPlanNodeTypePlaceHolder
+	LogicalPlanNodeTypeNot
 } LogicalPlanNodeType;
 
 typedef enum {

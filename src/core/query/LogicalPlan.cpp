@@ -10,25 +10,25 @@ namespace srch2 {
 namespace instantsearch {
 
 
-LogicalPlanNode::LogicalPlanNode(Term * term){
+LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
-	this->term = term;
+	this->exactTerm= exactTerm;
+	this->fuzzyTerm = fuzzyTerm;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
-	srch2::util::ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
 	this->nodeType = nodeType;
-	this->term = NULL;
-}
-
-LogicalPlanNode::LogicalPlanNode(){
-	this->nodeType = LogicalPlanNodeTypePlaceHolder;
-	this->term = NULL;
+	this->exactTerm= NULL;
+	this->fuzzyTerm = NULL;
 }
 
 LogicalPlanNode::~LogicalPlanNode(){
-	if(this->term != NULL){
-		delete term;
+	if(this->exactTerm != NULL){
+		delete exactTerm;
+	}
+	if(this->fuzzyTerm != NULL){
+		delete fuzzyTerm;
 	}
 	for(vector<LogicalPlanNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 		if(*child != NULL){
@@ -37,25 +37,14 @@ LogicalPlanNode::~LogicalPlanNode(){
 	}
 }
 
-void LogicalPlanNode::changeToTermLogicalPlanNode(
-		LogicalPlanNode * logicalPlanNode,
-		const std::string &queryKeyword,
-		TermType type,
-		const float boost,
-		const float similarityBoost,
-		const uint8_t threshold,
-		unsigned fieldFilter){
-
-	ASSERT(this->nodeType == LogicalPlanNodeTypePlaceHolder);
-	Term * term = Term(queryKeyword, type, boost, similarityBoost, threshold);
-	term->addAttributeToFilterTermHits(fieldFilter);
-	this->term = term;
-	this->nodeType = LogicalPlanNodeTypeTerm;
-}
-
 unsigned LogicalPlanNode::getNodeId(){
 	return this->nodeId;
 }
+
+void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
+	this->fuzzyTerm = fuzzyTerm;
+}
+
 //////////////////////////////////////////////// Logical Plan ///////////////////////////////////////////////
 
 LogicalPlan::LogicalPlan(){
@@ -67,23 +56,17 @@ LogicalPlan::~LogicalPlan(){
 	if(tree != NULL) delete tree;
 }
 
-LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float similarityBoost, const uint8_t threshold , unsigned fieldFilter){
-	Term * term = Term(queryKeyword, type, boost, similarityBoost, threshold);
+LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){
+	Term * term = new Term(queryKeyword, type, boost, fuzzyMatchPenalty, threshold);
 	term->addAttributeToFilterTermHits(fieldFilter);
-	LogicalPlanNode node = new LogicalPlanNode(term);
+	LogicalPlanNode * node = new LogicalPlanNode(term , NULL);
 	node->nodeId = ++logicalPlanNodeId;
 	return node;
 }
 
 LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType){
-	srch2::util::ASSERT(nodeType != LogicalPlanNodeTypeTerm);
-	LogicalPlanNode node = new LogicalPlanNode(nodeType);
-	node->nodeId = ++logicalPlanNodeId;
-	return node;
-}
-
-LogicalPlanNode * LogicalPlan::createDummyLogicalPlanNode(){
-	LogicalPlanNode node = new LogicalPlanNode();
+	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
 	node->nodeId = ++logicalPlanNodeId;
 	return node;
 }

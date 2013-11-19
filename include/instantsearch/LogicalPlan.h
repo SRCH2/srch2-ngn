@@ -21,6 +21,8 @@
 
 #include "Constants.h"
 #include "instantsearch/Term.h"
+#include "instantsearch/ResultsPostProcessor.h"
+#include "util/Assert.h"
 #include <vector>
 #include <string>
 using namespace std;
@@ -38,29 +40,19 @@ class LogicalPlanNode{
 public:
 	LogicalPlanNodeType nodeType;
 	vector<LogicalPlanNode *> children;
-	Term * term;
+	Term * exactTerm;
+	Term * fuzzyTerm;
 
 	~LogicalPlanNode();
 
-    // changes a dummy logical plan node to a term node
-    void changeToTermLogicalPlanNode(
-    		LogicalPlanNode * logicalPlanNode,
-    		const std::string &queryKeyword,
-    		TermType type,
-    		const float boost,
-    		const float similarityBoost,
-    		const uint8_t threshold,
-    		unsigned fieldFilter);
-
     unsigned getNodeId();
+
+    void setFuzzyTerm(Term * fuzzyTerm);
 
 private:
 	unsigned nodeId;
-	LogicalPlanNode(Term * term);
+	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
-	LogicalPlanNode();
-
-
 };
 
 /*
@@ -90,6 +82,17 @@ public:
     LogicalPlan();
     ~LogicalPlan();
 
+
+	std::string docIdForRetrieveByIdSearchType;
+	ResultsPostProcessorPlan * postProcessingPlan;
+	/// Plan related information
+	unsigned searchType;
+	int offset;
+	int resultsToRetrieve;
+	bool shouldRunFuzzyQuery;
+	Query *exactQuery;
+	Query *fuzzyQuery;
+
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
     		TermType type,
@@ -99,8 +102,107 @@ public:
     		unsigned fieldFilter);
     // constructs an internal (operator) logical plan node
     LogicalPlanNode * createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType);
-    // construct a dummy logical plan node which can be used as place_holder.
-    LogicalPlanNode * createDummyLogicalPlanNode();
+
+	ResultsPostProcessorPlan* getPostProcessingPlan() const {
+		return postProcessingPlan;
+	}
+
+	void setPostProcessingPlan(ResultsPostProcessorPlan* postProcessingPlan) {
+		this->postProcessingPlan = postProcessingPlan;
+	}
+
+	LogicalPlanNode * getTree(){
+		return tree;
+	}
+
+	void setTree(LogicalPlanNode * tree){
+		this->tree = tree;
+	}
+
+	bool isFuzzy() const {
+		return shouldRunFuzzyQuery;
+	}
+
+	void setFuzzy(bool isFuzzy) {
+		this->shouldRunFuzzyQuery = isFuzzy;
+	}
+
+	int getOffset() const {
+		return offset;
+	}
+
+	void setOffset(int offset) {
+		this->offset = offset;
+	}
+
+	int getResultsToRetrieve() const {
+		return resultsToRetrieve;
+	}
+
+	void setResultsToRetrieve(int resultsToRetrieve) {
+		this->resultsToRetrieve = resultsToRetrieve;
+	}
+
+	unsigned getSearchType() const {
+		return searchType;
+	}
+	Query* getExactQuery() {
+		return exactQuery;
+	}
+
+	void setExactQuery(Query* exactQuery) { // TODO : change the header
+		// it gets enough information from the arguments and allocates the query objects
+        if(this->exactQuery == NULL){
+            this->exactQuery = exactQuery;
+        }
+	}
+
+	Query* getFuzzyQuery() {
+		return fuzzyQuery;
+	}
+
+	void setFuzzyQuery(Query* fuzzyQuery) { // TODO : change the header
+
+		// it gets enough information from the arguments and allocates the query objects
+	    if(this->fuzzyQuery == NULL){
+            this->fuzzyQuery = fuzzyQuery;
+	    }
+	}
+
+//	// this function translates searchType enum flags to correspondent unsigned values
+//	unsigned getSearchTypeCode() const {
+//		// TODO : there must be some functions in Config file that give us these codes.
+//		switch (getSearchType()) {
+//			case srch2http::TopKSearchType:
+//				return 0;
+//				break;
+//			case srch2http::GetAllResultsSearchType:
+//				return 1;
+//				break;
+//			case srch2http::GeoSearchType:
+//				return 2;
+//				break;
+//			case srch2http::RetrieveByIdSearchType:
+//				return 3;
+//				break;
+//			default:
+//
+//				break;
+//		}
+//		return 0;
+//	}
+
+	void setSearchType(unsigned searchType) {
+		this->searchType = searchType;
+	}
+
+	std::string getDocIdForRetrieveByIdSearchType(){
+		return this->docIdForRetrieveByIdSearchType;
+	}
+
+	void setDocIdForRetrieveByIdSearchType(const std::string & docid){
+		this->docIdForRetrieveByIdSearchType = docid;
+	}
 
 };
 
