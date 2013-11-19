@@ -48,7 +48,7 @@ class HTTPRequestHandler
 	private:
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
+				const LogicalPlan &queryPlan,
 				const ConfigManager *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const Query *query,
@@ -61,7 +61,7 @@ class HTTPRequestHandler
 				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
+				const LogicalPlan &queryPlan,
 				const ConfigManager *indexDataContainerConf,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,

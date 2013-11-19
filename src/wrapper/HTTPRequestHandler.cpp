@@ -18,7 +18,6 @@
 #include "QueryParser.h"
 #include "QueryValidator.h"
 #include "QueryRewriter.h"
-#include "QueryPlanGen.h"
 #include "QueryPlan.h"
 #include "QueryExecutor.h"
 #include "ParserUtility.h"
@@ -105,7 +104,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
  * Add the record information to the request.out string.
  */
 void HTTPRequestHandler::printResults(evhttp_request *req,
-        const evkeyvalq &headers, const QueryPlan &queryPlan,
+        const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
@@ -239,7 +238,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
     // return some meta data
 
-    root["type"] = queryPlan.getSearchTypeCode();
+    root["type"] = queryPlan.getSearchType();
     root["offset"] = start;
     root["limit"] = end - start;
 
@@ -326,7 +325,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
  * Add the record information to the request.out string.
  */
 void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
-        const QueryPlan &queryPlan,
+        const LogicalPlan &queryPlan,
         const ConfigManager *indexDataContainerConf,
         const QueryResults *queryResults,
         const srch2is::Indexer *indexer,
@@ -380,7 +379,7 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
     // return some meta data
 
-    root["type"] = queryPlan.getSearchTypeCode();
+    root["type"] = queryPlan.getSearchType();
     root["results_found"] = queryResults->getNumberOfResults();
 
     root["message"] = message;
@@ -864,6 +863,15 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
+//    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
+//	ParseTreeNode * leafNode;
+//	ParseTreeLeadNodeIterator termIterator(paramContainer.parseTreeRoot);
+//	while(termIterator.hasMore()){
+//		leafNode = termIterator.getNext();
+//		leafNode->temporaryTerm->print();
+//	}
+//	return;
+
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
             *(server->indexDataContainerConf), &paramContainer);
@@ -882,18 +890,14 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
-    qr.rewrite();
+    LogicalPlan logicalPlan;
+    qr.rewrite(logicalPlan);
 
-    //4. generate the queries and the plan
-    QueryPlanGen qpg(paramContainer, indexDataContainerConf);
-    QueryPlan queryPlan;
-    qpg.generatePlan(&queryPlan);
-
-    //5. now execute the plan
+    //4. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();
     // TODO : is it possible to make executor and planGen singleton ?
-    QueryExecutor qe(queryPlan, resultsFactory, server , indexDataContainerConf);
+    QueryExecutor qe(logicalPlan, resultsFactory, server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
@@ -904,14 +908,14 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-    //6. call the print function to print out the results
+    //5. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
-    switch (queryPlan.getSearchType()) {
+    switch (logicalPlan.getSearchType()) {
     case TopKSearchType:
         finalResults->printStats();
-        HTTPRequestHandler::printResults(req, headers, queryPlan,
-                indexDataContainerConf, finalResults, queryPlan.getExactQuery(),
-                server->indexer, queryPlan.getOffset(),
+        HTTPRequestHandler::printResults(req, headers, logicalPlan,
+                indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
+                server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
                 paramContainer.getMessageString(), ts1, tstart, tend);
@@ -920,21 +924,21 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     case GetAllResultsSearchType:
     case GeoSearchType:
         finalResults->printStats();
-        if (queryPlan.getOffset() + queryPlan.getResultsToRetrieve()
+        if (logicalPlan.getOffset() + logicalPlan.getResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
-            HTTPRequestHandler::printResults(req, headers, queryPlan,
+            HTTPRequestHandler::printResults(req, headers, logicalPlan,
                     indexDataContainerConf, finalResults,
-                    queryPlan.getExactQuery(), server->indexer,
-                    queryPlan.getOffset(), finalResults->getNumberOfResults(),
+                    logicalPlan.getExactQuery(), server->indexer,
+                    logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
                     paramContainer.getMessageString(), ts1, tstart, tend , paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-            HTTPRequestHandler::printResults(req, headers, queryPlan,
+            HTTPRequestHandler::printResults(req, headers, logicalPlan,
                     indexDataContainerConf, finalResults,
-                    queryPlan.getExactQuery(), server->indexer,
-                    queryPlan.getOffset(),
-                    queryPlan.getOffset() + queryPlan.getResultsToRetrieve(),
+                    logicalPlan.getExactQuery(), server->indexer,
+                    logicalPlan.getOffset(),
+                    logicalPlan.getOffset() + logicalPlan.getResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
                     paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         }
@@ -943,7 +947,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         finalResults->printStats();
         HTTPRequestHandler::printOneResultRetrievedById(req,
                 headers,
-                queryPlan ,
+                logicalPlan ,
                 indexDataContainerConf,
                 finalResults ,
                 server->indexer ,
@@ -954,7 +958,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         break;
     }
 
-    // 7. delete allocated structures
+    // 6. delete allocated structures
     // Free the objects
     evhttp_clear_headers(&headers);
     delete finalResults;
