@@ -66,7 +66,12 @@ bool QueryValidator::validate() {
     // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
     if (paramContainer->hasParameterInQuery(TopKSearchType)
             || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-        if (paramContainer->rawQueryKeywords.size() == 0) {
+		ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+		unsigned numberOfTerms = 0;
+		while(termIterator.hasMore()){
+			numberOfTerms ++;
+		}
+        if (numberOfTerms == 0) {
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
                             "No keywords provided for search."));
@@ -156,21 +161,22 @@ bool QueryValidator::validateExistenceOfAttributesInFieldList() {
 
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
-        for (vector<vector<string> >::iterator fields =
-                paramContainer->fieldFilter.begin();
-                fields != paramContainer->fieldFilter.end(); ++fields) {
-            for (vector<string>::iterator field = fields->begin();
-                    field != fields->end(); ++field) {
-                if (searchableAttributes.find(*field)
-                        == searchableAttributes.end()) { // field does not exist in searchable attributes
-                        // write a warning and change field value to *
-                    paramContainer->messages.push_back(
-                            std::make_pair(MessageWarning,
-                                    "Field " + *field
-                                            + " is not a searchable field. We changed it to * (all fields). "));
-                    *field = "*"; // this * means all fields , query rewriter will interpret this one.
-                }
-            }
+        ParseTreeNode * leafNode;
+        ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+        while(termIterator.hasMore()){
+        	leafNode = termIterator.getNext();
+        	for (vector<string>::iterator field = leafNode->temporaryTerm->fieldFilter.begin();
+        			field != leafNode->temporaryTerm->fieldFilter.end(); ++field) {
+        		if (searchableAttributes.find(*field)
+        				== searchableAttributes.end()) { // field does not exist in searchable attributes
+        			// write a warning and change field value to *
+        			paramContainer->messages.push_back(
+        					std::make_pair(MessageWarning,
+        							"Field " + *field
+        							+ " is not a searchable field. We changed it to * (all fields). "));
+        			*field = "*"; // this * means all fields , query rewriter will interpret this one.
+        		}
+        	}
         }
     }
     return true;
