@@ -26,6 +26,8 @@
 #include <record/LocationRecordUtil.h>
 #include <operation/Cache.h>
 #include <instantsearch/LogicalPlan.h>
+#include <instantsearch/QueryResults.h>
+#include <instantsearch/Query.h>
 
 namespace srch2
 {
@@ -118,7 +120,6 @@ public:
      */
     ~QueryEvaluator() {};
 
-private:
     QueryEvaluatorInternal * impl;
 
 };

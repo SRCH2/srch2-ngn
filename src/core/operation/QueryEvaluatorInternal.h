@@ -19,11 +19,7 @@
 #ifndef __QUERYEVALUATORINTERNAL_H__
 #define __QUERYEVALUATORINTERNAL_H__
 
-namespace srch2
-{
-namespace instantsearch
-{
-
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/platform.h>
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Indexer.h>
@@ -41,6 +37,13 @@ namespace instantsearch
 #include <instantsearch/LogicalPlan.h>
 #include <vector>
 #include <string>
+
+
+namespace srch2
+{
+namespace instantsearch
+{
+
 
 class QueryResultsInternal;
 class QueryResults;
@@ -105,6 +108,24 @@ public:
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
     std::string getInMemoryData(unsigned internalRecordId) const ;
 
+    const InvertedIndex *getInvertedIndex() {
+        return this->indexData->invertedIndex;
+    }
+
+    ForwardIndex * getForwardIndex() {
+        return this->indexData->forwardIndex;
+    }
+
+    Schema * getSchema() {
+        return this->indexData->schemaInternal;
+    }
+
+    const Trie* getTrie() const {
+        return this->indexData->trie;
+    }
+
+    PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
+
     void cacheClear() ;
     /**
      * Destructor to free persistent resources used by the QueryEvaluator.
@@ -116,7 +137,7 @@ private:
     IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
-    IndexSearcherRuntimeParametersContainer parameters;
+    QueryEvaluatorRuntimeParametersContainer parameters;
     Cache *cacheManager;
 };
 

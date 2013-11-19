@@ -30,8 +30,8 @@ namespace instantsearch
  * Creates an QueryEvaluator object.
  * @param indexer - An object holding the index structures and cache.
  */
-QueryEvaluator::QueryEvaluator(Indexer *indexer , QueryEvaluatorRuntimeParametersContainer * parameters = NULL){
-	this->impl = new QueryEvaluatorInternal(indexer, parameters);
+QueryEvaluator::QueryEvaluator(Indexer *indexer , QueryEvaluatorRuntimeParametersContainer * parameters ){
+	this->impl = new QueryEvaluatorInternal(dynamic_cast<IndexReaderWriter *>(indexer), parameters);
 }
 
 /*

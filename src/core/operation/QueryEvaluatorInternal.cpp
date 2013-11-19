@@ -33,6 +33,8 @@
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
 #include "CatalogManager.h"
+#include "QueryOptimizer.h"
+#include "physical_plan/PhysicalPlan.h"
 
 #include <vector>
 #include <algorithm>
@@ -50,7 +52,7 @@ namespace instantsearch
  * Creates an QueryEvaluatorInternal object.
  * @param indexer - An object holding the index structures and cache.
  */
-QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , QueryEvaluatorRuntimeParametersContainer * parameters = NULL){
+QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , QueryEvaluatorRuntimeParametersContainer * parameters){
 	// if parameters is NULL, the default constructor of the object is used which has the default values for everything.
 	if(parameters != NULL){
 		this->parameters = *parameters;
@@ -108,12 +110,12 @@ int QueryEvaluatorInternal::search(const LogicalPlan * logicalPlan , QueryResult
 	QueryOptimizer queryOptimizer(this->indexData->forwardIndex,
 			this->indexData->invertedIndex,
 			this->indexData->trie,
-			catalogManager,
+			&catalogManager,
 			logicalPlan);
 	PhysicalPlan physicalPlan(this->indexData->forwardIndex,
 			this->indexData->invertedIndex,
 			this->indexData->trie,
-			catalogManager);
+			&catalogManager);
 	queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
 	 /*
 	  * 3. Execute physical plan
@@ -162,6 +164,10 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
 std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
+
+}
+
+PrefixActiveNodeSet *QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
 
 }
 
