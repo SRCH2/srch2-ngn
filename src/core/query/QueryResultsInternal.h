@@ -45,7 +45,7 @@ namespace srch2
 namespace instantsearch
 {
 
-class IndexSearcherInternal;
+class QueryEvaluatorInternal;
 class QueryResultFactoryInternal;
 class FacetedSearchFilter;
 
@@ -123,9 +123,9 @@ public:
 	friend class QueryResults;
     friend class ResultsPostProcessor;
 	QueryResultsInternal();
-	void init(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
+	void init(QueryResultFactory * resultsFactory ,const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
 
-    QueryResultsInternal(QueryResultFactory * resultsFactory , const IndexSearcherInternal *indexSearcherInternal, Query *query);
+    QueryResultsInternal(QueryResultFactory * resultsFactory , const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
     virtual ~QueryResultsInternal();
 
     std::vector<TermVirtualList* > *getVirtualListVector() { return virtualListVector; };
@@ -151,7 +151,7 @@ public:
     }
 
     // DEBUG function. Used in CacheIntegration_Test
-    bool checkCacheHit(IndexSearcherInternal *indexSearcherInternal, Query *query);
+    bool checkCacheHit(QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
     
     
     std::vector<QueryResult *> sortedFinalResults;
@@ -181,7 +181,7 @@ public:
     Query* query;
     unsigned nextK;
 
-    const IndexSearcherInternal *indexSearcherInternal;
+    const QueryEvaluatorInternal *queryEvaluatorInternal;
 
     QueryResultFactory * resultsFactory;
 

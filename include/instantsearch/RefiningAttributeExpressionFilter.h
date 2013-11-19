@@ -22,7 +22,7 @@
 #define __CORE_POSTPROICESSING_REFININGATTRIBTEEXPRESSIONFILTER_H__
 
 #include "instantsearch/ResultsPostProcessor.h"
-#include "instantsearch/IndexSearcher.h"
+#include "instantsearch/QueryEvaluator.h"
 #include "instantsearch/TypedValue.h"
 
 namespace srch2
@@ -42,7 +42,7 @@ class RefiningAttributeExpressionFilter : public ResultsPostProcessorFilter
 {
 public:
 	RefiningAttributeExpressionFilter();
-	void doFilter(IndexSearcher * indexSearcher, const Query * query,
+	void doFilter(QueryEvaluator *queryEvaluator, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~RefiningAttributeExpressionFilter();
 	// this object is allocated and de-allocated ourside this class.

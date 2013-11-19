@@ -25,7 +25,7 @@
 #include "instantsearch/RefiningAttributeExpressionFilter.h"
 #include "postprocessing/RefiningAttributeExpressionFilterInternal.h"
 #include "instantsearch/IndexSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/TypedValue.h"
@@ -45,12 +45,12 @@ RefiningAttributeExpressionFilter::~RefiningAttributeExpressionFilter(){
 	delete impl;
 }
 
-void RefiningAttributeExpressionFilter::doFilter(IndexSearcher * indexSearcher,  const Query * query,
+void RefiningAttributeExpressionFilter::doFilter(QueryEvaluator *queryEvaluator,  const Query * query,
 		QueryResults * input, QueryResults * output){
 
-	IndexSearcherInternal * indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-	Schema * schema = indexSearcherInternal->getSchema();
-	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+	QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+	Schema * schema = queryEvaluatorInternal->getSchema();
+	ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
 
 	// iterating on results and checking the criteria on each of them
 	for(vector<QueryResult *>::iterator resultIter = input->impl->sortedFinalResults.begin(); resultIter != input->impl->sortedFinalResults.end() ; ++resultIter){

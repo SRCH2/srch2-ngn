@@ -27,19 +27,20 @@
 
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
-#include "instantsearch/IndexSearcher.h"
+
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-
+class QueryEvaluator;
+class QueryResults;
 
 class ResultsPostProcessorFilter
 {
 public:
-	virtual void doFilter(IndexSearcher *indexSearcher, const Query * query,
+	virtual void doFilter(QueryEvaluator * queryEvaluator, const Query * query,
 			 QueryResults * input , QueryResults * output) = 0;
 
 	virtual ~ResultsPostProcessorFilter() {};

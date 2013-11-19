@@ -18,7 +18,7 @@
 #include "instantsearch/FacetedSearchFilter.h"
 #include "FacetedSearchFilterInternal.h"
 #include "instantsearch/IndexSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
@@ -36,9 +36,9 @@ FacetedSearchFilter::~FacetedSearchFilter() {
     delete impl;
 }
 
-void FacetedSearchFilter::doFilter(IndexSearcher *indexSearcher,
+void FacetedSearchFilter::doFilter(QueryEvaluator *queryEvaluator,
         const Query * query, QueryResults * input, QueryResults * output) {
-	this->impl->doFilter(indexSearcher , query , input , output);
+	this->impl->doFilter(queryEvaluator , query , input , output);
 
 }
 

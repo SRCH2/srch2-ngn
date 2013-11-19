@@ -25,7 +25,7 @@
 #include <string>
 #include <algorithm>
 #include "instantsearch/TypedValue.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -156,9 +156,9 @@ public:
     	}
     }
 
-    void doFilter(IndexSearcher *indexSearcher,
+    void doFilter(QueryEvaluator *queryEvaluator,
             const Query * query, QueryResults * input, QueryResults * output) ;
-    void preFilter(IndexSearcher *indexSearcher);
+    void preFilter(QueryEvaluator *queryEvaluator);
     void doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex);
 
     void initialize(std::vector<FacetType> & facetTypes,

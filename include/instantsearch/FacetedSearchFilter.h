@@ -28,7 +28,7 @@
 #include "ResultsPostProcessor.h"
 #include "instantsearch/Schema.h"
 #include "instantsearch/TypedValue.h"
-#include "instantsearch/IndexSearcher.h"
+#include "instantsearch/QueryEvaluator.h"
 #include <instantsearch/Constants.h>
 
 namespace srch2
@@ -43,7 +43,7 @@ class FacetedSearchFilter : public ResultsPostProcessorFilter
 public:
 	FacetedSearchFilter();
 	// TODO : we don't need query in new design
-	void doFilter(IndexSearcher *indexS48earcher, const Query * query,
+	void doFilter(QueryEvaluator *queryEvaluator, const Query * query,
 			QueryResults * input, QueryResults * output);
 	~FacetedSearchFilter();
 	void initialize(std::vector<FacetType> & facetTypes,

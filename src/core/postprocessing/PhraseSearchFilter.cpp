@@ -7,13 +7,13 @@
 
 #include "PhraseSearchFilter.h"
 #include "operation/PhraseSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 namespace srch2 {
 namespace instantsearch {
 
 void PhraseQueryFilter::doFilter(
-    IndexSearcher* indexSearcher, const Query* query, QueryResults* input,
+    QueryEvaluator* queryEvaluator, const Query* query, QueryResults* input,
     QueryResults* output) {
 
 	unsigned resultsCount =  input->getNumberOfResults();
@@ -21,10 +21,9 @@ void PhraseQueryFilter::doFilter(
 	if (resultsCount == 0)
 	    	return;
 
-	IndexSearcherInternal * indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
+	QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
 
-	ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+	ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
 
     /*
      * fetch internal keyword ids from keyword string
@@ -32,13 +31,13 @@ void PhraseQueryFilter::doFilter(
 
 	{
 		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		indexSearcherInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+		queryEvaluatorInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 
 		for ( unsigned i = 0 ; i < phraseInfoVector.size(); ++i) {
 			PhraseInfo & pi = phraseInfoVector[i];
 			for (int j = 0; j < pi.phraseKeyWords.size(); ++j) {
 				const string& keywordString = pi.phraseKeyWords[j];
-				const TrieNode *trieNode = indexSearcherInternal->getTrie()->getTrieNodeFromUtf8String(
+				const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
 						trieRootNode_ReadView->root, keywordString);
 				if (trieNode == NULL){
 					Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());

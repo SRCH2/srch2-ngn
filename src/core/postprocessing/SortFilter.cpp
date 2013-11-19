@@ -23,7 +23,7 @@
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/SortFilter.h"
 #include "instantsearch/IndexSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/TypedValue.h"
@@ -64,16 +64,15 @@ SortFilter::~SortFilter() {
 }
 
 // TODO : we don't need query in new design
-void SortFilter::doFilter(IndexSearcher * indexSearcher, const Query * query,
+void SortFilter::doFilter(QueryEvaluator * queryEvaluator, const Query * query,
         QueryResults * input, QueryResults * output) {
 
     ASSERT(evaluator != NULL);
     if(evaluator == NULL) return;
 
-    IndexSearcherInternal * indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-    Schema * schema = indexSearcherInternal->getSchema();
-    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+    Schema * schema = queryEvaluatorInternal->getSchema();
+    ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
 
     // first copy all input results to output
     output->copyForPostProcessing(input);

@@ -254,15 +254,14 @@ void RangeFacetHelper::initialize(const std::string * facetInfoForInitialization
 }
 
 
-void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
+void FacetedSearchFilterInternal::doFilter(QueryEvaluator *queryEvaluator,
         const Query * query, QueryResults * input, QueryResults * output){
-    IndexSearcherInternal * indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-    Schema * schema = indexSearcherInternal->getSchema();
-    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+    Schema * schema = queryEvaluatorInternal->getSchema();
+    ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
 
     // first prepare internal structures based on the input
-    preFilter(indexSearcher);
+    preFilter(queryEvaluator);
 
     // also copy all input results to output to save previous filter works
     output->copyForPostProcessing(input);
@@ -319,11 +318,10 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 	}
 }
 
-void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){
+void FacetedSearchFilterInternal::preFilter(QueryEvaluator *queryEvaluator){
 
-    IndexSearcherInternal * indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-    Schema * schema = indexSearcherInternal->getSchema();
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+    Schema * schema = queryEvaluatorInternal->getSchema();
 
 	for(std::vector<std::string>::iterator facetField = fields.begin();
             facetField != fields.end() ; ++facetField){

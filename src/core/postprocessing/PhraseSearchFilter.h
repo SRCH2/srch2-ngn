@@ -31,7 +31,7 @@ class PhraseInfo{
 
 class PhraseQueryFilter : public ResultsPostProcessorFilter {
 public:
-    virtual void doFilter(IndexSearcher *indexSearcher, const Query * query,
+    virtual void doFilter(QueryEvaluator *queryEvaluator, const Query * query,
                  QueryResults * input , QueryResults * output);
     void addPhrase(const vector<string>& keywordsInPhrase,
                    const vector<unsigned>& queryKeywordsPositionIndex,
