@@ -290,8 +290,6 @@ public:
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
 
-    // no parameters known as of now
-
 	//
 	bool hasParameterInQuery(ParameterName param){
 	    return (std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
@@ -300,24 +298,10 @@ public:
 
 class GetAllResultsParameterContainer {
 public:
-	GetAllResultsParameterContainer(){
-		facetQueryContainer = NULL;
-		sortQueryContainer = NULL;
-	}
-	~GetAllResultsParameterContainer(){
-		if(facetQueryContainer != NULL) delete facetQueryContainer;
-		if(sortQueryContainer != NULL) delete sortQueryContainer;
-	}
 
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
-
-
-	// facet parser parameters
-	FacetQueryContainer * facetQueryContainer;
-	// sort parser parameters
-	SortQueryContainer * sortQueryContainer;
 
 	bool hasParameterInQuery(ParameterName param){
 		return (std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
@@ -327,24 +311,10 @@ public:
 
 class GeoParameterContainer {
 public:
-	GeoParameterContainer(){
-		facetQueryContainer = NULL;
-		sortQueryContainer = NULL;
-	}
-	~GeoParameterContainer(){
-		if(facetQueryContainer != NULL) delete facetQueryContainer;
-		if(sortQueryContainer != NULL) delete sortQueryContainer;
-	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
 
-
-	// this object is created in planGenerator but freed when the filter is being destroyed.
-	// facet parser parameters
-	FacetQueryContainer * facetQueryContainer;
-	// sort parser parameters
-	SortQueryContainer * sortQueryContainer;
 
 	// geo related parameters
 	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
@@ -360,9 +330,8 @@ public:
 
     ParsedParameterContainer() {
         filterQueryContainer = NULL;
-        topKParameterContainer = NULL;
-        getAllResultsParameterContainer = NULL;
-        geoParameterContainer = NULL;
+    	facetQueryContainer = NULL;
+    	sortQueryContainer = NULL;
         onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
@@ -384,12 +353,10 @@ public:
     ~ParsedParameterContainer() {
         if (filterQueryContainer != NULL)
             delete filterQueryContainer;
-        if (topKParameterContainer != NULL)
-            delete topKParameterContainer;
-        if (getAllResultsParameterContainer != NULL)
-            delete getAllResultsParameterContainer;
-        if (geoParameterContainer != NULL)
-            delete geoParameterContainer;
+        if (facetQueryContainer != NULL)
+            delete facetQueryContainer;
+        if (sortQueryContainer != NULL)
+            delete sortQueryContainer;
         if(parseTreeRoot != NULL){
         	delete parseTreeRoot;
         }
@@ -442,9 +409,15 @@ public:
     // filter query parser parameters
     FilterQueryContainer * filterQueryContainer; // contains all filter query related info.
 
+	// facet parser parameters
+	FacetQueryContainer * facetQueryContainer;
+	// sort parser parameters
+	SortQueryContainer * sortQueryContainer;
+
     // different search type specific parameters
     TopKParameterContainer * topKParameterContainer; // contains all Top k only parameters. currently none.
-    GetAllResultsParameterContainer * getAllResultsParameterContainer; //getAllResults specefic params
+    GetAllResultsParameterContainer * getAllResultsParameterContainer; //getAllResults specefic params. currently none.
+    // both of the above members are just place holders. They are actually used now.
     GeoParameterContainer * geoParameterContainer; // Geo specific params
 
     /// messages for the query processing pipeline

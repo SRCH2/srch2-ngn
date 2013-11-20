@@ -273,25 +273,14 @@ void QueryRewriter::prepareFieldFilters() {
 // 2. If facet is disabled by configuration, facet information should be removed.
 void QueryRewriter::prepareFacetFilterInfo() {
 
-    FacetQueryContainer * facetQueryContainer = NULL;
-    if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-        if (paramContainer->getAllResultsParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // we have facet filter
-            facetQueryContainer =
-                    paramContainer->getAllResultsParameterContainer->facetQueryContainer;
-        }
+	if(paramContainer->hasParameterInQuery(FacetQueryHandler) == false){
+		return; // no facet available to validate
+	}
+    FacetQueryContainer * facetQueryContainer = paramContainer->facetQueryContainer;
 
-    }
-
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-        if (paramContainer->geoParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // we have facet filter
-            facetQueryContainer =
-                    paramContainer->geoParameterContainer->facetQueryContainer;
-        }
-    }
-
-    if (facetQueryContainer == NULL) { // there is no facet filter
+    if (facetQueryContainer == NULL) { // it's just for double check, we should never go into this if
+    	// there is no facet query to validate but FacetQueryHandler is in parameters vector
+    	ASSERT(false);
         return;
     }
 
@@ -301,36 +290,16 @@ void QueryRewriter::prepareFacetFilterInfo() {
     if (!indexDataContainerConf->isFacetEnabled()) {
 
         // remove facet flag from queryParameters
-
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-
-            paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.begin(),
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.end(),
-                            FacetQueryHandler),
-                    paramContainer->getAllResultsParameterContainer->parametersInQuery.end());
-        } else if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-
-            paramContainer->geoParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->geoParameterContainer->parametersInQuery.begin(),
-                            paramContainer->geoParameterContainer->parametersInQuery.end(),
-                            FacetQueryHandler),
-                    paramContainer->geoParameterContainer->parametersInQuery.end());
-        }
+		paramContainer->parametersInQuery.erase(
+				remove(
+						paramContainer->parametersInQuery.begin(),
+						paramContainer->parametersInQuery.end(),
+						FacetQueryHandler),
+				paramContainer->parametersInQuery.end());
 
         // free facet container
         delete facetQueryContainer;
-
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-            paramContainer->getAllResultsParameterContainer->facetQueryContainer = NULL;
-
-        }
-
-        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-            paramContainer->geoParameterContainer->facetQueryContainer = NULL;
-        }
+		paramContainer->facetQueryContainer = NULL;
 
         return;
     }
@@ -834,54 +803,26 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
         plan.getPostProcessingPlan()->addFilterToPlan(pqFilter);
     }
 
-    // 3. If the search type is GetAllResults or Geo, look for Sort and Facet
-    if (plan.getSearchType() == GetAllResultsSearchType) {
-        // look for SortFiler
-        if (paramContainer->getAllResultsParameterContainer->hasParameterInQuery(
-                SortQueryHandler)) { // there is a sort filter
-            srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
-            sortFilter->evaluator =
-            		paramContainer->getAllResultsParameterContainer->sortQueryContainer->evaluator;
-            plan.getPostProcessingPlan()->addFilterToPlan(sortFilter);
-        }
+    // 3. look for Sort and Facet
+	// look for SortFiler
+	if (paramContainer->hasParameterInQuery(SortQueryHandler)) { // there is a sort filter
+		srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
+		sortFilter->evaluator =
+				paramContainer->sortQueryContainer->evaluator;
+		plan.getPostProcessingPlan()->addFilterToPlan(sortFilter);
+	}
 
-        // look for Facet filter
-        if (paramContainer->getAllResultsParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // there is a sort filter
-            srch2is::FacetedSearchFilter * facetFilter =
-                    new srch2is::FacetedSearchFilter();
-            FacetQueryContainer * container =
-            		paramContainer->getAllResultsParameterContainer->facetQueryContainer;
-            facetFilter->initialize(container->types, container->fields,
-                    container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps , container->numberOfTopGroupsToReturn);
+	// look for Facet filter
+	if (paramContainer->hasParameterInQuery(FacetQueryHandler)) { // there is a sort filter
+		srch2is::FacetedSearchFilter * facetFilter = new srch2is::FacetedSearchFilter();
+		FacetQueryContainer * container =
+				paramContainer->facetQueryContainer;
+		facetFilter->initialize(container->types, container->fields,
+				container->rangeStarts, container->rangeEnds,
+				container->rangeGaps , container->numberOfTopGroupsToReturn);
 
-            plan.getPostProcessingPlan()->addFilterToPlan(facetFilter);
-        }
-    } else if (plan.getSearchType() == GeoSearchType) {
-        // look for SortFiler
-        if (paramContainer->geoParameterContainer->hasParameterInQuery(
-                SortQueryHandler)) { // there is a sort filter
-            srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
-            sortFilter->evaluator =
-            		paramContainer->geoParameterContainer->sortQueryContainer->evaluator;
-            plan.getPostProcessingPlan()->addFilterToPlan(sortFilter);
-        }
-
-        // look for Facet filter
-        if (paramContainer->geoParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // there is a sort filter
-            srch2is::FacetedSearchFilter * facetFilter =
-                    new srch2is::FacetedSearchFilter();
-            FacetQueryContainer * container =
-            		paramContainer->geoParameterContainer->facetQueryContainer;
-            facetFilter->initialize(container->types, container->fields,
-                    container->rangeStarts, container->rangeEnds,
-                    container->rangeGaps , container->numberOfTopGroupsToReturn);
-
-            plan.getPostProcessingPlan()->addFilterToPlan(facetFilter);
-        }
-    }
+		plan.getPostProcessingPlan()->addFilterToPlan(facetFilter);
+	}
 
 }
 

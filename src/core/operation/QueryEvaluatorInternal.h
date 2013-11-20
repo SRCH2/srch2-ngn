@@ -139,6 +139,9 @@ private:
 
     QueryEvaluatorRuntimeParametersContainer parameters;
     Cache *cacheManager;
+    // search functions for map search
+    int searchMapQuery(const Query *query, QueryResults* queryResults);
+    void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
 };
 
 }
