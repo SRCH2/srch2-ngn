@@ -9,6 +9,8 @@
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include "util/CustomizableJsonWriter.h"
+
 
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
@@ -36,6 +38,7 @@ using namespace snappy;
 
 namespace srch2 {
 namespace httpwrapper {
+
 
 /**
  * Create evbuffer. If failed, send 503 response.
@@ -111,8 +114,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
-    Json::FastWriter writer;
+
     Json::Value root;
+    static std::string internalRecordTag = "srch2_internal_record_123456789";
+
+    std::vector<std::string> tags;
+    tags.push_back(internalRecordTag);
+    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
+    // parse the internalRecordTag string to add it to the JSON object.
+    CustomizableJsonWriter writer(tags);
 
     // For logging
     string logQueries;
@@ -148,15 +158,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     Json::Reader reader;
                     reader.parse(uncompressedInMemoryRecordString, in_mem_String,
                             false);
-                    root["results"][counter]["record"] = in_mem_String;
+                    root["results"][counter][internalRecordTag] = in_mem_String;
                 }
                 ++counter;
             }
 
         } else // the query is including keywords:(1)only keywords (2)keywords+geo
         {
-            for (unsigned i = start; i < end; ++i) {
 
+            for (unsigned i = start; i < end; ++i) {
                 root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
                 root["results"][counter]["score"] = queryResults->getResultScore(i)
@@ -184,7 +194,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                 if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                         || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                    unsigned internalRecordId = queryResults->getInternalRecordId(
+                	unsigned internalRecordId = queryResults->getInternalRecordId(
                             i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
@@ -195,14 +205,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                             compressedInMemoryRecordString.size(),
                             &uncompressedInMemoryRecordString);
 
-                    Json::Value in_mem_String;
-                    Json::Reader reader;
-                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                            false);
-                    root["results"][counter]["record"] = in_mem_String;
+                    // The class CustomizableJsonWriter allows us to
+                    // attach the data string to the JSON tree without parsing it.
+                    root["results"][counter][internalRecordTag] = uncompressedInMemoryRecordString;
                 }
                 ++counter;
             }
+
             root["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 string &term = *(query->getQueryTerms()->at(i)->getKeyword());
