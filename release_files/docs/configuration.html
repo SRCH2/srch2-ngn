@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -78,7 +78,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#protectedKeyWordsFilter">11.5.3 Protected Words</a></br><br>
 </td></tr></tbody></table>
 
 </div>
@@ -462,12 +462,17 @@ example shows how to enable this indexing:</p>
 
 <h3 id="PorterStemFilter">11.5.1 Stemmer, Optional</h3>
 <p>The engine supports <a href="http://tartarus.org/martin/PorterStemmer/">Porter Stemming</a>. It uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.</p>
-<pre><code>&lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;stemmer-dictionary.txt&quot; /&gt;
+<pre><code>&lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;srch2_stemmer_dictionary.txt&quot; /&gt;
 </code></pre>
 
 <h3 id="StopFilter">11.5.2 Stop Words, Optional</h3>
 <p>It specifies a file of stop words that are ignored by the engine. Providing an empty string ("") for the "words" parameter disables this filter.</p>
-<pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;stop-words.txt&quot; /&gt;
+<pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;srch2_stop_words.txt&quot; /&gt;
+</code></pre>
+
+<h3 id="protectedKeyWordsFilter">11.5.3 Protect Words Filter, Optional</h3>
+<p>It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&amp;T". Providing an empty string ("") for the "words" parameter disables this filter.</p>
+<pre><code>&lt;filter name=&quot;protectedKeyWordsFilter&quot; words=&quot;srch2_protected_words.txt&quot; /&gt;
 </code></pre>
 
 </table>
