@@ -9,7 +9,7 @@
 
 using namespace Json;
 
-CustomizableJsonWriter::CustomizableJsonWriter(std::vector<std::string> tags)
+CustomizableJsonWriter::CustomizableJsonWriter(std::vector<std::pair<std::string, std::string> > *tags)
 {
 	this->skipTags = tags;
 	yamlCompatiblityEnabled_ = false;
@@ -78,9 +78,13 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 
 	            // if current field is in skipTags, then regard this field as a string
 	            bool skipFlag = false;
-	            for(int i = 0; i < this->skipTags.size(); i++) {
-	            	if(name == this->skipTags[i]) {
-	            		skipFlag = true; break;
+	            unsigned idx = 0;
+	            for(idx = 0; idx < this->skipTags->size(); idx++) {
+	            	// If the name of the value is equal to one of the tags we want
+	            	// to skip, we set the "skipFlag" to true.
+	            	if(name == this->skipTags->at(idx).first) {
+	            		skipFlag = true;
+	            		break;
 	            	}
 	            }
 
@@ -90,11 +94,10 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 														  : ":";
 					writeValue( value[name] );
 	            } else {
-					document_ += Json::valueToQuotedString( name.c_str() );
+					document_ += Json::valueToQuotedString( this->skipTags->at(idx).second.c_str() );
 					document_ += yamlCompatiblityEnabled_ ? ": "
 														  : ":";
-					std::string content = value[name].asCString();
-					document_ += content ;
+					document_ += value[name].asCString() ;
 	            }
 	         }
 	         document_ += "}";

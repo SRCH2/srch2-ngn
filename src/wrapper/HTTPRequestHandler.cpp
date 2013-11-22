@@ -116,13 +116,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
 
     Json::Value root;
-    static std::string internalRecordTag = "srch2_internal_record_123456789";
+    static std::pair<std::string, std::string> internalRecordTags("srch2_internal_record_123456789", "record");
 
-    std::vector<std::string> tags;
-    tags.push_back(internalRecordTag);
+    std::vector<std::pair<std::string, std::string> > tags;
+    tags.push_back(internalRecordTags);
     // We use CustomizableJsonWriter with the internal record tag so that we don't need to
     // parse the internalRecordTag string to add it to the JSON object.
-    CustomizableJsonWriter writer(tags);
+    CustomizableJsonWriter writer(&tags);
 
     // For logging
     string logQueries;
@@ -154,11 +154,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                             compressedInMemoryRecordString.size(),
                             &uncompressedInMemoryRecordString);
 
-                    Json::Value in_mem_String;
-                    Json::Reader reader;
-                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                            false);
-                    root["results"][counter][internalRecordTag] = in_mem_String;
+                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
                 }
                 ++counter;
             }
@@ -207,7 +203,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][internalRecordTag] = uncompressedInMemoryRecordString;
+                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
                 }
                 ++counter;
             }

@@ -16,7 +16,7 @@
 // The goal is to save parsing time.
 class CustomizableJsonWriter : public Json::Writer {
 public:
-	CustomizableJsonWriter(std::vector<std::string> tags);
+	CustomizableJsonWriter(std::vector<std::pair<std::string, std::string> > *tags);
 	virtual ~CustomizableJsonWriter() { };
 	void enableYAMLCompatibility();
 
@@ -25,7 +25,7 @@ public:
 private:
 	void writeValue( const Json::Value &value );
 
-	std::vector<std::string> skipTags;
+	std::vector<std::pair<std::string, std::string> > *skipTags;
     std::string document_;
     bool yamlCompatiblityEnabled_;
 };
