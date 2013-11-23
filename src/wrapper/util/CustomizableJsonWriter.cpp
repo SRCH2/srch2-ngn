@@ -8,8 +8,9 @@
 #include <util/CustomizableJsonWriter.h>
 
 using namespace Json;
+using namespace std;
 
-CustomizableJsonWriter::CustomizableJsonWriter(std::vector<std::pair<std::string, std::string> > *tags)
+CustomizableJsonWriter::CustomizableJsonWriter(vector<pair<string, string> > *tags)
 {
 	this->skipTags = tags;
 	yamlCompatiblityEnabled_ = false;
@@ -33,25 +34,25 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 {
 	   switch ( value.type() )
 	   {
-	   case Json::nullValue:
+	   case nullValue:
 	      document_ += "null";
 	      break;
-	   case Json::intValue:
-	      document_ += Json::valueToString( value.asInt() );
+	   case intValue:
+	      document_ += valueToString( value.asInt() );
 	      break;
-	   case Json::uintValue:
-	      document_ += Json::valueToString( value.asUInt() );
+	   case uintValue:
+	      document_ += valueToString( value.asUInt() );
 	      break;
-	   case Json::realValue:
-	      document_ += Json::valueToString( value.asDouble() );
+	   case realValue:
+	      document_ += valueToString( value.asDouble() );
 	      break;
-	   case Json::stringValue:
-	      document_ += Json::valueToQuotedString( value.asCString() );
+	   case stringValue:
+	      document_ += valueToQuotedString( value.asCString() );
 	      break;
-	   case Json::booleanValue:
-	      document_ += Json::valueToString( value.asBool() );
+	   case booleanValue:
+	      document_ += valueToString( value.asBool() );
 	      break;
-	   case Json::arrayValue:
+	   case arrayValue:
 	      {
 	         document_ += "[";
 	         int size = value.size();
@@ -64,15 +65,15 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 	         document_ += "]";
 	      }
 	      break;
-	   case Json::objectValue:
+	   case objectValue:
 	      {
-	    	  Json::Value::Members members( value.getMemberNames() );
+	    	  Value::Members members( value.getMemberNames() );
 	         document_ += "{";
-	         for ( Json::Value::Members::iterator it = members.begin();
+	         for ( Value::Members::iterator it = members.begin();
 	               it != members.end();
 	               ++it )
 	         {
-	            const std::string &name = *it;
+	            const string &name = *it;
 	            if ( it != members.begin() )
 	               document_ += ",";
 
