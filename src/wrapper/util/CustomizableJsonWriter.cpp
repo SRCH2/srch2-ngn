@@ -94,6 +94,7 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 														  : ":";
 					writeValue( value[name] );
 	            } else {
+	            	// We use the second string in the pair as the json label
 					document_ += Json::valueToQuotedString( this->skipTags->at(idx).second.c_str() );
 					document_ += yamlCompatiblityEnabled_ ? ": "
 														  : ":";

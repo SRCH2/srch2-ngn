@@ -35,6 +35,7 @@ using srch2is::QueryResultsInternal;
 using srch2is::QueryResults;
 
 using namespace snappy;
+using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -116,9 +117,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
 
     Json::Value root;
-    static std::pair<std::string, std::string> internalRecordTags("srch2_internal_record_123456789", "record");
+    static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
 
-    std::vector<std::pair<std::string, std::string> > tags;
+    // In each pair, the first one is the internal json label for the unparsed text, and
+    // the second one is the final json label used in the print() function
+    vector<pair<string, string> > tags;
     tags.push_back(internalRecordTags);
     // We use CustomizableJsonWriter with the internal record tag so that we don't need to
     // parse the internalRecordTag string to add it to the JSON object.
