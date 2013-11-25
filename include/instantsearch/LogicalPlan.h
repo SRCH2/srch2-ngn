@@ -30,6 +30,7 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+class LogicalPlanNodeAnnotation;
 /*
  * LogicalPlanNode is the common class used for the logical plan tree operators and operands. And tree is
  * constructed by attaching the instances of this class and the pointer to the root is kept in LogicalPlan.
@@ -42,6 +43,7 @@ public:
 	vector<LogicalPlanNode *> children;
 	Term * exactTerm;
 	Term * fuzzyTerm;
+	LogicalPlanNodeAnnotation * stats;
 
 	~LogicalPlanNode();
 
@@ -54,6 +56,7 @@ private:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
 };
+
 
 /*
  * LogicalPlan is the class which maintains the logical plan of query and its metadata. The logical plan is
@@ -86,7 +89,7 @@ public:
 	std::string docIdForRetrieveByIdSearchType;
 	ResultsPostProcessorPlan * postProcessingPlan;
 	/// Plan related information
-	unsigned searchType;
+	srch2::instantsearch::QueryType searchType;
 	int offset;
 	int resultsToRetrieve;
 	bool shouldRunFuzzyQuery;
@@ -115,6 +118,9 @@ public:
 		return tree;
 	}
 
+	const LogicalPlanNode * getTreeForRead() const{
+		return tree;
+	}
 	void setTree(LogicalPlanNode * tree){
 		this->tree = tree;
 	}
@@ -143,7 +149,7 @@ public:
 		this->resultsToRetrieve = resultsToRetrieve;
 	}
 
-	unsigned getSearchType() const {
+	srch2is::QueryType getSearchType() const {
 		return searchType;
 	}
 	Query* getExactQuery() {
@@ -192,7 +198,7 @@ public:
 //		return 0;
 //	}
 
-	void setSearchType(unsigned searchType) {
+	void setSearchType(srch2is::QueryType searchType) {
 		this->searchType = searchType;
 	}
 

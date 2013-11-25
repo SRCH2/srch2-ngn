@@ -14,6 +14,7 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
+	stats = NULL;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
@@ -21,6 +22,7 @@ LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
+	stats = NULL;
 }
 
 LogicalPlanNode::~LogicalPlanNode(){
@@ -35,6 +37,7 @@ LogicalPlanNode::~LogicalPlanNode(){
 			delete *child;
 		}
 	}
+	if(stats != NULL) delete stats;
 }
 
 unsigned LogicalPlanNode::getNodeId(){
