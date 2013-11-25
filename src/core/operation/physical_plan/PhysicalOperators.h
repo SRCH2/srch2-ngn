@@ -44,9 +44,9 @@ class PhysicalOperatorFactory;
 class RandomAccessVerificationTermOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationTermOperator();
 private:
@@ -73,9 +73,9 @@ public:
 class RandomAccessVerificationAndOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationAndOperator();
 private:
@@ -103,9 +103,9 @@ public:
 class RandomAccessVerificationOrOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationOrOperator();
 private:
@@ -133,9 +133,9 @@ public:
 class RandomAccessVerificationNotOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationNotOperator();
 private:
@@ -167,9 +167,9 @@ public:
 class SortByIdOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByIdOperator();
 private:
@@ -201,9 +201,9 @@ public:
 class SortByScoreOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByScoreOperator();
 private:
@@ -235,10 +235,10 @@ public:
 class MergeTopKOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem *
 	getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeTopKOperator();
 private:
@@ -269,9 +269,9 @@ public:
 class MergeSortedByIDOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeSortedByIDOperator();
 private:
@@ -302,9 +302,9 @@ public:
 class MergeByShortestListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeByShortestListOperator();
 private:
@@ -335,9 +335,9 @@ public:
 class UnionSortedByIDOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionSortedByIDOperator();
 private:
@@ -368,9 +368,9 @@ public:
 class UnionSortedByScoreOperatorTopK : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionSortedByScoreOperatorTopK();
 private:
@@ -401,9 +401,9 @@ public:
 class UnionSortedByScoreOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionSortedByScoreOperator();
 private:

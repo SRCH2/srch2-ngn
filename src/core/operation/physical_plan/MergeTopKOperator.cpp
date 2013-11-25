@@ -14,13 +14,13 @@ MergeTopKOperator::MergeTopKOperator() {
 MergeTopKOperator::~MergeTopKOperator(){
 	//TODO
 }
-bool MergeTopKOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager){
+bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool MergeTopKOperator::close(){
+bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

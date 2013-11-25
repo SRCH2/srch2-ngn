@@ -14,13 +14,13 @@ MergeByShortestListOperator::MergeByShortestListOperator() {
 MergeByShortestListOperator::~MergeByShortestListOperator(){
 	//TODO
 }
-bool MergeByShortestListOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager){
+bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool MergeByShortestListOperator::close(){
+bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

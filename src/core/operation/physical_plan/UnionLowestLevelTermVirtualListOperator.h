@@ -37,9 +37,9 @@ namespace instantsearch {
 class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
-	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager);
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close();
+	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionLowestLevelTermVirtualListOperator();
 private:

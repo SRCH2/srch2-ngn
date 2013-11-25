@@ -14,13 +14,13 @@ MergeSortedByIDOperator::MergeSortedByIDOperator() {
 MergeSortedByIDOperator::~MergeSortedByIDOperator(){
 	//TODO
 }
-bool MergeSortedByIDOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager){
+bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool MergeSortedByIDOperator::close(){
+bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

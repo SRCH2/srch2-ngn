@@ -14,13 +14,13 @@ UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
 	//TODO
 }
-bool UnionLowestLevelTermVirtualListOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
+bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool UnionLowestLevelTermVirtualListOperator::close(){
+bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

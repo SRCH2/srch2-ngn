@@ -13,13 +13,13 @@ UnionSortedByScoreOperatorTopK::UnionSortedByScoreOperatorTopK() {
 UnionSortedByScoreOperatorTopK::~UnionSortedByScoreOperatorTopK(){
 	//TODO
 }
-bool UnionSortedByScoreOperatorTopK::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
+bool UnionSortedByScoreOperatorTopK::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * UnionSortedByScoreOperatorTopK::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool UnionSortedByScoreOperatorTopK::close(){
+bool UnionSortedByScoreOperatorTopK::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool UnionSortedByScoreOperatorTopK::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

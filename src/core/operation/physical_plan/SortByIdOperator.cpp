@@ -13,13 +13,13 @@ SortByIdOperator::SortByIdOperator() {
 SortByIdOperator::~SortByIdOperator(){
 	//TODO
 }
-bool SortByIdOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
+bool SortByIdOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * SortByIdOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool SortByIdOperator::close(){
+bool SortByIdOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool SortByIdOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

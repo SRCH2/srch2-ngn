@@ -8,20 +8,20 @@ namespace instantsearch {
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
-	//TODO
+	queryEvaluator = NULL;
 }
 
 UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
 	//TODO
 }
-bool UnionLowestLevelSimpleScanOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
-	//TODO
+bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
+    // TODO
 }
 PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool UnionLowestLevelSimpleScanOperator::close(){
-	//TODO
+bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
+	queryEvaluator = NULL;
 }
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	//TODO

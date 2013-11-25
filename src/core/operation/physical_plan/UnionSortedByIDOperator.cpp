@@ -13,13 +13,13 @@ UnionSortedByIDOperator::UnionSortedByIDOperator() {
 UnionSortedByIDOperator::~UnionSortedByIDOperator(){
 	//TODO
 }
-bool UnionSortedByIDOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
+bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-bool UnionSortedByIDOperator::close(){
+bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

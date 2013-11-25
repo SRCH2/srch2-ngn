@@ -15,13 +15,13 @@ RandomAccessVerificationAndOperator::RandomAccessVerificationAndOperator() {
 RandomAccessVerificationAndOperator::~RandomAccessVerificationAndOperator(){
 	//TODO
 }
-bool RandomAccessVerificationAndOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * catalogManager){
+bool RandomAccessVerificationAndOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 PhysicalPlanRecordItem * RandomAccessVerificationAndOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	return NULL;
 }
-bool RandomAccessVerificationAndOperator::close(){
+bool RandomAccessVerificationAndOperator::close(PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 bool RandomAccessVerificationAndOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

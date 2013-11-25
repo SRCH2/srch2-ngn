@@ -80,9 +80,9 @@ class PhysicalPlanRecordItem{
 // The iterator interface used to implement iterator model
 class PhysicalPlanIteratorExecutionInterface{
 public:
-	virtual bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager) = 0;
+	virtual bool open(QueryEvaluatorInternal * queryEvaluator,PhysicalPlanExecutionParameters & params) = 0;
 	virtual PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) = 0;
-	virtual bool close() = 0;
+	virtual bool close(PhysicalPlanExecutionParameters & params) = 0;
 
 	virtual ~PhysicalPlanIteratorExecutionInterface(){};
 };
