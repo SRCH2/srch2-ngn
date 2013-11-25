@@ -45,7 +45,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#protectedKeyWordsFilter">11.5.3 Protected Words</a></br><br>
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -487,11 +487,17 @@ It specifies the analyzer used by the engine. <br>
 
 The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). It uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.
 ```
-<filter name="PorterStemFilter" dictionary="stemmer-dictionary.txt" />
+<filter name="PorterStemFilter" dictionary="srch2_stemmer_dictionary.txt" />
 ```
 ###11.5.2 Stop Words, Optional{id="StopFilter"}
 
 It specifies a file of stop words that are ignored by the engine. Providing an empty string ("") for the "words" parameter disables this filter.
 ```
-<filter name="StopFilter" words="stop-words.txt" />
+<filter name="StopFilter" words="srch2_stop_words.txt" />
+```
+###11.5.3 Protect Words Filter, Optional{id="protectedKeyWordsFilter"}
+
+It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&T". Providing an empty string ("") for the "words" parameter disables this filter.
+```
+<filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
 ```

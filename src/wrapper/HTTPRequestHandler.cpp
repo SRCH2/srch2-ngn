@@ -9,6 +9,8 @@
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
+#include "util/CustomizableJsonWriter.h"
+
 
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
@@ -33,9 +35,11 @@ using srch2is::QueryResultsInternal;
 using srch2is::QueryResults;
 
 using namespace snappy;
+using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
+
 
 /**
  * Create evbuffer. If failed, send 503 response.
@@ -111,8 +115,17 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
-    Json::FastWriter writer;
+
     Json::Value root;
+    static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
+
+    // In each pair, the first one is the internal json label for the unparsed text, and
+    // the second one is the final json label used in the print() function
+    vector<pair<string, string> > tags;
+    tags.push_back(internalRecordTags);
+    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
+    // parse the internalRecordTag string to add it to the JSON object.
+    CustomizableJsonWriter writer(&tags);
 
     // For logging
     string logQueries;
@@ -144,19 +157,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                             compressedInMemoryRecordString.size(),
                             &uncompressedInMemoryRecordString);
 
-                    Json::Value in_mem_String;
-                    Json::Reader reader;
-                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                            false);
-                    root["results"][counter]["record"] = in_mem_String;
+                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
                 }
                 ++counter;
             }
 
         } else // the query is including keywords:(1)only keywords (2)keywords+geo
         {
-            for (unsigned i = start; i < end; ++i) {
 
+            for (unsigned i = start; i < end; ++i) {
                 root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
                 root["results"][counter]["score"] = queryResults->getResultScore(i)
@@ -184,7 +193,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                 if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                         || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                    unsigned internalRecordId = queryResults->getInternalRecordId(
+                	unsigned internalRecordId = queryResults->getInternalRecordId(
                             i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
@@ -195,14 +204,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                             compressedInMemoryRecordString.size(),
                             &uncompressedInMemoryRecordString);
 
-                    Json::Value in_mem_String;
-                    Json::Reader reader;
-                    reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                            false);
-                    root["results"][counter]["record"] = in_mem_String;
+                    // The class CustomizableJsonWriter allows us to
+                    // attach the data string to the JSON tree without parsing it.
+                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
                 }
                 ++counter;
             }
+
             root["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 string &term = *(query->getQueryTerms()->at(i)->getKeyword());
@@ -211,6 +219,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     logQueries += "";
                 logQueries += term;
             }
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
+
 
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
@@ -226,7 +240,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     logQueries += "";
                 logQueries += term;
             }
-
+            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
+                bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
+                root["query_keywords_complete"][i] = isCompleteTermType;
+            }
             root["fuzzy"] = (int) queryPlan.isFuzzy();
     	}
     }
@@ -249,6 +267,11 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     root["results_found"] = retrievedResults;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
+    // Since estimation of number of results can return a wrong number, if this value is less
+    // than the actual number of found results, we use the real number.
+    if(estimatedNumberOfResults < (long int)retrievedResults){
+    	estimatedNumberOfResults = (long int)retrievedResults;
+    }
     if(estimatedNumberOfResults != -1){
         // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
         // it to unsigned (because the thirdparty library we use here does not accept long integers.)

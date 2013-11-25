@@ -180,7 +180,7 @@ private:
     void findKMostPopularSuggestionsSorted(Term *term ,
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
-    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
+    		std::vector<SuggestionInfo > & suggestionPairs) const;
 
     unsigned estimateNumberOfResults(const Query *query, std::vector<PrefixActiveNodeSet *>& activeNodes) const;
     float getPrefixPopularityProbability(PrefixActiveNodeSet * activeNodes , unsigned threshold) const;

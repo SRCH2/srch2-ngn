@@ -49,7 +49,7 @@ bool ChineseTokenizer::incrementToken(){
     unsigned currentType = CharSet::DELIMITER_TYPE;
     CharType currentChar = 0;
 
-    while(currentType == CharSet::DELIMITER_TYPE){ // We ignore delimiters
+    while(currentType == CharSet::DELIMITER_TYPE || currentType == CharSet::WHITESPACE){ // We ignore delimiters and whitespaces
         if ( isEnd() ){
             return false;
         }
@@ -107,6 +107,7 @@ bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType curren
     while (true){
         switch(currentType){
             case CharSet::DELIMITER_TYPE:
+            case CharSet::WHITESPACE:
                 ASSERT(!pCurrentToken->empty());
                 return true;
             case CharSet::LATIN_TYPE:

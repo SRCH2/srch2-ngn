@@ -103,6 +103,7 @@ const char* const ConfigManager::searchableString = "searchable";
 const char* const ConfigManager::searcherTypeString = "searchertype";
 const char* const ConfigManager::srch2HomeString = "srch2home";
 const char* const ConfigManager::stopFilterString = "StopFilter";
+const char* const ConfigManager::protectedWordFilterString = "protectedKeyWordsFilter";
 const char* const ConfigManager::supportSwapInEditDistanceString = "supportswapineditdistance";
 const char* const ConfigManager::synonymFilterString = "SynonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
@@ -742,6 +743,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->stemmerFile = "";
     this->stopFilterFilePath = "";
     this->synonymFilterFilePath = "";
+    this->protectedWordsFilePath = "";
     this->synonymKeepOrigFlag = false;
 
     configAttribute = configDoc.child(configString).child(schemaString).child(typesString);
@@ -779,6 +781,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     }
                               }
                             }*/
+                            else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
+                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
+                                    this->protectedWordsFilePath = this->srch2Home
+                                            + string(field.attribute("words").value());
+                                }
+                            }
                         }
                     }
                 }
@@ -1496,6 +1504,10 @@ string ConfigManager::getStemmerFile() const {
 
 string ConfigManager::getSynonymFilePath() const {
     return synonymFilterFilePath;
+}
+
+string ConfigManager::getProtectedWordsFilePath() const {
+    return protectedWordsFilePath;
 }
 
 bool ConfigManager::getSynonymKeepOrigFlag() const {

@@ -132,6 +132,25 @@ private:
     }
 };
 
+class TrieNode;
+
+class SuggestionInfo {
+public:
+	unsigned distance;
+	float probabilityValue;
+	// The path from root to this trie node gives the query keyword. For example : "you"
+	const TrieNode * queryTermNode;
+	// The path from root to this trie node gives the prefix which is the completed suggestion of query keyword. For example "your" for query "you"
+	const TrieNode * suggestedCompleteTermNode;
+	SuggestionInfo(unsigned distance,
+			float probabilityValue,
+			const TrieNode * queryTermNode,
+			const TrieNode * suggestedCompleteTermNode) : queryTermNode(queryTermNode), suggestedCompleteTermNode(suggestedCompleteTermNode) {
+		this->distance = distance;
+		this->probabilityValue = probabilityValue;
+	}
+};
+
 
 class TrieNode
 {
@@ -381,7 +400,8 @@ public:
 
     // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
     // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
-    void findMostPopularSuggestionsInThisSubTrie(unsigned ed, std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
+    void findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, std::vector<SuggestionInfo > & suggestions,
+    		const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
 

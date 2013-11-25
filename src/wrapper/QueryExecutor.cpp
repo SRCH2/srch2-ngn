@@ -168,35 +168,78 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
         return;
     }
 
+
+
+
     int idsExactFound = 0;
 
-    srch2is::QueryResults *queryResults = NULL;
-    unsigned idsFound = 0;
+    srch2is::QueryResults *exactQueryResults = new QueryResults(
+            this->queryResultFactory, indexSearcher,
+            this->queryPlan.getExactQuery());
+    idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(),
+    		exactQueryResults, 0 , this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
+            this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
 
-    if (!this->queryPlan.isFuzzy()) {
-        queryResults = new srch2is::QueryResults(this->queryResultFactory,
-                indexSearcher, this->queryPlan.getExactQuery());
-        idsFound = indexSearcher->search(this->queryPlan.getExactQuery(),
-                queryResults, 0 , this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
-                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-    } else {
-        queryResults = new srch2is::QueryResults(this->queryResultFactory,
-                indexSearcher, this->queryPlan.getFuzzyQuery());
-        idsFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
-                queryResults, 0, this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
-                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    //fill visitedList
+    std::set<std::string> exactVisitedList;
+    for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
+        exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
     }
 
+    int idsFuzzyFound = 0;
+
+    // If we got less than getGetAllResultsNumberOfResultsToFindInEstimationMode (e.g. 500) results
+    // we should try fuzzy, otherwise we don't have to because H2 heuristic triggers topK to find
+    // getGetAllResultsNumberOfResultsToFindInEstimationMode results anyways.
+    if (this->queryPlan.isFuzzy()
+            && (idsExactFound < (int) this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode() )) {
+        QueryResults *fuzzyQueryResults = new QueryResults(
+                this->queryResultFactory, indexSearcher,
+                this->queryPlan.getFuzzyQuery());
+        idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
+        		fuzzyQueryResults, 0, this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
+                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+        // create final queryResults to print.
+
+        QueryResultsInternal *exactQueryResultsInternal =
+                exactQueryResults->impl;
+        QueryResultsInternal *fuzzyQueryResultsInternal =
+                fuzzyQueryResults->impl;
+
+        unsigned fuzzyQueryResultsIter = 0;
+
+        while (exactQueryResultsInternal->sortedFinalResults.size()
+                < (unsigned) (this->queryPlan.getOffset()
+                        + this->queryPlan.getResultsToRetrieve())
+                && fuzzyQueryResultsIter
+                        < fuzzyQueryResults->getNumberOfResults()) {
+            std::string recordId = fuzzyQueryResults->getRecordId(
+                    fuzzyQueryResultsIter);
+            if (!exactVisitedList.count(recordId)) // record id not there
+                    {
+                exactQueryResultsInternal->sortedFinalResults.push_back(
+                        fuzzyQueryResultsInternal->sortedFinalResults[fuzzyQueryResultsIter]);
+            }
+            fuzzyQueryResultsIter++;
+        }
+        exactQueryResultsInternal->estimatedNumberOfResults = fuzzyQueryResultsInternal->estimatedNumberOfResults;
+        delete fuzzyQueryResults;
+    }else if (this->queryPlan.isFuzzy()){
+    	// this branch is the case that we have enough results for exact so we do not want to perform a
+    	// fuzzy search, but still we need to get the estimated number of results for fuzzy query.
+    	// The reason is that regardless of our policy (first exact, then fuzzy) we should always return a correct estimation
+    	// of number of results. If we don't use fuzzy query to estimate this number, we get a very smaller number for this estimation
+    	// which is incorrect.
+        QueryResultsInternal *exactQueryResultsInternal =
+                exactQueryResults->impl;
+    	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());
+    }
 
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
-    executePostProcessingPlan(
-            (this->queryPlan.isFuzzy()) ?
-                    this->queryPlan.getFuzzyQuery() :
-                    this->queryPlan.getExactQuery(), queryResults,
-            finalResults);
+    executePostProcessingPlan(this->queryPlan.getExactQuery(), exactQueryResults, finalResults);
 
-    delete queryResults;
+    delete exactQueryResults;
 }
 
 void QueryExecutor::executeGeo(QueryResults * finalResults) {

@@ -69,7 +69,8 @@ void Java_com_srch2_StringEngine_setString
 void StringEngine::setString(jobject string) {
   /* it does not matter that refiningString is used for all String Attributes
      since they all share a common getValue method call */
-  this->value = refiningString.toString(string);
+  this->value = refiningString.toValue 
+    <JNIClass::MakeUTF8StringFromUTF16JString>(string);
 }
 
 /** Returns the SearchableString equivalant of the string value stored in the
@@ -84,7 +85,8 @@ jobject Java_com_srch2_StringEngine_getSearchableString (JNIEnv *env,
     StringEngine.
   */
 jobject StringEngine::getSearchableString() {
-  return searchableString.createNew(value);
+  return searchableString.createNew
+    <JNIClass::MakeUTF8StringFromUTF16JString> (value);
 }
 
 /** Returns the RefiningString equivalent of the string value stored in the
@@ -100,7 +102,8 @@ jobject Java_com_srch2_StringEngine_getRefiningString (JNIEnv *env,
     StringEngine.
   */
 jobject StringEngine::getRefiningString() {
-  return refiningString.createNew(value);
+  return refiningString.createNew
+    <JNIClass::MakeUTF8StringFromUTF16JString> (value);
 }
 
 jobject Java_com_srch2_StringEngine_getIndexedString (JNIEnv *env,
@@ -111,7 +114,8 @@ jobject Java_com_srch2_StringEngine_getIndexedString (JNIEnv *env,
     StringEngine.
   */
 jobject StringEngine::getIndexedString() {
-  return indexedString.createNew(value);
+  return indexedString.createNew
+    <JNIClass::MakeUTF8StringFromUTF16JString> (value);
 }
 
 /** Deletes the c++ part of the StringEngine pointed to by the given handle */

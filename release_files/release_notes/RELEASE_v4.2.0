@@ -13,3 +13,4 @@ Changes over version 4.1.0:
 * Added a parameter f.field_name.rows in a facet condition to define the number of categories with the maximal frequencies to be returned. All categories are returned by default. This parameter is only valid for categorial facets.
 * Added a control message API "resetLogger" to allow the user to use a third-party tool such as "logrotate" to manage the log file.
 * Added a facet=only query parameter which results in only returning facet results.
+* Introduced a new filter called "protectedKeyWordsFilter" to preserve special keywords such as .NET, AT&T, and C++.

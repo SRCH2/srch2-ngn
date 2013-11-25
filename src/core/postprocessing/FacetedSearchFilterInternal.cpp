@@ -317,7 +317,6 @@ void FacetedSearchFilterInternal::doFilter(IndexSearcher *indexSearcher,
 		facetResultsPtr->second->getNamesAndValues(results, numberOfGroupsToReturnForThisField);
 		output->impl->facetResults[fields.at(std::distance(facetResults.begin() , facetResultsPtr))] = std::make_pair(facetResultsPtr->first , results);
 	}
-
 }
 
 void FacetedSearchFilterInternal::preFilter(IndexSearcher *indexSearcher){

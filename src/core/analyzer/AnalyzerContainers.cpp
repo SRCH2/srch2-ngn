@@ -247,5 +247,39 @@ void StopWordContainer::saveStopWordContainer(boost::archive::binary_oarchive& o
 	oa << this->stopWordsSet;
 }
 
+
+ProtectedWordsContainer* ProtectedWordsContainer::protectedWordsContainer = NULL;
+ProtectedWordsContainer& ProtectedWordsContainer::getInstance() {
+	if (protectedWordsContainer == NULL)
+	{
+		protectedWordsContainer = new ProtectedWordsContainer();
+	}
+	return *protectedWordsContainer;
+}
+void ProtectedWordsContainer::free() {
+	if (protectedWordsContainer)
+	{
+		delete protectedWordsContainer;
+		protectedWordsContainer = NULL;
+	}
+}
+void ProtectedWordsContainer::initProtectedWordsContainer(const std::string filePath) {
+	std::string str;
+	//  using file path to create an ifstream object
+	std::ifstream input(filePath.c_str());
+		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
+	if (input.fail()) {
+	    Logger::warn("The protected words file = \"%s\" could not be opened.", filePath.c_str());
+		return;
+	}
+	//	Reads the stop word files line by line and fills the vector
+	this->protectedWords.clear();
+	while (getline(input, str)) {
+		boost::algorithm::trim(str);
+		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+		this->protectedWords.insert(str);
+	}
+}
+
 } // instantsearch
 } // namespace srch2

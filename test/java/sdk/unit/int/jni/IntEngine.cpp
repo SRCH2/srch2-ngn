@@ -64,7 +64,7 @@ void Java_com_srch2_IntEngine_setInt
 void IntEngine::setInt(jobject integer) {
   /* it does not matter that refiningInt is used for all Int Attributes
      since they all share a common getValue method call */
-  this->value = refiningInteger.toInt(integer);
+this->value = refiningInteger.toValue(integer);
 }
 
 /** Returns the RefiningInt equivalent of the string value stored in the
