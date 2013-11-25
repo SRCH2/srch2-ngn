@@ -20,7 +20,7 @@
 #define __WRAPPER_QUERYOPTIMIZER_H__
 
 #include "instantsearch/Constants.h"
-#include "operation/CatalogManager.h"
+#include "operation/HistogramManager.h"
 #include "physical_plan/PhysicalPlan.h"
 #include "instantsearch/LogicalPlan.h"
 
@@ -29,6 +29,7 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+class QueryEvaluatorInternal;
 /*
  * This class is responsible of doing two tasks :
  * 1. Translating LogicalPlan and building PhysicalPlan from it
@@ -38,15 +39,17 @@ namespace instantsearch {
  */
 class QueryOptimizer {
 public:
-	QueryOptimizer(ForwardIndex * forwardIndex ,
-			InvertedIndex * invertedIndex,
-			Trie * trie,
-			CatalogManager * catalogManager,
-			const LogicalPlan * logicalPlan);
+	QueryOptimizer(QueryEvaluatorInternal * queryEvaluator,
+			LogicalPlan * logicalPlan);
 
 	/*
+	 * 1. Find the search type based on searchType coming from wrapper layer and
+	 * ---- post processing needs.
+	 * 2. Prepare the ranker object in and put it in PhysicalPlan. (Note that because of
+	 * ---- heuristics which will be chosen later, searchType and ranker might change in later steps)
+	 *  // TODO : write other steps.
 	 *
-	 * this function builds PhysicalPlan and optimizes it
+	 * 2. this function builds PhysicalPlan and optimizes it
 	 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
 	 *           and makes sure inputs and outputs of operators are consistent.
 	 * ---- 2.2. Applies optimization rules on the physical plan
@@ -61,6 +64,24 @@ private:
 	 */
 	void buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan);
 
+	void chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan);
+
+	void preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan);
+
+	void buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationNode *> & treeOptions);
+
+	void buildIncompleteSubTreeOptions(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
+	void buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
+	void buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
+	void buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
+
+	void injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions);
+	void injectRequiredSortOperators(PhysicalPlanOptimizationNode * root);
+
+
+	PhysicalPlanOptimizationNode * findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions);
+
+	PhysicalPlanNode * buildPhysicalPlanFirstVersionFromTreeStructure(PhysicalPlanOptimizationNode * chosenTree);
 	/*
 	 * this function applies optimization rules (funtions starting with Rule_) on the plan one by one
 	 */
@@ -71,11 +92,8 @@ private:
 	 */
 	void Rule_1(PhysicalPlan & physicalPlan);
 
-	ForwardIndex * forwardIndex;
-	InvertedIndex * invertedIndex;
-	Trie * trie;
-	CatalogManager * catalogManager;
-	const LogicalPlan * logicalPlan;
+	QueryEvaluatorInternal * queryEvaluator;
+	LogicalPlan * logicalPlan;
 };
 
 }
