@@ -13,40 +13,61 @@ UnionSortedByIDOperator::UnionSortedByIDOperator() {
 UnionSortedByIDOperator::~UnionSortedByIDOperator(){
 	//TODO
 }
-bool UnionSortedByIDOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, CatalogManager * catalogManager){
+bool UnionSortedByIDOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
 	//TODO
 }
-PhysicalPlanIterable * UnionSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
 bool UnionSortedByIDOperator::close(){
 	//TODO
 }
+bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
+	//TODO
+}
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned UnionSortedByIDOperator::getCostOfOpen(){
+unsigned UnionSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned UnionSortedByIDOperator::getCostOfGetNext() {
+unsigned UnionSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned UnionSortedByIDOperator::getCostOfClose() {
+unsigned UnionSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-void UnionSortedByIDOperator::getOutputProperties(const vector<IteratorProperties> & inputProps, IteratorProperties & prop){
+void UnionSortedByIDOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	prop.addProperty(PhysicalPlanIteratorProperty_SortById);
 }
-void UnionSortedByIDOperator::getRequiredInputProperties(IteratorProperties & prop){
+void UnionSortedByIDOptimizationOperator::getRequiredInputProperties(IteratorProperties & prop){
 	// the only requirement for input is to be sorted by ID
 	prop.addProperty(PhysicalPlanIteratorProperty_SortById);
 }
-PhysicalPlanNodeType UnionSortedByIDOperator::getType() {
+PhysicalPlanNodeType UnionSortedByIDOptimizationOperator::getType() {
 	return PhysicalPlanNode_UnionSortedById;
 }
-
+bool UnionSortedByIDOptimizationOperator::validateChildren(){
+	for(unsigned i = 0 ; i < getChildrenCount() ; i++){
+		PhysicalPlanOptimizationNode * child = getChildAt(i);
+		PhysicalPlanNodeType childType = child->getType();
+		switch (childType) {
+			case PhysicalPlanNode_RandomAccessTerm:
+			case PhysicalPlanNode_RandomAccessAnd:
+			case PhysicalPlanNode_RandomAccessOr:
+			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
+				return false;
+			default:{
+				continue;
+			}
+		}
+	}
+	return true;
+}
 
 }
 }

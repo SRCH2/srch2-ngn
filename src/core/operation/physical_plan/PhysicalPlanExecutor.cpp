@@ -34,7 +34,7 @@ unsigned PhysicalPlanExecutor::findRightValueForK(){
 }
 
 
-void PhysicalPlanExecutor::run(bool exactOnly, vector<PhysicalPlanIterable *> * results){
+void PhysicalPlanExecutor::run(bool exactOnly, vector<PhysicalPlanRecordItem *> * results){
 	//TODO
 	// 1. prepare the instance of PhysicalPlanExecutionParameters
 	// 2. keep calling getNext(...) on the root until it returns null and save the records in results vector

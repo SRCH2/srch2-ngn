@@ -14,39 +14,48 @@ UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
 	//TODO
 }
-bool UnionLowestLevelTermVirtualListOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, CatalogManager * catalogManager){
+bool UnionLowestLevelTermVirtualListOperator::open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager){
 	//TODO
 }
-PhysicalPlanIterable * UnionLowestLevelTermVirtualListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
 bool UnionLowestLevelTermVirtualListOperator::close(){
 	//TODO
 }
+bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
+	//TODO
+}
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned UnionLowestLevelTermVirtualListOperator::getCostOfOpen(){
+unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	//TODO
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned UnionLowestLevelTermVirtualListOperator::getCostOfGetNext() {
+unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned UnionLowestLevelTermVirtualListOperator::getCostOfClose() {
+unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	//TODO
 }
-void UnionLowestLevelTermVirtualListOperator::getOutputProperties(const vector<IteratorProperties> & inputProps, IteratorProperties & prop){
+void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	prop.addProperty(PhysicalPlanIteratorProperty_SortByScore);
 }
-void UnionLowestLevelTermVirtualListOperator::getRequiredInputProperties(IteratorProperties & prop){
+void UnionLowestLevelTermVirtualListOptimizationOperator::getRequiredInputProperties(IteratorProperties & prop){
 	// the only requirement for input is to be directly connected to inverted index,
 	// so since no operator outputs PhysicalPlanIteratorProperty_LowestLevel TVL will be pushed down to lowest level
 	prop.addProperty(PhysicalPlanIteratorProperty_LowestLevel);
 }
-PhysicalPlanNodeType UnionLowestLevelTermVirtualListOperator::getType() {
+PhysicalPlanNodeType UnionLowestLevelTermVirtualListOptimizationOperator::getType() {
 	return PhysicalPlanNode_UnionLowestLevelTermVirtualList;
+}
+bool UnionLowestLevelTermVirtualListOptimizationOperator::validateChildren(){
+	if(getChildrenCount() > 0){ // this operator cannot have any children
+		return false;
+	}
+	return true;
 }
 
 }

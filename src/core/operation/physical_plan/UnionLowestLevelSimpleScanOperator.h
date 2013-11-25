@@ -16,8 +16,8 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#ifndef __WRAPPER_UNIONLOWESTLEVELTERMVIRTUALLISTOPERATOR_H__
-#define __WRAPPER_UNIONLOWESTLEVELTERMVIRTUALLISTOPERATOR_H__
+#ifndef __WRAPPER_UNIONLOWESTLEVELSUMPLESCANOPERATOR_H__
+#define __WRAPPER_UNIONLOWESTLEVELSUMPLESCANOPERATOR_H__
 
 #include "instantsearch/Constants.h"
 #include "index/ForwardIndex.h"
@@ -34,19 +34,19 @@ namespace instantsearch {
 /*
  * This operator is TermVirtualList implementation as a physical operator.
  */
-class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
+class UnionLowestLevelSimpleScanOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
 	bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
-	~UnionLowestLevelTermVirtualListOperator();
+	~UnionLowestLevelSimpleScanOperator();
 private:
-	UnionLowestLevelTermVirtualListOperator() ;
+	UnionLowestLevelSimpleScanOperator() ;
 };
 
-class UnionLowestLevelTermVirtualListOptimizationOperator : public PhysicalPlanOptimizationNode {
+class UnionLowestLevelSimpleScanOptimizationOperator : public PhysicalPlanOptimizationNode {
 	friend class PhysicalOperatorFactory;
 public:
 	// The cost of open of a child is considered only once in the cost computation
@@ -66,4 +66,4 @@ public:
 }
 }
 
-#endif // __WRAPPER_UNIONLOWESTLEVELTERMVIRTUALLISTOPERATOR_H__
+#endif // __WRAPPER_UNIONLOWESTLEVELSUMPLESCANOPERATOR_H__

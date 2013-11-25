@@ -25,7 +25,7 @@
 #include "index/ForwardIndex.h"
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
-#include "operation/CatalogManager.h"
+#include "operation/HistogramManager.h"
 #include "instantsearch/QueryResults.h"
 #include "PhysicalPlan.h"
 
@@ -43,7 +43,7 @@ private:
 	const LogicalPlan * logicalPlan;
 	PhysicalPlan & physicalPlan;
 	unsigned findRightValueForK();
-	void run(bool exactOnly, vector<PhysicalPlanIterable *> * results);
+	void run(bool exactOnly, vector<PhysicalPlanRecordItem *> * results);
 
 };
 

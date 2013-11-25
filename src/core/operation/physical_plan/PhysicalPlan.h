@@ -25,76 +25,138 @@
 #include "index/ForwardIndex.h"
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
-#include "operation/CatalogManager.h"
+#include "operation/HistogramManager.h"
 
 using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
 
+typedef const TrieNode* TrieNodePointer;
+
 struct PhysicalPlanExecutionParameters {
 	unsigned k;
-	// if this variable is true the operator only returns exact matches by calling getNext(...)
-	bool exactOnly;
+	// if this variable is false the operator only returns exact matches by calling getNext(...)
+	bool isFuzzy;
 	PhysicalPlanExecutionParameters(unsigned k,bool exactOnly){
 		this->k = k;
-		this->exactOnly = exactOnly ;
+		this->isFuzzy = exactOnly ;
 	}
+};
+
+struct PhysicalPlanRandomAccessVerificationParameters {
+
 };
 
 // This class is used to maintain the input/output properties of a PhysicalPlanIterator
 class IteratorProperties{
 public:
-	bool isMatchAsInputTo(const IteratorProperties & prop);
+	bool isMatchAsInputTo(const IteratorProperties & prop, IteratorProperties & reason);
 	void addProperty(PhysicalPlanIteratorProperty prop);
 	vector<PhysicalPlanIteratorProperty> properties;
 };
 
 // This class is the ancestor of all different kinds of list items in this iterator model.
 // Regardless of what kind of iterator we have, lists are implemented as sequences of PhysicalPlanIterable.
-class PhysicalPlanIterable{
+class PhysicalPlanRecordItem{
+	// getters
 	virtual unsigned getRecordId() = 0;
-	virtual unsigned getRecordScore() = 0;
-	virtual ~PhysicalPlanIterable(){};
-	//TODO : maybe more API is required to enable this class to produce a QueryResult object
+	virtual float getRecordStaticScore() = 0;
+	virtual float getRecordRuntimeScore() = 0;
+	virtual void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) = 0;
+	virtual void getRecordMatchEditDistances(vector<unsigned> & editDistances) = 0;
+	virtual void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) = 0;
+
+	// setters
+	virtual void setRecordId(unsigned id) = 0;
+	virtual void setRecordStaticScore(float staticScore) = 0;
+	virtual void setRecordRuntimeScore(float runtimeScore) = 0;
+	virtual void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) = 0;
+	virtual void setRecordMatchEditDistances(const vector<unsigned> & editDistances) = 0;
+	virtual void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) = 0;
+	virtual ~PhysicalPlanRecordItem(){};
 };
 
 // The iterator interface used to implement iterator model
-class PhysicalPlanIterator{
+class PhysicalPlanIteratorExecutionInterface{
 public:
-	virtual bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, CatalogManager * catalogManager) = 0;
-	virtual PhysicalPlanIterable * getNext(const PhysicalPlanExecutionParameters & params) = 0;
+	virtual bool open(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, HistogramManager * histogramManager) = 0;
+	virtual PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) = 0;
 	virtual bool close() = 0;
+
+	virtual ~PhysicalPlanIteratorExecutionInterface(){};
+};
+
+// The iterator interface used to implement iterator model
+class PhysicalPlanIteratorOptimizationInterface{
+public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	virtual unsigned getCostOfOpen() = 0;
+	virtual unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) = 0;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	virtual unsigned getCostOfGetNext() = 0;
+	virtual unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) = 0;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	virtual unsigned getCostOfClose() = 0;
-	virtual void getOutputProperties(const vector<IteratorProperties> & inputProps, IteratorProperties & prop) = 0;
+	virtual unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) = 0;
+	virtual void getOutputProperties(IteratorProperties & prop) = 0;
 	virtual void getRequiredInputProperties(IteratorProperties & prop) = 0;
-	virtual ~PhysicalPlanIterator();
+	virtual ~PhysicalPlanIteratorOptimizationInterface(){};
 };
 
 class PhysicalPlan;
-class PhysicalPlanNode : public PhysicalPlanIterator{
+class PhysicalPlanNode;
+
+class PhysicalPlanOptimizationNode : public PhysicalPlanIteratorOptimizationInterface{
 	friend class PhysicalPlan;
 public:
 	virtual PhysicalPlanNodeType getType() = 0;
+	// this function checks the types and properties of children to see if it's
+	// meaningful to have this node with this children.
+	virtual bool validateChildren() = 0;
 	unsigned getChildrenCount() ;
-	PhysicalPlanNode * getChildAt(unsigned offset) ;
-	void addChild(PhysicalPlanNode * child) ;
-	void setParent(PhysicalPlanNode * parent);
-	PhysicalPlanNode * getParent();
+	PhysicalPlanOptimizationNode * getChildAt(unsigned offset) ;
+	void setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) ;
+	void addChild(PhysicalPlanOptimizationNode * child) ;
+	void setParent(PhysicalPlanOptimizationNode * parent);
+	PhysicalPlanOptimizationNode * getParent();
+	virtual ~PhysicalPlanOptimizationNode(){}
+	void setExecutableNode(PhysicalPlanNode * node){
+		this->executableNode = node;
+	}
+	PhysicalPlanNode * getExecutableNode(){
+		return this->executableNode;
+	}
+
+	void setLogicalPlanNode(LogicalPlanNode * node){
+		this->logicalPlanNode = node;
+	}
+	LogicalPlanNode * getLogicalPlanNode(){
+		return this->logicalPlanNode;
+	}
+
+	void printSubTree(unsigned indent = 0);
 private:
-	vector<PhysicalPlanNode *> children;
+	PhysicalPlanNode * executableNode;
+	vector<PhysicalPlanOptimizationNode *> children;
 	// We might want to change the tree to a DAG in future but currently it doesn't make sense
 	// since the lowest levels of the tree are the most cost-full parts and it's better not to duplicate keywords
-	PhysicalPlanNode * parent;
+	PhysicalPlanOptimizationNode * parent;
 
+	LogicalPlanNode * logicalPlanNode;
 };
+
+class PhysicalPlanNode : public PhysicalPlanIteratorExecutionInterface{
+	friend class PhysicalPlan;
+public:
+	void setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode);
+	PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode();
+
+	virtual bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) = 0;
+private:
+	PhysicalPlanOptimizationNode * optimizationNode;
+};
+
+
 
 
 /*
@@ -105,24 +167,29 @@ private:
 class PhysicalPlan{
 public:
 
-	PhysicalPlan(ForwardIndex * forwardIndex , InvertedIndex * invertedIndex, Trie * trie, CatalogManager * catalogManager);
+	PhysicalPlan(QueryEvaluatorInternal * queryEvaluator);
 	~PhysicalPlan();
 
 
 	PhysicalPlanNode * createNode(PhysicalPlanNodeType nodeType);
 
 	ForwardIndex * getForwardIndex();
-	InvertedIndex * getInvertedIndex();
-	Trie * getTrie();
-	CatalogManager * getCatalogManager();
+	const InvertedIndex * getInvertedIndex();
+	const Trie * getTrie();
 	PhysicalPlanNode * getPlanTree();
-
+	void setPlanTree(PhysicalPlanNode * tree);
+	Ranker * getRanker();
+	void setSearchTypeAndRanker(srch2is::QueryType searchType);
+	srch2is::QueryType getSearchType();
+	void setExecutionParameters(PhysicalPlanExecutionParameters * executionParameters);
+	PhysicalPlanExecutionParameters * getExecutionParameters();
 private:
-	ForwardIndex * forwardIndex;
-	InvertedIndex * invertedIndex;
-	Trie * trie;
-	CatalogManager * catalogManager;
+	QueryEvaluatorInternal * queryEvaluator;
 	PhysicalPlanNode * tree;
+    Ranker *ranker;
+    srch2is::QueryType searchType;
+    PhysicalPlanExecutionParameters * executionParameters;
+
 };
 
 
