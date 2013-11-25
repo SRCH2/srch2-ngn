@@ -15,17 +15,188 @@ UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
 	//TODO
 }
 bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-    // TODO
+	// first save the pointer to QueryEvaluator
+	this->queryEvaluator = queryEvaluator;
+
+	// 1. get the pointer to logical plan node
+	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
+	// 2. Get the Term object
+	Term * term = NULL;
+	if(params.isFuzzy){
+		term = logicalPlanNode->fuzzyTerm;
+	}else{
+		term = logicalPlanNode->exactTerm;
+	}
+	// 3. Get the ActiveNodeSet from the logical plan
+	PrefixActiveNodeSet * activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
+
+	// 4. Create the iterator and save it as a member of the class for future calls to getNext
+	if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term
+        for (LeafNodeSetIterator iter (activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+            TrieNodePointer leafNode;
+            TrieNodePointer prefixNode;
+            unsigned distance;
+            iter.getItem(prefixNode, leafNode, distance);
+            // get inverted list pointer and save it
+            shared_ptr<vectorview<unsigned> > invertedListReadView;
+            this->queryEvaluator->getInvertedIndex()->
+            		getInvertedListReadView(leafNode->getInvertedListOffset() , invertedListReadView);
+            this->invertedLists.push_back(invertedListReadView);
+            this->invertedListPrefixes.push_back(prefixNode);
+            this->invertedListLeafNodes.push_back(leafNode);
+            this->invertedListDistances.push_back(distance);
+            this->invertedListIDs.push_back(leafNode->getInvertedListOffset());
+        }
+	}else{ // complete term
+        for (ActiveNodeSetIterator iter(activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+            TrieNodePointer trieNode;
+            unsigned distance;
+            iter.getItem(trieNode, distance);
+            distance = activeNodeSet->getEditdistanceofPrefix(trieNode);
+            depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
+        }
+	}
+	this->invertedListOffset = 0;
+	this->cursorOnInvertedList = 0;
+
 }
 PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+
+	if(this->invertedListOffset >= this->invertedLists.size()){
+		return NULL;
+	}
+	// we dont have any list with size zero
+	ASSERT(this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size());
+
+	// 1. get the pointer to logical plan node
+	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
+	// 2. Get the Term object
+	Term * term = NULL;
+	if(params.isFuzzy){
+		term = logicalPlanNode->fuzzyTerm;
+	}else{
+		term = logicalPlanNode->exactTerm;
+	}
+
+	// find the next record and check the its validity
+	unsigned recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
+
+	unsigned recordOffset =
+			this->queryEvaluator->getInvertedIndex()->getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
+
+    bool foundValidHit = 0;
+    float termRecordStaticScore = 0;
+    unsigned termAttributeBitmap = 0;
+    while (1) {
+        if (this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(recordID, recordOffset,
+                term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                termRecordStaticScore) ) {
+            foundValidHit = 1;
+            break;
+        }
+        this->cursorOnInvertedList ++;
+        if (this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size()) {
+        	recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
+            // calculate record offset online
+        	recordOffset =
+        				this->queryEvaluator->getInvertedIndex()->getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
+        } else {
+        	this->invertedListOffset ++;
+			this->cursorOnInvertedList = 0;
+        	if(this->invertedListOffset < this->invertedLists.size()){
+        		recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
+				// calculate record offset online
+				recordOffset =
+							this->queryEvaluator->getInvertedIndex()->getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
+        	}else{
+        		return NULL;
+        	}
+        }
+    }
+
+    if(foundValidHit == 0){
+    	return NULL;
+    }
+
+	// return the item.
+	PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
+	// record id
+	newItem->setRecordId(recordID);
+	// edit distance
+	vector<unsigned> editDistances;
+	editDistances.push_back(this->invertedListDistances.at(this->cursorOnInvertedList));
+	newItem->setRecordMatchEditDistances(editDistances);
+	// matching prefix
+	vector<TrieNodePointer> matchingPrefixes;
+	matchingPrefixes.push_back(this->invertedListLeafNodes.at(this->cursorOnInvertedList)); // TODO this might be wrong
+	newItem->setRecordMatchingPrefixes(matchingPrefixes);
+	// runtime score
+	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) ==
+			this->invertedListLeafNodes.at(this->invertedListOffset);
+	////// TODO ???????????????????????????? RANKER
+	newItem->setRecordRuntimeScore(	DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
+            this->invertedListDistances.at(this->invertedListOffset),
+            term->getKeyword()->size(),
+            isPrefixMatch,
+            params.prefixMatchPenalty , term->getSimilarityBoost()));
+	// static score
+	newItem->setRecordStaticScore(termRecordStaticScore);
+	// attributeBitmap
+	vector<unsigned> attributeBitmaps;
+	attributeBitmaps.push_back(termAttributeBitmap);
+	newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
+	// !!!! runtime score is not set here !!!! (we don't have it here and we don't need it here)
+
+
+
+
+	// prepare for next call
+	this->cursorOnInvertedList ++;
+	if(this->cursorOnInvertedList > this->invertedLists.at(this->invertedListOffset)->size()){
+		this->invertedListOffset ++;
+		this->cursorOnInvertedList = 0;
+	}
+
+
+	return newItem;
 }
 bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
+
+	this->invertedLists.clear();
+	this->invertedListDistances.clear();
+	this->invertedListLeafNodes.clear();
+	this->invertedListPrefixes.clear();
+	this->invertedListIDs.clear();
+	this->cursorOnInvertedList = 0;
+	this->invertedListOffset = 0;
 	queryEvaluator = NULL;
+
 }
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	//TODO
 }
+
+
+void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
+		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned distance, unsigned bound){
+    if (trieNode->isTerminalNode())
+        // get inverted list pointer and save it
+        shared_ptr<vectorview<unsigned> > invertedListReadView;
+        this->queryEvaluator->getInvertedIndex()->
+        		getInvertedListReadView(trieNode->getInvertedListOffset() , invertedListReadView);
+        this->invertedLists.push_back(invertedListReadView);
+        this->invertedListPrefixes.push_back(prefixNode);
+        this->invertedListLeafNodes.push_back(trieNode);
+        this->invertedListDistances.push_back(distance);
+        this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
+    if (distance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthInitializeSimpleScanOperator(child, trieNode, distance+1, bound);
+        }
+    }
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 unsigned UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){

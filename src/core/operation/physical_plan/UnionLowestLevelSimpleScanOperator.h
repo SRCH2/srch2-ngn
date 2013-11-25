@@ -45,7 +45,18 @@ public:
 private:
 	UnionLowestLevelSimpleScanOperator() ;
 
+	void depthInitializeSimpleScanOperator(
+			const TrieNode* trieNode,const TrieNode* prefixNode, unsigned distance, unsigned bound);
+
 	QueryEvaluatorInternal * queryEvaluator;
+
+	vector< shared_ptr<vectorview<unsigned> > > invertedLists;
+	vector< unsigned > invertedListDistances;
+	vector< TrieNodePointer > invertedListPrefixes;
+	vector< TrieNodePointer > invertedListLeafNodes;
+	vector<unsigned> invertedListIDs;
+	unsigned invertedListOffset;
+	unsigned cursorOnInvertedList;
 };
 
 class UnionLowestLevelSimpleScanOptimizationOperator : public PhysicalPlanOptimizationNode {
