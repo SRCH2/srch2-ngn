@@ -31,19 +31,120 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+struct HeapItem {
+    //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
+    unsigned invertedListId;
+    unsigned attributeBitMap;           //only used for attribute based query
+    unsigned cursorVectorPosition;
+    unsigned recordId; //invertedListTop
+    float termRecordRuntimeScore;
+    float termRecordStaticScore;
+    unsigned positionIndexOffset;
+    TrieNodePointer trieNode;
+    unsigned ed;
+    bool isPrefixMatch;
+
+    HeapItem() {
+        this->invertedListId = 0;
+        this->cursorVectorPosition = 0;
+        this->recordId = 0;
+        this->attributeBitMap = 0;
+        this->termRecordRuntimeScore = 0;
+        this->termRecordStaticScore = 0;
+        this->positionIndexOffset = 0;
+        this->trieNode = NULL;
+        this->ed = 0;
+        this->isPrefixMatch = false;
+    }
+    HeapItem(unsigned invertedListId,
+             unsigned cursorVectorPosition,
+             unsigned recordId,
+             unsigned attributeBitMap,
+             float termRecordRuntimeScore,
+             float termRecordStaticScore,
+             unsigned positionIndexOffset,
+             TrieNodePointer trieNode,
+             unsigned ed,
+             bool isPrefixMatch) {
+        this->invertedListId = invertedListId;
+        this->cursorVectorPosition = cursorVectorPosition;
+        this->recordId = recordId;
+        this->attributeBitMap = attributeBitMap;
+        this->termRecordRuntimeScore = termRecordRuntimeScore;
+        this->termRecordStaticScore = termRecordStaticScore;
+        this->positionIndexOffset = positionIndexOffset;
+        this->trieNode = trieNode;
+        this->ed = ed;
+        this->isPrefixMatch = isPrefixMatch;
+    }
+    ~HeapItem() {
+        trieNode = NULL;
+    }
+};
+
+
 /*
  * This operator is TermVirtualList implementation as a physical operator.
  */
 class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
+
+    struct HeapItemCmp {
+        unsigned termLength; // length of the query term
+
+        HeapItemCmp() {
+        }
+
+        // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
+        bool operator() (const HeapItem *lhs, const HeapItem *rhs) const {
+            return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
+                    rhs->termRecordRuntimeScore, rhs->recordId);
+
+        }
+    };
+
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionLowestLevelTermVirtualListOperator();
+
 private:
 	UnionLowestLevelTermVirtualListOperator() ;
+    inline srch2::instantsearch::TermType getTermType() const {
+        return term->getTermType();
+    }
+    void initialiseTermVirtualListElement(TrieNodePointer prefixNode,
+            TrieNodePointer leafNode, unsigned distance);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    //Called when this->numberOfItemsInPartialHeap = 0
+    bool _addItemsToPartialHeap();
+
+    QueryEvaluatorInternal * queryEvaluator;
+    // the current recordId, initial value is -1
+    int currentRecordID;
+    // current inverted list Readview
+    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    //int numberOfLeafNodes;
+    //int totalInveretListLength ;
+
+    PrefixActiveNodeSet *prefixActiveNodeSet;
+    const InvertedIndex *invertedIndex;
+    vector<HeapItem* > itemsHeap;
+    Term *term;
+    float prefixMatchPenalty;
+    unsigned numberOfItemsInPartialHeap;
+    unsigned currentMaxEditDistanceOnHeap;
+    /**
+     * Vector of cursors.
+     * Cursor always points to next element in invertedList.
+     *
+     * Enables the functions getCursors and setCursors for Caching purpose
+     */
+    // a vector to keep all the inverted list readviews in current term virtual list
+    vector<shared_ptr<vectorview<unsigned> > > invertedListReadViewVector;
+    vector<unsigned> cursorVector;
 };
 
 class UnionLowestLevelTermVirtualListOptimizationOperator : public PhysicalPlanOptimizationNode {
