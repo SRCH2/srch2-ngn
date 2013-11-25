@@ -122,7 +122,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         root["results"].resize(end - start);
         unsigned counter = 0;
-        if (queryPlan.getSearchType() == GeoSearchType
+        if (queryPlan.getSearchType() == srch2is::SearchTypeMapQuery
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
                 {
             for (unsigned i = start; i < end; ++i) {
@@ -214,7 +214,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getSearchType() != GeoSearchType
+    	if (queryPlan.getSearchType() != srch2is::SearchTypeMapQuery
     			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             root["query_keywords"].resize(query->getQueryTerms()->size());
@@ -863,6 +863,11 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
+//    if(paramContainer.parseTreeRoot->checkValiditiyOfPointers() == false){
+//    	cout << "Pointers are not valid." << endl;
+//    }
+//    paramContainer.parseTreeRoot->print();
+//
 //    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
 //	ParseTreeNode * leafNode;
 //	ParseTreeLeadNodeIterator termIterator(paramContainer.parseTreeRoot);
@@ -911,7 +916,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     //5. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
     switch (logicalPlan.getSearchType()) {
-    case TopKSearchType:
+    case srch2is::SearchTypeTopKQuery:
         finalResults->printStats();
         HTTPRequestHandler::printResults(req, headers, logicalPlan,
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
@@ -921,8 +926,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 paramContainer.getMessageString(), ts1, tstart, tend);
         break;
 
-    case GetAllResultsSearchType:
-    case GeoSearchType:
+    case srch2is::SearchTypeGetAllResultsQuery:
+    case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
         if (logicalPlan.getOffset() + logicalPlan.getResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
@@ -943,7 +948,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         }
         break;
-    case RetrieveByIdSearchType:
+    case srch2is::SearchTypeRetrievById:
         finalResults->printStats();
         HTTPRequestHandler::printOneResultRetrievedById(req,
                 headers,

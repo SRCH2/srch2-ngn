@@ -190,9 +190,10 @@ void QueryRewriter::applyAnalyzer() {
     	TreeOperations::removeFromTree(*keywordToErase , paramContainer->parseTreeRoot);
     }
 
-    termIterator.init();
+    termIterator.init(paramContainer->parseTreeRoot);
     unsigned numberOfKeywords = 0;
 	while(termIterator.hasMore()){
+		termIterator.getNext();
 		numberOfKeywords ++;
 	}
 
@@ -443,7 +444,7 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 	// if search type is RetrieveByIdSearchType, only docid must be set in QueryPlan, no other information is needed in QueryPlan
 	if(paramContainer->hasParameterInQuery(RetrieveByIdSearchType)){
 		plan.setDocIdForRetrieveByIdSearchType(paramContainer->docIdForRetrieveByIdSearchType);
-		plan.setSearchType(RetrieveByIdSearchType);
+		plan.setSearchType(srch2is::SearchTypeRetrievById);
 		return;
 	}
     createExactAndFuzzyQueries(plan);
@@ -516,17 +517,18 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
     //1. first find the search type
     if (paramContainer->hasParameterInQuery(TopKSearchType)) { // search type is TopK
-        plan.setSearchType(TopKSearchType);
+        plan.setSearchType(srch2is::SearchTypeTopKQuery);
     } else if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results
-        plan.setSearchType(GetAllResultsSearchType);
+        plan.setSearchType(srch2is::SearchTypeGetAllResultsQuery);
     } else if (paramContainer->hasParameterInQuery(GeoSearchType)) { // GEO
-        plan.setSearchType(GeoSearchType);
+        plan.setSearchType(srch2is::SearchTypeMapQuery);
     } // else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
 	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
 	unsigned numberOfKeywords = 0;
 	while(termIterator.hasMore()){
+		termIterator.getNext();
 		numberOfKeywords++;
 	}
     if (paramContainer->hasParameterInQuery(IsFuzzyFlag)) {
@@ -554,13 +556,13 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
     // 5. based on the search type, get needed information and create the query objects
     switch (plan.getSearchType()) {
-    case TopKSearchType:
+    case srch2is::SearchTypeTopKQuery:
         createExactAndFuzzyQueriesForTopK(plan);
         break;
-    case GetAllResultsSearchType:
+    case srch2is::SearchTypeGetAllResultsQuery:
         createExactAndFuzzyQueriesForGetAllTResults(plan);
         break;
-    case GeoSearchType:
+    case srch2is::SearchTypeMapQuery:
         createExactAndFuzzyQueriesForGeo(plan);
         break;
     default:
@@ -621,7 +623,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		}
 	}
 
-	termIterator.init();
+	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(KeywordBoostLevel) == false) { // get it from configuration file
@@ -629,7 +631,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		}
 	}
 
-	termIterator.init();
+	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag) == false) { // get it from configuration file
@@ -640,7 +642,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		}
 	}
 
-	termIterator.init();
+	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (leafNode->temporaryTerm->fieldFilterNumber == 0) { // get it from configuration file
@@ -648,7 +650,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		}
 	}
 
-	termIterator.init();
+	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(IsPhraseKeyword) == false) { // get it from configuration file
@@ -658,7 +660,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 
     // 3. Fill up query objects
     // exact query
-	termIterator.init();
+	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		srch2is::Term *exactTerm;
@@ -688,7 +690,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
     // fuzzy query
     if (plan.isFuzzy()) {
 
-    	termIterator.init();
+    	termIterator.init(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
         	if (leafNode->temporaryTerm->isPhraseKeywordFlag == true)

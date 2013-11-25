@@ -69,6 +69,7 @@ bool QueryValidator::validate() {
 		ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
 		unsigned numberOfTerms = 0;
 		while(termIterator.hasMore()){
+			termIterator.getNext();
 			numberOfTerms ++;
 		}
         if (numberOfTerms == 0) {

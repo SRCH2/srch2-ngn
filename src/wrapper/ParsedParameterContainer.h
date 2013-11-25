@@ -124,9 +124,8 @@ public:
 	ParseTreeNode * currentLeafNode;
 	vector<vector<ParseTreeNode *> > dfsChildrenStack;
 	ParseTreeLeadNodeIterator(ParseTreeNode * root){
-		this->root = root;
 		this->currentLeafNode = NULL;
-		init();
+		init(root);
 	}
 	~ParseTreeLeadNodeIterator(){}
 
@@ -140,7 +139,8 @@ public:
 	/*
 	 * Initializing the iteration
 	 */
-	void init(){
+	void init(ParseTreeNode * root){
+		this->root = root;
 		// Clear all structures
 		this->currentLeafNode = NULL;
 		dfsChildrenStack.clear();

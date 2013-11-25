@@ -220,7 +220,9 @@ bool QueryParser::parse() {
         } else {
             this->topKParameterParser();
         }
-        this->isParsedError = this->isParsedError && (  ! attachParseTreeAndMainQueryParallelVectors() );
+        if(!this->isParsedError){ // no error so far
+        	this->isParsedError = ! attachParseTreeAndMainQueryParallelVectors();
+        }
 
     } catch (exception& e) {
         Logger::error(e.what());
@@ -861,7 +863,7 @@ void QueryParser::facetParser() {
             populateFacetFieldsSimple(*fqc);
             populateFacetFieldsRange(*fqc);
             //// set the parametersInQuery
-            this->container->parametersInQuery.push_back(FacetQueryHandler)
+            this->container->parametersInQuery.push_back(FacetQueryHandler);
 			this->container->facetQueryContainer = fqc;
             if( boost::iequals("only", facet)){
             	this->container->onlyFacets = true;

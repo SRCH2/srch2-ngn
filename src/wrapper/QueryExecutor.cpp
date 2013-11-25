@@ -63,14 +63,14 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 
     //do the search
     switch (queryPlan.getSearchType()) {
-    case TopKSearchType: //TopK
-    case GetAllResultsSearchType: //GetAllResults
+    case srch2is::SearchTypeTopKQuery: //TopK
+    case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
         executeKeywordSearch(finalResults);
         break;
-    case GeoSearchType: //MapQuery
+    case srch2is::SearchTypeMapQuery: //MapQuery
         executeGeo(finalResults);
         break;
-    case RetrieveByIdSearchType:
+    case srch2is::SearchTypeRetrievById:
     	executeRetrieveById(finalResults);
     	break;
     default:
