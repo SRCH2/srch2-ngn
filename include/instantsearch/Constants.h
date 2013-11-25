@@ -90,7 +90,8 @@ typedef enum
 {
     SearchTypeTopKQuery ,
     SearchTypeGetAllResultsQuery ,
-    SearchTypeMapQuery
+    SearchTypeMapQuery,
+    SearchTypeRetrievById
 } QueryType;
 
 //TODO add prefix OP
@@ -215,16 +216,19 @@ typedef enum {
 
 typedef enum {
 	PhysicalPlanNode_SortById,
+	PhysicalPlanNode_SortByScore,
 	PhysicalPlanNode_MergeTopK,
-	PhysicalPlanNode_MergeSortedByIdTopK,
 	PhysicalPlanNode_MergeSortedById,
 	PhysicalPlanNode_MergeByShortestList,
-	PhysicalPlanNode_UnionSortedByIdTopK,
 	PhysicalPlanNode_UnionSortedById,
 	PhysicalPlanNode_UnionSortedByScoreTopK,
 	PhysicalPlanNode_UnionSortedByScore,
 	PhysicalPlanNode_UnionLowestLevelTermVirtualList,
-	PhysicalPlanNode_LowestLevelNull
+	PhysicalPlanNode_UnionLowestLevelSimpleScanOperator,
+	PhysicalPlanNode_RandomAccessTerm,
+	PhysicalPlanNode_RandomAccessAnd,
+	PhysicalPlanNode_RandomAccessOr,
+	PhysicalPlanNode_RandomAccessNot
 } PhysicalPlanNodeType;
 
 typedef enum {

@@ -95,7 +95,7 @@ public:
      *
      * if search type is getAllResults, this function finds all the results.
      */
-    int search(const LogicalPlan * logicalPlan , QueryResults *queryResults);
+    int search(LogicalPlan * logicalPlan , QueryResults *queryResults);
 
     /**
      * Does Map Search

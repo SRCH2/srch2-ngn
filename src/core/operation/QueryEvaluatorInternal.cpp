@@ -32,7 +32,7 @@
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
-#include "CatalogManager.h"
+#include "HistogramManager.h"
 #include "QueryOptimizer.h"
 #include "physical_plan/PhysicalPlan.h"
 
@@ -60,6 +60,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;
+    setPhysicalOperatorFactory(new PhysicalOperatorFactory());
 }
 
 /*
@@ -90,7 +91,7 @@ unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * log
  *
  * if search type is getAllResults, this function finds all the results.
  */
-int QueryEvaluatorInternal::search(const LogicalPlan * logicalPlan , QueryResults *queryResults){
+int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
 	/*
 	 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
@@ -98,8 +99,8 @@ int QueryEvaluatorInternal::search(const LogicalPlan * logicalPlan , QueryResult
 	 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 	 * ---- 1.3. ...
 	 */
-	CatalogManager catalogManager(this->indexData->forwardIndex , this->indexData->invertedIndex , this->indexData->trie);
-	catalogManager.calculateInfoForLogicalPlan(logicalPlan);
+	HistogramManager histogramManager(this);
+	histogramManager.annotate(logicalPlan);
 	/*
 	 * 2. Use QueryOptimizer to build PhysicalPlan and optimize it
 	 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
@@ -107,15 +108,8 @@ int QueryEvaluatorInternal::search(const LogicalPlan * logicalPlan , QueryResult
 	 * ---- 2.2. Applies optimization rules on the physical plan
 	 * ---- 2.3. ...
 	 */
-	QueryOptimizer queryOptimizer(this->indexData->forwardIndex,
-			this->indexData->invertedIndex,
-			this->indexData->trie,
-			&catalogManager,
-			logicalPlan);
-	PhysicalPlan physicalPlan(this->indexData->forwardIndex,
-			this->indexData->invertedIndex,
-			this->indexData->trie,
-			&catalogManager);
+	QueryOptimizer queryOptimizer(this,logicalPlan);
+	PhysicalPlan physicalPlan(this);
 	queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
 	 /*
 	  * 3. Execute physical plan

@@ -35,6 +35,7 @@
 #include "geo/QuadNodeInternalStructures.h"
 #include "operation/IndexData.h"
 #include <instantsearch/LogicalPlan.h>
+#include <operation/physical_plan/PhysicalOperators.h>
 #include <vector>
 #include <string>
 
@@ -55,6 +56,7 @@ class InvertedIndex;
  */
 class MYLIB_EXPORT QueryEvaluatorInternal
 {
+	friend class HistogramManager;
 public:
     /**
      * Creates an QueryEvaluator object.
@@ -86,7 +88,7 @@ public:
      *
      * if search type is getAllResults, this function finds all the results.
      */
-    int search(const LogicalPlan * logicalPlan , QueryResults *queryResults);
+    int search(LogicalPlan * logicalPlan , QueryResults *queryResults);
 
     /**
      * Does Map Search
@@ -130,8 +132,16 @@ public:
     /**
      * Destructor to free persistent resources used by the QueryEvaluator.
      */
-    ~QueryEvaluatorInternal() {};
+    ~QueryEvaluatorInternal() {
+    	delete getPhysicalOperatorFactory();
+    };
 
+    PhysicalOperatorFactory * getPhysicalOperatorFactory(){
+    	return this->physicalOperatorFactory;
+    }
+    void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory){
+    	this->physicalOperatorFactory = physicalOperatorFactory;
+    }
 private:
     const IndexData *indexData;
     IndexReadStateSharedPtr_Token indexReadToken;
@@ -139,6 +149,7 @@ private:
 
     QueryEvaluatorRuntimeParametersContainer parameters;
     Cache *cacheManager;
+	PhysicalOperatorFactory * physicalOperatorFactory;
     // search functions for map search
     int searchMapQuery(const Query *query, QueryResults* queryResults);
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);

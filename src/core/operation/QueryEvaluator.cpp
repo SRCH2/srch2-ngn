@@ -62,7 +62,7 @@ unsigned QueryEvaluator::estimateNumberOfResults(const LogicalPlan * logicalPlan
  *
  * if search type is getAllResults, this function finds all the results.
  */
-int QueryEvaluator::search(const LogicalPlan * logicalPlan , QueryResults *queryResults){
+int QueryEvaluator::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 	return this->impl->search(logicalPlan , queryResults);
 }
 
