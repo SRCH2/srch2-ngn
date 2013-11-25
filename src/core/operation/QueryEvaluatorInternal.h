@@ -142,6 +142,14 @@ public:
     void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory){
     	this->physicalOperatorFactory = physicalOperatorFactory;
     }
+
+    PhysicalPlanRecordItemFactory * getPhysicalPlanRecordItemFactory(){
+    	return this->physicalPlanRecordItemFactory;
+    }
+    void setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
+    	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
+    }
+
 private:
     const IndexData *indexData;
     IndexReadStateSharedPtr_Token indexReadToken;
@@ -150,6 +158,7 @@ private:
     QueryEvaluatorRuntimeParametersContainer parameters;
     Cache *cacheManager;
 	PhysicalOperatorFactory * physicalOperatorFactory;
+	PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
     // search functions for map search
     int searchMapQuery(const Query *query, QueryResults* queryResults);
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);

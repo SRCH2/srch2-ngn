@@ -61,6 +61,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
+    setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());
 }
 
 /*

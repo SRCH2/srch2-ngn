@@ -38,9 +38,11 @@ struct PhysicalPlanExecutionParameters {
 	unsigned k;
 	// if this variable is false the operator only returns exact matches by calling getNext(...)
 	bool isFuzzy;
-	PhysicalPlanExecutionParameters(unsigned k,bool exactOnly){
+	float prefixMatchPenalty ;
+	PhysicalPlanExecutionParameters(unsigned k,bool exactOnly,float prefixMatchPenalty){
 		this->k = k;
 		this->isFuzzy = exactOnly ;
+		this->prefixMatchPenalty = prefixMatchPenalty;
 	}
 };
 
@@ -59,22 +61,36 @@ public:
 // This class is the ancestor of all different kinds of list items in this iterator model.
 // Regardless of what kind of iterator we have, lists are implemented as sequences of PhysicalPlanIterable.
 class PhysicalPlanRecordItem{
+public:
 	// getters
-	virtual unsigned getRecordId() = 0;
-	virtual float getRecordStaticScore() = 0;
-	virtual float getRecordRuntimeScore() = 0;
-	virtual void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) = 0;
-	virtual void getRecordMatchEditDistances(vector<unsigned> & editDistances) = 0;
-	virtual void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) = 0;
+	unsigned getRecordId() ;
+	float getRecordStaticScore();
+	float getRecordRuntimeScore() ;
+	void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) ;
+	void getRecordMatchEditDistances(vector<unsigned> & editDistances) ;
+	void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) ;
+	void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets);
 
 	// setters
-	virtual void setRecordId(unsigned id) = 0;
-	virtual void setRecordStaticScore(float staticScore) = 0;
-	virtual void setRecordRuntimeScore(float runtimeScore) = 0;
-	virtual void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) = 0;
-	virtual void setRecordMatchEditDistances(const vector<unsigned> & editDistances) = 0;
-	virtual void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) = 0;
-	virtual ~PhysicalPlanRecordItem(){};
+	void setRecordId(unsigned id) ;
+	void setRecordStaticScore(float staticScore) ;
+	void setRecordRuntimeScore(float runtimeScore) ;
+	void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) ;
+	void setRecordMatchEditDistances(const vector<unsigned> & editDistances) ;
+	void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) ;
+	void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets);
+	~PhysicalPlanRecordItem(){};
+};
+
+class PhysicalPlanRecordItemFactory{
+public:
+	PhysicalPlanRecordItem * createRecordItem(){
+		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
+		objects.push_back(newObj);
+		return newObj;
+	}
+private:
+	vector<PhysicalPlanRecordItem *> objects;
 };
 
 // The iterator interface used to implement iterator model
