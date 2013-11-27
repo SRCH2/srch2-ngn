@@ -152,7 +152,7 @@ public:
 	srch2is::QueryType getSearchType() const {
 		return searchType;
 	}
-	Query* getExactQuery() {
+	Query* getExactQuery() const{
 		return exactQuery;
 	}
 

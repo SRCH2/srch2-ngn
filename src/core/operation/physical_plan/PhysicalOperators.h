@@ -25,14 +25,18 @@
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
 #include "PhysicalPlan.h"
-#include "UnionLowestLevelTermVirtualListOperator.h"
-#include "UnionLowestLevelSimpleScanOperator.h"
 
 using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
 
+class UnionLowestLevelTermVirtualListOperator;
+class UnionLowestLevelTermVirtualListOptimizationOperator;
+class UnionLowestLevelSimpleScanOperator;
+class UnionLowestLevelSimpleScanOptimizationOperator;
+class MergeTopKOperator;
+class MergeTopKOptimizationOperator;
 class PhysicalOperatorFactory;
 
 /*
@@ -228,41 +232,6 @@ public:
 };
 
 /*
- * This operator output the best K results coming from input.
- * The assumption of this operator is that input is sorted based on score.
- * This function is the core of TopK and implements the threshold algorithm.
- */
-class MergeTopKOperator : public PhysicalPlanNode {
-	friend class PhysicalOperatorFactory;
-public:
-	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
-	PhysicalPlanRecordItem *
-	getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close(PhysicalPlanExecutionParameters & params);
-	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
-	~MergeTopKOperator();
-private:
-	MergeTopKOperator() ;
-};
-
-class MergeTopKOptimizationOperator : public PhysicalPlanOptimizationNode {
-	friend class PhysicalOperatorFactory;
-public:
-	// The cost of open of a child is considered only once in the cost computation
-	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
-	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
-	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
-	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
-	void getOutputProperties(IteratorProperties & prop);
-	void getRequiredInputProperties(IteratorProperties & prop);
-	PhysicalPlanNodeType getType() ;
-	bool validateChildren();
-};
-
-/*
  * This operator merges the inputs assuming they are sorted by ID.
  * It moves down on all inputs in parallel and merges the them.
  */
@@ -430,156 +399,37 @@ public:
 class PhysicalOperatorFactory{
 public:
 
-	~PhysicalOperatorFactory(){
-		for( vector<PhysicalPlanNode *>::iterator node = executionNodes.begin(); node != executionNodes.end(); ++node ){
-			delete (*node);
-		}
-		for( vector<PhysicalPlanOptimizationNode *>::iterator node = optimizationNodes.begin(); node != optimizationNodes.end(); ++node ){
-			delete (*node);
-		}
-	}
+	~PhysicalOperatorFactory();
 
 
-	RandomAccessVerificationTermOperator * createRandomAccessVerificationTermOperator(){
-		RandomAccessVerificationTermOperator * op = new RandomAccessVerificationTermOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationTermOptimizationOperator * createRandomAccessVerificationTermOptimizationOperator(){
-		RandomAccessVerificationTermOptimizationOperator * op = new RandomAccessVerificationTermOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationAndOperator * createRandomAccessVerificationAndOperator(){
-		RandomAccessVerificationAndOperator * op = new RandomAccessVerificationAndOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationAndOptimizationOperator * createRandomAccessVerificationAndOptimizationOperator(){
-		RandomAccessVerificationAndOptimizationOperator * op = new RandomAccessVerificationAndOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationOrOperator * createRandomAccessVerificationOrOperator(){
-		RandomAccessVerificationOrOperator * op = new RandomAccessVerificationOrOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationOrOptimizationOperator * createRandomAccessVerificationOrOptimizationOperator(){
-		RandomAccessVerificationOrOptimizationOperator *  op = new RandomAccessVerificationOrOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationNotOperator * createRandomAccessVerificationNotOperator(){
-		RandomAccessVerificationNotOperator *  op = new RandomAccessVerificationNotOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	RandomAccessVerificationNotOptimizationOperator * createRandomAccessVerificationNotOptimizationOperator(){
-		RandomAccessVerificationNotOptimizationOperator *  op = new RandomAccessVerificationNotOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	SortByIdOperator * createSortByIdOperator(){
-		SortByIdOperator *  op = new SortByIdOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	SortByIdOptimizationOperator * createSortByIdOptimizationOperator(){
-		SortByIdOptimizationOperator *  op = new SortByIdOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	SortByScoreOperator* createSortByScoreOperator(){
-		SortByScoreOperator*  op = new SortByScoreOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	SortByScoreOptimizationOperator* createSortByScoreOptimizationOperator(){
-		SortByScoreOptimizationOperator*  op = new SortByScoreOptimizationOperator;
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	MergeTopKOperator * createMergeTopKOperator(){
-		MergeTopKOperator *  op =  new MergeTopKOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	MergeTopKOptimizationOperator * createMergeTopKOptimizationOperator(){
-		MergeTopKOptimizationOperator *  op = new MergeTopKOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	MergeSortedByIDOperator * createMergeSortedByIDOperator(){
-		MergeSortedByIDOperator *  op = new MergeSortedByIDOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	MergeSortedByIDOptimizationOperator * createMergeSortedByIDOptimizationOperator(){
-		MergeSortedByIDOptimizationOperator *  op = new MergeSortedByIDOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	MergeByShortestListOperator * createMergeByShortestListOperator(){
-		MergeByShortestListOperator * op = new MergeByShortestListOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	MergeByShortestListOptimizationOperator * createMergeByShortestListOptimizationOperator(){
-		MergeByShortestListOptimizationOperator *  op = new MergeByShortestListOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByIDOperator * createUnionSortedByIDOperator(){
-		UnionSortedByIDOperator *  op = new UnionSortedByIDOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByIDOptimizationOperator * createUnionSortedByIDOptimizationOperator(){
-		UnionSortedByIDOptimizationOperator *  op = new UnionSortedByIDOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByScoreOperatorTopK * createUnionSortedByScoreOperatorTopK(){
-		UnionSortedByScoreOperatorTopK *  op = new UnionSortedByScoreOperatorTopK();
-		executionNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByScoreOptimizationOperatorTopK * createUnionSortedByScoreOptimizationOperatorTopK(){
-		UnionSortedByScoreOptimizationOperatorTopK *  op = new UnionSortedByScoreOptimizationOperatorTopK();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByScoreOperator * createUnionSortedByScoreOperator(){
-		UnionSortedByScoreOperator *  op = new UnionSortedByScoreOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	UnionSortedByScoreOptimizationOperator * createUnionSortedByScoreOptimizationOperator(){
-		UnionSortedByScoreOptimizationOperator *  op =  new UnionSortedByScoreOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	UnionLowestLevelTermVirtualListOperator * createUnionLowestLevelTermVirtualListOperator(){
-		UnionLowestLevelTermVirtualListOperator * op = new UnionLowestLevelTermVirtualListOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	UnionLowestLevelTermVirtualListOptimizationOperator * createUnionLowestLevelTermVirtualListOptimizationOperator(){
-		UnionLowestLevelTermVirtualListOptimizationOperator *  op = new UnionLowestLevelTermVirtualListOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
-	UnionLowestLevelSimpleScanOperator * createUnionLowestLevelSimpleScanOperator(){
-		UnionLowestLevelSimpleScanOperator * op = new UnionLowestLevelSimpleScanOperator();
-		executionNodes.push_back(op);
-		return op;
-	}
-	UnionLowestLevelSimpleScanOptimizationOperator * createUnionLowestLevelSimpleScanOptimizationOperator(){
-		UnionLowestLevelSimpleScanOptimizationOperator *  op = new UnionLowestLevelSimpleScanOptimizationOperator();
-		optimizationNodes.push_back(op);
-		return op;
-	}
+	RandomAccessVerificationTermOperator * createRandomAccessVerificationTermOperator();
+	RandomAccessVerificationTermOptimizationOperator * createRandomAccessVerificationTermOptimizationOperator();
+	RandomAccessVerificationAndOperator * createRandomAccessVerificationAndOperator();
+	RandomAccessVerificationAndOptimizationOperator * createRandomAccessVerificationAndOptimizationOperator();
+	RandomAccessVerificationOrOperator * createRandomAccessVerificationOrOperator();
+	RandomAccessVerificationOrOptimizationOperator * createRandomAccessVerificationOrOptimizationOperator();
+	RandomAccessVerificationNotOperator * createRandomAccessVerificationNotOperator();
+	RandomAccessVerificationNotOptimizationOperator * createRandomAccessVerificationNotOptimizationOperator();
+	SortByIdOperator * createSortByIdOperator();
+	SortByIdOptimizationOperator * createSortByIdOptimizationOperator();
+	SortByScoreOperator* createSortByScoreOperator();
+	SortByScoreOptimizationOperator* createSortByScoreOptimizationOperator();
+	MergeTopKOperator * createMergeTopKOperator();
+	MergeTopKOptimizationOperator * createMergeTopKOptimizationOperator();
+	MergeSortedByIDOperator * createMergeSortedByIDOperator();
+	MergeSortedByIDOptimizationOperator * createMergeSortedByIDOptimizationOperator();
+	MergeByShortestListOperator * createMergeByShortestListOperator();
+	MergeByShortestListOptimizationOperator * createMergeByShortestListOptimizationOperator();
+	UnionSortedByIDOperator * createUnionSortedByIDOperator();
+	UnionSortedByIDOptimizationOperator * createUnionSortedByIDOptimizationOperator();
+	UnionSortedByScoreOperatorTopK * createUnionSortedByScoreOperatorTopK();
+	UnionSortedByScoreOptimizationOperatorTopK * createUnionSortedByScoreOptimizationOperatorTopK();
+	UnionSortedByScoreOperator * createUnionSortedByScoreOperator();
+	UnionSortedByScoreOptimizationOperator * createUnionSortedByScoreOptimizationOperator();
+	UnionLowestLevelTermVirtualListOperator * createUnionLowestLevelTermVirtualListOperator();
+	UnionLowestLevelTermVirtualListOptimizationOperator * createUnionLowestLevelTermVirtualListOptimizationOperator();
+	UnionLowestLevelSimpleScanOperator * createUnionLowestLevelSimpleScanOperator();
+	UnionLowestLevelSimpleScanOptimizationOperator * createUnionLowestLevelSimpleScanOptimizationOperator();
 
 
 private:

@@ -39,15 +39,24 @@ struct PhysicalPlanExecutionParameters {
 	// if this variable is false the operator only returns exact matches by calling getNext(...)
 	bool isFuzzy;
 	float prefixMatchPenalty ;
-	PhysicalPlanExecutionParameters(unsigned k,bool exactOnly,float prefixMatchPenalty){
+	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty){
 		this->k = k;
-		this->isFuzzy = exactOnly ;
+		this->isFuzzy = isFuzzy ;
 		this->prefixMatchPenalty = prefixMatchPenalty;
 	}
 };
 
+class PhysicalPlanRecordItem;
 struct PhysicalPlanRandomAccessVerificationParameters {
-
+    std::vector<float> runTimeTermRecordScores;
+    std::vector<float> staticTermRecordScores;
+    std::vector<TrieNodePointer> termRecordMatchingPrefixes;
+    std::vector<unsigned> attributeBitmaps;
+    std::vector<unsigned> prefixEditDistances;
+    std::vector<unsigned> positionIndexOffsets;
+    PhysicalPlanRecordItem * recordToVerify;
+    bool isFuzzy;
+	float prefixMatchPenalty ;
 };
 
 // This class is used to maintain the input/output properties of a PhysicalPlanIterator
@@ -63,13 +72,13 @@ public:
 class PhysicalPlanRecordItem{
 public:
 	// getters
-	unsigned getRecordId() ;
-	float getRecordStaticScore();
-	float getRecordRuntimeScore() ;
-	void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) ;
-	void getRecordMatchEditDistances(vector<unsigned> & editDistances) ;
-	void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) ;
-	void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets);
+	unsigned getRecordId() const ;
+	float getRecordStaticScore() const;
+	float getRecordRuntimeScore() const;
+	void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const;
+	void getRecordMatchEditDistances(vector<unsigned> & editDistances) const;
+	void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const;
+	void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const ;
 
 	// setters
 	void setRecordId(unsigned id) ;
@@ -80,6 +89,15 @@ public:
 	void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) ;
 	void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets);
 	~PhysicalPlanRecordItem(){};
+
+private:
+	unsigned recordId;
+	float recordStaticScore;
+	float recordRuntimeScore;
+	vector<TrieNodePointer> matchingPrefixes;
+	vector<unsigned> editDistances;
+	vector<unsigned> attributeBitmaps;
+	vector<unsigned> positionIndexOffsets;
 };
 
 class PhysicalPlanRecordItemFactory{

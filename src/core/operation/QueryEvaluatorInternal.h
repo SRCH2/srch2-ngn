@@ -35,7 +35,7 @@
 #include "geo/QuadNodeInternalStructures.h"
 #include "operation/IndexData.h"
 #include <instantsearch/LogicalPlan.h>
-#include <operation/physical_plan/PhysicalOperators.h>
+#include "physical_plan/PhysicalPlan.h"
 #include <vector>
 #include <string>
 
@@ -51,6 +51,8 @@ class QueryResults;
 class TermVirtualList;
 class IndexReaderWriter;
 class InvertedIndex;
+class PhysicalOperatorFactory;
+class PhysicalPlanRecordItemFactory;
 /**
  * QueryEvaluatorInternal is the implementation of QueryEvaluator.
  */
@@ -150,9 +152,11 @@ public:
     	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
     }
 
+
+public:
+    IndexReadStateSharedPtr_Token indexReadToken;
 private:
     const IndexData *indexData;
-    IndexReadStateSharedPtr_Token indexReadToken;
     IndexReaderWriter *indexer;
 
     QueryEvaluatorRuntimeParametersContainer parameters;

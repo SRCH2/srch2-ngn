@@ -35,6 +35,7 @@
 #include "HistogramManager.h"
 #include "QueryOptimizer.h"
 #include "physical_plan/PhysicalPlan.h"
+#include "physical_plan/PhysicalOperators.h"
 
 #include <vector>
 #include <algorithm>
@@ -94,24 +95,6 @@ unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * log
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
-	/*
-	 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
-	 * ---- 1.1. computes and attaches active node sets for each term
-	 * ---- 1.2. estimates and saves the number of results of each internal logical operator
-	 * ---- 1.3. ...
-	 */
-	HistogramManager histogramManager(this);
-	histogramManager.annotate(logicalPlan);
-	/*
-	 * 2. Use QueryOptimizer to build PhysicalPlan and optimize it
-	 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
-	 *           and makes sure inputs and outputs of operators are consistent.
-	 * ---- 2.2. Applies optimization rules on the physical plan
-	 * ---- 2.3. ...
-	 */
-	QueryOptimizer queryOptimizer(this,logicalPlan);
-	PhysicalPlan physicalPlan(this);
-	queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -123,7 +106,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	 * 2. Post processing: Post processing physical operators are added to the tree by QueryOptimizer.
 	 * ---- So there is nothing much to be done here, maybe just passing up the recorded data by some filters
 	 * ---- like facet.
-	 * 3. Passing the results to QueryResults : This module is also responsible of populating QueryResults from
+	 * 3. Passing the results to QueryResults : This module is also responsible of populating QuebuildPhysicalPlanFirstVersionryResults from
 	 * ---- the outputs of the root operator and make everything inside core transparent to outside layers.
 	 * 4. Exact and fuzzy policy : If exactOnly is passed as true to getNext(...) of any operator, that operator
 	 * ---- only returns exact results (if not, all the results are returned.) Therefore, the physical plan is executed first
@@ -132,8 +115,87 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	 * ---- this policy is applied on all search types.
 	 */
 
+	//1. Find the right value for K (if search type is topK)
+	unsigned K = logicalPlan->offset + logicalPlan->resultsToRetrieve;
+	bool isFuzzy = logicalPlan->isFuzzy();
+	// we set fuzzy to false to the first session which is exact
+	logicalPlan->setFuzzy(false);
+	PhysicalPlanExecutionParameters params(K, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty());
+
+	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
+	//2. Apply exact/fuzzy policy and run
+	vector<unsigned> resultIds;
+	for(unsigned fuzzyPolicyIter=0;fuzzyPolicyIter<2;fuzzyPolicyIter++){ // this for is a two itertion loop, to avoid copying the code for exact and fuzzy
+
+		/*
+		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
+		 * ---- 1.1. computes and attaches active node sets for each term
+		 * ---- 1.2. estimates and saves the number of results of each internal logical operator
+		 * ---- 1.3. ...
+		 */
+		HistogramManager histogramManager(this);
+		histogramManager.annotate(logicalPlan);
+		/*
+		 * 2. Use QueryOptimizer to build PhysicalPlan and optimize it
+		 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
+		 *           and makes sure inputs and outputs of operators are consistent.
+		 * ---- 2.2. Applies optimization rules on the physical plan
+		 * ---- 2.3. ...
+		 */
+		QueryOptimizer queryOptimizer(this,logicalPlan);
+		PhysicalPlan physicalPlan(this);
+		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
+		//1. Open the physical plan by opening the root
+		physicalPlan.getPlanTree()->open(this , params);
+		//2. call getNext for K times
+		for(unsigned i=0;i<K;i++){
+			PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
+			if(newRecord == NULL){
+				break;
+			}
+			// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
+			if(fuzzyPolicyIter > 0){
+				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+					continue;
+				}
+			}
+
+			QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+			queryResults->impl->sortedFinalResults.push_back(queryResult);
+
+			queryResult->internalRecordId = newRecord->getRecordId();
+			//
+			resultIds.push_back(newRecord->getRecordId());
+			//
+			queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());//TODO
+			vector< TrieNodePointer > matchingKeywordTrieNodes;
+			newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
+			for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
+				std::vector<CharType> temp;
+				this->getTrie()->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+													   matchingKeywordTrieNodes.at(i), temp);
+				string str;
+				charTypeVectorToUtf8String(temp, str);
+				queryResult->matchingKeywords.push_back(str);
+			}
+			newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
+			newRecord->getRecordMatchEditDistances(queryResult->editDistances);
+			this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
+
+		}
+
+		if(isFuzzy == false || queryResults->impl->sortedFinalResults.size() >= K){
+			break;
+		}else{
+			logicalPlan->setFuzzy(true);
+			params.isFuzzy = true;
+		}
+	}
+
+	return queryResults->impl->sortedFinalResults.size();
 
 }
+
 
 /**
  * Does Map Search

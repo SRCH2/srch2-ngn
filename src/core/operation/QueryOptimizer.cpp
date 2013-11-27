@@ -56,6 +56,13 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	// --- and set in the plan object
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
+	// print for test
+	cout << "========================================================" << endl;
+	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+	cout << "========================================================" << endl;
+//	exit(0);
+	// end : print for test
+
 }
 
 /*
@@ -75,9 +82,7 @@ void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physic
 		k = logicalPlan->getResultsToRetrieve() + logicalPlan->getOffset() ;
 	}
 	// Parameter exactOnly for exact/fuzzy policy.
-	bool isFuzzy = logicalPlan->isFuzzy();
-
-	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , isFuzzy);
+	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(), logicalPlan->exactQuery->getPrefixMatchPenalty());
 
 	physicalPlan.setExecutionParameters(parameters);
 }
@@ -159,18 +164,17 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 	for(unsigned p = 0 ; p < totalNumberOfProducts ; ++p){
 		// add AND implementation options that we have
 		vector<PhysicalPlanOptimizationNode *> ourOptions;
-		// TODO : we need a factory
-		// we should use searchType here !!!!!!!!!
+		// TODO :we should use searchType here !!!!!!!!!
 		if(root->nodeType == LogicalPlanNodeTypeAnd){
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createMergeTopKOptimizationOperator());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createMergeByShortestListOptimizationOperator());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOptimizationOperator());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationAndOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeTopKOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeByShortestListOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationAndOptimizationOperator());
 		}else if(root->nodeType == LogicalPlanNodeTypeOr){
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOptimizationOperator());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperator());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperatorTopK());
-			ourOptions.push_back(this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationOrOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperator());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperatorTopK());
+			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationOrOptimizationOperator());
 		}else{
 			ASSERT(false);
 		}
@@ -205,7 +209,7 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, ve
 	buildIncompleteSubTreeOptions(root->children.at(0), childrenOptions);
 
 	for(unsigned optionOffset = 0; optionOffset < childrenOptions.size() ; ++optionOffset){
-		PhysicalPlanOptimizationNode * newNotObj =
+		PhysicalPlanOptimizationNode * newNotObj =(PhysicalPlanOptimizationNode *)
 				this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationNotOptimizationOperator();
 		newNotObj->setLogicalPlanNode(root);
 		newNotObj->addChild(childrenOptions.at(optionOffset));
@@ -213,14 +217,14 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, ve
 	}
 }
 void QueryOptimizer::buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
-	PhysicalPlanOptimizationNode * op =
+	PhysicalPlanOptimizationNode * op = (PhysicalPlanOptimizationNode *)
 			this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelTermVirtualListOptimizationOperator();
 	op->setLogicalPlanNode(root);
 	treeOptions.push_back(op);
-	op = this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();
+	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();
 	op->setLogicalPlanNode(root);
 	treeOptions.push_back(op);
-	op = this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
+	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
 	op->setLogicalPlanNode(root);
 	treeOptions.push_back(op);
 }
@@ -325,78 +329,77 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 
 PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructure(PhysicalPlanOptimizationNode * chosenTree){
 	// now we move on the tree structure and create the real physical plan
-	PhysicalOperatorFactory pof;
 	PhysicalPlanOptimizationNode * optimizationResult = NULL;
 	PhysicalPlanNode * executableResult = NULL;
 	switch (chosenTree->getType()) {
 		case PhysicalPlanNode_SortById:{
-			optimizationResult = pof.createSortByIdOptimizationOperator();
-			executableResult = pof.createSortByIdOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByIdOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByIdOperator();
 			break;
 		}
 		case PhysicalPlanNode_SortByScore:{
-			optimizationResult = pof.createSortByScoreOptimizationOperator();
-			executableResult = pof.createSortByScoreOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOperator();
 			break;
 		}
 		case PhysicalPlanNode_MergeTopK:{
-			optimizationResult = pof.createMergeTopKOptimizationOperator();
-			executableResult = pof.createMergeTopKOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeTopKOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeTopKOperator();
 			break;
 		}
 		case PhysicalPlanNode_MergeSortedById:{
-			optimizationResult = pof.createMergeSortedByIDOptimizationOperator();
-			executableResult = pof.createMergeSortedByIDOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOperator();
 			break;
 		}
 		case PhysicalPlanNode_MergeByShortestList:{
-			optimizationResult = pof.createMergeSortedByIDOptimizationOperator();
-			executableResult = pof.createMergeSortedByIDOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionSortedById:{
-			optimizationResult = pof.createUnionSortedByIDOptimizationOperator();
-			executableResult = pof.createUnionSortedByIDOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionSortedByScoreTopK:{
-			optimizationResult = pof.createUnionSortedByScoreOptimizationOperatorTopK();
-			executableResult = pof.createUnionSortedByScoreOperatorTopK();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperatorTopK();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOperatorTopK();
 			break;
 		}
 		case PhysicalPlanNode_UnionSortedByScore:{
-			optimizationResult = pof.createUnionSortedByScoreOptimizationOperator();
-			executableResult = pof.createUnionSortedByScoreOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:{
-			optimizationResult = pof.createUnionLowestLevelTermVirtualListOptimizationOperator();
-			executableResult = pof.createUnionLowestLevelTermVirtualListOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelTermVirtualListOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelTermVirtualListOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:{
-			optimizationResult = pof.createUnionLowestLevelSimpleScanOptimizationOperator();
-			executableResult = pof.createUnionLowestLevelSimpleScanOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOperator();
 			break;
 		}
 		case PhysicalPlanNode_RandomAccessTerm:{
-			optimizationResult = pof.createRandomAccessVerificationTermOptimizationOperator();
-			executableResult = pof.createRandomAccessVerificationTermOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOperator();
 			break;
 		}
 		case PhysicalPlanNode_RandomAccessAnd:{
-			optimizationResult = pof.createRandomAccessVerificationAndOptimizationOperator();
-			executableResult = pof.createRandomAccessVerificationAndOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationAndOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationAndOperator();
 			break;
 		}
 		case PhysicalPlanNode_RandomAccessOr:{
-			optimizationResult = pof.createRandomAccessVerificationOrOptimizationOperator();
-			executableResult = pof.createRandomAccessVerificationOrOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationOrOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationOrOperator();
 			break;
 		}
 		case PhysicalPlanNode_RandomAccessNot:{
-			optimizationResult = pof.createRandomAccessVerificationNotOptimizationOperator();
-			executableResult = pof.createRandomAccessVerificationNotOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationNotOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationNotOperator();
 			break;
 		}
 	}

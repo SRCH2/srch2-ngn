@@ -25,6 +25,7 @@
 #include "instantsearch/LogicalPlan.h"
 #include "operation/ActiveNode.h"
 #include "util/Assert.h"
+#include "QueryEvaluatorInternal.h"
 
 #include "map"
 
@@ -47,6 +48,20 @@ public:
 		estimatedProbability = 0;
 		activeNodeSetExact = NULL;
 		activeNodeSetFuzzy = NULL;
+	}
+	~LogicalPlanNodeAnnotation(){
+		estimatedNumberOfResults = 0;
+		estimatedProbability = 0;
+        if (activeNodeSetExact->isResultsCached() == true){
+        	activeNodeSetExact->busyBit->setFree();
+        }else{
+	        delete activeNodeSetExact;
+	    }
+        if (activeNodeSetFuzzy->isResultsCached() == true){
+        	activeNodeSetFuzzy->busyBit->setFree();
+        }else{
+	        delete activeNodeSetFuzzy;
+	    }
 	}
 	unsigned getEstimatedNumberOfResults(){
 		return this->estimatedNumberOfResults;

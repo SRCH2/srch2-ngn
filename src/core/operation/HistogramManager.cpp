@@ -1,7 +1,6 @@
 
 
 #include "HistogramManager.h"
-#include "QueryEvaluatorInternal.h"
 
 namespace srch2
 {
@@ -39,8 +38,9 @@ void HistogramManager::allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node
 	if(node == NULL){
 		return;
 	}
-	ASSERT(node->stats == NULL);
-	node->stats = new LogicalPlanNodeAnnotation();
+	if(node->stats == NULL){
+		node->stats = new LogicalPlanNodeAnnotation();
+	}
 	for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
 		allocateLogicalPlanNodeAnnotations(*child);
 	}
@@ -57,8 +57,10 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 		case LogicalPlanNodeTypeNot:
 			break;
 		case LogicalPlanNodeTypeTerm:
-			node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
-			if(isFuzzy == true){
+			if(node->stats->activeNodeSetExact == NULL){
+				node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
+			}
+			if(isFuzzy == true && node->stats->activeNodeSetFuzzy == NULL){
 				node->stats->activeNodeSetFuzzy = computeActiveNodeSet(node->fuzzyTerm);
 			}
 			break;
