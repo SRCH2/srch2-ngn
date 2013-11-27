@@ -1,5 +1,6 @@
 
 #include "UnionLowestLevelSimpleScanOperator.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -173,13 +174,55 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 
 }
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	  //do the verification
+	PrefixActiveNodeSet *prefixActiveNodeSet =
+			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
+
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
+
+	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
+	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
+	for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+			!iter.isDone(); iter.next()) {
+		const TrieNode *trieNode;
+		unsigned distance;
+		iter.getItem(trieNode, distance);
+
+		unsigned minId = trieNode->getMinId();
+		unsigned maxId = trieNode->getMaxId();
+		if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+			if (trieNode->isTerminalNode())
+				maxId = minId;
+			else
+				continue;  // ignore non-terminal nodes
+		}
+
+		unsigned matchingKeywordId;
+		float termRecordStaticScore;
+		unsigned termAttributeBitmap;
+		if (this->queryEvaluator->getForwardIndex()->haveWordInRange(parameters.recordToVerify->getRecordId(), minId, maxId,
+				termSearchableAttributeIdToFilterTermHits,
+				matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+			parameters.termRecordMatchingPrefixes.push_back(trieNode);
+			parameters.attributeBitmaps.push_back(termAttributeBitmap);
+			parameters.prefixEditDistances.push_back(distance);
+			bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+			parameters.runTimeTermRecordScores.push_back(DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+						term->getKeyword()->size(),
+						isPrefixMatch,
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() ) );
+			parameters.staticTermRecordScores.push_back(termRecordStaticScore);
+			// parameters.positionIndexOffsets ????
+			return true;
+		}
+	}
+	return false;
 }
 
 
 void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
 		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned distance, unsigned bound){
-    if (trieNode->isTerminalNode())
+    if (trieNode->isTerminalNode()){
         // get inverted list pointer and save it
         shared_ptr<vectorview<unsigned> > invertedListReadView;
         this->queryEvaluator->getInvertedIndex()->
@@ -189,6 +232,7 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
         this->invertedListLeafNodes.push_back(trieNode);
         this->invertedListDistances.push_back(distance);
         this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
+    }
     if (distance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
