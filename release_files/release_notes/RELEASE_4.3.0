@@ -1,0 +1,7 @@
+
+*------------------------------------------------------------------
+*  RELEASE NOTES Version 4.3.0
+*  Date: {MONTH} {DAY}, YEAR
+*------------------------------------------------------------------
+
+* Introduced a new filter called "protectedKeyWordsFilter" to preserve special keywords such as .NET, AT&T, and C++.

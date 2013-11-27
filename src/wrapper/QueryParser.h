@@ -252,7 +252,7 @@ private:
     bool filterQueryParameterParser();
 
     /*
-     * example:  facet=true&facet.field=Author&facet.field=Title&facet.range=price&f.price.range.start=10&f.price.range.end=100&f.price.range.gap=10
+     * example:  facet=true&facet.field=Author&facet.field=Title&facet.range=price&f.price.facet.start=10&f.price.facet.end=100&f.price.facet.gap=10
      * parses the parameters facet=true/false , and it is true it parses the rest of
      * parameters which are related to faceted search.
      */
