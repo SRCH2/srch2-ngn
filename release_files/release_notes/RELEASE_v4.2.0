@@ -33,8 +33,6 @@ Changes over version 4.1.0:
   the engine increases the performance by first computing the most
   likely completions, and then using them to compute top-k answers. 
 
-* Optimized the process of returning JSON results.
-
 * Tag names and attribute names are now case insensitive.
 
 * Tag "queryTermType" is now changed to "queryTermPrefixType".

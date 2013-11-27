@@ -35,7 +35,7 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie records, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
@@ -94,7 +94,7 @@ Now you should see the following results:
 
 ##2. Simple Front-end UI##{id="simple-ui"}
 
-Use a browser to open the file "example-demo/basic-ui/index.html". Type into the search box.  After a few characters you should see results similar to the following:
+Use a browser to open the file [example-demo/basic/index.html](example-demo/basic/index.html). Type into the search box.  After typing a few characters you should see results similar to the following:
 
 ![Demo Web page Image](./images/Srch2-BasicDemoFront.png){width=750px}
 

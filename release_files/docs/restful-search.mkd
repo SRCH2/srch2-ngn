@@ -48,7 +48,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: RESTful API - Search</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.2.0, November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview##{id="overview"}
 
@@ -68,28 +68,30 @@ Query f1 searches for all records containing the word "terminator". The result s
 f1) curl -i "http://localhost:8081/search?q=terminator"
 ```
 
-Query f2 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron") gets records with the word "terminator" in its <i>title</i> field and the word "cameron" in its <i>director</i> field.
+Query f2 gets records with the word "terminator" in its <i>title</i>
+field and the word "cameron" in its <i>director</i> field.
+
 ```
 f2) http://localhost:8081/search?q=title:terminator AND director:cameron
-(curl command with URL encoding: curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron")
+curl command with URL encoding: curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron"
 ```
 
-Query f3 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]")
-filters the results based on the <i>year</i> field, i.e., the <i>year</i> value needs to be between 1983 and 1992 (both inclusive).
+Query f3 filters the results based on the <i>year</i> field, i.e., the
+<i>year</i> value needs to be between 1983 and 1992 (both inclusive). 
 ```
 f3) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]
 (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=year:%5B1983%20TO%201992%5D")
 ```
 
-Query f4 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=genre:action")
-filters the results based on the <i>genre</i> field.
+Query f4 filters the results based on the <i>genre</i> field.
 
 ```
 f4) "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=genre:action
 (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=genre:action")
 ```
 
-Query f5 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $") includes a filtering expression, as specified by the syntax "boolexp$ ... $", which selects movies made after 1982.
+Query f5 includes a filtering expression, as specified by the syntax
+"boolexp$ ... $", which selects movies made after 1982.
 ```
 f5) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $
 (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=boolexp$%20year%3E1982%20$")
@@ -105,7 +107,11 @@ Query f7 requests the engine to return faceted information for the record's <i>g
 f7) curl -i "http://localhost:8081/search?q=cameron&facet=true&facet.field=genre"
 ```
 
-Note: The response of a RESTful request is in the [JSON](http://www.json.org/) format.  The engine also supports the [JSONP](http://en.wikipedia.org/wiki/JSONP) format. In order to get the response data in JSONP, append a parameter field "callback" to the query URL. For example:
+Note: The response of a RESTful request is in the
+[JSON](http://www.json.org/) format.  The engine also supports the
+[JSONP](http://en.wikipedia.org/wiki/JSONP) format. In order to get
+the response data in JSONP, append a parameter field "callback" to the
+query URL. For example:
 ```
 curl -i "http://localhost:8081/search?q=terminator&callback=myfunc
 ```
