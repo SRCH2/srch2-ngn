@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.1.0">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Search API</title>
 </head>
@@ -84,7 +84,7 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, November 26, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, November 27, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
 <p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
@@ -95,24 +95,25 @@
 <pre><code>f1) curl -i &quot;http://localhost:8081/search?q=terminator&quot;
 </code></pre>
 
-<p>Query f2 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron") gets records with the word "terminator" in its <i>title</i> field and the word "cameron" in its <i>director</i> field.</p>
+<p>Query f2 gets records with the word "terminator" in its <i>title</i>
+field and the word "cameron" in its <i>director</i> field.</p>
 <pre><code>f2) http://localhost:8081/search?q=title:terminator AND director:cameron
-(curl command with URL encoding: curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&quot;)
+curl command with URL encoding: curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&quot;
 </code></pre>
 
-<p>Query f3 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=year:[1983 TO 1992]")
-filters the results based on the <i>year</i> field, i.e., the <i>year</i> value needs to be between 1983 and 1992 (both inclusive).</p>
+<p>Query f3 filters the results based on the <i>year</i> field, i.e., the
+<i>year</i> value needs to be between 1983 and 1992 (both inclusive). </p>
 <pre><code>f3) http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=year:[1983 TO 1992]
 (curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=year:%5B1983%20TO%201992%5D&quot;)
 </code></pre>
 
-<p>Query f4 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=genre:action")
-filters the results based on the <i>genre</i> field.</p>
+<p>Query f4 filters the results based on the <i>genre</i> field.</p>
 <pre><code>f4) &quot;http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=genre:action
 (curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=genre:action&quot;)
 </code></pre>
 
-<p>Query f5 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=boolexp$ year&gt;1982 $") includes a filtering expression, as specified by the syntax "boolexp$ ... $", which selects movies made after 1982.</p>
+<p>Query f5 includes a filtering expression, as specified by the syntax
+"boolexp$ ... $", which selects movies made after 1982.</p>
 <pre><code>f5) http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=boolexp$ year&gt;1982 $
 (curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=boolexp$%20year%3E1982%20$&quot;)
 </code></pre>
@@ -125,7 +126,11 @@ filters the results based on the <i>genre</i> field.</p>
 <pre><code>f7) curl -i &quot;http://localhost:8081/search?q=cameron&amp;facet=true&amp;facet.field=genre&quot;
 </code></pre>
 
-<p>Note: The response of a RESTful request is in the <a href="http://www.json.org/">JSON</a> format.  The engine also supports the <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get the response data in JSONP, append a parameter field "callback" to the query URL. For example:</p>
+<p>Note: The response of a RESTful request is in the
+<a href="http://www.json.org/">JSON</a> format.  The engine also supports the
+<a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a> format. In order to get
+the response data in JSONP, append a parameter field "callback" to the
+query URL. For example:</p>
 <pre><code>curl -i &quot;http://localhost:8081/search?q=terminator&amp;callback=myfunc
 </code></pre>
 
@@ -194,7 +199,7 @@ Invalid query 3) q=star~.6*
 
 <p>Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.</p>
 <h2 id="queryComponents">4. Understanding different query components</h2>
-<p>The components and sub-components of a query are shown in Figure 1. The "Local Parameters" have query-related meta data specification, and the "Query Parameters" include specifications for the main query, postprocessing filters, sorting, and facets.
+<p>The components and sub-components of a query are shown in Figure 1. The "Local Parameters" have query-related meta data specification, and the "Query Parameters" include specifications for the main query, post-processing filters, sorting, and facets.
 <br>
 <span ><center><img style="width:75%" src="images/Srch2-querysyntax.png" /></center></span>
 <center>Figure 1: Query Components</center></p>
@@ -271,8 +276,8 @@ Invalid query 3) q=star~.6*
 
 <p>The first query returns the records with an <i>id</i> greater than or equal to 1000, a <i>genre</i> of drama, and <i>year</i> greater than or equal to 1975.</p>
 <p>The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".</p>
-<pre><code>fq=year:[2000 TO *] AND genre:comedy AND boolexp$numOfReviews * 5 + numOfLikes * 2 &gt; 940$
-(fq=year:%5B2000%20TO%20*%5D%20AND%20genre:comedy%20AND%20boolexp$numOfReviews%20*%205%20+%20numOfLikes%20*%202%20&gt;%20940$)
+<pre><code>fq=year:[2000 TO *] AND genre:comedy AND boolexp$year &gt; 2000$
+(fq=year:%5B2000%20TO%20*%5D%20AND%20genre:comedy%20AND%20boolexp$year%20%3E%202000$)
 </code></pre>
 
 <p>Please note: for the predicate "boolexp$ numOfReviews * 5 + numOfLikes * 2 &gt; 940$", the engine will evaluate the boolean expression between the two '$' signs, which in this case is "numOfReviews * 5 + numOfLikes * 2 &gt; 940". Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.</p>
@@ -303,7 +308,7 @@ Invalid query 3) q=star~.6*
 <pre><code>f.year.rows=10
 </code></pre>
 
-<p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the different query parameter name of <i>field</i> instead of <i>f</i> for backward compatibilty to Solr.</p>
+<p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the different query parameter name of <i>field</i> instead of <i>f</i> for backward compatibility to Solr.</p>
 <h3 id="facetByRange">7.3. Facet by Range</h3>
 <h3 id="facetRange">7.3.1 facet.range</h3>
 <p>This parameter can be used to specify a field that should be treated as a range facet. It allows us to specify fields for which only facets within a specified range will be included. Example:</p>
@@ -313,7 +318,7 @@ Invalid query 3) q=star~.6*
 <p>The response of the above query includes facet information for the <i>year</i> field. <br></p>
 <p>Please note: the <a href="configuration.html#facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
 <h3 id="facetStart">7.3.2. facet.range.start</h3>
-<p>This is the mininum value (inclusive) of the range. Example:</p>
+<p>This is the minimum value (inclusive) of the range. Example:</p>
 <pre><code>f.year.facet.start=1995
 </code></pre>
 

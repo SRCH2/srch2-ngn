@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.1.0">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -78,7 +78,6 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#protectedKeyWordsFilter">11.5.3 Protected Words</a></br><br>
 </td></tr></tbody></table>
 
 </div>
@@ -97,15 +96,23 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Configuration</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, Date: November 26, 2013</center></h6>
-<h2 id="overview">1. Overview:</h2>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
+<h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
 <p>Tag names and tag attribute names (but not values) are case insensitive.</p>
 <h2 id="srch2Home">2. SRCH2 Home Directory, Required</h2>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
 
-<p>This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, a folder "example-demo" with an example, a license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "example-data/sample-data.json".</p>
+<p>This parameter specifies the installation folder of the SRCH2 engine,
+which includes the binary, a folder "example-demo" with a movie
+example, a license file, and other files needed by the engine. Other
+file paths used in the configuration should be relative to this home
+path. For example, if we give the engine a data file at
+"/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home
+directory is set to "/usr/joe/srch2", then the configuration file
+should reference the data file's location as
+"example-data/sample-data.json".</p>
 <h2 id="licenseFile">3. License Key File, Required</h2>
 <pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
 </code></pre>
@@ -130,9 +137,8 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 
 <p>It specifies the type of data source to build the indexes from.</p>
 <blockquote>
-<pre><code>   1 - json data file. (Default)
-   2 - MongoDB.
-</code></pre>
+<p>1: json data file. (Default)
+ 2: MongoDB.</p>
 </blockquote>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/data.json&lt;/dataFile&gt;
@@ -170,11 +176,19 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 </code></pre>
 
 <p>It specifies boost values for the <a href="#indexConfig">searchable attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three searchable attributes can be specified as: <br></p>
-<pre><code>&lt;fieldBoost&gt;relevance^10 name^7 title&lt;/fieldBoost&gt;
+<pre><code>&lt;fieldBoost&gt;title^2 director^1&lt;/fieldBoost&gt;
 </code></pre>
 
-<p>This parameter, together with the following parameters, is used in the <a href="ranking.html">ranking function</a> of the engine.  The reason they are under the "indexConfig" tag is that they are used to compute static scores during the constructions of the indexes.  There are also parameters under the "<a href="#queryConfig">query</a>" tag that are used to compute query-specific scores.</p>
-<p>Notice that the fields are separated by a single white space. If a value is not provided for a field, the engine uses a default value of 1. In the example above, the filed "title" will have a boost value of 1.<br></p>
+<p>This parameter, together with the following parameters, is used in the
+<a href="ranking.html">ranking function</a> of the engine.  The reason they are
+under the "indexConfig" tag is that they are used to compute static
+scores during the constructions of the indexes.  There are also
+parameters under the "<a href="#queryConfig">query</a>" tag that are used to
+compute query-specific scores. </p>
+<p>Notice that the fields are separated by a single white space. If a
+value is not provided for a field, the engine uses a default value of
+1. In the example above, the filed "title" will have a boost value of
+1.<br></p>
 <h3 id="recordBoostField">7.3. Record Boost Field, Optional</h3>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
@@ -217,18 +231,31 @@ example shows how to enable this indexing:</p>
 <pre><code>&lt;fuzzyMatchPenalty&gt;0.9&lt;/fuzzyMatchPenalty&gt;
 </code></pre>
 
-<p>It is used to decide how much penality we want to give to a fuzzy match. See the <a href="ranking.html">Ranking Section</a> section about how this parameter is used. Its default value is 0.5.</p>
+<p>It is used to decide how much penalty we want to give to a fuzzy
+match. See the <a href="ranking.html">Ranking Section</a> section about how this
+parameter is used. Its default value is 0.5.</p>
 <h3 id="queryTermSimilarityThreshold">8.3. Term Similarity Threshold, Optional</h3>
-<pre><code>&lt;queryTermSimilarityThreshold&gt;0.5&lt;/queryTermSimilarityThreshold&gt;
+<pre><code>&lt;queryTermSimilarityThreshold&gt;0.75&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
-<p>It specifies how much error tolerance we want to have for this term in fuzzy search. Its value must lie in [0,1], with 1 representing exact match, and 0 being the largest possible error tolerance. Its default value is 0.5.</p>
-<p>This threshold is normalized by the length of the query term. The engine uses the following formula the compute the edit distance threshold for this term: floor((1-queryTermSimilarityThreshold) * length(query term)). For instance, suppose the query term is "schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the threshold of edit distance for this term is: floor((1-0.8)*16) = 3.</p>
-<h3 id="supportSwapInEditDistance">8.4. Support Swap as an Edit Distance Operation, Optional</h3>
+<p>It specifies how much error tolerance we want to have for this term in
+fuzzy search. Its value must lie in [0,1], with 1 representing exact
+match, and 0 being the largest possible error tolerance. Its default
+value is 0.5.</p>
+<p>This threshold is normalized by the length of the query term. The
+engine uses the following formula the compute the edit distance
+threshold for this term: floor((1-queryTermSimilarityThreshold) <em>
+length(query term)). For instance, suppose the query term is
+"schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the
+threshold of edit distance for this term is: floor((1-0.8)</em>16) = 3.</p>
+<h3>8.4. Support Swap as an Edit Distance Operation</h3>
+<p>Optional{id="supportSwapInEditDistance"}</p>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
-<p>It specifies whether we support swap operation (e.g., "iphone" versus "ipohne") in the edit distance function, in addition to insertion, deletion, and substitution operations. By default it is true.</p>
+<p>It specifies whether we support swap operation (e.g., "iphone" versus
+"ipohne") in the edit distance function, in addition to insertion,
+deletion, and substitution operations. By default it is true.</p>
 <h3 id="prefixMatchPenalty">8.5. Prefix Match Penalty, Optional</h3>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
@@ -255,8 +282,8 @@ example shows how to enable this indexing:</p>
 
 <p>It is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br></p>
 <blockquote>
-<p>0 - Disabled <br>
-1 - Enabled <br></p>
+<p>0: Disabled <br>
+1: Enabled <br></p>
 </blockquote>
 <p>Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.</p>
 <h3 id="searcherType">8.10. Search Type, Optional</h3>
@@ -311,7 +338,7 @@ example shows how to enable this indexing:</p>
 <pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
 </code></pre>
 
-<h2 id="updateHandler">10. Update Handler:</h2>
+<h2 id="updateHandler">10. Update Handler</h2>
 <p>This tag includes tags related to configuring the engine to handle update requests.</p>
 <pre><code>&lt;updatehandler&gt;
 ...
@@ -361,9 +388,15 @@ example shows how to enable this indexing:</p>
 <pre><code>&lt;accessLogFile&gt;./indexes/log.txt&lt;/accessLogFile&gt;
 </code></pre>
 
-<p>It specifies the file to which the engine writes logging information.  We can use third-party tools such as <a href="http://linuxcommand.org/man_pages/logrotate8.html">logrotate</a> to  manage the log messages.  Check <a href="restful-control.html#reset-log">this page</a> for more information about how to manage this log file.<br></p>
+<p>It specifies the file to which the engine writes logging information.
+We can use third-party tools such as
+<a href="http://linuxcommand.org/man_pages/logrotate8.html">logrotate</a> to
+manage the log messages.  Check <a href="restful-control.html#reset-log">this
+page</a> for more information about how
+to manage this log file using third-party tools such as "logrotate".<br></p>
 <h2 id="schemaTag">11. Data Schema:</h2>
-<p>The following sections explain each subtag under the <i>schema</i> component.</p>
+<p>The following sections explain each sub-tag under the <i>schema</i>
+component.</p>
 <pre><code>&lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
 ...
 &lt;/schema&gt;
@@ -409,11 +442,13 @@ example shows how to enable this indexing:</p>
 <li><b>required</b>: The flag indicates whether this field can be empty or not. It is false by default.<br></li>
 <li><b>default</b>: It gives the default value of this field if the value is missing.<br></li>
 <li><b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br></li>
-<li><b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
+<li><b>refining</b>: If it is true, then the engine will include its values in the indexes to support post-processing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
 <li><b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br></li>
 <li><b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
 </ul>
-<p>In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".</p>
+<p>In the example above, we can do keyword search on the attributes
+"category" and "name".  We can do post-processing on attributes
+"name", "model", "price", "likes" and "seller_id".</p>
 <p>Note:</p>
 <ul>
 <li>For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br></li>
@@ -434,21 +469,29 @@ example shows how to enable this indexing:</p>
 </code></pre>
 
 <p>Facet fields: Required if facet is enabled <br></p>
-<pre><code>&lt;facetField name=&quot;likes&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;50&quot; facetGap=&quot;10&quot; /&gt;
-&lt;facetField name=&quot;model&quot; facetType=&quot;categorical&quot; /&gt;
-&lt;facetField name=&quot;price&quot; facetType=&quot;range&quot; facetStart=&quot;0&quot; facetEnd=&quot;100&quot; facetGap=&quot;10&quot; /&gt;
+<pre><code>          &lt;facetField name=&quot;genre&quot; facetType=&quot;categorical&quot;/&gt;
+          &lt;facetField name=&quot;year&quot;  facetType=&quot;range&quot; facetStart=&quot;1990&quot; facetEnd=&quot;2050&quot; facetGap=&quot;10&quot;/&gt;
 </code></pre>
 
 <blockquote>
 <ul>
-<li>name: The name of the field used for this facet. It must correspond to a refining field specified in the <a href=#fields>field tag</a>. <br></li>
+<li>name: The name of the field used for this facet. It must
+correspond to a refining field specified in the <a href=#fields>field
+tag</a>. <br> </li>
 <li>facetType: Categorical or range. <br></li>
-<li>facetStart: The start point of making a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
-<li>facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br></li>
-<li>facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br></li>
+<li>facetStart: The start point of making a range facet. It is
+required for a range facet. The value will be ignored for categorical
+facets. <br> </li>
+<li>facetEnd: The end point of a range facet. It is required for a
+range facet. The value will be ignored for categorical facets. <br> </li>
+<li>facetGap: The increment amount used for a range facet. The value
+will be ignored for categorical facets. <br> </li>
 </ul>
 </blockquote>
-<p>Note: facet ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br></p>
+<p>Note: facet ranges are created in correspondence with the "facetStart"
+value, not the "facetEnd" value. Therefore, the last interval may not
+stretch the entire facetGap. Also all facet fields must be declared in
+<a href=#fields>fields tag</a> as well (with refining="true") <br> </p>
 <h3 id="analyzer">11.5. Analyzer:</h3>
 <p>It specifies the analyzer used by the engine. <br></p>
 <pre><code>&lt;types&gt;
@@ -468,11 +511,6 @@ example shows how to enable this indexing:</p>
 <h3 id="StopFilter">11.5.2 Stop Words, Optional</h3>
 <p>It specifies a file of stop words that are ignored by the engine. Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;srch2_stop_words.txt&quot; /&gt;
-</code></pre>
-
-<h3 id="protectedKeyWordsFilter">11.5.3 Protect Words Filter, Optional</h3>
-<p>It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&amp;T". Providing an empty string ("") for the "words" parameter disables this filter.</p>
-<pre><code>&lt;filter name=&quot;protectedKeyWordsFilter&quot; words=&quot;srch2_protected_words.txt&quot; /&gt;
 </code></pre>
 
 </table>

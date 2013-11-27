@@ -45,7 +45,6 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#protectedKeyWordsFilter">11.5.3 Protected Words</a></br><br>
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -62,9 +61,9 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Configuration</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
-##1. Overview:##{id="overview"}
+##1. Overview##{id="overview"}
 
 The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample [configuration file](example-demo/srch2-config.xml).  Each parameter in the file can have one of the following two labels: "Required" means this tag has to be present in the configuration file, and "Optional" means this tag does not need to be present.
 
@@ -75,7 +74,15 @@ Tag names and tag attribute names (but not values) are case insensitive.
 ```
 <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
-This parameter specifies the installation folder of the SRCH2 engine, which includes the binary, a folder "example-demo" with an example, a license file, and other files needed by the engine. Other file paths used in the configuration should be relative to this home path. For example, if we give the engine a data file at "/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home directory is set to "/usr/joe/srch2", then the configuration file should reference the data file's location as "example-data/sample-data.json".
+This parameter specifies the installation folder of the SRCH2 engine,
+which includes the binary, a folder "example-demo" with a movie
+example, a license file, and other files needed by the engine. Other
+file paths used in the configuration should be relative to this home
+path. For example, if we give the engine a data file at
+"/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home
+directory is set to "/usr/joe/srch2", then the configuration file
+should reference the data file's location as
+"example-data/sample-data.json".
 
 ##3. License Key File, Required##{id="licenseFile"}
 ```
@@ -107,8 +114,8 @@ It specifies the path of a folder where the engine stores serialized index files
 ```
 It specifies the type of data source to build the indexes from.
 
->        1 - json data file. (Default)
->        2 - MongoDB.
+>  1: json data file. (Default)
+>  2: MongoDB.
 
 ###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
@@ -150,14 +157,21 @@ This tag includes parameters related to customizing the indexes.
 ```
 <fieldBoost></fieldBoost>
 ```
-It specifies boost values for the <a href="#indexConfig">search-able attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three search-able attributes can be specified as: <br>
+It specifies boost values for the <a href="#indexConfig">searchable attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three searchable attributes can be specified as: <br>
 ```
-<fieldBoost>relevance^10 name^7 title</fieldBoost>
+<fieldBoost>title^2 director^1</fieldBoost>
 ```
-This parameter, together with the following parameters, is used in the [ranking function](ranking.html) of the engine.  The reason they are under the "indexConfig" tag is that they are used to compute static scores during the constructions of the indexes.  There are also parameters under the "[query](#queryConfig)" tag that are used to compute query-specific scores.
+This parameter, together with the following parameters, is used in the
+[ranking function](ranking.html) of the engine.  The reason they are
+under the "indexConfig" tag is that they are used to compute static
+scores during the constructions of the indexes.  There are also
+parameters under the "[query](#queryConfig)" tag that are used to
+compute query-specific scores. 
 
-Notice that the fields are separated by a single white space. If a value is not provided for a field, the engine uses a default value of 1. In the example above, the filed "title" will have a boost value of 1.<br>
-
+Notice that the fields are separated by a single white space. If a
+value is not provided for a field, the engine uses a default value of
+1. In the example above, the filed "title" will have a boost value of
+1.<br>
 
 ###7.3. Record Boost Field, Optional{id="recordBoostField"}
 ```
@@ -213,21 +227,34 @@ The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [
 ```
 <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
 ```
-It is used to decide how much penalty we want to give to a fuzzy match. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
+It is used to decide how much penalty we want to give to a fuzzy
+match. See the [Ranking Section](ranking.html) section about how this
+parameter is used. Its default value is 0.5.
 
 ###8.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
 ```
-<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
 ```
-It specifies how much error tolerance we want to have for this term in fuzzy search. Its value must lie in [0,1], with 1 representing exact match, and 0 being the largest possible error tolerance. Its default value is 0.5.
+It specifies how much error tolerance we want to have for this term in
+fuzzy search. Its value must lie in [0,1], with 1 representing exact
+match, and 0 being the largest possible error tolerance. Its default
+value is 0.5.
 
-This threshold is normalized by the length of the query term. The engine uses the following formula the compute the edit distance threshold for this term: floor((1-queryTermSimilarityThreshold) * length(query term)). For instance, suppose the query term is "schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
+This threshold is normalized by the length of the query term. The
+engine uses the following formula the compute the edit distance
+threshold for this term: floor((1-queryTermSimilarityThreshold) *
+length(query term)). For instance, suppose the query term is
+"schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the
+threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
 
-###8.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
+###8.4. Support Swap as an Edit Distance Operation
+Optional{id="supportSwapInEditDistance"}
 ```
 <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
-It specifies whether we support swap operation (e.g., "iphone" versus "ipohne") in the edit distance function, in addition to insertion, deletion, and substitution operations. By default it is true.
+It specifies whether we support swap operation (e.g., "iphone" versus
+"ipohne") in the edit distance function, in addition to insertion,
+deletion, and substitution operations. By default it is true.
 
 ###8.5. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
 
@@ -261,10 +288,10 @@ It specifies the number of threads that serve search requests. Its default value
 <fieldBasedSearch>0</fieldBasedSearch>
 ```
 It is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br>
-> 0 - Disabled <br>
-> 1 - Enabled <br>
+> 0: Disabled <br>
+> 1: Enabled <br>
 
-Note that if field-based search is enabled, the number of search-able attributes as specified in <a href='#fields'>fields</a> is limited to 31.
+Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 ###8.10. Search Type, Optional{id="searcherType"}
 ```
@@ -323,7 +350,7 @@ or
 <responseContent type="2">lat,lng</responseContent>
 ```
 
-##10. Update Handler:###{id="updateHandler"}
+##10. Update Handler###{id="updateHandler"}
 
 This tag includes tags related to configuring the engine to handle update requests.
 ```
@@ -373,11 +400,17 @@ Its default value is 3.
 ```
 <accessLogFile>./indexes/log.txt</accessLogFile>
 ```
-It specifies the file to which the engine writes logging information.  We can use third-party tools such as [logrotate](http://linuxcommand.org/man_pages/logrotate8.html) to  manage the log messages.  Check [this page](restful-control.html#reset-log) for more information about how to manage this log file.<br>
+It specifies the file to which the engine writes logging information.
+We can use third-party tools such as
+[logrotate](http://linuxcommand.org/man_pages/logrotate8.html) to
+manage the log messages.  Check [this
+page](restful-control.html#reset-log) for more information about how
+to manage this log file using third-party tools such as "logrotate".<br>
 
 ##11. Data Schema:##{id="schemaTag"}
 
-The following sections explain each sub-tag under the <i>schema</i> component.
+The following sections explain each sub-tag under the <i>schema</i>
+component.
 ```
 <schema name="SRCH2" version="3">
 ...
@@ -433,7 +466,9 @@ Each field has certain properties:
  - <b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
  - <b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
 
-In the example above, we can do keyword search on the attributes "category" and "name".  We can do post-processing on attributes "name", "model", "price", "likes" and "seller_id".
+In the example above, we can do keyword search on the attributes
+"category" and "name".  We can do post-processing on attributes
+"name", "model", "price", "likes" and "seller_id".
 
 Note:
 
@@ -459,17 +494,25 @@ This tag contains all facet-related tags.
 ```
 Facet fields: Required if facet is enabled <br>
 ```
-<facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
-<facetField name="model" facetType="categorical" />
-<facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+          <facetField name="genre" facetType="categorical"/>
+          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
 ```
-> - name: The name of the field used for this facet. It must correspond to a refining field specified in the <a href=#fields>field tag</a>. <br>
+> - name: The name of the field used for this facet. It must
+correspond to a refining field specified in the <a href=#fields>field
+tag</a>. <br> 
 > - facetType: Categorical or range. <br>
-> - facetStart: The start point of making a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
-> - facetEnd: The end point of a range facet. It is required for a range facet. The value will be ignored for categorical facets. <br>
-> - facetGap: The increment amount used for a range facet. The value will be ignored for categorical facets. <br>
+> - facetStart: The start point of making a range facet. It is
+required for a range facet. The value will be ignored for categorical
+facets. <br> 
+> - facetEnd: The end point of a range facet. It is required for a
+range facet. The value will be ignored for categorical facets. <br> 
+> - facetGap: The increment amount used for a range facet. The value
+will be ignored for categorical facets. <br> 
 
-Note: facet ranges are created in correspondence with the "facetStart" value, not the "facetEnd" value. Therefore, the last interval may not stretch the entire facetGap. Also all facet fields must be declared in <a href=#fields>fields tag</a> as well (with refining="true") <br>
+Note: facet ranges are created in correspondence with the "facetStart"
+value, not the "facetEnd" value. Therefore, the last interval may not
+stretch the entire facetGap. Also all facet fields must be declared in
+<a href=#fields>fields tag</a> as well (with refining="true") <br> 
 
 ###11.5. Analyzer:{id="analyzer"}
 
@@ -495,9 +538,4 @@ It specifies a file of stop words that are ignored by the engine. Providing an e
 ```
 <filter name="StopFilter" words="srch2_stop_words.txt" />
 ```
-###11.5.3 Protect Words Filter, Optional{id="protectedKeyWordsFilter"}
 
-It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&T". Providing an empty string ("") for the "words" parameter disables this filter.
-```
-<filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
-```
