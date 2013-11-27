@@ -288,8 +288,8 @@ The first query returns the records with an <i>id</i> greater than or equal to 1
 
 The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".
 ```
-fq=boolexp$year > 2003$
-(fq=boolexp%24year%20%3E%202003%24)
+fq=boolexp$log(year) + 5 > log(2003)$
+(fq=boolexp%24log%28year%29%20%2B%205%20%3E%20log%282003%29%24)
 ```
 Please note: for the predicate "boolexp$ numOfReviews * 5 + numOfLikes * 2 > 940$", the engine will evaluate the boolean expression between the two '$' signs, which in this case is "numOfReviews * 5 + numOfLikes * 2 > 940". Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.
 
