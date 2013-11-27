@@ -15,16 +15,147 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 	//TODO
 }
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+
+	this->isShortestListFinished = false;
+
+	this->indexOfShortestListChild =
+			((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
+
+	// open the shortest list
+	this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->open(this->queryEvaluator,params);
+
+	return true;
+
 }
 PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+
+	if(isShortestListFinished == true){
+		return NULL;
+	}
+
+	while(true){
+		//1. get the next record from shortest list
+		PhysicalPlanRecordItem * nextRecord =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->getNext(params);
+
+		if(nextRecord == NULL){
+			this->isShortestListFinished = true;
+			return NULL;
+		}
+		// validate the record with other children
+		//2.
+		std::vector<float> runTimeTermRecordScores;
+		std::vector<float> staticTermRecordScores;
+		std::vector<TrieNodePointer> termRecordMatchingKeywords;
+		std::vector<unsigned> attributeBitmaps;
+		std::vector<unsigned> prefixEditDistances;
+		std::vector<unsigned> positionIndexOffsets;
+		if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
+				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
+			continue;	// 2.1. and 2.2.
+		}
+		// from this point, nextRecord is a candidate
+		//3.
+		// set the members
+		nextRecord->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		nextRecord->setRecordMatchEditDistances(prefixEditDistances);
+		nextRecord->setRecordMatchingPrefixes(termRecordMatchingKeywords);
+		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
+		// nextRecord->setRecordStaticScore() Should we set static score as well ?
+		nextRecord->setRecordRuntimeScore(computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+		return nextRecord;
+	}
+
+	ASSERT(false); // we never reach here
+	return NULL; // this return statement is only to suppress compiler warning
+
 }
+
+
 bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	// open the shortest list
+	this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->close(params);
+	this->isShortestListFinished = false;
+	this->queryEvaluator = NULL;
+	return true;
+
 }
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	//TODO
+}
+
+
+bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * recordItem ,
+					std::vector<float> & runTimeTermRecordScores,
+					std::vector<float> & staticTermRecordScores,
+					std::vector<TrieNodePointer> & termRecordMatchingKeywords,
+					std::vector<unsigned> & attributeBitmaps,
+					std::vector<unsigned> & prefixEditDistances,
+					std::vector<unsigned> & positionIndexOffsets,
+					const PhysicalPlanExecutionParameters & params){
+
+	// move on children and call verifyByRandomAccess
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		if(childOffset == this->indexOfShortestListChild){
+			runTimeTermRecordScores.push_back(recordItem->getRecordRuntimeScore());
+			staticTermRecordScores.push_back(recordItem->getRecordStaticScore());
+			vector<TrieNodePointer> matchingPrefixes;
+			recordItem->getRecordMatchingPrefixes(matchingPrefixes);
+			termRecordMatchingKeywords.insert(termRecordMatchingKeywords.end(),matchingPrefixes.begin(),matchingPrefixes.end());
+			vector<unsigned> recordAttributeBitmaps;
+			recordItem->getRecordMatchAttributeBitmaps(recordAttributeBitmaps);
+			attributeBitmaps.insert(attributeBitmaps.end(),recordAttributeBitmaps.begin(),recordAttributeBitmaps.end());
+			vector<unsigned> recordPrefixEditDistances;
+			recordItem->getRecordMatchEditDistances(recordPrefixEditDistances);
+			prefixEditDistances.insert(prefixEditDistances.end(),recordPrefixEditDistances.begin(),recordPrefixEditDistances.end());
+			vector<unsigned> recordPositionIndexOffsets;
+			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
+			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
+		}else{
+			PhysicalPlanRandomAccessVerificationParameters parameters;
+			parameters.recordToVerify = recordItem;
+			parameters.isFuzzy = params.isFuzzy;
+			parameters.prefixMatchPenalty = params.prefixMatchPenalty;
+			bool resultOfThisChild =
+					this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+			if(resultOfThisChild == false){
+				return false;
+			}
+			// append new information to the output
+			runTimeTermRecordScores.insert(
+					runTimeTermRecordScores.end(), parameters.runTimeTermRecordScores.begin() , parameters.runTimeTermRecordScores.end());
+			staticTermRecordScores.insert(
+					staticTermRecordScores.end(), parameters.staticTermRecordScores.begin() , parameters.staticTermRecordScores.end());
+			termRecordMatchingKeywords.insert(
+					termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
+			attributeBitmaps.insert(
+					attributeBitmaps.end(),parameters.attributeBitmaps.begin(),parameters.attributeBitmaps.end());
+			prefixEditDistances.insert(
+					prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
+			positionIndexOffsets.insert(
+					positionIndexOffsets.end(),parameters.positionIndexOffsets.begin(),parameters.positionIndexOffsets.end());
+		}
+	}
+
+    bool validForwardList;
+    this->queryEvaluator->getForwardIndex()->getForwardList(recordItem->getRecordId(), validForwardList);
+    if (validForwardList) {
+    	return true;
+    }
+	return false;
+
+}
+
+float MergeByShortestListOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+	float resultScore = 0;
+
+	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+		resultScore += *(score);
+	}
+	return resultScore;
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
@@ -78,6 +209,29 @@ bool MergeByShortestListOptimizationOperator::validateChildren(){
 
 	return true;
 }
+
+unsigned MergeByShortestListOptimizationOperator::getShortestListOffsetInChildren(){
+	unsigned numberOfNonNullChildren = 0;
+	for(unsigned i = 0 ; i < getChildrenCount() ; i++){
+		PhysicalPlanOptimizationNode * child = getChildAt(i);
+		PhysicalPlanNodeType childType = child->getType();
+
+		switch (childType) {
+			case PhysicalPlanNode_RandomAccessTerm:
+			case PhysicalPlanNode_RandomAccessAnd:
+			case PhysicalPlanNode_RandomAccessOr:
+			case PhysicalPlanNode_RandomAccessNot:
+				break;
+			default:{ // we count the number of non-verification operators.
+				return i;
+			}
+		}
+
+	}
+	ASSERT(false);
+	return 0;
+}
+
 
 }
 }

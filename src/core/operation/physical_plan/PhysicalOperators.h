@@ -275,9 +275,21 @@ public:
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
+	bool verifyRecordWithChildren(PhysicalPlanRecordItem * recordItem ,
+						std::vector<float> & runTimeTermRecordScores,
+						std::vector<float> & staticTermRecordScores,
+						std::vector<TrieNodePointer> & termRecordMatchingKeywords,
+						std::vector<unsigned> & attributeBitmaps,
+						std::vector<unsigned> & prefixEditDistances,
+						std::vector<unsigned> & positionIndexOffsets,
+						const PhysicalPlanExecutionParameters & params);
+	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
 	~MergeByShortestListOperator();
 private:
 	MergeByShortestListOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
+	unsigned indexOfShortestListChild ;
+	bool isShortestListFinished;
 };
 
 class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -295,6 +307,7 @@ public:
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
 	bool validateChildren();
+	unsigned getShortestListOffsetInChildren();
 };
 
 /*
