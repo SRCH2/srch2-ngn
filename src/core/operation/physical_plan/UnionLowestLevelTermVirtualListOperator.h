@@ -31,7 +31,7 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-struct HeapItem {
+struct UnionLowestLevelTermVirtualListOperatorHeapItem {
     //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
     unsigned invertedListId;
     unsigned attributeBitMap;           //only used for attribute based query
@@ -44,7 +44,7 @@ struct HeapItem {
     unsigned ed;
     bool isPrefixMatch;
 
-    HeapItem() {
+    UnionLowestLevelTermVirtualListOperatorHeapItem() {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
         this->recordId = 0;
@@ -56,7 +56,7 @@ struct HeapItem {
         this->ed = 0;
         this->isPrefixMatch = false;
     }
-    HeapItem(unsigned invertedListId,
+    UnionLowestLevelTermVirtualListOperatorHeapItem(unsigned invertedListId,
              unsigned cursorVectorPosition,
              unsigned recordId,
              unsigned attributeBitMap,
@@ -77,7 +77,7 @@ struct HeapItem {
         this->ed = ed;
         this->isPrefixMatch = isPrefixMatch;
     }
-    ~HeapItem() {
+    ~UnionLowestLevelTermVirtualListOperatorHeapItem() {
         trieNode = NULL;
     }
 };
@@ -90,14 +90,14 @@ class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
 
-    struct HeapItemCmp {
+    struct UnionLowestLevelTermVirtualListOperatorHeapItemCmp {
         unsigned termLength; // length of the query term
 
-        HeapItemCmp() {
+        UnionLowestLevelTermVirtualListOperatorHeapItemCmp() {
         }
 
         // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
-        bool operator() (const HeapItem *lhs, const HeapItem *rhs) const {
+        bool operator() (const UnionLowestLevelTermVirtualListOperatorHeapItem *lhs, const UnionLowestLevelTermVirtualListOperatorHeapItem *rhs) const {
             return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
                     rhs->termRecordRuntimeScore, rhs->recordId);
 
@@ -131,7 +131,7 @@ private:
 
     PrefixActiveNodeSet *prefixActiveNodeSet;
     const InvertedIndex *invertedIndex;
-    vector<HeapItem* > itemsHeap;
+    vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap;
     Term *term;
     float prefixMatchPenalty;
     unsigned numberOfItemsInPartialHeap;

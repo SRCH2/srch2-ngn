@@ -1,5 +1,6 @@
 
 #include "UnionLowestLevelTermVirtualListOperator.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -64,7 +65,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     }
 
     // Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
-    make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::HeapItemCmp());
+    make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
 
     return true;
 }
@@ -78,12 +79,12 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
     if (this->numberOfItemsInPartialHeap != 0) {
         // Elements are there in PartialHeap and pop them out to calling function
-        HeapItem *currentHeapMax = *(itemsHeap.begin());
+        UnionLowestLevelTermVirtualListOperatorHeapItem *currentHeapMax = *(itemsHeap.begin());
         pop_heap(itemsHeap.begin(), itemsHeap.begin() + this->numberOfItemsInPartialHeap,
-                 TermVirtualList::HeapItemCmp());
+        		UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
 
         // allocate new item and fill it out
-        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory();
+        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
 
         newItem->setRecordId(currentHeapMax->recordId);
         newItem->setRecordRuntimeScore(currentHeapMax->termRecordRuntimeScore);
@@ -133,12 +134,12 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
                             currentHeapMax->ed,
                             term->getKeyword()->size(),
                             currentHeapMax->isPrefixMatch,
-                            this->prefixMatchPenalty , term->getSimilarityBoost());
+                            this->prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost();
                 currentHeapMax->termRecordStaticScore = termRecordStaticScore;
                 currentHeapMax->attributeBitMap = termAttributeBitmap;
                 currentHeapMax->positionIndexOffset = recordOffset;
                 push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
-                          TermVirtualList::HeapItemCmp());
+                          UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
                 break;
             }
         }
@@ -160,8 +161,8 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 }
 bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParameters & params){
     queryEvaluator = NULL;
-    for (vector<HeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
-        HeapItem *currentItem = *iter;
+    for (vector<UnionLowestLevelTermVirtualListOperatorHeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
+        UnionLowestLevelTermVirtualListOperatorHeapItem *currentItem = *iter;
         if (currentItem != NULL)
             delete currentItem;
     }
@@ -174,7 +175,55 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
     return true;
 }
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-    //TODO
+	  //do the verification
+	PrefixActiveNodeSet *prefixActiveNodeSet =
+			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
+
+	Term * term = NULL;
+	if(parameters.isFuzzy){
+		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
+	}else{
+		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
+	}
+
+	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
+	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
+	for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+			!iter.isDone(); iter.next()) {
+		const TrieNode *trieNode;
+		unsigned distance;
+		iter.getItem(trieNode, distance);
+
+		unsigned minId = trieNode->getMinId();
+		unsigned maxId = trieNode->getMaxId();
+		if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+			if (trieNode->isTerminalNode())
+				maxId = minId;
+			else
+				continue;  // ignore non-terminal nodes
+		}
+
+		unsigned matchingKeywordId;
+		float termRecordStaticScore;
+		unsigned termAttributeBitmap;
+		if (this->queryEvaluator->getForwardIndex()->haveWordInRange(parameters.recordToVerify->getRecordId(), minId, maxId,
+				termSearchableAttributeIdToFilterTermHits,
+				matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+			parameters.termRecordMatchingPrefixes.push_back(trieNode);
+			parameters.attributeBitmaps.push_back(termAttributeBitmap);
+			parameters.prefixEditDistances.push_back(distance);
+			bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+			parameters.runTimeTermRecordScores.push_back(DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+						term->getKeyword()->size(),
+						isPrefixMatch,
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() ) );
+			parameters.staticTermRecordScores.push_back(termRecordStaticScore);
+			// parameters.positionIndexOffsets ????
+			return true;
+		}
+	}
+	return false;
+
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
@@ -257,7 +306,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
                         term->getKeyword()->size(),
                         isPrefixMatch,
                         this->prefixMatchPenalty , term->getSimilarityBoost());
-            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
+            this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,
                                                    recordOffset, prefixNode,
@@ -269,7 +318,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
                         term->getKeyword()->size(),
                         false,
                         this->prefixMatchPenalty , term->getSimilarityBoost());// prefix match == false
-            this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
+            this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,
                                                    recordOffset, leafNode, distance, false));
@@ -300,8 +349,8 @@ bool UnionLowestLevelTermVirtualListOperator::_addItemsToPartialHeap()
 {
     bool returnValue = false;
     // If partial heap is empty, increase editDistanceThreshold and add more elements
-    for ( vector<HeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
-        HeapItem *currentItem = *iter;
+    for ( vector<UnionLowestLevelTermVirtualListOperatorHeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
+        UnionLowestLevelTermVirtualListOperatorHeapItem *currentItem = *iter;
         if (this->numberOfItemsInPartialHeap == 0) {
             // partialHeap is empty, assign new maxEditDistance and add items to partialHeap
             if (currentItem->ed > this->currentMaxEditDistanceOnHeap) {
@@ -322,7 +371,7 @@ bool UnionLowestLevelTermVirtualListOperator::_addItemsToPartialHeap()
     // PartialHeap changed;
     if (returnValue) {
         make_heap(this->itemsHeap.begin(),this->itemsHeap.begin()+numberOfItemsInPartialHeap,
-                  TermVirtualList::HeapItemCmp());
+                  UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
     }
     return returnValue;
 }
