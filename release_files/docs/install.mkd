@@ -6,9 +6,9 @@
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serverConfig">1. Download and Run Server</a><br><br>
 
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#simple-ui">2. Simple Frontend UI</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#simple-ui">2. Simple Front-end UI</a></br><br>
 
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#advanced-ui">3. Advanced Frontend UI</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#advanced-ui">3. Advanced Front-end UI</a></br><br>
 
 
 </td></tr></tbody></table>
@@ -35,10 +35,10 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
-This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie recrods, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
+This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie records, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
 
 
 ##1. Download and Run Server##{id="serverConfig"}
@@ -50,7 +50,7 @@ This documentation gives step-by-step instructions on how to use the SRCH2 engin
  - readme.txt;
  - example-demo/.
  
-The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two frontend UIs (one basic and one advanced).
+The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two front-end UIs (one basic and one advanced).
 
 <b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_ into the install directory.
 
@@ -92,18 +92,18 @@ Now you should see the following results:
 </br>
 
 
-##2. Simple Frontend UI##{id="simple-ui"}
+##2. Simple Front-end UI##{id="simple-ui"}
 
 Use a browser to open the file "example-demo/basic-ui/index.html". Type into the search box.  After a few characters you should see results similar to the following:
 
-![Demo Webpage Image](./images/Srch2-BasicDemoFront.png){width=750px}
+![Demo Web page Image](./images/Srch2-BasicDemoFront.png){width=750px}
 
 
-##3. Advanced Frontend UI##{id="advanced-ui"}
+##3. Advanced Front-end UI##{id="advanced-ui"}
 
 Use the browser to open the file "example-demo/advanced-ui/index.html". Do a search, and you should see a page similar to the following:
 
-![Demo Webpage Image](./images/Srch2-FullDemoFront.png){width=750px}
+![Demo Web-page Image](./images/Srch2-FullDemoFront.png){width=750px}
 
 
 The screen has the following regions:
@@ -114,7 +114,7 @@ The screen has the following regions:
 
 3. It allows the user to specify the order in which the results are sorted using the year field;
 
-4. It allows the user to specify filters to postprocess results;
+4. It allows the user to specify filters to post-process results;
 
 5. It allows the user to specify a facet on the year field by providing a start year, an end year, and a year gap;
 

@@ -62,7 +62,7 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual: Engine Configuration</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##1. Overview:##{id="overview"}
 
@@ -150,7 +150,7 @@ This tag includes parameters related to customizing the indexes.
 ```
 <fieldBoost></fieldBoost>
 ```
-It specifies boost values for the <a href="#indexConfig">searchable attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three searchable attributes can be specified as: <br>
+It specifies boost values for the <a href="#indexConfig">search-able attributes</a>. A boost value is in the range [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for three search-able attributes can be specified as: <br>
 ```
 <fieldBoost>relevance^10 name^7 title</fieldBoost>
 ```
@@ -213,7 +213,7 @@ The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [
 ```
 <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
 ```
-It is used to decide how much penality we want to give to a fuzzy match. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
+It is used to decide how much penalty we want to give to a fuzzy match. See the [Ranking Section](ranking.html) section about how this parameter is used. Its default value is 0.5.
 
 ###8.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
 ```
@@ -264,7 +264,7 @@ It is a flag to toggle attribute-based search. An attribute-based search applies
 > 0 - Disabled <br>
 > 1 - Enabled <br>
 
-Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
+Note that if field-based search is enabled, the number of search-able attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
 ###8.10. Search Type, Optional{id="searcherType"}
 ```
@@ -377,7 +377,7 @@ It specifies the file to which the engine writes logging information.  We can us
 
 ##11. Data Schema:##{id="schemaTag"}
 
-The following sections explain each subtag under the <i>schema</i> component.
+The following sections explain each sub-tag under the <i>schema</i> component.
 ```
 <schema name="SRCH2" version="3">
 ...
@@ -429,11 +429,11 @@ Each field has certain properties:
  - <b>required</b>: The flag indicates whether this field can be empty or not. It is false by default.<br>
  - <b>default</b>: It gives the default value of this field if the value is missing.<br>
  - <b>searchable</b>: If it is true, then the engine will include its values in the indexes to support keyword search on this field.<br>
- - <b>refining</b>: If it is true, then the engine will include its values in the indexes to support postprocessing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
+ - <b>refining</b>: If it is true, then the engine will include its values in the indexes to support post-processing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
  - <b>indexed</b>: If this flag is true, then the engine will treat it as both a searchable and a refining attribute. <br>
  - <b>multivalued</b>: If this flag is true, then this attribute is considered as a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
 
-In the example above, we can do keyword search on the attributes "category" and "name".  We can do postprocessing on attributes "name", "model", "price", "likes" and "seller_id".
+In the example above, we can do keyword search on the attributes "category" and "name".  We can do post-processing on attributes "name", "model", "price", "likes" and "seller_id".
 
 Note:
 

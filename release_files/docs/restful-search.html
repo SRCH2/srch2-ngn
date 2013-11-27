@@ -84,7 +84,7 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, November 25, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, November 26, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
 <p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
@@ -97,7 +97,7 @@
 
 <p>Query f2 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron") gets records with the word "terminator" in its <i>title</i> field and the word "cameron" in its <i>director</i> field.</p>
 <pre><code>f2) http://localhost:8081/search?q=title:terminator AND director:cameron
-(curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&quot;)
+(curl command with URL encoding: curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&quot;)
 </code></pre>
 
 <p>Query f3 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=year:[1983 TO 1992]")
@@ -109,12 +109,12 @@ filters the results based on the <i>year</i> field, i.e., the <i>year</i> value 
 <p>Query f4 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=genre:action")
 filters the results based on the <i>genre</i> field.</p>
 <pre><code>f4) &quot;http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=genre:action
-curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=genre:action&quot;
+(curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=genre:action&quot;)
 </code></pre>
 
 <p>Query f5 (encoded from "http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=boolexp$ year&gt;1982 $") includes a filtering expression, as specified by the syntax "boolexp$ ... $", which selects movies made after 1982.</p>
 <pre><code>f5) http://localhost:8081/search?q=title:terminator AND director:cameron&amp;fq=boolexp$ year&gt;1982 $
-curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=boolexp$%20year%3E1982%20$&quot;
+(curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&amp;fq=boolexp$%20year%3E1982%20$&quot;)
 </code></pre>
 
 <p>Query f6 sorts the results based on the year attribute in the ascending order.</p>
@@ -166,17 +166,17 @@ curl -i &quot;http://localhost:8081/search?q=title:terminator%20AND%20director:c
 <p>The engine provides the relevance level of matching records based on its matching terms. To boost the importance of a given term, we can use the caret symbol (<i>^</i>) with a boost number at the end of the given term. The higher the boost value, the more relevant the term will be.</p>
 <p>Boosting allows control over the relevance of a record by boosting the significance of its terms. For example, if we are searching for two terms "star" and "wars", and we want the term "star" to be more relevant, we can boost it using the <i>^</i> symbol along with the boost value next to the term. We would type:</p>
 <pre><code>star^4 AND wars
-(star%5E4%20AND%20wars
+(star%5E4%20AND%20wars)
 </code></pre>
 
 <p>The boost value must be a positive integer, and its default value is 1.</p>
 <p><em>Note:</em> we can specify all three modifiers to a single term, but the order of modifiers must always be prefix, boost, and then fuzzy. The following are valid query examples:</p>
 <pre><code>1) q=sta*^4~0.6 AND wars^~0.8
-   q=sta*%5E4~0.6%20AND%20wars%5E~0.8
+   (q=sta*%5E4~0.6%20AND%20wars%5E~0.8)
 2) q=star^4~0.6 AND wars^~ AND cam*
-   q=star%5E4~0.6%20AND%20wars%5E~%20AND%20cam*
+   (q=star%5E4~0.6%20AND%20wars%5E~%20AND%20cam*)
 3) q=star~0.6 AND wars^5~0.8
-   q=star~0.6%20AND%20wars%5E5~0.8
+   (q=star~0.6%20AND%20wars%5E5~0.8)
 </code></pre>
 
 <p>The following are <b>invalid</b> query examples:</p>
@@ -196,13 +196,13 @@ Invalid query 3) q=star~.6*
 <h2 id="queryComponents">4. Understanding different query components</h2>
 <p>The components and sub-components of a query are shown in Figure 1. The "Local Parameters" have query-related meta data specification, and the "Query Parameters" include specifications for the main query, postprocessing filters, sorting, and facets.
 <br>
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100%" src="images/Srch2-querysyntax.png" /></a></span>
+<span ><center><img style="width:75%" src="images/Srch2-querysyntax.png" /></center></span>
 <center>Figure 1: Query Components</center></p>
 <h2 id="localParams">5. Local Parameters (LocalParams)</h2>
 <p><i>LocalParams</i> stands for "local parameters." It provides a way to "localize" query behavior by specifying modifiers for the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.</p>
-<p>To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by a white space. So if the original query keyword is "hunt", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}algorithm</i>. For example, we can specify a default field in local parameters as follows:</p>
+<p>To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by a white space. So if the original query keyword is "hunt", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}hunt</i>. For example, we can specify a default field in local parameters as follows:</p>
 <pre><code>q={defaultSearchFields=title}hunt
-q=%7BdefaultSearchFields=title%7Dhunt
+(q=%7BdefaultSearchFields=title%7Dhunt)
 </code></pre>
 
 <p>The above query searches for records with the word "hunt" in the field <i>title</i>.  <i>title</i> is searched by default unless specified elsewhere in the query (see below). We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:</p>
@@ -210,9 +210,9 @@ q=%7BdefaultSearchFields=title%7Dhunt
 (q=%7BdefaultFieldOperator=AND%20defaultSearchFields=director,title%7Dhunt)
 </code></pre>
 
-<p>The above query will return records with the word "hunt" in both <i>author</i> and <i>title</i> fields. If "hunt" is present only in one of the specified defaultSearchFields, the engine will not return the record. If we want the engine to return a record with the word "hunt" present in any of the given defaultSearchFields, then we can set the value of defaultFieldOperator to "OR". The corresponding query is the following:</p>
-<pre><code>q={defaultFieldOperator=OR defaultSearchFields=author,title}hunt
-(q=%7BdefaultFieldOperator=OR%20defaultSearchFields=author,title%7Dhunt
+<p>The above query will return records with the word "hunt" in both <i>director</i> and <i>title</i> fields. If "hunt" is present only in one of the specified defaultSearchFields, the engine will not return the record. If we want the engine to return a record with the word "hunt" present in any of the given defaultSearchFields, then we can set the value of defaultFieldOperator to "OR". The corresponding query is the following:</p>
+<pre><code>q={defaultFieldOperator=OR defaultSearchFields=director,title}hunt
+(q=%7BdefaultFieldOperator=OR%20defaultSearchFields=director,title%7Dhunt)
 </code></pre>
 
 <p>The following are valid localParams:</p>
@@ -227,7 +227,7 @@ q=%7BdefaultSearchFields=title%7Dhunt
 <p><a href="configuration.html#queryTermType">defaultPrefixComplete</a>: 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.</p>
 </li>
 <li>
-<p>defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,author,price' (without quotes).</p>
+<p>defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,director,year' (without quotes).</p>
 </li>
 <li>
 <p>defaultFieldOperator : 'AND' or 'OR' (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.</p>
@@ -303,33 +303,33 @@ q=%7BdefaultSearchFields=title%7Dhunt
 <pre><code>f.year.rows=10
 </code></pre>
 
-<p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the change in query parameter name from <i>field</i> to <i>f</i> for backward compatibilty to Solr.</p>
+<p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the different query parameter name of <i>field</i> instead of <i>f</i> for backward compatibilty to Solr.</p>
 <h3 id="facetByRange">7.3. Facet by Range</h3>
 <h3 id="facetRange">7.3.1 facet.range</h3>
-<p>This parameter can be used to specify a field that should be treated as a range facet. It allows us to specify names of fields to be treated as range facets. Example:</p>
-<pre><code>facet.range=id&amp;facet.range=year
+<p>This parameter can be used to specify a field that should be treated as a range facet. It allows us to specify fields for which only facets within a specified range will be included. Example:</p>
+<pre><code>facet.range=year
 </code></pre>
 
-<p>The response of the above query includes facet information for the <i>id</i> and <i>year</i> fields. <br></p>
+<p>The response of the above query includes facet information for the <i>year</i> field. <br></p>
 <p>Please note: the <a href="configuration.html#facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
 <h3 id="facetStart">7.3.2. facet.range.start</h3>
 <p>This is the mininum value (inclusive) of the range. Example:</p>
-<pre><code>f.year.facet.start=1995&amp;f.id.facet.start=1000
+<pre><code>f.year.facet.start=1995
 </code></pre>
 
-<p>The above query defines the lower bounds of the facet ranges for <i>year</i> and <i>id</i> fields.</p>
+<p>The above query defines the lower bounds of the facet range for the <i>year</i> field.</p>
 <h3 id="facetEnd">7.3.3. facet.range.end</h3>
 <p>It is the upper bound (exclusive) of the range. Example:</p>
-<pre><code>f.year.facet.end=2020&amp;f.id.facet.end=999999
+<pre><code>f.year.facet.end=2020
 </code></pre>
 
-<p>The above query defines the upper bounds of the facet ranges for <i>year</i> and <i>id</i> fields.</p>
+<p>The above query defines the upper bounds of the facet range for the <i>year</i> field.</p>
 <h3 id="facetGap">7.3.4. facet.range.gap</h3>
 <p>It is the size of each range starting from the minimum value. Example:</p>
-<pre><code>f.year.facet.gap=5&amp;f.id.facet.gap=1000
+<pre><code>f.year.facet.gap=5
 </code></pre>
 
-<p>The above query defines the gap between each consecutive faceted value of the facet ranges for the <i>year</i> and <i>id</i> fields.</p>
+<p>The above query defines the gap between each consecutive faceted value of the facet range for the <i>year</i> field.</p>
 <p>Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.</p>
 <p><em>Note:</em> if the expected number of results of a query is greater than 10K, facet results are made based on the best 2000 results.</p>
 <h2 id="searchType">8. searchType</h2>
@@ -347,7 +347,7 @@ q=%7BdefaultSearchFields=title%7Dhunt
 </code></pre>
 
 <p><em>Note:</em> if searchType is not included in the query, it is set to topK by default. However, if any facet or sort parameter is included in the query, the search type will be getAll.
-<em>Note:</em> If searchType is 'getAll' and the expected number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.</p>
+<em>Note:</em> If the searchType is 'getAll' and if the expected number of results is more than 10,000, the engine will return the top 2000 results based on the ranking score.</p>
 <h2 id="sort">9. sort</h2>
 <p>The engine's default behavior is to sort the results using a descending order by the overall score of each record. The user can specify sorting by other fields. For example:</p>
 <pre><code>sort=director,year,title
@@ -374,10 +374,10 @@ q=%7BdefaultSearchFields=title%7Dhunt
 <p>This parameter and <i>start</i> can be used to implement pagination.</p>
 <h2 id="fetchById">13. Fetch a Record by ID</h2>
 <p>The SRCH2 engine provides an API that allows the user to fetch a record by giving its primary key value.  An example of such a request is:</p>
-<pre><code>curl -i &quot;http://localhost:8081/search?docid=123&quot;
+<pre><code>curl -i &quot;http://localhost:8081/search?docid=929&quot;
 </code></pre>
 
-<p>which returns the record with "123" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.</p>
+<p>which returns the record with "929" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.</p>
 
 </table>
 <hr>

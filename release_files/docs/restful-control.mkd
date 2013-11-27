@@ -21,7 +21,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: RESTful API - Control</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.1.0, Date: November 26, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 The SRCH2 engine supports certain control messages through its RESTful API.
 
