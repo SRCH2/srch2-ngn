@@ -245,6 +245,21 @@ public:
 	~MergeSortedByIDOperator();
 private:
 	MergeSortedByIDOperator() ;
+	void initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params);
+	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
+	QueryEvaluatorInternal * queryEvaluator;
+
+	/* this vector always contains the next record coming out of children
+	* this means each record first goes to this vector and then it can be used
+	* by the operator.
+	* getNextRecordOfChild(unsigned childOffset, parameters) returns the record
+	* and makes sure to populate the vector again from the child operator.
+	*/
+	vector<PhysicalPlanRecordItem *> nextItemsFromChildren;
+	/*
+	 * This variable is true unless one of the children lists become empty
+	 */
+	bool listsHaveMoreRecordsInThem;
 };
 
 class MergeSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode {

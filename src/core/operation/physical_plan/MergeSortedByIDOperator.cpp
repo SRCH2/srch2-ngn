@@ -15,17 +15,155 @@ MergeSortedByIDOperator::~MergeSortedByIDOperator(){
 	//TODO
 }
 bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+
+	/*
+	 * 1. open all children (no parameters known to pass as of now)
+	 * 2. initialize nextRecordItems vector.
+	 */
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
+
+	initializeNextItemsFromChildren(params);
+
+
+	listsHaveMoreRecordsInThem = true;
+	return true;
 }
 PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+
+	if(listsHaveMoreRecordsInThem == false){
+		return NULL;
+	}
+	/*
+	 * 0. i = 0
+	 * 1. 'record' = pick a 'record' from the current top of the ith list
+	 * 1.1 clear 'recordMatches' vector
+	 * 2. for each jth list that j!=i
+	 * 2.1. keep getting the 'nextRecord' of the jth list until
+	 * ---- either 'nextRecord' is NULL, in which case we return NULL
+	 * ---- or'nextRecord'.ID >= 'record'.ID
+	 * 2.2. if(nextRecord'.ID == 'record'.ID) then, save 'nextRecord' in 'recordMatches' and go to 2
+	 * 2.2. else, 'record' = 'nextrecord' and go to 1.1.
+	 * 3. if size of recordMatches == numberOfChildren , prepare and return 'record'
+	 * 3. else, i = (i+1) mod numberOfChildren , go to 1
+	 *
+	 */
+	unsigned childToGetNextRecordFrom = 0; // i
+	PhysicalPlanRecordItem * record = // record
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+	while(true){ // 1.1.
+		vector<PhysicalPlanRecordItem *> recordMatches;
+		bool shouldGoToNextRound = false;
+		for(unsigned childOffset /*j*/ = 0 ; childOffset < this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){ // 2.
+			if(childOffset == childToGetNextRecordFrom){
+				recordMatches.push_back(record);
+				// the share of this list in the vector is this record itself
+				continue;
+			}
+			while(true){ //2.1
+				PhysicalPlanRecordItem * nextRecord = // record
+						this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+				if(nextRecord == NULL){
+					this->listsHaveMoreRecordsInThem = false;
+					return NULL;
+				}
+				if(nextRecord->getRecordId() == record->getRecordId()){
+					recordMatches.push_back(nextRecord);
+					break; // go to 2
+				}else if(nextRecord->getRecordId() > record->getRecordId()){
+					record = nextRecord;
+					shouldGoToNextRound = true;//because we want to go to 1.1.
+					break;
+				}
+			}
+			if(shouldGoToNextRound == true){
+				break;// because we want to go to 1.1.
+			}
+		}
+		if(shouldGoToNextRound == false){
+			continue;// go to 1.1.
+		}
+		//3.
+		if(recordMatches.size() == this->getPhysicalPlanOptimizationNode()->getChildrenCount()){ // this record is a result
+			//runtime score
+			vector<float> runtimeScores;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				runtimeScores.push_back((*match)->getRecordRuntimeScore());
+			}
+			vector<TrieNodePointer> recordKeywordMatchPrefixes;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				(*match)->getRecordMatchingPrefixes(recordKeywordMatchPrefixes);
+			}
+			vector<unsigned> recordKeywordMatchEditDistances;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				(*match)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
+			}
+			vector<unsigned> recordKeywordMatchBitmaps;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				(*match)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+			}
+			vector<unsigned> positionIndexOffsets;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				(*match)->getPositionIndexOffsets(positionIndexOffsets);
+			}
+			// static score, not for now
+			record->setRecordRuntimeScore(computeAggregatedRuntimeScoreForAnd(runtimeScores));
+			record->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
+			record->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
+			record->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+			record->setPositionIndexOffsets(positionIndexOffsets);
+			// static score ignored for now
+			return record;
+		}else{
+			childToGetNextRecordFrom = (childToGetNextRecordFrom + 1) % this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+			record = // record
+						this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+		}
+	}
+
+	ASSERT(false);
+	return NULL;
+
 }
 bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+
+	// close children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
+	this->queryEvaluator = NULL;
+	this->listsHaveMoreRecordsInThem = true;
+	this->nextItemsFromChildren.clear();
+	return true;
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	//TODO
 }
+
+void MergeSortedByIDOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params){
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		PhysicalPlanRecordItem * recordItem =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+		if(recordItem == NULL){
+			listsHaveMoreRecordsInThem = false;
+		}
+		this->nextItemsFromChildren.push_back(recordItem);
+	}
+}
+
+float MergeSortedByIDOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+	float resultScore = 0;
+
+	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+		resultScore += *(score);
+	}
+	return resultScore;
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 unsigned MergeSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
