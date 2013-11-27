@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Search API</title>
 </head>
@@ -276,8 +276,8 @@ Invalid query 3) q=star~.6*
 
 <p>The first query returns the records with an <i>id</i> greater than or equal to 1000, a <i>genre</i> of drama, and <i>year</i> greater than or equal to 1975.</p>
 <p>The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".</p>
-<pre><code>fq=year:[2000 TO *] AND genre:comedy AND boolexp$year &gt; 2000$
-(fq=year:%5B2000%20TO%20*%5D%20AND%20genre:comedy%20AND%20boolexp$year%20%3E%202000$)
+<pre><code>fq=boolexp$year &gt; 2003$
+(fq=boolexp%24year%20%3E%202003%24)
 </code></pre>
 
 <p>Please note: for the predicate "boolexp$ numOfReviews * 5 + numOfLikes * 2 &gt; 940$", the engine will evaluate the boolean expression between the two '$' signs, which in this case is "numOfReviews * 5 + numOfLikes * 2 &gt; 940". Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.</p>
