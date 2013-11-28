@@ -353,6 +353,15 @@ public:
 	~UnionSortedByIDOperator();
 private:
 	UnionSortedByIDOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
+	bool listsHaveMoreRecordsInThem;
+	/* this vector always contains the next record coming out of children
+	* this means each record first goes to this vector and then it can be used
+	* by the operator.
+	* getNextRecordOfChild(unsigned childOffset, parameters) returns the record
+	* and makes sure to populate the vector again from the child operator.
+	*/
+	vector<PhysicalPlanRecordItem *> nextItemsFromChildren;
 };
 
 class UnionSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode {

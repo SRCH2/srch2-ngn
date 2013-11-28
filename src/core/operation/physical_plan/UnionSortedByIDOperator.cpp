@@ -14,17 +14,77 @@ UnionSortedByIDOperator::~UnionSortedByIDOperator(){
 	//TODO
 }
 bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+	/*
+	 * 1. open all children (no parameters known to pass as of now)
+	 * 2. initialize nextRecordItems vector.
+	 */
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
+
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		PhysicalPlanRecordItem * recordItem =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+		this->nextItemsFromChildren.push_back(recordItem);
+	}
+
+	listsHaveMoreRecordsInThem = true;
+	return true;
+
 }
 PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+
+	if(listsHaveMoreRecordsInThem == false){
+		return NULL;
+	}
+
+	/*
+	 * 1. iterate on nextItemsFromChildren
+	 * 2. find the min ID on top,
+	 * 3. remove all top records that have the same ID as min ID
+	 * 4. return the min ID (which has the most Score in ties)
+	 */
+	// find the min ID
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	PhysicalPlanRecordItem * minIDRecord = NULL;
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		PhysicalPlanRecordItem * recordItem = this->nextItemsFromChildren.at(childOffset);
+		if(recordItem == NULL){
+			continue;
+		}
+		if(minIDRecord == NULL){
+			minIDRecord = recordItem;
+		}else if((minIDRecord->getRecordId() > recordItem->getRecordId()) // find the 1. min ID and 2. max score
+				|| (minIDRecord->getRecordId() == recordItem->getRecordId() &&
+						minIDRecord->getRecordRuntimeScore() < recordItem->getRecordRuntimeScore())){
+			minIDRecord = recordItem;
+		}
+
+	}
+	if(minIDRecord == NULL){
+		return NULL;
+	}
+	// now remove all minID records from all lists
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		if(this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
+			this->nextItemsFromChildren.at(childOffset) =
+					this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+		}
+	}
+	// and now return the minId record
+	return minIDRecord;
 }
 bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = NULL;
+	this->listsHaveMoreRecordsInThem = true;
+	return true;
 }
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	//TODO
 }
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 unsigned UnionSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
