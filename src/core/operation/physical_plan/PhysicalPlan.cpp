@@ -90,12 +90,6 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 		case PhysicalPlanNode_UnionSortedById:
 			cout << "[OR SortedByID]" << endl;
 			break;
-		case PhysicalPlanNode_UnionSortedByScoreTopK:
-			cout << "[OR SortedByScore TopK]" << endl;
-			break;
-		case PhysicalPlanNode_UnionSortedByScore:
-			cout << "[OR SortedByScore]" << endl;
-			break;
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
 			cout << "[TVL]" << endl;
 			break;

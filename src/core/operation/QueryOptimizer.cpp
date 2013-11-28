@@ -172,8 +172,6 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationAndOptimizationOperator());
 		}else if(root->nodeType == LogicalPlanNodeTypeOr){
 			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOptimizationOperator());
-			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperator());
-			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperatorTopK());
 			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationOrOptimizationOperator());
 		}else{
 			ASSERT(false);
@@ -360,16 +358,6 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 		case PhysicalPlanNode_UnionSortedById:{
 			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOptimizationOperator();
 			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByIDOperator();
-			break;
-		}
-		case PhysicalPlanNode_UnionSortedByScoreTopK:{
-			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperatorTopK();
-			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOperatorTopK();
-			break;
-		}
-		case PhysicalPlanNode_UnionSortedByScore:{
-			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOptimizationOperator();
-			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionSortedByScoreOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:{

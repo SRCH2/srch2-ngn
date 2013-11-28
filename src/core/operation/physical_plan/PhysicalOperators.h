@@ -381,72 +381,6 @@ public:
 	bool validateChildren();
 };
 
-/*
- * This operator unions the inputs assuming they are sorted by score.
- * It uses a trivial approach for doing the union. It only returns top K results.
- */
-class UnionSortedByScoreOperatorTopK : public PhysicalPlanNode {
-	friend class PhysicalOperatorFactory;
-public:
-	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
-	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close(PhysicalPlanExecutionParameters & params);
-	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
-	~UnionSortedByScoreOperatorTopK();
-private:
-	UnionSortedByScoreOperatorTopK() ;
-};
-
-class UnionSortedByScoreOptimizationOperatorTopK : public PhysicalPlanOptimizationNode {
-	friend class PhysicalOperatorFactory;
-public:
-	// The cost of open of a child is considered only once in the cost computation
-	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
-	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
-	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
-	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
-	void getOutputProperties(IteratorProperties & prop);
-	void getRequiredInputProperties(IteratorProperties & prop);
-	PhysicalPlanNodeType getType() ;
-	bool validateChildren();
-};
-
-/*
- * This operator unions the inputs assuming they are sorted by score.
- * It uses a trivial approach for doing the union.
- */
-class UnionSortedByScoreOperator : public PhysicalPlanNode {
-	friend class PhysicalOperatorFactory;
-public:
-	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
-	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
-	bool close(PhysicalPlanExecutionParameters & params);
-	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
-	~UnionSortedByScoreOperator();
-private:
-	UnionSortedByScoreOperator() ;
-};
-
-class UnionSortedByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {
-	friend class PhysicalOperatorFactory;
-public:
-	// The cost of open of a child is considered only once in the cost computation
-	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
-	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
-	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
-	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
-	void getOutputProperties(IteratorProperties & prop);
-	void getRequiredInputProperties(IteratorProperties & prop);
-	PhysicalPlanNodeType getType() ;
-	bool validateChildren();
-};
-
 class PhysicalOperatorFactory{
 public:
 
@@ -473,10 +407,6 @@ public:
 	MergeByShortestListOptimizationOperator * createMergeByShortestListOptimizationOperator();
 	UnionSortedByIDOperator * createUnionSortedByIDOperator();
 	UnionSortedByIDOptimizationOperator * createUnionSortedByIDOptimizationOperator();
-	UnionSortedByScoreOperatorTopK * createUnionSortedByScoreOperatorTopK();
-	UnionSortedByScoreOptimizationOperatorTopK * createUnionSortedByScoreOptimizationOperatorTopK();
-	UnionSortedByScoreOperator * createUnionSortedByScoreOperator();
-	UnionSortedByScoreOptimizationOperator * createUnionSortedByScoreOptimizationOperator();
 	UnionLowestLevelTermVirtualListOperator * createUnionLowestLevelTermVirtualListOperator();
 	UnionLowestLevelTermVirtualListOptimizationOperator * createUnionLowestLevelTermVirtualListOptimizationOperator();
 	UnionLowestLevelSimpleScanOperator * createUnionLowestLevelSimpleScanOperator();

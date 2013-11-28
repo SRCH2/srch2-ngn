@@ -221,8 +221,6 @@ typedef enum {
 	PhysicalPlanNode_MergeSortedById,
 	PhysicalPlanNode_MergeByShortestList,
 	PhysicalPlanNode_UnionSortedById,
-	PhysicalPlanNode_UnionSortedByScoreTopK,
-	PhysicalPlanNode_UnionSortedByScore,
 	PhysicalPlanNode_UnionLowestLevelTermVirtualList,
 	PhysicalPlanNode_UnionLowestLevelSimpleScanOperator,
 	PhysicalPlanNode_RandomAccessTerm,

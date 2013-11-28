@@ -116,26 +116,6 @@ UnionSortedByIDOptimizationOperator * PhysicalOperatorFactory::createUnionSorted
 	optimizationNodes.push_back(op);
 	return op;
 }
-UnionSortedByScoreOperatorTopK * PhysicalOperatorFactory::createUnionSortedByScoreOperatorTopK(){
-	UnionSortedByScoreOperatorTopK *  op = new UnionSortedByScoreOperatorTopK();
-	executionNodes.push_back(op);
-	return op;
-}
-UnionSortedByScoreOptimizationOperatorTopK * PhysicalOperatorFactory::createUnionSortedByScoreOptimizationOperatorTopK(){
-	UnionSortedByScoreOptimizationOperatorTopK *  op = new UnionSortedByScoreOptimizationOperatorTopK();
-	optimizationNodes.push_back(op);
-	return op;
-}
-UnionSortedByScoreOperator * PhysicalOperatorFactory::createUnionSortedByScoreOperator(){
-	UnionSortedByScoreOperator *  op = new UnionSortedByScoreOperator();
-	executionNodes.push_back(op);
-	return op;
-}
-UnionSortedByScoreOptimizationOperator * PhysicalOperatorFactory::createUnionSortedByScoreOptimizationOperator(){
-	UnionSortedByScoreOptimizationOperator *  op =  new UnionSortedByScoreOptimizationOperator();
-	optimizationNodes.push_back(op);
-	return op;
-}
 UnionLowestLevelTermVirtualListOperator * PhysicalOperatorFactory::createUnionLowestLevelTermVirtualListOperator(){
 	UnionLowestLevelTermVirtualListOperator * op = new UnionLowestLevelTermVirtualListOperator();
 	executionNodes.push_back(op);
