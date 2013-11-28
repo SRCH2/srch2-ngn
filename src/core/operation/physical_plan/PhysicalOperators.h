@@ -171,6 +171,11 @@ public:
 class SortByIdOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
+	struct SortByIdRecordMinHeapComparator{
+		bool operator()(const PhysicalPlanRecordItem * left , const PhysicalPlanRecordItem * right) const{
+			return (left->getRecordId() > right->getRecordId());
+		}
+	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
@@ -178,6 +183,8 @@ public:
 	~SortByIdOperator();
 private:
 	SortByIdOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
+	vector< PhysicalPlanRecordItem * > records;
 };
 
 class SortByIdOptimizationOperator : public PhysicalPlanOptimizationNode {
