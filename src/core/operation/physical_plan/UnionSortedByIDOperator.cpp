@@ -64,6 +64,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 
 	}
 	if(minIDRecord == NULL){
+		this->listsHaveMoreRecordsInThem = false;
 		return NULL;
 	}
 	// now remove all minID records from all lists
@@ -93,6 +94,10 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	return minIDRecord;
 }
 bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
+	// close children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
 	this->queryEvaluator = NULL;
 	this->listsHaveMoreRecordsInThem = true;
 	return true;
