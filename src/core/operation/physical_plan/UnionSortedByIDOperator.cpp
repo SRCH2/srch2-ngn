@@ -67,13 +67,29 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 		return NULL;
 	}
 	// now remove all minID records from all lists
+	vector<float> runtimeScores;
+	vector<TrieNodePointer> recordKeywordMatchPrefixes;
+	vector<unsigned> recordKeywordMatchEditDistances;
+	vector<unsigned> recordKeywordMatchBitmaps;
+	vector<unsigned> positionIndexOffsets;
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		if(this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
+			this->nextItemsFromChildren.at(childOffset)->getRecordMatchingPrefixes(recordKeywordMatchPrefixes);
+			this->nextItemsFromChildren.at(childOffset)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
+			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+			this->nextItemsFromChildren.at(childOffset)->getPositionIndexOffsets(positionIndexOffsets);
+			// static score, not for now
+			// and remove it from this list by substituting it by the next one
 			this->nextItemsFromChildren.at(childOffset) =
 					this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
 		}
 	}
-	// and now return the minId record
+	// prepare the record and return it
+	minIDRecord->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
+	minIDRecord->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
+	minIDRecord->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+	minIDRecord->setPositionIndexOffsets(positionIndexOffsets);
+
 	return minIDRecord;
 }
 bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
