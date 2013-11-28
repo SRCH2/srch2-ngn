@@ -209,7 +209,7 @@ void ConfigManager::lowerCaseNodeNames(xml_node &document)
     document.traverse(nodeTraversal);
 }
 
-string & ConfigManager::trimPath(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append)
+void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append)
 {
     string oldValue(fieldValue);
     trim(fieldValue);
@@ -219,7 +219,6 @@ string & ConfigManager::trimPath(string &fieldValue, const char *fieldName, std:
     if (append != NULL) {
         fieldValue += append;
     }
-    return fieldValue;
 }
 
 void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
@@ -230,7 +229,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     xml_node configAttribute = configDoc.child(configString).child(srch2HomeString);
     if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
         tempUse = string(configAttribute.text().get());
-	this->srch2Home = trimPath(tempUse, srch2HomeString, parseWarnings, "/");
+	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
+	this->srch2Home = tempUse;
     } else {
         parseError << "srch2Home is not set.\n";
         configSuccess = false;
@@ -773,12 +773,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
 				    this->stemmerFlag = true;
 				    tempUse = string(field.attribute(dictionaryString).value());
-				    this->stemmerFile = this->srch2Home + trimPath(tempUse, porterStemFilterString, parseWarnings);
+				    trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
+				    this->stemmerFile = this->srch2Home + tempUse;
                                 }
                             } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
-				    this->stopFilterFilePath = this->srch2Home + trimPath(tempUse, stopFilterString, parseWarnings);
+				    trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
+				    this->stopFilterFilePath = this->srch2Home + tempUse;
                                 }
                             } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
                                 if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
@@ -799,7 +801,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
-				    this->protectedWordsFilePath = this->srch2Home + trimPath(tempUse, protectedWordFilterString, parseWarnings);
+				    trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
+				    this->protectedWordsFilePath = this->srch2Home + tempUse;
                                 }
                             }
                         }
@@ -821,7 +824,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(licenseFileString);
     if (configAttribute && configAttribute.text()) { // checks if config/licenseFile exists and have any text value or not
         tempUse = string(configAttribute.text().get());
-	this->licenseKeyFile = this->srch2Home + trimPath(tempUse, licenseFileString, parseWarnings);
+	trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
+	this->licenseKeyFile = this->srch2Home + tempUse;
     } else {
         parseError << "License key is not set.\n";
         configSuccess = false;
@@ -851,7 +855,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(dataDirString);
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
         tempUse = string(configAttribute.text().get());
-	this->indexPath = this->srch2Home + trimPath(tempUse, dataDirString, parseWarnings);
+	trimSpacesFromValue(tempUse, dataDirString, parseWarnings);
+	this->indexPath = this->srch2Home + tempUse;
     } else {
         parseError
                 << "Path of index file is not set. You should set it as <dataDir>path/to/index/file</dataDir> in the config file.\n";
@@ -886,7 +891,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         configAttribute = configDoc.child(configString).child(dataFileString);
     	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
 	    tempUse = string(configAttribute.text().get());
-	    this->filePath = this->srch2Home + trimPath(tempUse, dataFileString, parseWarnings);
+	    trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
+	    this->filePath = this->srch2Home + tempUse;
     	} else {
     		parseError
     		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
@@ -1262,7 +1268,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(accessLogFileString);
     if (configAttribute && configAttribute.text()) {
         tempUse = string(configAttribute.text().get());
-	this->httpServerAccessLogFile = this->srch2Home + trimPath(tempUse, updateLogString, parseWarnings);
+	trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
+	this->httpServerAccessLogFile = this->srch2Home + tempUse;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;

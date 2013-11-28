@@ -276,7 +276,7 @@ private:
 
     void lowerCaseNodeNames(xml_node &node);
 
-    string & trimPath(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
+    void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
 public:
     ConfigManager(const string& configfile);
