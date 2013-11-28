@@ -16,16 +16,55 @@ RandomAccessVerificationOrOperator::~RandomAccessVerificationOrOperator(){
 	//TODO
 }
 bool RandomAccessVerificationOrOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+	// open all children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
+	return true;
 }
 PhysicalPlanRecordItem * RandomAccessVerificationOrOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	return NULL;
 }
 bool RandomAccessVerificationOrOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = NULL;
+	// close the children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
+	return true;
 }
 bool RandomAccessVerificationOrOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	// move on children and if at least on of them verifies the record return true
+	bool verified = false;
+	vector<float> runtimeScore;
+	// static score is ignored for now
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		bool resultOfThisChild =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == true){
+			verified = true;
+		}
+	}
+	if(verified == true){ // so we need to aggregate runtime and static score
+		parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForOr(runtimeScore);
+	}
+	return verified;
+}
+
+
+float RandomAccessVerificationOrOperator::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
+
+	// max
+	float resultScore = -1;
+
+	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+		if((*score) > resultScore){
+			resultScore = (*score);
+		}
+	}
+	return resultScore;
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.

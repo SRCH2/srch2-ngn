@@ -16,16 +16,35 @@ RandomAccessVerificationNotOperator::~RandomAccessVerificationNotOperator(){
 	//TODO
 }
 bool RandomAccessVerificationNotOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+	// open all children
+	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
+	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluator , params);
+	return true;
 }
 PhysicalPlanRecordItem * RandomAccessVerificationNotOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	return NULL;
 }
 bool RandomAccessVerificationNotOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = NULL;
+	// close the children
+	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
+	return true;
 }
 bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+
+	bool resultFromChild = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
+	if(resultFromChild == true){
+		return false;
+	}
+	// we clear everything to make sure no junk propagates up
+	parameters.attributeBitmaps.clear();
+	parameters.positionIndexOffsets.clear();
+	parameters.prefixEditDistances.clear();
+	parameters.termRecordMatchingPrefixes.clear();
+	parameters.runTimeTermRecordScore = 0;
+	parameters.staticTermRecordScore = 0;
+	return true;
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.

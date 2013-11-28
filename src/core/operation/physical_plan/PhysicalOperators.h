@@ -55,6 +55,7 @@ public:
 	~RandomAccessVerificationTermOperator();
 private:
 	RandomAccessVerificationTermOperator();
+	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationTermOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -84,6 +85,8 @@ public:
 	~RandomAccessVerificationAndOperator();
 private:
 	RandomAccessVerificationAndOperator();
+	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
+	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationAndOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -114,6 +117,8 @@ public:
 	~RandomAccessVerificationOrOperator();
 private:
 	RandomAccessVerificationOrOperator();
+	float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
+	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationOrOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -144,6 +149,7 @@ public:
 	~RandomAccessVerificationNotOperator();
 private:
 	RandomAccessVerificationNotOperator();
+	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationNotOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -353,6 +359,7 @@ public:
 	~UnionSortedByIDOperator();
 private:
 	UnionSortedByIDOperator() ;
+	float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
 	QueryEvaluatorInternal * queryEvaluator;
 	bool listsHaveMoreRecordsInThem;
 	/* this vector always contains the next record coming out of children

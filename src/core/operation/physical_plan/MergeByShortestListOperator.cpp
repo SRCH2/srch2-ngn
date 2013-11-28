@@ -22,8 +22,10 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 	this->indexOfShortestListChild =
 			((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
 
-	// open the shortest list
-	this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->open(this->queryEvaluator,params);
+	// open children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
 
 	return true;
 
@@ -74,15 +76,30 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 
 
 bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params){
-	// open the shortest list
-	this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->close(params);
+	// close the children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
 	this->isShortestListFinished = false;
 	this->queryEvaluator = NULL;
 	return true;
 
 }
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	// move on children and if at least on of them verifies the record return true
+	vector<float> runtimeScore;
+	// static score is ignored for now
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		bool resultOfThisChild =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == false){
+			return false;
+		}
+	}
+	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
+
+	return true;
 }
 
 
@@ -124,10 +141,8 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 				return false;
 			}
 			// append new information to the output
-			runTimeTermRecordScores.insert(
-					runTimeTermRecordScores.end(), parameters.runTimeTermRecordScores.begin() , parameters.runTimeTermRecordScores.end());
-			staticTermRecordScores.insert(
-					staticTermRecordScores.end(), parameters.staticTermRecordScores.begin() , parameters.staticTermRecordScores.end());
+			runTimeTermRecordScores.push_back(parameters.runTimeTermRecordScore);
+			staticTermRecordScores.push_back(parameters.staticTermRecordScore);
 			termRecordMatchingKeywords.insert(
 					termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
 			attributeBitmaps.insert(

@@ -176,14 +176,20 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 }
 bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 
-	//TODO : This part IS NOT CORRECT!!!!!!!
-	// verify the children
+	// move on children and if at least on of them verifies the record return true
+	vector<float> runtimeScore;
+	// static score is ignored for now
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		bool resultOfThisChild =
 				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		if(resultOfThisChild == false) return false;
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == false){
+			return false;
+		}
 	}
-	return false;
+	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
+
+	return true;
 }
 
 
@@ -240,10 +246,8 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 				return false;
 			}
 			// append new information to the output
-			runTimeTermRecordScores.insert(
-					runTimeTermRecordScores.end(), parameters.runTimeTermRecordScores.begin() , parameters.runTimeTermRecordScores.end());
-			staticTermRecordScores.insert(
-					staticTermRecordScores.end(), parameters.staticTermRecordScores.begin() , parameters.staticTermRecordScores.end());
+			runTimeTermRecordScores.push_back(parameters.runTimeTermRecordScore);
+			staticTermRecordScores.push_back(parameters.staticTermRecordScore);
 			termRecordMatchingKeywords.insert(
 					termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
 			attributeBitmaps.insert(

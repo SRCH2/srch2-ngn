@@ -48,8 +48,8 @@ struct PhysicalPlanExecutionParameters {
 
 class PhysicalPlanRecordItem;
 struct PhysicalPlanRandomAccessVerificationParameters {
-    std::vector<float> runTimeTermRecordScores;
-    std::vector<float> staticTermRecordScores;
+    float runTimeTermRecordScore;
+    float staticTermRecordScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;

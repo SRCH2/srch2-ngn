@@ -139,7 +139,20 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	// move on children and if at least on of them verifies the record return true
+	vector<float> runtimeScore;
+	// static score is ignored for now
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		bool resultOfThisChild =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == false){
+			return false;
+		}
+	}
+	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
+
+	return true;
 }
 
 void MergeSortedByIDOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params){

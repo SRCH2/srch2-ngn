@@ -207,11 +207,11 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
 			parameters.attributeBitmaps.push_back(termAttributeBitmap);
 			parameters.prefixEditDistances.push_back(distance);
 			bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-			parameters.runTimeTermRecordScores.push_back(DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+			parameters.runTimeTermRecordScore = DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
 						term->getKeyword()->size(),
 						isPrefixMatch,
-						parameters.prefixMatchPenalty , term->getSimilarityBoost() ) );
-			parameters.staticTermRecordScores.push_back(termRecordStaticScore);
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() ) ;
+			parameters.staticTermRecordScore = termRecordStaticScore;
 			// parameters.positionIndexOffsets ????
 			return true;
 		}

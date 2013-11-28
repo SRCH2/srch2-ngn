@@ -16,16 +16,68 @@ RandomAccessVerificationTermOperator::~RandomAccessVerificationTermOperator(){
 	//TODO
 }
 bool RandomAccessVerificationTermOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+	// open all children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
+	return true;
 }
 PhysicalPlanRecordItem * RandomAccessVerificationTermOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	return NULL;
 }
 bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = NULL;
+	// close the children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
+	return true;
 }
 bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	  //do the verification
+	PrefixActiveNodeSet *prefixActiveNodeSet =
+			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
+
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
+
+	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
+	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
+	for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+			!iter.isDone(); iter.next()) {
+		const TrieNode *trieNode;
+		unsigned distance;
+		iter.getItem(trieNode, distance);
+
+		unsigned minId = trieNode->getMinId();
+		unsigned maxId = trieNode->getMaxId();
+		if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+			if (trieNode->isTerminalNode())
+				maxId = minId;
+			else
+				continue;  // ignore non-terminal nodes
+		}
+
+		unsigned matchingKeywordId;
+		float termRecordStaticScore;
+		unsigned termAttributeBitmap;
+		if (this->queryEvaluator->getForwardIndex()->haveWordInRange(parameters.recordToVerify->getRecordId(), minId, maxId,
+				termSearchableAttributeIdToFilterTermHits,
+				matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+			parameters.termRecordMatchingPrefixes.push_back(trieNode);
+			parameters.attributeBitmaps.push_back(termAttributeBitmap);
+			parameters.prefixEditDistances.push_back(distance);
+			bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+			parameters.runTimeTermRecordScore = DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+						term->getKeyword()->size(),
+						isPrefixMatch,
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() ) ;
+			parameters.staticTermRecordScore = termRecordStaticScore ;
+			// parameters.positionIndexOffsets ????
+			return true;
+		}
+	}
+	return false;
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.

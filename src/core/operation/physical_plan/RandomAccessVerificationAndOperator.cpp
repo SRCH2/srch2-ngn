@@ -16,17 +16,52 @@ RandomAccessVerificationAndOperator::~RandomAccessVerificationAndOperator(){
 	//TODO
 }
 bool RandomAccessVerificationAndOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = queryEvaluator;
+	// open all children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	}
+	return true;
 }
 PhysicalPlanRecordItem * RandomAccessVerificationAndOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 	return NULL;
 }
 bool RandomAccessVerificationAndOperator::close(PhysicalPlanExecutionParameters & params){
-	//TODO
+	this->queryEvaluator = NULL;
+	// close the children
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+	}
+	return true;
 }
 bool RandomAccessVerificationAndOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	// move on children and if at least on of them verifies the record return true
+	vector<float> runtimeScore;
+	// static score is ignored for now
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		bool resultOfThisChild =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == false){
+			return false;
+		}
+	}
+	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
+
+	return true;
 }
+
+float RandomAccessVerificationAndOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+	// summation
+	float resultScore = 0;
+
+	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+		resultScore += *(score);
+	}
+	return resultScore;
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 unsigned RandomAccessVerificationAndOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){

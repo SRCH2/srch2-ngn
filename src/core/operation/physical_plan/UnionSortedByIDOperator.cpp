@@ -103,7 +103,35 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	//TODO
+	// move on children and if at least on of them verifies the record return true
+	bool verified = false;
+	vector<float> runtimeScore;
+	// static score is ignored for now
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		bool resultOfThisChild =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+		runtimeScore.push_back(parameters.runTimeTermRecordScore);
+		if(resultOfThisChild == true){
+			verified = true;
+		}
+	}
+	if(verified == true){ // so we need to aggregate runtime and static score
+		parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForOr(runtimeScore);
+	}
+	return verified;
+}
+
+float UnionSortedByIDOperator::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
+
+	// max
+	float resultScore = -1;
+
+	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+		if((*score) > resultScore){
+			resultScore = (*score);
+		}
+	}
+	return resultScore;
 }
 
 // The cost of open of a child is considered only once in the cost computation
