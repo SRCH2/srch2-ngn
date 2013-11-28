@@ -209,6 +209,19 @@ void ConfigManager::lowerCaseNodeNames(xml_node &document)
     document.traverse(nodeTraversal);
 }
 
+string & ConfigManager::trimPath(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append)
+{
+    string oldValue(fieldValue);
+    trim(fieldValue);
+    if (fieldValue.length() != oldValue.length()) {
+        parseWarnings << "Trimmed whitespace from the variable " << fieldName << "\"" << oldValue << "\"\n";
+    }
+    if (append != NULL) {
+        fieldValue += append;
+    }
+    return fieldValue;
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     string tempUse = ""; // This is just for temporary use.
@@ -217,11 +230,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     xml_node configAttribute = configDoc.child(configString).child(srch2HomeString);
     if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
         tempUse = string(configAttribute.text().get());
-	size_t length = tempUse.length();
-	this->srch2Home = trim(tempUse) + "/";
-	if (tempUse.length() != length) {
-	    parseWarnings << "Trimmed whitespace from srch2Home\n";
-	}
+	this->srch2Home = trimPath(tempUse, srch2HomeString, parseWarnings, "/");
     } else {
         parseError << "srch2Home is not set.\n";
         configSuccess = false;
@@ -764,20 +773,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
 				    this->stemmerFlag = true;
 				    tempUse = string(field.attribute(dictionaryString).value());
-				    size_t length = tempUse.length();
-				    this->stemmerFile = this->srch2Home + trim(tempUse);
-				    if (tempUse.length() != length) {
-				        parseWarnings << "Trimmed whitespace from stemmer filter file\n";
-				    }
+				    this->stemmerFile = this->srch2Home + trimPath(tempUse, porterStemFilterString, parseWarnings);
                                 }
                             } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
-				    size_t length = tempUse.length();
-                                    this->stopFilterFilePath = this->srch2Home + trim(tempUse);
-				    if (tempUse.length() != length) {
-				        parseWarnings << "Trimmed whitespace from stop filter file.\n";
-				    }
+				    this->stopFilterFilePath = this->srch2Home + trimPath(tempUse, stopFilterString, parseWarnings);
                                 }
                             } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
                                 if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
@@ -798,11 +799,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
-				    size_t length = tempUse.length();
-                                    this->protectedWordsFilePath = this->srch2Home + trim(tempUse);
-				    if (tempUse.length() != length) {
-				        parseWarnings << "Trimmed whitespace from protected words file name\n";
-				    }
+				    this->protectedWordsFilePath = this->srch2Home + trimPath(tempUse, protectedWordFilterString, parseWarnings);
                                 }
                             }
                         }
@@ -824,11 +821,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(licenseFileString);
     if (configAttribute && configAttribute.text()) { // checks if config/licenseFile exists and have any text value or not
         tempUse = string(configAttribute.text().get());
-	size_t length = tempUse.length();
-	this->licenseKeyFile = this->srch2Home + trim(tempUse);
-	if (tempUse.length() != length) {
-	    parseWarnings << "Trimmed whitespace from licenseFile\n";
-	}
+	this->licenseKeyFile = this->srch2Home + trimPath(tempUse, licenseFileString, parseWarnings);
     } else {
         parseError << "License key is not set.\n";
         configSuccess = false;
@@ -858,11 +851,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(dataDirString);
     if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
         tempUse = string(configAttribute.text().get());
-	size_t length = tempUse.length();
-	this->indexPath = this->srch2Home + trim(tempUse);
-	if (tempUse.length() != length) {
-	    parseWarnings << "Trimmed whitespace from dataDir";
-	}
+	this->indexPath = this->srch2Home + trimPath(tempUse, dataDirString, parseWarnings);
     } else {
         parseError
                 << "Path of index file is not set. You should set it as <dataDir>path/to/index/file</dataDir> in the config file.\n";
@@ -897,11 +886,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         configAttribute = configDoc.child(configString).child(dataFileString);
     	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
 	    tempUse = string(configAttribute.text().get());
-	    size_t length = tempUse.length();
-	    this->filePath = this->srch2Home + trim(tempUse);
-	    if (tempUse.length() != length) {
-	        parseWarnings << "Trimmed whitespace from data source file.\n";
-	    }
+	    this->filePath = this->srch2Home + trimPath(tempUse, dataFileString, parseWarnings);
     	} else {
     		parseError
     		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
@@ -1277,11 +1262,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(accessLogFileString);
     if (configAttribute && configAttribute.text()) {
         tempUse = string(configAttribute.text().get());
-	size_t length = tempUse.length();
-	this->httpServerAccessLogFile = this->srch2Home + trim(tempUse);
-	if (tempUse.length() != length) {
-	    parseWarnings << "Trimmed whitespace from accessLogFile.\n";
-	}
+	this->httpServerAccessLogFile = this->srch2Home + trimPath(tempUse, updateLogString, parseWarnings);
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
