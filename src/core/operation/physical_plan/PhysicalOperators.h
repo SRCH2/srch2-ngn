@@ -212,6 +212,11 @@ public:
 class SortByScoreOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
+	struct SortByScoreRecordMaxHeapComparator{
+		bool operator()(const PhysicalPlanRecordItem * left , const PhysicalPlanRecordItem * right) const{
+			return (left->getRecordRuntimeScore() < right->getRecordRuntimeScore());
+		}
+	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
@@ -219,6 +224,8 @@ public:
 	~SortByScoreOperator();
 private:
 	SortByScoreOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
+	vector< PhysicalPlanRecordItem * > records;
 };
 
 class SortByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {
