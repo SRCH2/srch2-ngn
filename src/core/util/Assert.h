@@ -61,7 +61,7 @@ inline void print_trace (void)
         if (cond) {\
         } else {\
             printf("Assert failed in file=%s and line %d\n", __FILE__, __LINE__); \
-            srch2::instantsearch::print_trace();\
+            print_trace();\
             abort();\
         }\
 } while(0)

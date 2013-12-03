@@ -939,7 +939,7 @@ int IndexSearcherInternal::suggest(const string & keyword,
 		fuzzyMatchPenalty = 0.5;
 	}
 
-	unsigned editDistanceThreshold = computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
+	unsigned editDistanceThreshold = srch2::instantsearch::computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
 
 	// compute active nodes
 	// 1. first we must create term object which is used to compute activenodes.

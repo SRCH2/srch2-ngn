@@ -104,8 +104,6 @@ namespace srch2
         // Convert degree value to radian value using the formula : radian = degree*PI/180
         virtual double degreeToRadian(double degreeValue) const;
     };
-    
-    }
 
     /*
      * This function computes the edit-distance, with adjustments for floating point conversion error (epsilon),
@@ -113,6 +111,7 @@ namespace srch2
      * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword).
      */
     uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
+    }
 }
 
 #endif /* __RANKER_H__ */
