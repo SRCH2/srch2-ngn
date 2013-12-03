@@ -218,17 +218,13 @@ double SpatialRanker::degreeToRadian(double degreeValue) const
 
 }
 
-    /*
-     * This function computes the edit-distance based on the length of the keyword and a normalizationFactor
-     * which must be between 0 and 1.
-     * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword)
-     */
     uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold)
     {
     	if(similarityThreshold < 0 || similarityThreshold > 1) {
-    		//ASSERT(false);
+    		ASSERT(false);
     		return 0;
     	}
+    	// We add "FLT_EPSILON" to deal with imprecise representations of float.
     	float fresult = keywordLength * (1 - similarityThreshold + FLT_EPSILON);
     	return fresult; // casting to unsigned int will do the floor operation automatically.
     }
