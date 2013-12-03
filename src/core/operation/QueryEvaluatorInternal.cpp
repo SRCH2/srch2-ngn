@@ -125,7 +125,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
-	for(unsigned fuzzyPolicyIter=0;fuzzyPolicyIter<2;fuzzyPolicyIter++){ // this for is a two itertion loop, to avoid copying the code for exact and fuzzy
+	for(unsigned fuzzyPolicyIter=0;fuzzyPolicyIter<2;fuzzyPolicyIter++){ // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 
 		/*
 		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
@@ -148,7 +148,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		//1. Open the physical plan by opening the root
 		physicalPlan.getPlanTree()->open(this , params);
 		//2. call getNext for K times
-		for(unsigned i=0;i<K;i++){
+		for(unsigned i=0;(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery ? true : (i < K) );i++){
 			PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
 			if(newRecord == NULL){
 				break;
