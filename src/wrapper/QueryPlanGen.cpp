@@ -342,7 +342,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
             fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
                     keywordPrefixComplete[i], keywordBoostLevel[i],
                     indexDataContainerConf->getFuzzyMatchPenalty(),
-                    srch2is::Term::getEditDistanceThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i]) , keywordSimilarityThreshold[i]));
+                    computeEditDistanceThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i]) , keywordSimilarityThreshold[i]));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
             fuzzyTerm->addAttributeToFilterTermHits(fieldFilter[i]);
@@ -352,6 +352,8 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     }
 
 }
+
+
 
 void QueryPlanGen::createExactAndFuzzyQueriesForTopK(QueryPlan * plan) {
     // allocate the objects
