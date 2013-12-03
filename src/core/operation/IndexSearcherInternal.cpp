@@ -938,9 +938,8 @@ int IndexSearcherInternal::suggest(const string & keyword,
 	if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
 		fuzzyMatchPenalty = 0.5;
 	}
-	// calculate editDistanceThreshold
-	// TODO use Ranker to implement this logic
-	unsigned editDistanceThreshold = keyword.length() * (1 - fuzzyMatchPenalty);
+
+	unsigned editDistanceThreshold = computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
 
 	// compute active nodes
 	// 1. first we must create term object which is used to compute activenodes.

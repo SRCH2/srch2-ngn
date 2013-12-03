@@ -106,6 +106,9 @@ namespace srch2
     };
     
     }
+
+    // compute EditDistanceThreshold with adjustments for floating point conversion error (epsilon)
+    uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
 }
 
 #endif /* __RANKER_H__ */
