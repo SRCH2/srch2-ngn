@@ -1,6 +1,7 @@
 
 #include "UnionLowestLevelTermVirtualListOperator.h"
 #include "operation/QueryEvaluatorInternal.h"
+#include "cmath"
 
 namespace srch2 {
 namespace instantsearch {
@@ -9,11 +10,9 @@ namespace instantsearch {
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
 UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator() {
-    //TODO
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
-    //TODO
 }
 bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
@@ -227,17 +226,25 @@ bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanR
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-    //TODO
+PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(estimatedNumberOfTerminalNodes +
+			(unsigned)(estimatedNumberOfTerminalNodes * log2((double)estimatedNumberOfTerminalNodes))); // cost of going over leaf nodes and making the heap
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-    //TODO
+PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(5 + (unsigned)(log2((double)estimatedNumberOfTerminalNodes))); // cost of sequential access + heap access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-    //TODO
+PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(estimatedNumberOfTerminalNodes); // cost of deleting heap items
+}
+PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(20 * estimatedNumberOfTerminalNodes); // cost of random access
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
     prop.addProperty(PhysicalPlanIteratorProperty_SortByScore);

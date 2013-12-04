@@ -8,11 +8,9 @@ namespace instantsearch {
 ///////////////////////////////////// merge when lists are sorted by ID ////////////////////////////
 
 MergeSortedByIDOperator::MergeSortedByIDOperator() {
-	//TODO
 }
 
 MergeSortedByIDOperator::~MergeSortedByIDOperator(){
-	//TODO
 }
 bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
@@ -24,8 +22,6 @@ bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, Phys
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
 	}
-
-	initializeNextItemsFromChildren(params);
 
 
 	listsHaveMoreRecordsInThem = true;
@@ -135,7 +131,6 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	}
 	this->queryEvaluator = NULL;
 	this->listsHaveMoreRecordsInThem = true;
-	this->nextItemsFromChildren.clear();
 	return true;
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
@@ -155,17 +150,6 @@ bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerif
 	return true;
 }
 
-void MergeSortedByIDOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params){
-	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
-	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
-		PhysicalPlanRecordItem * recordItem =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
-		if(recordItem == NULL){
-			listsHaveMoreRecordsInThem = false;
-		}
-		this->nextItemsFromChildren.push_back(recordItem);
-	}
-}
 
 float MergeSortedByIDOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
 
@@ -179,17 +163,75 @@ float MergeSortedByIDOperator::computeAggregatedRuntimeScoreForAnd(std::vector<f
 
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned MergeSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned MergeSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	/*
+	 * We suppose all cursors move with the same speed
+	 * So the total number of children getNexts that we call is the length of the shortest child for each child
+	 * so the average cost of each getNext is :
+	 * ((numberOfChildren * estimatedLengthOfShortestList) / estimatedNumberOfResults) * ( children getNextCost average + O(1) ) + O(1)
+	 */
+	unsigned numberOfChildren = this->getChildrenCount();
+	unsigned estimatedLengthOfShortestList = 0 ;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		unsigned thisChildsLength = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		if(estimatedLengthOfShortestList < thisChildsLength){
+			estimatedLengthOfShortestList = thisChildsLength;
+		}
+	}
+	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	float childrenGetNextAverage = 0;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		childrenGetNextAverage += this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
+	}
+	childrenGetNextAverage = childrenGetNextAverage / numberOfChildren;
+
+	PhysicalPlanCost resultCost ;
+	resultCost = resultCost + 1; // O(1)
+
+	resultCost = resultCost +
+			(unsigned)(((numberOfChildren * estimatedLengthOfShortestList * 1.0) / estimatedNumberOfResults) * ( childrenGetNextAverage + 1 ));
+
+	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned MergeSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
+}
+PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 void MergeSortedByIDOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// this function keeps the sorted-by-id propert of the inputs

@@ -8,11 +8,11 @@ namespace instantsearch {
 ///////////////////////////////////// merge by moving on shortest list /////////////////////////////
 
 MergeByShortestListOperator::MergeByShortestListOperator() {
-	//TODO
+
 }
 
 MergeByShortestListOperator::~MergeByShortestListOperator(){
-	//TODO
+
 }
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
@@ -174,17 +174,77 @@ float MergeByShortestListOperator::computeAggregatedRuntimeScoreForAnd(std::vect
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned MergeByShortestListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned MergeByShortestListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	/*
+	 * If shortest list has 10 records, and the estimated number of results for this AND
+	 * is 5, it means 2 records are processed in average per getNext(...)
+	 * So, the cost of getNext is
+	 * (estimated length of shortest list / estimated number of results of this and) * ( child's getNextCost + sum of verification costs + O(1) ) + O(1)
+	 */
+	unsigned indexOfShortestList = getShortestListOffsetInChildren();
+	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->estimatedNumberOfResults;
+	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	if(estimatedNumberOfResults == 0){
+		estimatedNumberOfResults = 1;
+	}
+	// initialize record processing cost by cost of child's get next
+	PhysicalPlanCost recordProcessingCost = this->getChildAt(indexOfShortestList)->getCostOfGetNext(params);
+	// cost of verification on other children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		if(childOffset == indexOfShortestList){
+			continue;
+		}
+		recordProcessingCost = recordProcessingCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+	}
+	recordProcessingCost = recordProcessingCost + 1;
+
+
+	recordProcessingCost.cost = (unsigned)( recordProcessingCost.cost * ( (estimatedLengthOfShortestList * 1.0) / (estimatedNumberOfResults) ));
+
+	// O(1)
+	recordProcessingCost = recordProcessingCost + 1;
+
+	return recordProcessingCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned MergeByShortestListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of closing children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
+}
+PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 void MergeByShortestListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// this function doesn't provide any guarantee about order of results.

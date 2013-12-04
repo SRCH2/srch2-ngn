@@ -48,17 +48,29 @@ bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRando
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned RandomAccessVerificationNotOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost ;
+	resultCost = resultCost + 1;
+	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params);
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned RandomAccessVerificationNotOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(); // zero cost
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned RandomAccessVerificationNotOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost ;
+	resultCost = resultCost + 1;
+	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
+	return resultCost;
+}
+PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
+	return resultCost;
 }
 void RandomAccessVerificationNotOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// TODO

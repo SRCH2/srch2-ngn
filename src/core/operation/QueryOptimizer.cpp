@@ -50,16 +50,16 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	buildIncompleteTreeOptions(treeOptions);
 
 	//4. Find the option which has the minimum cost
-	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions);
+	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan);
 
 	// 5. Build the complete version of physical plan tree from the chosen tree structure
 	// --- and set in the plan object
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	cout << "========================================================" << endl;
-	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	cout << "========================================================" << endl;
+//	cout << "========================================================" << endl;
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	cout << "========================================================" << endl;
 //	exit(0);
 	// end : print for test
 
@@ -314,15 +314,42 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 	}
 }
 
-PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions){
-	// TODO
-	// TEMPORARY CODE
+PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
+	PhysicalPlanOptimizationNode * minPlan = NULL;
+	unsigned minCost = 0;
 	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
-		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){
-			return *treeOption;
+		PhysicalPlanCost cost;
+		unsigned numberOfGetNextCalls = 0;
+		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
+			numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;
+			if((*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
+				numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+			}
+		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
+			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		}
+		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+		cost = cost +
+				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
+				numberOfGetNextCalls;
+		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+
+		cout << "========================================================" << endl;
+		cout << "Cost is " << cost.cost << endl;
+		(*treeOption)->printSubTree();
+		cout << "========================================================" << endl;
+
+		if(minPlan == NULL){
+			minPlan = (*treeOption);
+			minCost = cost.cost;
+		}else{
+			if(minCost < cost.cost){
+				minPlan = (*treeOption);
+				minCost = cost.cost;
+			}
 		}
 	}
-	return NULL;
+	return minPlan;
 }
 
 PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructure(PhysicalPlanOptimizationNode * chosenTree){

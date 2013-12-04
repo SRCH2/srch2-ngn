@@ -41,8 +41,10 @@ class LogicalPlanNodeAnnotation{
 public:
 	unsigned estimatedNumberOfResults;
 	float estimatedProbability;
+	unsigned estimatedNumberOfLeafNodes;
 	PrefixActiveNodeSet * activeNodeSetExact;
 	PrefixActiveNodeSet * activeNodeSetFuzzy;
+
 	LogicalPlanNodeAnnotation(){
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
@@ -63,13 +65,22 @@ public:
 	        delete activeNodeSetFuzzy;
 	    }
 	}
-	unsigned getEstimatedNumberOfResults(){
+	unsigned getEstimatedNumberOfResults() const{
 		return this->estimatedNumberOfResults;
 	}
 	void setEstimatedNumberOfResults(unsigned estimate){
 		estimatedNumberOfResults = estimate;
 	}
-	float getEstimatedProbability(){
+
+	unsigned getEstimatedNumberOfLeafNodes() const {
+		return estimatedNumberOfLeafNodes;
+	}
+
+	void setEstimatedNumberOfLeafNodes(unsigned estimatedNumberOfLeafNodes) {
+		this->estimatedNumberOfLeafNodes = estimatedNumberOfLeafNodes;
+	}
+
+	float getEstimatedProbability() const{
 		return estimatedProbability;
 	}
 	void setEstimatedProbability(float p){
@@ -113,7 +124,8 @@ private:
 	void annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy);
 
 	PrefixActiveNodeSet * computeActiveNodeSet(Term *term) const;
-	float computeEstimatedProbabilityOfPrefix(PrefixActiveNodeSet * activeNodes , unsigned threshold) const;
+	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
+			unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const;
 	unsigned computeEstimatedNumberOfResults(float probability);
 
 };

@@ -10,11 +10,9 @@ namespace instantsearch {
 ////////////////////////////////////////// merge with topK /////////////////////////////////////////
 
 MergeTopKOperator::MergeTopKOperator() {
-	//TODO
 }
 
 MergeTopKOperator::~MergeTopKOperator(){
-	//TODO
 }
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
@@ -306,17 +304,97 @@ void MergeTopKOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionPar
 //###################################### Optimization Node ####################################################//
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned MergeTopKOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	// cost of initializing nextItems vector
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfGetNext(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	/*
+	 * ***** cost =
+	 *  costOfVisitingOneRecord * estimatedNumberOfRecordsToVisitForOneCandidate * estimatedNumberOfCandidatesToFindForTop1
+	 *
+	 * that :
+	 * costOfVisitingOneRecord = 1 getNext + (X-1) verifications , i.e. that X is the number of children
+	 * NOTE: since getNext cost is different for different children, we use the average. So :
+	 * ***** costOfVisitingOneRecord =
+	 *       SUM [1<=i<=X]( getNext(i) + SUM[1<=j<=X,j != i](verify(j))) / X
+	 * ***** estimatedNumberOfRecordsToVisitForOneCandidate =
+	 *       SUM[1<=i<=X](length(i)) / estimatedTotalNumberOfCandidates
+	 * ***** estimatedNumberOfCandidatesToFindForTop1 = This value depends on scores, for now we assume it's 10
+	 * So :
+	 * ******* cost =
+	 * 				( ( SUM [1<=i<=X]( getNext(i) + SUM[1<=j<=X,j != i](verify(j))) / X ) + O(1) ) *
+	 * 				( (SUM[1<=i<=X](length(i)) / estimatedTotalNumberOfCandidates) + O(1) ) *
+	 * 				10
+	 */
+	double costOfVisitingOneRecord = 0;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
+		for(unsigned childOffset2 = 0 ; childOffset2 != this->getChildrenCount() ; ++childOffset2){
+			if(childOffset == childOffset2){
+				continue;
+			}
+			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost;
+		}
+	}
+	ASSERT(this->getChildrenCount() != 0);
+	costOfVisitingOneRecord = costOfVisitingOneRecord / this->getChildrenCount();
+	costOfVisitingOneRecord += 1; // O(1)
+
+	unsigned sumOfChildrenLenghts = 0 ;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		sumOfChildrenLenghts += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	}
+
+	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	double estimatedNumberOfRecordsToVisitForOneCandidate = ( (sumOfChildrenLenghts * 1.0) / estimatedTotalNumberOfCandidates ) + 1;
+
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+	resultCost = resultCost + (unsigned )( costOfVisitingOneRecord * estimatedNumberOfRecordsToVisitForOneCandidate * 10);
+
+	return resultCost;
+
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
+}
+PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost(1); // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 void MergeTopKOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	prop.addProperty(PhysicalPlanIteratorProperty_SortByScore);

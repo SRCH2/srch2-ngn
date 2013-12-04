@@ -130,12 +130,13 @@ class MergeTopKOptimizationOperator : public PhysicalPlanOptimizationNode {
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;

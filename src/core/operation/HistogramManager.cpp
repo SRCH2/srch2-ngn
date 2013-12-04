@@ -131,9 +131,12 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
 			PrefixActiveNodeSet * activeNodeSetForEstimation = node->stats->getActiveNodeSetForEstimation(isFuzzy);
-			float termProbability = computeEstimatedProbabilityOfPrefix(activeNodeSetForEstimation, thresholdForEstimation);
+			float termProbability;
+			unsigned numberOfLeafNodes;
+			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation, thresholdForEstimation, termProbability, numberOfLeafNodes);
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
 			break;
 		}
 	}
@@ -196,7 +199,8 @@ PrefixActiveNodeSet *HistogramManager::computeActiveNodeSet(Term *term) const
     return prefixActiveNodeSet;
 }
 
-float HistogramManager::computeEstimatedProbabilityOfPrefix(PrefixActiveNodeSet * activeNodes , unsigned threshold) const{
+void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
+		unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const{
 
 	/*
 	 * Example :
@@ -261,12 +265,16 @@ float HistogramManager::computeEstimatedProbabilityOfPrefix(PrefixActiveNodeSet 
     // now we have the top level trieNodes
     // we move on all top trie nodes and aggregate their probability by using Joint Probability formula
     float aggregatedProbability = 0;
+    unsigned aggregatedNumberOfLeafNodes = 0;
     for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
     	TrieNodePointer topTrieNode = *trieNodeIter;
     	aggregatedProbability = topTrieNode->aggregateValueByJointProbability(aggregatedProbability , topTrieNode->getNodeProbabilityValue());
+    	aggregatedNumberOfLeafNodes += topTrieNode->getNumberOfTerminalNodes();
     }
 
-    return aggregatedProbability;
+    probability = aggregatedProbability;
+    numberOfLeafNodes = aggregatedNumberOfLeafNodes;
+
 }
 
 unsigned HistogramManager::computeEstimatedNumberOfResults(float probability){

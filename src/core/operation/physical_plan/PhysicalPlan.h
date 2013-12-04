@@ -121,17 +121,38 @@ public:
 	virtual ~PhysicalPlanIteratorExecutionInterface(){};
 };
 
+struct PhysicalPlanCost{
+	unsigned cost;
+	PhysicalPlanCost(){
+		cost = 0;
+	}
+	PhysicalPlanCost(unsigned c){
+		cost = c;
+	}
+	PhysicalPlanCost(const PhysicalPlanCost & src){
+		cost = src.cost;
+	}
+	PhysicalPlanCost operator+(const PhysicalPlanCost & rightValue){
+		return PhysicalPlanCost( cost + rightValue.cost);
+	}
+	PhysicalPlanCost operator+(const unsigned & rightValue){
+		return PhysicalPlanCost(cost + rightValue);
+	}
+};
+
 // The iterator interface used to implement iterator model
 class PhysicalPlanIteratorOptimizationInterface{
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	virtual unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) = 0;
+	virtual PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) = 0;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	virtual unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) = 0;
+	virtual PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) = 0;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	virtual unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) = 0;
+	virtual PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) = 0;
+	// the cost of verifying a record by random access
+	virtual PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params) = 0 ;
 	virtual void getOutputProperties(IteratorProperties & prop) = 0;
 	virtual void getRequiredInputProperties(IteratorProperties & prop) = 0;
 	virtual ~PhysicalPlanIteratorOptimizationInterface(){};

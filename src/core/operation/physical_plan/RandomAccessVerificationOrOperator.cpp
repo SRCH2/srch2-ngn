@@ -9,11 +9,9 @@ namespace instantsearch {
 ///////////////////////////// PhysicalPlan Random Access Verification Term Operator ////////////////////////////
 
 RandomAccessVerificationOrOperator::RandomAccessVerificationOrOperator() {
-	//TODO
 }
 
 RandomAccessVerificationOrOperator::~RandomAccessVerificationOrOperator(){
-	//TODO
 }
 bool RandomAccessVerificationOrOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
@@ -68,17 +66,47 @@ float RandomAccessVerificationOrOperator::computeAggregatedRuntimeScoreForOr(std
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned RandomAccessVerificationOrOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost RandomAccessVerificationOrOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned RandomAccessVerificationOrOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationOrOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(); // zero cost
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned RandomAccessVerificationOrOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationOrOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of closing children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
+}
+PhysicalPlanCost RandomAccessVerificationOrOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of verifying children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 void RandomAccessVerificationOrOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// TODO

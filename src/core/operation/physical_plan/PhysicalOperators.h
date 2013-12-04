@@ -63,12 +63,13 @@ class RandomAccessVerificationTermOptimizationOperator : public PhysicalPlanOpti
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -94,12 +95,13 @@ class RandomAccessVerificationAndOptimizationOperator : public PhysicalPlanOptim
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -126,12 +128,13 @@ class RandomAccessVerificationOrOptimizationOperator : public PhysicalPlanOptimi
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -157,12 +160,13 @@ class RandomAccessVerificationNotOptimizationOperator : public PhysicalPlanOptim
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -198,12 +202,13 @@ class SortByIdOptimizationOperator : public PhysicalPlanOptimizationNode {
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -239,12 +244,13 @@ class SortByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -265,17 +271,9 @@ public:
 	~MergeSortedByIDOperator();
 private:
 	MergeSortedByIDOperator() ;
-	void initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params);
 	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
 	QueryEvaluatorInternal * queryEvaluator;
 
-	/* this vector always contains the next record coming out of children
-	* this means each record first goes to this vector and then it can be used
-	* by the operator.
-	* getNextRecordOfChild(unsigned childOffset, parameters) returns the record
-	* and makes sure to populate the vector again from the child operator.
-	*/
-	vector<PhysicalPlanRecordItem *> nextItemsFromChildren;
 	/*
 	 * This variable is true unless one of the children lists become empty
 	 */
@@ -287,12 +285,13 @@ class MergeSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode 
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+    PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -332,12 +331,13 @@ class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationN
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+    PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;
@@ -376,12 +376,13 @@ class UnionSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode 
 public:
 	// The cost of open of a child is considered only once in the cost computation
 	// of parent open function.
-	unsigned getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
 	// The cost of getNext of a child is multiplied by the estimated number of calls to this function
 	// when the cost of parent is being calculated.
-	unsigned getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
-	unsigned getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
 	void getRequiredInputProperties(IteratorProperties & prop);
 	PhysicalPlanNodeType getType() ;

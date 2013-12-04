@@ -7,12 +7,9 @@ namespace instantsearch {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// Union lists sorted by ID /////////////////////////////////////
 
-UnionSortedByIDOperator::UnionSortedByIDOperator() {
-	//TODO
-}
-UnionSortedByIDOperator::~UnionSortedByIDOperator(){
-	//TODO
-}
+UnionSortedByIDOperator::UnionSortedByIDOperator() {}
+UnionSortedByIDOperator::~UnionSortedByIDOperator(){}
+
 bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 	/*
@@ -136,18 +133,63 @@ float UnionSortedByIDOperator::computeAggregatedRuntimeScoreForOr(std::vector<fl
 
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned UnionSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	// cost of initializing nextItems vector
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfGetNext(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned UnionSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	/*
+	 * cost : sum of size of all children / estimatedNumberOfResults
+	 */
+	unsigned sumOfAllLengths = 0;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		sumOfAllLengths += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	}
+	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	return PhysicalPlanCost((unsigned)(((sumOfAllLengths*1.0)/estimatedNumberOfResults) + 1));
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned UnionSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
 }
+PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost = resultCost + 1; // O(1)
+
+	// cost of opening children
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		resultCost = resultCost + 1; // O(1)
+	}
+
+	return resultCost;
+}
+
 void UnionSortedByIDOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	prop.addProperty(PhysicalPlanIteratorProperty_SortById);
 }

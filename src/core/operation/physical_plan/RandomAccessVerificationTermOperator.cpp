@@ -9,18 +9,13 @@ namespace instantsearch {
 ///////////////////////////// PhysicalPlan Random Access Verification Term Operator ////////////////////////////
 
 RandomAccessVerificationTermOperator::RandomAccessVerificationTermOperator() {
-	//TODO
 }
 
 RandomAccessVerificationTermOperator::~RandomAccessVerificationTermOperator(){
-	//TODO
 }
 bool RandomAccessVerificationTermOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
-	// open all children
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
-	}
+	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
 }
 PhysicalPlanRecordItem * RandomAccessVerificationTermOperator::getNext(const PhysicalPlanExecutionParameters & params) {
@@ -28,10 +23,7 @@ PhysicalPlanRecordItem * RandomAccessVerificationTermOperator::getNext(const Phy
 }
 bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = NULL;
-	// close the children
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
-	}
+	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
 }
 bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
@@ -81,17 +73,23 @@ bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRand
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned RandomAccessVerificationTermOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	return PhysicalPlanCost(1); // cost O(1)
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned RandomAccessVerificationTermOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(); // cost zero
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned RandomAccessVerificationTermOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(1); // cost O(1)
+}
+PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	// base cost for one verification : 20
+	unsigned cost = 20;
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(20 * estimatedNumberOfTerminalNodes);
 }
 void RandomAccessVerificationTermOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// TODO

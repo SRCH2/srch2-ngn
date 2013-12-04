@@ -13,7 +13,6 @@ UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
 }
 
 UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
-	//TODO
 }
 bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	// first save the pointer to QueryEvaluator
@@ -59,6 +58,8 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	}
 	this->invertedListOffset = 0;
 	this->cursorOnInvertedList = 0;
+
+	return true;
 
 }
 PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const PhysicalPlanExecutionParameters & params) {
@@ -172,6 +173,7 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 	this->invertedListOffset = 0;
 	queryEvaluator = NULL;
 
+	return true;
 }
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
@@ -243,17 +245,22 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
 
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
-unsigned UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	//TODO
+PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(estimatedNumberOfTerminalNodes); // cost of going over leaf nodes.
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
-unsigned UnionLowestLevelSimpleScanOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(5); // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
-unsigned UnionLowestLevelSimpleScanOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	//TODO
+PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
+	return PhysicalPlanCost(1); // cost 1
+}
+PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	return PhysicalPlanCost(20 * estimatedNumberOfTerminalNodes); // cost of random access
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// no output property
