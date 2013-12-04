@@ -22,6 +22,7 @@
 #include "util/Assert.h"
 #include <iostream>
 #include <math.h>
+#include <cfloat>
 
 using std::vector;
 
