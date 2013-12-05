@@ -7,6 +7,8 @@
 #include "util/Logger.h"
 #include "util/Assert.h"
 #include "RegexConstants.h"
+#include "QueryFieldBoostParser.h"
+
 using namespace std;
 using srch2::util::Logger;
 using namespace srch2::instantsearch;
@@ -33,6 +35,7 @@ const char* const QueryParser::suggestionKeywordParamName = "k"; //solr
 const char* const QueryParser::lengthBoostParamName = "lengthBoost"; //srch2
 const char* const QueryParser::prefixMatchPenaltyParamName = "pmp"; //srch2
 const char* const QueryParser::filterQueryParamName = "fq"; //solr
+const char* const QueryParser::queryFieldBoostParamName = "qf"; //solr
 const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
 const char* const QueryParser::docIdParamName = "docid"; //srch2
 // local parameter params
@@ -90,6 +93,7 @@ QueryParser::QueryParser(const evkeyvalq &headers,
             srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
+    //this->isQfBoosted = false;
     this->isSearchTypeSet = false;
 }
 
@@ -182,15 +186,16 @@ bool QueryParser::parse() {
      * 7. call the omit header parser : omitHeaderParameterParser();
      * 8. call the response writer parser : responseWriteTypeParameterParser();
      * 9. call the filter query parser : filterQueryParameterParser();
-     * 10. this->lengthBoostParser();
-     * 11. this->prefixMatchPenaltyParser();
-     * 12. based on the value of search type (if it's defined in local parameters we take it
+     * 10. call the query field boost parser : queryFieldBoostParser();
+     * 11. this->lengthBoostParser();
+     * 12. this->prefixMatchPenaltyParser();
+     * 13. based on the value of search type (if it's defined in local parameters we take it
      *    otherwise we get it from conf file) leave the rest of parsing to one of the parsers
-     * 12.1: search type : Top-K
+     * 13.1: search type : Top-K
      *      call topKParameterParser();
-     * 12.2: search type : All results
+     * 13.2: search type : All results
      *      call getAllResultsParser();
-     * 12.3: search type : GEO
+     * 13.3: search type : GEO
      *      call geoParser();
      */
 
@@ -209,6 +214,7 @@ bool QueryParser::parse() {
         this->omitHeaderParameterParser();
         this->responseWriteTypeParameterParser();
         this->filterQueryParameterParser();
+        this->queryFieldBoostParser();
         this->lengthBoostParser();
         this->prefixMatchPenaltyParser();
         this->extractSearchType();
@@ -808,6 +814,38 @@ bool QueryParser::filterQueryParameterParser() {
         }
     }
     Logger::debug("returning from filterQueryParameterParser function");
+    return true;
+}
+
+bool QueryParser::queryFieldBoostParser() {
+    /*
+     * it looks to see if there is any post processing dynamic boosting
+     * if there is then it fills up the container accordingly
+     *
+     * example: 'qf=price^100+popularity^100'
+     *
+     */
+    Logger::debug("inside queryFieldBoostParser function");
+    const char* key = QueryParser::queryFieldBoostParamName;
+    const char* qfTmp = evhttp_find_header(&headers, key);
+    // read qf from headers
+    if (qfTmp) {
+        Logger::debug("queryFieldBoostParam found.");
+        string qf;
+        decodeString(qfTmp, qf);
+        // create filterQueryContainer object.
+        QueryFieldBoostContainer* qfboost= new QueryFieldBoostContainer();
+
+        this->container->qfContainer= qfboost;
+        this->container->parametersInQuery.push_back(QueryFieldBoostFlag);
+        boost::algorithm::trim(qf);
+        Logger::debug("parsing qf %s", qf.c_str());
+        if (!QueryFieldBoostParser::parseAndAddCriterion(*qfboost, qf)) {
+            this->isParsedError = true;
+            return false;
+        }
+    }
+    Logger::debug("returning from quertFieldBoostParser function");
     return true;
 }
 

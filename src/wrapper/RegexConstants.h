@@ -42,6 +42,9 @@ const string FQ_ASSIGNMENT_KEYWORD_REGEX_STRING = "^[^\\s:]+"; // no space allow
 const string FQ_COMPLEX_EXPRESSION_REGEX_STRING = "[^\\$]+";
 const string FQ_FIELD_KEYWORD_DELIMETER_REGEX_STRING = "\\s+TO\\s+";
 }
+
+//query field boost regex strings
+const string QF_ATTRIBUTE_REGEX_STRING = "^[^\\^]*\\^";
 }
 
 #endif // __REGEX_CONSTANTS__

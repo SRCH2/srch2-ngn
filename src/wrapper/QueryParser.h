@@ -92,6 +92,7 @@ public:
     // localparamter related variables end
     bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
     bool isSearchTypeSet; // whether the searchType has been set or not.
+ //   bool isQfBoosted; // whether the query is dynamically boosted
 
 private:
 
@@ -118,6 +119,7 @@ private:
     static const char* const lengthBoostParamName; //srch2
     static const char* const prefixMatchPenaltyParamName; //srch2
     static const char* const filterQueryParamName; //solr
+    static const char* const queryFieldBoostParamName;//solr
     static const char* const isFuzzyParamName; //srch2
     static const char* const docIdParamName;
     // local parameter params
@@ -250,6 +252,15 @@ private:
      *
      */
     bool filterQueryParameterParser();
+
+    /*
+     * it looks to see if there is any post processing dynamic boosting
+     * if there is then it fills up the container accordingly
+     *
+     * example: 'qf=price^100+popularity^100'
+     *
+     */
+    bool queryFieldBoostParser();
 
     /*
      * example:  facet=true&facet.field=Author&facet.field=Title&facet.range=price&f.price.range.start=10&f.price.range.end=100&f.price.range.gap=10
