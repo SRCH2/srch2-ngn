@@ -16,7 +16,6 @@ RandomAccessVerificationNotOperator::~RandomAccessVerificationNotOperator(){
 	//TODO
 }
 bool RandomAccessVerificationNotOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
 	// open all children
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluator , params);
@@ -26,7 +25,6 @@ PhysicalPlanRecordItem * RandomAccessVerificationNotOperator::getNext(const Phys
 	return NULL;
 }
 bool RandomAccessVerificationNotOperator::close(PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = NULL;
 	// close the children
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;

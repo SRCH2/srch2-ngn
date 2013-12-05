@@ -67,8 +67,6 @@ public:
 	~MergeTopKOperator();
 private:
 
-	QueryEvaluatorInternal * queryEvaluator;
-
 	/* this vector always contains the next record coming out of children
 	* this means each record first goes to this vector and then it can be used
 	* by the operator.
@@ -117,8 +115,6 @@ private:
 						const PhysicalPlanExecutionParameters & params);
 
 	bool getMaximumScoreOfUnvisitedRecords(float & score);
-
-	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
 
 	MergeTopKOperator() ;
 	void insertResult(PhysicalPlanRecordItem * recordItem);

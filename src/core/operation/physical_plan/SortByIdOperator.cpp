@@ -14,8 +14,6 @@ SortByIdOperator::SortByIdOperator() {
 SortByIdOperator::~SortByIdOperator(){
 }
 bool SortByIdOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
-
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
 
 	// open the single child
@@ -50,7 +48,6 @@ PhysicalPlanRecordItem * SortByIdOperator::getNext(const PhysicalPlanExecutionPa
 bool SortByIdOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	records.clear();
-	this->queryEvaluator = NULL;
 	return true;
 }
 bool SortByIdOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

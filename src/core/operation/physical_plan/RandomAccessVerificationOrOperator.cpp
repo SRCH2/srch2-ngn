@@ -1,5 +1,6 @@
 
 #include "PhysicalOperators.h"
+#include "PhysicalOperatorsHelper.h"
 
 using namespace std;
 namespace srch2 {
@@ -14,7 +15,6 @@ RandomAccessVerificationOrOperator::RandomAccessVerificationOrOperator() {
 RandomAccessVerificationOrOperator::~RandomAccessVerificationOrOperator(){
 }
 bool RandomAccessVerificationOrOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
 	// open all children
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
@@ -25,7 +25,6 @@ PhysicalPlanRecordItem * RandomAccessVerificationOrOperator::getNext(const Physi
 	return NULL;
 }
 bool RandomAccessVerificationOrOperator::close(PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = NULL;
 	// close the children
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
@@ -33,37 +32,9 @@ bool RandomAccessVerificationOrOperator::close(PhysicalPlanExecutionParameters &
 	return true;
 }
 bool RandomAccessVerificationOrOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	// move on children and if at least on of them verifies the record return true
-	bool verified = false;
-	vector<float> runtimeScore;
-	// static score is ignored for now
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		bool resultOfThisChild =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		runtimeScore.push_back(parameters.runTimeTermRecordScore);
-		if(resultOfThisChild == true){
-			verified = true;
-		}
-	}
-	if(verified == true){ // so we need to aggregate runtime and static score
-		parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForOr(runtimeScore);
-	}
-	return verified;
+	return verifyByRandomAccessOrHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
-
-float RandomAccessVerificationOrOperator::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
-
-	// max
-	float resultScore = -1;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		if((*score) > resultScore){
-			resultScore = (*score);
-		}
-	}
-	return resultScore;
-}
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost RandomAccessVerificationOrOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){

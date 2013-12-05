@@ -1,5 +1,6 @@
 
 #include "PhysicalOperators.h"
+#include "PhysicalOperatorsHelper.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -11,7 +12,6 @@ UnionSortedByIDOperator::UnionSortedByIDOperator() {}
 UnionSortedByIDOperator::~UnionSortedByIDOperator(){}
 
 bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
 	/*
 	 * 1. open all children (no parameters known to pass as of now)
 	 * 2. initialize nextRecordItems vector.
@@ -71,7 +71,8 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	vector<unsigned> recordKeywordMatchBitmaps;
 	vector<unsigned> positionIndexOffsets;
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
-		if(this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
+		if(this->nextItemsFromChildren.at(childOffset) != NULL &&
+				this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
@@ -95,40 +96,11 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
-	this->queryEvaluator = NULL;
 	this->listsHaveMoreRecordsInThem = true;
 	return true;
 }
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	// move on children and if at least on of them verifies the record return true
-	bool verified = false;
-	vector<float> runtimeScore;
-	// static score is ignored for now
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		bool resultOfThisChild =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		runtimeScore.push_back(parameters.runTimeTermRecordScore);
-		if(resultOfThisChild == true){
-			verified = true;
-		}
-	}
-	if(verified == true){ // so we need to aggregate runtime and static score
-		parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForOr(runtimeScore);
-	}
-	return verified;
-}
-
-float UnionSortedByIDOperator::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
-
-	// max
-	float resultScore = -1;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		if((*score) > resultScore){
-			resultScore = (*score);
-		}
-	}
-	return resultScore;
+	return verifyByRandomAccessOrHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
 // The cost of open of a child is considered only once in the cost computation

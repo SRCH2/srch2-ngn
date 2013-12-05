@@ -1,5 +1,6 @@
 
 #include "PhysicalOperators.h"
+#include "PhysicalOperatorsHelper.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -15,7 +16,6 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 
 }
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
 
 	this->isShortestListFinished = false;
 
@@ -81,25 +81,11 @@ bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
 	this->isShortestListFinished = false;
-	this->queryEvaluator = NULL;
 	return true;
 
 }
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	// move on children and if at least on of them verifies the record return true
-	vector<float> runtimeScore;
-	// static score is ignored for now
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		bool resultOfThisChild =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		runtimeScore.push_back(parameters.runTimeTermRecordScore);
-		if(resultOfThisChild == false){
-			return false;
-		}
-	}
-	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
-
-	return true;
+	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
 
@@ -154,24 +140,10 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 		}
 	}
 
-    bool validForwardList;
-    this->queryEvaluator->getForwardIndex()->getForwardList(recordItem->getRecordId(), validForwardList);
-    if (validForwardList) {
-    	return true;
-    }
-	return false;
+	return true;
 
 }
 
-float MergeByShortestListOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
-
-	float resultScore = 0;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		resultScore += *(score);
-	}
-	return resultScore;
-}
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
@@ -297,7 +269,7 @@ unsigned MergeByShortestListOptimizationOperator::getShortestListOffsetInChildre
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
 				break;
-			default:{ // we count the number of non-verification operators.
+			default:{
 				return i;
 			}
 		}

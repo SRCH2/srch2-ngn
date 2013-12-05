@@ -1,5 +1,6 @@
 
 #include "PhysicalOperators.h"
+#include "PhysicalOperatorsHelper.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -13,8 +14,6 @@ MergeSortedByIDOperator::MergeSortedByIDOperator() {
 MergeSortedByIDOperator::~MergeSortedByIDOperator(){
 }
 bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-	this->queryEvaluator = queryEvaluator;
-
 	/*
 	 * 1. open all children (no parameters known to pass as of now)
 	 * 2. initialize nextRecordItems vector.
@@ -49,6 +48,10 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 	unsigned childToGetNextRecordFrom = 0; // i
 	PhysicalPlanRecordItem * record = // record
 			this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+	if(record == NULL){
+		this->listsHaveMoreRecordsInThem = false;
+		return NULL;
+	}
 	while(true){ // 1.1.
 		vector<PhysicalPlanRecordItem *> recordMatches;
 		bool shouldGoToNextRound = false;
@@ -70,6 +73,7 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 					break; // go to 2
 				}else if(nextRecord->getRecordId() > record->getRecordId()){
 					record = nextRecord;
+					childToGetNextRecordFrom = childOffset;
 					shouldGoToNextRound = true;//because we want to go to 1.1.
 					break;
 				}
@@ -78,7 +82,7 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 				break;// because we want to go to 1.1.
 			}
 		}
-		if(shouldGoToNextRound == false){
+		if(shouldGoToNextRound == true){
 			continue;// go to 1.1.
 		}
 		//3.
@@ -116,6 +120,10 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 			childToGetNextRecordFrom = (childToGetNextRecordFrom + 1) % this->getPhysicalPlanOptimizationNode()->getChildrenCount();
 			record = // record
 						this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+			if(record == NULL){
+				this->listsHaveMoreRecordsInThem = false;
+				return NULL;
+			}
 		}
 	}
 
@@ -129,36 +137,11 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
-	this->queryEvaluator = NULL;
 	this->listsHaveMoreRecordsInThem = true;
 	return true;
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	// move on children and if at least on of them verifies the record return true
-	vector<float> runtimeScore;
-	// static score is ignored for now
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		bool resultOfThisChild =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		runtimeScore.push_back(parameters.runTimeTermRecordScore);
-		if(resultOfThisChild == false){
-			return false;
-		}
-	}
-	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
-
-	return true;
-}
-
-
-float MergeSortedByIDOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
-
-	float resultScore = 0;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		resultScore += *(score);
-	}
-	return resultScore;
+	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
 // The cost of open of a child is considered only once in the cost computation

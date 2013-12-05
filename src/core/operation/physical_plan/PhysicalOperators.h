@@ -86,8 +86,6 @@ public:
 	~RandomAccessVerificationAndOperator();
 private:
 	RandomAccessVerificationAndOperator();
-	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
-	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationAndOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -119,8 +117,6 @@ public:
 	~RandomAccessVerificationOrOperator();
 private:
 	RandomAccessVerificationOrOperator();
-	float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
-	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationOrOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -152,7 +148,6 @@ public:
 	~RandomAccessVerificationNotOperator();
 private:
 	RandomAccessVerificationNotOperator();
-	QueryEvaluatorInternal * queryEvaluator;
 };
 
 class RandomAccessVerificationNotOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -193,7 +188,6 @@ public:
 	~SortByIdOperator();
 private:
 	SortByIdOperator() ;
-	QueryEvaluatorInternal * queryEvaluator;
 	vector< PhysicalPlanRecordItem * > records;
 };
 
@@ -235,7 +229,6 @@ public:
 	~SortByScoreOperator();
 private:
 	SortByScoreOperator() ;
-	QueryEvaluatorInternal * queryEvaluator;
 	vector< PhysicalPlanRecordItem * > records;
 };
 
@@ -271,8 +264,6 @@ public:
 	~MergeSortedByIDOperator();
 private:
 	MergeSortedByIDOperator() ;
-	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
-	QueryEvaluatorInternal * queryEvaluator;
 
 	/*
 	 * This variable is true unless one of the children lists become empty
@@ -317,11 +308,9 @@ public:
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
 						const PhysicalPlanExecutionParameters & params);
-	float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
 	~MergeByShortestListOperator();
 private:
 	MergeByShortestListOperator() ;
-	QueryEvaluatorInternal * queryEvaluator;
 	unsigned indexOfShortestListChild ;
 	bool isShortestListFinished;
 };
@@ -359,8 +348,6 @@ public:
 	~UnionSortedByIDOperator();
 private:
 	UnionSortedByIDOperator() ;
-	float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
-	QueryEvaluatorInternal * queryEvaluator;
 	bool listsHaveMoreRecordsInThem;
 	/* this vector always contains the next record coming out of children
 	* this means each record first goes to this vector and then it can be used

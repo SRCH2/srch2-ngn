@@ -2,6 +2,7 @@
 #include "PhysicalOperators.h"
 #include "MergeTopKOperator.h"
 #include "operation/QueryEvaluatorInternal.h"
+#include "PhysicalOperatorsHelper.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -15,8 +16,6 @@ MergeTopKOperator::MergeTopKOperator() {
 MergeTopKOperator::~MergeTopKOperator(){
 }
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-
-	this->queryEvaluator = queryEvaluator;
 
 	/*
 	 * 1. open all children (no parameters known to pass as of now)
@@ -157,12 +156,10 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 
 }
 bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
-	queryEvaluator = NULL;
 	candidatesList.clear();
 	childRoundRobinOffset = 0;
 	listsHaveMoreRecordsInThem = true;
 	nextItemsFromChildren.clear();
-	queryEvaluator = NULL;
 	visitedRecords.clear();
 
 	// close the children
@@ -173,21 +170,7 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-
-	// move on children and if at least on of them verifies the record return true
-	vector<float> runtimeScore;
-	// static score is ignored for now
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		bool resultOfThisChild =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
-		runtimeScore.push_back(parameters.runTimeTermRecordScore);
-		if(resultOfThisChild == false){
-			return false;
-		}
-	}
-	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
-
-	return true;
+	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
 
@@ -257,12 +240,7 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 		}
 	}
 
-    bool validForwardList;
-    this->queryEvaluator->getForwardIndex()->getForwardList(recordItem->getRecordId(), validForwardList);
-    if (validForwardList) {
-    	return true;
-    }
-	return false;
+    return true;
 
 }
 
@@ -277,16 +255,6 @@ bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
 		score += (*nextRecord)->getRecordRuntimeScore();
 	}
 	return true;
-}
-
-float MergeTopKOperator::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
-
-	float resultScore = 0;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		resultScore += *(score);
-	}
-	return resultScore;
 }
 
 void MergeTopKOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params){
