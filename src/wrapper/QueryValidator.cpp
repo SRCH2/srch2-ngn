@@ -113,6 +113,13 @@ bool QueryValidator::validate() {
         return false;
     }
 
+    // validate boost list
+    // Example : qf= title^19+name^123
+    // title and name should be declared as searchable attributes.
+    if (!validateExistenceOfAttributesInQueryFieldBoost()) {
+        return false;
+    }
+
     // validate sort filter
     // Example : sort=price,discount&orderby=asc
     // price and discount must be non-searchable attributes
@@ -140,6 +147,32 @@ bool QueryValidator::validate() {
     return true;
 }
 
+bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
+    if (paramContainer->hasParameterInQuery(QueryFieldBoostFlag)) {
+      // query field boost list is not empty
+
+        const std::map<std::string, unsigned>& searchableAttributes =
+                schema.getSearchableAttribute();
+        std::vector<QueryFieldBoostTerm>&
+          terms(paramContainer->qfContainer->terms);
+
+        for (std::vector<QueryFieldBoostTerm>::iterator term =
+                terms.begin(); term != terms.end(); ++term) {
+                if (searchableAttributes.find(term->attribute)
+                        == searchableAttributes.end()) {
+                  // field does not exist in searchable attributes
+                        // write a warning and change field value to *
+                    paramContainer->messages.push_back(
+                            std::make_pair(MessageWarning,
+                                    "Field " + term->attribute
+                                            + " is not a searchable field."
+                                           "It will be removed"));
+                    terms.erase(term);
+                } 
+        }
+    }  
+    return true;
+}
 
 bool QueryValidator::validateExistenceOfAttributesInFieldList() {
     if (paramContainer->hasParameterInQuery(FieldFilter)) { // field filter list is not empty
