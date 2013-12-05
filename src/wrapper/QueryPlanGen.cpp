@@ -23,6 +23,7 @@
 #include <instantsearch/FacetedSearchFilter.h>
 #include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include <instantsearch/SortFilter.h>
+#include <instantsearch/DynamicScoringFilter.h>
 #include "QueryPlan.h"
 #include <algorithm>
 #include <sstream>
@@ -35,7 +36,42 @@ namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using srch2is::Query;
 
+
 namespace srch2 {
+
+  bool attributeBoostSort(const srch2is::AttributeBoost& lhs,
+      const srch2is::AttributeBoost& rhs) {
+      return lhs.attributeMask < rhs.attributeMask;
+  }
+
+  srch2is::DynamicScoringFilter& createScoringFilter(
+      const std::map<std::string,
+      httpwrapper::SearchableAttributeInfoContainer>& searchableAttributes,
+      const std::vector<httpwrapper::QueryFieldBoostTerm>& boost) {
+    void* ptr= malloc(sizeof(DynamicScoringFilter)+
+        sizeof(AttributeBoost)*boost.size());
+    
+    srch2is::DynamicScoringFilter *filter=
+      new (ptr) DynamicScoringFilter(boost.size());
+    filter->boostedAttributeMask=0;
+
+    {
+      int i=0;
+      std::vector<httpwrapper::QueryFieldBoostTerm>::
+        const_iterator term(boost.begin());
+    for(; term != boost.end(); ++term, ++i) {
+      filter->attribute[i].boostFactor= term->boost;
+      filter->attribute[i].attributeMask= 
+        1 << searchableAttributes.find(term->attribute)->second.offset;
+      filter->attribute[i].hitCount= 0;
+      filter->boostedAttributeMask|= filter->attribute[i].attributeMask;
+    } /*outer scope of for loop */}
+
+    std::sort(filter->attribute, filter->attribute+boost.size(),
+        attributeBoostSort);
+
+  return *filter;
+}
 
 namespace httpwrapper {
 
@@ -99,6 +135,18 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         plan->getPostProcessingPlan()->addFilterToPlan(pqFilter);
     }
 
+    if (paramsContainer.hasParameterInQuery(QueryFieldBoostFlag)) { 
+       const map<string, SearchableAttributeInfoContainer>*attributes=
+          indexDataContainerConf->getSearchableAttributes();
+
+       // there is a dynamic ranking 
+       srch2is::DynamicScoringFilter& scoringFilter =
+         srch2::createScoringFilter(*attributes,
+             paramsContainer.qfContainer->terms);
+
+       plan->getPostProcessingPlan()->addFilterToPlan(&scoringFilter);
+    }
+
     // 3. If the search type is GetAllResults or Geo, look for Sort and Facet
     if (plan->getSearchType() == GetAllResultsSearchType) {
         // look for SortFiler
@@ -111,8 +159,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         }
 
         // look for Facet filter
-        if (paramsContainer.getAllResultsParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // there is a sort filter
+        if (paramsContainer.hasParameterInQuery(FacetQueryHandler)) {
             srch2is::FacetedSearchFilter * facetFilter =
                     new srch2is::FacetedSearchFilter();
             FacetQueryContainer * container =
@@ -149,6 +196,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
     }
 
 }
+
 
 void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
     // move on summary of the container and build the query object
