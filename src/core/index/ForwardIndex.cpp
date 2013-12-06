@@ -807,8 +807,10 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
             keywordOffset);
     // support attribute-based search
     if (searchableAttributeId == 0
-            || (schema->getPositionIndexType()
-                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)) {
+            || ((schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
+            &&  (schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FULL))) {
         return true;
     } else {
         ASSERT(
