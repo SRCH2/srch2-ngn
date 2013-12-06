@@ -805,7 +805,10 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
             keywordOffset);
-    // support attribute-based search
+    // support attribute-based search. Here we check if attribute search
+    // is disabled, ie. neither the POSITION_INDEX is neither FIELDBIT nor
+    // FULL. In this case, or if the mask attributes to validate is 0
+    // the the hit is always valid.
     if (searchableAttributeId == 0
             || ((schema->getPositionIndexType()
                     != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
@@ -815,10 +818,11 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
     } else {
         ASSERT(
                 this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
-        bool AND = searchableAttributeId & 0x80000000; // test the highest bit
+         // test the highest bit
+        bool highestBit = searchableAttributeId & 0x80000000;
         matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
                 keywordOffset);
-        if (AND) {
+        if (highestBit) {
             searchableAttributeId &= 0x7fffffff; // turn off the highest bit
             return (matchingKeywordAttributeBitmap & searchableAttributeId)
                     == searchableAttributeId;
