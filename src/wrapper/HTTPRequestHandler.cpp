@@ -548,22 +548,46 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
         Json::Reader reader;
         bool parseSuccess = reader.parse(post_data, root, false);
 
+
+
         if (parseSuccess == false) {
             log_str << "JSON object parse error";
         } else {
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
-
             Record *record = new Record(server->indexer->getSchema());
-            const Json::Value doc = root;
 
-            IndexWriteUtil::_updateCommand(server->indexer,
-                    server->indexDataContainerConf, headers, doc, record,
-                    log_str);
+            if (root.type() == Json::arrayValue) {
+            	//the record parameter is an array of json object
 
-            record->clear();
+				for(Json::UInt index = 0; index < root.size(); index++) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+					                            defaultValueToReturn);
+
+					IndexWriteUtil::_updateCommand(server->indexer,
+							server->indexDataContainerConf, headers, doc, record,
+							log_str);
+
+					record->clear();
+
+                    if (index < root.size() - 1)
+                        log_str << ",";
+
+				}
+
+            } else {
+            	// the record parameter is a single json object
+                const Json::Value doc = root;
+
+                IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataContainerConf, headers, doc, record,
+                        log_str);
+
+                record->clear();
+            }
+
             delete record;
-
             evhttp_clear_headers(&headers);
         }
         //std::cout << log_str.str() << std::endl;
