@@ -6,6 +6,11 @@ SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
+if [ $# -ne 2 ]; then
+     echo "Usage: $0 <system-test-director> <server-executable-directory>"
+    exit 1
+fi
+
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
 
