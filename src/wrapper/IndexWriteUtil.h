@@ -138,50 +138,38 @@ struct IndexWriteUtil
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
-    	const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
+    	//const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 
         unsigned deletedInternalRecordId;
         std::string primaryKeyStringValue;
 
+
     	Json::FastWriter writer;
-    	JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+    	primaryKeyStringValue = record->getPrimaryKey();
 
-		if (pKeyParamName)
+
+		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
+
+    	if(parseJson == false) {
+    		log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
+    		return;
+    	}
+
+		//delete the record from the index
+		switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
 		{
-			size_t sz;
-			char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
-
-			//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
-			primaryKeyStringValue = string(pKeyParamName_cstar);
-			delete pKeyParamName_cstar;
-
-			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
-
-            if (record->getPrimaryKey() != primaryKeyStringValue)
-            {
-                log_str << "failed\",\"reason\":\"new record has a different primary key\"}";
-                return;
-            }
-
-			//delete the record from the index
-			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
+			case srch2::instantsearch::OP_FAIL:
 			{
-				case srch2::instantsearch::OP_FAIL:
-				{
-                    // record to update doesn't exit, will insert it
-                    break;
-				}
-				default: // OP_SUCCESS.
-				{
-					//log_str << "success\"}";
-				}
-			};
-		}
-		else
-		{
-            log_str << "{\"rid\":\"NULL\",\"update\":\"failed\",\"reason\":\"delete: no record with given primary key\"}";
-            return;
-		}
+				// record to update doesn't exit, will insert it
+				break;
+			}
+			default: // OP_SUCCESS.
+			{
+				//log_str << "success\"}";
+			}
+		};
+
 
         /// step 2, insert new record
 
