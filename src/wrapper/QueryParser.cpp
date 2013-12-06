@@ -93,7 +93,6 @@ QueryParser::QueryParser(const evkeyvalq &headers,
             srch2::instantsearch::TERM_TYPE_NOT_SPECIFIED; // stores the fallback termType for keywords
     this->container->isTermBooleanOperatorSet = false;
     this->container->isFqBooleanOperatorSet = false;
-    //this->isQfBoosted = false;
     this->isSearchTypeSet = false;
 }
 
@@ -831,16 +830,16 @@ bool QueryParser::queryFieldBoostParser() {
     // read qf from headers
     if (qfTmp) {
         Logger::debug("queryFieldBoostParam found.");
-        string qf;
-        decodeString(qfTmp, qf);
+        string qfString;
+        decodeString(qfTmp, qfString);
         // create filterQueryContainer object.
         QueryFieldBoostContainer* qfboost= new QueryFieldBoostContainer();
 
         this->container->qfContainer= qfboost;
         this->container->parametersInQuery.push_back(QueryFieldBoostFlag);
-        boost::algorithm::trim(qf);
-        Logger::debug("parsing qf %s", qf.c_str());
-        if (!QueryFieldBoostParser::parseAndAddCriterion(*qfboost, qf)) {
+        boost::algorithm::trim(qfString);
+        Logger::debug("parsing qf %s", qfString.c_str());
+        if (!QueryFieldBoostParser::parseAndAddCriterion(*qfboost, qfString)) {
             this->isParsedError = true;
             return false;
         }

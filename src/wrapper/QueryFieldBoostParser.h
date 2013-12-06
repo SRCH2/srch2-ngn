@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright ������ 2013 SRCH2 Inc. All rights reserved
+ * Copyright 2013 SRCH2 Inc. All rights reserved
  */
 
 #include <string>
@@ -27,6 +27,19 @@ namespace srch2 {
 namespace httpwrapper {
 
 struct QueryFieldBoostParser {
+  /* Parses the qf parameter of url header, ie. qf=title^10+body^2 and adds
+     the parse information into the QueryFieldBoostContainer's qfterms list
+     as a new structure 
+     Vector boosts :
+      [0] struct QueryFieldBoostContainer {
+            attribute = "title";
+            boostFactor = 10;
+          };
+      [1] struct QueryFieldBoostContainer {
+            attribute = "body";
+            boostFactor = 2;
+          };
+   */
   static bool parseAndAddCriterion(QueryFieldBoostContainer&, std::string&);
 };
 

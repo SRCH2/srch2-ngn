@@ -1,3 +1,22 @@
+// $Id$ 12/01/13 RJ
+
+/*
+ * The Software is made available solely for use according to the License Agreement. Any reproduction
+ * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
+ * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
+ * maximum extent possible.
+ *
+ * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
+ * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
+ * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
+ * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF SOFTWARE.
+
+ * Copyright 2013 SRCH2 Inc. All rights reserved
+ */
+
 #include "ParserUtility.h"
 #include "RegexConstants.h"
 #include "QueryFieldBoostParser.h"
@@ -34,7 +53,7 @@ bool srch2::httpwrapper::QueryFieldBoostParser::parseAndAddCriterion(
   do {
     std::string qfField;
     std::string qfBoost;
-    struct QueryFieldBoostTerm term;
+    struct QueryFieldAttributeBoost attributeBoost;
     // no more Parameters to parse
     if(!parseQfAttribute(currentParameterString, qfField)) {
      Logger::error("Error while parsing query field boost:"
@@ -42,14 +61,14 @@ bool srch2::httpwrapper::QueryFieldBoostParser::parseAndAddCriterion(
           currentParameterString.c_str());
       return false;
     }
-    term.attribute= qfField;
+    attributeBoost.attribute= qfField;
     if(!parseQfBoost(currentParameterString, qfBoost)) {
       Logger::error("Error while parsing query field boost:"
           "boost integer value expected after %s attribute", qfField.c_str());
       return false;
     }
-    term.boost= std::atoi(qfBoost.c_str());
-    qfcontainer.terms.push_back(term);
+    attributeBoost.boost= std::atoi(qfBoost.c_str());
+    qfcontainer.boosts.push_back(attributeBoost);
   } while(*currentParameterString.begin() == '+');
 
   return currentParameterString.empty();

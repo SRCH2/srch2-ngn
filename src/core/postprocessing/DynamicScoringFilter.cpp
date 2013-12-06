@@ -1,3 +1,22 @@
+// $Id: DynamicScoringFilter.h 2013-12-01 RJ $
+
+/*
+ * The Software is made available solely for use according to the License Agreement. Any reproduction
+ * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
+ * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
+ * maximum extent possible.
+ *
+ * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
+ * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
+ * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
+ * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF SOFTWARE.
+
+ * Copyright © 2013 SRCH2 Inc. All rights reserved
+ */
+
 #include <instantsearch/DynamicScoringFilter.h>
 #include <util/AttributeIterator.h>
 #include <index/ForwardIndex.h>
@@ -14,44 +33,47 @@ DynamicScoringFilter::DynamicScoringFilter(unsigned numberOfAttributes)
 
 inline
 void getQueryKeywordIds(const Trie& trie, const TrieNode* root,
-    const std::vector<Term*>& keywords, unsigned* keywordID) {
-  std::vector<Term*>::const_iterator keyword(keywords.begin());
-  for(; keyword != keywords.end(); ++keywordID, ++keyword) {
+    const std::vector<Term*>& terms, unsigned* keywordID) {
+  std::vector<Term*>::const_iterator term(terms.begin());
+  for(; term != terms.end(); ++keywordID, ++term) {
      *keywordID=
        (trie.
-        getTrieNodeFromUtf8String(root, *(*keyword)->getKeyword()))->getId();
+        getTrieNodeFromUtf8String(root, *(*term)->getKeyword()))->getId();
   }
 //  *keywordID=
 //  (trie.getTrieNodeFromUtf8String(root, *(*keyword)->getKeyword()))->getId();
 }
 
-bool attributeBoostSearcher(const AttributeBoost&  lhs,
+bool attributeBoostSearchCondition(const AttributeBoost&  lhs,
     unsigned rhs) {
   return lhs.attributeMask < rhs;
 }
 
+/* This function returns the AttributeBoost structure associated with a given
+   attribute id. Its behaviour is only well defined for Attribute ids with
+   associated dynamic boosts in this query */
 AttributeBoost* 
 DynamicScoringFilter::getAttributeBoost(unsigned attributeID)  {
   return std::lower_bound(attribute, attribute+numberOfAttributes,
       (unsigned) (1 << attributeID),
-      &attributeBoostSearcher);
+      &attributeBoostSearchCondition);
 }
 
 void updateAttributeHitCount(DynamicScoringFilter& filter,
     unsigned attributeMask) {
-  for(AttributeIterator attribute(attributeMask);
-      attribute.hasNext();
-      ++attribute) {
-  ++filter.getAttributeBoost(*attribute)->hitCount;
+  for(AttributeIterator attribute(attributeMask); 
+      attribute.hasNext(); ++attribute) {
+    ++filter.getAttributeBoost(*attribute)->hitCount;
   }
 }
 
-float newScore(const ForwardList& record, const SchemaInternal *const schema,
+float dynamicRuntimeScore(const ForwardList& record,
+    const SchemaInternal *const schema,
     DynamicScoringFilter& filter,
     const unsigned *const queryKeywordIDs, unsigned numberOfKeywords) {
   struct KeywordBoost keyword[numberOfKeywords+1];
 
-  /* For each keyword in Query */
+  // For each keyword in Query 
   {
     const unsigned *queryKeyword= queryKeywordIDs;
     unsigned i=0;
@@ -62,7 +84,9 @@ float newScore(const ForwardList& record, const SchemaInternal *const schema,
       keyword[i].attributeMask&= filter.boostedAttributeMask;
       //records runtime score changed for this keyword
       updateAttributeHitCount(filter, keyword[i].attributeMask);
-  /* end if score changed*/} /* end for keywords */ } /*end for scope*/}
+    }
+  }
+  }
 
   //TODO: handle matchingKeyword
 
@@ -94,7 +118,7 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
   unsigned queryKeywordIDs[query->getQueryTerms()->size()];
 
 
-	((IndexSearcherInternal*) indexSearcher)->getTrie()
+  ((IndexSearcherInternal*) indexSearcher)->getTrie()
     ->getTrieRootNode_ReadView(root);
   getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
       root->root,
@@ -110,7 +134,8 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
     forwardList= forwardIndex.getForwardList((*result)->internalRecordId,
         isValid);
     assert(isValid);
-    dynamicScore= newScore(*forwardList, forwardIndex.getSchema(), *this,
+    dynamicScore= dynamicRuntimeScore(*forwardList,
+        forwardIndex.getSchema(), *this,
         queryKeywordIDs, query->getQueryTerms()->size());
     dynamicScore= std::max(dynamicScore,
         (*result)->_score.getFloatTypedValue());

@@ -153,21 +153,21 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
 
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
-        std::vector<QueryFieldBoostTerm>&
-          terms(paramContainer->qfContainer->terms);
+        std::vector<QueryFieldAttributeBoost>&
+          boosts(paramContainer->qfContainer->boosts);
 
-        for (std::vector<QueryFieldBoostTerm>::iterator term =
-                terms.begin(); term != terms.end(); ++term) {
-                if (searchableAttributes.find(term->attribute)
+        for (std::vector<QueryFieldAttributeBoost>::iterator boost =
+                boosts.begin(); boost != boosts.end(); ++boost) {
+                if (searchableAttributes.find(boost->attribute)
                         == searchableAttributes.end()) {
                   // field does not exist in searchable attributes
-                        // write a warning and change field value to *
+                        // write a warning and remove it
                     paramContainer->messages.push_back(
                             std::make_pair(MessageWarning,
-                                    "Field " + term->attribute
+                                    "Field " + boost->attribute
                                             + " is not a searchable field."
                                            "It will be removed"));
-                    terms.erase(term);
+                    boost= boosts.erase(boost);
                 } 
         }
     }  

@@ -17,24 +17,33 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "instantsearch/ResultsPostProcessor.h"
-
 #ifndef __CORE_POSTPROCESSING_DYNAMICSCOREFILTER_H__
 #define __CORE_POSTPROCESSING_DYNAMICSCOREFILTER_H__
 
+
+#include "instantsearch/ResultsPostProcessor.h"
 
 namespace srch2 {
 namespace instantsearch {
 
 struct AttributeBoost {
+  /* the bitmap mask associated with this attribute. For example, if an
+     attribute has id 5 then its mask is 0000..010000 */
   unsigned attributeMask;
+  /* the factor by which this attribute is boost. For example, if qf=title^100
+     then title's boostFactor = 100 */
   unsigned boostFactor;
+  /* the number of keywords occuring in a given instance of this attribute.
+     This field is used by ranker to calculate the boost for a given record */
   unsigned hitCount;
 };
 
 struct KeywordBoost {
+  /* the runtime score associated with a given keyword of a given record */
   float score;
+  /* the attribute mask of where this keyword occurs in a given record*/
   unsigned attributeMask;
+  /* the given id of this keyword */
   unsigned id;
 };
 
@@ -42,7 +51,7 @@ struct DynamicScoringFilter : ResultsPostProcessorFilter {
   const unsigned numberOfAttributes;
   unsigned boostedAttributeMask;
   AttributeBoost attribute[0];
- 	void doFilter(IndexSearcher*, const Query*, QueryResults*, QueryResults*);
+  void doFilter(IndexSearcher*, const Query*, QueryResults*, QueryResults*);
   AttributeBoost* getAttributeBoost(unsigned);
 
   DynamicScoringFilter(unsigned numberOfAttribute);

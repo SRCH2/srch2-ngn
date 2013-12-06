@@ -47,27 +47,32 @@ namespace srch2 {
   srch2is::DynamicScoringFilter& createScoringFilter(
       const std::map<std::string,
       httpwrapper::SearchableAttributeInfoContainer>& searchableAttributes,
-      const std::vector<httpwrapper::QueryFieldBoostTerm>& boost) {
-    void* ptr= malloc(sizeof(DynamicScoringFilter)+
-        sizeof(AttributeBoost)*boost.size());
+      const std::vector<httpwrapper::QueryFieldAttributeBoost>& boosts) {
+    void* attributeBoostVectorptr= ::operator new(sizeof(DynamicScoringFilter)+
+        sizeof(AttributeBoost)*boosts.size());
     
+    /* use placement new to fill in the underlying array of the 
+       DynamicScoringFilter structure */
     srch2is::DynamicScoringFilter *filter=
-      new (ptr) DynamicScoringFilter(boost.size());
+      new (attributeBoostVectorptr) 
+      DynamicScoringFilter(boosts.size());
     filter->boostedAttributeMask=0;
 
     {
       int i=0;
-      std::vector<httpwrapper::QueryFieldBoostTerm>::
-        const_iterator term(boost.begin());
-    for(; term != boost.end(); ++term, ++i) {
+      std::vector<httpwrapper::QueryFieldAttributeBoost>::
+        const_iterator term(boosts.begin());
+    for(; term != boosts.end(); ++term, ++i) {
       filter->attribute[i].boostFactor= term->boost;
+      /* We already check the searchableAttribute in the validator so find
+         much return. So we create the bitmap associate with each attribute */
       filter->attribute[i].attributeMask= 
         1 << searchableAttributes.find(term->attribute)->second.offset;
       filter->attribute[i].hitCount= 0;
       filter->boostedAttributeMask|= filter->attribute[i].attributeMask;
     } /*outer scope of for loop */}
 
-    std::sort(filter->attribute, filter->attribute+boost.size(),
+    std::sort(filter->attribute, filter->attribute+boosts.size(),
         attributeBoostSort);
 
   return *filter;
@@ -142,7 +147,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
        // there is a dynamic ranking 
        srch2is::DynamicScoringFilter& scoringFilter =
          srch2::createScoringFilter(*attributes,
-             paramsContainer.qfContainer->terms);
+             paramsContainer.qfContainer->boosts);
 
        plan->getPostProcessingPlan()->addFilterToPlan(&scoringFilter);
     }

@@ -150,13 +150,13 @@ public:
 	}
 };
 
-struct QueryFieldBoostTerm {
+struct QueryFieldAttributeBoost{
   std::string attribute;
   float boost;
 };
 
 struct QueryFieldBoostContainer {
-  std::vector<QueryFieldBoostTerm> terms;
+  std::vector<QueryFieldAttributeBoost> boosts;
 };
 
 class ParsedParameterContainer {

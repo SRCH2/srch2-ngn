@@ -221,8 +221,7 @@ float DynamicScoringRanker::CalculateDynamicKeywordScore(
     const KeywordBoost& keyword, DynamicScoringFilter& boost) {
   if(keyword.score == 0) return 0;
 
-  float boostFactor;
-  float boostValue;
+  float boostValue= 0;
   
   /* Loops over all boosted attributes containing this keyword */
   for(AttributeIterator attribute(keyword.attributeMask);

@@ -43,7 +43,13 @@ const string FQ_COMPLEX_EXPRESSION_REGEX_STRING = "[^\\$]+";
 const string FQ_FIELD_KEYWORD_DELIMETER_REGEX_STRING = "\\s+TO\\s+";
 }
 
-//query field boost regex strings
+/* Query field boost regex strings, used to match string in the qf= section:
+   matches from the begining of string up to and including the first ^.
+     Use cases are as follows: qf=title^100+record^100
+       - first regex call gets string title^100+record^100
+         and this expression matches title^
+       - second regex call get string record^100 and this expression
+         matches record^ */
 const string QF_ATTRIBUTE_REGEX_STRING = "^[^\\^]*\\^";
 }
 
