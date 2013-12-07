@@ -19,7 +19,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -79,18 +79,19 @@ void queryStressTest(double &time)
 
     // create an index searcher
     //srch2is::Cache *cache = new srch2is::Cache();
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexerDataContainer.indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexerDataContainer.indexer, &runtimeParameters);
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     for( vector<string>::iterator vectIter = indexerDataContainer.queryFile.begin(); vectIter!= indexerDataContainer.queryFile.end(); vectIter++ )
     {
-        pingDummyStressTest(indexerDataContainer.analyzer, indexSearcher,*vectIter);//,resultCount,0);
+        pingDummyStressTest(indexerDataContainer.analyzer, queryEvaluator,*vectIter);//,resultCount,0);
     }
 
     clock_gettime(CLOCK_REALTIME, &tend);
     double ts2 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-    delete indexSearcher;
+    delete queryEvaluator;
 
     time = ts2;
     //cout << "Executed " << file.size() << "queries in " << ts2 << " milliseconds." << endl;

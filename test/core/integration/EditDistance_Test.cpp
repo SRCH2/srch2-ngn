@@ -20,7 +20,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -132,92 +132,93 @@ void test1()
     		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(true);
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     const Analyzer *analyzer = getAnalyzer();
 
     //Edit distance 0
-    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, indexSearcher, "smth" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smith" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smythe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001) == true);
 
     //swap operation
-    ASSERT ( pingEd(analyzer, indexSearcher, "msyth" , 1 , 1001) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "symth" , 1 , 1001) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "smtyh" , 1 , 1001) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "smyht" , 1 , 1001) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "mxyth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "mxyth" , 1 , 1001) == false);
 
-    ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001) == true);
 
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smy" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyt" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001) == true);
 
 
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smi" , 0 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smit" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
-    ping(analyzer, indexSearcher, "padraic" , 1 , 1001);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001) == true);
+    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001);
 
     //Edit distance 0 0
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001) == true);
 
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smy" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyt" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, indexSearcher, "padraic" , 1 , 1001 ) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001 ) == true);
 
     //Edit distance 1 1
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001) == true);
 
     //Edit distance 0 1
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001) == true);
 
     //Edit distance 0 2
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001) == true);
 
     //Edit distance 2 2 swap operation
-    ASSERT ( ping(analyzer, indexSearcher, "pahdraci+smithe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "aphdraic+smithe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "pdarhaic+smithe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "pahdaric+smithe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padrhiac+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pahdraci+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "aphdraic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pdarhaic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pahdaric+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrhiac+smithe" , 1 , 1001) == true);
 
     // swap operation around the repetition of the same letters
-    ASSERT ( pingEd(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == true);
-    ASSERT ( pingEd(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002) == true);
 
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
     delete cache;
     delete analyzer;
@@ -241,84 +242,85 @@ void test2()
     		INDEX_DIR, "");
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(false);
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     const Analyzer *analyzer = getAnalyzer();
 
     //Edit distance 0
-    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, indexSearcher, "smth" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smith" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smythe" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001) == true);
 
     //swap operation
-    ASSERT ( pingEd(analyzer, indexSearcher, "msyth" , 1 , 1001) == false);
-    ASSERT ( pingEd(analyzer, indexSearcher, "symth" , 1 , 1001) == false);
-    ASSERT ( pingEd(analyzer, indexSearcher, "smtyh" , 1 , 1001) == false);
-    ASSERT ( pingEd(analyzer, indexSearcher, "smyht" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001) == false);
 
-    ASSERT ( ping(analyzer, indexSearcher, "smytx" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001) == true);
 
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smy" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyt" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001) == true);
 
 
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padh" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhrai" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smi" , 0 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smit" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
-    ping(analyzer, indexSearcher, "padraic" , 1 , 1001);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001) == true);
+    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001);
 
     //Edit distance 0 0
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "pad" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padr" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padra" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padrai" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001) == true);
 
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+s" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+sm" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smy" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyt" , 1 , 1001) == true);
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smyth" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, indexSearcher, "padraic" , 1 , 1001 ) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001 ) == true);
 
     //Edit distance 1 1
-    ASSERT ( ping(analyzer, indexSearcher, "padraic+smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001) == true);
 
     //Edit distance 0 1
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smith" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001) == true);
 
     //Edit distance 0 2
-    ASSERT ( ping(analyzer, indexSearcher, "padhraic+smithe" , 1 , 1001) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001) == true);
 
     // swap operation around the repetition of the same letters
-    ASSERT ( pingEd(analyzer, indexSearcher, "baXXXXX" , 1 , 1002) == false);
-    ASSERT ( pingEd(analyzer, indexSearcher, "XXXbaXX" , 1 , 1002) == false);
-    ASSERT ( pingEd(analyzer, indexSearcher, "XXXXXba" , 1 , 1002) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002) == false);
 
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
     delete cache;
     delete analyzer;

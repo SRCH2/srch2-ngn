@@ -111,12 +111,12 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     return indexer;
 }
 
-void validateIntSortableAttrDescending(const Analyzer *analyzer, IndexSearcher *indexSearcher, bool descending, const map<string, int> &sortMap)
+void validateIntSortableAttrDescending(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, bool descending, const map<string, int> &sortMap)
 {
     vector<string> recordIds;
 
     // sort use the id number
-    getGetAllResultsQueryResults(analyzer, indexSearcher, "Professional", descending, recordIds, -1, 0);
+    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds, -1, 0);
 
     // there are 139 records containing the word "professional" in the data.
     ASSERT(recordIds.size()==139);
@@ -136,12 +136,12 @@ void validateIntSortableAttrDescending(const Analyzer *analyzer, IndexSearcher *
 
 }
 
-void validateFloatSortableAttrDescending(const Analyzer *analyzer, IndexSearcher *indexSearcher, bool descending, const map<string, float> &sortMap)
+void validateFloatSortableAttrDescending(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, bool descending, const map<string, float> &sortMap)
 {
     vector<string> recordIds;
 
     // sort use the latitude
-    getGetAllResultsQueryResults(analyzer, indexSearcher, "Professional", descending, recordIds, -1, 1);
+    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds, -1, 1);
 
     // there are 139 records containing the word "professional" in the data.
     ASSERT(recordIds.size()==139);
@@ -160,12 +160,12 @@ void validateFloatSortableAttrDescending(const Analyzer *analyzer, IndexSearcher
     }
 
 }
-void validate(const Analyzer *analyzer, IndexSearcher *indexSearcher, const map<string, int> &sort1Map, const map<string, float> &sort2Map)
+void validate(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, const map<string, int> &sort1Map, const map<string, float> &sort2Map)
 {
-    validateIntSortableAttrDescending(analyzer, indexSearcher, true, sort1Map);
-    validateIntSortableAttrDescending(analyzer, indexSearcher, false, sort1Map);
-    validateFloatSortableAttrDescending(analyzer, indexSearcher, true, sort2Map);
-    validateFloatSortableAttrDescending(analyzer, indexSearcher, false, sort2Map);
+    validateIntSortableAttrDescending(analyzer, queryEvaluator, true, sort1Map);
+    validateIntSortableAttrDescending(analyzer, queryEvaluator, false, sort1Map);
+    validateFloatSortableAttrDescending(analyzer, queryEvaluator, true, sort2Map);
+    validateFloatSortableAttrDescending(analyzer, queryEvaluator, false, sort2Map);
 
     // TODO validate scores
 }
@@ -177,13 +177,14 @@ void testScoreDefaultIndex(string index_dir, string data_file)
 
     Indexer *indexer = buildIndex(data_file, index_dir, "idf_score*doc_boost", sort1Map, sort2Map);
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
 
     const Analyzer *analyzer = getAnalyzer();
 
-    validate(analyzer, indexSearcher, sort1Map, sort2Map);
+    validate(analyzer, queryEvaluator, sort1Map, sort2Map);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
     delete analyzer;
 

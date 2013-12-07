@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 #include <instantsearch/Indexer.h>
 #include "wrapper/JSONRecordParser.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "license/LicenseVerifier.h"
 #include "util/Logger.h"
@@ -330,8 +330,10 @@ bool test2(int argc, char** argv) {
     std::stringstream log_str;
     srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
     indexer->commit();
-    srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
-    ii->getTrie()->print_Trie();
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+    queryEvaluatorInternal->getTrie()->print_Trie();
 
 	delete indexMetaData;
 	delete indexer;

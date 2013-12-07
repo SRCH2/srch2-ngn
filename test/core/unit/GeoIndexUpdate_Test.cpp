@@ -10,7 +10,7 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/GlobalCache.h>
 
 using namespace std;
@@ -151,7 +151,8 @@ void generateTermAddToQuery(const string &keyword, Query *query, bool isFuzzy)
 
 void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Analyzer *analyzer, bool shouldExist = true, bool isFuzzy = true)
 {
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
     vector<PositionalTerm> queryKeywords;
 
@@ -184,10 +185,10 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
                              recordsToSearch[i].second.second.x + 0.05,
                              recordsToSearch[i].second.second.y + 0.05 );
 
-        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
             unsigned expectedRecordId = atoi(recordsToSearch[i].second.first.c_str());
-            indexSearcher->search(query, queryResults);
+            queryEvaluator->search(query, queryResults);
 
             bool pass = true;
             if(shouldExist)
@@ -236,7 +237,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         queryKeywords.clear();
     }
 
-    delete indexSearcher;
+    delete queryEvaluator;
 }
 
 /*

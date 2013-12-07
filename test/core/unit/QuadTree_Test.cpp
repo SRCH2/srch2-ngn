@@ -11,14 +11,14 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/GlobalCache.h>
 
 #include "../integration/MapSearchTestHelper.h"
 #include "operation/TermVirtualList.h"
-#include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
 #include "operation/IndexData.h"
+#include "instantsearch/QueryEvaluator.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 using namespace std;
 using namespace srch2::instantsearch;
@@ -189,7 +189,8 @@ bool parseQueryStrings(string &line, vector<string> &strings, unsigned numOfQuer
 void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, vector<unsigned> &expectedResults, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
 	Query *query = new Query(SearchTypeMapQuery);
@@ -217,9 +218,9 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator , query);
 
-	indexSearcher->search(query, queryResults);
+    queryEvaluator->search(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -239,13 +240,14 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vector<string> &keywords, vector<unsigned> &expectedResults, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
 	Query *query = new Query(SearchTypeMapQuery);
@@ -274,9 +276,9 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	query->setRange(x, y, radius);
 
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->search(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -296,14 +298,15 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, unsigned number, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
 	Query *query = new Query(SearchTypeMapQuery);
 
@@ -331,9 +334,9 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	query->setRange(minX, minY, maxX, maxY);
 
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->search(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -350,13 +353,14 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, bool isFuzzy = false)
 {
 
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
 	Query *query = new Query(SearchTypeMapQuery);
 
@@ -383,9 +387,9 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->search(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	/*for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -399,7 +403,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 	delete queryResults;
 	delete query;
 
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 /*
 void searchIndexTwoSteps(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, unsigned exactMatchNumber, vector<unsigned> &resultIds)

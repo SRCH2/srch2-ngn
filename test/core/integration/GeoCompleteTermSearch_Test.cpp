@@ -1,7 +1,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -110,7 +110,8 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
 void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng, double rt_lat, double rt_lng, TermType termType, unsigned ed, const vector<string> &expected)
 {
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
 
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
@@ -127,9 +128,9 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
 
     // for each keyword in the user input, add a term to the query
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-    indexSearcher->search(query, queryResults);
+    queryEvaluator->search(query, queryResults);
 
     ASSERT(expected.size() == queryResults->getNumberOfResults());
 
@@ -140,13 +141,15 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
 
     delete queryResults;
     delete query;
-    delete indexSearcher;
+    delete queryEvaluator;
 }
 //  for testing a  range query with a  rectangle
 void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double rt_lng, const vector<string> &expected)
 {
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
+
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
     query->setRange(lb_lat,lb_lng,rt_lat,rt_lng);
     Rectangle *rectangleRange = new Rectangle();
@@ -154,9 +157,9 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
     rectangleRange->min.y = lb_lng;
     rectangleRange->max.x = rt_lat;
     rectangleRange->max.y = rt_lng;
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-    indexSearcher->search(*rectangleRange, queryResults);
+    queryEvaluator->search(*rectangleRange, queryResults);
     ASSERT(expected.size() == queryResults->getNumberOfResults());
     for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
 	{
@@ -165,13 +168,14 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
     delete queryResults;
     delete query;
     delete rectangleRange;
-    delete indexSearcher;
+    delete queryEvaluator;
 }
 //test a  range query  with a circle
 void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const vector<string> &expected)
 {
 
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
 	Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 	query->setRange(lb_lat,lb_lng,radius);
 	Point pnt;
@@ -179,8 +183,8 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 	pnt.y=lb_lng;
 	Circle *circleRange = new Circle(pnt,radius);
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
-	indexSearcher->search(*circleRange,queryResults);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
+	queryEvaluator->search(*circleRange,queryResults);
 	ASSERT(expected.size() == queryResults->getNumberOfResults());
 	for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
 	{
@@ -189,7 +193,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 	delete circleRange;
 	delete queryResults;
 	delete query;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 int main(int argc, char **argv)

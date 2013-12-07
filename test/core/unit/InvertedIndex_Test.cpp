@@ -19,7 +19,7 @@
 
 #include "index/InvertedIndex.h"
 #include "operation/IndexerInternal.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include <iostream>
 #include <functional>
 #include <vector>
@@ -224,11 +224,12 @@ bool test3()
     		INDEX_DIR, "");
     
     Indexer *indexer = Indexer::load(indexMetaData);
-    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
 
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluatorInternal * queryEvaluatorInternal = new QueryEvaluatorInternal(dynamic_cast<IndexReaderWriter *>(indexer), &runTimeParameters);
     //(void)indexSearcherInternal;
     //indexSearcherInternal->getInvertedIndex()->print_test();
-    delete indexSearcherInternal;
+    delete queryEvaluatorInternal;
     //delete indexerInternal;
     //delete indexer;
     delete indexer;

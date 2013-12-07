@@ -64,9 +64,9 @@ ADD_EXECUTABLE(TermVirtualList_Test TermVirtualList_Test.cpp)
 TARGET_LINK_LIBRARIES(TermVirtualList_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS TermVirtualList_Test)
 
-ADD_EXECUTABLE(IndexSearcherInternal_Test IndexSearcherInternal_Test.cpp)
-TARGET_LINK_LIBRARIES(IndexSearcherInternal_Test ${UNIT_TEST_LIBS})
-LIST(APPEND UNIT_TESTS IndexSearcherInternal_Test)
+#ADD_EXECUTABLE(IndexSearcherInternal_Test IndexSearcherInternal_Test.cpp)
+#TARGET_LINK_LIBRARIES(IndexSearcherInternal_Test ${UNIT_TEST_LIBS})
+#LIST(APPEND UNIT_TESTS IndexSearcherInternal_Test)
 
 ADD_EXECUTABLE(Licensing_Test Licensing_Test.cpp)
 TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS})

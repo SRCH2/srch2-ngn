@@ -6,7 +6,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -170,7 +170,7 @@ void updateIndex(string data_file, Indexer *index)
     delete analyzer;
 }
 // Read queries from file and do the search
-void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *analyzer, IndexSearcher *indexSearcher, const unsigned k1, const unsigned k2)
+void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *analyzer, QueryEvaluator *queryEvaluator, const unsigned k1, const unsigned k2)
 {
     string line;
 
@@ -209,8 +209,8 @@ void checkTopK1andTopK2(string query_path, string result_path, const Analyzer *a
     // do the search and verify the results
     for( unsigned i = 0; i < keywordVector.size(); i++ )
     {
-        if( topK1ConsistentWithTopK2(analyzer, indexSearcher, keywordVector[i], k1, k2) == false
-            || existsInTopK(analyzer, indexSearcher, keywordVector[i], primaryKeyVector[i], k1) == false )
+        if( topK1ConsistentWithTopK2(analyzer, queryEvaluator, keywordVector[i], k1, k2) == false
+            || existsInTopK(analyzer, queryEvaluator, keywordVector[i], primaryKeyVector[i], k1) == false )
         {
             failedCounter++;
             cout << keywordVector[i] << endl;
@@ -259,13 +259,14 @@ int main(int argc, char **argv)
     
 
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
                                     "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
-    checkTopK1andTopK2(query_file, primaryKey_file, analyzer, indexSearcher, 10, 25);
+    checkTopK1andTopK2(query_file, primaryKey_file, analyzer, queryEvaluator, 10, 25);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
     delete indexMetaData;
     delete analyzer;

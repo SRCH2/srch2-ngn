@@ -20,7 +20,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -180,7 +180,8 @@ void test1()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Query: "tom", hits -> 1001, 1003
@@ -188,13 +189,13 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
     }
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
     }
 
     //Update Index
@@ -207,22 +208,22 @@ void test1()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "smith", hits -> 1001, 1003
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
     }
 
     //indexer->print_index();
@@ -233,7 +234,7 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -241,7 +242,7 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
     }
 
     index->commit();
@@ -253,11 +254,11 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 }
 
@@ -277,7 +278,8 @@ void test2()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Query: "smith", hits -> 1001, 1003
@@ -285,7 +287,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -294,14 +296,14 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
     }
 
     //Update a Deserialised Index
@@ -314,15 +316,15 @@ void test2()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "smith", hits -> 1002, 1998
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -330,7 +332,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -339,14 +341,14 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     index->commit();
     index->save(INDEX_DIR);
 
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 
 }
@@ -366,7 +368,8 @@ void test3()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Update a Deserialised Index with Duplicate
@@ -395,15 +398,15 @@ void test3()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "smith", hits -> 1002, 1998
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -411,7 +414,7 @@ void test3()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -420,13 +423,13 @@ void test3()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     index->commit();
     index->save(INDEX_DIR);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     (void)analyzer;
     delete index;
 }
@@ -447,7 +450,8 @@ void test4()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     std::string recordId = "1998";
@@ -455,15 +459,15 @@ void test4()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "smith", hits -> 1002, 1998
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         //recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -471,7 +475,7 @@ void test4()
         vector<unsigned> recordIds;
         //recordIds.push_back(1998);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -480,13 +484,13 @@ void test4()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     index->save(INDEX_DIR);
 
     //delete analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     (void)analyzer;
     delete index;
 }
@@ -506,7 +510,8 @@ void test5()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Update a Deserialised Index with Duplicate
@@ -519,15 +524,15 @@ void test5()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "jimi", hits -> 1002, 1998
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hits -> 1998, 1999
@@ -535,7 +540,7 @@ void test5()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -544,13 +549,13 @@ void test5()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     index->commit();
     index->save(INDEX_DIR);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     (void)analyzer;
     delete index;
 }
@@ -570,7 +575,8 @@ void test6()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Query: "jemi", hits -> 1002, 1998
@@ -578,7 +584,7 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jemi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jemi" , 2 , recordIds) == true);
     }
 
     //Query: "jobsi", hits -> 1998 , 1999
@@ -586,19 +592,19 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jobsi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobsi" , 2 , recordIds) == true);
     }
 
     //Query: "shiref", hits -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "shiref" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "shiref" , 1 , recordIds) == true);
     }
 
     //delete analyzer;
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 }
 
@@ -679,7 +685,8 @@ void test8()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     Analyzer *analyzer = getAnalyzer();
 
@@ -688,7 +695,7 @@ void test8()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi+jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -697,7 +704,7 @@ void test8()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003
@@ -705,7 +712,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jack" , 2 , recordIds) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003
@@ -713,7 +720,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "tom+jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds) == true);
     }
 
     //indexer->print_Index();
@@ -740,7 +747,7 @@ void test8()
 
     //delete analyzer;
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 }
 
@@ -762,7 +769,8 @@ void test9()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Query: "tom", hits -> 1001, 1003
@@ -770,14 +778,14 @@ void test9()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
     }
 
     //Update Index
@@ -792,22 +800,22 @@ void test9()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //Query: "smith", hits -> 1001, 1003
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
     }
 
     index->commit();
@@ -815,7 +823,7 @@ void test9()
 
     //delete analyzer;
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 
     //Do all update tests performed on normal index to advanced index.
@@ -843,7 +851,8 @@ void test10()
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     Analyzer *analyzer = getAnalyzer();
 
     //Query: "jimi+jobs", hits -> 1998 ;descending ;sortAttribute 0;
@@ -851,7 +860,7 @@ void test10()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "jimi+jobs" , 1 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds,-1,0) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999 ;descending ;sortAttribute 0;
@@ -860,7 +869,7 @@ void test10()
         recordIds.push_back(1999);
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "tom" , 3 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom" , 3 , recordIds,-1,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 0;
@@ -868,7 +877,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -876,7 +885,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,1) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -884,7 +893,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "tom+jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,1) == true);
     }
 
     //indexer->print_Index();
@@ -894,7 +903,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, indexSearcher, "tom+jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,0) == true);
     }
 
     /// positional index disabled, ignore the filter related tests for now
@@ -919,7 +928,7 @@ void test10()
 
     //delete analyzer;
     (void)analyzer;
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 }
 
@@ -980,7 +989,8 @@ void test11()
     index->commit();
     index->save(INDEX_DIR);
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     //ASSERT(indexer->commit() == 1);
 
@@ -989,14 +999,14 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003); // Should not be seen before commit
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, indexSearcher, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
     }
 
     //Update Index
@@ -1010,23 +1020,22 @@ void test11()
 
     sleep(mergeEveryNSeconds+1);
 
-    delete indexSearcher;
-    indexSearcher = IndexSearcher::create(index);
-
+    delete queryEvaluator;
+    queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
     //Query: "smith", hits -> 1001, 1003
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
     }
 
     //Query: "jobs", hit -> 1002
     /*{
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        //ASSERT ( ping(analyzer, indexSearcher, "jobs" , 1 , recordIds) == true);
-        ping(analyzer, indexSearcher, "jobs" , 1 , recordIds);
+        //ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds);
     }*/
 
     //indexer->print_index();
@@ -1037,7 +1046,7 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -1045,7 +1054,7 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
     }
 
     index->save(INDEX_DIR);
@@ -1056,10 +1065,10 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
     }
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
 }
 

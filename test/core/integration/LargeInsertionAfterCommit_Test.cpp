@@ -5,7 +5,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -156,7 +156,7 @@ void updateIndex(string data_file, Indexer *index)
     delete analyzer;
 }
 // Read queries from file and do the search
-void readQueriesAndDoQueries(string path, const Analyzer *analyzer, IndexSearcher *indexSearcher)
+void readQueriesAndDoQueries(string path, const Analyzer *analyzer, QueryEvaluator *queryEvaluator)
 {
     string line;
 
@@ -174,7 +174,7 @@ void readQueriesAndDoQueries(string path, const Analyzer *analyzer, IndexSearche
 
     for( vector<string>::iterator vectIter = keywordVector.begin(); vectIter!= keywordVector.end(); vectIter++ )
     {
-        if(pingExactTest(analyzer, indexSearcher, *vectIter) == 0)
+        if(pingExactTest(analyzer, queryEvaluator, *vectIter) == 0)
         {
             failedCounter++;
             cout << *vectIter << endl;
@@ -220,11 +220,12 @@ int main(int argc, char **argv)
     Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
             		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
-    readQueriesAndDoQueries(query_file, analyzer, indexSearcher);
+    readQueriesAndDoQueries(query_file, analyzer, queryEvaluator);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
     delete indexMetaData;
     delete analyzer;

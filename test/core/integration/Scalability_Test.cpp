@@ -2,7 +2,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -168,21 +168,21 @@ void buildGeoIndex(string dataFile, string indexDir) {
 }
 
 // Warm up the index, so that the first query in the test won't be slow
-void warmUp(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
-    pingForScalabilityTest(analyzer, indexSearcher, "aaa+bbb", 1);
+void warmUp(const Analyzer *analyzer, QueryEvaluator * queryEvaluator) {
+    pingForScalabilityTest(analyzer, queryEvaluator, "aaa+bbb", 1);
+    pingForScalabilityTest(analyzer, queryEvaluator, "aaa+bbb", 1);
+    pingForScalabilityTest(analyzer, queryEvaluator, "aaa+bbb", 1);
 }
 
 // Warm up the geo index, so that the first query in the test won't be slow
-void warmUpGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher) {
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
-    pingToCheckIfHasResults(analyzer, indexSearcher, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
+void warmUpGeo(const Analyzer *analyzer, QueryEvaluator * queryEvaluator) {
+    pingToCheckIfHasResults(analyzer, queryEvaluator, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
+    pingToCheckIfHasResults(analyzer, queryEvaluator, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
+    pingToCheckIfHasResults(analyzer, queryEvaluator, "aaa+bbb", 40.0, -120.0, 60.0, -90.0, 1);
 }
 
 // Read queries from file and do the search
-void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed, int verb) {
+void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, QueryEvaluator * queryEvaluator, unsigned ed, int verb) {
     string line;
 
     ifstream keywords(path.c_str());
@@ -219,7 +219,7 @@ void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer
 
         int resultNumber= 0;
 
-        resultNumber = pingForScalabilityTest(analyzer, indexSearcher, *vectIter, ed);
+        resultNumber = pingForScalabilityTest(analyzer, queryEvaluator, *vectIter, ed);
 
         if (verb >= 2) {
             clock_gettime(CLOCK_REALTIME, &t2_inner);
@@ -248,7 +248,7 @@ void readQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer
 }
 
 // Read geo queries from file and do the search
-void readGeoQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, IndexSearcher *indexSearcher, unsigned ed,int verb, float radius) {
+void readGeoQueriesAndDoQueries(bool isExact, string path, const Analyzer *analyzer, QueryEvaluator * queryEvaluator, unsigned ed,int verb, float radius) {
     string line;
 
     ifstream queries(path.c_str());
@@ -292,7 +292,7 @@ void readGeoQueriesAndDoQueries(bool isExact, string path, const Analyzer *analy
 
         int resultsNumber=0;
 
-        resultsNumber = pingToCheckIfHasResults(analyzer, indexSearcher, vectIter->substr(0,split), lat-radius, lng-radius, lat+radius, lng+radius, ed);
+        resultsNumber = pingToCheckIfHasResults(analyzer, queryEvaluator, vectIter->substr(0,split), lat-radius, lng-radius, lat+radius, lng+radius, ed);
 
         if (verb >=2) {
             clock_gettime(CLOCK_REALTIME, &t2_inner);
@@ -355,21 +355,22 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir, "");
     Indexer *index = Indexer::load(indexMetaData);
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     cout << "Index loaded." << endl;
 
     Analyzer *analyzer = getAnalyzer();
 
     if (!isGeo) {
-        warmUp(analyzer, indexSearcher);
-        readQueriesAndDoQueries(isExact, queryFile, analyzer, indexSearcher, ed, verb);
+        warmUp(analyzer, queryEvaluator);
+        readQueriesAndDoQueries(isExact, queryFile, analyzer, queryEvaluator, ed, verb);
     } else {
-        warmUpGeo(analyzer, indexSearcher);
-        readGeoQueriesAndDoQueries(isExact, queryFile, analyzer, indexSearcher, ed, verb, radius);
+        warmUpGeo(analyzer, queryEvaluator);
+        readGeoQueriesAndDoQueries(isExact, queryFile, analyzer, queryEvaluator, ed, verb, radius);
     }
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
     delete indexMetaData;
     delete analyzer;

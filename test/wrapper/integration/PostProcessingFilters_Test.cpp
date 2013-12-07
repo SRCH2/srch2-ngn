@@ -1,7 +1,7 @@
 //
 ////$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 //
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "util/Assert.h"
 #include "analyzer/AnalyzerInternal.h"
@@ -16,6 +16,7 @@
 #include <wrapper/SortFilterEvaluator.h>
 #include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include <instantsearch/FacetedSearchFilter.h>
+#include "../../core/unit/UnitTestHelper.h"
 //
 #include <iostream>
 #include <functional>
@@ -34,13 +35,13 @@ const char* INDEX_DIR = ".";
 using srch2::util::Logger;
 
 QueryResults * applyFilter(QueryResults * initialQueryResults,
-        IndexSearcher * indexSearcher, Query * query,
+        QueryEvaluator * queryEvaluator, Query * query,
         ResultsPostProcessorPlan * plan) {
 
 //    ResultsPostProcessor postProcessor(indexSearcher);
 
     QueryResults * finalQueryResults = new QueryResults(
-            new QueryResultFactory(), indexSearcher, query);
+            new QueryResultFactory(), queryEvaluator, query);
 
     plan->beginIteration();
 
@@ -66,7 +67,7 @@ QueryResults * applyFilter(QueryResults * initialQueryResults,
         // clear the output to be ready to accept the result of the filter
         finalQueryResults->clear();
         // apply the filter on the input and put the results in output
-        filter->doFilter(indexSearcher, query, initialQueryResults,
+        filter->doFilter(queryEvaluator, query, initialQueryResults,
                 finalQueryResults);
         // if there is going to be other filters, chain the output to the input
         if (plan->hasMoreFilters()) {
@@ -387,7 +388,7 @@ bool checkFacetedFilterResults(QueryResults * queryResults,
 
 }
 
-void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
+void Test_Sort_Filter(QueryEvaluator *queryEvaluator) {
 
     std::vector<unsigned> resultSet0, resultSet01, resultSet02, resultSet03,
             resultSet1, resultSet2, resultSetEmpty;
@@ -440,11 +441,11 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(sortFilter);
 
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
-
+    		queryEvaluator, query);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    queryEvaluator->search(logicalPlan , queryResults);
     QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            indexSearcherInternal, query, plan);
+            queryEvaluator, query, plan);
 
     bool valid = checkResults(queryResultsAfterFilter, &resultSet0);
     ASSERT(valid);
@@ -462,10 +463,11 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+            queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
 
     valid = checkResults(queryResultsAfterFilter, &resultSet01);
@@ -484,10 +486,11 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+            queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
 
     valid = checkResults(queryResultsAfterFilter, &resultSet02);
@@ -507,10 +510,11 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+            queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
 
     valid = checkResults(queryResultsAfterFilter, &resultSet03);
@@ -538,10 +542,11 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+            queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
 
     valid = checkResults(queryResultsAfterFilter, &resultSetEmpty);
@@ -716,7 +721,7 @@ void Test_Sort_Filter(IndexSearcherInternal *indexSearcherInternal) {
 //}
 //
 //
-void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
+void Test_FacetedSearch_Filter(QueryEvaluator *queryEvaluator) {
 
     std::vector<unsigned> resultSet0, resultSet01, resultSet02, resultSet03,
             resultSet1, resultSet2, resultSetEmpty;
@@ -813,11 +818,12 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     query->setPostProcessingPlan(plan);
     QueryResultFactory * factory = new QueryResultFactory();
     QueryResults *queryResults = new QueryResults(factory,
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+            queryEvaluator, query);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
     QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            indexSearcherInternal, query, plan);
+            queryEvaluator, query, plan);
     bool valid = checkFacetedFilterResults(queryResultsAfterFilter,
             &facetResults);
     printFacetResults(queryResultsAfterFilter->getFacetResults());
@@ -859,10 +865,11 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
     factory = new QueryResultFactory();
-    queryResults = new QueryResults(factory, indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    queryResults = new QueryResults(factory, queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
     valid = checkFacetedFilterResults(queryResultsAfterFilter, &facetResults2);
     printFacetResults(queryResultsAfterFilter->getFacetResults());
@@ -908,10 +915,11 @@ void Test_FacetedSearch_Filter(IndexSearcherInternal *indexSearcherInternal) {
     plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
     factory = new QueryResultFactory();
-    queryResults = new QueryResults(factory, indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    queryResults = new QueryResults(factory, queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+        queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, indexSearcherInternal,
+    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
             query, plan);
     ASSERT(checkFacetedFilterResults(queryResultsAfterFilter, &facetResults3));
     delete plan;
@@ -935,18 +943,17 @@ void Searcher_Tests() {
 
     Indexer* indexer = Indexer::load(indexMetaData);
 
-    IndexSearcherInternal *indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
-
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     Logger::info("Test 1");
-    Test_Sort_Filter(indexSearcherInternal);
+    Test_Sort_Filter(queryEvaluator);
 //	std::cout << "test2" << std::endl;
 //	Test_Expression_Filter(indexSearcherInternal);
     Logger::info("Test 3");
-    Test_FacetedSearch_Filter(indexSearcherInternal);
+    Test_FacetedSearch_Filter(queryEvaluator);
 
     delete indexer;
-    delete indexSearcherInternal;
+    delete queryEvaluator;
 }
 int main(int argc, char *argv[]) {
     bool verbose = false;
