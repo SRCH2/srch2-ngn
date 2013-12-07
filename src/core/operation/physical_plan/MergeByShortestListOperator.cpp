@@ -19,6 +19,8 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 
 	this->isShortestListFinished = false;
 
+	this->previousResultsFound.clear();
+
 	this->indexOfShortestListChild =
 			((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
 
@@ -41,9 +43,15 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		PhysicalPlanRecordItem * nextRecord =
 				this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->getNext(params);
 
+
 		if(nextRecord == NULL){
 			this->isShortestListFinished = true;
 			return NULL;
+		}
+
+		//TODO possible optimization
+		if(find(this->previousResultsFound.begin(),this->previousResultsFound.end(), nextRecord->getRecordId()) != this->previousResultsFound.end()){
+			continue;
 		}
 		// validate the record with other children
 		//2.
@@ -66,6 +74,8 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
 		nextRecord->setRecordRuntimeScore(computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+		// save it in previousResultsVector
+		this->previousResultsFound.push_back(nextRecord->getRecordId());
 		return nextRecord;
 	}
 
@@ -81,6 +91,7 @@ bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
 	this->isShortestListFinished = false;
+	this->previousResultsFound.clear();
 	return true;
 
 }

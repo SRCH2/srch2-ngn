@@ -85,7 +85,6 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
         // allocate new item and fill it out
         PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
-
         newItem->setRecordId(currentHeapMax->recordId);
         newItem->setRecordRuntimeScore(currentHeapMax->termRecordRuntimeScore);
         vector<TrieNodePointer> prefixes;
@@ -277,7 +276,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
                         distance,
                         term->getKeyword()->size(),
                         isPrefixMatch,
-                        this->prefixMatchPenalty , term->getSimilarityBoost());
+                        this->prefixMatchPenalty , term->getSimilarityBoost()) * term->getBoost();
             this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,
@@ -289,7 +288,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
                         distance,
                         term->getKeyword()->size(),
                         false,
-                        this->prefixMatchPenalty , term->getSimilarityBoost());// prefix match == false
+                        this->prefixMatchPenalty , term->getSimilarityBoost()) * term->getBoost();// prefix match == false
             this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,

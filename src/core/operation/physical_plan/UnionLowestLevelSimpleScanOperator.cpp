@@ -127,21 +127,21 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	newItem->setRecordId(recordID);
 	// edit distance
 	vector<unsigned> editDistances;
-	editDistances.push_back(this->invertedListDistances.at(this->cursorOnInvertedList));
+	editDistances.push_back(this->invertedListDistances.at(this->invertedListOffset));
 	newItem->setRecordMatchEditDistances(editDistances);
 	// matching prefix
 	vector<TrieNodePointer> matchingPrefixes;
-	matchingPrefixes.push_back(this->invertedListLeafNodes.at(this->cursorOnInvertedList)); // TODO this might be wrong
+	matchingPrefixes.push_back(this->invertedListLeafNodes.at(this->invertedListOffset)); // TODO this might be wrong
 	newItem->setRecordMatchingPrefixes(matchingPrefixes);
 	// runtime score
-	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) ==
+	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) !=
 			this->invertedListLeafNodes.at(this->invertedListOffset);
 	////// TODO ???????????????????????????? RANKER
 	newItem->setRecordRuntimeScore(	DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
             this->invertedListDistances.at(this->invertedListOffset),
             term->getKeyword()->size(),
             isPrefixMatch,
-            params.prefixMatchPenalty , term->getSimilarityBoost()));
+            params.prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost());
 	// static score
 	newItem->setRecordStaticScore(termRecordStaticScore);
 	// attributeBitmap
@@ -155,7 +155,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 
 	// prepare for next call
 	this->cursorOnInvertedList ++;
-	if(this->cursorOnInvertedList > this->invertedLists.at(this->invertedListOffset)->size()){
+	if(this->cursorOnInvertedList >= this->invertedLists.at(this->invertedListOffset)->size()){
 		this->invertedListOffset ++;
 		this->cursorOnInvertedList = 0;
 	}

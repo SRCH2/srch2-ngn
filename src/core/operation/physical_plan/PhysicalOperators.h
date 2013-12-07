@@ -178,7 +178,11 @@ class SortByIdOperator : public PhysicalPlanNode {
 public:
 	struct SortByIdRecordMinHeapComparator{
 		bool operator()(const PhysicalPlanRecordItem * left , const PhysicalPlanRecordItem * right) const{
-			return (left->getRecordId() > right->getRecordId());
+			if(left->getRecordId() == right->getRecordId()){
+				return (left->getRecordRuntimeScore() < right->getRecordRuntimeScore());
+			}else{
+				return (left->getRecordId() > right->getRecordId());
+			}
 		}
 	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
@@ -219,7 +223,11 @@ class SortByScoreOperator : public PhysicalPlanNode {
 public:
 	struct SortByScoreRecordMaxHeapComparator{
 		bool operator()(const PhysicalPlanRecordItem * left , const PhysicalPlanRecordItem * right) const{
-			return (left->getRecordRuntimeScore() < right->getRecordRuntimeScore());
+			if(left->getRecordRuntimeScore() == right->getRecordRuntimeScore()){
+				return (left->getRecordId() > right->getRecordId());
+			}else{
+				return (left->getRecordRuntimeScore() < right->getRecordRuntimeScore());
+			}
 		}
 	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
@@ -269,6 +277,7 @@ private:
 	 * This variable is true unless one of the children lists become empty
 	 */
 	bool listsHaveMoreRecordsInThem;
+	vector<unsigned> previousResultsFound;
 };
 
 class MergeSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -313,6 +322,7 @@ private:
 	MergeByShortestListOperator() ;
 	unsigned indexOfShortestListChild ;
 	bool isShortestListFinished;
+	vector<unsigned> previousResultsFound;
 };
 
 class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -356,6 +366,7 @@ private:
 	* and makes sure to populate the vector again from the child operator.
 	*/
 	vector<PhysicalPlanRecordItem *> nextItemsFromChildren;
+	vector<unsigned> visitedRecords;
 };
 
 class UnionSortedByIDOptimizationOperator : public PhysicalPlanOptimizationNode {

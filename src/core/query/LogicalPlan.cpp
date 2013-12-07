@@ -3,6 +3,7 @@
 #include "instantsearch/LogicalPlan.h"
 
 #include "util/Assert.h"
+#include "operation/HistogramManager.h"
 
 using namespace std;
 

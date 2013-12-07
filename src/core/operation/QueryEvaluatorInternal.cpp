@@ -23,7 +23,6 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
 #include "operation/IndexerInternal.h"
-#include "operation/IndexSearcherInternal.h"
 #include "operation/ActiveNode.h"
 #include "operation/TermVirtualList.h"
 #include "query/QueryResultsInternal.h"
@@ -71,14 +70,85 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
  */
 // TODO : FIXME: This function is not compatible with the new api
 int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ){
+	// non valid cases for input
+	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
+		return 0;
+	}
+    if (this->indexData->isBulkLoadDone() == false){
+        return -1;
+    }
 
+	// make sure fuzzyMatchPenalty is in [0,1]
+	if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
+		fuzzyMatchPenalty = 0.5;
+	}
+	// calculate editDistanceThreshold
+	// TODO use Ranker to implement this logic
+	unsigned editDistanceThreshold = keyword.length() * (1 - fuzzyMatchPenalty);
+
+	// compute active nodes
+	// 1. first we must create term object which is used to compute activenodes.
+	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
+	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
+	// 2. compute active nodes.
+	PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+	// 3. we don't need the term anymore
+	delete term;
+
+	// 4. now iterate on active nodes and find suggestions for each on of them
+    std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
+    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn , suggestionPairs);
+
+    int suggestionCount = 0;
+    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
+    	string suggestionString ;
+        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+                                               suggestion->second, suggestionString);
+    	suggestions.push_back(suggestionString);
+    }
+	// 5. now delete activenode set
+    if (termActiveNodeSet->isResultsCached() == true)
+    	termActiveNodeSet->busyBit->setFree();
+    else
+        delete termActiveNodeSet;
+	return 0;
+}
+
+bool suggestionComparator(const pair<std::pair< float , unsigned > , const TrieNode *> & left ,
+		const pair<std::pair< float , unsigned > , const TrieNode *> & right ){
+	return left.first.first > right.first.first;
+}
+
+
+void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
+		PrefixActiveNodeSet * activeNodes,
+		unsigned numberOfSuggestionsToReturn ,
+		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const{
+	// first make sure input is OK
+	if(term == NULL || activeNodes == NULL) return;
+
+	// now iterate on active nodes and find suggestions for each on of them
+    ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
+    for (; !iter.isDone(); iter.next()) {
+        TrieNodePointer trieNode;
+        unsigned distance;
+        iter.getItem(trieNode, distance);
+        trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+        if(suggestionPairs.size() >= numberOfSuggestionsToReturn){
+        	break;
+        }
+    }
+
+    // now sort the suggestions
+    std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
 
 /*
  * Returns the estimated number of results
  */
 unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * logicalPlan){
-
+	return 0; // TODO
 }
 
 /**
@@ -255,15 +325,65 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
 std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
-
+	return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
 }
 
+// TODO : this function might need to be deleted from here ...
 PrefixActiveNodeSet *QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
+    // it should not be an empty std::string
+    string *keyword = term->getKeyword();
+    vector<CharType> charTypeKeyword;
+    utf8StringToCharTypeVector(*keyword, charTypeKeyword);
+    unsigned keywordLength = charTypeKeyword.size();
+    ASSERT(keywordLength > 0);
 
+    //std::cout << "Keyword:" << *keyword;
+
+    // We group the active trie nodes based on their edit distance to the term prefix
+
+    // 1. Get the longest prefix that has active nodes
+    unsigned cachedPrefixLength = 0;
+    PrefixActiveNodeSet *initialPrefixActiveNodeSet = NULL;
+    int cacheResponse = this->cacheManager->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
+
+    if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) { // NO CacheHit,  response = 0
+        //std::cout << "|NO Cache|" << std::endl;;
+        // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
+        initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance());
+        initialPrefixActiveNodeSet->busyBit->setBusy();
+    }
+    cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
+
+    /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
+    PrefixActiveNodeSet *prefixActiveNodeSet = initialPrefixActiveNodeSet;
+
+    for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
+        CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
+
+        PrefixActiveNodeSet *newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
+        newPrefixActiveNodeSet->busyBit->setBusy();
+
+        // If the last result was not put into the cache successfully (e.g., due to
+        // limited cache size), we can safely delete it now
+        if (prefixActiveNodeSet->isResultsCached() == false) {
+            //if (prefixActiveNodeSet->busyBit->isBusy())
+            delete prefixActiveNodeSet;
+        }
+        prefixActiveNodeSet = newPrefixActiveNodeSet;
+
+        //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
+
+        if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
+            cacheResponse = this->cacheManager->setPrefixActiveNodeSet(prefixActiveNodeSet);
+        }
+    }
+    // Possible memory leak due to last prefixActiveNodeSet not being cached. This is checked for
+    // and deleted by the caller "QueryResultsInternal()"
+    return prefixActiveNodeSet;
 }
 
 void QueryEvaluatorInternal::cacheClear() {
-
+    this->cacheManager->clear();
 }
 
 int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* queryResults){
@@ -365,6 +485,45 @@ void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, u
             addMoreNodesToExpansion(child, distance+1, bound, mapSearcherTerm);
         }
     }
+}
+
+
+QueryEvaluatorInternal::~QueryEvaluatorInternal() {
+	delete physicalOperatorFactory;
+}
+
+PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
+	return this->physicalOperatorFactory;
+}
+void QueryEvaluatorInternal::setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory){
+	this->physicalOperatorFactory = physicalOperatorFactory;
+}
+
+PhysicalPlanRecordItemFactory * QueryEvaluatorInternal::getPhysicalPlanRecordItemFactory(){
+	return this->physicalPlanRecordItemFactory;
+}
+void QueryEvaluatorInternal::setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
+	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
+}
+
+//DEBUG function. Used in CacheIntegration_Test
+bool QueryEvaluatorInternal::cacheHit(const Query *query)
+{
+    const std::vector<Term* > *queryTerms = query->getQueryTerms();
+
+    //Empty Query case
+    if (queryTerms->size() == 0)
+        return false;
+
+    // Cache lookup, assume a query with the first k terms found in the cache
+    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
+    this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
+
+    // Cached results for the first k terms
+    if (conjunctionCacheResultsEntry != NULL)
+        return true;
+
+    return false;
 }
 
 }}

@@ -28,6 +28,7 @@ bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, Phys
 	}
 
 	listsHaveMoreRecordsInThem = true;
+	visitedRecords.clear();
 	return true;
 
 }
@@ -38,13 +39,31 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	}
 
 	/*
+	 * 0. Iterate on nextItemsFromChildren and getNext until an unvisited
+	 * ---- record comes up
 	 * 1. iterate on nextItemsFromChildren
 	 * 2. find the min ID on top,
 	 * 3. remove all top records that have the same ID as min ID
 	 * 4. return the min ID (which has the most Score in ties)
 	 */
-	// find the min ID
 	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+
+	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+		while(true){
+			PhysicalPlanRecordItem * recordItem = this->nextItemsFromChildren.at(childOffset);
+			if(recordItem == NULL){
+				break;;
+			}
+			if(find(this->visitedRecords.begin(), this->visitedRecords.end(), recordItem->getRecordId()) == this->visitedRecords.end()){
+				break;
+			}else{
+				this->nextItemsFromChildren.at(childOffset) =
+						this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+			}
+		}
+	}
+
+	// find the min ID
 	PhysicalPlanRecordItem * minIDRecord = NULL;
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		PhysicalPlanRecordItem * recordItem = this->nextItemsFromChildren.at(childOffset);
@@ -89,6 +108,8 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	minIDRecord->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
 	minIDRecord->setPositionIndexOffsets(positionIndexOffsets);
 
+	this->visitedRecords.push_back(minIDRecord->getRecordId());
+
 	return minIDRecord;
 }
 bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
@@ -97,6 +118,7 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
 	this->listsHaveMoreRecordsInThem = true;
+	visitedRecords.clear();
 	return true;
 }
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

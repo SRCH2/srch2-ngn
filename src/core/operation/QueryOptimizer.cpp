@@ -153,9 +153,14 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 		//
 		childIndex ++;
 	}
+
+	if(totalNumberOfProducts > 100){
+		totalNumberOfProducts = 100;
+	}
+
 	// now we must find all possible combinations of children options
 	unsigned * cartProductResults = new unsigned[totalNumberOfProducts * root->children.size()];
-	srch2::util::QueryOptimizerUtil::cartesianProduct(root->children.size(), domains, cartProductResults);
+	srch2::util::QueryOptimizerUtil::cartesianProduct(root->children.size(), domains, cartProductResults, totalNumberOfProducts);
 
 
 
@@ -305,6 +310,11 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 						sortByScoreOp->setLogicalPlanNode(child->getLogicalPlanNode());
 						sortByScoreOp->addChild(child);
 						root->setChildAt(i, sortByScoreOp);
+						break;
+					}
+					default:
+					{
+						//ASSERT(false);
 						break;
 					}
 				}

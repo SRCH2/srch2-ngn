@@ -18,8 +18,8 @@
  */
 
 #include "ResultsPostProcessorInternal.h"
-#include "instantsearch/IndexSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include <instantsearch/QueryEvaluator.h>
+#include "operation/QueryEvaluatorInternal.h"
 #include <instantsearch/ResultsPostProcessor.h>
 
 using namespace std;

@@ -12,11 +12,10 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/GlobalCache.h>
-#include <instantsearch/IndexSearcher.h>
 
 #include "query/QueryResultsInternal.h"
-#include "operation/IndexSearcherInternal.h"
-
+#include <instantsearch/QueryEvaluator.h>
+#include "operation/QueryEvaluatorInternal.h"
 #include "QueryPlan.h"
 
 #include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change

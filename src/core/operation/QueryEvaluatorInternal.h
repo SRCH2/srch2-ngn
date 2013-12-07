@@ -25,7 +25,6 @@
 #include <instantsearch/Indexer.h>
 #include <record/LocationRecordUtil.h>
 #include <operation/Cache.h>
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Schema.h>
 #include <instantsearch/Term.h>
@@ -72,6 +71,8 @@ public:
      */
 	// TODO : FIXME: This function is not compatible with the new api
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions );
+
+
 
     /*
      * Returns the estimated number of results
@@ -134,24 +135,15 @@ public:
     /**
      * Destructor to free persistent resources used by the QueryEvaluator.
      */
-    ~QueryEvaluatorInternal() {
-    	delete getPhysicalOperatorFactory();
-    };
+    ~QueryEvaluatorInternal();
 
-    PhysicalOperatorFactory * getPhysicalOperatorFactory(){
-    	return this->physicalOperatorFactory;
-    }
-    void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory){
-    	this->physicalOperatorFactory = physicalOperatorFactory;
-    }
+    PhysicalOperatorFactory * getPhysicalOperatorFactory();
+    void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory);
+    PhysicalPlanRecordItemFactory * getPhysicalPlanRecordItemFactory();
+    void setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory);
 
-    PhysicalPlanRecordItemFactory * getPhysicalPlanRecordItemFactory(){
-    	return this->physicalPlanRecordItemFactory;
-    }
-    void setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
-    	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
-    }
-
+    //DEBUG function. Used in CacheIntegration_Test
+    bool cacheHit(const Query *query);
 
 public:
     IndexReadStateSharedPtr_Token indexReadToken;
@@ -166,6 +158,10 @@ private:
     // search functions for map search
     int searchMapQuery(const Query *query, QueryResults* queryResults);
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
+    void findKMostPopularSuggestionsSorted(Term *term ,
+    		PrefixActiveNodeSet * activeNodes,
+    		unsigned numberOfSuggestionsToReturn ,
+    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 };
 
 }

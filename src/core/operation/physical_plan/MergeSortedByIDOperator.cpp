@@ -24,6 +24,7 @@ bool MergeSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, Phys
 
 
 	listsHaveMoreRecordsInThem = true;
+	previousResultsFound.clear();
 	return true;
 }
 PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExecutionParameters & params) {
@@ -46,11 +47,16 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 	 *
 	 */
 	unsigned childToGetNextRecordFrom = 0; // i
-	PhysicalPlanRecordItem * record = // record
-			this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
-	if(record == NULL){
-		this->listsHaveMoreRecordsInThem = false;
-		return NULL;
+	PhysicalPlanRecordItem * record = NULL;// record
+	while(true){
+		record = this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+		if(record == NULL){
+			this->listsHaveMoreRecordsInThem = false;
+			return NULL;
+		}
+		if(find(this->previousResultsFound.begin(),this->previousResultsFound.end(), record->getRecordId()) == this->previousResultsFound.end()){
+			break;
+		}
 	}
 	while(true){ // 1.1.
 		vector<PhysicalPlanRecordItem *> recordMatches;
@@ -115,15 +121,24 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 			record->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
 			record->setPositionIndexOffsets(positionIndexOffsets);
 			// static score ignored for now
+
+			// add to previousResultsFound
+			this->previousResultsFound.push_back(record->getRecordId());
+
 			return record;
 		}else{
 			childToGetNextRecordFrom = (childToGetNextRecordFrom + 1) % this->getPhysicalPlanOptimizationNode()->getChildrenCount();
-			record = // record
-						this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
-			if(record == NULL){
-				this->listsHaveMoreRecordsInThem = false;
-				return NULL;
+			while(true){
+				record = this->getPhysicalPlanOptimizationNode()->getChildAt(childToGetNextRecordFrom)->getExecutableNode()->getNext(params);//1.
+				if(record == NULL){
+					this->listsHaveMoreRecordsInThem = false;
+					return NULL;
+				}
+				if(find(this->previousResultsFound.begin(),this->previousResultsFound.end(), record->getRecordId()) == this->previousResultsFound.end()){
+					break;
+				}
 			}
+
 		}
 	}
 

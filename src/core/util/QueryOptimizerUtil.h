@@ -56,12 +56,10 @@ public:
 	 * domains = [2,3,1]
 	 * catProductResults should be [0,0,0 ,0,1,0 ,0,2,0 ,1,0,0 ,1,1,0 ,1,2,0]
 	 */
-	static void cartesianProduct(unsigned numberOfDomains, unsigned * domains, unsigned * cartProductResults){
-		// initialize the first product (all zero) , also calculate total number of products
-		unsigned totalNumberOfProducts = 1;
+	static void cartesianProduct(unsigned numberOfDomains, unsigned * domains, unsigned * cartProductResults , unsigned totalNumberOfProducts){
+		// initialize the first product (all zero)
 		for(unsigned d = 0; d < numberOfDomains ; ++d){
 			cartProductResults[d] = 0;
-			totalNumberOfProducts *= domains[d];
 		}
 		unsigned * currentProduct = cartProductResults;
 		for(unsigned p = 0; p < totalNumberOfProducts - 1 ; ++p){
