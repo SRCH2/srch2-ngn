@@ -110,7 +110,14 @@ namespace srch2 {
       static float CalculateAndAggregrateDynamicScore(const KeywordBoost*,
           unsigned, DynamicScoringFilter&);
     };
-  }
+
+    /*
+     * This function computes the edit-distance, with adjustments for floating point conversion error (epsilon),
+     * based on the length of the keyword and a normalizationFactor which must be between 0 and 1.
+     * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword).
+     */
+    uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
+    }
 }
 
 #endif /* __RANKER_H__ */

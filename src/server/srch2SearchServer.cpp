@@ -424,6 +424,9 @@ int bindSocket(const char * hostname, int port) {
     int one = 1;
     r = setsockopt(nfd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int));
 
+    // ignore a SIGPIPE signal (http://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly)
+    signal(SIGPIPE, SIG_IGN);
+
     struct sockaddr_in addr;
     struct hostent * host = gethostbyname(hostname);
     if (host == NULL)

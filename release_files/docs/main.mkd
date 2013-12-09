@@ -9,7 +9,7 @@
 </td></tr></tbody></table></div>
 
 #<center>SRCH2 Manual</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 The SRCH2 engine has the following powerful features:
@@ -35,7 +35,7 @@ You decide! We let you use the combination of rich search features you care abou
 
 ##System Requirements##
 
-The SRCH2 engine runs on both 32-bit and 64-bit Linux with a kernel version >= 2.6.32.
+The SRCH2 engine runs on both 32-bit and 64-bit Linux (with a kernel version >= 2.6.32) and Mac OS (10.5 and above, Intel x86).
 
 The engine supports all [Unicode characters](http://en.wikipedia.org/wiki/List_of_Unicode_characters) encoded using [UTF-8](http://en.wikipedia.org/wiki/UTF-8).
 

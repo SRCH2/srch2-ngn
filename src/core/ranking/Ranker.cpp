@@ -23,6 +23,7 @@
 #include <iostream>
 #include <math.h>
 #include "util/AttributeIterator.h"
+#include <cfloat>
 
 using std::vector;
 
@@ -250,6 +251,17 @@ float DynamicScoringRanker::CalculateAndAggregrateDynamicScore(
     score+= CalculateDynamicKeywordScore(*keyword, dynamicScoringFilter); 
   }
   return score;
+}
+
+uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold)
+{
+	if(similarityThreshold < 0 || similarityThreshold > 1) {
+		ASSERT(false);
+		return 0;
+	}
+	// We add "FLT_EPSILON" to deal with imprecise representations of float.
+	float fresult = keywordLength * (1 - similarityThreshold + FLT_EPSILON);
+	return fresult; // casting to unsigned int will do the floor operation automatically.
 }
 
 }}

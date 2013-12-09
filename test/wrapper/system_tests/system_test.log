@@ -34,11 +34,12 @@ http://localhost:8081/search?q=description%252Bgenre%3A%22crime%20gangster%22 te
 ==============================
 starting engine: /home/rj/srch2/srch2-ngn/build/src/server/srch2-search-server --config-file=./test_multi_valued_attributes/conf.xml &
 curl -s http://localhost:8081/search?q=Garden | grep -q results
+Query : q=%7BdefaultPrefixComplete=COMPLETE%7Dverycommonword*&fuzzy=true&facet=true&facet.field=model&rows=1
 Traceback (most recent call last):
   File "./test_multi_valued_attributes/test_multi_valued_attributes.py", line 180, in <module>
     testMultiValuedAttributes(queriesAndResultsPath, facetResultsPath, binary_path)
-  File "./test_multi_valued_attributes/test_multi_valued_attributes.py", line 121, in testMultiValuedAttributes
-    pingServer()
-  File "./test_multi_valued_attributes/test_multi_valued_attributes.py", line 18, in pingServer
-    time.sleep(1)
-KeyboardInterrupt
+  File "./test_multi_valued_attributes/test_multi_valued_attributes.py", line 155, in testMultiValuedAttributes
+    checkResult(query, response_json, resultValue , facetResultValue )
+  File "./test_multi_valued_attributes/test_multi_valued_attributes.py", line 50, in checkResult
+    isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
+KeyError: 'facets'

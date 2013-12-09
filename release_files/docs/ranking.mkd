@@ -29,7 +29,7 @@
 
 </td></tr></tbody></table></div>
 #<center>SRCH2 Manual: Ranking</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.1.0, Date: October 13, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 ##Overview##{id="overview"}
 
@@ -74,7 +74,7 @@ The "idf_score" uses the following formula:
 
 The value "sumOfFieldBoosts(<i>r</i>, <i>t_i</i>)" is the summation of the boosts of the attributes in which this keyword <i>t_i</i> appears in <i>r</i>, and "sumOfAllFieldBoosts" is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking.
 
-The value "idf(<i>t_i</i>)" is the inversed document frequency, calculated as follows:
+The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as follows:
 
 <center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center>
 
