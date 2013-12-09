@@ -52,7 +52,7 @@ struct DynamicScoringFilter : ResultsPostProcessorFilter {
   unsigned boostedAttributeMask;
   // This array has to be sorted by attributeID descending so we can
   // perform binary lookups 
-  AttributeBoost *const attribute;
+  AttributeBoost *const attributeBoosts;
   void doFilter(IndexSearcher*, const Query*, QueryResults*, QueryResults*);
   AttributeBoost* getAttributeBoost(unsigned);
 

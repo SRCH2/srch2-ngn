@@ -58,16 +58,16 @@ namespace srch2 {
       std::vector<httpwrapper::QueryFieldAttributeBoost>::
         const_iterator term(boosts.begin());
     for(; term != boosts.end(); ++term, ++i) {
-      filter->attribute[i].boostFactor= term->boost;
+      filter->attributeBoosts[i].boostFactor= term->boost;
       /* We already check the searchableAttribute in the validator so find
          much return. So we create the bitmap associate with each attribute */
-      filter->attribute[i].attributeMask= 
+      filter->attributeBoosts[i].attributeMask= 
         1 << searchableAttributes.find(term->attribute)->second.offset;
-      filter->attribute[i].hitCount= 0;
-      filter->boostedAttributeMask|= filter->attribute[i].attributeMask;
+      filter->attributeBoosts[i].hitCount= 0;
+      filter->boostedAttributeMask|= filter->attributeBoosts[i].attributeMask;
     } /*outer scope of for loop */}
 
-    std::sort(filter->attribute, filter->attribute+boosts.size(),
+    std::sort(filter->attributeBoosts, filter->attributeBoosts+boosts.size(),
         attributeBoostSort);
 
   return *filter;

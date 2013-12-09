@@ -30,10 +30,11 @@ namespace instantsearch {
 
 DynamicScoringFilter::DynamicScoringFilter(unsigned numberOfAttributes)
   : numberOfAttributes(numberOfAttributes), 
-  attribute(new AttributeBoost[numberOfAttributes]) {} 
+  attributeBoosts(new AttributeBoost[numberOfAttributes]) {} 
 
 DynamicScoringFilter::~DynamicScoringFilter() {
-  delete attribute;
+  if(attributeBoosts != NULL)
+    delete attributeBoosts;
 }
 
 inline
@@ -59,7 +60,7 @@ bool attributeBoostSearchCondition(const AttributeBoost&  lhs,
    associated dynamic boosts in this query */
 AttributeBoost* 
 DynamicScoringFilter::getAttributeBoost(unsigned attributeID)  {
-  return std::lower_bound(attribute, attribute+numberOfAttributes,
+  return std::lower_bound(attributeBoosts, attributeBoosts+numberOfAttributes,
       (unsigned) (1 << attributeID),
       &attributeBoostSearchCondition);
 }
@@ -100,7 +101,7 @@ float dynamicRuntimeScore(const ForwardList& record,
         numberOfKeywords, filter);
 
   for(unsigned i=0; i < filter.numberOfAttributes; ++i) 
-    filter.attribute[i].hitCount=0;
+    filter.attributeBoosts[i].hitCount=0;
 
   return rtn;
 }
