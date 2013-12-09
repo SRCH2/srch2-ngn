@@ -29,7 +29,12 @@ namespace srch2 {
 namespace instantsearch {
 
 DynamicScoringFilter::DynamicScoringFilter(unsigned numberOfAttributes)
-  : numberOfAttributes(numberOfAttributes) {}
+  : numberOfAttributes(numberOfAttributes), 
+  attribute(new AttributeBoost[numberOfAttributes]) {} 
+
+DynamicScoringFilter::~DynamicScoringFilter() {
+  delete attribute;
+}
 
 inline
 void getQueryKeywordIds(const Trie& trie, const TrieNode* root,
@@ -71,7 +76,7 @@ float dynamicRuntimeScore(const ForwardList& record,
     const SchemaInternal *const schema,
     DynamicScoringFilter& filter,
     const unsigned *const queryKeywordIDs, unsigned numberOfKeywords) {
-  struct KeywordBoost keyword[numberOfKeywords];
+  struct KeywordBoost keywordBoosts[numberOfKeywords];
 
   // For each keyword in Query 
   {
@@ -79,11 +84,11 @@ float dynamicRuntimeScore(const ForwardList& record,
     unsigned i=0;
   for(; i < numberOfKeywords; ++i) {
     if(record.haveWordInRange(schema, *queryKeyword, *queryKeyword,
-          filter.boostedAttributeMask,
-          keyword[i].id, keyword[i].attributeMask, keyword[i].score)) {
-      keyword[i].attributeMask&= filter.boostedAttributeMask;
+          filter.boostedAttributeMask, keywordBoosts[i].id, 
+          keywordBoosts[i].attributeMask, keywordBoosts[i].score)) {
+      keywordBoosts[i].attributeMask&= filter.boostedAttributeMask;
       //records runtime score changed for this keyword
-      updateAttributeHitCount(filter, keyword[i].attributeMask);
+      updateAttributeHitCount(filter, keywordBoosts[i].attributeMask);
     }
   }
   }
@@ -91,7 +96,8 @@ float dynamicRuntimeScore(const ForwardList& record,
   //TODO: handle matchingKeyword
 
   float rtn= srch2::instantsearch::DynamicScoringRanker::
-    CalculateAndAggregrateDynamicScore(keyword, numberOfKeywords, filter);
+    CalculateAndAggregrateDynamicScore(keywordBoosts, 
+        numberOfKeywords, filter);
 
   for(unsigned i=0; i < filter.numberOfAttributes; ++i) 
     filter.attribute[i].hitCount=0;

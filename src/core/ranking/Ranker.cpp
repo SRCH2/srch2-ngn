@@ -229,10 +229,10 @@ float DynamicScoringRanker::CalculateDynamicKeywordScore(
     const AttributeBoost& attributeBoost= 
       *dynamicScoringFilter.getAttributeBoost(*attribute);
     /* Each attribute boost is the log base e of the number of keyword hits in
-       that attribute plus 2, ensuring the log is greater than 1, multiplied
+       that attribute plus e-1, ensuring the log is greater than 1, multiplied
        by the attribute's boosting factor */ 
     boostValue+= 
-        std::log(attributeBoost.hitCount+2) * attributeBoost.boostFactor;
+        std::log(attributeBoost.hitCount-1+M_E) * attributeBoost.boostFactor;
   }
 
   return boostValue * keyword.score; 

@@ -27,36 +27,37 @@ namespace srch2 {
 namespace instantsearch {
 
 struct AttributeBoost {
-  /* the bitmap mask associated with this attribute. For example, if an
-     attribute has id 5 then its mask is 0000..010000 */
+  // the bitmap mask associated with this attribute. For example, if an
+  //   attribute has id 5 then its mask is 0000..010000 
   unsigned attributeMask;
-  /* the factor by which this attribute is boost. For example, if qf=title^100
-     then title's boostFactor = 100 */
+  // the factor by which this attribute is boost. For example, if qf=title^100
+  // then title's boostFactor = 100 
   unsigned boostFactor;
-  /* the number of keywords occuring in a given instance of this attribute.
-     This field is used by ranker to calculate the boost for a given record */
+  // the number of keywords occuring in a given instance of this attribute.
+  // This field is used by ranker to calculate the boost for a given record 
   unsigned hitCount;
 };
 
 struct KeywordBoost {
-  /* the runtime score associated with a given keyword of a given record */
+  // the runtime score associated with a given keyword of a given record 
   float score;
-  /* the attribute mask of where this keyword occurs in a given record*/
+  // the attribute mask of where this keyword occurs in a given record
   unsigned attributeMask;
-  /* the given id of this keyword */
+  // the given id of this keyword 
   unsigned id;
 };
 
 struct DynamicScoringFilter : ResultsPostProcessorFilter {
   const unsigned numberOfAttributes;
   unsigned boostedAttributeMask;
-  /* This array has to be sorted by attributeID descending so we can
-     perform binary lookups */
-  AttributeBoost attribute[0];
+  // This array has to be sorted by attributeID descending so we can
+  // perform binary lookups 
+  AttributeBoost *const attribute;
   void doFilter(IndexSearcher*, const Query*, QueryResults*, QueryResults*);
   AttributeBoost* getAttributeBoost(unsigned);
 
   DynamicScoringFilter(unsigned numberOfAttribute);
+  ~DynamicScoringFilter();
 };
 
 

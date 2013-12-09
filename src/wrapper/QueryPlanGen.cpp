@@ -48,14 +48,9 @@ namespace srch2 {
       const std::map<std::string,
       httpwrapper::SearchableAttributeInfoContainer>& searchableAttributes,
       const std::vector<httpwrapper::QueryFieldAttributeBoost>& boosts) {
-    void* attributeBoostVectorptr= ::operator new(sizeof(DynamicScoringFilter)+
-        sizeof(AttributeBoost)*boosts.size());
     
-    /* use placement new to fill in the underlying array of the 
-       DynamicScoringFilter structure */
     srch2is::DynamicScoringFilter *filter=
-      new (attributeBoostVectorptr) 
-      DynamicScoringFilter(boosts.size());
+      new DynamicScoringFilter(boosts.size());
     filter->boostedAttributeMask=0;
 
     {
