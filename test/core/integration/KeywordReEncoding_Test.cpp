@@ -314,7 +314,7 @@ void test1()
     indexer = Indexer::load(indexMetaData1);
 
     //threadNumber = 1000;
-    threadNumber = 2;
+    threadNumber = 1;
     threadReaders = (pthread_t *) malloc((threadNumber-1) * sizeof(*threadReaders)); // n-1 readers
     pthread_attr_init(&pthread_custom_attr);
     p = (parm *)malloc(sizeof(parm) * threadNumber);

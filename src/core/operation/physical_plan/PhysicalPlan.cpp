@@ -149,7 +149,7 @@ const InvertedIndex * PhysicalPlan::getInvertedIndex(){
 	return this->queryEvaluator->getInvertedIndex();
 }
 
-const Trie * PhysicalPlan::getTrie(){
+const Trie * PhysicalPlan::getTsrie(){
 	return this->queryEvaluator->getTrie();
 }
 

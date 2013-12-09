@@ -103,7 +103,9 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
     	string suggestionString ;
-        this->indexData->trie->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+        this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
                                                suggestion->second, suggestionString);
     	suggestions.push_back(suggestionString);
     }
@@ -242,7 +244,9 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
 			for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 				std::vector<CharType> temp;
-				this->getTrie()->getPrefixString(this->indexReadToken.trieRootNodeSharedPtr->root,
+				boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+				this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+				this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
 													   matchingKeywordTrieNodes.at(i), temp);
 				string str;
 				charTypeVectorToUtf8String(temp, str);

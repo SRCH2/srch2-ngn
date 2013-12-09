@@ -230,7 +230,7 @@ public:
 
 	ForwardIndex * getForwardIndex();
 	const InvertedIndex * getInvertedIndex();
-	const Trie * getTrie();
+	const Trie * getTsrie();
 	PhysicalPlanNode * getPlanTree();
 	void setPlanTree(PhysicalPlanNode * tree);
 	Ranker * getRanker();
