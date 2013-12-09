@@ -100,6 +100,7 @@ float dynamicRuntimeScore(const ForwardList& record,
     CalculateAndAggregrateDynamicScore(keywordBoosts, 
         numberOfKeywords, filter);
 
+  //Clear the counts for the next record
   for(unsigned i=0; i < filter.numberOfAttributes; ++i) 
     filter.attributeBoosts[i].hitCount=0;
 
