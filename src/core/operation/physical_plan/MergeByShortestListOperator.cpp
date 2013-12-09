@@ -73,7 +73,7 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		nextRecord->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
-		nextRecord->setRecordRuntimeScore(computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 		// save it in previousResultsVector
 		this->previousResultsFound.push_back(nextRecord->getRecordId());
 		return nextRecord;
@@ -128,7 +128,7 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
 			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
 		}else{
-			PhysicalPlanRandomAccessVerificationParameters parameters;
+			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;
 			parameters.prefixMatchPenalty = params.prefixMatchPenalty;

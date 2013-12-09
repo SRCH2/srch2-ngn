@@ -102,7 +102,7 @@ void test1(){
 	unionOpOp->addChild(&list3OpOp);
 	unionOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	unionOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -205,7 +205,7 @@ void test2(){
 	unionOpOp->addChild(&list3OpOp);
 	unionOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	unionOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -327,7 +327,7 @@ void test3(){
 	unionOpOp->addChild(&list3OpOp);
 	unionOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5, SearchTypeTopKQuery);
 	unionOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){

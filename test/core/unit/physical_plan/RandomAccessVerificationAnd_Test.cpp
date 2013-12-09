@@ -99,8 +99,8 @@ void test1(){
 	verificationOpOp->addChild(&list3OpOp);
 	verificationOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
-	PhysicalPlanRandomAccessVerificationParameters verificationParams;
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
+	PhysicalPlanRandomAccessVerificationParameters verificationParams(params.ranker);
 	verificationOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	for(unsigned i = 1 ; i <= 8 ; ++i){
@@ -204,8 +204,8 @@ void test2(){
 	verificationOpOp->addChild(&list3OpOp);
 	verificationOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
-	PhysicalPlanRandomAccessVerificationParameters verificationParams;
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
+	PhysicalPlanRandomAccessVerificationParameters verificationParams(params.ranker);
 	verificationOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	for(unsigned i = 1 ; i <= 8 ; ++i){
@@ -327,8 +327,8 @@ void test3(){
 	verificationOpOp->addChild(&list3OpOp);
 	verificationOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
-	PhysicalPlanRandomAccessVerificationParameters verificationParams;
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
+	PhysicalPlanRandomAccessVerificationParameters verificationParams(params.ranker);
 	verificationOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	for(unsigned i = 1 ; i <= 9 ; ++i){

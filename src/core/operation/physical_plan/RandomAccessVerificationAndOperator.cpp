@@ -10,11 +10,9 @@ namespace instantsearch {
 ///////////////////////////// PhysicalPlan Random Access Verification Term Operator ////////////////////////////
 
 RandomAccessVerificationAndOperator::RandomAccessVerificationAndOperator() {
-	//TODO
 }
 
 RandomAccessVerificationAndOperator::~RandomAccessVerificationAndOperator(){
-	//TODO
 }
 bool RandomAccessVerificationAndOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	// open all children

@@ -155,7 +155,23 @@ ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verb
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(PhraseSearch_Test PROPERTIES ENVIRONMENT "positionIndexFile=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/phraseSearch/positionIndex.txt")
 
+ADD_TEST(MergeByShortestList_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeByShortestList_Test "--verbose")
 
+ADD_TEST(MergeSortedById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeSortedById_Test "--verbose")
+
+ADD_TEST(MergeTopK_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeTopK_Test "--verbose")
+
+ADD_TEST(SortById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/SortById_Test "--verbose")
+
+ADD_TEST(SortByScore_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/SortByScore_Test "--verbose")
+
+ADD_TEST(UnionSortedById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/UnionSortedById_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationAnd_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationAnd_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationOr_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationOr_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationNot_Test "--verbose")
 
 
 #wrapper related tests should be added below this line

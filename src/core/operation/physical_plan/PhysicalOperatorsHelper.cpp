@@ -40,10 +40,10 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 				parameters.attributeBitmaps.push_back(termAttributeBitmap);
 				parameters.prefixEditDistances.push_back(distance);
 				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-				parameters.runTimeTermRecordScore = DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
 							term->getKeyword()->size(),
 							isPrefixMatch,
-							parameters.prefixMatchPenalty , term->getSimilarityBoost() ) ;
+							parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
 				parameters.staticTermRecordScore = termRecordStaticScore ;
 				// parameters.positionIndexOffsets ????
 				return true;
@@ -51,17 +51,6 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 		}
 	}
 	return false;
-}
-
-
-float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
-
-	float resultScore = 0;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		resultScore += *(score);
-	}
-	return resultScore;
 }
 
 
@@ -77,22 +66,9 @@ bool verifyByRandomAccessAndHelper(PhysicalPlanOptimizationNode * node, Physical
 			return false;
 		}
 	}
-	parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForAnd(runtimeScore);
+	parameters.runTimeTermRecordScore = parameters.ranker->computeAggregatedRuntimeScoreForAnd(runtimeScore);
 
 	return true;
-}
-
-float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
-
-	// max
-	float resultScore = -1;
-
-	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
-		if((*score) > resultScore){
-			resultScore = (*score);
-		}
-	}
-	return resultScore;
 }
 
 bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalPlanRandomAccessVerificationParameters & parameters){
@@ -109,7 +85,7 @@ bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalP
 		}
 	}
 	if(verified == true){ // so we need to aggregate runtime and static score
-		parameters.runTimeTermRecordScore = computeAggregatedRuntimeScoreForOr(runtimeScore);
+		parameters.runTimeTermRecordScore = parameters.ranker->computeAggregatedRuntimeScoreForOr(runtimeScore);
 	}
 	return verified;
 }

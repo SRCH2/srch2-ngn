@@ -230,6 +230,8 @@ public:
 			}
 		}
 
+		ASSERT(false);
+		return NULL;
 	}
 
 

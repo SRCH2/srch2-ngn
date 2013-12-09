@@ -111,6 +111,33 @@ namespace srch2
     }
 
 
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+    	float resultScore = 0;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		resultScore += *(score);
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
+
+    	// max
+    	float resultScore = -1;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		if((*score) > resultScore){
+    			resultScore = (*score);
+    		}
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeScoreForNot(float score){
+    	return 1 - score;
+    }
+
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const
       {
       const vector<Term *> *queryTerms = query->getQueryTerms();

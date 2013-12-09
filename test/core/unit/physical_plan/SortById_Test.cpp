@@ -45,7 +45,7 @@ void test1(){
 
 	sortOpOp->addChild(&list1OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	sortOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -88,7 +88,7 @@ void test2(){
 
 	sortOpOp->addChild(&list1OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	sortOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){

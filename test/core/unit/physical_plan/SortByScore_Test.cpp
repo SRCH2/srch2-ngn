@@ -45,7 +45,7 @@ void test1(){
 
 	sortOpOp->addChild(&list1OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	sortOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -88,7 +88,7 @@ void test2(){
 
 	mergeOpOp->addChild(&list1OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	mergeOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -109,7 +109,7 @@ void test3(){
 	/*
 	 * List1 : (3,1),(5,1),(4,1),(6,3),(1,5),(2,4),(7,6),(8,7)
 	 *
-	 * Output : (8,7),(7,6),(1,5),(2,4),(6,3),(5,1),(4,1),(3,1)
+	 * Output : (8,7),(7,6),(1,5),(2,4),(6,3),(3,1),(4,1),(5,1)
 	 */
 	PhysicalPlanRecordItemFactory recordFactory;
 
@@ -146,7 +146,7 @@ void test3(){
 
 	sortOpOp->addChild(&list1OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	sortOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -158,7 +158,7 @@ void test3(){
 	}
 	sortOp->close(params);
 
-	unsigned correctResultsArray[8] = {8,7,1,2,6,5,4,3};
+	unsigned correctResultsArray[8] = {8,7,1,2,6,3,4,5};
 	vector<unsigned> correctResults(correctResultsArray , correctResultsArray+8);
 	ASSERT(checkResults(correctResults,operatorResults));
 

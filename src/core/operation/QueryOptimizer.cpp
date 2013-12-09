@@ -71,7 +71,7 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
  */
 void QueryOptimizer::chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan){
 	// TODO : for now, we just simply pass the same search type
-	physicalPlan.setSearchTypeAndRanker(logicalPlan->getSearchType());
+	physicalPlan.setSearchType(logicalPlan->getSearchType());
 }
 
 void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan){
@@ -82,7 +82,8 @@ void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physic
 		k = logicalPlan->getResultsToRetrieve() + logicalPlan->getOffset() ;
 	}
 	// Parameter exactOnly for exact/fuzzy policy.
-	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(), logicalPlan->exactQuery->getPrefixMatchPenalty());
+	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(),
+			logicalPlan->exactQuery->getPrefixMatchPenalty(), logicalPlan->getSearchType());
 
 	physicalPlan.setExecutionParameters(parameters);
 }
@@ -344,10 +345,10 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 
-		cout << "========================================================" << endl;
-		cout << "Cost is " << cost.cost << endl;
-		(*treeOption)->printSubTree();
-		cout << "========================================================" << endl;
+//		cout << "========================================================" << endl;
+//		cout << "Cost is " << cost.cost << endl;
+//		(*treeOption)->printSubTree();
+//		cout << "========================================================" << endl;
 
 		if(minPlan == NULL){
 			minPlan = (*treeOption);
@@ -366,6 +367,7 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 	// now we move on the tree structure and create the real physical plan
 	PhysicalPlanOptimizationNode * optimizationResult = NULL;
 	PhysicalPlanNode * executableResult = NULL;
+	// TODO possible optimization : we can use PhysicalPlanOptimizationNodes from the chosenTree
 	switch (chosenTree->getType()) {
 		case PhysicalPlanNode_SortById:{
 			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByIdOptimizationOperator();

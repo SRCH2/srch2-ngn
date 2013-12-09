@@ -129,7 +129,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
                 // Cursor always points to next element in invertedList
                 currentHeapMax->recordId = recordId;
                 currentHeapMax->termRecordRuntimeScore =
-                    DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
+                    params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
                             currentHeapMax->ed,
                             term->getKeyword()->size(),
                             currentHeapMax->isPrefixMatch,

@@ -115,7 +115,7 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 				(*match)->getPositionIndexOffsets(positionIndexOffsets);
 			}
 			// static score, not for now
-			record->setRecordRuntimeScore(computeAggregatedRuntimeScoreForAnd(runtimeScores));
+			record->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd(runtimeScores));
 			record->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			record->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			record->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);

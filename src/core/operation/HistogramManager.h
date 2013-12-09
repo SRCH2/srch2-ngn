@@ -54,16 +54,20 @@ public:
 	~LogicalPlanNodeAnnotation(){
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
-        if (activeNodeSetExact->isResultsCached() == true){
-        	activeNodeSetExact->busyBit->setFree();
-        }else{
-	        delete activeNodeSetExact;
-	    }
-        if (activeNodeSetFuzzy->isResultsCached() == true){
-        	activeNodeSetFuzzy->busyBit->setFree();
-        }else{
-	        delete activeNodeSetFuzzy;
-	    }
+		if(activeNodeSetExact != NULL){
+			if (activeNodeSetExact->isResultsCached() == true){
+				activeNodeSetExact->busyBit->setFree();
+			}else{
+				delete activeNodeSetExact;
+			}
+		}
+		if(activeNodeSetFuzzy != NULL){
+			if (activeNodeSetFuzzy->isResultsCached() == true){
+				activeNodeSetFuzzy->busyBit->setFree();
+			}else{
+				delete activeNodeSetFuzzy;
+			}
+		}
 	}
 	unsigned getEstimatedNumberOfResults() const{
 		return this->estimatedNumberOfResults;

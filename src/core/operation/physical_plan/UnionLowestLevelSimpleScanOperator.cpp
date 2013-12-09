@@ -136,8 +136,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	// runtime score
 	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) !=
 			this->invertedListLeafNodes.at(this->invertedListOffset);
-	////// TODO ???????????????????????????? RANKER
-	newItem->setRecordRuntimeScore(	DefaultTopKRanker::computeTermRecordRuntimeScore(termRecordStaticScore,
+	newItem->setRecordRuntimeScore(	params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
             this->invertedListDistances.at(this->invertedListOffset),
             term->getKeyword()->size(),
             isPrefixMatch,
@@ -148,7 +147,6 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	vector<unsigned> attributeBitmaps;
 	attributeBitmaps.push_back(termAttributeBitmap);
 	newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
-	// !!!! runtime score is not set here !!!! (we don't have it here and we don't need it here)
 
 
 

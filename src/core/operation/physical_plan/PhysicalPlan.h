@@ -39,15 +39,41 @@ struct PhysicalPlanExecutionParameters {
 	// if this variable is false the operator only returns exact matches by calling getNext(...)
 	bool isFuzzy;
 	float prefixMatchPenalty ;
-	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty){
+	Ranker * ranker;
+	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
 		this->isFuzzy = isFuzzy ;
 		this->prefixMatchPenalty = prefixMatchPenalty;
+		switch (searchType) {
+			case srch2is::SearchTypeTopKQuery:
+				this->ranker = new DefaultTopKRanker();
+				break;
+			case srch2is::SearchTypeGetAllResultsQuery:
+				this->ranker = new GetAllResultsRanker();
+				break;
+			case srch2is::SearchTypeMapQuery:
+				this->ranker = new SpatialRanker();
+				break;
+			case srch2is::SearchTypeRetrievById:
+				this->ranker = new DefaultTopKRanker();
+				break;
+		}
+	}
+
+	~PhysicalPlanExecutionParameters(){
+		if(this->ranker != NULL){
+			delete ranker;
+		}
 	}
 };
 
 class PhysicalPlanRecordItem;
 struct PhysicalPlanRandomAccessVerificationParameters {
+	Ranker * ranker ;
+	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker){
+		this->ranker = ranker;
+	}
+
     float runTimeTermRecordScore;
     float staticTermRecordScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
@@ -226,22 +252,18 @@ public:
 	~PhysicalPlan();
 
 
-	PhysicalPlanNode * createNode(PhysicalPlanNodeType nodeType);
-
-	ForwardIndex * getForwardIndex();
-	const InvertedIndex * getInvertedIndex();
-	const Trie * getTsrie();
+//	ForwardIndex * getForwardIndex();
+//	const InvertedIndex * getInvertedIndex();
 	PhysicalPlanNode * getPlanTree();
 	void setPlanTree(PhysicalPlanNode * tree);
 	Ranker * getRanker();
-	void setSearchTypeAndRanker(srch2is::QueryType searchType);
+	void setSearchType(srch2is::QueryType searchType);
 	srch2is::QueryType getSearchType();
 	void setExecutionParameters(PhysicalPlanExecutionParameters * executionParameters);
 	PhysicalPlanExecutionParameters * getExecutionParameters();
 private:
 	QueryEvaluatorInternal * queryEvaluator;
 	PhysicalPlanNode * tree;
-    Ranker *ranker;
     srch2is::QueryType searchType;
     PhysicalPlanExecutionParameters * executionParameters;
 

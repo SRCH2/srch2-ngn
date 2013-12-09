@@ -34,12 +34,8 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator,
 		PhysicalPlanRandomAccessVerificationParameters & parameters);
 
 
-float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
-
 
 bool verifyByRandomAccessAndHelper(PhysicalPlanOptimizationNode * node, PhysicalPlanRandomAccessVerificationParameters & parameters);
-
-float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
 
 bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalPlanRandomAccessVerificationParameters & parameters);
 

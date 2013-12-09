@@ -102,7 +102,7 @@ void test1(){
 	mergeOpOp->addChild(&list3OpOp);
 	mergeOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	mergeOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -205,7 +205,7 @@ void test2(){
 	mergeOpOp->addChild(&list3OpOp);
 	mergeOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	mergeOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){
@@ -326,7 +326,7 @@ void test3(){
 	mergeOpOp->addChild(&list3OpOp);
 	mergeOpOp->addChild(&list4OpOp);
 
-	PhysicalPlanExecutionParameters params(10,true,0.5);
+	PhysicalPlanExecutionParameters params(10,true,0.5,SearchTypeTopKQuery);
 	mergeOp->open(NULL, params);
 	vector<unsigned> operatorResults;
 	while(true){

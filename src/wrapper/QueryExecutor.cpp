@@ -79,7 +79,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     };
 
     // Free objects
-    delete queryEvaluator;
+    delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
 
 void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {

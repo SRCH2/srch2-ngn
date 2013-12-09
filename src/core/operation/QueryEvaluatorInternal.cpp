@@ -192,7 +192,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	bool isFuzzy = logicalPlan->isFuzzy();
 	// we set fuzzy to false to the first session which is exact
 	logicalPlan->setFuzzy(false);
-	PhysicalPlanExecutionParameters params(K, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty());
+	PhysicalPlanExecutionParameters params(K, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getSearchType());
 
 	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
@@ -494,6 +494,7 @@ void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, u
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
+	delete physicalPlanRecordItemFactory;
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){

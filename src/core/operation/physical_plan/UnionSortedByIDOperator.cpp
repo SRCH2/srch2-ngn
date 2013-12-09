@@ -92,6 +92,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		if(this->nextItemsFromChildren.at(childOffset) != NULL &&
 				this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
+			runtimeScores.push_back( this->nextItemsFromChildren.at(childOffset)->getRecordRuntimeScore() );
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
@@ -103,6 +104,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 		}
 	}
 	// prepare the record and return it
+	minIDRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForOr(runtimeScores));
 	minIDRecord->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 	minIDRecord->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
 	minIDRecord->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);

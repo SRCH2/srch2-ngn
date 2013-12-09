@@ -124,34 +124,23 @@ PhysicalPlanOptimizationNode * PhysicalPlanNode::getPhysicalPlanOptimizationNode
 PhysicalPlan::PhysicalPlan(	QueryEvaluatorInternal * queryEvaluator){
 	this->queryEvaluator = 	queryEvaluator;
 	this->tree = NULL;
-	this->ranker = NULL;
 	this->executionParameters = NULL;
 }
 
 PhysicalPlan::~PhysicalPlan(){
 	if(tree != NULL) delete tree;
-	if(ranker != NULL) delete ranker;
 	if(executionParameters != NULL) delete executionParameters;
 }
 
 
-PhysicalPlanNode * PhysicalPlan::createNode(PhysicalPlanNodeType nodeType){
 
-	// TODO : based on the type, one iterator must be allocated and returned.
-	return NULL;
-}
-
-ForwardIndex * PhysicalPlan::getForwardIndex(){
-	return this->queryEvaluator->getForwardIndex();
-}
-
-const InvertedIndex * PhysicalPlan::getInvertedIndex(){
-	return this->queryEvaluator->getInvertedIndex();
-}
-
-const Trie * PhysicalPlan::getTsrie(){
-	return this->queryEvaluator->getTrie();
-}
+//ForwardIndex * PhysicalPlan::getForwardIndex(){
+//	return this->queryEvaluator->getForwardIndex();
+//}
+//
+//const InvertedIndex * PhysicalPlan::getInvertedIndex(){
+//	return this->queryEvaluator->getInvertedIndex();
+//}
 
 PhysicalPlanNode * PhysicalPlan::getPlanTree(){
 	return this->tree;
@@ -161,31 +150,8 @@ void PhysicalPlan::setPlanTree(PhysicalPlanNode * tree){
 	this->tree = tree;
 }
 
-Ranker * PhysicalPlan::getRanker(){
-	ASSERT(ranker != NULL);
-	return this->ranker;
-}
-
-
-void PhysicalPlan::setSearchTypeAndRanker(srch2is::QueryType searchType){
+void PhysicalPlan::setSearchType(srch2is::QueryType searchType){
 	this->searchType = searchType;
-	if(this->ranker != NULL){
-		delete this->ranker;
-	}
-	switch (this->searchType) {
-		case srch2is::SearchTypeTopKQuery:
-			this->ranker = new DefaultTopKRanker();
-			break;
-		case srch2is::SearchTypeGetAllResultsQuery:
-			this->ranker = new GetAllResultsRanker();
-			break;
-		case srch2is::SearchTypeMapQuery:
-			this->ranker = new SpatialRanker();
-			break;
-		case srch2is::SearchTypeRetrievById:
-			this->ranker = new DefaultTopKRanker();
-			break;
-	}
 }
 
 srch2is::QueryType PhysicalPlan::getSearchType(){
