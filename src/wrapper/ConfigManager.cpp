@@ -268,6 +268,270 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, bool &conf
     }
 }
 
+void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    xml_node childNode = mongoDbNode.child(hostString);
+    if (childNode && childNode.text()) {
+        this->mongoHost = string(childNode.text().get());
+    } else {
+        parseError << "mongo host is not set.\n";
+	configSuccess = false;
+	return;
+    }
+
+    childNode = mongoDbNode.child(portString);
+    if (childNode && childNode.text()) {
+        this->mongoPort = string(childNode.text().get());
+    } else {
+        this->mongoPort = ""; // use default port
+    }
+
+    childNode = mongoDbNode.child(dbString);
+    if (childNode && childNode.text()) {
+        this->mongoDbName = string(childNode.text().get());
+    } else {
+        parseError << "mongo data base name is not set.\n";
+	configSuccess = false;
+	return;
+    }
+
+    childNode = mongoDbNode.child(collectionString);
+    if (childNode && childNode.text()) {
+        this->mongoCollection = string(childNode.text().get());
+    } else {
+        parseError << "mongo collection name is not set.\n";
+	configSuccess = false;
+	return;
+    }
+
+    childNode = mongoDbNode.child(listenerWaitTimeString);
+    if (childNode && childNode.text()) {
+        this->mongoListenerWaitTime = childNode.text().as_uint(1);
+    } else {
+        this->mongoListenerWaitTime = 1;
+    }
+
+    childNode = mongoDbNode.child(maxRetryOnFailureString);
+    if (childNode && childNode.text()) {
+        this->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
+    } else {
+        this->mongoListenerMaxRetryOnFailure = 3;
+    }
+
+    // For MongoDB as a data source , primary key must be "_id" which is a unique key generated
+    // by MongoDB. It is important to set primary key to "_id" because oplog entries for inserts
+    // and deletes in MongoDB can be identified by _id only.
+    this->primaryKey = "_id";
+}
+
+void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    // scoringExpressionString is an optional field
+    this->scoringExpressionString = "1"; // By default it is 1
+    xml_node childNode = queryNode.child(rankingAlgorithmString).child(recordScoreExpressionString);
+    if (childNode && childNode.text()) {
+        string exp = childNode.text().get();
+        boost::algorithm::trim(exp);
+        if (this->isValidRecordScoreExpession(exp)) {
+            this->scoringExpressionString = exp;
+        } else {
+            configSuccess = false;
+            parseError << "The expression provided for recordScoreExpression is not a valid.";
+            return;
+        }
+    }
+
+    // fuzzyMatchPenalty is an optional field
+    this->fuzzyMatchPenalty = 1; // By default it is 1
+    childNode = queryNode.child(fuzzyMatchPenaltyString);
+    if (childNode && childNode.text()) {
+        string qtsb = childNode.text().get();
+        if (this->isValidFuzzyMatchPenalty(qtsb)) {
+            this->fuzzyMatchPenalty = childNode.text().as_float();
+        } else {
+            configSuccess = false;
+            parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
+            return;
+        }
+    }
+
+
+    // queryTermSimilarityThreshold is an optional field
+    //By default it is 0.5.
+    this->queryTermSimilarityThreshold = 0.5;
+    childNode = queryNode.child(queryTermSimilarityThresholdString);
+    if (childNode && childNode.text()) {
+        string qtsb = childNode.text().get();
+        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
+            this->queryTermSimilarityThreshold = childNode.text().as_float();
+            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
+                this->queryTermSimilarityThreshold = 0.5;
+                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
+            }
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
+            return;
+        }
+    }
+
+    // queryTermLengthBoost is an optional field
+    this->queryTermLengthBoost = 0.5; // By default it is 0.5
+    childNode = queryNode.child(queryTermLengthBoostString);
+    if (childNode && childNode.text()) {
+        string qtlb = childNode.text().get();
+        if (this->isValidQueryTermLengthBoost(qtlb)) {
+            this->queryTermLengthBoost = childNode.text().as_float();
+        } else {
+            configSuccess = false;
+            parseError << "The expression provided for queryTermLengthBoost is not a valid.";
+            return;
+        }
+    }
+
+    // prefixMatchPenalty is an optional field.
+    this->prefixMatchPenalty = 0.95; // By default it is 0.5
+    childNode = queryNode.child(prefixMatchPenaltyString);
+    if (childNode && childNode.text()) {
+        string pm = childNode.text().get();
+
+        if (this->isValidPrefixMatch(pm)) {
+            this->prefixMatchPenalty = childNode.text().as_float();
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for prefixMatch is not a valid.";
+            return;
+        }
+    }
+
+    // cacheSize is an optional field
+    this->cacheSizeInBytes = 50 * 1048576;
+    childNode = queryNode.child(cacheSizeString);
+    if (childNode && childNode.text()) {
+        string cs = childNode.text().get();
+        if (this->isValidCacheSize(cs)) {
+            this->cacheSizeInBytes = childNode.text().as_uint();
+        } else {
+            parseError << "cache size provided is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // rows is an optional field
+    this->resultsToRetrieve = 10; // by default it is 10
+    childNode = queryNode.child(rowsString);
+    if (childNode && childNode.text()) {
+        string row = childNode.text().get();
+        if (isValidRows(row)) {
+            this->resultsToRetrieve = childNode.text().as_int();
+        } else {
+            parseError << "rows is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // maxSearchThreads is an optional field
+    this->numberOfThreads = 1; // by default it is 1
+    childNode = queryNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
+        if (isValidMaxSearchThreads(mst)) {
+            this->numberOfThreads = childNode.text().as_int();
+        } else {
+            parseError << "maxSearchThreads is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // fieldBasedSearch is an optional field
+    if (this->enablePositionIndex == false) {
+        this->supportAttributeBasedSearch = false; // by default it is false
+        childNode = queryNode.child(fieldBasedSearchString);
+        if (childNode && childNode.text()) {
+            string configValue = childNode.text().get();
+            if (this->isValidBooleanValue(configValue)) {
+                this->supportAttributeBasedSearch = childNode.text().as_bool();
+            } else {
+                parseError << "fieldBasedSearch is not set correctly.\n";
+                configSuccess = false;
+                return;
+            }
+        }
+    } else {
+        // attribute based search is enabled if positional index is enabled
+        this->supportAttributeBasedSearch = true;
+    }
+
+    // queryTermFuzzyType is an optional field
+    this->exactFuzzy = false; // by default it is false
+    childNode = queryNode.child(queryTermFuzzyTypeString);
+    if (childNode && childNode.text()) {
+        string qtmt = childNode.text().get();
+        if (this->isValidQueryTermFuzzyType(qtmt)) {
+            this->exactFuzzy = childNode.text().as_bool();
+        } else {
+            parseError << "The queryTermFuzzyType that is provided is not valid";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // queryTermPrefixType is an optional field
+    this->queryTermPrefixType = false;
+    childNode = queryNode.child(queryTermPrefixTypeString);
+    if (childNode && childNode.text()) {
+        string qt = childNode.text().get();
+        if (this->isValidQueryTermPrefixType(qt)) {
+            this->queryTermPrefixType = childNode.text().as_bool();
+        } else {
+            parseError << "The queryTerm that is provided is not valid";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // responseFormat is an optional field
+    this->searchResponseJsonFormat = 0; // by default it is 10
+    childNode = queryNode.child(queryResponseWriterString).child(responseFormatString);
+    if (childNode && childNode.text()) {
+        string rf = childNode.text().get();
+        if (this->isValidResponseFormat(rf)) {
+            this->searchResponseJsonFormat = childNode.text().as_int();
+        } else {
+            parseError << "The provided responseFormat is not valid";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // responseContent is an optional field
+    this->searchResponseFormat = (ResponseType)0; // by default it is 0
+    childNode = queryNode.child(queryResponseWriterString).child(responseContentString);
+    if (childNode) {
+        string type = childNode.attribute(typeString).value();
+        if (this->isValidResponseContentType(type)) {
+            this->searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
+        } else {
+            parseError << "The type provided for responseContent is not valid";
+            configSuccess = false;
+            return;
+        }
+
+        if (this->searchResponseFormat == 2) {
+            if (childNode.text()) {
+                this->splitString(string(childNode.text().get()), ",", this->attributesToReturn);
+            } else {
+                parseError << "For specified response content type, return fields should be provided.";
+                configSuccess = false;
+                return;
+            }
+        }
+    }
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings)
 {
@@ -746,6 +1010,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         this->searchType = 0;
         this->fieldLongitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
         this->fieldLatitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
+
+	// TODO: Should this be in parseQuery()?
         childNode = configNode.child(queryString).child(searcherTypeString);
         if (childNode && childNode.text()) {
             string st = childNode.text().get();
@@ -980,213 +1246,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    // scoringExpressionString is an optional field
-    this->scoringExpressionString = "1"; // By default it is 1
-    childNode = configNode.child(queryString).child(rankingAlgorithmString).child(recordScoreExpressionString);
-    if (childNode && childNode.text()) {
-        string exp = childNode.text().get();
-        boost::algorithm::trim(exp);
-        if (this->isValidRecordScoreExpession(exp)) {
-            this->scoringExpressionString = exp;
-        } else {
-            configSuccess = false;
-            parseError << "The expression provided for recordScoreExpression is not a valid.";
-            return;
-        }
+    childNode = configNode.child(queryString);
+    parseQuery(childNode, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
     }
-
-    // fuzzyMatchPenalty is an optional field
-    this->fuzzyMatchPenalty = 1; // By default it is 1
-    childNode = configNode.child(queryString).child(fuzzyMatchPenaltyString);
-    if (childNode && childNode.text()) {
-        string qtsb = childNode.text().get();
-        if (this->isValidFuzzyMatchPenalty(qtsb)) {
-            this->fuzzyMatchPenalty = childNode.text().as_float();
-        } else {
-            configSuccess = false;
-            parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
-            return;
-        }
-    }
-
-
-    // queryTermSimilarityThreshold is an optional field
-    //By default it is 0.5.
-    this->queryTermSimilarityThreshold = 0.5;
-    childNode = configNode.child(queryString).child(queryTermSimilarityThresholdString);
-    if (childNode && childNode.text()) {
-        string qtsb = childNode.text().get();
-        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = childNode.text().as_float();
-            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
-                this->queryTermSimilarityThreshold = 0.5;
-                parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
-            }
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for queryTermSimilarityThreshold is not a valid.";
-            return;
-        }
-    }
-
-    // queryTermLengthBoost is an optional field
-    this->queryTermLengthBoost = 0.5; // By default it is 0.5
-    childNode = configNode.child(queryString).child(queryTermLengthBoostString);
-    if (childNode && childNode.text()) {
-        string qtlb = childNode.text().get();
-        if (this->isValidQueryTermLengthBoost(qtlb)) {
-            this->queryTermLengthBoost = childNode.text().as_float();
-        } else {
-            configSuccess = false;
-            parseError << "The expression provided for queryTermLengthBoost is not a valid.";
-            return;
-        }
-    }
-
-    // prefixMatchPenalty is an optional field.
-    this->prefixMatchPenalty = 0.95; // By default it is 0.5
-    childNode = configNode.child(queryString).child(prefixMatchPenaltyString);
-    if (childNode && childNode.text()) {
-        string pm = childNode.text().get();
-
-        if (this->isValidPrefixMatch(pm)) {
-            this->prefixMatchPenalty = childNode.text().as_float();
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for prefixMatch is not a valid.";
-            return;
-        }
-    }
-
-    // cacheSize is an optional field
-    this->cacheSizeInBytes = 50 * 1048576;
-    childNode = configNode.child(queryString).child(cacheSizeString);
-    if (childNode && childNode.text()) {
-        string cs = childNode.text().get();
-        if (this->isValidCacheSize(cs)) {
-            this->cacheSizeInBytes = childNode.text().as_uint();
-        } else {
-            parseError << "cache size provided is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // rows is an optional field
-    this->resultsToRetrieve = 10; // by default it is 10
-    childNode = configNode.child(queryString).child(rowsString);
-    if (childNode && childNode.text()) {
-        string row = childNode.text().get();
-        if (isValidRows(row)) {
-            this->resultsToRetrieve = childNode.text().as_int();
-        } else {
-            parseError << "rows is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // maxSearchThreads is an optional field
-    this->numberOfThreads = 1; // by default it is 1
-    childNode = configNode.child(queryString).child(maxSearchThreadsString);
-    if (childNode && childNode.text()) {
-        string mst = childNode.text().get();
-        if (isValidMaxSearchThreads(mst)) {
-            this->numberOfThreads = childNode.text().as_int();
-        } else {
-            parseError << "maxSearchThreads is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // fieldBasedSearch is an optional field
-    if (this->enablePositionIndex == false) {
-        this->supportAttributeBasedSearch = false; // by default it is false
-        childNode = configNode.child(queryString).child(fieldBasedSearchString);
-        if (childNode && childNode.text()) {
-            string configValue = childNode.text().get();
-            if (this->isValidBooleanValue(configValue)) {
-                this->supportAttributeBasedSearch = childNode.text().as_bool();
-            } else {
-                parseError << "fieldBasedSearch is not set correctly.\n";
-                configSuccess = false;
-                return;
-            }
-        }
-    } else {
-        // attribute based search is enabled if positional index is enabled
-        this->supportAttributeBasedSearch = true;
-    }
-
-    // queryTermFuzzyType is an optional field
-    this->exactFuzzy = false; // by default it is false
-    childNode = configNode.child(queryString).child(queryTermFuzzyTypeString);
-    if (childNode && childNode.text()) {
-        string qtmt = childNode.text().get();
-        if (this->isValidQueryTermFuzzyType(qtmt)) {
-            this->exactFuzzy = childNode.text().as_bool();
-        } else {
-            parseError << "The queryTermFuzzyType that is provided is not valid";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // queryTermPrefixType is an optional field
-    this->queryTermPrefixType = false;
-    childNode = configNode.child(queryString).child(queryTermPrefixTypeString);
-    if (childNode && childNode.text()) {
-        string qt = childNode.text().get();
-        if (this->isValidQueryTermPrefixType(qt)) {
-            this->queryTermPrefixType = childNode.text().as_bool();
-        } else {
-            parseError << "The queryTerm that is provided is not valid";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // responseFormat is an optional field
-    this->searchResponseJsonFormat = 0; // by default it is 10
-    childNode = configNode.child(queryString).child(queryResponseWriterString).child(responseFormatString);
-    if (childNode && childNode.text()) {
-        string rf = childNode.text().get();
-        if (this->isValidResponseFormat(rf)) {
-            this->searchResponseJsonFormat = childNode.text().as_int();
-        } else {
-            parseError << "The provided responseFormat is not valid";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // responseContent is an optional field
-    this->searchResponseFormat = (ResponseType)0; // by default it is 0
-    childNode = configNode.child(queryString).child(queryResponseWriterString).child(responseContentString);
-    if (childNode) {
-        string type = childNode.attribute(typeString).value();
-        if (this->isValidResponseContentType(type)) {
-            this->searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
-        } else {
-            parseError << "The type provided for responseContent is not valid";
-            configSuccess = false;
-            return;
-        }
-
-        if (this->searchResponseFormat == 2) {
-            if (childNode.text()) {
-                this->splitString(string(childNode.text().get()), ",", this->attributesToReturn);
-            } else {
-                parseError << "For specified response content type, return fields should be provided.";
-                configSuccess = false;
-                return;
-            }
-        }
-
-    }
-
-
 
     this->writeApiType = HTTPWRITEAPI;
 
@@ -1302,53 +1366,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->attributeToSort = 0;
 
     if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
-      childNode = configNode.child(mongoDbString).child(hostString);
-    	if (childNode && childNode.text()) {
-    		this->mongoHost = string(childNode.text().get());
-    	}else {
-    		parseError << "mongo host is not set.\n";
-    		configSuccess = false;
-    		return;
-    	}
-    	childNode = configNode.child(mongoDbString).child(portString);
-    	if (childNode && childNode.text()) {
-    		this->mongoPort = string(childNode.text().get());
-    	}else {
-    		this->mongoPort = ""; // use default port
-    	}
-    	childNode = configNode.child(mongoDbString).child(dbString);
-    	if (childNode && childNode.text()) {
-    		this->mongoDbName = string(childNode.text().get());
-    	}else {
-    		parseError << "mongo data base name is not set.\n";
-    		configSuccess = false;
-    		return;
-    	}
-    	childNode = configNode.child(mongoDbString).child(collectionString);
-    	if (childNode && childNode.text()) {
-    		this->mongoCollection = string(childNode.text().get());
-    	}else {
-    		parseError << "mongo collection name is not set.\n";
-    		configSuccess = false;
-    		return;
-    	}
-    	childNode = configNode.child(mongoDbString).child(listenerWaitTimeString);
-    	if (childNode && childNode.text()) {
-    		this->mongoListenerWaitTime = childNode.text().as_uint(1);
-    	}else {
-    		this->mongoListenerWaitTime = 1;
-    	}
-    	childNode = configNode.child(mongoDbString).child(maxRetryOnFailureString);
-    	if (childNode && childNode.text()) {
-    		this->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
-    	}else {
-    		this->mongoListenerMaxRetryOnFailure = 3;
-    	}
-
-    	// For MongoDB as a data source , primary key must be "_id" which is a unique key generated
-    	// by MongoDB. It is important to set primary key to "_id" because oplog entries for inserts
-    	// and deletes in MongoDB can be identified by _id only.
-    	this->primaryKey = "_id";
+        childNode = configNode.child(mongoDbString);
+        parseMongoDb(childNode, configSuccess, parseError, parseWarnings);
+	if (configSuccess == false) {
+            return;
+	}
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there

@@ -281,6 +281,8 @@ private:
 protected:
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseMongoDb(const xml_node &mongoDbNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseQuery(const xml_node &queryNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 public:
     ConfigManager(const string& configfile);
