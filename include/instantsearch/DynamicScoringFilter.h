@@ -50,6 +50,8 @@ struct KeywordBoost {
 struct DynamicScoringFilter : ResultsPostProcessorFilter {
   const unsigned numberOfAttributes;
   unsigned boostedAttributeMask;
+  /* This array has to be sorted by attributeID descending so we can
+     perform binary lookups */
   AttributeBoost attribute[0];
   void doFilter(IndexSearcher*, const Query*, QueryResults*, QueryResults*);
   AttributeBoost* getAttributeBoost(unsigned);

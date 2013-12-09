@@ -40,8 +40,8 @@ void getQueryKeywordIds(const Trie& trie, const TrieNode* root,
        (trie.
         getTrieNodeFromUtf8String(root, *(*term)->getKeyword()))->getId();
   }
-//  *keywordID=
-//  (trie.getTrieNodeFromUtf8String(root, *(*keyword)->getKeyword()))->getId();
+  //potential TODO: we might need to modify the matching term hit on and
+  //or condition
 }
 
 bool attributeBoostSearchCondition(const AttributeBoost&  lhs,
@@ -71,14 +71,14 @@ float dynamicRuntimeScore(const ForwardList& record,
     const SchemaInternal *const schema,
     DynamicScoringFilter& filter,
     const unsigned *const queryKeywordIDs, unsigned numberOfKeywords) {
-  struct KeywordBoost keyword[numberOfKeywords+1];
+  struct KeywordBoost keyword[numberOfKeywords];
 
   // For each keyword in Query 
   {
     const unsigned *queryKeyword= queryKeywordIDs;
     unsigned i=0;
   for(; i < numberOfKeywords; ++i) {
-    if(record.haveWordInRange(schema, *queryKeyword, *queryKeyword+1,
+    if(record.haveWordInRange(schema, *queryKeyword, *queryKeyword,
           filter.boostedAttributeMask,
           keyword[i].id, keyword[i].attributeMask, keyword[i].score)) {
       keyword[i].attributeMask&= filter.boostedAttributeMask;
@@ -133,17 +133,18 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
       result != results.end(); ++result) {
     forwardList= forwardIndex.getForwardList((*result)->internalRecordId,
         isValid);
-    assert(isValid);
+    ASSERT(isValid);
     dynamicScore= dynamicRuntimeScore(*forwardList,
         forwardIndex.getSchema(), *this,
         queryKeywordIDs, query->getQueryTerms()->size());
+    //We assume "qf" can only increase the score
     dynamicScore= std::max(dynamicScore,
         (*result)->_score.getFloatTypedValue());
 
     (*result)->_score.setTypedValue(dynamicScore); 
   }
       
-  std::sort( results.begin(), results.end(), QueryResultCompareScore);
+  std::sort(results.begin(), results.end(), QueryResultCompareScore);
 }
 
 }}

@@ -218,18 +218,18 @@ double SpatialRanker::degreeToRadian(double degreeValue) const
 }
 
 float DynamicScoringRanker::CalculateDynamicKeywordScore(
-    const KeywordBoost& keyword, DynamicScoringFilter& boost) {
+    const KeywordBoost& keyword, DynamicScoringFilter& dynamicScoringFilter) {
   if(keyword.score == 0) return 0;
 
   float boostValue= 0;
   
   /* Loops over all boosted attributes containing this keyword */
   for(AttributeIterator attribute(keyword.attributeMask);
-      attribute.hasNext();
-      ++attribute) {
-    const AttributeBoost& attributeBoost= *boost.getAttributeBoost(*attribute);
+      attribute.hasNext(); ++attribute) {
+    const AttributeBoost& attributeBoost= 
+      *dynamicScoringFilter.getAttributeBoost(*attribute);
     /* Each attribute boost is the log base e of the number of keyword hits in
-       that attribute plus 2, ensuring the log is greater than 1, multipled
+       that attribute plus 2, ensuring the log is greater than 1, multiplied
        by the attribute's boosting factor */ 
     boostValue+= 
         std::log(attributeBoost.hitCount+2) * attributeBoost.boostFactor;
@@ -241,13 +241,13 @@ float DynamicScoringRanker::CalculateDynamicKeywordScore(
 
 float DynamicScoringRanker::CalculateAndAggregrateDynamicScore(
     const KeywordBoost* keyword, unsigned numberOfKeywords,
-    DynamicScoringFilter& boost) {
+    DynamicScoringFilter& dynamicScoringFilter) {
   float score= 0;
   float boostValue=1;
   AttributeBoost *attributeBoost;
 
   for(unsigned i=0; i < numberOfKeywords; ++i, ++keyword) {
-    score+= CalculateDynamicKeywordScore(*keyword, boost); 
+    score+= CalculateDynamicKeywordScore(*keyword, dynamicScoringFilter); 
   }
   return score;
 }

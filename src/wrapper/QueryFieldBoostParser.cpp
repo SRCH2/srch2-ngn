@@ -29,7 +29,7 @@ namespace httpwrapper {
 bool parseQfAttribute(std::string& input, std::string& output) {
   boost::regex re(QF_ATTRIBUTE_REGEX_STRING); //TODO: make compile time
   if(doParse(input, re, output)) {
-    assert((*(--output.end()) == '^')); 
+    ASSERT((*(--output.end()) == '^')); 
     output.erase(--output.end()); // erases the '^' character at end of string
     //erase the begin + sign if a conjuctive
     if((*(output.begin()) == '+')) {
@@ -68,6 +68,7 @@ bool srch2::httpwrapper::QueryFieldBoostParser::parseAndAddCriterion(
       return false;
     }
     attributeBoost.boost= std::atoi(qfBoost.c_str());
+    ASSERT(!attributeBoost.boost);
     qfcontainer.boosts.push_back(attributeBoost);
   } while(*currentParameterString.begin() == '+');
 
