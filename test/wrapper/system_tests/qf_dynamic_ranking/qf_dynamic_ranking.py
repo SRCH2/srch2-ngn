@@ -20,14 +20,21 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if responseJson[i]['record']['id'] !=  resultValue[i]:
+          if ((responseJson[i]['record']['id'] != \
+                  resultValue[i].split('s')[0]) \
+                 and (round(responseJson[i]['score'], 2) != \
+                   round(resultValue[i].split('s')[1],2))):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
-                print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
+                print 'number of results:'+str(len(responseJson))+\
+                      '||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
-                    print responseJson[i]['record']['id']+'||'+resultValue[i]
-                break
+                    print 's'+responseJson[i]['record']['id']+'s' \
+                          + 's'+responseJson[i]['score'] \
+                          +'||'+resultValue[i]
+                    continue
+          break
     else:
         isPass=0
         print query+' test failed'
@@ -74,7 +81,7 @@ def prepareQuery(queryKeywords, boostValue):
 def testQF(queriesAndResultsPath, binary_path):
     #Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_a1/conf.xml &'
+    binary= binary+' --config-file=./qf_dynamic_ranking/conf.xml &'
     print 'starting engine: ' + binary
     os.popen(binary)
 
@@ -85,7 +92,7 @@ def testQF(queriesAndResultsPath, binary_path):
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
-        resultValue=(value[1]).split()
+        resultValue=(value[1].split())
         value= value[0].split('&')
         queryValue=value[0].split()
         boostValue=value[1]
@@ -99,7 +106,7 @@ def testQF(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
 
         #check the result
-        checkResult(query, response_json['results'], resultValue )
+        checkResult(query, response_json['results'], resultValue)
 
     #get pid of srch2-search-server and kill the process
     try:
