@@ -138,23 +138,19 @@ struct IndexWriteUtil
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
-    	//const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
-
         unsigned deletedInternalRecordId;
         std::string primaryKeyStringValue;
 
 
     	Json::FastWriter writer;
     	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+        if(parseJson == false) {
+            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
+            return;
+        }
+
     	primaryKeyStringValue = record->getPrimaryKey();
-
-
 		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
-
-    	if(parseJson == false) {
-    		log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
-    		return;
-    	}
 
 		//delete the record from the index
 		switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
@@ -162,11 +158,12 @@ struct IndexWriteUtil
 			case srch2::instantsearch::OP_FAIL:
 			{
 				// record to update doesn't exit, will insert it
+				log_str << "inserted ";
 				break;
 			}
 			default: // OP_SUCCESS.
 			{
-				//log_str << "success\"}";
+				log_str << "updated ";
 			}
 		};
 
@@ -184,7 +181,7 @@ struct IndexWriteUtil
 			{
 				case srch2::instantsearch::OP_SUCCESS:
 				{
-					log_str << "success\"}";
+					log_str << "successfully\"}";
 					return;
 				}
 				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:

@@ -548,8 +548,6 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
         Json::Reader reader;
         bool parseSuccess = reader.parse(post_data, root, false);
 
-
-
         if (parseSuccess == false) {
             log_str << "JSON object parse error";
         } else {
@@ -557,34 +555,26 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
             evhttp_parse_query(req->uri, &headers);
             Record *record = new Record(server->indexer->getSchema());
 
-            if (root.type() == Json::arrayValue) {
-            	//the record parameter is an array of json object
+            // if root is a single object, convert it into an array
+            if(root.type() == Json::objectValue) {
+                std::string tempStr = "[" + root.toStyledString() + "]";
+                reader.parse(tempStr.c_str(), root, false) ;
+            }
 
-				for(Json::UInt index = 0; index < root.size(); index++) {
-					Json::Value defaultValueToReturn = Json::Value("");
-					const Json::Value doc = root.get(index,
-					                            defaultValueToReturn);
-
-					IndexWriteUtil::_updateCommand(server->indexer,
-							server->indexDataContainerConf, headers, doc, record,
-							log_str);
-
-					record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
-
-				}
-
-            } else {
-            	// the record parameter is a single json object
-                const Json::Value doc = root;
+            //the record parameter is an array of json object
+            for(Json::UInt index = 0; index < root.size(); index++) {
+                Json::Value defaultValueToReturn = Json::Value("");
+                const Json::Value doc = root.get(index,
+                                            defaultValueToReturn);
 
                 IndexWriteUtil::_updateCommand(server->indexer,
                         server->indexDataContainerConf, headers, doc, record,
                         log_str);
 
                 record->clear();
+
+                if (index < root.size() - 1)
+                    log_str << ",";
             }
 
             delete record;
