@@ -556,7 +556,7 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
             Record *record = new Record(server->indexer->getSchema());
 
             if (root.type() == Json::arrayValue) {
-                //the record parameter is an array of json object
+                //the record parameter is an array of json objects
                 for(Json::UInt index = 0; index < root.size(); index++) {
                     Json::Value defaultValueToReturn = Json::Value("");
                     const Json::Value doc = root.get(index,
