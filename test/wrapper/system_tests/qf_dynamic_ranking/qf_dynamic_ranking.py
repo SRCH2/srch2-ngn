@@ -1,5 +1,33 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#
+#   Test of qf feature of the SRCH2 Engine
+#
+#        This test relies on three components:
+#              1. This driver script
+#              2. A Configuration file: conf.xml
+#              3. A query and results file: queriesAndResults.txt
+#
+#   The format of queryNresults is a follows 
+#
+#     A query of space delimited keywords and a qf clause seperated by &
+#     Then || with the results following. The results are space seperated
+#     sorted by score, and have the row's id and score, rounded to two decimal
+#     places, seprated by 's'
+#
+#     eg. 
+#         Health Service&name%5E10||97s10 1s1 55s1 68s1 77s1
+#
+#      is the query of two keywords Health AND Space  with dynamic boosting
+#         on the field name.
+#      With 5 rows in the expected results, these row's have id's
+#      97, 1, 55, 68, 77 and scores 10, 1, 1, 1, 1 respectively.
+#        
+#            
+#     The test cases covered are, as follows:
+#
+#        1. Test of single keyword
+#        2. Test of boost 1 having no effect on results (single keyword)
+#        3. Test of two keywords hiting in boosted record
+#        4. Test of two keywords with single boost
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -22,17 +50,17 @@ def checkResult(query, responseJson,resultValue):
             #print response_json['results'][i]['record']['id']
           if ((responseJson[i]['record']['id'] != \
                   resultValue[i].split('s')[0]) \
-                 and (round(responseJson[i]['score'], 2) != \
-                   round(resultValue[i].split('s')[1],2))):
+                 or (round(responseJson[i]['score'], 2) != \
+                   round(float(resultValue[i].split('s')[1]),2))):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+\
                       '||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
-                    print 's'+responseJson[i]['record']['id']+'s' \
-                          + 's'+responseJson[i]['score'] \
-                          +'||'+resultValue[i]
+                    print responseJson[i]['record']['id']+ \
+                    's'+str(round(responseJson[i]['score'],2))+ \
+                    '||'+resultValue[i]
                     continue
           break
     else:

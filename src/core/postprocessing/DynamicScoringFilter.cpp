@@ -83,7 +83,7 @@ float dynamicRuntimeScore(const ForwardList& record,
   {
     const unsigned *queryKeyword= queryKeywordIDs;
     unsigned i=0;
-  for(; i < numberOfKeywords; ++i) {
+  for(; i < numberOfKeywords; ++i, ++queryKeyword) {
     if(record.haveWordInRange(schema, *queryKeyword, *queryKeyword,
           filter.boostedAttributeMask, keywordBoosts[i].id, 
           keywordBoosts[i].attributeMask, keywordBoosts[i].score)) {
