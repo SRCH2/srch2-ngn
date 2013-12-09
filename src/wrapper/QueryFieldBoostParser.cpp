@@ -68,7 +68,7 @@ bool srch2::httpwrapper::QueryFieldBoostParser::parseAndAddCriterion(
       return false;
     }
     attributeBoost.boost= std::atoi(qfBoost.c_str());
-    ASSERT(!attributeBoost.boost);
+    ASSERT(attributeBoost.boost);
     qfcontainer.boosts.push_back(attributeBoost);
   } while(*currentParameterString.begin() == '+');
 
