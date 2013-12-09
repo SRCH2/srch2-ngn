@@ -221,27 +221,13 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     }
 }
 
-void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
-        std::stringstream &parseWarnings) {
-    string tempUse = ""; // This is just for temporary use.
-
-    // srch2Home is a required field
-    xml_node configAttribute = configDoc.child(configString).child(srch2HomeString);
-    if (configAttribute && configAttribute.text()) { // checks if the config/srch2Home has any text in it or not
-        tempUse = string(configAttribute.text().get());
-	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
-	this->srch2Home = tempUse;
-    } else {
-        parseError << "srch2Home is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(indexTypeString);
-    if (configAttribute && configAttribute.text()) {
-        string it = string(configAttribute.text().get());
+void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    xml_node childNode = indexConfigNode.child(indexTypeString);
+    if (childNode && childNode.text()) {
+        string it = string(childNode.text().get());
         if (this->isValidIndexType(it)) {
-            this->indexType = configAttribute.text().as_int();
+            this->indexType = childNode.text().as_int();
         } else {
             parseError << "Index Type's value can be only 0 or 1.\n";
             configSuccess = false;
@@ -254,12 +240,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     this->supportSwapInEditDistance = true; // by default it is true
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(supportSwapInEditDistanceString);
-    if (configAttribute && configAttribute.text()) {
-        string qtmt = configAttribute.text().get();
+    childNode = indexConfigNode.child(supportSwapInEditDistanceString);
+    if (childNode && childNode.text()) {
+        string qtmt = childNode.text().get();
         if (this->isValidBool(qtmt)) {
-         
-   this->supportSwapInEditDistance = configAttribute.text().as_bool();
+	    this->supportSwapInEditDistance = childNode.text().as_bool();
         } else {
             parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
@@ -268,11 +253,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     this->enablePositionIndex = false; // by default it is false
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(enablePositionIndexString);
-    if (configAttribute && configAttribute.text()) {
-        string configValue = configAttribute.text().get();
+    childNode = indexConfigNode.child(enablePositionIndexString);
+    if (childNode && childNode.text()) {
+        string configValue = childNode.text().get();
         if (this->isValidBooleanValue(configValue)) {
-            this->enablePositionIndex = configAttribute.text().as_bool();
+            this->enablePositionIndex = childNode.text().as_bool();
         } else {
             parseError << "enablePositionIndex should be either 0 or 1.\n";
             configSuccess = false;
@@ -281,17 +266,42 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         Logger::info("turning on attribute based search because position index is enabled");
         this->supportAttributeBasedSearch = true;
     }
+}
+
+void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
+        std::stringstream &parseWarnings)
+{
+    string tempUse = ""; // This is just for temporary use.
+
+    xml_node configNode = configDoc.child(configString);
+
+    // srch2Home is a required field
+    xml_node childNode = configNode.child(srch2HomeString);
+    if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
+        tempUse = string(childNode.text().get());
+	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
+	this->srch2Home = tempUse;
+    } else {
+        parseError << "srch2Home is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    xml_node indexConfigNode = configNode.child(indexConfigString);
+    parseIndexConfig(indexConfigNode, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
+    }
 
     // uniqueKey is required
-    configAttribute = configDoc.child(configString).child(schemaString).child(uniqueKeyString);
-    if (configAttribute && configAttribute.text()) {
-        this->primaryKey = string(configAttribute.text().get());
+    childNode = configNode.child(schemaString).child(uniqueKeyString);
+    if (childNode && childNode.text()) {
+        this->primaryKey = string(childNode.text().get());
     } else {
         parseError << "uniqueKey (primary key) is not set.\n";
         configSuccess = false;
         return;
     }
-
 
     /*
      * <schema> in config.xml file
@@ -316,11 +326,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->isPrimSearchable = 0;
 
-    configAttribute = configDoc.child(configString).child(schemaString).child(fieldsString);
-    if (configAttribute) {
-        for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
+    childNode = configNode.child(schemaString).child(fieldsString);
+    if (childNode) {
+        for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare(fieldString) == 0) {
-
 
             	/*
             	 * The following code decides whether this field is multi-valued or not.
@@ -503,30 +512,29 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                             tempUse = string(field.attribute("default").value());
                             if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
 
-                                if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-                                	if(isMultiValued == false){
-                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+			        if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+				    if(isMultiValued == false){
+				        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
                                         std::stringstream buffer;
                                         buffer << timeValue;
                                         tempUse = buffer.str();
-                                }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
-                                	// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+				    }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+				        // For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
                                         string convertedDefaultValues = "";
                                         vector<string> defaultValueTokens;
                                         splitString(tempUse , "," , defaultValueTokens);
                                         for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
-                                                 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
-    									    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
-    									    std::stringstream buffer;
+					    defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+					    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+					    std::stringstream buffer;
                                             buffer << timeValue;
-    										if(defaultValueToken == defaultValueTokens.begin()){
-    											convertedDefaultValues = buffer.str();
-    										}else{
-    											convertedDefaultValues = ","+buffer.str();
-    										}
-
-                                		}
-                                	}
+					    if(defaultValueToken == defaultValueTokens.begin()){
+					        convertedDefaultValues = buffer.str();
+					    }else{
+					        convertedDefaultValues = ","+buffer.str();
+					    }
+					}
+				    }
                                 }
                             }else{
                                 parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
@@ -600,11 +608,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * <facetEnabled>  in config.xml file
      */
     this->facetEnabled = false; // by default it is false
-    configAttribute = configDoc.child(configString).child(schemaString).child(facetEnabledString);
-    if (configAttribute && configAttribute.text()) {
-        string qtmt = configAttribute.text().get();
+    childNode = configNode.child(schemaString).child(facetEnabledString);
+    if (childNode && childNode.text()) {
+        string qtmt = childNode.text().get();
         if (this->isValidBool(qtmt)) {
-            this->facetEnabled = configAttribute.text().as_bool();
+            this->facetEnabled = childNode.text().as_bool();
         } else {
             parseError << "The facetEnabled that is provided is not valid";
             configSuccess = false;
@@ -620,9 +628,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      */
 
     if(this->facetEnabled){
-      configAttribute = configDoc.child(configString).child(schemaString).child(facetFieldsString);
-        if (configAttribute) {
-            for (xml_node field = configAttribute.first_child(); field; field = field.next_sibling()) {
+      childNode = configNode.child(schemaString).child(facetFieldsString);
+        if (childNode) {
+            for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
                 if (string(field.name()).compare(facetFieldString) == 0) {
 		  if (string(field.attribute(nameString).value()).compare("") != 0
                             && string(field.attribute(facetTypeString).value()).compare("") != 0){
@@ -738,11 +746,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         this->searchType = 0;
         this->fieldLongitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
         this->fieldLatitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
-        configAttribute = configDoc.child(configString).child(queryString).child(searcherTypeString);
-        if (configAttribute && configAttribute.text()) {
-            string st = configAttribute.text().get();
+        childNode = configNode.child(queryString).child(searcherTypeString);
+        if (childNode && childNode.text()) {
+            string st = childNode.text().get();
             if (this->isValidSearcherType(st)) {
-                this->searchType = configAttribute.text().as_int();
+                this->searchType = childNode.text().as_int();
             } else {
                 parseError << "The Searcher Type only can get 0 or 1";
                 configSuccess = false;
@@ -760,14 +768,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->protectedWordsFilePath = "";
     this->synonymKeepOrigFlag = false;
 
-    configAttribute = configDoc.child(configString).child(schemaString).child(typesString);
-    if (configAttribute) {        // Checks if <schema><types> exists or not
-        for (xml_node fieldType = configAttribute.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
+    childNode = configNode.child(schemaString).child(typesString);
+    if (childNode) {        // Checks if <schema><types> exists or not
+        for (xml_node fieldType = childNode.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
             if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
                 if (string(fieldType.attribute(nameString).value()).compare(textEnString) == 0) {
                     // Checking if the values are empty or not
-                    xml_node configAttributeTemp = fieldType.child(analyzerString); // looks for analyzer
-                    for (xml_node field = configAttributeTemp.first_child(); field; field = field.next_sibling()) {
+                    xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
+                    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
                         if (string(field.name()).compare(filterString) == 0) {
                             if (string(field.attribute("name").value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
                                 if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
@@ -821,9 +829,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * <Config> in config.xml file
      */
     // licenseFile is a required field
-    configAttribute = configDoc.child(configString).child(licenseFileString);
-    if (configAttribute && configAttribute.text()) { // checks if config/licenseFile exists and have any text value or not
-        tempUse = string(configAttribute.text().get());
+    childNode = configNode.child(licenseFileString);
+    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
+        tempUse = string(childNode.text().get());
 	trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
 	this->licenseKeyFile = this->srch2Home + tempUse;
     } else {
@@ -833,9 +841,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // listeningHostname is a required field
-    configAttribute = configDoc.child(configString).child(listeningHostStringString);
-    if (configAttribute && configAttribute.text()) { // checks if config/listeningHostname exists and have any text value or not
-        this->httpServerListeningHostname = string(configAttribute.text().get());
+    childNode = configNode.child(listeningHostStringString);
+    if (childNode && childNode.text()) { // checks if config/listeningHostname exists and have any text value or not
+        this->httpServerListeningHostname = string(childNode.text().get());
     } else {
         parseError << "listeningHostname is not set.\n";
         configSuccess = false;
@@ -843,18 +851,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // listeningPort is a required field
-    configAttribute = configDoc.child(configString).child(listeningPortString);
-    if (configAttribute && configAttribute.text()) { // checks if the config/listeningPort has any text in it or not
-        this->httpServerListeningPort = string(configAttribute.text().get());
+    childNode = configNode.child(listeningPortString);
+    if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
+        this->httpServerListeningPort = string(childNode.text().get());
     } else {
         parseError << "listeningPort is not set.\n";
         configSuccess = false;
         return;
     }
     // dataDir is a required field
-    configAttribute = configDoc.child(configString).child(dataDirString);
-    if (configAttribute && configAttribute.text()) { // checks if the config/dataDir has any text in it or not
-        tempUse = string(configAttribute.text().get());
+    childNode = configNode.child(dataDirString);
+    if (childNode && childNode.text()) { // checks if the config/dataDir has any text in it or not
+        tempUse = string(childNode.text().get());
 	trimSpacesFromValue(tempUse, dataDirString, parseWarnings);
 	this->indexPath = this->srch2Home + tempUse;
     } else {
@@ -864,9 +872,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         return;
     }
 
-    configAttribute = configDoc.child(configString).child(dataSourceTypeString);
-    if (configAttribute && configAttribute.text()) {
-        int datasourceValue = configAttribute.text().as_int(DATA_SOURCE_JSON_FILE);
+    childNode = configNode.child(dataSourceTypeString);
+    if (childNode && childNode.text()) {
+        int datasourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
         switch(datasourceValue) {
         case 0:
         	this->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
@@ -888,9 +896,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
     if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
     	// dataFile is a required field only if JSON file is specified as data source.
-        configAttribute = configDoc.child(configString).child(dataFileString);
-    	if (configAttribute && configAttribute.text()) { // checks if the config/dataFile has any text in it or not
-	    tempUse = string(configAttribute.text().get());
+        childNode = configNode.child(dataFileString);
+    	if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
+	    tempUse = string(childNode.text().get());
 	    trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
 	    this->filePath = this->srch2Home + tempUse;
     	} else {
@@ -904,11 +912,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // <config>
     //   <indexconfig>
     //        <fieldBoost>
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(fieldBoostString);
+    childNode = indexConfigNode.child(fieldBoostString);
     map<string, unsigned> boostsMap;
     // spliting the field boost input and put them in boostsMap
-    if (configAttribute && configAttribute.text()) {
-        string boostString = string(configAttribute.text().get());
+    if (childNode && childNode.text()) {
+        string boostString = string(childNode.text().get());
         boost::algorithm::trim(boostString);
         this->splitBoostFieldValues(boostString, boostsMap);
     }
@@ -952,19 +960,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // recordBoostField is an optional field
     this->recordBoostFieldFlag = false;
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(recordBoostFieldString);
-    if (configAttribute && configAttribute.text()) {
+    childNode = indexConfigNode.child(recordBoostFieldString);
+    if (childNode && childNode.text()) {
         this->recordBoostFieldFlag = true;
-        this->recordBoostField = string(configAttribute.text().get());
+        this->recordBoostField = string(childNode.text().get());
     }
 
     // queryTermBoost is an optional field
     this->queryTermBoost = 1; // By default it is 1
-    configAttribute = configDoc.child(configString).child(indexConfigString).child(defaultQueryTermBoostString);
-    if (configAttribute && configAttribute.text()) {
-        string qtb = configAttribute.text().get();
+    childNode = indexConfigNode.child(defaultQueryTermBoostString);
+    if (childNode && childNode.text()) {
+        string qtb = childNode.text().get();
         if (this->isValidQueryTermBoost(qtb)) {
-            this->queryTermBoost = configAttribute.text().as_uint();
+            this->queryTermBoost = childNode.text().as_uint();
         } else {
             configSuccess = false;
             parseError << "The value provided for queryTermBoost is not a (non-negative)number.";
@@ -974,9 +982,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // scoringExpressionString is an optional field
     this->scoringExpressionString = "1"; // By default it is 1
-    configAttribute = configDoc.child(configString).child(queryString).child(rankingAlgorithmString).child(recordScoreExpressionString);
-    if (configAttribute && configAttribute.text()) {
-        string exp = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(rankingAlgorithmString).child(recordScoreExpressionString);
+    if (childNode && childNode.text()) {
+        string exp = childNode.text().get();
         boost::algorithm::trim(exp);
         if (this->isValidRecordScoreExpession(exp)) {
             this->scoringExpressionString = exp;
@@ -989,11 +997,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // fuzzyMatchPenalty is an optional field
     this->fuzzyMatchPenalty = 1; // By default it is 1
-    configAttribute = configDoc.child(configString).child(queryString).child(fuzzyMatchPenaltyString);
-    if (configAttribute && configAttribute.text()) {
-        string qtsb = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(fuzzyMatchPenaltyString);
+    if (childNode && childNode.text()) {
+        string qtsb = childNode.text().get();
         if (this->isValidFuzzyMatchPenalty(qtsb)) {
-            this->fuzzyMatchPenalty = configAttribute.text().as_float();
+            this->fuzzyMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
@@ -1005,11 +1013,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
     this->queryTermSimilarityThreshold = 0.5;
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermSimilarityThresholdString);
-    if (configAttribute && configAttribute.text()) {
-        string qtsb = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(queryTermSimilarityThresholdString);
+    if (childNode && childNode.text()) {
+        string qtsb = childNode.text().get();
         if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = configAttribute.text().as_float();
+            this->queryTermSimilarityThreshold = childNode.text().as_float();
             if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
                 this->queryTermSimilarityThreshold = 0.5;
                 parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
@@ -1023,11 +1031,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // queryTermLengthBoost is an optional field
     this->queryTermLengthBoost = 0.5; // By default it is 0.5
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermLengthBoostString);
-    if (configAttribute && configAttribute.text()) {
-        string qtlb = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(queryTermLengthBoostString);
+    if (childNode && childNode.text()) {
+        string qtlb = childNode.text().get();
         if (this->isValidQueryTermLengthBoost(qtlb)) {
-            this->queryTermLengthBoost = configAttribute.text().as_float();
+            this->queryTermLengthBoost = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermLengthBoost is not a valid.";
@@ -1037,12 +1045,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // prefixMatchPenalty is an optional field.
     this->prefixMatchPenalty = 0.95; // By default it is 0.5
-    configAttribute = configDoc.child(configString).child(queryString).child(prefixMatchPenaltyString);
-    if (configAttribute && configAttribute.text()) {
-        string pm = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(prefixMatchPenaltyString);
+    if (childNode && childNode.text()) {
+        string pm = childNode.text().get();
 
         if (this->isValidPrefixMatch(pm)) {
-            this->prefixMatchPenalty = configAttribute.text().as_float();
+            this->prefixMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The value provided for prefixMatch is not a valid.";
@@ -1052,11 +1060,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // cacheSize is an optional field
     this->cacheSizeInBytes = 50 * 1048576;
-    configAttribute = configDoc.child(configString).child(queryString).child(cacheSizeString);
-    if (configAttribute && configAttribute.text()) {
-        string cs = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(cacheSizeString);
+    if (childNode && childNode.text()) {
+        string cs = childNode.text().get();
         if (this->isValidCacheSize(cs)) {
-            this->cacheSizeInBytes = configAttribute.text().as_uint();
+            this->cacheSizeInBytes = childNode.text().as_uint();
         } else {
             parseError << "cache size provided is not set correctly.\n";
             configSuccess = false;
@@ -1066,11 +1074,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // rows is an optional field
     this->resultsToRetrieve = 10; // by default it is 10
-    configAttribute = configDoc.child(configString).child(queryString).child(rowsString);
-    if (configAttribute && configAttribute.text()) {
-        string row = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(rowsString);
+    if (childNode && childNode.text()) {
+        string row = childNode.text().get();
         if (isValidRows(row)) {
-            this->resultsToRetrieve = configAttribute.text().as_int();
+            this->resultsToRetrieve = childNode.text().as_int();
         } else {
             parseError << "rows is not set correctly.\n";
             configSuccess = false;
@@ -1080,11 +1088,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // maxSearchThreads is an optional field
     this->numberOfThreads = 1; // by default it is 1
-    configAttribute = configDoc.child(configString).child(queryString).child(maxSearchThreadsString);
-    if (configAttribute && configAttribute.text()) {
-        string mst = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
         if (isValidMaxSearchThreads(mst)) {
-            this->numberOfThreads = configAttribute.text().as_int();
+            this->numberOfThreads = childNode.text().as_int();
         } else {
             parseError << "maxSearchThreads is not set correctly.\n";
             configSuccess = false;
@@ -1095,11 +1103,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     // fieldBasedSearch is an optional field
     if (this->enablePositionIndex == false) {
         this->supportAttributeBasedSearch = false; // by default it is false
-        configAttribute = configDoc.child(configString).child(queryString).child(fieldBasedSearchString);
-        if (configAttribute && configAttribute.text()) {
-            string configValue = configAttribute.text().get();
+        childNode = configNode.child(queryString).child(fieldBasedSearchString);
+        if (childNode && childNode.text()) {
+            string configValue = childNode.text().get();
             if (this->isValidBooleanValue(configValue)) {
-                this->supportAttributeBasedSearch = configAttribute.text().as_bool();
+                this->supportAttributeBasedSearch = childNode.text().as_bool();
             } else {
                 parseError << "fieldBasedSearch is not set correctly.\n";
                 configSuccess = false;
@@ -1113,11 +1121,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // queryTermFuzzyType is an optional field
     this->exactFuzzy = false; // by default it is false
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermFuzzyTypeString);
-    if (configAttribute && configAttribute.text()) {
-        string qtmt = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(queryTermFuzzyTypeString);
+    if (childNode && childNode.text()) {
+        string qtmt = childNode.text().get();
         if (this->isValidQueryTermFuzzyType(qtmt)) {
-            this->exactFuzzy = configAttribute.text().as_bool();
+            this->exactFuzzy = childNode.text().as_bool();
         } else {
             parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
@@ -1127,11 +1135,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // queryTermPrefixType is an optional field
     this->queryTermPrefixType = false;
-    configAttribute = configDoc.child(configString).child(queryString).child(queryTermPrefixTypeString);
-    if (configAttribute && configAttribute.text()) {
-        string qt = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(queryTermPrefixTypeString);
+    if (childNode && childNode.text()) {
+        string qt = childNode.text().get();
         if (this->isValidQueryTermPrefixType(qt)) {
-            this->queryTermPrefixType = configAttribute.text().as_bool();
+            this->queryTermPrefixType = childNode.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -1141,11 +1149,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // responseFormat is an optional field
     this->searchResponseJsonFormat = 0; // by default it is 10
-    configAttribute = configDoc.child(configString).child(queryString).child(queryResponseWriterString).child(responseFormatString);
-    if (configAttribute && configAttribute.text()) {
-        string rf = configAttribute.text().get();
+    childNode = configNode.child(queryString).child(queryResponseWriterString).child(responseFormatString);
+    if (childNode && childNode.text()) {
+        string rf = childNode.text().get();
         if (this->isValidResponseFormat(rf)) {
-            this->searchResponseJsonFormat = configAttribute.text().as_int();
+            this->searchResponseJsonFormat = childNode.text().as_int();
         } else {
             parseError << "The provided responseFormat is not valid";
             configSuccess = false;
@@ -1155,11 +1163,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // responseContent is an optional field
     this->searchResponseFormat = (ResponseType)0; // by default it is 0
-    configAttribute = configDoc.child(configString).child(queryString).child(queryResponseWriterString).child(responseContentString);
-    if (configAttribute) {
-        string type = configAttribute.attribute(typeString).value();
+    childNode = configNode.child(queryString).child(queryResponseWriterString).child(responseContentString);
+    if (childNode) {
+        string type = childNode.attribute(typeString).value();
         if (this->isValidResponseContentType(type)) {
-            this->searchResponseFormat = (ResponseType)configAttribute.attribute("type").as_int();
+            this->searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
@@ -1167,8 +1175,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
 
         if (this->searchResponseFormat == 2) {
-            if (configAttribute.text()) {
-                this->splitString(string(configAttribute.text().get()), ",", this->attributesToReturn);
+            if (childNode.text()) {
+                this->splitString(string(childNode.text().get()), ",", this->attributesToReturn);
             } else {
                 parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
@@ -1182,12 +1190,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->writeApiType = HTTPWRITEAPI;
 
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(maxDocsString);
+    childNode = configNode.child(updateHandlerString).child(maxDocsString);
     bool mdflag = false;
-    if (configAttribute && configAttribute.text()) {
-        string md = configAttribute.text().get();
+    if (childNode && childNode.text()) {
+        string md = childNode.text().get();
         if (this->isValidMaxDoc(md)) {
-            this->documentLimit = configAttribute.text().as_uint();
+            this->documentLimit = childNode.text().as_uint();
             mdflag = true;
         }
     }
@@ -1199,11 +1207,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     this->memoryLimit = 100000;
     bool mmflag = false;
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(maxMemoryString);
-    if (configAttribute && configAttribute.text()) {
-        string mm = configAttribute.text().get();
+    childNode = configNode.child(updateHandlerString).child(maxMemoryString);
+    if (childNode && childNode.text()) {
+        string mm = childNode.text().get();
         if (this->isValidMaxMemory(mm)) {
-            this->memoryLimit = configAttribute.text().as_uint();
+            this->memoryLimit = childNode.text().as_uint();
             mmflag = true;
         }
     }
@@ -1214,12 +1222,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // mergeEveryNSeconds
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(mergePolicyString).child(mergeEveryNSecondsString);
+    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryNSecondsString);
     bool mensflag = false;
-    if (configAttribute && configAttribute.text()) {
-        string mens = configAttribute.text().get();
+    if (childNode && childNode.text()) {
+        string mens = childNode.text().get();
         if (this->isValidMergeEveryNSeconds(mens)) {
-            this->mergeEveryNSeconds = configAttribute.text().as_uint();
+            this->mergeEveryNSeconds = childNode.text().as_uint();
             mensflag = true;
         }
     }
@@ -1230,13 +1238,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // mergeEveryMWrites
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(mergePolicyString).child(mergeEveryMWritesString);
+    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryMWritesString);
     bool memwflag = false;
-    if (configAttribute && configAttribute.text()) {
-        string memw = configAttribute.text().get();
+    if (childNode && childNode.text()) {
+        string memw = childNode.text().get();
 
         if (this->isValidMergeEveryMWrites(memw)) {
-            this->mergeEveryMWrites = configAttribute.text().as_uint();
+            this->mergeEveryMWrites = childNode.text().as_uint();
             memwflag = true;
         }
     }
@@ -1248,12 +1256,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(logLevelString);
+    childNode = configNode.child(updateHandlerString).child(updateLogString).child(logLevelString);
     bool llflag = true;
-    if (configAttribute && configAttribute.text()) {
-        string ll = configAttribute.text().get();
+    if (childNode && childNode.text()) {
+        string ll = childNode.text().get();
         if (this->isValidLogLevel(ll)) {
-            this->loglevel = static_cast<Logger::LogLevel>(configAttribute.text().as_int());
+            this->loglevel = static_cast<Logger::LogLevel>(childNode.text().as_int());
         } else {
             llflag = false;
         }
@@ -1265,9 +1273,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // accessLogFile is required
-    configAttribute = configDoc.child(configString).child(updateHandlerString).child(updateLogString).child(accessLogFileString);
-    if (configAttribute && configAttribute.text()) {
-        tempUse = string(configAttribute.text().get());
+    childNode = configNode.child(updateHandlerString).child(updateLogString).child(accessLogFileString);
+    if (childNode && childNode.text()) {
+        tempUse = string(childNode.text().get());
 	trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
 	this->httpServerAccessLogFile = this->srch2Home + tempUse;
     } else {
@@ -1294,45 +1302,45 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     this->attributeToSort = 0;
 
     if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
-      configAttribute = configDoc.child(configString).child(mongoDbString).child(hostString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoHost = string(configAttribute.text().get());
+      childNode = configNode.child(mongoDbString).child(hostString);
+    	if (childNode && childNode.text()) {
+    		this->mongoHost = string(childNode.text().get());
     	}else {
     		parseError << "mongo host is not set.\n";
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child(configString).child(mongoDbString).child(portString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoPort = string(configAttribute.text().get());
+    	childNode = configNode.child(mongoDbString).child(portString);
+    	if (childNode && childNode.text()) {
+    		this->mongoPort = string(childNode.text().get());
     	}else {
     		this->mongoPort = ""; // use default port
     	}
-    	configAttribute = configDoc.child(configString).child(mongoDbString).child(dbString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoDbName = string(configAttribute.text().get());
+    	childNode = configNode.child(mongoDbString).child(dbString);
+    	if (childNode && childNode.text()) {
+    		this->mongoDbName = string(childNode.text().get());
     	}else {
     		parseError << "mongo data base name is not set.\n";
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child(configString).child(mongoDbString).child(collectionString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoCollection = string(configAttribute.text().get());
+    	childNode = configNode.child(mongoDbString).child(collectionString);
+    	if (childNode && childNode.text()) {
+    		this->mongoCollection = string(childNode.text().get());
     	}else {
     		parseError << "mongo collection name is not set.\n";
     		configSuccess = false;
     		return;
     	}
-    	configAttribute = configDoc.child(configString).child(mongoDbString).child(listenerWaitTimeString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoListenerWaitTime = configAttribute.text().as_uint(1);
+    	childNode = configNode.child(mongoDbString).child(listenerWaitTimeString);
+    	if (childNode && childNode.text()) {
+    		this->mongoListenerWaitTime = childNode.text().as_uint(1);
     	}else {
     		this->mongoListenerWaitTime = 1;
     	}
-    	configAttribute = configDoc.child(configString).child(mongoDbString).child(maxRetryOnFailureString);
-    	if (configAttribute && configAttribute.text()) {
-    		this->mongoListenerMaxRetryOnFailure = configAttribute.text().as_uint(3);
+    	childNode = configNode.child(mongoDbString).child(maxRetryOnFailureString);
+    	if (childNode && childNode.text()) {
+    		this->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
     	}else {
     		this->mongoListenerMaxRetryOnFailure = 3;
     	}
@@ -1356,12 +1364,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     // setting default values for getAllResults optimization parameters
     // <getAllResultsMaxResultsThreshold>10000</getAllResultsMaxResultsThreshold>
-    configAttribute = configDoc.child(configString).child(getAllResultsMaxResultsThreshold);
-    if (configAttribute && configAttribute.text()) {
-        string kpt = configAttribute.text().get();
+    childNode = configNode.child(getAllResultsMaxResultsThreshold);
+    if (childNode && childNode.text()) {
+        string kpt = childNode.text().get();
 
         if (this->isValidGetAllResultsMaxResultsThreshold(kpt)) {
-            this->getAllResultsNumberOfResultsThreshold = configAttribute.text().as_uint();
+            this->getAllResultsNumberOfResultsThreshold = childNode.text().as_uint();
         }else{
         	parseError << "getAllResultsMaxResultsThreshold has an invalid format. Use 10000 as its value.\n";
         	this->getAllResultsNumberOfResultsThreshold = 10000;
@@ -1371,12 +1379,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     // <getAllResultsKAlternative>2000</getAllResultsKAlternative>
-    configAttribute = configDoc.child(configString).child(getAllResultsKAlternative);
-    if (configAttribute && configAttribute.text()) {
-        string kpt = configAttribute.text().get();
+    childNode = configNode.child(getAllResultsKAlternative);
+    if (childNode && childNode.text()) {
+        string kpt = childNode.text().get();
 
         if (this->isValidGetAllResultsKAlternative(kpt)) {
-            this->getAllResultsNumberOfResultsToFindInEstimationMode = configAttribute.text().as_uint();
+            this->getAllResultsNumberOfResultsToFindInEstimationMode = childNode.text().as_uint();
         }else{
         	parseError << "getAllResultsKAlternative has an invalid format. Use 2000 as its value.\n";
         	this->getAllResultsNumberOfResultsToFindInEstimationMode = 2000;
@@ -1386,12 +1394,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
 
-    configAttribute = configDoc.child(configString).child(keywordPopularityThresholdString);
-    if (configAttribute && configAttribute.text()) {
-        string kpt = configAttribute.text().get();
+    childNode = configNode.child(keywordPopularityThresholdString);
+    if (childNode && childNode.text()) {
+        string kpt = childNode.text().get();
 
         if (this->isValidKeywordPopularityThreshold(kpt)) {
-            this->keywordPopularityThreshold = configAttribute.text().as_uint();
+            this->keywordPopularityThreshold = childNode.text().as_uint();
         }else{
         	parseError << "keywordPopularityThreshold has an invalid format. Use 50000 as its value. \n";
         	keywordPopularityThreshold = 50000;

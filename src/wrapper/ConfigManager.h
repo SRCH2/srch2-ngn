@@ -103,7 +103,7 @@ private:
 	string filePath;
 
 
-	// <confgi><indexConfig>
+	// <config><indexConfig>
 	bool recordBoostFieldFlag;
 	string recordBoostField;
 	unsigned queryTermBoost;
@@ -159,10 +159,10 @@ private:
 
 	// <config><updatehandler><updateLog>
 	Logger::LogLevel loglevel;
-    string httpServerAccessLogFile;
-    string httpServerErrorLogFile;
+	string httpServerAccessLogFile;
+	string httpServerErrorLogFile;
 
-    // <schema><fields>
+	// <schema><fields>
 	string fieldLatitude;
 	string fieldLongitude;
 	int indexType;
@@ -181,7 +181,7 @@ private:
 	string trieBootstrapDictFile;
 	uint32_t writeReadBufferInBytes;
 
-    bool supportSwapInEditDistance;
+	bool supportSwapInEditDistance;
 	float defaultSpatialQueryBoundingBox;
 
 	srch2::instantsearch::ResponseType searchResponseFormat;
@@ -189,7 +189,7 @@ private:
 
 	//vector<string> searchableAttributes;
 
-    map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
+	map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
 	string attributeRecordBoost;
 
 	map<string , RefiningAttributeInfoContainer > RefiningAttributesInfo;
@@ -215,9 +215,9 @@ private:
 	int attributeToSort;
 	int ordering;
 	//string httpServerDocumentRoot;
-    string configFile;
+	string configFile;
 
-    // mongo db related settings
+	// mongo db related settings
 	string mongoHost;
 	string mongoPort;
 	string mongoDbName;
@@ -278,6 +278,10 @@ private:
 
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
+protected:
+    // parsing helper functions for modularity
+    void parseIndexConfig(const xml_node &indexConfigNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
 public:
     ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
@@ -298,9 +302,7 @@ public:
 
 	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes() const;
 
-    const vector<string> * getAttributesToReturnName() const;
-
-
+	const vector<string> * getAttributesToReturnName() const;
 
 	//const vector<unsigned>* getAttributesBoosts() const;
 	const std::string& getAttributeRecordBoostName() const;
