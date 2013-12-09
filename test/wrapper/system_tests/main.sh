@@ -4,10 +4,20 @@ SYSTEM_TEST_DIR=$1
 # $2 is <srch2-main-dir>/build/src/server
 SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
-cd $SYSTEM_TEST_DIR
 
 if [ $# -ne 2 ]; then
-     echo "Usage: $0 <system-test-director> <server-executable-directory>"
+    echo "Usage: $0 <system-test-director> <server-executable-directory>"
+    exit 1
+fi
+
+if [ ! -d "$SYSTEM_TEST_DIR" ]; then
+    echo "$0: \"$SYSTEM_TEST_DIR\" not an existing directory."
+    exit 1
+fi
+cd $SYSTEM_TEST_DIR
+
+if [ ! -d "$SRCH2_ENGINE_DIR" ]; then
+    echo "$0: Search engine directory \"$SRCH2_ENGINE_DIR\" not an existing directory."
     exit 1
 fi
 
@@ -20,7 +30,7 @@ python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -30,7 +40,7 @@ python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -40,7 +50,7 @@ echo "---------------------do $test_id-----------------------"
 python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -50,7 +60,7 @@ echo "---------------------do $test_id-----------------------"
 python ./empty_index/empty_index.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -61,7 +71,7 @@ echo "---------------------do $test_id-----------------------"
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -71,7 +81,7 @@ python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -81,7 +91,7 @@ python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE_DIR ./fuzzy_a1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -91,7 +101,7 @@ python ./exact_m1/exact_M1.py $SRCH2_ENGINE_DIR ./exact_m1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -101,7 +111,7 @@ python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE_DIR ./fuzzy_m1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -110,7 +120,7 @@ echo "---------------------do $test_id-----------------------"
 python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -119,7 +129,7 @@ echo "---------------------do $test_id-----------------------"
 python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -129,7 +139,7 @@ python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $S
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -139,7 +149,7 @@ python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $S
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -149,7 +159,7 @@ python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -159,7 +169,7 @@ python ./sort_filter/sort_filter.py $SRCH2_ENGINE_DIR ./sort_filter/queriesAndRe
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -169,7 +179,7 @@ python ./filter_query/filter_query.py $SRCH2_ENGINE_DIR ./filter_query/queriesAn
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -179,7 +189,7 @@ python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py 
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -189,7 +199,7 @@ python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE_DIR >> system_test
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED:$test_id"
 
@@ -201,7 +211,7 @@ python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGIN
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -212,7 +222,7 @@ python ./geo/geo.py $SRCH2_ENGINE_DIR ./geo/queriesAndResults.txt >> system_test
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -223,7 +233,7 @@ python ./term_type/term_type.py $SRCH2_ENGINE_DIR ./term_type/queriesAndResults.
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -234,7 +244,7 @@ python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE_DIR ./analyzer_exa
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -245,7 +255,7 @@ python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE_DIR food 10 20 >> system_test.l
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -256,7 +266,7 @@ python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE_DIR >> system_test.log 
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
@@ -266,7 +276,7 @@ echo "---------------------do $test_id-----------------------"
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    exit 255
 fi
 echo "-- PASSED: $test_id"
 
