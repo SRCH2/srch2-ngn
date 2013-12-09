@@ -41,11 +41,6 @@ struct IndexWriteUtil
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
 					break;
 				}
-				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
-				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The keywordid space problem.\"}";
-					break;
-				}
 				case srch2::instantsearch::OP_FAIL:
 				{
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
@@ -153,17 +148,17 @@ struct IndexWriteUtil
 		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
 
 		//delete the record from the index
+		bool recordExisted = false;
 		switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
 		{
 			case srch2::instantsearch::OP_FAIL:
 			{
 				// record to update doesn't exit, will insert it
-				log_str << "inserted ";
 				break;
 			}
 			default: // OP_SUCCESS.
 			{
-				log_str << "updated ";
+			    recordExisted = true;
 			}
 		};
 
@@ -181,13 +176,12 @@ struct IndexWriteUtil
 			{
 				case srch2::instantsearch::OP_SUCCESS:
 				{
-					log_str << "successfully\"}";
+					if (recordExisted)
+					  log_str << "Existing record updated successfully\"}";
+					else
+					  log_str << "New record inserted successfully\"}";
+
 					return;
-				}
-				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
-				{
-					log_str << "failed\",\"reason\":\"insert: The keywordid space problem.\",";
-					break;
 				}
 				case srch2::instantsearch::OP_FAIL:
 				{
