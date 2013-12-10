@@ -70,10 +70,11 @@ def prepareQuery(queryKeywords):
     return query
 
 
-def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
+def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+    configFile):
     # Start the engine server
     binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_attribute_based_search/conf.xml &'
+    binary= binary+' --config-file='+configFile+' &'
     os.popen(binary)
 
     #make sure that start the engine up
@@ -115,4 +116,7 @@ if __name__ == '__main__':
     #each line like "Alaska:name||3 89 8 10" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testExactAttributeBasedSearch(queriesAndResultsPath, binary_path)
+    testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+        './exact_attribute_based_search/conf.xml')
+    testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+        './exact_attribute_based_search/conf_w_positional_info.xml')
