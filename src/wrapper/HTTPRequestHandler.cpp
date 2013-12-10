@@ -479,13 +479,26 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
-            //for ( int index = 0; index < root.size(); ++index )  // Iterates over the sequence elements.
-            //{
-            const Json::Value doc = root;
-            IndexWriteUtil::_insertCommand(server->indexer,
-                    server->indexDataContainerConf, doc, record, log_str);
-            record->clear();
-            //}
+            if(root.type() == Json::arrayValue) {
+                // Iterates over the sequence elements.
+                for ( int index = 0; index < root.size(); ++index ) {
+                    Json::Value defaultValueToReturn = Json::Value("");
+                    const Json::Value doc = root.get(index,
+                                                defaultValueToReturn);
+
+                    IndexWriteUtil::_insertCommand(server->indexer,
+                            server->indexDataContainerConf, doc, record, log_str);
+                    record->clear();
+
+                    if (index < root.size() - 1)
+                        log_str << ",";
+                }
+            } else {  // only one json object needs to insert
+                const Json::Value doc = root;
+                IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataContainerConf, doc, record, log_str);
+                record->clear();
+            }
             delete record;
         }
         //std::cout << log_str.str() << std::endl;
