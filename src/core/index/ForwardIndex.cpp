@@ -800,16 +800,17 @@ bool ForwardIndex::getExternalRecordIdFromInternalRecordId(const unsigned intern
 }
 
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
-        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned keywordOffset, 
+        unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
             keywordOffset);
     // support attribute-based search. Here we check if attribute search
-    // is disabled, ie. neither the POSITION_INDEX is neither FIELDBIT nor
-    // FULL. In this case, or if the mask attributes to validate is 0
+    // is disabled, ie. the POSITION_INDEX_TYPE is neither FIELDBIT nor
+    // FULL. In this case, or if the masked attributes to validate is 0
     // the the hit is always valid.
-    if (searchableAttributeId == 0
+    if (termSearchableAttributeIdToFilterTermHits == 0
             || ((schema->getPositionIndexType()
                     != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
             &&  (schema->getPositionIndexType()
@@ -819,15 +820,19 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
         ASSERT(
                 this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
          // test the highest bit
-        bool highestBit = searchableAttributeId & 0x80000000;
+        bool highestBit =
+          termSearchableAttributeIdToFilterTermHits & 0x80000000;
         matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
                 keywordOffset);
         if (highestBit) {
-            searchableAttributeId &= 0x7fffffff; // turn off the highest bit
-            return (matchingKeywordAttributeBitmap & searchableAttributeId)
-                    == searchableAttributeId;
+            // turn off the highest bit
+            termSearchableAttributeIdToFilterTermHits&= 0x7fffffff; 
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits)
+                    == termSearchableAttributeIdToFilterTermHits;
         } else {
-            return (matchingKeywordAttributeBitmap & searchableAttributeId) != 0;
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits) != 0;
         }
     }
 }
