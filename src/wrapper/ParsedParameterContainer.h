@@ -344,8 +344,7 @@ public:
     ~ParsedParameterContainer() {
         if (filterQueryContainer != NULL)
             delete filterQueryContainer;
-//        if (facetQueryContainer != NULL)
-//            delete facetQueryContainer;
+        // facet container is deleted by ResutlsPostProcessingInfo
         if (sortQueryContainer != NULL)
             delete sortQueryContainer;
         if(parseTreeRoot != NULL){

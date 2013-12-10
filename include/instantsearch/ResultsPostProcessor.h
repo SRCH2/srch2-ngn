@@ -91,6 +91,15 @@ public:
 	SortOrder order;
 };
 
+class RefiningAttributeExpressionFilterInternal;
+
+class RefiningAttributeExpressionEvaluator
+{
+public:
+	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
+	virtual ~RefiningAttributeExpressionEvaluator(){};
+};
+
 class ResultsPostProcessingInfo{
 public:
 	ResultsPostProcessingInfo();
@@ -100,9 +109,13 @@ public:
 	SortEvaluator * getSortEvaluator();
 	void setSortEvaluator(SortEvaluator * evaluator);
 
+	void setFilterQueryEvaluator(RefiningAttributeExpressionEvaluator * filterQuery);
+	RefiningAttributeExpressionEvaluator * getFilterQueryEvaluator();
+
 private:
 	FacetQueryContainer * facetInfo;
 	SortEvaluator * sortEvaluator;
+	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
 };
 
 

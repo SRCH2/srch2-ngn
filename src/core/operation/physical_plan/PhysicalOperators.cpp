@@ -3,6 +3,7 @@
 #include "UnionLowestLevelTermVirtualListOperator.h"
 #include "UnionLowestLevelSimpleScanOperator.h"
 #include "MergeTopKOperator.h"
+#include "FilterQueryOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -137,5 +138,16 @@ UnionLowestLevelSimpleScanOptimizationOperator * PhysicalOperatorFactory::create
 	return op;
 }
 
+FilterQueryOperator * PhysicalOperatorFactory::createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator){
+	FilterQueryOperator * filterQueryOp = new FilterQueryOperator(filterQueryEvaluator);
+	executionNodes.push_back(filterQueryOp);
+	return filterQueryOp;
+}
+
+FilterQueryOptimizationOperator * PhysicalOperatorFactory::createFilterQueryOptimizationOperator(){
+	FilterQueryOptimizationOperator * filterQueryOpOp = new FilterQueryOptimizationOperator();
+	optimizationNodes.push_back(filterQueryOpOp);
+	return filterQueryOpOp;
+}
 }
 }

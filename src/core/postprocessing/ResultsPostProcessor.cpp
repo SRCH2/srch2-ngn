@@ -73,6 +73,7 @@ void ResultsPostProcessorPlan::closeIteration(){
 ResultsPostProcessingInfo::ResultsPostProcessingInfo(){
 	facetInfo = NULL;
 	sortEvaluator = NULL;
+	filterQueryEvaluator = NULL;
 }
 ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
 	if(facetInfo != NULL){
@@ -80,6 +81,9 @@ ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
 	}
 	if(sortEvaluator != NULL){
 		delete sortEvaluator;
+	}
+	if(filterQueryEvaluator != NULL){
+		delete filterQueryEvaluator;
 	}
 }
 
@@ -94,6 +98,13 @@ SortEvaluator * ResultsPostProcessingInfo::getSortEvaluator(){
 }
 void ResultsPostProcessingInfo::setSortEvaluator(SortEvaluator * evaluator){
 	this->sortEvaluator = evaluator;
+}
+
+void ResultsPostProcessingInfo::setFilterQueryEvaluator(RefiningAttributeExpressionEvaluator * filterQuery){
+	this->filterQueryEvaluator = filterQuery;
+}
+RefiningAttributeExpressionEvaluator * ResultsPostProcessingInfo::getFilterQueryEvaluator(){
+	return this->filterQueryEvaluator;
 }
 
 }

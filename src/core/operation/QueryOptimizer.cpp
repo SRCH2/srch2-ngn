@@ -4,6 +4,7 @@
 #include "util/QueryOptimizerUtil.h"
 #include "physical_plan/PhysicalOperators.h"
 #include "QueryEvaluatorInternal.h"
+#include "physical_plan/FilterQueryOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -24,9 +25,6 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan){
 
 	// Build physical plan
 	buildPhysicalPlanFirstVersion(physicalPlan);
-
-	// add post processing filters as operators
-	addPostProcessingFilterOperators(physicalPlan);
 
 	// apply optimization rules
 	applyOptimizationRulesOnThePlan(physicalPlan);
@@ -66,11 +64,6 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 //	exit(0);
 	// end : print for test
 
-}
-
-
-void QueryOptimizer::addPostProcessingFilterOperators(PhysicalPlan & physicalPlan){
-//TODO
 }
 
 /*
@@ -376,6 +369,20 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 	PhysicalPlanOptimizationNode * optimizationResult = NULL;
 	PhysicalPlanNode * executableResult = NULL;
 	// TODO possible optimization : we can use PhysicalPlanOptimizationNodes from the chosenTree
+	// allocate filter query operator to be attached to a term (if this filter exists)
+	FilterQueryOperator * filterQueryOp = NULL;
+	if(logicalPlan->getPostProcessingInfo() != NULL &&
+			(chosenTree->getType() == PhysicalPlanNode_UnionLowestLevelTermVirtualList
+					|| chosenTree->getType() == PhysicalPlanNode_UnionLowestLevelSimpleScanOperator)){
+		if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL){
+			filterQueryOp = this->queryEvaluator->getPhysicalOperatorFactory()->
+					createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() );
+			FilterQueryOptimizationOperator * filterQueryOpOp = this->queryEvaluator->getPhysicalOperatorFactory()->
+					createFilterQueryOptimizationOperator();
+			filterQueryOp->setPhysicalPlanOptimizationNode(filterQueryOpOp);
+			filterQueryOpOp->setExecutableNode(filterQueryOp);
+		}
+	}
 	switch (chosenTree->getType()) {
 		case PhysicalPlanNode_SortById:{
 			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createSortByIdOptimizationOperator();
@@ -442,9 +449,17 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 	optimizationResult->setExecutableNode(executableResult);
 	executableResult->setPhysicalPlanOptimizationNode(optimizationResult);
 
+
+
+
 	for(unsigned childOffset = 0 ; childOffset < chosenTree->getChildrenCount() ; ++childOffset){
 		PhysicalPlanOptimizationNode * child = chosenTree->getChildAt(childOffset);
 		optimizationResult->addChild(buildPhysicalPlanFirstVersionFromTreeStructure(child)->getPhysicalPlanOptimizationNode());
+	}
+
+	if(filterQueryOp != NULL){
+		filterQueryOp->getPhysicalPlanOptimizationNode()->addChild(optimizationResult);
+		executableResult = (PhysicalPlanNode *)filterQueryOp;
 	}
 
 	return executableResult;

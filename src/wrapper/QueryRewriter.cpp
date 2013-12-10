@@ -22,7 +22,6 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include "postprocessing/PhraseSearchFilter.h"
 #include "ConfigManager.h"
 
@@ -776,11 +775,7 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     plan.setPostProcessingInfo(new ResultsPostProcessingInfo());
     // 2. If there is a filter query, allocate the filter and add it to the plan
     if (paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
-        srch2is::RefiningAttributeExpressionFilter * filterQuery =
-                new srch2is::RefiningAttributeExpressionFilter();
-        filterQuery->evaluator =
-        		paramContainer->filterQueryContainer->evaluator;
-        plan.getPostProcessingPlan()->addFilterToPlan(filterQuery);
+        plan.getPostProcessingInfo()->setFilterQueryEvaluator(paramContainer->filterQueryContainer->evaluator);
     }
 
     if (paramContainer->hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...

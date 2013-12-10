@@ -229,6 +229,7 @@ typedef enum {
 	PhysicalPlanNode_RandomAccessNot,
 	PhysicalPlanNode_Facet,
 	PhysicalPlanNode_SortByRefiningAttribute,
+	PhysicalPlanNode_FilterQuery,
 	PhysicalPlanNode_KeywordSearch
 } PhysicalPlanNodeType;
 

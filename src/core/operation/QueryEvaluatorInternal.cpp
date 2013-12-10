@@ -35,6 +35,7 @@
 #include "physical_plan/PhysicalPlan.h"
 #include "physical_plan/PhysicalOperators.h"
 #include "physical_plan/FacetOperator.h"
+#include "physical_plan/SortByRefiningAttributeOperator.h"
 #include "physical_plan/KeywordSearchOperator.h"
 
 #include <vector>
