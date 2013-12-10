@@ -159,7 +159,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
         }
 
         // look for Facet filter
-        if (paramsContainer.hasParameterInQuery(FacetQueryHandler)) {
+        if (paramsContainer.getAllResultsParameterContainer->hasParameterInQuery(FacetQueryHandler)) {
             srch2is::FacetedSearchFilter * facetFilter =
                     new srch2is::FacetedSearchFilter();
             FacetQueryContainer * container =
