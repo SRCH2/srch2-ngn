@@ -1010,6 +1010,8 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
         case MessageWarning:
             messagesString += "WARNING : " + m->second + "\n";
             break;
+	default:
+	    break;
         }
     }
 
