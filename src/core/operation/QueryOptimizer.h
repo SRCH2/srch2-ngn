@@ -64,6 +64,8 @@ private:
 	 */
 	void buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan);
 
+	void addPostProcessingFilterOperators(PhysicalPlan & physicalPlan);
+
 	void chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan);
 
 	void preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan);

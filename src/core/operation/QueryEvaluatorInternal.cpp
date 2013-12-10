@@ -32,9 +32,10 @@
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
 #include "HistogramManager.h"
-#include "QueryOptimizer.h"
 #include "physical_plan/PhysicalPlan.h"
 #include "physical_plan/PhysicalOperators.h"
+#include "physical_plan/FacetOperator.h"
+#include "physical_plan/KeywordSearchOperator.h"
 
 #include <vector>
 #include <algorithm>
@@ -187,85 +188,109 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	 * ---- this policy is applied on all search types.
 	 */
 
-	//1. Find the right value for K (if search type is topK)
-	unsigned K = logicalPlan->offset + logicalPlan->resultsToRetrieve;
-	bool isFuzzy = logicalPlan->isFuzzy();
-	// we set fuzzy to false to the first session which is exact
-	logicalPlan->setFuzzy(false);
-	PhysicalPlanExecutionParameters params(K, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getSearchType());
+	PhysicalPlanNode * topOperator = NULL;
+	FacetOperator * facetOperatorPtr = NULL;
+	SortByRefiningAttributeOperator * sortOperator = NULL;
+	if(logicalPlan->getPostProcessingInfo() != NULL){
+		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
+			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
+					logicalPlan->getPostProcessingInfo()->getfacetInfo()->fields,
+					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeStarts,
+					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeEnds,
+					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeGaps,
+					logicalPlan->getPostProcessingInfo()->getfacetInfo()->numberOfTopGroupsToReturn);
 
-	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
-	//2. Apply exact/fuzzy policy and run
-	vector<unsigned> resultIds;
-	for(unsigned fuzzyPolicyIter=0;fuzzyPolicyIter<2;fuzzyPolicyIter++){ // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
+			FacetOptimizationOperator * facetOptimizationOperatorPtr = new FacetOptimizationOperator();
+			facetOperatorPtr->setPhysicalPlanOptimizationNode(facetOptimizationOperatorPtr);
+			facetOptimizationOperatorPtr->setExecutableNode(facetOperatorPtr);
 
-		/*
-		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
-		 * ---- 1.1. computes and attaches active node sets for each term
-		 * ---- 1.2. estimates and saves the number of results of each internal logical operator
-		 * ---- 1.3. ...
-		 */
-		HistogramManager histogramManager(this);
-		histogramManager.annotate(logicalPlan);
-		/*
-		 * 2. Use QueryOptimizer to build PhysicalPlan and optimize it
-		 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
-		 *           and makes sure inputs and outputs of operators are consistent.
-		 * ---- 2.2. Applies optimization rules on the physical plan
-		 * ---- 2.3. ...
-		 */
-		QueryOptimizer queryOptimizer(this,logicalPlan);
-		PhysicalPlan physicalPlan(this);
-		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
-		//1. Open the physical plan by opening the root
-		physicalPlan.getPlanTree()->open(this , params);
-		//2. call getNext for K times
-		for(unsigned i=0;(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery ? true : (i < K) );i++){
-			PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
-			if(newRecord == NULL){
-				break;
-			}
-			// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-			if(fuzzyPolicyIter > 0){
-				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-					continue;
-				}
-			}
-
-			QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
-			queryResults->impl->sortedFinalResults.push_back(queryResult);
-
-			queryResult->internalRecordId = newRecord->getRecordId();
-			//
-			resultIds.push_back(newRecord->getRecordId());
-			//
-			queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());//TODO
-			vector< TrieNodePointer > matchingKeywordTrieNodes;
-			newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
-			for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
-				std::vector<CharType> temp;
-				boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-				this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
-				this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-													   matchingKeywordTrieNodes.at(i), temp);
-				string str;
-				charTypeVectorToUtf8String(temp, str);
-				queryResult->matchingKeywords.push_back(str);
-			}
-			newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
-			newRecord->getRecordMatchEditDistances(queryResult->editDistances);
-			this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
-
+			topOperator =  facetOperatorPtr;
 		}
+		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
+			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
+					new SortByRefiningAttributeOptimizationOperator();
+			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
+			sortOpOperator->setExecutableNode(sortOperator);
 
-		if(isFuzzy == false || queryResults->impl->sortedFinalResults.size() >= K){
-			break;
-		}else{
-			logicalPlan->setFuzzy(true);
-			params.isFuzzy = true;
+			if(topOperator != NULL){
+				topOperator->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+			}else{
+				topOperator = sortOperator;
+			}
 		}
 	}
 
+
+	KeywordSearchOperator keywordSearchOperator(logicalPlan);
+	KeywordSearchOptimizationOperator keywordSearchOptimizationOperator;
+	keywordSearchOperator.setPhysicalPlanOptimizationNode(&keywordSearchOptimizationOperator);
+	keywordSearchOptimizationOperator.setExecutableNode(&keywordSearchOperator);
+
+	if(topOperator != NULL){
+		topOperator->getPhysicalPlanOptimizationNode()->addChild(&keywordSearchOptimizationOperator);
+	}else{
+		topOperator = &keywordSearchOperator;
+	}
+
+
+
+	PhysicalPlanExecutionParameters dummy(0,true,1,SearchTypeTopKQuery); // this parameter will be created inside KeywordSearchOperator
+	topOperator->open(this, dummy );
+
+
+	unsigned numberOfIterations ;
+	if(logicalPlan->getSearchType() == SearchTypeTopKQuery){
+		numberOfIterations = logicalPlan->offset + logicalPlan->resultsToRetrieve;
+	}else{
+		numberOfIterations = -1; // to set it to a very big number
+	}
+
+	while(true){
+
+		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
+
+		if(newRecord == NULL){
+			break;
+		}
+
+		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
+			continue;
+		}
+
+		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+		queryResults->impl->sortedFinalResults.push_back(queryResult);
+
+		queryResult->internalRecordId = newRecord->getRecordId();
+		//
+		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());//TODO
+		vector< TrieNodePointer > matchingKeywordTrieNodes;
+		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
+		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
+			std::vector<CharType> temp;
+			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+			this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
+												   matchingKeywordTrieNodes.at(i), temp);
+			string str;
+			charTypeVectorToUtf8String(temp, str);
+			queryResult->matchingKeywords.push_back(str);
+		}
+		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
+		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
+	}
+
+	if(facetOperatorPtr != NULL){
+		facetOperatorPtr->getFacetResults(queryResults);
+	}
+
+	topOperator->close(dummy);
+
+	if(facetOperatorPtr != NULL){
+		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
+		delete facetOperatorPtr;
+	}
 	return queryResults->impl->sortedFinalResults.size();
 
 }

@@ -22,9 +22,7 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/FacetedSearchFilter.h>
 #include <instantsearch/RefiningAttributeExpressionFilter.h>
-#include <instantsearch/SortFilter.h>
 #include "postprocessing/PhraseSearchFilter.h"
 #include "ConfigManager.h"
 
@@ -775,6 +773,7 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
 
     // 1. allocate the post processing plan, it will be freed when the QueryPlan object is destroyed.
     plan.setPostProcessingPlan(new ResultsPostProcessorPlan());
+    plan.setPostProcessingInfo(new ResultsPostProcessingInfo());
     // 2. If there is a filter query, allocate the filter and add it to the plan
     if (paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
         srch2is::RefiningAttributeExpressionFilter * filterQuery =
@@ -808,22 +807,15 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     // 3. look for Sort and Facet
 	// look for SortFiler
 	if (paramContainer->hasParameterInQuery(SortQueryHandler)) { // there is a sort filter
-		srch2is::SortFilter * sortFilter = new srch2is::SortFilter();
-		sortFilter->evaluator =
-				paramContainer->sortQueryContainer->evaluator;
-		plan.getPostProcessingPlan()->addFilterToPlan(sortFilter);
+		plan.getPostProcessingInfo()->setSortEvaluator(paramContainer->sortQueryContainer->evaluator);
 	}
 
 	// look for Facet filter
 	if (paramContainer->hasParameterInQuery(FacetQueryHandler)) { // there is a sort filter
-		srch2is::FacetedSearchFilter * facetFilter = new srch2is::FacetedSearchFilter();
 		FacetQueryContainer * container =
 				paramContainer->facetQueryContainer;
-		facetFilter->initialize(container->types, container->fields,
-				container->rangeStarts, container->rangeEnds,
-				container->rangeGaps , container->numberOfTopGroupsToReturn);
 
-		plan.getPostProcessingPlan()->addFilterToPlan(facetFilter);
+		plan.getPostProcessingInfo()->setFacetInfo(container);
 	}
 
 }

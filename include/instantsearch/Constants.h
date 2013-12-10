@@ -226,7 +226,10 @@ typedef enum {
 	PhysicalPlanNode_RandomAccessTerm,
 	PhysicalPlanNode_RandomAccessAnd,
 	PhysicalPlanNode_RandomAccessOr,
-	PhysicalPlanNode_RandomAccessNot
+	PhysicalPlanNode_RandomAccessNot,
+	PhysicalPlanNode_Facet,
+	PhysicalPlanNode_SortByRefiningAttribute,
+	PhysicalPlanNode_KeywordSearch
 } PhysicalPlanNodeType;
 
 typedef enum {

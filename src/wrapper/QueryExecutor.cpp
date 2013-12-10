@@ -93,17 +93,13 @@ void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
 
     int idsFound = 0;
 
-    srch2is::QueryResults *exactQueryResults = new QueryResults(
-            this->queryResultFactory, queryEvaluator,
-            this->queryPlan.getExactQuery());
-    idsFound = queryEvaluator->search(&queryPlan,exactQueryResults);
+    idsFound = queryEvaluator->search(&queryPlan,finalResults);
 
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
-    executePostProcessingPlan(this->queryPlan.getExactQuery(),
-            exactQueryResults, finalResults);
+//    executePostProcessingPlan(this->queryPlan.getExactQuery(),
+//            exactQueryResults, finalResults);
 
-    delete exactQueryResults;
 }
 
 

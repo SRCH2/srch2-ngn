@@ -88,6 +88,7 @@ public:
 
 	std::string docIdForRetrieveByIdSearchType;
 	ResultsPostProcessorPlan * postProcessingPlan;
+	ResultsPostProcessingInfo * postProcessingInfo;
 	/// Plan related information
 	srch2::instantsearch::QueryType searchType;
 	int offset;
@@ -112,6 +113,14 @@ public:
 
 	void setPostProcessingPlan(ResultsPostProcessorPlan* postProcessingPlan) {
 		this->postProcessingPlan = postProcessingPlan;
+	}
+
+	ResultsPostProcessingInfo* getPostProcessingInfo() {
+		return postProcessingInfo;
+	}
+
+	void setPostProcessingInfo(ResultsPostProcessingInfo* postProcessingInfo) {
+		this->postProcessingInfo = postProcessingInfo;
 	}
 
 	LogicalPlanNode * getTree(){

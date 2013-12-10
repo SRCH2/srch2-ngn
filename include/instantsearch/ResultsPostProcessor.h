@@ -27,6 +27,7 @@
 
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
+#include "instantsearch/TypedValue.h"
 
 
 namespace srch2
@@ -67,6 +68,42 @@ private:
 	ResultsPostProcessorPlanInternal * impl;
 };
 
+class FacetQueryContainer {
+
+public:
+    // these vectors must be parallel and same size all the time
+    std::vector<srch2::instantsearch::FacetType> types;
+    std::vector<std::string> fields;
+    std::vector<std::string> rangeStarts;
+    std::vector<std::string> rangeEnds;
+    std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfTopGroupsToReturn;
+};
+
+class SortEvaluator
+{
+public:
+	// pass left and right value to compare. Additionally pass internal record id of both left
+	// and right records which serve as tie breaker.
+	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
+	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
+	virtual ~SortEvaluator(){};
+	SortOrder order;
+};
+
+class ResultsPostProcessingInfo{
+public:
+	ResultsPostProcessingInfo();
+	~ResultsPostProcessingInfo();
+	FacetQueryContainer * getfacetInfo();
+	void setFacetInfo(FacetQueryContainer * facetInfo);
+	SortEvaluator * getSortEvaluator();
+	void setSortEvaluator(SortEvaluator * evaluator);
+
+private:
+	FacetQueryContainer * facetInfo;
+	SortEvaluator * sortEvaluator;
+};
 
 
 }

@@ -70,5 +70,31 @@ void ResultsPostProcessorPlan::closeIteration(){
 	impl->filterIterator = impl->filterVector.end();
 }
 
+ResultsPostProcessingInfo::ResultsPostProcessingInfo(){
+	facetInfo = NULL;
+	sortEvaluator = NULL;
+}
+ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
+	if(facetInfo != NULL){
+		delete facetInfo;
+	}
+	if(sortEvaluator != NULL){
+		delete sortEvaluator;
+	}
+}
+
+FacetQueryContainer * ResultsPostProcessingInfo::getfacetInfo(){
+	return facetInfo;
+}
+void ResultsPostProcessingInfo::setFacetInfo(FacetQueryContainer * facetInfo){
+	this->facetInfo = facetInfo;
+}
+SortEvaluator * ResultsPostProcessingInfo::getSortEvaluator(){
+	return this->sortEvaluator;
+}
+void ResultsPostProcessingInfo::setSortEvaluator(SortEvaluator * evaluator){
+	this->sortEvaluator = evaluator;
+}
+
 }
 }

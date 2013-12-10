@@ -24,7 +24,6 @@
 #include "instantsearch/ResultsPostProcessor.h"
 #include "instantsearch/RefiningAttributeExpressionFilter.h"
 #include "postprocessing/RefiningAttributeExpressionFilterInternal.h"
-#include "instantsearch/IndexSearcher.h"
 #include "operation/QueryEvaluatorInternal.h"
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"

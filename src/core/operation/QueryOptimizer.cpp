@@ -25,6 +25,9 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan){
 	// Build physical plan
 	buildPhysicalPlanFirstVersion(physicalPlan);
 
+	// add post processing filters as operators
+	addPostProcessingFilterOperators(physicalPlan);
+
 	// apply optimization rules
 	applyOptimizationRulesOnThePlan(physicalPlan);
 
@@ -63,6 +66,11 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 //	exit(0);
 	// end : print for test
 
+}
+
+
+void QueryOptimizer::addPostProcessingFilterOperators(PhysicalPlan & physicalPlan){
+//TODO
 }
 
 /*

@@ -29,6 +29,7 @@
 #include "FilterQueryEvaluator.h"
 #include "SortFilterEvaluator.h"
 #include "instantsearch/LogicalPlan.h"
+#include "instantsearch/ResultsPostProcessor.h"
 
 
 namespace srch2 {
@@ -274,18 +275,6 @@ public:
     SortFilterEvaluator * evaluator;
 };
 
-class FacetQueryContainer {
-
-public:
-    // these vectors must be parallel and same size all the time
-    std::vector<srch2::instantsearch::FacetType> types;
-    std::vector<std::string> fields;
-    std::vector<std::string> rangeStarts;
-    std::vector<std::string> rangeEnds;
-    std::vector<std::string> rangeGaps;
-    std::vector<int> numberOfTopGroupsToReturn;
-};
-
 class TopKParameterContainer {
 public:
 	// while we are parsing we populate this vector by the names of those members
@@ -355,8 +344,8 @@ public:
     ~ParsedParameterContainer() {
         if (filterQueryContainer != NULL)
             delete filterQueryContainer;
-        if (facetQueryContainer != NULL)
-            delete facetQueryContainer;
+//        if (facetQueryContainer != NULL)
+//            delete facetQueryContainer;
         if (sortQueryContainer != NULL)
             delete sortQueryContainer;
         if(parseTreeRoot != NULL){

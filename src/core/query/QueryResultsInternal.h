@@ -58,7 +58,6 @@ public:
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
-    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue getResultScore() const

@@ -4,6 +4,7 @@
 
 #include "util/Assert.h"
 #include "operation/HistogramManager.h"
+#include "instantsearch/ResultsPostProcessor.h"
 
 using namespace std;
 
@@ -54,10 +55,14 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 LogicalPlan::LogicalPlan(){
 	tree = NULL;
 	logicalPlanNodeId = 0;
+	postProcessingInfo = NULL;
 }
 
 LogicalPlan::~LogicalPlan(){
 	if(tree != NULL) delete tree;
+	if(postProcessingInfo != NULL){
+		delete postProcessingInfo;
+	}
 }
 
 LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){

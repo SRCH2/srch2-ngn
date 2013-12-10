@@ -116,6 +116,7 @@ public:
 	void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets);
 	~PhysicalPlanRecordItem(){};
 
+    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
 private:
 	unsigned recordId;
 	float recordStaticScore;

@@ -8,7 +8,6 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/GlobalCache.h>
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/QueryResults.h>
 
 #include "ConfigManager.h"
@@ -29,7 +28,6 @@
 
 namespace srch2is = srch2::instantsearch;
 using std::string;
-using srch2is::IndexSearcher;
 using srch2is::QueryResults;
 using srch2is::Indexer;
 using srch2is::GlobalCache;

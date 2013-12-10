@@ -108,10 +108,10 @@ def prepareQuery(queryKeywords, facetedFields):
 
 def testFacetedSearch(f_in , f_facet, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./faceted_search/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    #binary= binary_path + '/srch2-search-server'
+    #binary= binary+' --config-file=./faceted_search/conf.xml &'
+    #print 'starting engine: ' + binary 
+    #os.popen(binary)
     #make sure that start the engine up
     pingServer()
 
