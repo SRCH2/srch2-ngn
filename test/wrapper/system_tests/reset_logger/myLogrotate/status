@@ -1,4 +1,4 @@
 logrotate state -- version 2
 "./logs/srch2-log.txt" 2013-11-4
-"./reset_logger/logs/srch2-log.txt" 2013-11-4
+"./reset_logger/logs/srch2-log.txt" 2013-12-9
 "./../logs/srch2-log.txt" 2013-11-4
