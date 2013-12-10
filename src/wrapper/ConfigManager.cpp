@@ -117,14 +117,21 @@ const char* const ConfigManager::wordsString = "words";
 const char* const ConfigManager::keywordPopularityThresholdString = "keywordpopularitythreshold";
 const char* const ConfigManager::getAllResultsMaxResultsThreshold = "getallresultsmaxresultsthreshold";
 const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalternative";
+const char* const ConfigManager::coresString = "cores";
+const char* const ConfigManager::coreString = "core";
+const char* const ConfigManager::defaultCoreNameString = "defaultCoreName";
+const char* const ConfigManager::hostPortString = "hostPort";
+const char* const ConfigManager::instanceDirString = "instanceDir";
+const char* const ConfigManager::schemaFileString = "schemaFile";
+const char* const ConfigManager::uLogDirString = "uLogDir";
 
-
-ConfigManager::ConfigManager(const string& configFile) {
+ConfigManager::ConfigManager(const string& configFile)
+{
     this->configFile = configFile;
-
 }
 
-void ConfigManager::loadConfigFile() {
+void ConfigManager::loadConfigFile()
+{
     Logger::debug("Reading config file: %s\n", this->configFile.c_str());
     xml_document configDoc;
     // Checks if the xml file is parsed correctly or not.
@@ -531,6 +538,102 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
         }
     }
 }
+
+void ConfigManager::parseCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    if (coresNode) {
+
+        // <cores defaultCoreName = "foo">
+        if (coresNode.attribute(defaultCoreNameString) && string(coresNode.attribute(defaultCoreNameString).value()).compare("") != 0) {
+            defaultCoreName = coresNode.attribute(defaultCoreNameString).value();
+	} else {
+	    parseWarnings << "Cores defaultCoreName never set";
+	}
+
+	// parse zero or more individual core settings
+        for (xml_node coreNode = coresNode.first_child(); coreNode; coreNode = coreNode.next_sibling()) {
+	    parseCore(coreNode, configSuccess, parseError, parseWarnings);
+	    if (configSuccess == false) {
+	        return;
+	    }
+	}	
+    }
+}
+
+void ConfigManager::parseCore(const xml_node &coreNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    string tempUse = "";
+    CoreSettings_t core;
+
+    // <core name="core0"
+    if (coreNode.attribute(nameString) && string(coreNode.attribute(nameString).value()).compare("") != 0) {
+        core.name = coreNode.attribute(nameString).value();
+    } else {
+        parseError << "Core must have a name attribute";
+	configSuccess = false;
+	return;
+    }
+
+    // <core dataDir="core0/data"
+    if (coreNode.attribute(dataDirString) && string(coreNode.attribute(dataDirString).value()).compare("") != 0) {
+        core.dataDir = coreNode.attribute(dataDirString).value();
+    }
+
+    xml_node childNode = coreNode.child(dataSourceTypeString);
+    if (childNode && childNode.text()) {
+        int dataSourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
+	switch(dataSourceValue) {
+	case 0:
+	    core.dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
+	    break;
+	case 1:
+	    core.dataSourceType = DATA_SOURCE_JSON_FILE;
+	    break;
+	case 2:
+	    core.dataSourceType = DATA_SOURCE_MONGO_DB;
+	    break;
+	default:
+	    // if user forgets to specify this option, we will assume data source is JSON file
+	    core.dataSourceType = DATA_SOURCE_JSON_FILE;
+	    break;
+	}
+    } else {
+        core.dataSourceType = DATA_SOURCE_JSON_FILE;
+    }
+
+    if (core.dataSourceType == DATA_SOURCE_JSON_FILE) {
+        // dataFile is a required field only if JSON file is specified as data source.
+        childNode = coreNode.child(dataFileString);
+	if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
+	    tempUse = string(childNode.text().get());
+	    trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
+	    core.filePath = this->srch2Home + tempUse;
+	} else {
+	  parseError << core.name <<
+	      ": Path to the data file is not set. "
+	      "You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+	  configSuccess = false;
+	  return;
+	}
+    }
+
+    // if no errors, create new core config settings and add to map
+    if (configSuccess == true) {
+        CoreSettings_t *newCore = new CoreSettings_t(core);
+	coreSettings[core.name] = newCore;
+    }
+}
+
+CoreSettings_t::CoreSettings_t(const CoreSettings_t &src)
+{
+    name = src.name;
+    dataDir = src.dataDir;
+    dataSourceType = src.dataSourceType;
+    dataFile = src.dataFile;
+    filePath = src.filePath;
+    // TODO schema
+}
+
 
 void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings)
@@ -1429,6 +1532,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }else{
     	keywordPopularityThreshold = 50000;
     }
+
+    // <cores>
+    childNode = configNode.child(coresString);
+    parseCores(childNode, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
+    }
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
@@ -1438,8 +1548,12 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &s
     }
 }
 
-ConfigManager::~ConfigManager() {
-
+ConfigManager::~ConfigManager()
+{
+    for (CoreSettingsMap_t::iterator iterator = coreSettings.begin(); iterator != coreSettings.end(); iterator++) {
+        delete iterator->second;
+    }
+    coreSettings.clear();
 }
 
 uint32_t ConfigManager::getDocumentLimit() const {

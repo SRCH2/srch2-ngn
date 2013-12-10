@@ -91,6 +91,19 @@ public:
 	bool isMultiValued;
 };
 
+// definitions for multiple cores (srch2Server objects within one HTTP server)
+struct CoreSettings_t {
+    string name;
+    // NOTDONE: schema
+    string dataDir; // aka indexPath in ConfigManager
+    DataSourceType dataSourceType;
+    string dataFile;
+    string filePath;
+
+    CoreSettings_t() {};
+    CoreSettings_t(const CoreSettings_t &src);
+};
+
 class ConfigManager {
 private:
 
@@ -278,15 +291,24 @@ private:
 
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
+ protected:
+    // <config><cores>
+    string defaultCoreName;
+
+    typedef std::map<const string, CoreSettings_t *> CoreSettingsMap_t;
+    CoreSettingsMap_t coreSettings;
+
 protected:
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     void parseMongoDb(const xml_node &mongoDbNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     void parseQuery(const xml_node &queryNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseCore(const xml_node &coreNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 public:
     ConfigManager(const string& configfile);
-	virtual ~ConfigManager();
+    virtual ~ConfigManager();
 
 	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
 
@@ -425,6 +447,10 @@ public:
     	return defaultNumberOfSuggestions;
     }
 
+    string getDefaultCoreName() const {
+        return defaultCoreName;
+    }
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
@@ -513,6 +539,13 @@ private:
     static const char* const keywordPopularityThresholdString;
     static const char* const getAllResultsMaxResultsThreshold;
     static const char* const getAllResultsKAlternative;
+    static const char* const coresString;
+    static const char* const coreString;
+    static const char* const defaultCoreNameString;
+    static const char* const hostPortString;
+    static const char* const instanceDirString;
+    static const char* const schemaFileString;
+    static const char* const uLogDirString;
 };
 
 }
