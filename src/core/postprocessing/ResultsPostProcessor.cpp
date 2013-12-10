@@ -74,6 +74,7 @@ ResultsPostProcessingInfo::ResultsPostProcessingInfo(){
 	facetInfo = NULL;
 	sortEvaluator = NULL;
 	filterQueryEvaluator = NULL;
+	phraseSearchInfoContainer = NULL;
 }
 ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
 	if(facetInfo != NULL){
@@ -84,6 +85,9 @@ ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
 	}
 	if(filterQueryEvaluator != NULL){
 		delete filterQueryEvaluator;
+	}
+	if(phraseSearchInfoContainer != NULL){
+		delete phraseSearchInfoContainer;
 	}
 }
 
@@ -105,6 +109,13 @@ void ResultsPostProcessingInfo::setFilterQueryEvaluator(RefiningAttributeExpress
 }
 RefiningAttributeExpressionEvaluator * ResultsPostProcessingInfo::getFilterQueryEvaluator(){
 	return this->filterQueryEvaluator;
+}
+
+void ResultsPostProcessingInfo::setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer){
+	this->phraseSearchInfoContainer = phraseSearchInfoContainer;
+}
+PhraseSearchInfoContainer * ResultsPostProcessingInfo::getPhraseSearchInfoContainer(){
+	return this->phraseSearchInfoContainer;
 }
 
 }

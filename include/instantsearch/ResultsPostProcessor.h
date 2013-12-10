@@ -91,13 +91,38 @@ public:
 	SortOrder order;
 };
 
-class RefiningAttributeExpressionFilterInternal;
-
 class RefiningAttributeExpressionEvaluator
 {
 public:
 	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
 	virtual ~RefiningAttributeExpressionEvaluator(){};
+};
+
+class PhraseInfo{
+    public:
+        vector<string> phraseKeyWords;
+        vector<unsigned> keywordIds;
+        vector<unsigned> phraseKeywordPositionIndex;
+        unsigned proximitySlop;
+        unsigned attributeBitMap;
+};
+
+
+class PhraseSearchInfoContainer {
+public:
+	void addPhrase(const vector<string>& phraseKeywords,
+			const vector<unsigned>& phraseKeywordsPositionIndex,
+			unsigned proximitySlop,
+			unsigned attributeBitMap){
+
+		PhraseInfo pi;
+		pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
+		pi.attributeBitMap = attributeBitMap;
+		pi.phraseKeyWords = phraseKeywords;
+		pi.proximitySlop = proximitySlop;
+		phraseInfoVector.push_back(pi);
+	}
+	vector<PhraseInfo> phraseInfoVector;
 };
 
 class ResultsPostProcessingInfo{
@@ -112,10 +137,14 @@ public:
 	void setFilterQueryEvaluator(RefiningAttributeExpressionEvaluator * filterQuery);
 	RefiningAttributeExpressionEvaluator * getFilterQueryEvaluator();
 
+	void setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer);
+	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
+
 private:
 	FacetQueryContainer * facetInfo;
 	SortEvaluator * sortEvaluator;
 	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
+	PhraseSearchInfoContainer * phraseSearchInfoContainer;
 };
 
 

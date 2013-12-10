@@ -42,7 +42,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
 			if(logicalPlan->getPostProcessingInfo() != NULL){
 				if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL
-						|| logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+						|| logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL
+						|| logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
 					if(physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->
 							getLogicalPlanNode()->stats->getEstimatedNumberOfResults() > 500){
 						numberOfIterations = 500;

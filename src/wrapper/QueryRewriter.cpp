@@ -779,7 +779,7 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     }
 
     if (paramContainer->hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...
-    	srch2is::PhraseQueryFilter * pqFilter = new srch2is::PhraseQueryFilter();
+    	srch2is::PhraseSearchInfoContainer * phraseSearchInfoContainer = new PhraseSearchInfoContainer();
 		ParseTreeNode * leafNode;
 		ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
 		while(termIterator.hasMore()){
@@ -793,10 +793,10 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     				paramContainer->PhraseKeyWordsPositionMap.find(leafNode->temporaryTerm->rawQueryKeyword);
     		ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
     		ASSERT(iter->second.size() == phraseKeywords.size());
-    		pqFilter->addPhrase(phraseKeywords,iter->second, leafNode->temporaryTerm->phraseSlop,
+    		phraseSearchInfoContainer->addPhrase(phraseKeywords,iter->second, leafNode->temporaryTerm->phraseSlop,
     				leafNode->temporaryTerm->fieldFilterNumber);
 		}
-        plan.getPostProcessingPlan()->addFilterToPlan(pqFilter);
+        plan.getPostProcessingInfo()->setPhraseSearchInfoContainer(phraseSearchInfoContainer);
     }
 
     // 3. look for Sort and Facet

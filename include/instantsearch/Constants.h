@@ -230,6 +230,7 @@ typedef enum {
 	PhysicalPlanNode_Facet,
 	PhysicalPlanNode_SortByRefiningAttribute,
 	PhysicalPlanNode_FilterQuery,
+	PhysicalPlanNode_PhraseSearch,
 	PhysicalPlanNode_KeywordSearch
 } PhysicalPlanNodeType;
 

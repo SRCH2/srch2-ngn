@@ -58,9 +58,9 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-//	cout << "========================================================" << endl;
-//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-//	cout << "========================================================" << endl;
+	cout << "========================================================" << endl;
+	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+	cout << "========================================================" << endl;
 //	exit(0);
 	// end : print for test
 

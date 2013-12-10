@@ -20,22 +20,10 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-class PhraseInfo{
-    public:
-        vector<string> phraseKeyWords;
-        vector<unsigned> keywordIds;
-        vector<unsigned> phraseKeywordPositionIndex;
-        unsigned proximitySlop;
-        unsigned attributeBitMap;
-};
-
 class PhraseQueryFilter : public ResultsPostProcessorFilter {
 public:
     virtual void doFilter(QueryEvaluator *queryEvaluator, const Query * query,
                  QueryResults * input , QueryResults * output);
-    void addPhrase(const vector<string>& keywordsInPhrase,
-                   const vector<unsigned>& queryKeywordsPositionIndex,
-                   unsigned slopValue, unsigned fieldVector);
 private:
 
     bool matchPhrase(const ForwardList * forwardListPtr, const PhraseInfo& phraseInfo);

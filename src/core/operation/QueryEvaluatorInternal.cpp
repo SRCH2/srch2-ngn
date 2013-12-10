@@ -36,6 +36,7 @@
 #include "physical_plan/PhysicalOperators.h"
 #include "physical_plan/FacetOperator.h"
 #include "physical_plan/SortByRefiningAttributeOperator.h"
+#include "physical_plan/PhraseSearchOperator.h"
 #include "physical_plan/KeywordSearchOperator.h"
 
 #include <vector>
@@ -192,6 +193,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	PhysicalPlanNode * topOperator = NULL;
 	FacetOperator * facetOperatorPtr = NULL;
 	SortByRefiningAttributeOperator * sortOperator = NULL;
+	PhraseSearchOperator * phraseOperator = NULL;
 	if(logicalPlan->getPostProcessingInfo() != NULL){
 		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
 			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
@@ -218,6 +220,18 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 				topOperator->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
 			}else{
 				topOperator = sortOperator;
+			}
+		}
+		if(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
+			phraseOperator = new PhraseSearchOperator(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer());
+			PhraseSearchOptimizationOperator * phraseOpOp = new PhraseSearchOptimizationOperator();
+			phraseOperator->setPhysicalPlanOptimizationNode(phraseOpOp);
+			phraseOpOp->setExecutableNode(phraseOperator);
+
+			if(topOperator != NULL){
+				topOperator->getPhysicalPlanOptimizationNode()->addChild(phraseOpOp);
+			}else{
+				topOperator = phraseOperator;
 			}
 		}
 	}
