@@ -28,6 +28,9 @@
 #        2. Test of boost 1 having no effect on results (single keyword)
 #        3. Test of two keywords hiting in boosted record
 #        4. Test of two keywords with single boost
+#        5. Test of keyword in multiple attributes
+#
+#
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
