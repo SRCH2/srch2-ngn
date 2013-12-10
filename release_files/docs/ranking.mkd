@@ -6,7 +6,7 @@
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#formula">2. Ranking Formula</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dymRanking">3. Dynamic Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dynamicRanking">3. Dynamic Ranking</a></br><br>
 <
 </td></tr></tbody></table>
 
@@ -82,27 +82,27 @@ The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as fo
 
 In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.
 
-##Dynamic Ranking##{id=""dymRanking"}
+##Dynamic Ranking##{id="dynamicRanking"}
 
-The final score of results can also be modified on a per query basis by appending a qf parameter to the query string. The qf string allows boosting of results based on the number of keywords of the query which fall in a particular attribute.
+The final score of results can also be modified on a per query basis by appending a "qf" parameter to the query string. The "qf" string allows boosting of results based on the number of keywords of the query which fall in a particular attribute.
 <p>
 For example: 
 <t>q=terminator&qf=title^10 
 
-<t>will boost the runtime TermScore of terminator by a factor of 10, for the movie Terminator 2, since the record occurs in the title.
+<t>will boost the runtime TermScore of "terminator" by a factor of 10, for the movie Terminator 2, since the record occurs in the "title".
 <p>
 For a record where multiple query keywords fall into the required attribute. Each of those keyword's runtime TermScore will be boosted by a factor of the log of the total number of matching keywords in that attribute.
 <p>
-For Example:
+For example:
 <t>q=Monty AND Grail&qf=title^10
 
-<t>the TermScore of Monty and Grail independently will be boosted by 10*ln(e+2-1) for the movie Monty Python and the Holy Grail, since both keywords: Monty and Grail fall in the title.
+<t>the TermScore of "Monty" and "Grail" independently will be boosted by 10*ln(e+2-1) for the movie "Monty Python and the Holy Grail", since both keywords: "Monty" and "Grail" fall in the "title".
 
 <p>
-Multiple Attributes can also be boosted at once by concating them together with a plus in the qf string.
+Multiple attributes can also be boosted at once by concating them together with a plus in the qf string.
 <p>
 For example:
 <t>q=Carter&qf=title^10+director^5
 
 <p>
-<t>the runtime TermScore of Carter, will be translate to the dynamic TermScore: T(Carter)*10+T(Carter)*5, for the movie "Coach Carter", since "Carter" occurs in both the title and the director attribute.
+<t>the runtime TermScore of "Carter", will be translated to the dynamic TermScore: T(Carter)*10+T(Carter)*5, for the movie "Coach Carter", since "Carter" occurs in both the "title" and the "director" attribute.
