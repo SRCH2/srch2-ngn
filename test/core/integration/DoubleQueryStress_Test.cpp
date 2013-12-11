@@ -20,7 +20,6 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>

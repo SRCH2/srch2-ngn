@@ -12,10 +12,7 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/SortFilter.h>
 #include <wrapper/SortFilterEvaluator.h>
-#include <instantsearch/RefiningAttributeExpressionFilter.h>
-#include <instantsearch/FacetedSearchFilter.h>
 #include "../../core/unit/UnitTestHelper.h"
 //
 #include <iostream>
@@ -431,93 +428,74 @@ void Test_Sort_Filter(QueryEvaluator *queryEvaluator) {
 
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    SortFilter * sortFilter = new SortFilter();
     srch2::httpwrapper::SortFilterEvaluator * eval =
             new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     eval->order = srch2::instantsearch::SortOrderAscending;
     eval->field.push_back("citation");
-
-    plan->addFilterToPlan(sortFilter);
 
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
     		queryEvaluator, query);
     LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
     queryEvaluator->search(logicalPlan , queryResults);
-    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            queryEvaluator, query, plan);
 
-    bool valid = checkResults(queryResultsAfterFilter, &resultSet0);
+    bool valid = checkResults(queryResults, &resultSet0);
     ASSERT(valid);
 
     ////////////////////////////////////////////////////
 
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    sortFilter = new SortFilter();
     eval = new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     eval->order = srch2::instantsearch::SortOrderAscending;
     eval->field.push_back("price");
-
-    plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
             queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
     queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-
-    valid = checkResults(queryResultsAfterFilter, &resultSet01);
+    valid = checkResults(queryResults, &resultSet01);
     ASSERT(valid);
 
     ////////////////////////////////////////////////////////
 
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    sortFilter = new SortFilter();
     eval = new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     eval->order = srch2::instantsearch::SortOrderAscending;
     eval->field.push_back("class");
-
-    plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
             queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-
-    valid = checkResults(queryResultsAfterFilter, &resultSet02);
+    valid = checkResults(queryResults, &resultSet02);
     ASSERT(valid);
 
     ///////////////////////////////////////////////////////////
 
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    sortFilter = new SortFilter();
     eval = new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     eval->order = srch2::instantsearch::SortOrderAscending;
     eval->field.push_back("class");
     eval->field.push_back("citation");
 
-    plan->addFilterToPlan(sortFilter);
-
     queryResults = new QueryResults(new QueryResultFactory(),
             queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-
-    valid = checkResults(queryResultsAfterFilter, &resultSet03);
+    valid = checkResults(queryResults, &resultSet03);
     ASSERT(valid);
 
     /////////////////////////////////////////////////////////////
@@ -533,23 +511,18 @@ void Test_Sort_Filter(QueryEvaluator *queryEvaluator) {
 
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    sortFilter = new SortFilter();
     eval = new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     eval->order = srch2::instantsearch::SortOrderAscending;
     eval->field.push_back("price");
-
-    plan->addFilterToPlan(sortFilter);
 
     queryResults = new QueryResults(new QueryResultFactory(),
             queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-
-    valid = checkResults(queryResultsAfterFilter, &resultSetEmpty);
+    valid = checkResults(queryResults, &resultSetEmpty);
     ASSERT(valid);
 
     delete query;
@@ -797,134 +770,115 @@ void Test_FacetedSearch_Filter(QueryEvaluator *queryEvaluator) {
     // facet: // class , simple
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    FacetedSearchFilter * facetFilter = new FacetedSearchFilter();
 
-    std::vector<FacetType> types;
-    std::vector<std::string> fields;
-    std::vector<std::string> rangeStarts;
-    std::vector<std::string> rangeEnds;
-    std::vector<std::string> rangeGaps;
-    std::vector<int> numberOfGroups;
+    FacetQueryContainer fqc;
 
-    types.push_back(srch2::instantsearch::FacetTypeCategorical);
-    fields.push_back("class");
-    rangeStarts.push_back("");
-    rangeEnds.push_back("");
-    rangeGaps.push_back("");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeCategorical);
+    fqc.fields.push_back("class");
+    fqc.rangeStarts.push_back("");
+    fqc.rangeEnds.push_back("");
+    fqc.rangeGaps.push_back("");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps , numberOfGroups);
-
-    plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
     QueryResultFactory * factory = new QueryResultFactory();
     QueryResults *queryResults = new QueryResults(factory,
             queryEvaluator, query);
     LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setFacetInfo(&fqc);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            queryEvaluator, query, plan);
-    bool valid = checkFacetedFilterResults(queryResultsAfterFilter,
+    bool valid = checkFacetedFilterResults(queryResults,
             &facetResults);
-    printFacetResults(queryResultsAfterFilter->getFacetResults());
+    printFacetResults(queryResults->getFacetResults());
     ASSERT(valid);
 
 //    ASSERT(checkResults(queryResultsAfterFilter, &resultSet0));
     delete plan;
     delete queryResults;
-    delete queryResultsAfterFilter;
     delete factory;
     ////////////////////////////////////////////////////
     // facet: //class , simple & citation : 1,5 range
 
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    facetFilter = new FacetedSearchFilter();
 
-    types.clear();
-    fields.clear();
-    rangeStarts.clear();
-    rangeEnds.clear();
-    rangeGaps.clear();
+    fqc.types.clear();
+    fqc.fields.clear();
+    fqc.rangeStarts.clear();
+    fqc.rangeEnds.clear();
+    fqc.rangeGaps.clear();
 
     // class
-    types.push_back(srch2::instantsearch::FacetTypeCategorical);
-    fields.push_back("class");
-    rangeStarts.push_back("");
-    rangeEnds.push_back("");
-    rangeGaps.push_back("");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeCategorical);
+    fqc.fields.push_back("class");
+    fqc.rangeStarts.push_back("");
+    fqc.rangeEnds.push_back("");
+    fqc.rangeGaps.push_back("");
     // citation
-    types.push_back(srch2::instantsearch::FacetTypeRange);
-    fields.push_back("citation");
-    rangeStarts.push_back("1");
-    rangeEnds.push_back("5");
-    rangeGaps.push_back("4");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
+    fqc.fields.push_back("citation");
+    fqc.rangeStarts.push_back("1");
+    fqc.rangeEnds.push_back("5");
+    fqc.rangeGaps.push_back("4");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps, numberOfGroups);
-
-    plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
     factory = new QueryResultFactory();
     queryResults = new QueryResults(factory, queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setFacetInfo(&fqc);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-    valid = checkFacetedFilterResults(queryResultsAfterFilter, &facetResults2);
-    printFacetResults(queryResultsAfterFilter->getFacetResults());
+    valid = checkFacetedFilterResults(queryResults, &facetResults2);
+    printFacetResults(queryResults->getFacetResults());
     ASSERT(valid);
     delete plan;
     delete queryResults;
-    delete queryResultsAfterFilter;
     delete factory;
 
     //////////////////////////////////
     ////price : 5,7 , range & class , simple & citation : 1 , range
     plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    facetFilter = new FacetedSearchFilter();
 
-    types.clear();
-    fields.clear();
-    rangeStarts.clear();
-    rangeEnds.clear();
-    rangeGaps.clear();
+    fqc.types.clear();
+    fqc.fields.clear();
+    fqc.rangeStarts.clear();
+    fqc.rangeEnds.clear();
+    fqc.rangeGaps.clear();
+
 
     // price
-    types.push_back(srch2::instantsearch::FacetTypeRange);
-    fields.push_back("price");
-    rangeStarts.push_back("5");
-    rangeEnds.push_back("7");
-    rangeGaps.push_back("2");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
+    fqc.fields.push_back("price");
+    fqc.rangeStarts.push_back("5");
+    fqc.rangeEnds.push_back("7");
+    fqc.rangeGaps.push_back("2");
     // class
-    types.push_back(srch2::instantsearch::FacetTypeCategorical);
-    fields.push_back("class");
-    rangeStarts.push_back("");
-    rangeEnds.push_back("");
-    rangeGaps.push_back("");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeCategorical);
+    fqc.fields.push_back("class");
+    fqc.rangeStarts.push_back("");
+    fqc.rangeEnds.push_back("");
+    fqc.rangeGaps.push_back("");
     // citation
-    types.push_back(srch2::instantsearch::FacetTypeRange);
-    fields.push_back("citation");
-    rangeStarts.push_back("1");
-    rangeEnds.push_back("1");
-    rangeGaps.push_back("0");
+    fqc.types.push_back(srch2::instantsearch::FacetTypeRange);
+    fqc.fields.push_back("citation");
+    fqc.rangeStarts.push_back("1");
+    fqc.rangeEnds.push_back("1");
+    fqc.rangeGaps.push_back("0");
 
-    facetFilter->initialize(types, fields, rangeStarts, rangeEnds, rangeGaps, numberOfGroups);
-
-    plan->addFilterToPlan(facetFilter);
     query->setPostProcessingPlan(plan);
     factory = new QueryResultFactory();
     queryResults = new QueryResults(factory, queryEvaluator, query);
     logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+        logicalPlan->getPostProcessingInfo()->setFacetInfo(&fqc);
         queryEvaluator->search(logicalPlan , queryResults);
 
-    queryResultsAfterFilter = applyFilter(queryResults, queryEvaluator,
-            query, plan);
-    ASSERT(checkFacetedFilterResults(queryResultsAfterFilter, &facetResults3));
+    ASSERT(checkFacetedFilterResults(queryResults, &facetResults3));
     delete plan;
     delete queryResults;
-    delete queryResultsAfterFilter;
     delete factory;
 
 }

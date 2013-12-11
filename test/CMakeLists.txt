@@ -78,9 +78,9 @@ ADD_TEST(BuildIndexesForIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integ
 SET_TESTS_PROPERTIES(BuildIndexesForIntegration_Test 
   PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/")
 
-ADD_TEST(CacheIntegration_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/CacheIntegration_Test "--verbose")
-SET_TESTS_PROPERTIES(CacheIntegration_Test 
-				PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}stress-test-queries/QW-1.dat")
+#ADD_TEST(CacheIntegration_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/CacheIntegration_Test "--verbose")
+#SET_TESTS_PROPERTIES(CacheIntegration_Test 
+#			PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}stress-test-queries/QW-1.dat")
          
 #SET_TESTS_PROPERTIES(QueryStress_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}/stress-test-queries/factual-queries/categories.txt")
 

@@ -176,6 +176,7 @@ private:
 	std::string synonymFilterFilePath;
 	bool synonymKeepOrigFlag;
 	std::string stopFilterFilePath;
+	std::string protectedWordsFilePath;
 
 	string trieBootstrapDictFile;
 	uint32_t writeReadBufferInBytes;
@@ -275,6 +276,8 @@ private:
 
     void lowerCaseNodeNames(xml_node &node);
 
+    void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
+
 public:
     ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
@@ -311,6 +314,7 @@ public:
 	bool getQueryTermPrefixType() const;
 	bool getStemmerFlag() const;
 	string getSynonymFilePath() const;
+	string getProtectedWordsFilePath() const;
 	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
 	string getStopFilePath() const; // StopFilter File Path
 	string getStemmerFile() const; // stemmer file
@@ -491,6 +495,7 @@ private:
     static const char* const searcherTypeString;
     static const char* const srch2HomeString;
     static const char* const stopFilterString;
+    static const char* const protectedWordFilterString;
     static const char* const supportSwapInEditDistanceString;
     static const char* const synonymFilterString;
     static const char* const synonymsString;

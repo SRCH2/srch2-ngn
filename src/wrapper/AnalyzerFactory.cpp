@@ -67,6 +67,9 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configM
 }
 
 void AnalyzerHelper::initializeAnalyzerResource (const ConfigManager* conf) {
+	if (conf->getProtectedWordsFilePath().compare("") != 0) {
+		ProtectedWordsContainer::getInstance().initProtectedWordsContainer(conf->getProtectedWordsFilePath());
+	}
 	if (conf->getSynonymFilePath().compare("") != 0) {
 		SynonymContainer::getInstance().initSynonymContainer(conf->getSynonymFilePath());
 	}
@@ -94,6 +97,7 @@ void AnalyzerHelper::loadAnalyzerResource(const ConfigManager* conf) {
 			initializeAnalyzerResource(conf);
 			saveAnalyzerResource(conf);
 		}
+		ProtectedWordsContainer::getInstance().initProtectedWordsContainer(conf->getProtectedWordsFilePath());
 	}catch (std::exception& ex){
 		Logger::error("Error while loading Analyzer resource files");
 		Logger::error(ex.what());

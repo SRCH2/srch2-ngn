@@ -800,28 +800,39 @@ bool ForwardIndex::getExternalRecordIdFromInternalRecordId(const unsigned intern
 }
 
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
-        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned keywordOffset, 
+        unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
             keywordOffset);
-    // support attribute-based search
-    if (searchableAttributeId == 0
-            || (schema->getPositionIndexType()
-                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)) {
+    // support attribute-based search. Here we check if attribute search
+    // is disabled, ie. the POSITION_INDEX_TYPE is neither FIELDBIT nor
+    // FULL. In this case, or if the masked attributes to validate is 0
+    // the the hit is always valid.
+    if (termSearchableAttributeIdToFilterTermHits == 0
+            || ((schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
+            &&  (schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FULL))) {
         return true;
     } else {
         ASSERT(
                 this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
-        bool AND = searchableAttributeId & 0x80000000; // test the highest bit
+         // test the highest bit
+        bool highestBit =
+          termSearchableAttributeIdToFilterTermHits & 0x80000000;
         matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
                 keywordOffset);
-        if (AND) {
-            searchableAttributeId &= 0x7fffffff; // turn off the highest bit
-            return (matchingKeywordAttributeBitmap & searchableAttributeId)
-                    == searchableAttributeId;
+        if (highestBit) {
+            // turn off the highest bit
+            termSearchableAttributeIdToFilterTermHits&= 0x7fffffff; 
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits)
+                    == termSearchableAttributeIdToFilterTermHits;
         } else {
-            return (matchingKeywordAttributeBitmap & searchableAttributeId) != 0;
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits) != 0;
         }
     }
 }

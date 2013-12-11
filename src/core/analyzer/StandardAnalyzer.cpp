@@ -11,6 +11,7 @@
 #include "StemmerFilter.h"
 #include "StopFilter.h"
 #include "SynonymFilter.h"
+#include "NonAlphaNumericFilter.h"
 #include "util/Logger.h"
 
 using srch2::util::Logger;
@@ -24,6 +25,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
 
+    tokenStream = new NonAlphaNumericFilter(tokenStream);
 
 	if (this->stopWordFilePath.compare("") != 0) {
 		struct stat stResult;

@@ -45,7 +45,7 @@ public:
 private:
 	UnionLowestLevelSuggestionOperator() ;
 
-	std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
+	std::vector<SuggestionInfo > suggestionPairs;
 	unsigned suggestionPairCursor ;
 	unsigned invertedListCursor ;
 	QueryEvaluatorInternal * queryEvaluatorIntrnal;

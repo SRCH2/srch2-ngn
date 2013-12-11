@@ -33,7 +33,8 @@ public:
         BOPOMOFO_TYPE,  // Used for the Bopomofo Zhuyin system in Taiwan, 
                         //  http://www.ssec.wisc.edu/~tomw/java/unicode.html
                         
-        HANZI_TYPE      // Chinese Hanzi character
+        HANZI_TYPE,      // Chinese Hanzi character
+        WHITESPACE        // simple whitespace, tab
     };
 
 	static void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters);

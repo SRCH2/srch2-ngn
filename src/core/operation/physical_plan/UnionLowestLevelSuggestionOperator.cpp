@@ -45,7 +45,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 	}
 	shared_ptr<vectorview<unsigned> > invertedListReadView;
 	queryEvaluatorIntrnal->getInvertedIndex()->
-				getInvertedListReadView(suggestionPairs[suggestionPairCursor].second->getInvertedListOffset(), invertedListReadView);
+				getInvertedListReadView(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
 	unsigned termAttributeBitmap = 0;
 	float termRecordStaticScore = 0;
 	// move on inverted list and add the records which are valid
@@ -53,7 +53,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 		if(invertedListCursor < invertedListReadView->size()){
 			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
 			unsigned recordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
-					recordId, suggestionPairs[suggestionPairCursor].second->getInvertedListOffset());
+					recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
 			if (queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(recordId, recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 				// return the item.
@@ -62,16 +62,16 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 				newItem->setRecordId(recordId);
 				// edit distance
 				vector<unsigned> editDistances;
-				editDistances.push_back(suggestionPairs[suggestionPairCursor].first.second);
+				editDistances.push_back(suggestionPairs[suggestionPairCursor].distance);
 				newItem->setRecordMatchEditDistances(editDistances);
 				// matching prefix
 				vector<TrieNodePointer> matchingPrefixes;
-				matchingPrefixes.push_back(suggestionPairs[suggestionPairCursor].second); // TODO this might be wrong
+				matchingPrefixes.push_back(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode); // TODO this might be wrong
 				newItem->setRecordMatchingPrefixes(matchingPrefixes);
 				// runtime score
 				bool isPrefixMatch = true;
 				newItem->setRecordRuntimeScore(	params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
-						suggestionPairs[suggestionPairCursor].first.second,
+						suggestionPairs[suggestionPairCursor].distance,
 						term->getKeyword()->size(),
 						isPrefixMatch,
 						params.prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost());
@@ -91,7 +91,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 				return NULL;
 			}
 			queryEvaluatorIntrnal->getInvertedIndex()->
-						getInvertedListReadView(suggestionPairs[suggestionPairCursor].second->getInvertedListOffset(), invertedListReadView);
+						getInvertedListReadView(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
 			invertedListCursor = 0;
 		}
 	}

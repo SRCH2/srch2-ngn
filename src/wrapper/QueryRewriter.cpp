@@ -172,7 +172,8 @@ void QueryRewriter::applyAnalyzer() {
 			if (positionIndexes.size() > 0)
 				paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
 		}else{
-			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->temporaryTerm->rawQueryKeyword);
+			TermType termType = leafNode->temporaryTerm->keywordPrefixComplete;
+			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->temporaryTerm->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
 		}
 		if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
 			keywordPointersToErase.push_back(leafNode);
@@ -494,9 +495,9 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 						root->temporaryTerm->keywordPrefixComplete,
 						root->temporaryTerm->keywordBoostLevel ,
 						indexDataContainerConf->getFuzzyMatchPenalty(),
-						srch2is::Term::getEditDistanceThreshold(getUtf8StringCharacterNumber(
-						                    		root->temporaryTerm->rawQueryKeyword) ,
-						                    		root->temporaryTerm->keywordSimilarityThreshold));
+						computeEditDistanceThreshold(getUtf8StringCharacterNumber(
+												root->temporaryTerm->rawQueryKeyword) ,
+												root->temporaryTerm->keywordSimilarityThreshold));
 				fuzzyTerm->addAttributeToFilterTermHits(root->temporaryTerm->fieldFilterNumber);
 				result->setFuzzyTerm(fuzzyTerm);
 			}
@@ -696,8 +697,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
             fuzzyTerm = new srch2is::Term(leafNode->temporaryTerm->rawQueryKeyword,
             		leafNode->temporaryTerm->keywordPrefixComplete, leafNode->temporaryTerm->keywordBoostLevel,
                     indexDataContainerConf->getFuzzyMatchPenalty(),
-                    srch2is::Term::getEditDistanceThreshold(getUtf8StringCharacterNumber(
-                    		leafNode->temporaryTerm->rawQueryKeyword) , leafNode->temporaryTerm->keywordSimilarityThreshold));
+                    computeEditDistanceThreshold(getUtf8StringCharacterNumber(leafNode->temporaryTerm->rawQueryKeyword) , leafNode->temporaryTerm->keywordSimilarityThreshold));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
             fuzzyTerm->addAttributeToFilterTermHits(leafNode->temporaryTerm->fieldFilterNumber);

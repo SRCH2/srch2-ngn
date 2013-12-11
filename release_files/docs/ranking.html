@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Ranking</title>
 </head>
@@ -62,7 +62,7 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Ranking</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, Date: October 13, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
 <h2 id="overview">Overview</h2>
 <p>The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:</p>
 <ul>
@@ -90,7 +90,7 @@
 <p>The "idf_score" uses the following formula:</p>
 <p><center> idf_score(<i>r</i>, <i>t_i</i>) = (1.0 + sumOfFieldBoosts(r, <i>t_i</i>) / sumOfAllFieldBoosts ) * idf(<i>t_i</i>).</center></p>
 <p>The value "sumOfFieldBoosts(<i>r</i>, <i>t_i</i>)" is the summation of the boosts of the attributes in which this keyword <i>t_i</i> appears in <i>r</i>, and "sumOfAllFieldBoosts" is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking.</p>
-<p>The value "idf(<i>t_i</i>)" is the inversed document frequency, calculated as follows:</p>
+<p>The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as follows:</p>
 <p><center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center></p>
 <p>In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.</p>
 

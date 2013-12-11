@@ -494,7 +494,7 @@ bool QueryValidator::validateParseTreeStructureForGeo(){
 		return true;
 	}
 	// root must be AND
-	if( paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeAnd){
+	if( paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeAnd && paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeTerm){
 		return false;
 	}
 	// all children of root must be TERM

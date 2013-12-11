@@ -1,15 +1,41 @@
+
 *------------------------------------------------------------------
 *  RELEASE NOTES Version 4.2.0
-*  Date: ${MONTH} ${DAY}, ${YEAR} 
+*  Date: November 26, 2013
 *------------------------------------------------------------------
 
 Changes over version 4.1.0:
+
+* Support of multivalued attributes is added.  Attributes can be
+  declared as multivalued and have a JSON array as their values in
+  the data file. 
+
+* Added a "facet=only" query parameter that tells the engine to return
+  facet results only.  This feature can be used by a frontend that 
+  wants to send a top-k query and a facet-query separately because of
+  their performance differences.
+
+* Added a parameter "f.field_name.rows" in a facet condition to define
+  the number of categories with the maximal frequencies to be
+  returned. All categories are returned by default. This parameter is
+  only valid for categorial facets.  This feature can be used in
+  a frontend where we want to retrieve a small number of facets.
+
+* Added a control message API "resetLogger" to allow the user to use a
+  third-party tool such as "logrotate" to manage the log file.
+
+* GetAll search type is optimized for expensive queries. If the
+  expected number of results is more than 10,000, the engine
+  will return top 2000 results based on the ranking score.
+
+* Optimization is done for short prefixes. If a query is a single
+  prefix with an estimated number of records more than 50,000,
+  the engine increases the performance by first computing the most
+  likely completions, and then using them to compute top-k answers. 
+
 * Tag names and attribute names are now case insensitive.
-* GetAll search type is optimized. If the number of results of the query is greater than 10K, estimated number of results is returned instead of exact number of results.
-* Tag "queryTermType" is now changed to "queryTermPrefixType"
-* Tag "queryTermMatchType" is now changed to "queryTermFuzzyType"
-* Support of multivalued attributes is added. Attributes can be declared as multivalued and contain a JSON array as their value in the data file.
-* Optimization is done for short prefixes. If a query is a single prefix that is very popular (e.g., "q=a"), a heuristic is used to increase the performance by first computing the most likely completions and then using them to compute answers.
-* Added a parameter f.field_name.rows in a facet condition to define the number of categories with the maximal frequencies to be returned. All categories are returned by default. This parameter is only valid for categorial facets.
-* Added a control message API "resetLogger" to allow the user to use a third-party tool such as "logrotate" to manage the log file.
-* Added a facet=only query parameter which results in only returning facet results.
+
+* Tag "queryTermType" is now changed to "queryTermPrefixType".
+
+* Tag "queryTermMatchType" is now changed to "queryTermFuzzyType".
+

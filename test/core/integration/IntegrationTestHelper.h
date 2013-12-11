@@ -465,53 +465,6 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
     }
 }
 
-QueryResults * applyFilter(QueryResults * initialQueryResults,
-        QueryEvaluator * queryEvaluator, Query * query,
-        ResultsPostProcessorPlan * plan) {
-
-//    ResultsPostProcessor postProcessor(indexSearcher);
-
-    QueryResults * finalQueryResults = new QueryResults(
-            new QueryResultFactory(), queryEvaluator, query);
-
-    plan->beginIteration();
-
-    // short circuit in case the plan doesn't have any filters in it.
-    // if no plan is set in Query or there is no filter in it,
-    // then there is no post processing so just mirror the results
-    if (plan == NULL) {
-        finalQueryResults->copyForPostProcessing(initialQueryResults);
-        return finalQueryResults;
-    }
-
-    plan->beginIteration();
-    if (!plan->hasMoreFilters()) {
-        finalQueryResults->copyForPostProcessing(initialQueryResults);
-        plan->closeIteration();
-        return finalQueryResults;
-    }
-
-    // iterating on filters and applying them on list of results
-    while (plan->hasMoreFilters()) {
-        ResultsPostProcessorFilter * filter = plan->nextFilter();
-
-        // clear the output to be ready to accept the result of the filter
-        finalQueryResults->clear();
-        // apply the filter on the input and put the results in output
-        filter->doFilter(queryEvaluator, query, initialQueryResults,
-                finalQueryResults);
-        // if there is going to be other filters, chain the output to the input
-        if (plan->hasMoreFilters()) {
-            initialQueryResults->copyForPostProcessing(finalQueryResults);
-        }
-
-    }
-    plan->closeIteration();
-
-    return finalQueryResults;
-}
-
-
 //Stress Test
 bool doubleSearcherPing(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
 {
@@ -715,12 +668,8 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvalu
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
 
-    ResultsPostProcessorPlan * plan = NULL;
-    plan = new ResultsPostProcessorPlan();
-    SortFilter * sortFilter = new SortFilter();
     srch2::httpwrapper::SortFilterEvaluator * eval =
             new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
 	eval->order = srch2::instantsearch::SortOrderDescending;
     const std::map<std::string , unsigned> * nonSearchableAttributes =
     		queryEvaluatorInternal->getSchema()->getRefiningAttributes();
@@ -733,9 +682,6 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvalu
     }
     eval->field.push_back(attributeToSortName);
 
-    plan->addFilterToPlan(sortFilter);
-
-
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -744,14 +690,14 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvalu
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
     LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeGetAllResultsQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
     queryEvaluator->search(logicalPlan , queryResults);
 
     QueryResultFactory * factory = new QueryResultFactory();
-    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            queryEvaluator, query, plan);
     //bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
-    bool returnvalue =  checkResults(queryResultsAfterFilter, numberofHits, recordIDs);
-    printResults(queryResultsAfterFilter);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    printResults(queryResults);
     delete queryResults;
     delete query;
     return returnvalue;
@@ -765,10 +711,8 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
-    SortFilter * sortFilter = new SortFilter();
     srch2::httpwrapper::SortFilterEvaluator * eval =
             new srch2::httpwrapper::SortFilterEvaluator();
-    sortFilter->evaluator = eval;
     if (descending)
 		eval->order = srch2::instantsearch::SortOrderDescending;
     else
@@ -784,9 +728,6 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     }
     eval->field.push_back(attributeToSortName);
 
-    plan->addFilterToPlan(sortFilter);
-
-
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -795,15 +736,15 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
     LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeGetAllResultsQuery);
+    logicalPlan->setPostProcessingInfo(new ResultsPostProcessingInfo());
+    logicalPlan->getPostProcessingInfo()->setSortEvaluator(eval);
     queryEvaluator->search(logicalPlan , queryResults);
 
     QueryResultFactory * factory = new QueryResultFactory();
-    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,
-            queryEvaluator, query, plan);
 
-    for (unsigned resultCounter = 0; resultCounter < queryResultsAfterFilter->getNumberOfResults(); resultCounter++ )
-        recordIds.push_back(queryResultsAfterFilter->getRecordId(resultCounter));
-    printResults(queryResultsAfterFilter);
+    for (unsigned resultCounter = 0; resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
+        recordIds.push_back(queryResults->getRecordId(resultCounter));
+    printResults(queryResults);
 
     delete queryResults;
     delete query;

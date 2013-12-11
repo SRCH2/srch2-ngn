@@ -154,7 +154,7 @@ public:
     void findKMostPopularSuggestionsSorted(Term *term ,
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
-    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
+    		std::vector<SuggestionInfo > & suggestionPairs) const;
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;

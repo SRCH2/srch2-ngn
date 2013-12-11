@@ -86,8 +86,7 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 		fuzzyMatchPenalty = 0.5;
 	}
 	// calculate editDistanceThreshold
-	// TODO use Ranker to implement this logic
-	unsigned editDistanceThreshold = keyword.length() * (1 - fuzzyMatchPenalty);
+	unsigned editDistanceThreshold = srch2::instantsearch::computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
 
 	// compute active nodes
 	// 1. first we must create term object which is used to compute activenodes.
@@ -99,17 +98,17 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	delete term;
 
 	// 4. now iterate on active nodes and find suggestions for each on of them
-    std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > suggestionPairs;
-    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn , suggestionPairs);
+    std::vector<SuggestionInfo > suggestionPairs;
+    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn, suggestionPairs);
 
     int suggestionCount = 0;
-    for(std::vector<std::pair<std::pair< float , unsigned > , const TrieNode * > >::iterator suggestion = suggestionPairs.begin() ;
+    for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
     	string suggestionString ;
 		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
         this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-                                               suggestion->second, suggestionString);
+                                               suggestion->suggestedCompleteTermNode, suggestionString);
     	suggestions.push_back(suggestionString);
     }
 	// 5. now delete activenode set
@@ -120,16 +119,16 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	return 0;
 }
 
-bool suggestionComparator(const pair<std::pair< float , unsigned > , const TrieNode *> & left ,
-		const pair<std::pair< float , unsigned > , const TrieNode *> & right ){
-	return left.first.first > right.first.first;
+bool suggestionComparator(const SuggestionInfo & left ,
+		const SuggestionInfo & right ){
+	return left.probabilityValue > right.probabilityValue;
 }
 
 
 void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
 		PrefixActiveNodeSet * activeNodes,
 		unsigned numberOfSuggestionsToReturn ,
-		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const{
+		std::vector<SuggestionInfo > & suggestionPairs) const{
 	// first make sure input is OK
 	if(term == NULL || activeNodes == NULL) return;
 
@@ -139,7 +138,16 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
         TrieNodePointer trieNode;
         unsigned distance;
         iter.getItem(trieNode, distance);
-        trieNode->findMostPopularSuggestionsInThisSubTrie(distance, suggestionPairs , numberOfSuggestionsToReturn );
+        // this function is only called if query has only one keyword.
+        // If this keyword is prefix, we should traverse down the trie and find possible completions;
+        // otherwise, we should just check to see if active node is terminal or not.
+        if(term->getTermType() == TERM_TYPE_PREFIX){
+        	trieNode->findMostPopularSuggestionsInThisSubTrie(trieNode , distance, suggestionPairs , numberOfSuggestionsToReturn);
+        }else{
+        	if(trieNode->isTerminalNode() == true){
+        		suggestionPairs.push_back(SuggestionInfo(distance , trieNode->getNodeProbabilityValue(), trieNode , trieNode));
+        	}
+        }
         if(suggestionPairs.size() >= numberOfSuggestionsToReturn){
         	break;
         }

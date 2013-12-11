@@ -28,10 +28,14 @@ public:
         tokenStreamContainer->fillInCharacters(charVector);
     }
 
-    void fillInCharacters(const std::string &str){
+    /*
+     *  isPrefix is a way to inform the analyzer that stop filter should not be applied
+     *  the passed string.
+     */
+    void fillInCharacters(const std::string &str, bool isPrefix = false){
         std::vector<CharType> charVector;
         utf8StringToCharTypeVector(str, charVector); 
-        tokenStreamContainer->fillInCharacters(charVector);
+        tokenStreamContainer->fillInCharacters(charVector, isPrefix);
     }
 
     std::vector<CharType> & getProcessedToken() {

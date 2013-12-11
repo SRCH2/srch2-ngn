@@ -540,9 +540,9 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
         // (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
         // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
     }
-    
-    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
 
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+    
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         this->quadTree->merge();
 
