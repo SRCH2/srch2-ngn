@@ -451,6 +451,7 @@ The engine supports the following formats of time and date: <br>
  - HH:MM:SS<br>
  - MM/DD/YY<br>
  - YYYY-MM-DD HH:MM::SS<br>
+ - YYYY-MM-DD<br>
  - YYYYMMDDHHMMSS<br>
  - YYYYMMDDHHMM<br>
  - YYYYMMDD<br>
