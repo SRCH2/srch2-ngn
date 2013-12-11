@@ -145,8 +145,16 @@ public:
     //DEBUG function. Used in CacheIntegration_Test
     bool cacheHit(const Query *query);
 
+    void setQueryEvaluatorRuntimeParametersContainer(QueryEvaluatorRuntimeParametersContainer * parameters);
+    QueryEvaluatorRuntimeParametersContainer * getQueryEvaluatorRuntimeParametersContainer();
+
+
 public:
     IndexReadStateSharedPtr_Token indexReadToken;
+    void findKMostPopularSuggestionsSorted(Term *term ,
+    		PrefixActiveNodeSet * activeNodes,
+    		unsigned numberOfSuggestionsToReturn ,
+    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;
@@ -158,10 +166,6 @@ private:
     // search functions for map search
     int searchMapQuery(const Query *query, QueryResults* queryResults);
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
-    void findKMostPopularSuggestionsSorted(Term *term ,
-    		PrefixActiveNodeSet * activeNodes,
-    		unsigned numberOfSuggestionsToReturn ,
-    		std::vector<std::pair<std::pair< float , unsigned > , const TrieNode *> > & suggestionPairs) const;
 };
 
 }

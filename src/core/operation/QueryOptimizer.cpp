@@ -46,6 +46,7 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	//---- and not in the PhysicalPlanExecutor
 	preparePhysicalPlanExecutionParamters(physicalPlan);
 
+
 	//3. Build all the options for physical plan tree
 	vector<PhysicalPlanOptimizationNode *> treeOptions;
 	buildIncompleteTreeOptions(treeOptions);
@@ -222,16 +223,23 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, ve
 	}
 }
 void QueryOptimizer::buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
-	PhysicalPlanOptimizationNode * op = (PhysicalPlanOptimizationNode *)
-			this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelTermVirtualListOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
-	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
-	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
+	if(root->forcedPhysicalNode == PhysicalPlanNode_NOT_SPECIFIED){
+		PhysicalPlanOptimizationNode * op = (PhysicalPlanOptimizationNode *)
+				this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelTermVirtualListOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}else if(root->forcedPhysicalNode == PhysicalPlanNode_UnionLowestLevelSuggestion){
+		PhysicalPlanOptimizationNode * op = (PhysicalPlanOptimizationNode *)
+				this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}
 }
 
 
@@ -484,6 +492,7 @@ void QueryOptimizer::applyOptimizationRulesOnThePlan(PhysicalPlan & physicalPlan
 void QueryOptimizer::Rule_1(PhysicalPlan & physicalPlan){
 	//TODO
 }
+
 
 }
 }

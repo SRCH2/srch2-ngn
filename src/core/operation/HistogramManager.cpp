@@ -31,6 +31,33 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 
 	annotateWithEstimatedProbabilitiesAndNumberOfResults(logicalPlan->getTree(), logicalPlan->isFuzzy());
 
+	if(countNumberOfKeywords(logicalPlan->getTree() , logicalPlan->isFuzzy()) == 1){
+		if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
+			queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold){
+			markTermToForceSuggestionPhysicalOperator(logicalPlan->getTree(), logicalPlan->isFuzzy());
+		}
+	}
+
+
+}
+
+void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode * node , bool isFuzzy){
+	switch (node->nodeType) {
+		case LogicalPlanNodeTypeAnd:
+		case LogicalPlanNodeTypeOr:
+		case LogicalPlanNodeTypeNot:
+		{
+			ASSERT(node->children.size() == 1);
+			unsigned numberOfTermsInChildren = 0;
+			markTermToForceSuggestionPhysicalOperator(node->children.at(0) , isFuzzy);
+			return;
+		}
+		case LogicalPlanNodeTypeTerm:
+		{
+			node->forcedPhysicalNode = PhysicalPlanNode_UnionLowestLevelSuggestion;
+			return;
+		}
+	}
 }
 
 // traverses the tree (by recursive calling) and allocates the annotation object for each node
@@ -142,6 +169,25 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 	}
 
 
+}
+
+unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy){
+	switch (node->nodeType) {
+		case LogicalPlanNodeTypeAnd:
+		case LogicalPlanNodeTypeOr:
+		case LogicalPlanNodeTypeNot:
+		{
+			unsigned numberOfTermsInChildren = 0;
+			for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+				numberOfTermsInChildren += countNumberOfKeywords(*child, isFuzzy);
+			}
+			return numberOfTermsInChildren;
+		}
+		case LogicalPlanNodeTypeTerm:
+		{
+			return 1;
+		}
+	}
 }
 
 PrefixActiveNodeSet *HistogramManager::computeActiveNodeSet(Term *term) const

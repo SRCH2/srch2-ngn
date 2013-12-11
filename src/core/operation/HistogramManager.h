@@ -122,10 +122,13 @@ public:
 private:
 	QueryEvaluatorInternal * queryEvaluator;
 
+	void markTermToForceSuggestionPhysicalOperator(LogicalPlanNode * node , bool isFuzzy);
+
 	void allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node);
 
 	void annotateWithActiveNodeSets(LogicalPlanNode * node , bool isFuzzy);
 	void annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy);
+	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
 	PrefixActiveNodeSet * computeActiveNodeSet(Term *term) const;
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,

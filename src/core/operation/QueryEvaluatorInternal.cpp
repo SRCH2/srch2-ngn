@@ -571,4 +571,11 @@ bool QueryEvaluatorInternal::cacheHit(const Query *query)
     return false;
 }
 
+void QueryEvaluatorInternal::setQueryEvaluatorRuntimeParametersContainer(QueryEvaluatorRuntimeParametersContainer * parameters){
+	this->parameters = *parameters;
+}
+QueryEvaluatorRuntimeParametersContainer * QueryEvaluatorInternal::getQueryEvaluatorRuntimeParametersContainer(){
+	return &(this->parameters);
+}
+
 }}

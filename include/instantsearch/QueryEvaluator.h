@@ -39,17 +39,30 @@ namespace instantsearch
 class QueryEvaluatorRuntimeParametersContainer{
 public:
 	unsigned keywordPopularityThreshold;
+	unsigned getAllMaximumNumberOfResults;
+	unsigned getAllTopKReplacementK;
 
 	QueryEvaluatorRuntimeParametersContainer(){
 		keywordPopularityThreshold = 50000;
+		getAllMaximumNumberOfResults = 500;
 	}
 
 	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold){
 		this->keywordPopularityThreshold = keywordPopularityThreshold;
+		this->getAllMaximumNumberOfResults = 500;
+		this->getAllTopKReplacementK = 500;
+	}
+
+	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold, unsigned getAllMaximumNumberOfResults, unsigned getAllTopKReplacementK){
+		this->keywordPopularityThreshold = keywordPopularityThreshold;
+		this->getAllMaximumNumberOfResults = getAllMaximumNumberOfResults;
+		this->getAllTopKReplacementK = getAllTopKReplacementK;
 	}
 
 	QueryEvaluatorRuntimeParametersContainer(const QueryEvaluatorRuntimeParametersContainer & copy){
 		this->keywordPopularityThreshold = copy.keywordPopularityThreshold;
+		this->getAllMaximumNumberOfResults = copy.getAllMaximumNumberOfResults;
+		this->getAllTopKReplacementK = copy.getAllTopKReplacementK;
 	}
 };
 

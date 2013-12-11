@@ -215,6 +215,7 @@ typedef enum {
 } LogicalPlanNodeType;
 
 typedef enum {
+	PhysicalPlanNode_NOT_SPECIFIED,
 	PhysicalPlanNode_SortById,
 	PhysicalPlanNode_SortByScore,
 	PhysicalPlanNode_MergeTopK,
@@ -223,6 +224,7 @@ typedef enum {
 	PhysicalPlanNode_UnionSortedById,
 	PhysicalPlanNode_UnionLowestLevelTermVirtualList,
 	PhysicalPlanNode_UnionLowestLevelSimpleScanOperator,
+	PhysicalPlanNode_UnionLowestLevelSuggestion,
 	PhysicalPlanNode_RandomAccessTerm,
 	PhysicalPlanNode_RandomAccessAnd,
 	PhysicalPlanNode_RandomAccessOr,

@@ -35,6 +35,8 @@ class UnionLowestLevelTermVirtualListOperator;
 class UnionLowestLevelTermVirtualListOptimizationOperator;
 class UnionLowestLevelSimpleScanOperator;
 class UnionLowestLevelSimpleScanOptimizationOperator;
+class UnionLowestLevelSuggestionOperator;
+class UnionLowestLevelSuggestionOptimizationOperator;
 class MergeTopKOperator;
 class MergeTopKOptimizationOperator;
 class FilterQueryOperator;
@@ -423,6 +425,8 @@ public:
 	UnionLowestLevelTermVirtualListOptimizationOperator * createUnionLowestLevelTermVirtualListOptimizationOperator();
 	UnionLowestLevelSimpleScanOperator * createUnionLowestLevelSimpleScanOperator();
 	UnionLowestLevelSimpleScanOptimizationOperator * createUnionLowestLevelSimpleScanOptimizationOperator();
+	UnionLowestLevelSuggestionOperator * createUnionLowestLevelSuggestionOperator();
+	UnionLowestLevelSuggestionOptimizationOperator * createUnionLowestLevelSuggestionOptimizationOperator();
 	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator);
 	FilterQueryOptimizationOperator * createFilterQueryOptimizationOperator();
 

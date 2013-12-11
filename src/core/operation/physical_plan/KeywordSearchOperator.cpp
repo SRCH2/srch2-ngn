@@ -52,6 +52,12 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 					}
 				}
 			}
+		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
+			if(physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->
+					getLogicalPlanNode()->stats->getEstimatedNumberOfResults() >
+			queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllMaximumNumberOfResults){
+				numberOfIterations = queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllTopKReplacementK;
+			}
 		}
 		params.k = numberOfIterations;
 		//1. Open the physical plan by opening the root

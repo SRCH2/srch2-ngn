@@ -45,6 +45,8 @@ public:
 	Term * fuzzyTerm;
 	LogicalPlanNodeAnnotation * stats;
 
+	PhysicalPlanNodeType forcedPhysicalNode;
+
 	~LogicalPlanNode();
 
     unsigned getNodeId();

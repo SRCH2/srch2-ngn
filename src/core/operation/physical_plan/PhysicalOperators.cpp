@@ -2,6 +2,7 @@
 #include "PhysicalOperators.h"
 #include "UnionLowestLevelTermVirtualListOperator.h"
 #include "UnionLowestLevelSimpleScanOperator.h"
+#include "UnionLowestLevelSuggestionOperator.h"
 #include "MergeTopKOperator.h"
 #include "FilterQueryOperator.h"
 
@@ -134,6 +135,17 @@ UnionLowestLevelSimpleScanOperator * PhysicalOperatorFactory::createUnionLowestL
 }
 UnionLowestLevelSimpleScanOptimizationOperator * PhysicalOperatorFactory::createUnionLowestLevelSimpleScanOptimizationOperator(){
 	UnionLowestLevelSimpleScanOptimizationOperator *  op = new UnionLowestLevelSimpleScanOptimizationOperator();
+	optimizationNodes.push_back(op);
+	return op;
+}
+
+UnionLowestLevelSuggestionOperator * PhysicalOperatorFactory::createUnionLowestLevelSuggestionOperator(){
+	UnionLowestLevelSuggestionOperator * op = new UnionLowestLevelSuggestionOperator();
+	executionNodes.push_back(op);
+	return op;
+}
+UnionLowestLevelSuggestionOptimizationOperator * PhysicalOperatorFactory::createUnionLowestLevelSuggestionOptimizationOperator(){
+	UnionLowestLevelSuggestionOptimizationOperator *  op = new UnionLowestLevelSuggestionOptimizationOperator();
 	optimizationNodes.push_back(op);
 	return op;
 }

@@ -17,6 +17,7 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
 	stats = NULL;
+	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
@@ -25,6 +26,7 @@ LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	stats = NULL;
+	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::~LogicalPlanNode(){
