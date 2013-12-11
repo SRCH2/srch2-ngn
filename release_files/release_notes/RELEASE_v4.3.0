@@ -16,3 +16,4 @@
  https://bitbucket.org/srch2inc/srch2-ngn/pull-request/263/support-for-solr-qf-boosting/diff#chg-release_files/docs/ranking.html 
 
   for more details
+* Added support of a new Refining date format YYYY-MM-DD
