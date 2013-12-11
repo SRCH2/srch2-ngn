@@ -38,14 +38,17 @@ DynamicScoringFilter::~DynamicScoringFilter() {
 }
 
 inline
-void getQueryKeywordIds(const Trie& trie, const TrieNode* root,
+bool getQueryKeywordIds(const Trie& trie, const TrieNode* root,
     const std::vector<Term*>& terms, unsigned* keywordID) {
+  const TrieNode *keywordNode;
   std::vector<Term*>::const_iterator term(terms.begin());
   for(; term != terms.end(); ++keywordID, ++term) {
-     *keywordID=
-       (trie.
-        getTrieNodeFromUtf8String(root, *(*term)->getKeyword()))->getId();
+    if(!(keywordNode = 
+          trie.getTrieNodeFromUtf8String(root, *(*term)->getKeyword()))) 
+      return false;
+    *keywordID= keywordNode->getId();
   }
+  return true;
   //potential TODO: we might need to modify the matching term hit on and
   //or condition
 }
@@ -125,15 +128,15 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
   boost::shared_ptr<TrieRootNodeAndFreeList> root;
   unsigned queryKeywordIDs[query->getQueryTerms()->size()];
 
+  output->copyForPostProcessing(input);
 
   ((IndexSearcherInternal*) indexSearcher)->getTrie()
     ->getTrieRootNode_ReadView(root);
-  getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
+  if(!getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
       root->root,
       *query->getQueryTerms(),
-      queryKeywordIDs);
+      queryKeywordIDs)) return;
 
-  output->copyForPostProcessing(input); 
 
   std::vector<QueryResult*>& results= output->impl->sortedFinalResults;
 
