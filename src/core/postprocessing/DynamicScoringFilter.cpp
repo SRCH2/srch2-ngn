@@ -43,6 +43,8 @@ bool getQueryKeywordIds(const Trie& trie, const TrieNode* root,
   const TrieNode *keywordNode;
   std::vector<Term*>::const_iterator term(terms.begin());
   for(; term != terms.end(); ++keywordID, ++term) {
+    // It's possible for this function to return a NULL node,
+    // i.e., when the keyword doesn't exist in the trie.
     if(!(keywordNode = 
           trie.getTrieNodeFromUtf8String(root, *(*term)->getKeyword()))) 
       return false;
@@ -132,10 +134,12 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
 
   ((IndexSearcherInternal*) indexSearcher)->getTrie()
     ->getTrieRootNode_ReadView(root);
+
+  // If one query keyword doesn't exist on the trie,
+  // the filter becomes a "no-op".
   if(!getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
-      root->root,
-      *query->getQueryTerms(),
-      queryKeywordIDs)) return;
+      root->root, *query->getQueryTerms(), queryKeywordIDs))
+    return;
 
 
   std::vector<QueryResult*>& results= output->impl->sortedFinalResults;
