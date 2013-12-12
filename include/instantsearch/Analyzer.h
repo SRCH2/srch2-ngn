@@ -91,6 +91,10 @@ public:
      */
 	std::string applyFilters(std::string input, bool isPrefix);
 
+    // clear the initial states of the filters in the analyzer, e.g.,
+    // for those filters that have an internal buffer to keep tokens
+	void clearFilterStates();
+
 	void tokenizeQuery(const std::string &queryString,
 			std::vector<PositionalTerm> &queryKeywords) const;
 

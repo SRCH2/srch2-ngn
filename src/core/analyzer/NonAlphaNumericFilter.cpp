@@ -15,6 +15,16 @@ NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream):
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
 
+void NonAlphaNumericFilter::clearState() {
+    // clear the state of the filter in the upstream
+	if (this->tokenStream != NULL)
+		this->tokenStream->clearState();
+
+	// clear our own states
+	while (!this->internalTokenBuffer.empty())
+		this->internalTokenBuffer.pop();
+}
+
 /*
  *    This filter receives tokens from upstream filter/tokenizer and then further tokenizes
  *    them based on delimiters. It is advised to have this filter right after the tokenizer.
@@ -34,7 +44,7 @@ bool NonAlphaNumericFilter::processToken() {
 		// if we have tokens in the filter's internal buffer then flush them out one by one before
 		// requesting a new token from the upstream.
 		if (internalTokenBuffer.size() == 0) {
-			if (!this->tokenStream->processToken()) {
+			if (this->tokenStream != NULL && !this->tokenStream->processToken()) {
 				return false;
 			}
 			string currentToken;

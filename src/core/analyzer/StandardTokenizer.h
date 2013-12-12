@@ -19,6 +19,7 @@ namespace instantsearch {
 class StandardTokenizer: public Tokenizer {
 public:
     StandardTokenizer();
+    void clearState() {};
     bool incrementToken();
     bool processToken();
     virtual ~StandardTokenizer();

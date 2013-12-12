@@ -96,8 +96,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
 
 string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 
-   // TokenStream * tokenStream = this->createOperatorFlow();
-
     this->tokenStream->fillInCharacters(input, isPrefix);
 
     string result = "";
@@ -110,6 +108,14 @@ string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
         break; //only returns the first output of filters
     }
     return result;
+}
+
+
+void AnalyzerInternal::clearFilterStates() {
+    // clear the state of each filter on the chain
+	if (tokenStream != NULL) {
+		tokenStream->clearState();
+	}
 }
 
 
