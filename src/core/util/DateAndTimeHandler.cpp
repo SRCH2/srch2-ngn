@@ -269,6 +269,7 @@ const string DateAndTimeHandler::regexInputsPointOfTime[] = {
 		"^\\d{2}:\\d{2}:\\d{2}$",
         "^\\d{2}/\\d{2}/\\d{4}$",
         "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}$",
+        "^\\d{4}-\\d{2}-\\d{2}$",
         "^\\d{4}\\d{2}\\d{2}\\s\\d{2}\\d{2}\\d{2}$",
         "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}$",
         "^\\d{4}-\\d{2}-\\d{2}$"
@@ -278,6 +279,7 @@ const locale DateAndTimeHandler::localeInputsPointOfTime[] ={
 		locale(locale::classic(), new time_input_facet("%H:%M:%S")),
         locale(locale::classic(), new time_input_facet("%m/%d/%Y")),
         locale(locale::classic(), new time_input_facet("%Y-%m-%d %H:%M:%S")),
+        locale(locale::classic(), new time_input_facet("%Y-%m-%d")),
         locale(locale::classic(), new time_input_facet("%Y%m%d%H%M%S")),
         locale(locale::classic(), new time_input_facet("%Y%m%d%H%M")),
         locale(locale::classic(), new time_input_facet("%Y%m%d"))
