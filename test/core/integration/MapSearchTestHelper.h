@@ -266,7 +266,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, QueryEvaluator * queryEvalu
     // for each keyword in the user input, add a term to the query
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    queryEvaluator->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
     //printGeoResults(queryResults);
 
     float resVal = queryResults->getResultScore(0).getFloatTypedValue();
@@ -306,7 +306,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, QueryEvaluator * queryEval
     // for each keyword in the user input, add a term to the query
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    queryEvaluator->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
     //printGeoResults(queryResults);
     //cout << "num of res: " << queryResults->getNumberOfResults() << endl;
 
@@ -335,7 +335,7 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, QueryEvaluator *  queryEvalua
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
     QueryResults *queryResultsK = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    queryEvaluator->search(query, queryResultsK);
+    queryEvaluator->geoSearch(query, queryResultsK);
 
     //printResults(queryResultsK1);
 

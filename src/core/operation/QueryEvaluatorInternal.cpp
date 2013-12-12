@@ -264,7 +264,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	unsigned numberOfIterations ;
 	if(logicalPlan->getSearchType() == SearchTypeTopKQuery){
-		numberOfIterations = logicalPlan->offset + logicalPlan->resultsToRetrieve;
+		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 	}else{
 		numberOfIterations = -1; // to set it to a very big number
 	}
@@ -322,7 +322,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 /**
  * Does Map Search
  */
-int QueryEvaluatorInternal::search(const Query *query, QueryResults *queryResults){
+int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
     int returnValue = this->searchMapQuery(query, queryResults);
@@ -332,7 +332,7 @@ int QueryEvaluatorInternal::search(const Query *query, QueryResults *queryResult
 }
 
 // for doing a geo range query with a circle
-void QueryEvaluatorInternal::search(const Circle &queryCircle, QueryResults *queryResults){
+void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
@@ -343,7 +343,7 @@ void QueryEvaluatorInternal::search(const Circle &queryCircle, QueryResults *que
 }
 
 // for doing a geo range query with a rectangle
-void QueryEvaluatorInternal::search(const Rectangle &queryRectangle, QueryResults *queryResults){
+void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex

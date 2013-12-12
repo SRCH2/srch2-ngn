@@ -111,26 +111,26 @@ void QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 void QueryRewriter::prepareKeywordInfo() {
 
 	ParseTreeNode * leafNode;
-	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 
         if (paramContainer->hasParameterInQuery(KeywordBoostLevel)
-                && leafNode->temporaryTerm->keywordBoostLevel < 0) { // -1 is the place holder for numerical parameters ...
-        	leafNode->temporaryTerm->keywordBoostLevel =
+                && leafNode->termIntermediateStructure->keywordBoostLevel < 0) { // -1 is the place holder for numerical parameters ...
+        	leafNode->termIntermediateStructure->keywordBoostLevel =
                     indexDataContainerConf->getQueryTermBoost();
         }
 
         if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)
-                && leafNode->temporaryTerm->keywordSimilarityThreshold < 0) {
-        	leafNode->temporaryTerm->keywordSimilarityThreshold =
+                && leafNode->termIntermediateStructure->keywordSimilarityThreshold < 0) {
+        	leafNode->termIntermediateStructure->keywordSimilarityThreshold =
                     indexDataContainerConf->getQueryTermSimilarityThreshold();
         }
 
         if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)
-                && leafNode->temporaryTerm->keywordPrefixComplete
+                && leafNode->termIntermediateStructure->keywordPrefixComplete
                         == srch2is::TERM_TYPE_NOT_SPECIFIED) {
-        	leafNode->temporaryTerm->keywordPrefixComplete =
+        	leafNode->termIntermediateStructure->keywordPrefixComplete =
                     indexDataContainerConf->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX;
@@ -138,9 +138,9 @@ void QueryRewriter::prepareKeywordInfo() {
         }
 
         if (paramContainer->hasParameterInQuery(FieldFilter)
-                && leafNode->temporaryTerm->fieldFilterOp
+                && leafNode->termIntermediateStructure->fieldFilterOp
                         == srch2is::OP_NOT_SPECIFIED) {
-        	leafNode->temporaryTerm->fieldFilterOp = srch2is::BooleanOperatorOR; // default field filter operation is OR
+        	leafNode->termIntermediateStructure->fieldFilterOp = srch2is::BooleanOperatorOR; // default field filter operation is OR
             // TODO : get it from configuration file
         }
 	}
@@ -151,16 +151,16 @@ void QueryRewriter::applyAnalyzer() {
     vector<ParseTreeNode *> keywordPointersToErase; // stop word indexes, to be removed later
     // first apply the analyzer
 	ParseTreeNode * leafNode;
-	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 
 		// Currently we only get the first token coming out of analyzer chain for each
 		// keyword. In future we should handle synonyms TODO
 		string keywordAfterAnalyzer = "";
-		if (leafNode->temporaryTerm->isPhraseKeywordFlag){
+		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag){
 			std::vector<PositionalTerm> analyzedQueryKeywords;
-			analyzerNotConst.tokenizeQuery(leafNode->temporaryTerm->rawQueryKeyword, analyzedQueryKeywords);
+			analyzerNotConst.tokenizeQuery(leafNode->termIntermediateStructure->rawQueryKeyword, analyzedQueryKeywords);
 			keywordAfterAnalyzer.clear();
 			vector<unsigned> positionIndexes;
 			for (int i=0; i < analyzedQueryKeywords.size(); ++i){
@@ -172,13 +172,13 @@ void QueryRewriter::applyAnalyzer() {
 			if (positionIndexes.size() > 0)
 				paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
 		}else{
-			TermType termType = leafNode->temporaryTerm->keywordPrefixComplete;
-			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->temporaryTerm->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
+			TermType termType = leafNode->termIntermediateStructure->keywordPrefixComplete;
+			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->termIntermediateStructure->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
 		}
 		if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
 			keywordPointersToErase.push_back(leafNode);
 		} else { // just apply the analyzer
-			leafNode->temporaryTerm->rawQueryKeyword = keywordAfterAnalyzer;
+			leafNode->termIntermediateStructure->rawQueryKeyword = keywordAfterAnalyzer;
 		}
 
 	}
@@ -187,6 +187,7 @@ void QueryRewriter::applyAnalyzer() {
     for(vector<ParseTreeNode *>::iterator keywordToErase = keywordPointersToErase.begin() ; keywordToErase != keywordPointersToErase.end() ; ++keywordToErase){
     	TreeOperations::removeFromTree(*keywordToErase , paramContainer->parseTreeRoot);
     }
+    // TODO After removing stop words the parse tree should be validated again
 
     termIterator.init(paramContainer->parseTreeRoot);
     unsigned numberOfKeywords = 0;
@@ -211,10 +212,10 @@ void QueryRewriter::prepareFieldFilters() {
 
     if(!indexDataContainerConf->getSupportAttributeBasedSearch()){
     	ParseTreeNode * leafNode;
-    	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+    	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->temporaryTerm->fieldFilterNumber = 0x7fffffff;
+    		leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;
     	}
         return;
     }
@@ -222,20 +223,20 @@ void QueryRewriter::prepareFieldFilters() {
         // some filters are provided in query so these two vectors are the same size as keywords vector
 
     	ParseTreeNode * leafNode;
-    	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+    	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
 
-            srch2is::BooleanOperation op = leafNode->temporaryTerm->fieldFilterOp;
+            srch2is::BooleanOperation op = leafNode->termIntermediateStructure->fieldFilterOp;
 
             unsigned filter = 0;
-            if (leafNode->temporaryTerm->fieldFilter.size() == 0) {
+            if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
                 filter = 0x7fffffff;  // it can appear in all fields
                 // TODO : get it from configuration file
             } else {
                 bool shouldApplyAnd = true;
-                for (std::vector<std::string>::iterator field = leafNode->temporaryTerm->fieldFilter.begin();
-                        field != leafNode->temporaryTerm->fieldFilter.end(); ++field) {
+                for (std::vector<std::string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
+                        field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
 
                     if (field->compare("*") == 0) { // all fields
                         filter = 0x7fffffff;
@@ -251,16 +252,16 @@ void QueryRewriter::prepareFieldFilters() {
                     filter |= 0x80000000;
                 }
             }
-            leafNode->temporaryTerm->fieldFilterNumber = filter;
+            leafNode->termIntermediateStructure->fieldFilterNumber = filter;
 
     	}
 
     }else{
     	ParseTreeNode * leafNode;
-    	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+    	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->temporaryTerm->fieldFilterNumber = 0x7fffffff;
+    		leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;
     	}
     }
 
@@ -484,21 +485,21 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 			result = logicalPlan.createOperatorLogicalPlanNode(root->type);
 			break;
 		case LogicalPlanNodeTypeTerm:
-			result = logicalPlan.createTermLogicalPlanNode(root->temporaryTerm->rawQueryKeyword ,
-					root->temporaryTerm->keywordPrefixComplete,
-					root->temporaryTerm->keywordBoostLevel ,
+			result = logicalPlan.createTermLogicalPlanNode(root->termIntermediateStructure->rawQueryKeyword ,
+					root->termIntermediateStructure->keywordPrefixComplete,
+					root->termIntermediateStructure->keywordBoostLevel ,
 					indexDataContainerConf->getFuzzyMatchPenalty(),
 					0,
-					root->temporaryTerm->fieldFilterNumber);
+					root->termIntermediateStructure->fieldFilterNumber);
 			if(logicalPlan.isFuzzy()){
-				Term * fuzzyTerm = new Term(root->temporaryTerm->rawQueryKeyword ,
-						root->temporaryTerm->keywordPrefixComplete,
-						root->temporaryTerm->keywordBoostLevel ,
+				Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
+						root->termIntermediateStructure->keywordPrefixComplete,
+						root->termIntermediateStructure->keywordBoostLevel ,
 						indexDataContainerConf->getFuzzyMatchPenalty(),
 						computeEditDistanceThreshold(getUtf8StringCharacterNumber(
-												root->temporaryTerm->rawQueryKeyword) ,
-												root->temporaryTerm->keywordSimilarityThreshold));
-				fuzzyTerm->addAttributeToFilterTermHits(root->temporaryTerm->fieldFilterNumber);
+												root->termIntermediateStructure->rawQueryKeyword) ,
+												root->termIntermediateStructure->keywordSimilarityThreshold));
+				fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
 				result->setFuzzyTerm(fuzzyTerm);
 			}
 			break;
@@ -523,7 +524,7 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
     } // else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
-	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 	unsigned numberOfKeywords = 0;
 	while(termIterator.hasMore()){
 		termIterator.getNext();
@@ -546,9 +547,9 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
     // 4. set the number of results to retrieve
     if (paramContainer->hasParameterInQuery(NumberOfResults)) {
-        plan.setResultsToRetrieve(paramContainer->numberOfResults);
+        plan.setNumberOfResultsToRetrieve(paramContainer->numberOfResults);
     } else { // get it from configuration file
-        plan.setResultsToRetrieve(
+        plan.setNumberOfResultsToRetrieve(
                 indexDataContainerConf->getDefaultResultsToRetrieve());
     }
 
@@ -613,11 +614,11 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
     }
 
     ParseTreeNode * leafNode;
-	ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold) == false) { // get it from configuration file
-			leafNode->temporaryTerm->keywordSimilarityThreshold = indexDataContainerConf->getQueryTermSimilarityThreshold();
+			leafNode->termIntermediateStructure->keywordSimilarityThreshold = indexDataContainerConf->getQueryTermSimilarityThreshold();
 		}
 	}
 
@@ -625,7 +626,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(KeywordBoostLevel) == false) { // get it from configuration file
-			leafNode->temporaryTerm->keywordBoostLevel = indexDataContainerConf->getQueryTermBoost();
+			leafNode->termIntermediateStructure->keywordBoostLevel = indexDataContainerConf->getQueryTermBoost();
 		}
 	}
 
@@ -633,7 +634,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag) == false) { // get it from configuration file
-			leafNode->temporaryTerm->keywordPrefixComplete =
+			leafNode->termIntermediateStructure->keywordPrefixComplete =
 					indexDataContainerConf->getQueryTermPrefixType() ?
                     srch2is::TERM_TYPE_COMPLETE :
                     srch2is::TERM_TYPE_PREFIX;
@@ -643,8 +644,8 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
-		if (leafNode->temporaryTerm->fieldFilterNumber == 0) { // get it from configuration file
-			leafNode->temporaryTerm->fieldFilterNumber = 0x7fffffff;// 0x7fffffff means all attributes with OR operator
+		if (leafNode->termIntermediateStructure->fieldFilterNumber == 0) { // get it from configuration file
+			leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;// 0x7fffffff means all attributes with OR operator
 		}
 	}
 
@@ -652,7 +653,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(IsPhraseKeyword) == false) { // get it from configuration file
-			leafNode->temporaryTerm->isPhraseKeywordFlag = false;
+			leafNode->termIntermediateStructure->isPhraseKeywordFlag = false;
 		}
 	}
 
@@ -662,25 +663,25 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		srch2is::Term *exactTerm;
-		if (leafNode->temporaryTerm->isPhraseKeywordFlag == false){
+		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag == false){
 
-			exactTerm = new srch2is::Term(leafNode->temporaryTerm->rawQueryKeyword,
-					leafNode->temporaryTerm->keywordPrefixComplete, leafNode->temporaryTerm->keywordBoostLevel,
+			exactTerm = new srch2is::Term(leafNode->termIntermediateStructure->rawQueryKeyword,
+					leafNode->termIntermediateStructure->keywordPrefixComplete, leafNode->termIntermediateStructure->keywordBoostLevel,
 					indexDataContainerConf->getFuzzyMatchPenalty(), 0);
-			exactTerm->addAttributeToFilterTermHits(leafNode->temporaryTerm->fieldFilterNumber);
+			exactTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
 
 			plan.getExactQuery()->add(exactTerm);
 
 		} else {
 
 			vector<string> phraseKeyWords;
-			boost::algorithm::split(phraseKeyWords, leafNode->temporaryTerm->rawQueryKeyword, boost::is_any_of("\t "));
+			boost::algorithm::split(phraseKeyWords, leafNode->termIntermediateStructure->rawQueryKeyword, boost::is_any_of("\t "));
 			// keywords in phrase are considered to be complete and no fuzziness is allowed
 			for (int pIndx =0; pIndx < phraseKeyWords.size(); ++pIndx){
 				exactTerm = new srch2is::Term(phraseKeyWords[pIndx],
-						srch2is::TERM_TYPE_COMPLETE, leafNode->temporaryTerm->keywordBoostLevel,
+						srch2is::TERM_TYPE_COMPLETE, leafNode->termIntermediateStructure->keywordBoostLevel,
 						1 , 0);
-				exactTerm->addAttributeToFilterTermHits(leafNode->temporaryTerm->fieldFilterNumber);
+				exactTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
 				plan.getExactQuery()->add(exactTerm);
 			}
 		}
@@ -691,16 +692,16 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
     	termIterator.init(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-        	if (leafNode->temporaryTerm->isPhraseKeywordFlag == true)
+        	if (leafNode->termIntermediateStructure->isPhraseKeywordFlag == true)
         		continue;                   // No fuzzy for phrase search
             srch2is::Term *fuzzyTerm;
-            fuzzyTerm = new srch2is::Term(leafNode->temporaryTerm->rawQueryKeyword,
-            		leafNode->temporaryTerm->keywordPrefixComplete, leafNode->temporaryTerm->keywordBoostLevel,
+            fuzzyTerm = new srch2is::Term(leafNode->termIntermediateStructure->rawQueryKeyword,
+            		leafNode->termIntermediateStructure->keywordPrefixComplete, leafNode->termIntermediateStructure->keywordBoostLevel,
                     indexDataContainerConf->getFuzzyMatchPenalty(),
-                    computeEditDistanceThreshold(getUtf8StringCharacterNumber(leafNode->temporaryTerm->rawQueryKeyword) , leafNode->temporaryTerm->keywordSimilarityThreshold));
+                    computeEditDistanceThreshold(getUtf8StringCharacterNumber(leafNode->termIntermediateStructure->rawQueryKeyword) , leafNode->termIntermediateStructure->keywordSimilarityThreshold));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
-            fuzzyTerm->addAttributeToFilterTermHits(leafNode->temporaryTerm->fieldFilterNumber);
+            fuzzyTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
 
             plan.getFuzzyQuery()->add(fuzzyTerm);
     	}
@@ -781,20 +782,20 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     if (paramContainer->hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...
     	srch2is::PhraseSearchInfoContainer * phraseSearchInfoContainer = new PhraseSearchInfoContainer();
 		ParseTreeNode * leafNode;
-		ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 		while(termIterator.hasMore()){
 			leafNode = termIterator.getNext();
-    		if (leafNode->temporaryTerm->isPhraseKeywordFlag == false)
+    		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag == false)
     			continue;
     		vector<string> phraseKeywords;
-    		boost::algorithm::split(phraseKeywords, leafNode->temporaryTerm->rawQueryKeyword,
+    		boost::algorithm::split(phraseKeywords, leafNode->termIntermediateStructure->rawQueryKeyword,
                                     boost::is_any_of("\t "));
     		std::map<string, vector<unsigned> >::const_iterator iter =
-    				paramContainer->PhraseKeyWordsPositionMap.find(leafNode->temporaryTerm->rawQueryKeyword);
+    				paramContainer->PhraseKeyWordsPositionMap.find(leafNode->termIntermediateStructure->rawQueryKeyword);
     		ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
     		ASSERT(iter->second.size() == phraseKeywords.size());
-    		phraseSearchInfoContainer->addPhrase(phraseKeywords,iter->second, leafNode->temporaryTerm->phraseSlop,
-    				leafNode->temporaryTerm->fieldFilterNumber);
+    		phraseSearchInfoContainer->addPhrase(phraseKeywords,iter->second, leafNode->termIntermediateStructure->phraseSlop,
+    				leafNode->termIntermediateStructure->fieldFilterNumber);
 		}
         plan.getPostProcessingInfo()->setPhraseSearchInfoContainer(phraseSearchInfoContainer);
     }

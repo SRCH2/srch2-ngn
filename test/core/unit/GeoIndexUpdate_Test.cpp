@@ -188,7 +188,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
             unsigned expectedRecordId = atoi(recordsToSearch[i].second.first.c_str());
-            queryEvaluator->search(query, queryResults);
+            queryEvaluator->geoSearch(query, queryResults);
 
             bool pass = true;
             if(shouldExist)

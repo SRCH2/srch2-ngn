@@ -220,7 +220,7 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator , query);
 
-    queryEvaluator->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -278,7 +278,7 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	queryEvaluator->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -336,7 +336,7 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	queryEvaluator->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -389,7 +389,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	queryEvaluator->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	/*for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)

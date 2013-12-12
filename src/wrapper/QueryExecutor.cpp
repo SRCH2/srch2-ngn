@@ -128,7 +128,7 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             p.x = values[0];
             p.y = values[1];
             Circle *circleRange = new Circle(p, values[2]);
-            queryEvaluator->search(*circleRange, exactQueryResults);
+            queryEvaluator->geoSearch(*circleRange, exactQueryResults);
             delete circleRange;
         } else {
             pair<pair<double, double>, pair<double, double> > rect;
@@ -137,12 +137,12 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             rect.second.first = values[2];
             rect.second.second = values[3];
             Rectangle *rectangleRange = new Rectangle(rect);
-            queryEvaluator->search(*rectangleRange, exactQueryResults);
+            queryEvaluator->geoSearch(*rectangleRange, exactQueryResults);
             delete rectangleRange;
         }
     } else // keywords and geo search
     {
-        queryEvaluator->search(this->queryPlan.getExactQuery(),
+        queryEvaluator->geoSearch(this->queryPlan.getExactQuery(),
                 exactQueryResults);
         idsExactFound = exactQueryResults->getNumberOfResults();
 
@@ -157,11 +157,11 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
         if (this->queryPlan.isFuzzy()
                 && idsExactFound
                         < (int) (this->queryPlan.getOffset()
-                                + this->queryPlan.getResultsToRetrieve())) {
+                                + this->queryPlan.getNumberOfResultsToRetrieve())) {
             QueryResults *fuzzyQueryResults = new QueryResults(
                     this->queryResultFactory, queryEvaluator,
                     this->queryPlan.getFuzzyQuery());
-            queryEvaluator->search(this->queryPlan.getFuzzyQuery(),
+            queryEvaluator->geoSearch(this->queryPlan.getFuzzyQuery(),
                     fuzzyQueryResults);
             idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
 
@@ -173,7 +173,7 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
 
             while (exact_qs->sortedFinalResults.size()
                     < (unsigned) (this->queryPlan.getOffset()
-                            + this->queryPlan.getResultsToRetrieve())
+                            + this->queryPlan.getNumberOfResultsToRetrieve())
                     && fuzzyQueryResultsIter
                             < fuzzyQueryResults->getNumberOfResults()) {
                 std::string recordId = fuzzyQueryResults->getRecordId(

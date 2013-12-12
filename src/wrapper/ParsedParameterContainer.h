@@ -35,20 +35,35 @@
 namespace srch2 {
 namespace httpwrapper {
 
+/*
+ * This class contains the information required to make a Term object coming from the
+ * query. This information (such as rawQueryString and keywordSimilarityThreshold) are
+ * specified in the query, then saved in this class, and then copied to the constructor of
+ * Term.
+ */
 class TermIntermediateStructure{
 public:
 	TermIntermediateStructure(){
 		fieldFilterNumber = 0;
 	}
+	// termQueryString contains the keyword and all the modifiers. It's the original
+	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
+	// termQueryString is foo*~0.5 for the first term and "author:bar" for the second one.
 	string termQueryString;
+	// rawQueryKeyword is the actual searchable keyword. in the above example, "foo" and
+	// "bar" are the values that we keep in rawQueryKeyword.
 	string rawQueryKeyword;
+
 	float keywordSimilarityThreshold;
 	int keywordBoostLevel;
 	srch2::instantsearch::TermType keywordPrefixComplete;
+
 	vector<string> fieldFilter;
 	BooleanOperation fieldFilterOp;
+
 	bool isPhraseKeywordFlag ;
 	short phraseSlop;
+
 	unsigned fieldFilterNumber;
 
 	void print(){
@@ -61,22 +76,22 @@ public:
 	LogicalPlanNodeType type;
 	ParseTreeNode * parent;
 	vector<ParseTreeNode *> children;
-	TermIntermediateStructure * temporaryTerm;
+	TermIntermediateStructure * termIntermediateStructure;
 
 //	static int objectCount;
 	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
 	 this->type = type;
 	 this->parent = parent;
-	 this->temporaryTerm = NULL;
+	 this->termIntermediateStructure = NULL;
 //	 objectCount++;
 	}
-	~ParseTreeNode(){
+    ~ParseTreeNode(){
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 			if(*child != NULL) delete *child;
 		}
 
-		if(temporaryTerm != NULL){
-			delete temporaryTerm;
+		if(termIntermediateStructure != NULL){
+			delete termIntermediateStructure;
 		}
 //		objectCount--;
 	}
@@ -109,7 +124,7 @@ public:
 		}
 		cout << indentation(indent) << "--" << endl;
 	}
-	bool checkValiditiyOfPointers(){
+	bool checkValiditiyOfParentPointers(){
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 			if ((*child)->parent != this) return false;
 		}
@@ -119,124 +134,53 @@ public:
 };
 
 
-class ParseTreeLeadNodeIterator{
+class ParseTreeLeafNodeIterator{
 public:
-	ParseTreeNode * root;
-	ParseTreeNode * currentLeafNode;
-	vector<vector<ParseTreeNode *> > dfsChildrenStack;
-	ParseTreeLeadNodeIterator(ParseTreeNode * root){
-		this->currentLeafNode = NULL;
+	unsigned leafNodeCursor;
+	vector<ParseTreeNode *> leafNodes;
+	ParseTreeLeafNodeIterator(ParseTreeNode * root){
 		init(root);
 	}
-	~ParseTreeLeadNodeIterator(){}
+	~ParseTreeLeafNodeIterator(){}
 
 	bool hasMore(){
-		if(currentLeafNode == NULL){
-			return false;
-		}
-		return true;
+		return (leafNodeCursor < leafNodes.size());
 	}
 
 	/*
-	 * Initializing the iteration
+	 * Initializing the iteration :
+	 * Traverses the tree in preorder and saves all leaf nodes for later getNext calls
 	 */
 	void init(ParseTreeNode * root){
-		this->root = root;
-		// Clear all structures
-		this->currentLeafNode = NULL;
-		dfsChildrenStack.clear();
-		/*
-		 * Starting from root, we traverse down and keep the children in the stack
-		 */
-		if(this->root == NULL){
-			return;
-		}
-		// find the first leaf node to be returned by next call of getNext()
-		ParseTreeNode * currentNode = this->root;
-		while(true){
-			if(currentNode->type == LogicalPlanNodeTypeTerm){
-				break;
-			}
-			dfsChildrenStack.push_back(currentNode->children);
-			// each node must either be a TERM or have some children
-			//ASSERT(dfsChildrenStack.at(dfsChildrenStack.size()-1).size() > 0);
-			// set the currentNode to the first child and remove it from the children vector in stack
-			currentNode = dfsChildrenStack.at(dfsChildrenStack.size()-1).at(0);
-			removeFirstChildOfTopVectorInStack();
-		}
-
-		this->currentLeafNode = currentNode;
-	}
-
-	void removeFirstChildOfTopVectorInStack(){
-		dfsChildrenStack.at(dfsChildrenStack.size()-1).erase(
-				dfsChildrenStack.at(dfsChildrenStack.size()-1).begin(),
-				dfsChildrenStack.at(dfsChildrenStack.size()-1).begin()+1);
+		leafNodes.clear();
+		traversePreOrderAndAppendLeafNodesToLeafNodesVector(root);
+		leafNodeCursor = 0;
 	}
 
 	/*
-	 * Going on the next leaf node
+	 * This function traverses the subtree of 'root' and appends discovered leaf node to
+	 * leafNodes vector. It's a recursive function.
 	 */
-	ParseTreeNode * getNext(){
-		/*
-		 * 0. save the node to which currentNode is pointing
-		 * 1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
-		 * 2.1. if this node is a TERM node, set it to next to node to be returned, remove it from vector and return node saved in 0
-		 * 2.2. else, continue pushing children rightmost children until we reach the
-		 * ---- leaf level again and go to 1 again.
-		 * 3. if children vector is empty, we pop the stack and go to 1. if stack is also empty set current node to NULL
-		 * 3. return the saved node in 0
-		 */
-
-		//0. save the node to which currentNode is pointing
-		ParseTreeNode * nextLeafNode = this->currentLeafNode;
-		//1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
-		while(true){
-			if(dfsChildrenStack.size() == 0){ // stack is empty, leaf nodes are finished.
-				this->currentLeafNode = NULL;
-				return nextLeafNode;
-			}
-			vector<ParseTreeNode *> & topChildrenVector = dfsChildrenStack.at(dfsChildrenStack.size()-1);
-			if(topChildrenVector.size() != 0){ // 1. if top children vector is not empty : check the next node in the top vector of dfsChildrenStack
-				if(topChildrenVector.at(0)->type == LogicalPlanNodeTypeTerm){
-					// 2.1. if this node is a TERM node, set it to next to node to be returned, remove it from vector and return node saved in 0
-					this->currentLeafNode = topChildrenVector.at(0);
-					removeFirstChildOfTopVectorInStack();
-					return nextLeafNode;
-				}else{
-					// erase this node from children vector and keep pushing left most children to the stack
-					ParseTreeNode * firstChild = topChildrenVector.at(0);
-					// erase it from children vector
-					removeFirstChildOfTopVectorInStack();
-					// keep pushing left most children until first child is TERM
-					while(true){
-						// push children of this node
-						dfsChildrenStack.push_back(firstChild->children);
-						// this node shouldn't be terminal so it's children vector shouldn't be empty
-						//ASSERT(dfsChildrenStack.at(dfsChildrenStack.size()-1).size() > 0);
-						// get the first member of the new pushed vector (firstChild of the old firstChild)
-						firstChild = dfsChildrenStack.at(dfsChildrenStack.size()-1).at(0);
-						// remove the first child from top vector
-						removeFirstChildOfTopVectorInStack();
-						// if it's terminal we have found the next leaf node
-						if(firstChild->type == LogicalPlanNodeTypeTerm){
-							this->currentLeafNode = firstChild;
-							return nextLeafNode;
-						} // else : we should keep pushing children
-					}
-				}
-
-			}else{ // 3. if children vector is empty, we pop the stack and go to 1. if stack is also empty set current node to NULL
-				dfsChildrenStack.pop_back();
-			}
+	void traversePreOrderAndAppendLeafNodesToLeafNodesVector(ParseTreeNode * root){
+		if(root == NULL){
+			return;
 		}
-
-		ASSERT(false);
-		return NULL;
+		if(root->type == LogicalPlanNodeTypeTerm){
+			leafNodes.push_back(root);
+			return;
+		}
+		for(unsigned childOffset = 0 ; childOffset != root->children.size() ; ++childOffset){
+			traversePreOrderAndAppendLeafNodesToLeafNodesVector(root->children.at(childOffset));
+		}
 	}
 
-
-
+	/*
+	 * Returns the next leaf node
+	 */
+	ParseTreeNode * getNext(){
+		ASSERT(leafNodeCursor < leafNodes.size());
+		return leafNodes.at(leafNodeCursor++);
+	}
 };
 
 

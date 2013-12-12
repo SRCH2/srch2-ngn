@@ -33,7 +33,7 @@ LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQu
 	LogicalPlan * logicalPlan = new LogicalPlan();
 	logicalPlan->exactQuery = exactQuery;
 	logicalPlan->fuzzyQuery = fuzzyQuery;
-	logicalPlan->resultsToRetrieve = resultsToRetrieve;
+	logicalPlan->numberOfResultsToRetrieve = resultsToRetrieve;
 	logicalPlan->offset = offset;
 	logicalPlan->shouldRunFuzzyQuery = shouldRunFuzzyQuery;
 	logicalPlan->searchType = searchType;

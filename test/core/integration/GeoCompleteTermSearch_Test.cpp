@@ -130,7 +130,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
     // for each keyword in the user input, add a term to the query
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-    queryEvaluator->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
 
     ASSERT(expected.size() == queryResults->getNumberOfResults());
 
@@ -159,7 +159,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double rt_lat, double 
     rectangleRange->max.y = rt_lng;
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-    queryEvaluator->search(*rectangleRange, queryResults);
+    queryEvaluator->geoSearch(*rectangleRange, queryResults);
     ASSERT(expected.size() == queryResults->getNumberOfResults());
     for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
 	{
@@ -184,7 +184,7 @@ void query(Indexer *indexer,double lb_lat, double lb_lng, double radius, const v
 	Circle *circleRange = new Circle(pnt,radius);
 
 	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
-	queryEvaluator->search(*circleRange,queryResults);
+	queryEvaluator->geoSearch(*circleRange,queryResults);
 	ASSERT(expected.size() == queryResults->getNumberOfResults());
 	for (unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
 	{

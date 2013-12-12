@@ -69,18 +69,18 @@ int QueryEvaluator::search(LogicalPlan * logicalPlan , QueryResults *queryResult
 /**
  * Does Map Search
  */
-int QueryEvaluator::search(const Query *query, QueryResults *queryResults){
-	return this->impl->search(query , queryResults);
+int QueryEvaluator::geoSearch(const Query *query, QueryResults *queryResults){
+	return this->impl->geoSearch(query , queryResults);
 }
 
 // for doing a geo range query with a circle
-void QueryEvaluator::search(const Circle &queryCircle, QueryResults *queryResults){
-	this->impl->search(queryCircle , queryResults);
+void QueryEvaluator::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
+	this->impl->geoSearch(queryCircle , queryResults);
 }
 
 // for doing a geo range query with a rectangle
-void QueryEvaluator::search(const Rectangle &queryRectangle, QueryResults *queryResults){
-	this->impl->search(queryRectangle , queryResults);
+void QueryEvaluator::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
+	this->impl->geoSearch(queryRectangle , queryResults);
 }
 
 // for retrieving only one result by having the primary key

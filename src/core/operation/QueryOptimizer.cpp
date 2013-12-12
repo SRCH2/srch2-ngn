@@ -81,7 +81,7 @@ void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physic
 	// ---- NOT going to be used in execution.
 	unsigned k = 0;
 	if(physicalPlan.getSearchType() == srch2is::SearchTypeTopKQuery){
-		k = logicalPlan->getResultsToRetrieve() + logicalPlan->getOffset() ;
+		k = logicalPlan->getNumberOfResultsToRetrieve() + logicalPlan->getOffset() ;
 	}
 	// Parameter exactOnly for exact/fuzzy policy.
 	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(),

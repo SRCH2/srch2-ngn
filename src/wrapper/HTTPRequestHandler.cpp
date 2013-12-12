@@ -947,7 +947,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     case srch2is::SearchTypeGetAllResultsQuery:
     case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
-        if (logicalPlan.getOffset() + logicalPlan.getResultsToRetrieve()
+        if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
             HTTPRequestHandler::printResults(req, headers, logicalPlan,
@@ -961,7 +961,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(),
-                    logicalPlan.getOffset() + logicalPlan.getResultsToRetrieve(),
+                    logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
                     paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         }

@@ -44,10 +44,6 @@ LogicalPlanNode::~LogicalPlanNode(){
 	if(stats != NULL) delete stats;
 }
 
-unsigned LogicalPlanNode::getNodeId(){
-	return this->nodeId;
-}
-
 void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 	this->fuzzyTerm = fuzzyTerm;
 }
@@ -56,7 +52,6 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 
 LogicalPlan::LogicalPlan(){
 	tree = NULL;
-	logicalPlanNodeId = 0;
 	postProcessingInfo = NULL;
 }
 
@@ -71,14 +66,12 @@ LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &quer
 	Term * term = new Term(queryKeyword, type, boost, fuzzyMatchPenalty, threshold);
 	term->addAttributeToFilterTermHits(fieldFilter);
 	LogicalPlanNode * node = new LogicalPlanNode(term , NULL);
-	node->nodeId = ++logicalPlanNodeId;
 	return node;
 }
 
 LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
 	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
-	node->nodeId = ++logicalPlanNodeId;
 	return node;
 }
 

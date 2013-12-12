@@ -66,7 +66,7 @@ bool QueryValidator::validate() {
     // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
     if (paramContainer->hasParameterInQuery(TopKSearchType)
             || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-		ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
 		unsigned numberOfTerms = 0;
 		while(termIterator.hasMore()){
 			termIterator.getNext();
@@ -160,7 +160,7 @@ bool QueryValidator::validate() {
     // Example :
     // q= NOT john  ==> this query is not acceptable
     // q= john AND hello ==> this query is acceptable and correct
-    if(! validateLogicalPlanBooleanStructure()){
+    if(! validateParseTreeBooleanStructure()){
     	return false;
     }
 
@@ -174,11 +174,11 @@ bool QueryValidator::validateExistenceOfAttributesInFieldList() {
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
         ParseTreeNode * leafNode;
-        ParseTreeLeadNodeIterator termIterator(paramContainer->parseTreeRoot);
+        ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
         while(termIterator.hasMore()){
         	leafNode = termIterator.getNext();
-        	for (vector<string>::iterator field = leafNode->temporaryTerm->fieldFilter.begin();
-        			field != leafNode->temporaryTerm->fieldFilter.end(); ++field) {
+        	for (vector<string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
+        			field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
         		if (searchableAttributes.find(*field)
         				== searchableAttributes.end()) { // field does not exist in searchable attributes
         			// write a warning and change field value to *
@@ -459,33 +459,61 @@ bool QueryValidator::validateFilterQuery(){
     return true;
 }
 
-bool QueryValidator::validateLogicalPlanBooleanStructure(){
+bool QueryValidator::validateParseTreeBooleanStructure(){
 
 	// validation case : if we traverse the parse tree, there must at least one
 	// --- AND or OR in the path to each NOT. Because cannot handle pure NOT operators
 	// --- and there must be another operator so that NOT prunes the results of that operator.
 	// --- This means that the root of the tree cannot be NOT
-	if(! validateParseTreeStructureWithRegardToNOT() ){
+	if(! validateParseTreeStructureWithRegardToComputability() ){
         paramContainer->messages.push_back(
                 std::make_pair(MessageError,
-                        "Negation is has a too strong role in this expression. It's not supported."));
-        // TODO : ASK CHEN ABOUT WHAT SHOULD BE WRITTEN IN THIS MESSAGE!!!!!!
+                        "Query boolean structure is not supported."));
 		return false;
 	}
+
+
 	return true;
 }
 
-bool QueryValidator::validateParseTreeStructureWithRegardToNOT(){
+bool QueryValidator::validateParseTreeStructureWithRegardToComputability(){
 	ParseTreeNode * root = paramContainer->parseTreeRoot;
 	if(root == NULL){ // if the tree is empty there is no problem with NOT so we return true
 		return true;
 	}
 
-	if(root->type == LogicalPlanNodeTypeNot){
-		return false;
+	return isParseSubtreeComputableRecursive(root);
+
+}
+
+// check recursively if root is computable.
+// Rules are:
+// NOT is not computable
+// AND is computable if at least one child is computable
+// OR is computable only if all children are computable
+bool QueryValidator::isParseSubtreeComputableRecursive(ParseTreeNode * node){
+	switch (node->type) {
+		case LogicalPlanNodeTypeTerm:
+			return true;
+		case LogicalPlanNodeTypeNot:
+			return false;
+		case LogicalPlanNodeTypeAnd:
+			for(unsigned childOffset = 0 ; childOffset < node->children.size() ; ++childOffset){
+				if(isParseSubtreeComputableRecursive(node->children.at(childOffset))){
+					return true;
+				}
+			}
+			return false;
+		case LogicalPlanNodeTypeOr:
+			for(unsigned childOffset = 0 ; childOffset < node->children.size() ; ++childOffset){
+				if(isParseSubtreeComputableRecursive(node->children.at(childOffset)) == false){
+					return false;
+				}
+			}
+			return true;
+			break;
 	}
 	return true;
-
 }
 
 bool QueryValidator::validateParseTreeStructureForGeo(){

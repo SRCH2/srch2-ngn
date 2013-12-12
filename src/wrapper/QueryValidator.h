@@ -58,10 +58,10 @@ private:
 
     bool validateFilterQuery();
 
-    bool validateLogicalPlanBooleanStructure();
+    bool validateParseTreeBooleanStructure();
 
-    bool validateParseTreeStructureWithRegardToNOT();
-    bool validateParseTreeStructureWithRegardToNOTRecursive(ParseTreeNode * node);
+    bool validateParseTreeStructureWithRegardToComputability();
+    bool isParseSubtreeComputableRecursive(ParseTreeNode * node);
 
     bool validateParseTreeStructureForGeo();
 

@@ -603,7 +603,7 @@ private:
      * Example : (((A AND B) OR C)) => (A AND B) OR C
      * Assumption of this function is that parentheses are well formatted.
      */
-    void removeOuterParenthesis(string & input);
+    void removeOuterParenthesisPair(string & input);
 
     /*
      * This function tokenizes a string by a string delimiter (e.g. 'AND') while it is
@@ -616,7 +616,7 @@ private:
     void tokenizeAndDontBreakParentheses(const string & inputArg , vector<string> & tokensArg, const string & delimiter);
 
     /*
-     * This function remobes nodeToRemove from its parent's children list
+     * This function removes nodeToRemove from its parent's children list
      */
     void removeFromParentChildren(ParseTreeNode * nodeToRemove);
 
@@ -628,7 +628,7 @@ private:
     /*
      * This function removes nodeToRemove from a tree that its root is 'root'
      * if the root changes, the 'root' variable is assigned to the new root (which
-     *  might be null in case all the tree is deleted)
+     *  might be null in case the entire tree is deleted)
      */
     void removeFromTree(ParseTreeNode * nodeToRemove, ParseTreeNode *& root);
 

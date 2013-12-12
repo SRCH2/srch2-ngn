@@ -49,12 +49,9 @@ public:
 
 	~LogicalPlanNode();
 
-    unsigned getNodeId();
-
     void setFuzzyTerm(Term * fuzzyTerm);
 
 private:
-	unsigned nodeId;
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
 };
@@ -75,13 +72,17 @@ private:
  *              |_______{freedom, similarityThreshold=0.5}
  *
  * Each node in this tree is a LogicalPlanNode.
+ * Note: The shapes of logical plan and parse tree are similar. The difference between parse-tree and
+ * logical plan is:
+ * 1. Logical plan is made by traversing the parse tree. So parse tree is a product which is made before
+ *    logical plan from the query
+ * 2. LogicalPlan objects keep other information like searchType in addition to the query tree
  */
 class LogicalPlan {
 private:
 	// SearchType
 	// PostProcessingInfo
     LogicalPlanNode * tree;
-    unsigned logicalPlanNodeId;
 
 public:
     LogicalPlan();
@@ -94,7 +95,7 @@ public:
 	/// Plan related information
 	srch2::instantsearch::QueryType searchType;
 	int offset;
-	int resultsToRetrieve;
+	int numberOfResultsToRetrieve;
 	bool shouldRunFuzzyQuery;
 	Query *exactQuery;
 	Query *fuzzyQuery;
@@ -152,12 +153,12 @@ public:
 		this->offset = offset;
 	}
 
-	int getResultsToRetrieve() const {
-		return resultsToRetrieve;
+	int getNumberOfResultsToRetrieve() const {
+		return numberOfResultsToRetrieve;
 	}
 
-	void setResultsToRetrieve(int resultsToRetrieve) {
-		this->resultsToRetrieve = resultsToRetrieve;
+	void setNumberOfResultsToRetrieve(int resultsToRetrieve) {
+		this->numberOfResultsToRetrieve = resultsToRetrieve;
 	}
 
 	srch2is::QueryType getSearchType() const {
@@ -167,8 +168,8 @@ public:
 		return exactQuery;
 	}
 
-	void setExactQuery(Query* exactQuery) { // TODO : change the header
-		// it gets enough information from the arguments and allocates the query objects
+	void setExactQuery(Query* exactQuery) {
+		// it gets enough information from the arguments and allocates the query object
         if(this->exactQuery == NULL){
             this->exactQuery = exactQuery;
         }
@@ -178,36 +179,13 @@ public:
 		return fuzzyQuery;
 	}
 
-	void setFuzzyQuery(Query* fuzzyQuery) { // TODO : change the header
+	void setFuzzyQuery(Query* fuzzyQuery) {
 
-		// it gets enough information from the arguments and allocates the query objects
+		// it gets enough information from the arguments and allocates the query object
 	    if(this->fuzzyQuery == NULL){
             this->fuzzyQuery = fuzzyQuery;
 	    }
 	}
-
-//	// this function translates searchType enum flags to correspondent unsigned values
-//	unsigned getSearchTypeCode() const {
-//		// TODO : there must be some functions in Config file that give us these codes.
-//		switch (getSearchType()) {
-//			case srch2http::TopKSearchType:
-//				return 0;
-//				break;
-//			case srch2http::GetAllResultsSearchType:
-//				return 1;
-//				break;
-//			case srch2http::GeoSearchType:
-//				return 2;
-//				break;
-//			case srch2http::RetrieveByIdSearchType:
-//				return 3;
-//				break;
-//			default:
-//
-//				break;
-//		}
-//		return 0;
-//	}
 
 	void setSearchType(srch2is::QueryType searchType) {
 		this->searchType = searchType;

@@ -37,7 +37,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		PhysicalPlan physicalPlan(queryEvaluator);
 		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
 
-		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->resultsToRetrieve;
+		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
 			if(logicalPlan->getPostProcessingInfo() != NULL){
