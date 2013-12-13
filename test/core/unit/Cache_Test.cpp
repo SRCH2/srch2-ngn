@@ -17,7 +17,7 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "operation/Cache.h"
+#include "operation/CacheManager.h"
 
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Query.h>
@@ -39,7 +39,7 @@ using srch2is::TermType;
 using srch2is::Term;
 using srch2is::ExactTerm;
 using srch2is::FuzzyTerm;
-using srch2is::Cache;
+using srch2is::CacheManager;
 using srch2is::ConjunctionCacheResultsEntry;
 using srch2is::print_trace;
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
     ConjunctionCacheResultsEntry *conjunctionCacheResultsEntry = new ConjunctionCacheResultsEntry(cacheQueryTerms, NULL, NULL);
 
-    Cache *cache = new Cache(10000,10000);
+    CacheManager *cache = new CacheManager(10000,10000);
 
     cache->setCachedConjunctionResult(query1->getQueryTerms(),conjunctionCacheResultsEntry);
 

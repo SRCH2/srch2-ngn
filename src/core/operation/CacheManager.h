@@ -245,11 +245,11 @@ public:
  *  get function has the usual functionality of returns a reference to the cacheItem if found, otherwise returns a NULL.
  *
  */
-class Cache : public GlobalCache
+class CacheManager : public GlobalCache
 {
 public:
-    Cache(unsigned long byteSizeOfCache = 134217728, unsigned noOfCacheEntries = 20000);
-    virtual ~Cache();
+    CacheManager(unsigned long byteSizeOfCache = 134217728, unsigned noOfCacheEntries = 20000);
+    virtual ~CacheManager();
 
     /// Find the PrefixActiveNodeSet with the longest prefix of the keyword in the prefix
     /// If no prefix has a cached result, return NULL.

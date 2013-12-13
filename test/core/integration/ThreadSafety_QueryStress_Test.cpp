@@ -58,7 +58,7 @@ typedef struct
 
 struct IndexerDataContainer {
     Indexer *indexer;
-    Cache *cache;
+    CacheManager *cache;
     const Analyzer *analyzer;
     std::vector<std::string> queryFile;
 };
@@ -78,7 +78,7 @@ void queryStressTest(double &time)
     struct timespec tend;
 
     // create an index searcher
-    //srch2is::Cache *cache = new srch2is::Cache();
+    //srch2is::CacheManager *cache = new srch2is::CacheManager();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexerDataContainer.indexer, &runtimeParameters);
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    indexerDataContainer.cache = new srch2is::Cache(134217728,20000); // 134217728 bytes = 1GB
+    indexerDataContainer.cache = new srch2is::CacheManager(134217728,20000); // 134217728 bytes = 1GB
     IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,

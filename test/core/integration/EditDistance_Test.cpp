@@ -63,7 +63,7 @@ void buildLocalIndex(string INDEX_DIR)
     record->setSearchableAttributeValue("article_authors", "padhraic smyth");
     record->setRecordBoost(20);
 
-    Cache *cache = new Cache();// create an index writer
+    CacheManager *cache = new CacheManager();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -121,7 +121,7 @@ void test1()
     buildLocalIndex(INDEX_DIR);
 
     //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-    Cache *cache = new Cache();// create an index writer
+    CacheManager *cache = new CacheManager();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -231,7 +231,7 @@ void test2()
     buildLocalIndex(INDEX_DIR);
 
     //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-    Cache *cache = new Cache();// create an index writer
+    CacheManager *cache = new CacheManager();// create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;

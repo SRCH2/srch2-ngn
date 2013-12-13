@@ -891,7 +891,7 @@ void Searcher_Tests() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
-            new Cache(), mergeEveryNSeconds, mergeEveryMWrites,
+            new CacheManager(), mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges , updateHistogramEveryQWrites,
             INDEX_DIR, "");
 

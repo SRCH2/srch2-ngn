@@ -24,7 +24,7 @@
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Indexer.h>
 #include <record/LocationRecordUtil.h>
-#include <operation/Cache.h>
+#include <operation/CacheManager.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Schema.h>
 #include <instantsearch/Term.h>
@@ -160,7 +160,7 @@ private:
     IndexReaderWriter *indexer;
 
     QueryEvaluatorRuntimeParametersContainer parameters;
-    Cache *cacheManager;
+    CacheManager *cacheManager;
 	PhysicalOperatorFactory * physicalOperatorFactory;
 	PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
     // search functions for map search

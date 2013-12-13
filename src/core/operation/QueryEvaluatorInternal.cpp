@@ -61,7 +61,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
 		this->parameters = *parameters;
 	}
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
-    this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
+    this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());

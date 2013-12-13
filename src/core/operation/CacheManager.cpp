@@ -18,7 +18,7 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "Cache.h"
+#include "CacheManager.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
 
@@ -39,7 +39,7 @@ namespace instantsearch
 /**
  * Given a string, hashes it to a unsigned integer using djb2 hash function.
  */
-unsigned Cache::_hash( const std::vector<Term *> *queryTerms, unsigned end )
+unsigned CacheManager::_hash( const std::vector<Term *> *queryTerms, unsigned end )
 {
     std::stringstream query;
 
@@ -55,7 +55,7 @@ unsigned Cache::_hash( const std::vector<Term *> *queryTerms, unsigned end )
 }
 
 
-unsigned Cache::_hashDJB2(const char *str)
+unsigned CacheManager::_hashDJB2(const char *str)
 {
     unsigned hash = 5381;
     unsigned c;
@@ -67,7 +67,7 @@ unsigned Cache::_hashDJB2(const char *str)
     return hash;
 }
 
-bool Cache::_vectorOfTermPointerEqualsComparator( const vector<Term*> *leftVector, const vector<Term*> *rightVector , unsigned iter)
+bool CacheManager::_vectorOfTermPointerEqualsComparator( const vector<Term*> *leftVector, const vector<Term*> *rightVector , unsigned iter)
 {
     // CHENLI: DEBUG
     return false; // always returns false so that no cache hit
@@ -84,7 +84,7 @@ bool Cache::_vectorOfTermPointerEqualsComparator( const vector<Term*> *leftVecto
     return true;
 }
 
-bool Cache::_termPointerComparator(const Term *leftTerm, const Term *rightTerm)
+bool CacheManager::_termPointerComparator(const Term *leftTerm, const Term *rightTerm)
 {
     if ( leftTerm->getAttributeToFilterTermHits() == rightTerm->getAttributeToFilterTermHits()
             && leftTerm->getBoost() == rightTerm->getBoost()
@@ -138,7 +138,7 @@ ActiveNodeCache::ActiveNodeCache(unsigned long byteSizeOfCache, unsigned noOfCac
 }
 
 //TODO: Remove caching for 0 hits
-Cache::Cache(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
+CacheManager::CacheManager(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
 {
     pthread_mutex_init(&mutex_ConjunctionCache, 0);
     pthread_mutex_init(&mutex_ActiveNodeCache, 0);
@@ -147,7 +147,7 @@ Cache::Cache(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
     this->cCache = new ConjunctionCache(byteSizeOfCache, noOfCacheEntries);
 }
 
-Cache::~Cache()
+CacheManager::~CacheManager()
 {
     this->clear();
 
@@ -202,7 +202,7 @@ void ActiveNodeCache::clear()
     //this->noOfActiveNodeCacheItems = noOfCacheEntries;
 }
 
-int Cache::clear()
+int CacheManager::clear()
 {
     pthread_mutex_lock(&mutex_ConjunctionCache);
     this->cCache->clear();
@@ -222,7 +222,7 @@ PrefixActiveNodeSet *ActiveNodeCache::_getPrefixActiveNodeSet(string &prefix, un
 	// exact always makes the cache entry busy so fuzzy cannot use it.
 	// So, we want to differentiate the cache entries, so we append "0" (exact) or "1" (fuzzy) to the end of prefix before hashing it.
     std::string exactOrFuzzy =  termThreshold == 0?"0":"1";
-    unsigned hashedQuery = Cache::_hashDJB2((prefix+exactOrFuzzy).c_str());
+    unsigned hashedQuery = CacheManager::_hashDJB2((prefix+exactOrFuzzy).c_str());
     map<unsigned, unsigned>::iterator mapIterator = this->cachedActiveNodeSetMap.find(hashedQuery);
     if (mapIterator != this->cachedActiveNodeSetMap.end()
             ///Boundary checks
@@ -244,7 +244,7 @@ PrefixActiveNodeSet *ActiveNodeCache::_getPrefixActiveNodeSet(string &prefix, un
     return NULL;
 }
 
-int Cache::findLongestPrefixActiveNodes(Term *term, PrefixActiveNodeSet* &in)
+int CacheManager::findLongestPrefixActiveNodes(Term *term, PrefixActiveNodeSet* &in)
 {
     in = NULL;
     {
@@ -315,7 +315,7 @@ void ConjunctionCache::_conjunctionCacheMapCleanUp()
 }
 
 
-int Cache::setPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet)
+int CacheManager::setPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet)
 {
     {
     pthread_mutex_lock(&mutex_ActiveNodeCache);
@@ -446,7 +446,7 @@ int Cache::setPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet)
 /// TODO: Move the comment to header file. This setter can fail
 /// Test the cache_integration_test
 
-int Cache::setCachedConjunctionResult(const vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry)
+int CacheManager::setCachedConjunctionResult(const vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry)
 {
     if (pthread_mutex_trylock(&mutex_ConjunctionCache) != 0)
     {
@@ -568,7 +568,7 @@ int Cache::setCachedConjunctionResult(const vector<Term *> *queryTerms, Conjunct
     return 1;
 }
 
-int Cache::getCachedConjunctionResult(const std::vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* &conjunctionCacheResultsEntry)
+int CacheManager::getCachedConjunctionResult(const std::vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* &conjunctionCacheResultsEntry)
 {
     conjunctionCacheResultsEntry = NULL;
     if (pthread_mutex_trylock(&mutex_ConjunctionCache) != 0)

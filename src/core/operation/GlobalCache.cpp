@@ -17,7 +17,7 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "Cache.h"
+#include "CacheManager.h"
 
 namespace srch2
 {
@@ -26,7 +26,7 @@ namespace instantsearch
 
 GlobalCache* GlobalCache::create(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
 {
-    return dynamic_cast<GlobalCache*>( new Cache(byteSizeOfCache, noOfCacheEntries) );
+    return dynamic_cast<GlobalCache*>( new CacheManager(byteSizeOfCache, noOfCacheEntries) );
 }
 
 }}

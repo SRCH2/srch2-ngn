@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     {
         // create an index searcher
         //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-        Cache *cache = new Cache();// create an index writer
+        CacheManager *cache = new CacheManager();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
         unsigned updateHistogramEveryPMerges = 1;
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     {
         // create an index searcher
         //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-        Cache *cache = new Cache();// create an index writer
+        CacheManager *cache = new CacheManager();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
         unsigned updateHistogramEveryPMerges = 1;
