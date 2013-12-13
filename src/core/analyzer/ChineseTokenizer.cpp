@@ -25,6 +25,7 @@ ChineseTokenizer::ChineseTokenizer(const string &chineseDictFilePath)
     mCurrentChineseTokens.reserve(32);  // Assuming most Chinese sentences have less than 32 tokens. It will grow automatically if larger.
 }
 
+
 bool ChineseTokenizer::processToken(){
     if ( mCurrentChineseTokens.size() == 0 ){
         return this->incrementToken();
