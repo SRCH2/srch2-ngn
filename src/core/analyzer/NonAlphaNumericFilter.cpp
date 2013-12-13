@@ -16,13 +16,13 @@ NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream):
 }
 
 void NonAlphaNumericFilter::clearState() {
-    // clear the state of the filter in the upstream
-	if (this->tokenStream != NULL)
-		this->tokenStream->clearState();
-
-	// clear our own states
-	while (!this->internalTokenBuffer.empty())
-		this->internalTokenBuffer.pop();
+  // clear the state of the filter in the upstream
+  if (this->tokenStream != NULL)
+    this->tokenStream->clearState();
+  
+  // clear our own states
+  while (!this->internalTokenBuffer.empty())
+    this->internalTokenBuffer.pop();
 }
 
 /*

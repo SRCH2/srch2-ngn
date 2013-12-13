@@ -112,10 +112,10 @@ string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 
 
 void AnalyzerInternal::clearFilterStates() {
-    // clear the state of each filter on the chain
-	if (tokenStream != NULL) {
-		tokenStream->clearState();
-	}
+  // clear the state of each filter on the chain
+  if (tokenStream != NULL) {
+    tokenStream->clearState();
+  }
 }
 
 

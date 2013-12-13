@@ -24,6 +24,7 @@ public:
     }
     virtual bool processToken() = 0;
 
+    // by default, no state needs to be cleared
     virtual void clearState() {};
 
     void fillInCharacters(const std::vector<CharType> &charVector){

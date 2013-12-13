@@ -66,8 +66,10 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configM
 
 	Analyzer* analyzer = _ts_analyzer_object.get();
 
-	// clear the initial states of the filters in the analyzer, e.g., for
-	// for those filters that have an internal buffer to keep tokens
+	// clear the initial states of the filters in the analyzer, e.g.,
+	// for those filters that have an internal buffer to keep tokens.
+	// Such an internal buffer can have leftover tokens from
+	// the previous query (possibly an invalid query)
 	analyzer->clearFilterStates();
 
 	return analyzer;
