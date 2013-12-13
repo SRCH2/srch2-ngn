@@ -24,226 +24,58 @@
 #include <instantsearch/Term.h>
 #include "util/BusyBit.h"
 #include "operation/ActiveNode.h"
+#include <boost/shared_ptr.hpp>
+#include <string>
+#include <map>
+
+using namespace std;
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-class PrefixActiveNodeSetCacheItem
-{
+template <class T>
+class CacheEntry{
 public:
-    PrefixActiveNodeSet* prefixActiveNodeSet;
-    unsigned hashedQuery;///TODO: check if hashedQuery is good enough
-    bool notRecent;
-    unsigned noOfBytes;
+	CacheEntry(string key, boost::shared_ptr<T> objectPointer){
+		this->setKey(key);
+		this->setObjectPointer(objectPointer);
+	}
 
-    PrefixActiveNodeSetCacheItem()
-    {
-        this->prefixActiveNodeSet = NULL;
-        this->hashedQuery = 0;
-        this->notRecent = 1;
-        this->noOfBytes = 0; //TODO: implement getNumberOfBytes inside ActiveNode.h
-    }
+	void setKey(string key);
+	string getKey();
 
-    virtual ~PrefixActiveNodeSetCacheItem()
-    {
-        if ( prefixActiveNodeSet != NULL)
-        {
-            prefixActiveNodeSet->setResultsCached(false);
-            if (prefixActiveNodeSet->busyBit->isFree() )
-            {
-                   delete prefixActiveNodeSet;
-            }
-        }
-    }
+	void setObjectPointer(boost::shared_ptr<T> objectPointer);
+	boost::shared_ptr<T> getObjectPointer();
+private:
+	string key;
+	boost::shared_ptr<T> objectPointer;
 };
 
-struct CandidateResult
-{
-    unsigned internalRecordId;
-    std::vector<float> termScores;
-    std::vector<string> matchingKeywords;
-    std::vector<unsigned> editDistances;
-    std::vector<unsigned> attributeBitmaps;
-};
+/*
+ * this class is the main implementation of cache which contains the cache entries and
+ * get/set behaviors.
+ */
+template <class T>
+class CacheContainer{
 
-class ConjunctionCacheResultsEntry
-{
 public:
-    std::vector<Term* > *queryTerms;
-    // candidate list
-    std::vector<CandidateResult> *candidateList;
+	CacheContainer(unsigned long byteSizeOfCache = 134217728, unsigned noOfCacheEntries = 20000);
+	~CacheContainer(){};
 
-    // vector of vector of cursors for each term
-    std::vector<std::vector<unsigned>* >* virtualListCursorsVector;
+	void put(string key, boost::shared_ptr<T> objectPointer);
+	bool get(string key, boost::shared_ptr<T> & objectPointer);
 
-    BusyBit *busyBit;
-    bool isCached;
-
-    ConjunctionCacheResultsEntry(std::vector<Term* > *queryTerms, std::vector<CandidateResult> *candidateList, std::vector<std::vector<unsigned>* >* virtualListCursorsVector)
-    {
-        this->queryTerms = queryTerms;
-        this->candidateList =candidateList;
-        this->virtualListCursorsVector =virtualListCursorsVector;
-        this->busyBit = new BusyBit();
-        this->isCached = 0;
-    }
-
-    unsigned getNumberOfBytes() const
-    {
-        unsigned noOfBytes = sizeof(*(this->virtualListCursorsVector));
-        if (this->virtualListCursorsVector != NULL)
-        {
-            for ( std::vector<std::vector<unsigned>* >::const_iterator vectorIter = (this->virtualListCursorsVector)->begin(); vectorIter != (this->virtualListCursorsVector)->end(); vectorIter++ )
-            {
-                noOfBytes += (*vectorIter)->size() * sizeof((*vectorIter)) + ((*vectorIter)->capacity() - (*vectorIter)->size())*4;
-            }
-            noOfBytes += this->virtualListCursorsVector->capacity()*4;
-        }
-        if (this->candidateList != NULL)
-        {
-            //TODO: Inaccurate size of candidatResult
-            noOfBytes += this->candidateList->size() * (sizeof(CandidateResult) +  3*(4*queryTerms->size() + 8) ); //3*(4*queryTerms->size() + 8) = 3*vector*no_of_queryterms
-            noOfBytes += sizeof(*(this->candidateList)) + (this->candidateList->capacity() - this->candidateList->size())*4;
-        }
-
-        return  noOfBytes + (this->queryTerms->size() * sizeof(Term)) + sizeof(*(this->queryTerms)) + (this->queryTerms->capacity() - this->queryTerms->size())*4;
-    }
-
-    virtual ~ConjunctionCacheResultsEntry()
-    {
-        if ( virtualListCursorsVector != NULL)
-        {
-            for (unsigned i=0; i<virtualListCursorsVector->size(); ++i)
-            {
-                delete virtualListCursorsVector->at(i);
-            }
-            virtualListCursorsVector->clear();
-            delete virtualListCursorsVector;
-        }
-        if ( queryTerms != NULL)
-        {
-            for (unsigned i=0; i<queryTerms->size(); ++i)
-            {
-                if (queryTerms->at(i) != NULL)
-                    delete queryTerms->at(i);
-            }
-            delete queryTerms;
-        }
-        delete candidateList;
-
-        delete busyBit;
-    }
+private:
+	map<unsigned , CacheEntry<T> * > cacheEntries;
 
 };
 
-class ConjunctionCacheItem{
-public:
-    unsigned hashedQuery;
-    bool notRecent;
-    unsigned noOfBytes;
-    ConjunctionCacheResultsEntry* cacheData;
 
-    ConjunctionCacheItem()
-    {
-        this->cacheData = NULL;
-        this->hashedQuery = 0;
-        this->notRecent = 1;
-        this->noOfBytes = 0;
-    }
-
-    virtual ~ConjunctionCacheItem()
-    {
-        if ( cacheData != NULL)
-        {
-            if ( cacheData->busyBit->isFree() )
-            {
-                delete cacheData;
-            }
-            else
-            {
-                this->cacheData->isCached = 0;
-            }
-        }
-    }
-};
-
-class ActiveNodeCache
-{
-public:
-    ActiveNodeCache(unsigned long byteSizeOfCache, unsigned noOfCacheEntries);
-    virtual ~ActiveNodeCache();
-    void clear();
-
-    void _prefixActiveNodeCacheMapCleanUp();
-    PrefixActiveNodeSet *_getPrefixActiveNodeSet(std::string &prefix, unsigned termThreshold);
-
-    unsigned prefixActiveNodeCacheArm;
-
-    inline PrefixActiveNodeSetCacheItem* getPrefixActiveNodeSetCacheItemFromDirectory(unsigned index)
-    {
-        return &this->cachedActiveNodeSetDirectory.at(index);
-    }
-
-//private:
-    /// This map maps a prefix to its cached activeNodeSet
-    std::map<unsigned, unsigned> cachedActiveNodeSetMap;
-    std::vector<PrefixActiveNodeSetCacheItem> cachedActiveNodeSetDirectory;
-
-    unsigned long maxBytesOfActiveNodeCache;
-    unsigned long currentBytesOfActiveNodeCache;
-    unsigned noOfActiveNodeCacheItems;
-};
-
-class ConjunctionCache
-{
-public:
-    ConjunctionCache(unsigned long byteSizeOfCache, unsigned noOfCacheEntries);
-    virtual ~ConjunctionCache();
-    void clear();
-
-    void _conjunctionCacheMapCleanUp();
-
-    inline ConjunctionCacheItem* getConjunctionCacheItemFromDirectory(unsigned index)
-    {
-        return &this->conjunctionCacheDirectory.at(index);
-    }
-
-    unsigned conjunctionCacheArm;
-
-//private:
-    /// This map maps a query to its cached results
-    std::map<unsigned, unsigned> cachedConjunctionResultsMap;
-    std::vector<ConjunctionCacheItem> conjunctionCacheDirectory;
-
-    unsigned long maxBytesOfConjuntionCache;
-    unsigned long currentBytesOfConjuntionCache;
-    unsigned noOfConjuntionCacheItems;
-
-
-};
-
-/**
- * There are two types of cache:
- * 1. Active node cache
- *         Can be imagined as a map from prefix to its corresponding ActiveNodeSet
- * 2. Query results cache
- *         Can be imagined as a map from vector<Term*> to its corresponding ConjunctionQueryResults
- *
- * The cache replacement is based on LRU and implemented using Clock Algorithm. The cache is bounded by two user variables:
- *     1. NoOfBytesAllowed
- *  2. NoOfCacheItems
- *
- *  For both ActiveNodeCache and QueryResultsCache, two functions "set" and "get" are provided.
- *
- *  Set(cacheItem) function is best try cache.
- *  It the cacheItem cannot be accommodated in the cache due to the cache bounds(NoOfBytesAllowed or NoOfCacheItems), the set
- *  function just deletes the cacheItem. This makes the "cacheItem" very unsafe to be used after calling set(cacheItem) and so
- *  set(cacheItem) must be the last one to be called before exiting indexSearcherInternal.
- *
- *  get function has the usual functionality of returns a reference to the cacheItem if found, otherwise returns a NULL.
- *
+/*
+ * This class is the cache manager. The CacheManager is the holder of different kinds of Cache, e.g.
+ * ActiveNodesCache.
  */
 class CacheManager : public GlobalCache
 {
@@ -251,34 +83,11 @@ public:
     CacheManager(unsigned long byteSizeOfCache = 134217728, unsigned noOfCacheEntries = 20000);
     virtual ~CacheManager();
 
-    /// Find the PrefixActiveNodeSet with the longest prefix of the keyword in the prefix
-    /// If no prefix has a cached result, return NULL.
-    int findLongestPrefixActiveNodes(Term *term, PrefixActiveNodeSet* &in);
-
-    /// set the PrefixActiveNodeSet for a prefix stored in the given PrefixActiveNodeSet
-    int setPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
-
-    /// start with all the terms, if there is no cached results take out the last term and lookup for the new query terms vector.
-    int getCachedConjunctionResult(const std::vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* &conjunctionCacheResultsEntry);
-
-    int setCachedConjunctionResult(const std::vector<Term *> *queryTerms, ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry);
-
-    int clear(); // Called whenever index is updated
-
-    static unsigned _hash(const std::vector<Term *> *queryTerms, unsigned end);
-    static unsigned _hashDJB2(const char *str);
-    static bool _vectorOfTermPointerEqualsComparator(const std::vector<Term*> *leftVector, const std::vector<Term*> *rightVector , unsigned iter);
-    static bool _termPointerComparator( const Term *leftTerm, const Term *rightTerm);
-
-private:
-
-    mutable pthread_mutex_t mutex_ActiveNodeCache;
-    ActiveNodeCache *aCache;
-
-    mutable pthread_mutex_t mutex_ConjunctionCache;
-    ConjunctionCache *cCache;
 };
 
-}}
+
+
+}
+}
 
 #endif /* __CACHE_H__ */
