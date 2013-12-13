@@ -172,6 +172,8 @@ public:
 		// it gets enough information from the arguments and allocates the query object
         if(this->exactQuery == NULL){
             this->exactQuery = exactQuery;
+        }else{
+        	ASSERT(false);
         }
 	}
 
@@ -184,6 +186,8 @@ public:
 		// it gets enough information from the arguments and allocates the query object
 	    if(this->fuzzyQuery == NULL){
             this->fuzzyQuery = fuzzyQuery;
+	    }else{
+	    	ASSERT(false);
 	    }
 	}
 

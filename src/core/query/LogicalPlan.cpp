@@ -53,6 +53,7 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 LogicalPlan::LogicalPlan(){
 	tree = NULL;
 	postProcessingInfo = NULL;
+	fuzzyQuery = exactQuery = NULL;
 }
 
 LogicalPlan::~LogicalPlan(){
