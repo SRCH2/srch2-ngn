@@ -1,0 +1,14 @@
+and cucumb||4
+and foobar||6 5
+fish||
+shopping||87 16 93 17 80 53 63 5 59 91
+Whirl||68
+Shop or||87 16 93 17 80 53 63 5 59 91
+or||
+and cucumb or||4
+the*||3 52 8
+Services the*||3 52 8
+the||
+C%2b%2b||101
+.NET||101
+C%23 .NET||101

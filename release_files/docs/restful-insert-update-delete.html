@@ -59,16 +59,15 @@
 <p>Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of write requests) .</p>
 <p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="insert">1. Insert</h2>
-<p>This request adds a record or a list of records to the indexes. The request body should contain a single JSON object or an array of JSON objects, which should meet the following requirements:</p>
+<p>This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:</p>
 <ul>
 <li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
 <li>The JSON object should include searchable fields defined in the <a href="example-demo/srch2-config.xml">configuration file</a> and their corresponding values;</li>
 <li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
 <li>The sum of the length of each field value cannot be greater than 100 kilobytes.</li>
 </ul>
-<p>Here are two examples:</p>
+<p>Here is an example:</p>
 <pre><code class="python">$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '{&quot;id&quot; : &quot;1234&quot;, &quot;name&quot; : &quot;Toy Story&quot;, &quot;category&quot; : &quot;shop&quot;}'
-$ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '[{&quot;id&quot; : &quot;1234&quot;, &quot;name&quot; : &quot;Toy Story&quot;, &quot;category&quot; : &quot;shop&quot;},{&quot;id&quot; : &quot;5678&quot;, &quot;name&quot; : &quot;Toy Story II&quot;, &quot;category&quot; : &quot;shop&quot;}]'
 </code></pre>
 
 <h2 id="delete">2. Delete</h2>
@@ -77,26 +76,20 @@ $ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '[{&quot;id&quot; : &
 <pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
 </code></pre>
 
-<p>The following single 'curl' command can delete multiple records since it issues multiple requests to the server:</p>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id={1234,5678}&quot; -i -X DELETE
-</code></pre>
-
 <h2 id="update">3. Update</h2>
-<p>This request updates a record or an array of records in the indexes.  For each record in the request,
-if the id is already in the index, the record will be updated. Otherwise, the record will be inserted.  In other words, the engine is doing the <a href="http://en.wikipedia.org/wiki/Merge_(SQL)">"upsert" logic</a>.</p>
-<p>The request body should contain a JSON object or an array of JSON objects, which should meet the following requirements:</p>
+<p>This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:</p>
 <ul>
 <li>The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;</li>
 <li>The JSON object should include searchable fields defined in the <a href="example-demo/srch2-config.xml">configuration file</a> and their corresponding values;</li>
 <li>If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;</li>
-<li>The sum of the length of all the records cannot be greater than 100 kilobytes;</li>
+<li>The sum of the length of each field value cannot be greater than 100 kilobytes;</li>
+<li>The "id" in the query URL needs to be consistent with the "id" in the JSON object.</li>
 </ul>
-<p>Here are two examples: </p>
-<pre><code class="python">$ curl &quot;http://localhost:8081/update&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;}'
-$ curl &quot;http://localhost:8081/update&quot; -i -X PUT -d '[{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;},{&quot;id&quot;:&quot;456&quot;,&quot;name&quot;:&quot;Tom&quot;, &quot;category&quot;:&quot;shop&quot;}]'
+<p>Here is an example: </p>
+<pre><code class="python">$ curl &quot;http://localhost:8081/update?id=123&quot; -i -X PUT -d '{&quot;id&quot;:&quot;123&quot;,&quot;name&quot;:&quot;Brave&quot;, &quot;category&quot;:&quot;shop&quot;}'
 </code></pre>
 
-<p>Internally the engine implements the update of each record by first deleting the old record, then inserting the new record.</p>
+<p>Internally the engine implements the update by first deleting the old record, then inserting the new record.</p>
 
 </table>
 <hr>

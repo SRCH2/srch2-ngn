@@ -1,0 +1,25 @@
+q=American*~&facet=true&facet.range=relevance&sort=relevance&orderby=asc&rows=12||14 18 22 60 61 72 20 40 51 58 62 39
+q=American*~&fq=primary_category%3A_music_artist&facet=true&facet.range=relevance||3 76
+q=American*~&fq=primary_category%3A_en_anthropologist%20OR%20boolexp%24relevance%3E0.0015%20and%20relevance%3C0.0028%24&facet=true&facet.range=relevance&sort=relevance&orderby=asc&rows=6||20 40 51 58 62 39
+q=American*~&fq=relevance%3A%5B0.001%20TO%20*%5D%20OR%20boolexp%24relevance%3E0.002%20and%20relevance%3C0.0028%24&facet=true&facet.range=relevance&sort=relevance&orderby=asc&rows=6||14 18 22 60 61 72
+q=American*~&fq=boolexp%24relevance%3E0.002%20and%20relevance%3C0.003%24&facet=true&facet.range=relevance&sort=relevance&orderby=asc||55 19 7 49 85 41 3 10 29 30
+q=American*~&fq=relevance%3A%5B0.002%20TO%200.003%5D&facet=true&facet.range=relevance&sort=relevance&orderby=asc||55 19 7 49 85 41 3 10 29 30
+q=American*~&fq=primary_category%3A_en_journalist&facet=true&facet.range=relevance&f.relevance.facet.start=1||62
+q=American*~&facet=true&facet.range=relevance&f.relevance.facet.end=0.0026&sort=relevance&orderby=asc||14 18 22 60 61 72 20 40 51 58
+q=American*~&fq=primary_category%3A_location_citytown&facet=true&facet.range=relevance&f.relevance.facet.gap=0.0004&sort=relevance&orderby=asc||58 29 30 31
+q=American*~&fq=primary_category%3A_en_anthropologist&facet=true&facet.range=relevance&sort=relevance&orderby=asc||20
+q=American*~&fq=primary_category%3A_location_citytown&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||58 29 30 31
+q=American*~&facet=true&facet.field=primary_category&rows=12&sort=relevance&orderby=asc||14 18 22 60 61 72 20 40 51 58 62 39
+q=%7BdefaultBoostLevel=3%7DAaltonen&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||18 34 48 65 86 85
+q=%7BdefaultSearchFields=title%7DAalton*~&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||8 68 100 28 34 48 65 80 86 94
+q=%7BdefaultSearchFields=title%7DAaltonen&fq=primary_category%3A_en_anthropologist&facet=true&facet.field=primary_category||
+q=%7BdefaultSearchFields=title,description%7DAaltonen&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||18 34 48 65 86 85
+q=%7BdefaultFieldOperator=AND%7Dcaste%20AND%20American&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
+q=%7BdefaultSearchFields=title%7DAaltonen%20OR%20American*~&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||14 18 22 60 61 72 20 40 51 58
+q=%7BdefaultSearchFields=title%7DAaltonen&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||18 34 48 65 86 85
+q=%7BdefaultFieldOperator=AND%20defaultPrefixComplete=PREFIX%20defaultSearchFields=description,title%7DAmeric&facet=true&facet.field=primary_category&sort=relevance&orderby=asc||14 18 22 60 61 72 5 11 20 58
+q=%7BdefaultFieldOperator=AND%20defaultPrefixComplete=COMPLETE%20defaultSearchFields=description,title%7DAmerica*&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=3||14 18 60
+q=%7BdefaultFieldOperator=OR%20defaultSearchFields=description,title%7DAmerican&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=3||14 18 22
+q=American%20AND%20writer&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
+q=AmeriB*~%20AND%20writer&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
+q=AmeriB*~%20AND%20writf*~&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14

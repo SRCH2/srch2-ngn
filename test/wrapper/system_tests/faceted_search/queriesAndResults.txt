@@ -1,0 +1,8 @@
+verycommonword, -f model -f likes 0 -f price 0||48
+singletonword,  -f model||101
+verycommonword, -f likes 43 43||48
+verycommonword, -f price 0.5 10 10||48
+verycommonword, -f price 82  99.5 10||48
+verycommonword, -f price 0.5 99.5 100||48
+verycommonword, -f likes 70 100 10||48
+verycommonword, -f price 98 100 .5||48
