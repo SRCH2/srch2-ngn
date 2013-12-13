@@ -31,8 +31,8 @@ namespace httpwrapper {
 // we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
 // in the case of getAllResults.
 QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
-        QueryResultFactory * resultsFactory, Srch2Server *server, const ConfigManager * configManager) :
-        queryPlan(queryPlan), configManager(configManager) {
+        QueryResultFactory * resultsFactory, Srch2Server *server, const CoreInfo_t * config) :
+        queryPlan(queryPlan), configuration(config) {
     this->queryResultFactory = resultsFactory;
     this->server = server;
 }
@@ -43,7 +43,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     //evhttp_clear_headers(&headers);
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
-    IndexSearcherRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold());
+    IndexSearcherRuntimeParametersContainer runTimeParameters(server->indexDataConfig->getKeywordPopularityThreshold());
     this->indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters );
     //do the search
     switch (queryPlan.getSearchType()) {
@@ -177,8 +177,8 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
             this->queryResultFactory, indexSearcher,
             this->queryPlan.getExactQuery());
     idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(),
-    		exactQueryResults, 0 , this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
-            this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    		exactQueryResults, 0 , configuration->getGetAllResultsNumberOfResultsThreshold() ,
+            configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
 
     //fill visitedList
     std::set<std::string> exactVisitedList;
@@ -192,13 +192,13 @@ void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
     // we should try fuzzy, otherwise we don't have to because H2 heuristic triggers topK to find
     // getGetAllResultsNumberOfResultsToFindInEstimationMode results anyways.
     if (this->queryPlan.isFuzzy()
-            && (idsExactFound < (int) this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode() )) {
+            && (idsExactFound < (int) configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode() )) {
         QueryResults *fuzzyQueryResults = new QueryResults(
                 this->queryResultFactory, indexSearcher,
                 this->queryPlan.getFuzzyQuery());
         idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
-        		fuzzyQueryResults, 0, this->configManager->getGetAllResultsNumberOfResultsThreshold() ,
-                this->configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+        		fuzzyQueryResults, 0, configuration->getGetAllResultsNumberOfResultsThreshold() ,
+                configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
         // create final queryResults to print.
 
         QueryResultsInternal *exactQueryResultsInternal =

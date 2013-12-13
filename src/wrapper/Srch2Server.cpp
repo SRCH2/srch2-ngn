@@ -98,5 +98,15 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
 		"Content-Type: application/x-javascript\r\n"
 		"\r\n";
 
+void Srch2Server::setCoreName(const string &name)
+{
+    coreName = name;
+}
+
+const string &Srch2Server::getCoreName()
+{
+    return coreName;
+}
+
 }
 }

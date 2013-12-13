@@ -128,6 +128,7 @@ const char* const ConfigManager::uLogDirString = "uLogDir";
 ConfigManager::ConfigManager(const string& configFile)
 {
     this->configFile = configFile;
+    defaultCoreName = "__DEFAULT__";
 }
 
 void ConfigManager::loadConfigFile()
@@ -228,13 +229,52 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     }
 }
 
-void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+CoreInfo_t *ConfigManager::getCoreSettings(const string &coreName) const
+{
+    if (coreName.compare("") != 0) {
+        return ((CoreInfoMap_t) coreSettings)[coreName];
+    }
+    return getDefaultDataSource();
+}
+
+CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
+{
+    name = src.name;
+
+    configManager = src.configManager;
+
+    dataDir = src.dataDir;
+    dataSourceType = src.dataSourceType;
+    dataFile = src.dataFile;
+    filePath = src.filePath;
+
+    mongoHost = src.mongoHost;
+    mongoPort = src.mongoPort;
+    mongoDbName = src.mongoDbName;
+    mongoCollection = src.mongoCollection;
+    mongoListenerWaitTime = src.mongoListenerWaitTime;
+    mongoListenerMaxRetryOnFailure = src.mongoListenerMaxRetryOnFailure;
+
+    isPrimSearchable = src.isPrimSearchable;
+
+    primaryKey = src.primaryKey;
+
+    fieldLatitude = src.fieldLatitude;
+    fieldLongitude = src.fieldLongitude;
+    indexType = src.indexType;
+
+    searchType = src.searchType;
+
+    // TODO schema
+}
+
+void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *settings, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     xml_node childNode = indexConfigNode.child(indexTypeString);
     if (childNode && childNode.text()) {
         string it = string(childNode.text().get());
-        if (this->isValidIndexType(it)) {
-            this->indexType = childNode.text().as_int();
+        if (isValidIndexType(it)) {
+            settings->indexType = childNode.text().as_int();
         } else {
             parseError << "Index Type's value can be only 0 or 1.\n";
             configSuccess = false;
@@ -246,12 +286,12 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, bool &conf
         return;
     }
 
-    this->supportSwapInEditDistance = true; // by default it is true
+    settings->supportSwapInEditDistance = true; // by default it is true
     childNode = indexConfigNode.child(supportSwapInEditDistanceString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
-        if (this->isValidBool(qtmt)) {
-	    this->supportSwapInEditDistance = childNode.text().as_bool();
+        if (isValidBool(qtmt)) {
+	    settings->supportSwapInEditDistance = childNode.text().as_bool();
         } else {
             parseError << "The provided supportSwapInEditDistance flag is not valid";
             configSuccess = false;
@@ -259,27 +299,57 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, bool &conf
         }
     }
 
-    this->enablePositionIndex = false; // by default it is false
+    settings->enablePositionIndex = false; // by default it is false
     childNode = indexConfigNode.child(enablePositionIndexString);
     if (childNode && childNode.text()) {
         string configValue = childNode.text().get();
-        if (this->isValidBooleanValue(configValue)) {
-            this->enablePositionIndex = childNode.text().as_bool();
+        if (isValidBooleanValue(configValue)) {
+            settings->enablePositionIndex = childNode.text().as_bool();
         } else {
             parseError << "enablePositionIndex should be either 0 or 1.\n";
             configSuccess = false;
             return;
         }
         Logger::info("turning on attribute based search because position index is enabled");
-        this->supportAttributeBasedSearch = true;
+        settings->supportAttributeBasedSearch = true;
+    }
+
+    childNode = indexConfigNode.child(fieldBoostString);
+    // splitting the field boost input and put them in boostsMap
+    if (childNode && childNode.text()) {
+        string boostString = string(childNode.text().get());
+        boost::algorithm::trim(boostString);
+        splitBoostFieldValues(boostString, boostsMap);
+    }
+
+    // recordBoostField is an optional field
+    settings->recordBoostFieldFlag = false;
+    childNode = indexConfigNode.child(recordBoostFieldString);
+    if (childNode && childNode.text()) {
+        settings->recordBoostFieldFlag = true;
+        settings->recordBoostField = string(childNode.text().get());
+    }
+
+    // queryTermBoost is an optional field
+    settings->queryTermBoost = 1; // By default it is 1
+    childNode = indexConfigNode.child(defaultQueryTermBoostString);
+    if (childNode && childNode.text()) {
+        string qtb = childNode.text().get();
+        if (isValidQueryTermBoost(qtb)) {
+            settings->queryTermBoost = childNode.text().as_uint();
+        } else {
+            configSuccess = false;
+            parseError << "The value provided for queryTermBoost is not a (non-negative)number.";
+            return;
+        }
     }
 }
 
-void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     xml_node childNode = mongoDbNode.child(hostString);
     if (childNode && childNode.text()) {
-        this->mongoHost = string(childNode.text().get());
+        settings->mongoHost = string(childNode.text().get());
     } else {
         parseError << "mongo host is not set.\n";
 	configSuccess = false;
@@ -288,14 +358,14 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, bool &configSucces
 
     childNode = mongoDbNode.child(portString);
     if (childNode && childNode.text()) {
-        this->mongoPort = string(childNode.text().get());
+        settings->mongoPort = string(childNode.text().get());
     } else {
-        this->mongoPort = ""; // use default port
+        settings->mongoPort = ""; // use default port
     }
 
     childNode = mongoDbNode.child(dbString);
     if (childNode && childNode.text()) {
-        this->mongoDbName = string(childNode.text().get());
+        settings->mongoDbName = string(childNode.text().get());
     } else {
         parseError << "mongo data base name is not set.\n";
 	configSuccess = false;
@@ -304,7 +374,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, bool &configSucces
 
     childNode = mongoDbNode.child(collectionString);
     if (childNode && childNode.text()) {
-        this->mongoCollection = string(childNode.text().get());
+        settings->mongoCollection = string(childNode.text().get());
     } else {
         parseError << "mongo collection name is not set.\n";
 	configSuccess = false;
@@ -313,34 +383,38 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, bool &configSucces
 
     childNode = mongoDbNode.child(listenerWaitTimeString);
     if (childNode && childNode.text()) {
-        this->mongoListenerWaitTime = childNode.text().as_uint(1);
+        settings->mongoListenerWaitTime = childNode.text().as_uint(1);
     } else {
-        this->mongoListenerWaitTime = 1;
+        settings->mongoListenerWaitTime = 1;
     }
 
     childNode = mongoDbNode.child(maxRetryOnFailureString);
     if (childNode && childNode.text()) {
-        this->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
+        settings->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
     } else {
-        this->mongoListenerMaxRetryOnFailure = 3;
+        settings->mongoListenerMaxRetryOnFailure = 3;
     }
 
     // For MongoDB as a data source , primary key must be "_id" which is a unique key generated
     // by MongoDB. It is important to set primary key to "_id" because oplog entries for inserts
     // and deletes in MongoDB can be identified by _id only.
-    this->primaryKey = "_id";
+    settings->primaryKey = "_id";
 }
 
-void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+void ConfigManager::parseQuery(const xml_node &queryNode,
+			       CoreInfo_t *settings,
+			       bool &configSuccess,
+			       std::stringstream &parseError,
+			       std::stringstream &parseWarnings)
 {
     // scoringExpressionString is an optional field
-    this->scoringExpressionString = "1"; // By default it is 1
+    scoringExpressionString = "1"; // By default it is 1
     xml_node childNode = queryNode.child(rankingAlgorithmString).child(recordScoreExpressionString);
     if (childNode && childNode.text()) {
         string exp = childNode.text().get();
         boost::algorithm::trim(exp);
-        if (this->isValidRecordScoreExpession(exp)) {
-            this->scoringExpressionString = exp;
+        if (isValidRecordScoreExpession(exp)) {
+            scoringExpressionString = exp;
         } else {
             configSuccess = false;
             parseError << "The expression provided for recordScoreExpression is not a valid.";
@@ -349,12 +423,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // fuzzyMatchPenalty is an optional field
-    this->fuzzyMatchPenalty = 1; // By default it is 1
+    fuzzyMatchPenalty = 1; // By default it is 1
     childNode = queryNode.child(fuzzyMatchPenaltyString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
-        if (this->isValidFuzzyMatchPenalty(qtsb)) {
-            this->fuzzyMatchPenalty = childNode.text().as_float();
+        if (isValidFuzzyMatchPenalty(qtsb)) {
+            fuzzyMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
@@ -362,17 +436,16 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
         }
     }
 
-
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
-    this->queryTermSimilarityThreshold = 0.5;
+    queryTermSimilarityThreshold = 0.5;
     childNode = queryNode.child(queryTermSimilarityThresholdString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
-        if (this->isValidQueryTermSimilarityThreshold(qtsb)) {
-            this->queryTermSimilarityThreshold = childNode.text().as_float();
-            if(this->queryTermSimilarityThreshold < 0 || this->queryTermSimilarityThreshold > 1 ){
-                this->queryTermSimilarityThreshold = 0.5;
+        if (isValidQueryTermSimilarityThreshold(qtsb)) {
+            queryTermSimilarityThreshold = childNode.text().as_float();
+            if (queryTermSimilarityThreshold < 0 || queryTermSimilarityThreshold > 1 ){
+                queryTermSimilarityThreshold = 0.5;
                 parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
             }
         } else {
@@ -383,12 +456,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // queryTermLengthBoost is an optional field
-    this->queryTermLengthBoost = 0.5; // By default it is 0.5
+    queryTermLengthBoost = 0.5; // By default it is 0.5
     childNode = queryNode.child(queryTermLengthBoostString);
     if (childNode && childNode.text()) {
         string qtlb = childNode.text().get();
-        if (this->isValidQueryTermLengthBoost(qtlb)) {
-            this->queryTermLengthBoost = childNode.text().as_float();
+        if (isValidQueryTermLengthBoost(qtlb)) {
+            queryTermLengthBoost = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermLengthBoost is not a valid.";
@@ -397,13 +470,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // prefixMatchPenalty is an optional field.
-    this->prefixMatchPenalty = 0.95; // By default it is 0.5
+    prefixMatchPenalty = 0.95; // By default it is 0.5
     childNode = queryNode.child(prefixMatchPenaltyString);
     if (childNode && childNode.text()) {
         string pm = childNode.text().get();
 
-        if (this->isValidPrefixMatch(pm)) {
-            this->prefixMatchPenalty = childNode.text().as_float();
+        if (isValidPrefixMatch(pm)) {
+            prefixMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The value provided for prefixMatch is not a valid.";
@@ -412,12 +485,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // cacheSize is an optional field
-    this->cacheSizeInBytes = 50 * 1048576;
+    cacheSizeInBytes = 50 * 1048576;
     childNode = queryNode.child(cacheSizeString);
     if (childNode && childNode.text()) {
         string cs = childNode.text().get();
-        if (this->isValidCacheSize(cs)) {
-            this->cacheSizeInBytes = childNode.text().as_uint();
+        if (isValidCacheSize(cs)) {
+            cacheSizeInBytes = childNode.text().as_uint();
         } else {
             parseError << "cache size provided is not set correctly.\n";
             configSuccess = false;
@@ -426,12 +499,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // rows is an optional field
-    this->resultsToRetrieve = 10; // by default it is 10
+    resultsToRetrieve = 10; // by default it is 10
     childNode = queryNode.child(rowsString);
     if (childNode && childNode.text()) {
         string row = childNode.text().get();
         if (isValidRows(row)) {
-            this->resultsToRetrieve = childNode.text().as_int();
+            resultsToRetrieve = childNode.text().as_int();
         } else {
             parseError << "rows is not set correctly.\n";
             configSuccess = false;
@@ -440,12 +513,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // maxSearchThreads is an optional field
-    this->numberOfThreads = 1; // by default it is 1
+    numberOfThreads = 1; // by default it is 1
     childNode = queryNode.child(maxSearchThreadsString);
     if (childNode && childNode.text()) {
         string mst = childNode.text().get();
         if (isValidMaxSearchThreads(mst)) {
-            this->numberOfThreads = childNode.text().as_int();
+            numberOfThreads = childNode.text().as_int();
         } else {
             parseError << "maxSearchThreads is not set correctly.\n";
             configSuccess = false;
@@ -454,13 +527,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // fieldBasedSearch is an optional field
-    if (this->enablePositionIndex == false) {
-        this->supportAttributeBasedSearch = false; // by default it is false
+    if (settings->enablePositionIndex == false) {
+        settings->supportAttributeBasedSearch = false; // by default it is false
         childNode = queryNode.child(fieldBasedSearchString);
         if (childNode && childNode.text()) {
             string configValue = childNode.text().get();
-            if (this->isValidBooleanValue(configValue)) {
-                this->supportAttributeBasedSearch = childNode.text().as_bool();
+            if (isValidBooleanValue(configValue)) {
+                settings->supportAttributeBasedSearch = childNode.text().as_bool();
             } else {
                 parseError << "fieldBasedSearch is not set correctly.\n";
                 configSuccess = false;
@@ -469,16 +542,16 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
         }
     } else {
         // attribute based search is enabled if positional index is enabled
-        this->supportAttributeBasedSearch = true;
+        settings->supportAttributeBasedSearch = true;
     }
 
     // queryTermFuzzyType is an optional field
-    this->exactFuzzy = false; // by default it is false
+    exactFuzzy = false; // by default it is false
     childNode = queryNode.child(queryTermFuzzyTypeString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
-        if (this->isValidQueryTermFuzzyType(qtmt)) {
-            this->exactFuzzy = childNode.text().as_bool();
+        if (isValidQueryTermFuzzyType(qtmt)) {
+            exactFuzzy = childNode.text().as_bool();
         } else {
             parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
@@ -487,12 +560,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // queryTermPrefixType is an optional field
-    this->queryTermPrefixType = false;
+    queryTermPrefixType = false;
     childNode = queryNode.child(queryTermPrefixTypeString);
     if (childNode && childNode.text()) {
         string qt = childNode.text().get();
-        if (this->isValidQueryTermPrefixType(qt)) {
-            this->queryTermPrefixType = childNode.text().as_bool();
+        if (isValidQueryTermPrefixType(qt)) {
+            queryTermPrefixType = childNode.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -501,12 +574,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // responseFormat is an optional field
-    this->searchResponseJsonFormat = 0; // by default it is 10
+    searchResponseJsonFormat = 0; // by default it is 10
     childNode = queryNode.child(queryResponseWriterString).child(responseFormatString);
     if (childNode && childNode.text()) {
         string rf = childNode.text().get();
-        if (this->isValidResponseFormat(rf)) {
-            this->searchResponseJsonFormat = childNode.text().as_int();
+        if (isValidResponseFormat(rf)) {
+            searchResponseJsonFormat = childNode.text().as_int();
         } else {
             parseError << "The provided responseFormat is not valid";
             configSuccess = false;
@@ -515,21 +588,21 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 
     // responseContent is an optional field
-    this->searchResponseFormat = (ResponseType)0; // by default it is 0
+    searchResponseFormat = (ResponseType)0; // by default it is 0
     childNode = queryNode.child(queryResponseWriterString).child(responseContentString);
     if (childNode) {
         string type = childNode.attribute(typeString).value();
-        if (this->isValidResponseContentType(type)) {
-            this->searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
+        if (isValidResponseContentType(type)) {
+            searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
             return;
         }
 
-        if (this->searchResponseFormat == 2) {
+        if (searchResponseFormat == 2) {
             if (childNode.text()) {
-                this->splitString(string(childNode.text().get()), ",", this->attributesToReturn);
+                splitString(string(childNode.text().get()), ",", attributesToReturn);
             } else {
                 parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
@@ -539,6 +612,33 @@ void ConfigManager::parseQuery(const xml_node &queryNode, bool &configSuccess, s
     }
 }
 
+// only called by parseCores()
+void ConfigManager::parseCore(const xml_node &parentNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    string tempUse = "";
+
+    // <core name="core0"
+    if (parentNode.attribute(nameString) && string(parentNode.attribute(nameString).value()).compare("") != 0) {
+        settings->name = parentNode.attribute(nameString).value();
+    } else {
+        parseError << "Core must have a name attribute";
+	configSuccess = false;
+	return;
+    }
+
+     // <core dataDir="core0/data"
+    if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
+        settings->dataDir = parentNode.attribute(dataDirString).value();
+	settings->indexPath = srch2Home + settings->dataDir;
+    }
+
+    parseDataSource(parentNode, settings, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
+    }
+}
+
+// only called by parseDataConfiguration()
 void ConfigManager::parseCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     if (coresNode) {
@@ -552,138 +652,230 @@ void ConfigManager::parseCores(const xml_node &coresNode, bool &configSuccess, s
 
 	// parse zero or more individual core settings
         for (xml_node coreNode = coresNode.first_child(); coreNode; coreNode = coreNode.next_sibling()) {
-	    parseCore(coreNode, configSuccess, parseError, parseWarnings);
-	    if (configSuccess == false) {
+	  CoreInfo_t *newSettings = new CoreInfo_t(this);
+
+	    parseCore(coreNode, newSettings, configSuccess, parseError, parseWarnings);
+	    if (configSuccess) {
+	        coreSettings[newSettings->name] = newSettings;
+	    } else {
+	        delete newSettings;
 	        return;
 	    }
 	}	
     }
 }
 
-void ConfigManager::parseCore(const xml_node &coreNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+/*
+ * parentNode is either <config> or <core> - but only called by parseDataConfiguration()
+ */
+void ConfigManager::parseDataSource(const xml_node &parentNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     string tempUse = "";
-    CoreSettings_t core;
+    ParseState_t parseState;
 
-    // <core name="core0"
-    if (coreNode.attribute(nameString) && string(coreNode.attribute(nameString).value()).compare("") != 0) {
-        core.name = coreNode.attribute(nameString).value();
-    } else {
-        parseError << "Core must have a name attribute";
-	configSuccess = false;
-	return;
+    // <config><dataDir>core0/data OR <core><dataDir>
+    if (parentNode.child(dataDirString) && parentNode.child(dataDirString).text()) {
+        settings->dataDir = parentNode.child(dataDirString).value();
+	settings->indexPath = srch2Home + settings->dataDir;
     }
 
-    // <core dataDir="core0/data"
-    if (coreNode.attribute(dataDirString) && string(coreNode.attribute(dataDirString).value()).compare("") != 0) {
-        core.dataDir = coreNode.attribute(dataDirString).value();
-    }
-
-    xml_node childNode = coreNode.child(dataSourceTypeString);
+    xml_node childNode = parentNode.child(dataSourceTypeString);
     if (childNode && childNode.text()) {
         int dataSourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
 	switch(dataSourceValue) {
 	case 0:
-	    core.dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
+	    settings->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
 	    break;
 	case 1:
-	    core.dataSourceType = DATA_SOURCE_JSON_FILE;
+	    settings->dataSourceType = DATA_SOURCE_JSON_FILE;
 	    break;
 	case 2:
-	    core.dataSourceType = DATA_SOURCE_MONGO_DB;
+	    settings->dataSourceType = DATA_SOURCE_MONGO_DB;
 	    break;
 	default:
 	    // if user forgets to specify this option, we will assume data source is JSON file
-	    core.dataSourceType = DATA_SOURCE_JSON_FILE;
+	    settings->dataSourceType = DATA_SOURCE_JSON_FILE;
 	    break;
 	}
     } else {
-        core.dataSourceType = DATA_SOURCE_JSON_FILE;
+        settings->dataSourceType = DATA_SOURCE_JSON_FILE;
     }
 
-    if (core.dataSourceType == DATA_SOURCE_JSON_FILE) {
+    if (settings->dataSourceType == DATA_SOURCE_JSON_FILE) {
         // dataFile is a required field only if JSON file is specified as data source.
-        childNode = coreNode.child(dataFileString);
+        childNode = parentNode.child(dataFileString);
 	if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
 	    tempUse = string(childNode.text().get());
 	    trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-	    core.filePath = this->srch2Home + tempUse;
+	    settings->filePath = this->srch2Home + tempUse;
 	} else {
-	  parseError << core.name <<
-	      ": Path to the data file is not set. "
-	      "You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
+	    parseError << (settings->name.compare("") != 0 ? settings->name : "default") <<
+	        " core path to the data file is not set. "
+	        "You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
 	  configSuccess = false;
 	  return;
 	}
     }
 
-    // if no errors, create new core config settings and add to map
-    if (configSuccess == true) {
-        CoreSettings_t *newCore = new CoreSettings_t(core);
-	coreSettings[core.name] = newCore;
+    if (settings->dataSourceType == DATA_SOURCE_MONGO_DB) {
+        childNode = parentNode.child(mongoDbString);
+	parseMongoDb(childNode, settings, configSuccess, parseError, parseWarnings);
+	if (configSuccess == false) {
+	    return;
+	}
     }
-}
 
-CoreSettings_t::CoreSettings_t(const CoreSettings_t &src)
-{
-    name = src.name;
-    dataDir = src.dataDir;
-    dataSourceType = src.dataSourceType;
-    dataFile = src.dataFile;
-    filePath = src.filePath;
-    // TODO schema
-}
-
-
-void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError,
-        std::stringstream &parseWarnings)
-{
-    string tempUse = ""; // This is just for temporary use.
-
-    xml_node configNode = configDoc.child(configString);
-
-    // srch2Home is a required field
-    xml_node childNode = configNode.child(srch2HomeString);
-    if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
-        tempUse = string(childNode.text().get());
-	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
-	this->srch2Home = tempUse;
+    // uniqueKey is required
+    childNode = parentNode.child(schemaString).child(uniqueKeyString);
+    if (childNode && childNode.text()) {
+        settings->primaryKey = string(childNode.text().get());
     } else {
-        parseError << "srch2Home is not set.\n";
+        parseError << (settings->name.compare("") != 0 ? settings->name : "default") <<
+	    " core uniqueKey (primary key) is not set.\n";
         configSuccess = false;
         return;
     }
 
-    xml_node indexConfigNode = configNode.child(indexConfigString);
-    parseIndexConfig(indexConfigNode, configSuccess, parseError, parseWarnings);
+    xml_node indexConfigNode = parentNode.child(indexConfigString);
+    map<string, unsigned> boostsMap;
+    parseIndexConfig(indexConfigNode, settings, boostsMap, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
     }
 
-    // uniqueKey is required
-    childNode = configNode.child(schemaString).child(uniqueKeyString);
-    if (childNode && childNode.text()) {
-        this->primaryKey = string(childNode.text().get());
-    } else {
-        parseError << "uniqueKey (primary key) is not set.\n";
+    // <schema>
+    childNode = parentNode.child(schemaString);
+    if (childNode) {
+        parseSchema(childNode, &parseState, settings, configSuccess, parseError, parseWarnings);
+	if (configSuccess == false) {
+	    return;
+	}
+    }
+
+    if (settings->indexType == 1) {
+        // If index type is 1, it means it is geo. So both latitude and longitude should be provided
+        if (!(parseState.hasLatitude && parseState.hasLongitude)) {
+            parseError << "Both Geo related attributes should set together. Currently only one of them is set.\n";
+            configSuccess = false;
+            return;
+        }
+        settings->searchType = 2; // GEO search
+    } else if (settings->indexType == 0){
+        settings->searchType = 0;
+        settings->fieldLongitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
+        settings->fieldLatitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
+
+        childNode = parentNode.child(queryString).child(searcherTypeString);
+        if (childNode && childNode.text()) {
+            string st = childNode.text().get();
+            if (isValidSearcherType(st)) {
+                settings->searchType = childNode.text().as_int();
+            } else {
+                parseError << "The Searcher Type only can get 0 or 1";
+                configSuccess = false;
+                return;
+            }
+        }
+    }
+
+    // <config>
+    //   <indexconfig>
+    //        <fieldBoost>
+    // filling the searchableAttributesInfo map
+    // this depends upon parseIndexConfig() to have loaded boostsMap and
+    // searchableFieldsVector & company to have been loaded elsewhere from <schema>
+    for (int i = 0; i < parseState.searchableFieldsVector.size(); i++) {
+        if (boostsMap.find(parseState.searchableFieldsVector[i]) == boostsMap.end()) {
+            settings->searchableAttributesInfo[parseState.searchableFieldsVector[i]] =
+            		SearchableAttributeInfoContainer(parseState.searchableFieldsVector[i] ,
+            				parseState.searchableAttributesRequiredFlagVector[i] ,
+            				parseState.searchableAttributesDefaultVector[i] ,
+            				0 , 1 , parseState.searchableAttributesIsMultiValued[i]);
+        } else {
+            settings->searchableAttributesInfo[parseState.searchableFieldsVector[i]] =
+            		SearchableAttributeInfoContainer(parseState.searchableFieldsVector[i] ,
+            				parseState.searchableAttributesRequiredFlagVector[i] ,
+            				parseState.searchableAttributesDefaultVector[i] ,
+            				0 , boostsMap[parseState.searchableFieldsVector[i]] ,
+					parseState.searchableAttributesIsMultiValued[i]);
+        }
+    }
+
+    // give each searchable attribute an id based on the order in the info map
+    // should be consistent with the id in the schema
+    map<string, SearchableAttributeInfoContainer>::iterator searchableAttributeIter = settings->searchableAttributesInfo.begin();
+    for(unsigned idIter = 0; searchableAttributeIter != settings->searchableAttributesInfo.end() ; ++searchableAttributeIter, ++idIter){
+    	searchableAttributeIter->second.offset = idIter;
+
+	parseError << "Attribute: " << searchableAttributeIter->second.attributeName;
+    }
+
+    // checks the validity of the boost fields in boostsMap
+    // must occur after parseIndexConfig() AND parseSchema()
+    if (!isValidBoostFields(settings, boostsMap)) {
         configSuccess = false;
+        parseError << "In core " << settings->name << ": Fields that are provided in the boostField do not match with the defined fields.";
+	
         return;
     }
 
-    /*
-     * <schema> in config.xml file
-     */
-    /*
-     * <field>  in config.xml file
-     */
-    bool hasLatitude = false;
-    bool hasLongitude = false;
-    vector<string> searchableFieldsVector;
-    vector<string> searchableFieldTypesVector;
-    vector<bool> searchableFieldIndexsVector;
-    vector<bool> searchableAttributesRequiredFlagVector;
-    vector<string> searchableAttributesDefaultVector;
-    vector<bool> searchableAttributesIsMultiValued;
+    // checks the validity of the boost values in boostsMap
+    if (!isValidBoostFieldValues(boostsMap)) {
+        configSuccess = false;
+        parseError << "Boost values that are provided in the boostField are not in the range [1 to 100].";
+        return;
+    }
+}
+
+void ConfigManager::parseDataConfiguration(const xml_node &configNode,
+					   bool &configSuccess,
+					   std::stringstream &parseError,
+					   std::stringstream &parseWarnings)
+{
+    CoreInfo_t *settings = NULL;
+
+    // check for data source settings outside of <cores>
+    if (configNode.child(dataDirString) || configNode.child(dataSourceTypeString) ||
+	configNode.child(dataFileString)) {
+
+        // create a default core for settings outside of <cores>
+        bool created = false;
+        if (coreSettings.find(getDefaultCoreName()) == coreSettings.end()) {
+	  settings = new CoreInfo_t(this);
+	    created= true;
+	} else {
+	    settings = coreSettings[getDefaultCoreName()];
+	}
+
+	parseDataSource(configNode, settings, configSuccess, parseError, parseWarnings);
+	if (configSuccess == false) {
+	    if (created) {
+	        delete settings;
+	    }
+	    return;
+	}
+    }
+
+    // if no errors, add settings to map
+    if (settings != NULL) {
+        settings->name = getDefaultCoreName();
+	coreSettings[settings->name] = settings;
+    }
+
+    // <cores>
+    xml_node childNode = configNode.child(coresString);
+    parseCores(childNode, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
+    }
+}
+
+/*
+ * Parse a <schema> node, either directly under the root <config> or under <core>
+ */
+void ConfigManager::parseSchema(const xml_node &schemaNode, ParseState_t *parseState, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    string tempUse = "";
 
     vector<string> RefiningFieldsVector;
     vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
@@ -691,11 +883,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
 
-    this->isPrimSearchable = 0;
+    /*
+     * <field>  in config.xml file
+     */
+    settings->isPrimSearchable = 0;
 
-    childNode = configNode.child(schemaString).child(fieldsString);
-    if (childNode) {
-        for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
+    xml_node fieldsNode = schemaNode.child(fieldsString);
+    if (fieldsNode) {
+        for (xml_node field = fieldsNode.first_child(); field; field = field.next_sibling()) {
             if (string(field.name()).compare(fieldString) == 0) {
 
             	/*
@@ -704,14 +899,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
             	 */
             	bool isMultiValued = false;
                 if(string(field.attribute(multiValuedString).value()).compare("") != 0){
-                	tempUse = string(field.attribute(multiValuedString).value());
-                	if(isValidBool(tempUse)){
-                		isMultiValued = field.attribute(multiValuedString).as_bool();
-                	}else{
-                        parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
+		    tempUse = string(field.attribute(multiValuedString).value());
+		    if(isValidBool(tempUse)){
+		        isMultiValued = field.attribute(multiValuedString).as_bool();
+		    }else{
+		        parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
                         configSuccess = false;
                         return;
-                	}
+		    }
                 }// We do not need the "else" part since multivalued property is not
                  // there so this field is not a multivalued field (false by default)
             	/*
@@ -807,18 +1002,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                 // We want to set primaryKey as a searchable and/or refining field
                 // We assume the primary key is text, we don't get any type from user.
                 // And no default value is accepted from user.
-                if(string(field.attribute(nameString).value()).compare(this->primaryKey) == 0){
+                if(string(field.attribute(nameString).value()).compare(settings->primaryKey) == 0){
                     if(isSearchable){
-                        this->isPrimSearchable = 1;
-                        searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        settings->isPrimSearchable = 1;
+                        parseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
                         // there is no need for default value for primary key
-                        searchableAttributesDefaultVector.push_back("");
+                        parseState->searchableAttributesDefaultVector.push_back("");
                         // primary key is always required.
-                        searchableAttributesRequiredFlagVector.push_back(true);
+                        parseState->searchableAttributesRequiredFlagVector.push_back(true);
                     }
 
                     if(isRefining){
-                        RefiningFieldsVector.push_back(this->primaryKey);
+                        RefiningFieldsVector.push_back(settings->primaryKey);
                         RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
                         RefiningAttributesDefaultVector.push_back("");
                         RefiningAttributesRequiredFlagVector.push_back(true);
@@ -829,14 +1024,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                 if (string(field.attribute(nameString).value()).compare("") != 0
                         && string(field.attribute(typeString).value()).compare("") != 0) {
                     if(isSearchable){ // it is a searchable field
-                        searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
-                        searchableFieldIndexsVector.push_back(true);
-
+                        parseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
-                        if (this->isValidFieldType(tempUse , true)) {
-                            searchableFieldTypesVector.push_back(tempUse);
-                        } else {
+                        if (! this->isValidFieldType(tempUse , true)) {
                             parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
                             parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
                             configSuccess = false;
@@ -844,24 +1035,22 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         }
 
                         if (string(field.attribute(defaultString).value()).compare("") != 0){
-                            searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
+                            parseState->searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
                         }else{
-                            searchableAttributesDefaultVector.push_back("");
+                            parseState->searchableAttributesDefaultVector.push_back("");
                         }
 
                         tempUse = string(field.attribute(requiredString).value());
                         if (string(field.attribute("required").value()).compare("") != 0 && isValidBool(tempUse)){
-                            searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
+                            parseState->searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
                         }else{
-                            searchableAttributesRequiredFlagVector.push_back(false);
+			    parseState->searchableAttributesRequiredFlagVector.push_back(false);
                         }
-                        searchableAttributesIsMultiValued.push_back(isMultiValued);
+                        parseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){ // it is a refining field
                         RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
-                        searchableFieldIndexsVector.push_back(false);
-
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
                         if (this->isValidFieldType(tempUse , false)) {
@@ -924,12 +1113,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
                     if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
-                        hasLatitude = true;
-                        this->fieldLatitude = string(field.attribute(nameString).value());
+                        parseState->hasLatitude = true;
+                        settings->fieldLatitude = string(field.attribute(nameString).value());
                     }
                     if (string(field.attribute(typeString).value()).compare(locationLongitudeString) == 0) {
-                        hasLongitude = true;
-                        this->fieldLongitude = string(field.attribute(nameString).value());
+                        parseState->hasLongitude = true;
+                        settings->fieldLongitude = string(field.attribute(nameString).value());
                     }
 
                 } else { // if one of the values of name, type or indexed is empty
@@ -939,15 +1128,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                     return;
                 }
             }
-
         }
     } else { // No searchable fields provided.
         parseError << "No fields are provided.\n";
         configSuccess = false;
         return;
     }
+
     // Checking if there is any field or not.
-    if (searchableFieldsVector.size() == 0) {
+    if (parseState->searchableFieldsVector.size() == 0) {
         parseError << "No searchable fields are provided.\n";
         configSuccess = false;
         return;
@@ -955,7 +1144,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
 
     if(RefiningFieldsVector.size() != 0){
         for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
-            RefiningAttributesInfo[RefiningFieldsVector[iter]] =
+            settings->refiningAttributesInfo[RefiningFieldsVector[iter]] =
             		RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
             				RefiningFieldTypesVector[iter] ,
             				RefiningAttributesDefaultVector[iter] ,
@@ -964,22 +1153,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-
-
-
-
-    /*
-     * <schema> in config.xml file
-     */
     /*
      * <facetEnabled>  in config.xml file
      */
-    this->facetEnabled = false; // by default it is false
-    childNode = configNode.child(schemaString).child(facetEnabledString);
+    settings->facetEnabled = false; // by default it is false
+    xml_node childNode = schemaNode.child(facetEnabledString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
-        if (this->isValidBool(qtmt)) {
-            this->facetEnabled = childNode.text().as_bool();
+        if (isValidBool(qtmt)) {
+            settings->facetEnabled = childNode.text().as_bool();
         } else {
             parseError << "The facetEnabled that is provided is not valid";
             configSuccess = false;
@@ -988,41 +1170,38 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
     /*
-     * <schema> in config.xml file
-     */
-    /*
      * <facetFields>  in config.xml file
      */
 
-    if(this->facetEnabled){
-      childNode = configNode.child(schemaString).child(facetFieldsString);
+    if(settings->facetEnabled){
+        childNode = schemaNode.child(facetFieldsString);
         if (childNode) {
             for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
                 if (string(field.name()).compare(facetFieldString) == 0) {
-		  if (string(field.attribute(nameString).value()).compare("") != 0
+		    if (string(field.attribute(nameString).value()).compare("") != 0
                             && string(field.attribute(facetTypeString).value()).compare("") != 0){
                         // insert the name of the facet
-                        this->facetAttributes.push_back(string(field.attribute(nameString).value()));
+		        settings->facetAttributes.push_back(string(field.attribute(nameString).value()));
                         // insert the type of the facet
                         tempUse = string(field.attribute(facetTypeString).value());
                         int facetType = parseFacetType(tempUse);
                         if(facetType == 0){ // categorical
-                            this->facetTypes.push_back(facetType);
+                            settings->facetTypes.push_back(facetType);
                             // insert place holders for start,end and gap
-                            this->facetStarts.push_back("");
-                            this->facetEnds.push_back("");
-                            this->facetGaps.push_back("");
+                            settings->facetStarts.push_back("");
+                            settings->facetEnds.push_back("");
+                            settings->facetGaps.push_back("");
                         }else if(facetType == 1){ // range
-                            this->facetTypes.push_back(facetType);
+                            settings->facetTypes.push_back(facetType);
                             // insert start
                             string startTextValue = string(field.attribute(facetStartString).value());
                             string facetAttributeString = string(field.attribute(nameString).value());
                             srch2::instantsearch::FilterType facetAttributeType ;
-                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+                            if(settings->refiningAttributesInfo.find(facetAttributeString) != settings->refiningAttributesInfo.end()){
+                                facetAttributeType = settings->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                facetEnabled = false;
+                                settings->facetEnabled = false;
                                 break;
                             }
                             if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
@@ -1034,19 +1213,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     startTextValue = buffer.str();
                                 }else{
                                     parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-                                    facetEnabled = false;
+                                    settings->facetEnabled = false;
                                     break;
                                 }
                             }
-                            this->facetStarts.push_back(startTextValue);
+                            settings->facetStarts.push_back(startTextValue);
 
                             // insert end
                             string endTextValue = string(field.attribute(facetEndString).value());
-                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+                            if(settings->refiningAttributesInfo.find(facetAttributeString) != settings->refiningAttributesInfo.end()){
+                                facetAttributeType = settings->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                facetEnabled = false;
+                                settings->facetEnabled = false;
                                 break;
                             }
                             if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
@@ -1058,32 +1237,32 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                     endTextValue = buffer.str();
                                 }else{
                                     parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-                                    facetEnabled = false;
+                                    settings->facetEnabled = false;
                                     break;
                                 }
                             }
-                            this->facetEnds.push_back(endTextValue);
+                            settings->facetEnds.push_back(endTextValue);
 
                             // insert gap
                             string gapTextValue = string(field.attribute(facetGapString).value());
-                            if(RefiningAttributesInfo.find(facetAttributeString) != RefiningAttributesInfo.end()){
-                                facetAttributeType = RefiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+                            if(settings->refiningAttributesInfo.find(facetAttributeString) != settings->refiningAttributesInfo.end()){
+                                facetAttributeType = settings->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
                             }else{
                                 parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                facetEnabled = false;
+                                settings->facetEnabled = false;
                                 break;
                             }
                             if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
                                 if(!srch2is::DateAndTimeHandler::verifyDateTimeString(gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
                                     parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
-                                    facetEnabled = false;
+                                    settings->facetEnabled = false;
                                     break;
                                 }
                             }
-                            this->facetGaps.push_back(gapTextValue);
+                            settings->facetGaps.push_back(gapTextValue);
                         }else{
                             parseError << "Facet type is not recognized. Facet disabled.";
-                            this->facetEnabled = false;
+                            settings->facetEnabled = false;
                             break;
                         }
 
@@ -1093,51 +1272,23 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         }
     }
 
-    if(!facetEnabled){
-        this->facetAttributes.clear();
-        this->facetTypes.clear();
-        this->facetStarts.clear();
-        this->facetEnds.clear();
-        this->facetGaps.clear();
+    if(! settings->facetEnabled){
+        settings->facetAttributes.clear();
+        settings->facetTypes.clear();
+        settings->facetStarts.clear();
+        settings->facetEnds.clear();
+        settings->facetGaps.clear();
     }
-
-    if (this->indexType == 1) {
-        // If index type is 1, it means it is geo. So both latitude and longitude should be provided.
-        if (!(hasLatitude && hasLongitude)) {
-            parseError << "Both Geo related attributes should set together. Currently only one of them is set.\n";
-            configSuccess = false;
-            return;
-        }
-        this->searchType = 2; // GEO search
-    } else if (this->indexType == 0){
-        this->searchType = 0;
-        this->fieldLongitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
-        this->fieldLatitude = "IGNORE"; // IN URL parser these fields are being checked with "IGNORE". We should get rid of them.
-
-	// TODO: Should this be in parseQuery()?
-        childNode = configNode.child(queryString).child(searcherTypeString);
-        if (childNode && childNode.text()) {
-            string st = childNode.text().get();
-            if (this->isValidSearcherType(st)) {
-                this->searchType = childNode.text().as_int();
-            } else {
-                parseError << "The Searcher Type only can get 0 or 1";
-                configSuccess = false;
-                return;
-            }
-        }
-    }
-
 
     // Analyzer flags : Everything is disabled by default.
-    this->stemmerFlag = false;
-    this->stemmerFile = "";
-    this->stopFilterFilePath = "";
-    this->synonymFilterFilePath = "";
-    this->protectedWordsFilePath = "";
-    this->synonymKeepOrigFlag = false;
+    settings->stemmerFlag = false;
+    settings->stemmerFile = "";
+    settings->stopFilterFilePath = "";
+    settings->synonymFilterFilePath = "";
+    settings->protectedWordsFilePath = "";
+    settings->synonymKeepOrigFlag = false;
 
-    childNode = configNode.child(schemaString).child(typesString);
+    childNode = schemaNode.child(typesString);
     if (childNode) {        // Checks if <schema><types> exists or not
         for (xml_node fieldType = childNode.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
             if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
@@ -1148,16 +1299,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                         if (string(field.name()).compare(filterString) == 0) {
                             if (string(field.attribute("name").value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
                                 if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
-				    this->stemmerFlag = true;
+				    settings->stemmerFlag = true;
 				    tempUse = string(field.attribute(dictionaryString).value());
 				    trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
-				    this->stemmerFile = this->srch2Home + tempUse;
+				    settings->stemmerFile = this->srch2Home + tempUse;
                                 }
                             } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
 				    trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
-				    this->stopFilterFilePath = this->srch2Home + tempUse;
+				    settings->stopFilterFilePath = this->srch2Home + tempUse;
                                 }
                             } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
                                 if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
@@ -1179,7 +1330,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
 				    tempUse = string(field.attribute("words").value());
 				    trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
-				    this->protectedWordsFilePath = this->srch2Home + tempUse;
+				    settings->protectedWordsFilePath = this->srch2Home + tempUse;
                                 }
                             }
                         }
@@ -1193,6 +1344,45 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     /*
      * <Schema/>: End
      */
+}
+
+void ConfigManager::parse(const pugi::xml_document& configDoc,
+			  bool &configSuccess,
+			  std::stringstream &parseError,
+			  std::stringstream &parseWarnings)
+{
+    string tempUse = ""; // This is just for temporary use.
+
+    // create a default core for settings outside of <cores>
+    CoreInfo_t *defaultSettings = NULL;
+    if (coreSettings.find(getDefaultCoreName()) == coreSettings.end()) {
+        defaultSettings = new CoreInfo_t(this);
+	defaultSettings->name = getDefaultCoreName();
+	coreSettings[defaultSettings->name] = defaultSettings;
+    } else {
+        defaultSettings = coreSettings[getDefaultCoreName()];
+    }
+
+    xml_node configNode = configDoc.child(configString);
+
+    // srch2Home is a required field
+    xml_node childNode = configNode.child(srch2HomeString);
+    if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
+        tempUse = string(childNode.text().get());
+	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
+	this->srch2Home = tempUse;
+    } else {
+        parseError << "srch2Home is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    // parse all data source settings - no core (default core) and multiples core handled
+    // requires indexType to have been loaded by parseIndexConfig()
+    parseDataConfiguration(configNode, configSuccess, parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
+    }
 
     /*
      * <Config> in config.xml file
@@ -1228,129 +1418,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
         configSuccess = false;
         return;
     }
-    // dataDir is a required field
-    childNode = configNode.child(dataDirString);
-    if (childNode && childNode.text()) { // checks if the config/dataDir has any text in it or not
-        tempUse = string(childNode.text().get());
-	trimSpacesFromValue(tempUse, dataDirString, parseWarnings);
-	this->indexPath = this->srch2Home + tempUse;
-    } else {
-        parseError
-                << "Path of index file is not set. You should set it as <dataDir>path/to/index/file</dataDir> in the config file.\n";
-        configSuccess = false;
-        return;
-    }
-
-    childNode = configNode.child(dataSourceTypeString);
-    if (childNode && childNode.text()) {
-        int datasourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
-        switch(datasourceValue) {
-        case 0:
-        	this->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
-        	break;
-        case 1:
-        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
-        	break;
-        case 2:
-        	this->dataSourceType = DATA_SOURCE_MONGO_DB;
-        	break;
-        default:
-        	// if user forgets to specify this option, we will assume data source is
-        	// JSON file
-        	this->dataSourceType = DATA_SOURCE_JSON_FILE;
-        	break;
-        }
-    } else {
-    	this->dataSourceType = DATA_SOURCE_JSON_FILE;
-    }
-    if (this->dataSourceType == DATA_SOURCE_JSON_FILE) {
-    	// dataFile is a required field only if JSON file is specified as data source.
-        childNode = configNode.child(dataFileString);
-    	if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
-	    tempUse = string(childNode.text().get());
-	    trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-	    this->filePath = this->srch2Home + tempUse;
-    	} else {
-    		parseError
-    		<< "Path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
-    		configSuccess = false;
-    		return;
-    	}
-    }
-
-    // <config>
-    //   <indexconfig>
-    //        <fieldBoost>
-    childNode = indexConfigNode.child(fieldBoostString);
-    map<string, unsigned> boostsMap;
-    // spliting the field boost input and put them in boostsMap
-    if (childNode && childNode.text()) {
-        string boostString = string(childNode.text().get());
-        boost::algorithm::trim(boostString);
-        this->splitBoostFieldValues(boostString, boostsMap);
-    }
-
-    // filling the searchableAttributesInfo map
-    for (int i = 0; i < searchableFieldsVector.size(); i++) {
-        if (boostsMap.find(searchableFieldsVector[i]) == boostsMap.end()) {
-            searchableAttributesInfo[searchableFieldsVector[i]] =
-            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
-            				searchableAttributesRequiredFlagVector[i] ,
-            				searchableAttributesDefaultVector[i] ,
-            				0 , 1 , searchableAttributesIsMultiValued[i]);
-        } else {
-            searchableAttributesInfo[searchableFieldsVector[i]] =
-            		SearchableAttributeInfoContainer(searchableFieldsVector[i] ,
-            				searchableAttributesRequiredFlagVector[i] ,
-            				searchableAttributesDefaultVector[i] ,
-            				0 , boostsMap[searchableFieldsVector[i]] , searchableAttributesIsMultiValued[i]);
-        }
-    }
-
-    // checks the validity of the boost fields in boostsMap
-    if (!this->isValidBoostFields(boostsMap)) {
-        configSuccess = false;
-        parseError << "Fields that are provided in the boostField do not match with the defined fields.";
-        return;
-    }
-    // checks the validity of the boost values in boostsMap
-    if (!this->isValidBoostFieldValues(boostsMap)) {
-        configSuccess = false;
-        parseError << "Boost values that are provided in the boostField are not in the range [1 to 100].";
-        return;
-    }
-
-    // give each searchable attribute an id based on the order in the info map
-    // should be consistent with the id in the schema
-    map<string, SearchableAttributeInfoContainer>::iterator searchableAttributeIter = searchableAttributesInfo.begin();
-    for(unsigned idIter = 0; searchableAttributeIter != searchableAttributesInfo.end() ; ++searchableAttributeIter, ++idIter){
-    	searchableAttributeIter->second.offset = idIter;
-    }
-
-    // recordBoostField is an optional field
-    this->recordBoostFieldFlag = false;
-    childNode = indexConfigNode.child(recordBoostFieldString);
-    if (childNode && childNode.text()) {
-        this->recordBoostFieldFlag = true;
-        this->recordBoostField = string(childNode.text().get());
-    }
-
-    // queryTermBoost is an optional field
-    this->queryTermBoost = 1; // By default it is 1
-    childNode = indexConfigNode.child(defaultQueryTermBoostString);
-    if (childNode && childNode.text()) {
-        string qtb = childNode.text().get();
-        if (this->isValidQueryTermBoost(qtb)) {
-            this->queryTermBoost = childNode.text().as_uint();
-        } else {
-            configSuccess = false;
-            parseError << "The value provided for queryTermBoost is not a (non-negative)number.";
-            return;
-        }
-    }
 
     childNode = configNode.child(queryString);
-    parseQuery(childNode, configSuccess, parseError, parseWarnings);
+    parseQuery(childNode, defaultSettings, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
     }
@@ -1455,7 +1525,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
      * query: END
      */
 
-    if (this->supportAttributeBasedSearch && this->searchableAttributesInfo.size() > 31) {
+    if (defaultSettings->supportAttributeBasedSearch && defaultSettings->searchableAttributesInfo.size() > 31) {
         parseError
                 << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
         configSuccess = false;
@@ -1463,18 +1533,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }
 
 
-    this->allowedRecordTokenizerCharacters = "";
+    defaultSettings->allowedRecordTokenizerCharacters = "";
     this->ordering = 0;
-    this->trieBootstrapDictFile = "";
     this->attributeToSort = 0;
-
-    if (this->dataSourceType == DATA_SOURCE_MONGO_DB) {
-        childNode = configNode.child(mongoDbString);
-        parseMongoDb(childNode, configSuccess, parseError, parseWarnings);
-	if (configSuccess == false) {
-            return;
-	}
-    }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
     // is no option in xml for this one yet
@@ -1532,25 +1593,26 @@ void ConfigManager::parse(const pugi::xml_document& configDoc, bool &configSucce
     }else{
     	keywordPopularityThreshold = 50000;
     }
-
-    // <cores>
-    childNode = configNode.child(coresString);
-    parseCores(childNode, configSuccess, parseError, parseWarnings);
-    if (configSuccess == false) {
-        return;
-    }
 }
 
-void ConfigManager::_setDefaultSearchableAttributeBoosts(const vector<string> &searchableAttributesVector) {
+void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector)
+{
+    CoreInfo_t *settings = NULL;
+    if (coreName.compare("") != 0) {
+        settings = ((CoreInfoMap_t) coreSettings)[coreName];
+    } else {
+        settings = getDefaultDataSource();
+    }
+
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
-        searchableAttributesInfo[searchableAttributesVector[iter]] =
-        		SearchableAttributeInfoContainer(searchableAttributesVector[iter] , false, "" , iter , 1 , false);
+        settings->searchableAttributesInfo[searchableAttributesVector[iter]] =
+	    SearchableAttributeInfoContainer(searchableAttributesVector[iter] , false, "" , iter , 1 , false);
     }
 }
 
 ConfigManager::~ConfigManager()
 {
-    for (CoreSettingsMap_t::iterator iterator = coreSettings.begin(); iterator != coreSettings.end(); iterator++) {
+    for (CoreInfoMap_t::iterator iterator = coreSettings.begin(); iterator != coreSettings.end(); iterator++) {
         delete iterator->second;
     }
     coreSettings.clear();
@@ -1584,20 +1646,36 @@ unsigned ConfigManager::getKeywordPopularityThreshold() const {
 	return keywordPopularityThreshold;
 }
 
-int ConfigManager::getIndexType() const {
-    return indexType;
+int ConfigManager::getIndexType(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->indexType;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->indexType;
 }
 
-bool ConfigManager::getSupportSwapInEditDistance() const {
-    return supportSwapInEditDistance;
+bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->supportSwapInEditDistance;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->supportSwapInEditDistance;
 }
 
-const string& ConfigManager::getAttributeLatitude() const {
-    return fieldLatitude;
+const string& ConfigManager::getAttributeLatitude(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->fieldLatitude;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->fieldLatitude;
 }
 
-const string& ConfigManager::getAttributeLongitude() const {
-    return fieldLongitude;
+const string& ConfigManager::getAttributeLongitude(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->fieldLongitude;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->fieldLongitude;
 }
 
 float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
@@ -1616,47 +1694,87 @@ WriteApiType ConfigManager::getWriteApiType() const {
     return writeApiType;
 }
 
-const string& ConfigManager::getIndexPath() const {
-    return indexPath;
+const string& ConfigManager::getIndexPath(const string &coreName) const {
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->indexPath;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->indexPath;
 }
 
 const string& ConfigManager::getFilePath() const {
     return this->filePath;
 }
 
-const string& ConfigManager::getPrimaryKey() const {
-    return primaryKey;
-}
-const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes() const {
-    return &searchableAttributesInfo;
-}
-
-const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes() const {
-    return &RefiningAttributesInfo;
+const string& ConfigManager::getPrimaryKey(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->primaryKey;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->primaryKey;
 }
 
-const vector<string> * ConfigManager::getAttributesToReturnName() const {
-    return &attributesToReturn;
+const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->searchableAttributesInfo;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->searchableAttributesInfo;
 }
 
-bool ConfigManager::isFacetEnabled() const {
-    return facetEnabled;
-}
-const vector<string> * ConfigManager::getFacetAttributes() const {
-    return &facetAttributes;
-}
-const vector<int> * ConfigManager::getFacetTypes() const {
-    return &facetTypes;
-}
-const vector<string> * ConfigManager::getFacetStarts() const {
-    return &facetStarts;
-}
-const vector<string> * ConfigManager::getFacetEnds() const {
-    return &facetEnds;
+const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->refiningAttributesInfo;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->refiningAttributesInfo;
 }
 
-const vector<string> * ConfigManager::getFacetGaps() const {
-    return &facetGaps;
+bool ConfigManager::isFacetEnabled(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->facetEnabled;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->facetEnabled;
+}
+
+const vector<string> * ConfigManager::getFacetAttributes(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->facetAttributes;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->facetAttributes;
+}
+
+const vector<int> * ConfigManager::getFacetTypes(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->facetTypes;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->facetTypes;
+}
+
+const vector<string> * ConfigManager::getFacetStarts(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->facetStarts;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->facetStarts;
+}
+
+const vector<string> * ConfigManager::getFacetEnds(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->facetEnds;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->facetEnds;
+}
+
+const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return &getDefaultDataSource()->facetGaps;
+    }
+    return &((CoreInfoMap_t) coreSettings)[coreName]->facetGaps;
 }
 
 
@@ -1664,32 +1782,60 @@ string ConfigManager::getSrch2Home() const {
     return this->srch2Home;
 }
 
-bool ConfigManager::getStemmerFlag() const {
-    return stemmerFlag;
+bool ConfigManager::getStemmerFlag(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->stemmerFlag;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->stemmerFlag;
 }
 
-string ConfigManager::getStemmerFile() const {
-    return stemmerFile;
+const string &ConfigManager::getStemmerFile(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->stemmerFile;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->stemmerFile;
 }
 
-string ConfigManager::getSynonymFilePath() const {
-    return synonymFilterFilePath;
+const string &ConfigManager::getSynonymFilePath(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->synonymFilterFilePath;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->synonymFilterFilePath;
 }
 
-string ConfigManager::getProtectedWordsFilePath() const {
-    return protectedWordsFilePath;
+const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->protectedWordsFilePath;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->protectedWordsFilePath;
 }
 
-bool ConfigManager::getSynonymKeepOrigFlag() const {
-    return synonymKeepOrigFlag;
+bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->synonymKeepOrigFlag;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->synonymKeepOrigFlag;
 }
 
-string ConfigManager::getStopFilePath() const {
-    return stopFilterFilePath;
+const string &ConfigManager::getStopFilePath(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->stopFilterFilePath;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->stopFilterFilePath;
 }
 
-const string& ConfigManager::getAttributeRecordBoostName() const {
-    return recordBoostField;
+const string& ConfigManager::getAttributeRecordBoostName(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->recordBoostField;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->recordBoostField;
 }
 
 /*string getDefaultAttributeRecordBoost() const
@@ -1705,16 +1851,27 @@ int ConfigManager::getSearchResponseJSONFormat() const {
     return searchResponseJsonFormat;
 }
 
-const string& ConfigManager::getRecordAllowedSpecialCharacters() const {
-    return allowedRecordTokenizerCharacters;
+const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->allowedRecordTokenizerCharacters;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->allowedRecordTokenizerCharacters;
 }
 
-int ConfigManager::getSearchType() const {
-    return searchType;
+int ConfigManager::getSearchType(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->searchType;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->searchType;
 }
 
-int ConfigManager::getIsPrimSearchable() const {
-    return isPrimSearchable;
+int ConfigManager::getIsPrimSearchable(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->isPrimSearchable;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->isPrimSearchable;
 }
 
 bool ConfigManager::getIsFuzzyTermsQuery() const {
@@ -1725,8 +1882,12 @@ bool ConfigManager::getQueryTermPrefixType() const {
     return queryTermPrefixType;
 }
 
-unsigned ConfigManager::getQueryTermBoost() const {
-    return queryTermBoost;
+unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->queryTermBoost;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->queryTermBoost;
 }
 
 float ConfigManager::getFuzzyMatchPenalty() const {
@@ -1745,8 +1906,12 @@ float ConfigManager::getPrefixMatchPenalty() const {
     return prefixMatchPenalty;
 }
 
-bool ConfigManager::getSupportAttributeBasedSearch() const {
-    return supportAttributeBasedSearch;
+bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->supportAttributeBasedSearch;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->supportAttributeBasedSearch;
 }
 
 ResponseType ConfigManager::getSearchResponseFormat() const {
@@ -1755,10 +1920,6 @@ ResponseType ConfigManager::getSearchResponseFormat() const {
 
 const string& ConfigManager::getLicenseKeyFileName() const {
     return licenseKeyFile;
-}
-
-const std::string& ConfigManager::getTrieBootstrapDictFileName() const {
-    return this->trieBootstrapDictFile;
 }
 
 const string& ConfigManager::getHTTPServerListeningHostname() const {
@@ -1781,8 +1942,12 @@ int ConfigManager::getOrdering() const {
     return ordering;
 }
 
-bool ConfigManager::isRecordBoostAttributeSet() const {
-    return recordBoostFieldFlag;
+bool ConfigManager::isRecordBoostAttributeSet(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->recordBoostFieldFlag;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->recordBoostFieldFlag;
 }
 
 const string& ConfigManager::getHTTPServerAccessLogFile() const {
@@ -1894,10 +2059,12 @@ bool ConfigManager::isValidBool(string& fieldType) {
 }
 
 // validates if all the fields from boosts Fields are in the Triple or not.
-bool ConfigManager::isValidBoostFields(map<string, unsigned>& boostFields) {
+bool ConfigManager::isValidBoostFields(const CoreInfo_t *settings,
+				       map<string, unsigned>& boostFields)
+{
     map<string, unsigned>::iterator iter;
     for (iter = boostFields.begin(); iter != boostFields.end(); ++iter) {
-        if (this->searchableAttributesInfo.count(iter->first) > 0) {
+        if (settings->searchableAttributesInfo.count(iter->first) > 0) {
             continue;
         }
         return false;
@@ -2125,9 +2292,70 @@ void ConfigManager::setFilePath(const string& dataFile) {
 }
 
 
-bool ConfigManager::isPositionIndexEnabled() const{
-    return this->enablePositionIndex;
+bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultDataSource()->enablePositionIndex;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->enablePositionIndex;
 }
 
+const string& ConfigManager::getMongoServerHost(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoHost;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoHost;
+}
+
+const string& ConfigManager::getMongoServerPort(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoPort;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoPort;
+}
+
+const string& ConfigManager::getMongoDbName(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoDbName;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoDbName;
+}
+
+const string& ConfigManager::getMongoCollection (const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoCollection;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoCollection;
+}
+
+const unsigned ConfigManager::getMongoListenerWaitTime (const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoListenerWaitTime;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoListenerWaitTime;
+}
+
+const unsigned ConfigManager::getMongoListenerMaxRetryCount(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+	return getDefaultDataSource()->mongoListenerMaxRetryOnFailure;
+    }
+    return ((CoreInfoMap_t) coreSettings)[coreName]->mongoListenerMaxRetryOnFailure;
+}
+
+CoreInfo_t *ConfigManager::getDefaultDataSource() const
+{
+    string n = getDefaultCoreName();
+    CoreInfo_t *settings = ((CoreInfoMap_t) coreSettings)[n];
+    return settings;
+    //        return coreSettings[getDefaultCoreName()];
+}
+
+// end of namespaces
 }
 }

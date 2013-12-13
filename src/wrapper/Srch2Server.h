@@ -43,7 +43,7 @@ class Srch2Server
 {
 public:
 	Indexer *indexer;
-	const ConfigManager *indexDataContainerConf;
+	const CoreInfo_t *indexDataConfig;
 
 	/* Fields used only for stats */
 	time_t stat_starttime;          /* Server start time */
@@ -60,20 +60,20 @@ public:
 	Srch2Server()
 	{
 		this->indexer = NULL;
-		this->indexDataContainerConf = NULL;
+		this->indexDataConfig = NULL;
 	}
 
-	void init(const ConfigManager *indexDataContainerConf)
+	void init(const ConfigManager *config)
 	{
-		this->indexDataContainerConf = indexDataContainerConf;
-		this->createAndBootStrapIndexer();
+	    indexDataConfig = config->getCoreSettings(getCoreName());
+	    createAndBootStrapIndexer();
 	}
 
 
 	// Check if index files already exist.
-	bool checkIndexExistence(const ConfigManager *indexDataContainerConf)
+	bool checkIndexExistence(const CoreInfo_t *indexDataConfig)
 	{
-	    const string &directoryName = indexDataContainerConf->getIndexPath();
+	    const string &directoryName = indexDataConfig->getIndexPath();
 	    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
 	        return false;
 	    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
@@ -82,7 +82,7 @@ public:
 	        return false;
 	    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
 	        return false;
-	    if (indexDataContainerConf->getIndexType() == srch2::instantsearch::DefaultIndex){
+	    if (indexDataConfig->getIndexType() == srch2::instantsearch::DefaultIndex){
 	        // Check existence of the inverted index file for basic keyword search ("A1")
 	        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
 	            return false;
@@ -94,19 +94,18 @@ public:
 	    return true;
 	}
 
-	IndexMetaData *createIndexMetaData(const ConfigManager *indexDataContainerConf)
+	IndexMetaData *createIndexMetaData(const CoreInfo_t *indexDataConfig)
 	{
 		//Create a cache
-		srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataContainerConf->getCacheSizeInBytes(), 200000);
+		srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataConfig->getCacheSizeInBytes(), 200000);
 
 		// Create an IndexMetaData
 		srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( cache,
-				indexDataContainerConf->getMergeEveryNSeconds(),
-				indexDataContainerConf->getMergeEveryMWrites(),
-				indexDataContainerConf->getUpdateHistogramEveryPMerges(),
-				indexDataContainerConf->getUpdateHistogramEveryQWrites(),
-				indexDataContainerConf->getIndexPath(),
-				indexDataContainerConf->getTrieBootstrapDictFileName());
+				indexDataConfig->getMergeEveryNSeconds(),
+				indexDataConfig->getMergeEveryMWrites(),
+				indexDataConfig->getUpdateHistogramEveryPMerges(),
+				indexDataConfig->getUpdateHistogramEveryQWrites(),
+				indexDataConfig->getIndexPath());
 
 		return indexMetaData;
 	}
@@ -114,9 +113,9 @@ public:
 	void createAndBootStrapIndexer()
 	{
 		// create IndexMetaData
-		IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataContainerConf);
+		IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataConfig);
 		IndexCreateOrLoad indexCreateOrLoad;
-		if(checkIndexExistence(indexDataContainerConf))
+		if(checkIndexExistence(indexDataConfig))
 		    indexCreateOrLoad = srch2http::INDEXLOAD;
 		else
 		    indexCreateOrLoad = srch2http::INDEXCREATE;
@@ -125,20 +124,20 @@ public:
 		{
 			case srch2http::INDEXCREATE:
 			{
-				AnalyzerHelper::initializeAnalyzerResource(this->indexDataContainerConf);
+				AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
 				// Create a schema to the data source definition in the Srch2ServerConf
-				srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataContainerConf);
-				Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataContainerConf);
+				srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
+				Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
 				indexer = Indexer::create(indexMetaData, analyzer, schema);
 				delete analyzer;
 				delete schema;
-				switch(indexDataContainerConf->getDataSourceType())
+				switch(indexDataConfig->getDataSourceType())
 				{
 					case srch2http::DATA_SOURCE_JSON_FILE:
 					{
 						// Create from JSON and save to index-dir
 						Logger::console("Creating indexes from JSON file...");
-						unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataContainerConf);
+						unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataConfig);
 						/*
 						 *  commit the indexes once bulk load is done and then save it to the disk only
 						 *  if number of indexed record is > 0.
@@ -153,7 +152,7 @@ public:
 					case srch2http::DATA_SOURCE_MONGO_DB:
 					{
 						Logger::console("Creating indexes from a MongoDb instance...");
-						unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataContainerConf);
+						unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
 				        indexer->commit();
 				        if (indexedCounter > 0) {
 				            indexer->save();
@@ -166,7 +165,7 @@ public:
 	                    Logger::console("Creating new empty index");
 					}
 				};
-				AnalyzerHelper::saveAnalyzerResource(this->indexDataContainerConf);
+				AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
 				break;
 			}
 			case srch2http::INDEXLOAD:
@@ -174,14 +173,14 @@ public:
 				// Load from index-dir directly, skip creating an index initially.
 				indexer = Indexer::load(indexMetaData);
 				// Load Analayzer data from disk
-				AnalyzerHelper::loadAnalyzerResource(this->indexDataContainerConf);
-				indexer->getSchema()->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
+				AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
+				indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
 				bool isAttributeBasedSearch = false;
 				if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
 				    indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FULL) {
 					isAttributeBasedSearch =true;
 				}
-				if(isAttributeBasedSearch != indexDataContainerConf->getSupportAttributeBasedSearch())
+				if(isAttributeBasedSearch != indexDataConfig->getSupportAttributeBasedSearch())
 				{
 					cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
 				}
@@ -192,8 +191,13 @@ public:
 		indexer->createAndStartMergeThreadLoop();
 	}
 
+	void setCoreName(const string &name);
+	const string &getCoreName();
+
 	virtual ~Srch2Server(){}
 
+ protected:
+	string coreName;
 };
 
 class HTTPServerEndpoints

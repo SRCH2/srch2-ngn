@@ -51,7 +51,7 @@ std::string WStringToString(const std::wstring& s)
 
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
-                        const ConfigManager *indexDataContainerConf,
+                        const CoreInfo_t *indexDataContainerConf,
                         std::stringstream &error)
 {
     if (not (root.type() == Json::objectValue))
@@ -99,10 +99,10 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         Json::FastWriter local_writer;
         Json::Value local_root;
 
-        const vector<std::string> *attributesToReturnName = indexDataContainerConf->getAttributesToReturnName();
-        for (int i=0; i<attributesToReturnName->size(); i++)
+        const vector<std::string> *attributesToReturn = indexDataContainerConf->getAttributesToReturn();
+        for (int i=0; i<attributesToReturn->size(); i++)
         {
-            local_root[attributesToReturnName->at(i)] = root[attributesToReturnName->at(i)];
+            local_root[attributesToReturn->at(i)] = root[attributesToReturn->at(i)];
         }
 
         const string local_inputLine = local_writer.write(local_root);
@@ -277,7 +277,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const ConfigManager *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON(const string &inputLine, const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -305,7 +305,7 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Co
     return parseSuccess;
 }
 
-srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager *indexDataContainerConf)
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)
 {
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -381,7 +381,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 /*
  *  Create indexes using records from json file and return the total indexed records.
  */
-unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const CoreInfo_t *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getFilePath();
     ifstream in(filePath.c_str());

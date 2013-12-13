@@ -31,12 +31,12 @@ namespace srch2 {
 
 namespace httpwrapper {
 
-QueryRewriter::QueryRewriter(const ConfigManager *indexDataContainerConf,
+QueryRewriter::QueryRewriter(const CoreInfo_t *config,
         const Schema & schema, const Analyzer & analyzer,
         ParsedParameterContainer * paramContainer) :
         schema(schema), analyzer(analyzer) {
     this->paramContainer = paramContainer;
-    this->indexDataContainerConf = indexDataContainerConf;
+    indexDataConfig = config;
 }
 
 void QueryRewriter::rewrite() {
@@ -88,20 +88,20 @@ void QueryRewriter::prepareKeywordInfo() {
         if (paramContainer->hasParameterInQuery(KeywordBoostLevel)
                 && paramContainer->keywordBoostLevel.at(k) < 0) { // -1 is the place holder for numerical parameters ...
             paramContainer->keywordBoostLevel.at(k) =
-                    indexDataContainerConf->getQueryTermBoost();
+                    indexDataConfig->getQueryTermBoost();
         }
 
         if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold)
                 && paramContainer->keywordSimilarityThreshold.at(k) < 0) {
             paramContainer->keywordSimilarityThreshold.at(k) =
-                    indexDataContainerConf->getQueryTermSimilarityThreshold();
+                    indexDataConfig->getQueryTermSimilarityThreshold();
         }
 
         if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag)
                 && paramContainer->keywordPrefixComplete.at(k)
                         == srch2is::TERM_TYPE_NOT_SPECIFIED) {
             paramContainer->keywordPrefixComplete.at(k) =
-                    indexDataContainerConf->getQueryTermPrefixType() ?
+                    indexDataConfig->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX;
             // true means complete
@@ -207,7 +207,7 @@ void QueryRewriter::applyAnalyzer() {
 void QueryRewriter::prepareFieldFilters() {
 
 
-    if(!indexDataContainerConf->getSupportAttributeBasedSearch()){
+    if(!indexDataConfig->getSupportAttributeBasedSearch()){
         // these two vectors will not be used in future. We clear them just for safety.
         paramContainer->fieldFilter.clear();
         paramContainer->fieldFilterOps.clear();
@@ -292,7 +292,7 @@ void QueryRewriter::prepareFacetFilterInfo() {
     // there is a facet filter, continue with rewriting ...
 
     // 1. Remove everything if facet is disabled in config file.
-    if (!indexDataContainerConf->isFacetEnabled()) {
+    if (!indexDataConfig->isFacetEnabled()) {
 
         // remove facet flag from queryParameters
 
@@ -335,12 +335,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                 fieldName != facetQueryContainer->fields.end() ; ++fieldName){
 
             vector<string>::const_iterator facetIteratorInConfVector = find(
-                    indexDataContainerConf->getFacetAttributes()->begin(),
-                    indexDataContainerConf->getFacetAttributes()->end(),
+                    indexDataConfig->getFacetAttributes()->begin(),
+                    indexDataConfig->getFacetAttributes()->end(),
                     *fieldName);
             int fieldFacetTypeInt =
-                    indexDataContainerConf->getFacetTypes()->at(
-                            std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
+                    indexDataConfig->getFacetTypes()->at(
+                            std::distance(indexDataConfig->getFacetAttributes()->begin() , facetIteratorInConfVector));
             // this field must be removed from facet fields.
             if(fieldFacetTypeInt == 0){
                 facetQueryContainer->types.push_back(srch2is::FacetTypeCategorical);
@@ -354,12 +354,12 @@ void QueryRewriter::prepareFacetFilterInfo() {
                 facetType != facetQueryContainer->types.end(); ++facetType) {
             if(*facetType == srch2is::FacetTypeNonSpecified){
                 vector<string>::const_iterator facetIteratorInConfVector = find(
-                        indexDataContainerConf->getFacetAttributes()->begin(),
-                        indexDataContainerConf->getFacetAttributes()->end(),
+                        indexDataConfig->getFacetAttributes()->begin(),
+                        indexDataConfig->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(std::distance(facetType ,facetQueryContainer->types.begin() )));
                 int fieldFacetTypeInt =
-                        indexDataContainerConf->getFacetTypes()->at(
-                                std::distance(indexDataContainerConf->getFacetAttributes()->begin() , facetIteratorInConfVector));
+                        indexDataConfig->getFacetTypes()->at(
+                                std::distance(indexDataConfig->getFacetAttributes()->begin() , facetIteratorInConfVector));
                 if(fieldFacetTypeInt == 0){
                     *facetType = srch2is::FacetTypeCategorical;
                 }else if (fieldFacetTypeInt == 1){
@@ -383,15 +383,15 @@ void QueryRewriter::prepareFacetFilterInfo() {
             if (facetQueryContainer->rangeStarts.at(facetFieldIndex).compare("") == 0) {
                 // should get the value from config
                 vector<string>::const_iterator facetIteratorInConfVector = find(
-                        indexDataContainerConf->getFacetAttributes()->begin(),
-                        indexDataContainerConf->getFacetAttributes()->end(),
+                        indexDataConfig->getFacetAttributes()->begin(),
+                        indexDataConfig->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
                 if (facetIteratorInConfVector
-                        != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
+                        != indexDataConfig->getFacetAttributes()->end()) { // this attribute is in config
                     string startFromConfig =
-                            indexDataContainerConf->getFacetStarts()->at(
+                            indexDataConfig->getFacetStarts()->at(
                                     facetIteratorInConfVector
-                                            - indexDataContainerConf->getFacetAttributes()->begin());
+                                            - indexDataConfig->getFacetAttributes()->begin());
                     facetQueryContainer->rangeStarts.at(facetFieldIndex) = startFromConfig;
                 }
             }else if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
@@ -406,15 +406,15 @@ void QueryRewriter::prepareFacetFilterInfo() {
             if (facetQueryContainer->rangeEnds.at(facetFieldIndex).compare("") == 0) {
                 // should get the value from config
                 vector<string>::const_iterator facetIteratorInConfVector = find(
-                        indexDataContainerConf->getFacetAttributes()->begin(),
-                        indexDataContainerConf->getFacetAttributes()->end(),
+                        indexDataConfig->getFacetAttributes()->begin(),
+                        indexDataConfig->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
                 if (facetIteratorInConfVector
-                        != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
+                        != indexDataConfig->getFacetAttributes()->end()) { // this attribute is in config
                     string endFromConfig =
-                            indexDataContainerConf->getFacetEnds()->at(
+                            indexDataConfig->getFacetEnds()->at(
                                     facetIteratorInConfVector
-                                            - indexDataContainerConf->getFacetAttributes()->begin());
+                                            - indexDataConfig->getFacetAttributes()->begin());
                     facetQueryContainer->rangeEnds.at(facetFieldIndex) = endFromConfig;
                 }
             }else if(fieldType == srch2is::ATTRIBUTE_TYPE_TIME){
@@ -428,15 +428,15 @@ void QueryRewriter::prepareFacetFilterInfo() {
             if (facetQueryContainer->rangeGaps.at(facetFieldIndex).compare("") == 0) {
                 // should get the value from config
                 vector<string>::const_iterator facetIteratorInConfVector = find(
-                        indexDataContainerConf->getFacetAttributes()->begin(),
-                        indexDataContainerConf->getFacetAttributes()->end(),
+                        indexDataConfig->getFacetAttributes()->begin(),
+                        indexDataConfig->getFacetAttributes()->end(),
                         facetQueryContainer->fields.at(facetFieldIndex));
                 if (facetIteratorInConfVector
-                        != indexDataContainerConf->getFacetAttributes()->end()) { // this attribute is in config
+                        != indexDataConfig->getFacetAttributes()->end()) { // this attribute is in config
                     string gapFromConfig =
-                            indexDataContainerConf->getFacetGaps()->at(
+                            indexDataConfig->getFacetGaps()->at(
                                     facetIteratorInConfVector
-                                            - indexDataContainerConf->getFacetAttributes()->begin());
+                                            - indexDataConfig->getFacetAttributes()->begin());
                     facetQueryContainer->rangeGaps.at(facetFieldIndex) = gapFromConfig;
                 }
             }//else{

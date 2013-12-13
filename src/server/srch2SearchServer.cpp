@@ -64,7 +64,6 @@ using std::string;
 typedef std::map<const std::string, srch2http::Srch2Server *> ServerMap_t;
 ServerMap_t servers;
 srch2http::Srch2Server *defaultCore = NULL;
-static const char defaultCoreName[] = "__DEFAULT__";
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -603,19 +602,32 @@ int main(int argc, char** argv) {
         Logger::setOutputFile(stdout);
         Logger::error("Open Log file %s failed.",
                 serverConf->getHTTPServerAccessLogFile().c_str());
-    } else
+    } else {
         Logger::setOutputFile(logFile);
+    }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
-    // make sure at least one core is to be created
-    if (servers.empty() && defaultCore == NULL) {
-        defaultCore = new srch2http::Srch2Server();
-	servers[string(defaultCoreName)] = defaultCore;
+    // create a server (core) for each data source in config file
+    for (ConfigManager::CoreInfoMap_t::iterator iterator = serverConf->coreInfoIterateBegin();
+	 iterator != serverConf->coreInfoIterateEnd(); iterator++) {
+
+        srch2http::Srch2Server *core = new srch2http::Srch2Server;
+	core->setCoreName(iterator->second->getName());
+	servers[iterator->second->getName()] = core;
     }
 
     // make sure we have identified the default core
-    if (defaultCore == NULL) {
-      // NOTDONE
+    if (defaultCore == NULL && serverConf->getDefaultCoreName().compare("") != 0) {
+        defaultCore = servers[serverConf->getDefaultCoreName()];
+    }
+
+    // if no core created from ConfigManager, then create a default one
+    if (servers.empty()) {
+        ASSERT(defaultCore == NULL);
+
+        defaultCore = new srch2http::Srch2Server();
+	defaultCore->setCoreName(serverConf->getDefaultCoreName());
+	servers[defaultCore->getCoreName()] = defaultCore;
     }
 
     //load the index from the data source
@@ -643,8 +655,6 @@ int main(int argc, char** argv) {
     	srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
     	srch2http::MongoDataSource::spawnUpdateListener(defaultCore);
     }
-
-    //sleep(200);
 
     http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
     http_addr =
@@ -675,7 +685,7 @@ int main(int argc, char** argv) {
     /* 3). set general callback of http request */
     evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
 
-    if (defaultCore->indexDataContainerConf->getWriteApiType()
+    if (defaultCore->indexDataConfig->getWriteApiType()
             == srch2http::HTTPWRITEAPI) {
         //std::cout << "HTTPWRITEAPI:ON" << std::endl;
         //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
@@ -744,7 +754,7 @@ int main(int argc, char** argv) {
 
         http_server = evhttp_new(evbase);
         http_servers.push_back(http_server);
-        //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataContainerConf->getWriteReadBufferInBytes() );
+        //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataConfig->getWriteReadBufferInBytes() );
 
         if (NULL == http_server) {
             perror("evhttp_new");
@@ -759,7 +769,7 @@ int main(int argc, char** argv) {
         //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
         evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
 
-        if (defaultCore->indexDataContainerConf->getWriteApiType()
+        if (defaultCore->indexDataConfig->getWriteApiType()
                 == srch2http::HTTPWRITEAPI) {
             // std::cout << "HTTPWRITEAPI:ON" << std::endl;
             //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, defaultCore);

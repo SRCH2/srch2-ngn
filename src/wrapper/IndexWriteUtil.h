@@ -19,7 +19,7 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str) == false){
@@ -61,7 +61,7 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
+    static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -93,7 +93,7 @@ struct IndexWriteUtil
 
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
+    static void _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
 	{
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -131,7 +131,7 @@ struct IndexWriteUtil
 		}
 	}
 
-    static void _updateCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static void _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
         /// step 1, delete old record
 
@@ -247,7 +247,7 @@ struct IndexWriteUtil
         log_str << "{\"export\":\"success\"}";
     }
 
-    static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
+    static void _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
     	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)

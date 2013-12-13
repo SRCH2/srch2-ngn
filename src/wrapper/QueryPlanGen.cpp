@@ -40,9 +40,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 QueryPlanGen::QueryPlanGen(const ParsedParameterContainer & paramsContainer,
-        const ConfigManager *indexDataContainerConf) :
-        paramsContainer(paramsContainer) {
-    this->indexDataContainerConf = indexDataContainerConf;
+        const CoreInfo_t *config) :
+        paramsContainer(paramsContainer)
+{
+    indexDataConfig = config;
 }
 
 /*
@@ -167,7 +168,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
         plan->setFuzzy(paramsContainer.isFuzzy
                         && (paramsContainer.rawQueryKeywords.size() != 0));
     } else { // get it from configuration file
-        plan->setFuzzy(indexDataContainerConf->getIsFuzzyTermsQuery()
+        plan->setFuzzy(indexDataConfig->getIsFuzzyTermsQuery()
                         && (paramsContainer.rawQueryKeywords.size() != 0));
     }
 
@@ -183,7 +184,7 @@ void QueryPlanGen::createExactAndFuzzyQueries(QueryPlan * plan) {
         plan->setResultsToRetrieve(paramsContainer.numberOfResults);
     } else { // get it from configuration file
         plan->setResultsToRetrieve(
-                indexDataContainerConf->getDefaultResultsToRetrieve());
+                indexDataConfig->getDefaultResultsToRetrieve());
     }
 
     // 5. based on the search type, get needed information and create the query objects
@@ -222,10 +223,10 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     } else { // get it from configuration file
         plan->getExactQuery()->setLengthBoost(
-                indexDataContainerConf->getQueryTermLengthBoost());
+                indexDataConfig->getQueryTermLengthBoost());
         if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setLengthBoost(
-                    indexDataContainerConf->getQueryTermLengthBoost());
+                    indexDataConfig->getQueryTermLengthBoost());
         }
     }
 
@@ -239,10 +240,10 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     } else { // get it from configuration file
         plan->getExactQuery()->setPrefixMatchPenalty(
-                indexDataContainerConf->getPrefixMatchPenalty());
+                indexDataConfig->getPrefixMatchPenalty());
         if (plan->isFuzzy()) {
             plan->getFuzzyQuery()->setPrefixMatchPenalty(
-                    indexDataContainerConf->getPrefixMatchPenalty());
+                    indexDataConfig->getPrefixMatchPenalty());
         }
     }
 
@@ -257,7 +258,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
             keywordSimilarityThreshold.push_back(
-                    indexDataContainerConf->getQueryTermSimilarityThreshold());
+                    indexDataConfig->getQueryTermSimilarityThreshold());
         }
     }
 
@@ -268,7 +269,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
             keywordBoostLevel.push_back(
-                    indexDataContainerConf->getQueryTermBoost());
+                    indexDataConfig->getQueryTermBoost());
         }
     }
 
@@ -279,7 +280,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
     } else { // get it from configuration file
         for (unsigned i = 0; i < rawQueryKeywords.size(); i++) {
             keywordPrefixComplete.push_back(
-                    indexDataContainerConf->getQueryTermPrefixType() ?
+                    indexDataConfig->getQueryTermPrefixType() ?
                             srch2is::TERM_TYPE_COMPLETE :
                             srch2is::TERM_TYPE_PREFIX);
             // true means COMPLETE
@@ -314,7 +315,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
 
          exactTerm = new srch2is::Term(rawQueryKeywords[i],
                 keywordPrefixComplete[i], keywordBoostLevel[i],
-                indexDataContainerConf->getFuzzyMatchPenalty(), 0);
+                indexDataConfig->getFuzzyMatchPenalty(), 0);
         exactTerm->addAttributeToFilterTermHits(fieldFilter[i]);
 
         plan->getExactQuery()->add(exactTerm);
@@ -341,7 +342,7 @@ void QueryPlanGen::fillExactAndFuzzyQueriesWithCommonInformation(
             srch2is::Term *fuzzyTerm;
             fuzzyTerm = new srch2is::Term(rawQueryKeywords[i],
                     keywordPrefixComplete[i], keywordBoostLevel[i],
-                    indexDataContainerConf->getFuzzyMatchPenalty(),
+                    indexDataConfig->getFuzzyMatchPenalty(),
                     computeEditDistanceThreshold(getUtf8StringCharacterNumber(rawQueryKeywords[i]) , keywordSimilarityThreshold[i]));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
@@ -367,10 +368,10 @@ void QueryPlanGen::createExactAndFuzzyQueriesForGetAllTResults(
         QueryPlan * plan) {
     plan->setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
-            (indexDataContainerConf->getOrdering() == 0) ?
+            (indexDataConfig->getOrdering() == 0) ?
                     srch2is::SortOrderAscending : srch2is::SortOrderDescending;
     plan->getExactQuery()->setSortableAttribute(
-            indexDataContainerConf->getAttributeToSort(), order);
+            indexDataConfig->getAttributeToSort(), order);
     // TODO : sortableAttribute and order must be removed from here, all sort jobs must be transfered to
     //        to sort filter, now, when it's GetAllResults, it first finds the results based on an the order given here
     //        and then also applies the sort filter. When this is removed, core also must be changed to not need this
@@ -379,7 +380,7 @@ void QueryPlanGen::createExactAndFuzzyQueriesForGetAllTResults(
     if (plan->isFuzzy()) {
         plan->setFuzzyQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
         plan->getFuzzyQuery()->setSortableAttribute(
-                indexDataContainerConf->getAttributeToSort(), order);
+                indexDataConfig->getAttributeToSort(), order);
     }
 }
 
