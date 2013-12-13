@@ -479,7 +479,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
-            if(root.type() == Json::arrayValue) {
+            if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
                 for ( int index = 0; index < root.size(); ++index ) {
                     Json::Value defaultValueToReturn = Json::Value("");
@@ -493,7 +493,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
                     if (index < root.size() - 1)
                         log_str << ",";
                 }
-            } else {  // only one json object needs to insert
+            } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
                 IndexWriteUtil::_insertCommand(server->indexer,
                         server->indexDataContainerConf, doc, record, log_str);

@@ -146,7 +146,7 @@ if __name__ == '__main__':
     time.sleep(3)
     tester.killServer()
 
-    print '=====================Reset Logger Test Passed!=========================='
+    print '=====================Batch Upsert Test Passed!=========================='
 
 
 

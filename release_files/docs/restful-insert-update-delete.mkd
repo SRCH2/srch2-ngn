@@ -28,7 +28,7 @@ Note that each RESTful request needs to use a proper [URL encoder](http://www.w3
 
 ##1. Insert## {id="insert"}
 
-This request adds a record to the indexes. The request body should contain a JSON object, which should meet the following requirements:
+This request adds record(s) to the indexes. The request body should contain one single JSON object or an array of JSON objects, which should meet the following requirements:
 
  - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
  - The JSON object should include searchable fields defined in the [configuration file](example-demo/srch2-config.xml) and their corresponding values;
@@ -39,6 +39,7 @@ Here is an example:
 
 ```python
 $ curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "1234", "name" : "Toy Story", "category" : "shop"}'
+$ curl "http://localhost:8081/docs" -i -X PUT -d '[{"id" : "1234", "name" : "Toy Story", "category" : "shop"},{"id" : "5678", "name" : "Toy Story II", "category" : "shop"}]'
 ```
 
 ##2. Delete## {id="delete"}
@@ -50,9 +51,14 @@ Here is an example:
 $ curl "http://localhost:8081/docs?id=1234" -i -X DELETE
 ```
 
+We can use 'curl' to delete multiple records with one command
+```python
+$ curl "http://localhost:8081/docs?id={1234,5678}" -i -X DELETE
+```
+
 ##3. Update## {id="update"}
 
-This request updates a record in the indexes. It needs to provide the "id" of the record to be updated. The request body should contain a JSON object, which should meet the following requirements:
+This request updates a record in the indexes. It needs to provide the "id" of the records to be updated. If this id is in the index, the record will be updated. If not, then a new record with this id will be inserted. The request body should contain a JSON object or an array of JSON objects, which should meet the following requirements:
 
  - The JSON object should include a record identifier (e.g., "id"), which should be a non-empty string no longer than 1024 bytes;
  - The JSON object should include searchable fields defined in the [configuration file](example-demo/srch2-config.xml) and their corresponding values;
@@ -63,7 +69,8 @@ This request updates a record in the indexes. It needs to provide the "id" of th
 Here is an example: 
 
 ```python
-$ curl "http://localhost:8081/update?id=123" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
+$ curl "http://localhost:8081/update" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
+$ curl "http://localhost:8081/update" -i -X PUT -d '[{"id":"123","name":"Brave", "category":"shop"},{"id":"456","name":"Tom", "category":"shop"}]'
 ```
 
 Internally the engine implements the update by first deleting the old record, then inserting the new record.
