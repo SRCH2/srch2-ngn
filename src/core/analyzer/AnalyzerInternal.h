@@ -44,6 +44,8 @@ public:
 
 	string applyFilters(string input, bool isPrefix) ;
 
+	void clearFilterStates();
+
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;
