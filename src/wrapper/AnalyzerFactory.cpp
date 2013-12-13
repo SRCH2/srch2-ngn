@@ -66,9 +66,9 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configM
 
 	Analyzer* analyzer = _ts_analyzer_object.get();
 
-    // clear the initial states of the filters in the analyzer, e.g., for
-    // for those filters that have an internal buffer to keep tokens
-    analyzer->clearFilterStates();
+	// clear the initial states of the filters in the analyzer, e.g., for
+	// for those filters that have an internal buffer to keep tokens
+	analyzer->clearFilterStates();
 
 	return analyzer;
 }

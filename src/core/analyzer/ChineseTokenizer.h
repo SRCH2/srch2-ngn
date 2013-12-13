@@ -19,7 +19,6 @@ class ChineseTokenizer: public Tokenizer
 public:
     ChineseTokenizer(const std::string &dictFilePath);
     bool processToken();
-	void clearState() {};
     virtual ~ChineseTokenizer() {};
 protected:
     bool incrementToken();

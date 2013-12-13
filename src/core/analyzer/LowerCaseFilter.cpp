@@ -24,14 +24,6 @@ void LowerCaseFilter::transformToLowerCase(vector<CharType> &token) {
     }
 }
 
-void LowerCaseFilter::clearState() {
-    // clear the state of the filter in the upstream
-	if (this->tokenStream != NULL)
-		this->tokenStream->clearState();
-
-	// clear our own states: nothing to do.
-}
-
 bool LowerCaseFilter::processToken() {
     if (this->tokenStream->processToken()) {
         transformToLowerCase(tokenStreamContainer->currentToken);

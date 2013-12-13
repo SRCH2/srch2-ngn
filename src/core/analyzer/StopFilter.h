@@ -29,7 +29,6 @@ public:
 	 */
 	StopFilter(TokenStream *tokenStream, std::string &stopFilterFilePath);
 
-	void clearState();
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
 	 * */

@@ -101,15 +101,6 @@ void SynonymFilter::emitCurrentToken() {
 	this->emitBuffer.erase(this->emitBuffer.begin() + 0);
 }
 
-void SynonymFilter::clearState() {
-    // clear the state of the filter in the upstream
-	if (this->tokenStream != NULL)
-		this->tokenStream->clearState();
-
-	// clear our own states: nothing to do.
-}
-
-
 bool SynonymFilter::processToken() {
 	while (true) {
 		// if increment returns false

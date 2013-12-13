@@ -24,7 +24,7 @@ public:
     }
     virtual bool processToken() = 0;
 
-    virtual void clearState() = 0;
+    virtual void clearState() {};
 
     void fillInCharacters(const std::vector<CharType> &charVector){
         tokenStreamContainer->fillInCharacters(charVector);

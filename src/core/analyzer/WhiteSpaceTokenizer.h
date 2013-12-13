@@ -17,7 +17,6 @@ namespace instantsearch {
 class WhiteSpaceTokenizer: public Tokenizer {
 public:
     WhiteSpaceTokenizer();
-    void clearState() {};
     bool incrementToken();
     bool processToken();
     virtual ~WhiteSpaceTokenizer();

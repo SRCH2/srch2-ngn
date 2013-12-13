@@ -54,7 +54,6 @@ public:
 			const string &synonymFilterFilePath,
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag);
 
-	void clearState();
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
 	 * Here we have to implement it. It goes on all tokens.
