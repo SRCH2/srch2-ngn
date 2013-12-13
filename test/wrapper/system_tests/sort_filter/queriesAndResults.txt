@@ -1,4 +1,0 @@
-Hospital||1 18 31 33 51 57 64 86
-Goods Garden||6 17 44 66 78 90
-Goods Garden Retail||17 44 66
-Personal Services||8 10 13 29 36 37 52 69

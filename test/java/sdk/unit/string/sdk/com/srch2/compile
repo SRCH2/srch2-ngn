@@ -1,3 +1,0 @@
-mkdir -p com/srch2
-javac -cp /home/rj/srch2/srch2-ngn/test/java/sdk/junit-4.11.jar:/home/rj/srch2/srch2-ngn/build/src/java/Srch2SDK.jar -g *.java
-mv *.class com/srch2

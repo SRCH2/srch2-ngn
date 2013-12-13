@@ -1,8 +1,0 @@
-@pass
-q={defaultBoostLevel=2} p~ AND s~ AND b~&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983
-q={defaultBoostLevel=2} p~ AND s~ AND b~&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983&searchType=geo
-q={defaultBoostLevel=2} p~ AND s~ AND b~&lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&rtlong=149.888983&searchType=topK
-q={defaultBoostLevel=2} p~ AND s~ AND b~&clat=60.217491000000003&clong=-160.888983&radius=80&searchType=topK
-q={defaultBoostLevel=2} p~ AND s~ AND B~&clat=60.217491000000003&clong=-160.888983&radius=80&searchType=topK&fq=model:JEEP
-@fail
-lblat=60.217491000000003&lblong=-160.888983&rtlat=80.217491000000003&searchType=geo

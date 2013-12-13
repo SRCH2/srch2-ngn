@@ -1,1 +1,0 @@
-model||bmw,5.0|toyota,3.0|jeep,3.0|ford,5.0|mazda,4.0|honda,1.0|

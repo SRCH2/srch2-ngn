@@ -1,4 +1,0 @@
-Goods:category^-149.880918+61.155358||100 59 34 61 17 2 6 69 44 32
-Goods:name Garden:category^-147.880918+61.155358||
-Garden:category Retail:category^-149.980918+61.155358||44
-Alaska:name Services:category^-149.580918+61.155358||21 84

@@ -1,4 +1,0 @@
-C++
-C#
-.NET
-node.js
