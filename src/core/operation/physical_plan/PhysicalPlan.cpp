@@ -35,7 +35,7 @@ unsigned PhysicalPlanOptimizationNode::getChildrenCount() {
 }
 
 PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getChildAt(unsigned offset) {
-	if(offset >= children.size() || offset < 0){
+	if(offset >= children.size()){
 		ASSERT(false);
 		return NULL;
 	}
@@ -43,7 +43,7 @@ PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getChildAt(unsigned
 }
 
 void PhysicalPlanOptimizationNode::setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) {
-	if(offset >= children.size() || offset < 0){
+	if(offset >= children.size()){
 		ASSERT(false);
 		return;
 	}

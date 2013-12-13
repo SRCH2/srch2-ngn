@@ -413,8 +413,8 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 			break;
 		}
 		case PhysicalPlanNode_MergeByShortestList:{
-			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOptimizationOperator();
-			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeSortedByIDOperator();
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeByShortestListOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeByShortestListOperator();
 			break;
 		}
 		case PhysicalPlanNode_UnionSortedById:{
