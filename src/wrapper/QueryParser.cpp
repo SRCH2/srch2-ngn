@@ -2009,6 +2009,7 @@ bool QueryParser::parseBooleanExpressionRecursive(ParseTreeNode * parent, string
 	expressionNode = new ParseTreeNode(LogicalPlanNodeTypeTerm, parent);
 	expressionNode->termIntermediateStructure = new TermIntermediateStructure();
 	expressionNode->termIntermediateStructure->termQueryString = input;
+	return true;
 }
 
 /*
