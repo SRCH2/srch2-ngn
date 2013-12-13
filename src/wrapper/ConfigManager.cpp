@@ -1370,7 +1370,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
         tempUse = string(childNode.text().get());
 	trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
-	this->srch2Home = tempUse;
+	srch2Home = tempUse;
     } else {
         parseError << "srch2Home is not set.\n";
         configSuccess = false;
@@ -1779,7 +1779,7 @@ const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 
 
 string ConfigManager::getSrch2Home() const {
-    return this->srch2Home;
+    return srch2Home;
 }
 
 bool ConfigManager::getStemmerFlag(const string &coreName) const
@@ -2032,20 +2032,21 @@ bool ConfigManager::isValidFieldType(string& fieldType , bool isSearchable) {
     }
 }
 
-bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType , bool isMultiValued){
-	if(isMultiValued == false){
-		return validateValueWithType(fieldType , defaultValue);
-	}
+bool ConfigManager::isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType , bool isMultiValued)
+{
+    if(isMultiValued == false){
+	return validateValueWithType(fieldType , defaultValue);
+    }
 
-	// if it is a multi-valued attribute, default value is a comma separated list of default values. example : "tag1,tag2,tag3"
-	vector<string> defaultValueTokens;
-	splitString(defaultValue , "," , defaultValueTokens);
-	for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
-		if( validateValueWithType(fieldType , *defaultValueToken) == false){
-			return false;
-		}
+    // if it is a multi-valued attribute, default value is a comma separated list of default values. example : "tag1,tag2,tag3"
+    vector<string> defaultValueTokens;
+    splitString(defaultValue , "," , defaultValueTokens);
+    for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ; defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+	if( validateValueWithType(fieldType , *defaultValueToken) == false){
+	    return false;
 	}
-	return true;
+    }
+    return true;
 }
 
 bool ConfigManager::isValidBool(string& fieldType) {
@@ -2237,7 +2238,6 @@ bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
     }
     return false;
 }
-
 
 bool ConfigManager::isValidLogLevel(string& logLevel) {
     if (logLevel.compare("0") == 0 || logLevel.compare("1") == 0 || logLevel.compare("2") == 0
