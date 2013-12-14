@@ -95,6 +95,10 @@ std::string Analyzer::applyFilters(std::string input, bool isPrefix = false){
     return this->analyzerInternal->applyFilters(input, isPrefix);
 }
 
+void Analyzer::clearFilterStates(){
+    this->analyzerInternal->clearFilterStates();
+}
+
 void Analyzer::tokenizeQuery(const std::string &queryString,
         std::vector<PositionalTerm> &queryKeywords) const {
     this->analyzerInternal->tokenizeQuery(queryString, queryKeywords);

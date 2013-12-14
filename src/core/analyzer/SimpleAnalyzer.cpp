@@ -22,7 +22,6 @@ TokenStream * SimpleAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new WhiteSpaceTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
 
-
 	if (this->stopWordFilePath.compare("") != 0) {
 		struct stat stResult;
 		if(stat(this->stopWordFilePath.c_str(), &stResult) == 0) {
