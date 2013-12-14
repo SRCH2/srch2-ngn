@@ -36,11 +36,39 @@ namespace srch2
 {
 namespace instantsearch
 {
-void CacheEntry::setKey(string key){
-	this->key = key;
+
+
+int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
+
+	// find the longest prefix with active nodes in the cache
+	unsigned termThreshold = term->getThreshold();
+	string *keyword = term->getKeyword();
+	for (int i = keyword->size(); i >= 2; i --)
+	{
+		string prefix = keyword->substr(0, i);
+		std::string exactOrFuzzy =  termThreshold == 0?"0":"1";
+		string key = prefix + exactOrFuzzy;
+		boost::shared_ptr<PrefixActiveNodeSet> cacheHit;
+		if(this->cacheContainer->get(key , cacheHit) == true){
+			in = cacheHit;
+			return 1;
+		}
+	}
+    // no prefix has a cached PrefixActiveNodeSet
+	return 0;
+
 }
-string CacheEntry::getKey(){
-	return key;
+
+
+int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
+	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
+	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
+	string key = getUtf8String(*prefix) + exactOrFuzzy;
+	this->cacheContainer->put(key , prefixActiveNodeSet);
+}
+
+ActiveNodesCache * CacheManager::getActiveNodesCache(){
+	return this->aCache;
 }
 
 }}
