@@ -80,6 +80,13 @@ if __name__ == '__main__':
     #check increasing
     assert size_2 > size_1, 'Error, log into not written into logger file!'
 
+    #check if logrotate is installed
+    flagNum, output = commands.getstatusoutput('logrotate --usage')
+    #print flagNum
+    flagNum, output = commands.getstatusoutput('echo $?')
+    #print flagNum
+    assert int(flagNum) == 0, 'Error, please install logrotate for reset_logger_system_test'
+
     #send a command to rotate logger file by using the 3rd-party program 'logrotate' 
     status, output = commands.getstatusoutput("logrotate -s ./reset_logger/myLogrotate/status ./reset_logger/myLogrotate/logrotate.conf")
 
