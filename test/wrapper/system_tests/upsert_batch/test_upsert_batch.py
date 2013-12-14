@@ -1,5 +1,5 @@
 # test process
-# The orignal dataset has ten records, with id from '100' to '109', with body contents "january','february' ,....,'octobor'
+# The orignal dataset has ten records, with id from '100' to '109', with body contents "january','february' ,....,'october'
 
 # test case 1, update the body of record '101', which already exists, to "february monday" 
 # Check if the returned message has '"rid":"101","update":"Existing record updated successfully"'

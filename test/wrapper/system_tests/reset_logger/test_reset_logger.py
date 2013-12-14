@@ -9,6 +9,7 @@ class logTester():
 
     def startServer(self):
 	os.popen('rm -rf ./reset_logger/logs/')
+	os.popen('rm -rf ./reset_logger/indexes/')
         #print ('starting engine: {0}'.format(self.startServerCommand))
         os.popen(self.startServerCommand)
 
