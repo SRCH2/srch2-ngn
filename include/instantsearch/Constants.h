@@ -80,8 +80,7 @@ typedef enum{
 
 typedef enum {
     OP_FAIL,
-    OP_SUCCESS,
-    OP_KEYWORDID_SPACE_PROBLEM
+    OP_SUCCESS
 } INDEXWRITE_RETVAL;
 
 /// Query constants
