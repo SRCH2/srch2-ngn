@@ -563,7 +563,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -625,7 +625,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);

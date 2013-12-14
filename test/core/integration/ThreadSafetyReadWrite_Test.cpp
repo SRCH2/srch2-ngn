@@ -72,7 +72,7 @@ void addSimpleRecords()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges , updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
     
@@ -323,7 +323,7 @@ void test0()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *indexer = Indexer::load(indexMetaData1);
 
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
@@ -369,7 +369,7 @@ void test1()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer * indexer = Indexer::load(indexMetaData1);
 
     threadReaders1 = (pthread_t *) malloc(n * sizeof(*threadReaders1));
@@ -435,7 +435,7 @@ void test2()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer* indexer = Indexer::load(indexMetaData1);
     
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));

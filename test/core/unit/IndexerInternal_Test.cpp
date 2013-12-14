@@ -54,7 +54,6 @@ void testIndexData()
     IndexData *indexData = IndexData::create(INDEX_DIR,
                                             analyzer,
                                             schema,
-                                            "",
                                             srch2::instantsearch::DISABLE_STEMMER_NORMALIZER);
 
     Record *record = new Record(schema);
@@ -189,7 +188,7 @@ void test1()
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     Record *record = new Record(schema);
@@ -252,7 +251,7 @@ void addRecords()
     IndexMetaData *indexMetaData = new IndexMetaData( NULL,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -308,7 +307,7 @@ void test3()
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *indexer = Indexer::load(indexMetaData);
 

@@ -300,7 +300,7 @@ public:
     bool getSynonymKeepOrigFlag(const string &coreName) const; // Synonym: if we want to keep the original word or replace the synonym with it.
     const string &getStopFilePath(const string &coreName) const; // StopFilter File Path
     const string &getStemmerFile(const string &coreName) const; // stemmer file
-    string getSrch2Home() const; // Srch2Home Directory
+    const string &getSrch2Home() const; // Srch2Home Directory
     unsigned getQueryTermBoost(const string &coreName) const;
     float getFuzzyMatchPenalty() const;
     float getQueryTermSimilarityThreshold() const ;
@@ -509,6 +509,9 @@ public:
     const string &getDataFile() const { return dataFile; }
     const string &getFilePath() const { return filePath; }
 
+    // THIS FUNCTION IS JUST FOR WRAPPER TEST
+    void setFilePath(const string& dataFile) { configManager->setFilePath(dataFile); }
+
     const string &getMongoServerHost() const { return mongoHost; }
     const string &getMongoServerPort() const { return mongoPort; }
     const string &getMongoDbName() const { return mongoDbName; }
@@ -518,6 +521,8 @@ public:
     unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
 
     int getIndexType() const { return indexType; }
+    int getSearchType() const { return searchType; }
+    int getSearchType(const string &coreName) const { return configManager->getSearchType(coreName); }
     const string &getPrimaryKey() const { return primaryKey; }
     int getIsPrimSearchable() const { return isPrimSearchable; }
 
@@ -557,15 +562,22 @@ public:
 
 
     // **** accessors for settings in ConfigManager (global to all cores) ****
-    const std::string& getHTTPServerAccessLogFile() const
-        { return configManager->getHTTPServerAccessLogFile(); }
+    const string &getSrch2Home() const { return configManager->getSrch2Home(); }
+    const string& getLicenseKeyFileName() const { return configManager->getLicenseKeyFileName(); }
+    const string& getHTTPServerListeningHostname() const
+	    { return configManager->getHTTPServerListeningHostname(); }
+    const string& getHTTPServerListeningPort() const { return configManager->getHTTPServerListeningPort(); }
+    const string& getHTTPServerAccessLogFile() const { return configManager->getHTTPServerAccessLogFile(); }
     const Logger::LogLevel& getHTTPServerLogLevel() const
         { return configManager->getHTTPServerLogLevel(); }
 
     uint32_t getDocumentLimit() const { return configManager->getDocumentLimit(); }
+    uint64_t getMemoryLimit() const { return configManager->getMemoryLimit(); }
+    int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
     srch2::instantsearch::ResponseType getSearchResponseFormat() const
       { return configManager->getSearchResponseFormat(); }
+    int getSearchResponseJSONFormat() const { return configManager->getSearchResponseJSONFormat(); }
 
     bool getIsFuzzyTermsQuery() const { return configManager->getIsFuzzyTermsQuery(); }
     int getDefaultResultsToRetrieve() const
@@ -576,6 +588,9 @@ public:
     const vector<string> *getAttributesToReturn() const
         { return configManager->getAttributesToReturn(); }
     int getAttributeToSort() const { return configManager->getAttributeToSort(); }
+
+    float getDefaultSpatialQueryBoundingBox() const
+	    { return configManager->getDefaultSpatialQueryBoundingBox(); }
 
     unsigned int getKeywordPopularityThreshold() const
         { return configManager->getKeywordPopularityThreshold(); }
@@ -654,7 +669,6 @@ protected:
 
     // <config><query>
     int searchType;
-    int getsearchType() const { return searchType; }
 
     bool supportAttributeBasedSearch;
 

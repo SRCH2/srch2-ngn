@@ -1778,7 +1778,7 @@ const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 }
 
 
-string ConfigManager::getSrch2Home() const {
+const string &ConfigManager::getSrch2Home() const {
     return srch2Home;
 }
 
