@@ -35,10 +35,17 @@ namespace srch2
 namespace instantsearch
 {
 
+class Sizable{
+public:
+	virtual unsigned getSizeInBytes() = 0;
+
+	virtual ~Sizable(){};
+};
+
 template <class T>
 class CacheEntry{
 public:
-	CacheEntry(string key, boost::shared_ptr<T> objectPointer){
+	CacheEntry::CacheEntry(string key, boost::shared_ptr<T> objectPointer){
 		this->setKey(key);
 		this->setObjectPointer(objectPointer);
 	}
@@ -46,8 +53,16 @@ public:
 	void setKey(string key);
 	string getKey();
 
-	void setObjectPointer(boost::shared_ptr<T> objectPointer);
-	boost::shared_ptr<T> getObjectPointer();
+	void setObjectPointer(boost::shared_ptr<T> objectPointer){
+		this->objectPointer = objectPointer;
+	}
+	boost::shared_ptr<T> getObjectPointer(){
+		return this->objectPointer;
+	}
+
+	unsigned getSizeInBytes(){
+		return sizeof(this->key) + this->objectPointer->getSizeInBytes();
+	}
 private:
 	string key;
 	boost::shared_ptr<T> objectPointer;
@@ -60,16 +75,166 @@ private:
 template <class T>
 class CacheContainer{
 
+	struct HashedKeyLinkListElement{
+		HashedKeyLinkListElement * next;
+		unsigned hashedKey;
+		HashedKeyLinkListElement(unsigned hashedKey){
+			this->hashedKey = hashedKey;
+			this->next = NULL;
+		}
+	};
+
 public:
-	CacheContainer(unsigned long byteSizeOfCache = 134217728, unsigned noOfCacheEntries = 20000);
+	CacheContainer(unsigned long byteSizeOfCache = 134217728)
+	: BYTE_BUDGET(byteSizeOfCache){
+		totalSizeUsed = 0;
+		elementsLinkListHead = elementsLinkListTail = NULL;
+	}
 	~CacheContainer(){};
 
-	void put(string key, boost::shared_ptr<T> objectPointer);
-	bool get(string key, boost::shared_ptr<T> & objectPointer);
+	bool put(string key, boost::shared_ptr<T> objectPointer){
+		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
+		unsigned numberOfBytesNeededForNewEntry = getNumberOfBytesUsedByEntry(newEntry);
+		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET){
+			// we cannot accept this entry, it's bigger than our budget
+			delete newEntry;
+			return false;
+		}
+		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET - totalSizeUsed){ // size is bigger than our left budget, we should remove some entries
+			// keep removing entries until enough space is left
+			while(true){
+				LRUCacheReplacementPolicyKickoutOneEntry();
+				if(numberOfBytesNeededForNewEntry <= BYTE_BUDGET - totalSizeUsed){
+					break;
+				}
+			}
+		}
+		// now we can insert this new entry
+		// 1. first find the hashedKey
+		unsigned newEntryHashedKey = hashDJB2(key.c_str());
+		// 2. check to see if this hashKey is in the map
+		map<unsigned , CacheEntry<T> * >::iterator cacheEntryWithSameHashedKey = cacheEntries.find(newEntryHashedKey);
+		if(cacheEntryWithSameHashedKey != cacheEntries.end()){ // hashed key exists
+			// replace the old cache entry with the new one and update the size info
+			unsigned sizeOfEntryToRemove = getNumberOfBytesUsedByEntry(cacheEntryWithSameHashedKey->second);
+			// update the size
+			// it's important that we += first and then -= because it's unsigned
+			totalSizeUsed += numberOfBytesNeededForNewEntry;
+			ASSERT(totalSizeUsed >= sizeOfEntryToRemove);
+			totalSizeUsed -= sizeOfEntryToRemove;
+			ASSERT(totalSizeUsed <= BYTE_BUDGET);
+			delete cacheEntryWithSameHashedKey->second;
+			cacheEntryWithSameHashedKey->second = newEntry;
+			// no need to touch linked list although it might make this new entry kicked out earlier,
+			// but for simplicity we just return here
+			return true;
+		}
+		// 3. if it's not in map push it to the map, append hashedKey to the linkedlist and update the size
+		cacheEntries[newEntryHashedKey] = newEntry;
+		addNewElementToLinkList(newEntryHashedKey);
+		totalSizeUsed += numberOfBytesNeededForNewEntry;
+		ASSERT(totalSizeUsed <= BYTE_BUDGET);
+
+
+		return true;
+	}
+	bool get(string key, boost::shared_ptr<T> & objectPointer) const{
+
+		//1. compute the hashed key
+		unsigned hashedKeyToFind = hashDJB2(key.c_str());
+		map<unsigned , CacheEntry<T> * >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
+		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
+			return false;
+		}
+		objectPointer = cacheEntry->second->getObjectPointer();
+
+		return true;
+	}
+
 
 private:
 	map<unsigned , CacheEntry<T> * > cacheEntries;
 
+
+	// LRU replacement policy always removes elements from the head
+	HashedKeyLinkListElement * elementsLinkListHead;
+	// LRU replacement policy always requires adding new entries to the tail
+	HashedKeyLinkListElement * elementsLinkListTail;
+
+	const unsigned long BYTE_BUDGET;
+	unsigned totalSizeUsed;
+
+
+	void LRUCacheReplacementPolicyKickoutOneEntry(){
+		// 1. get the oldest element to kick out
+		unsigned hashedKeyToRemove ;
+		if(removeTheOldestElementFromLinkList(hashedKeyToRemove) == false){
+			return; // cache is empty , these is nothing to remove
+		}
+
+		// 2. remove the entry from the map and update the total byte size used
+		map<unsigned , CacheEntry<T> * >::iterator entryToRemove = cacheEntries.find(hashedKeyToRemove);
+		ASSERT(entryToRemove != cacheEntries.end());
+		unsigned numberOfUsedBytesToGetRidOf = getNumberOfBytesUsedByEntry(*entryToRemove);
+		cacheEntries.erase(entryToRemove); // remove it from map
+		ASSERT(totalSizeUsed >= numberOfUsedBytesToGetRidOf);
+		totalSizeUsed -= numberOfUsedBytesToGetRidOf;
+		delete *entryToRemove;
+	}
+
+	// does not update the size
+	void addNewElementToLinkList(unsigned hashedKey){
+		ASSERT((elementsLinkListHead == NULL && elementsLinkListTail == NULL) ||
+				(elementsLinkListHead != NULL && elementsLinkListTail != NULL) );
+
+		if(elementsLinkListHead == NULL && elementsLinkListTail == NULL){
+			elementsLinkListHead = elementsLinkListTail = new HashedKeyLinkListElement(hashedKey);
+			return;
+		}
+
+		elementsLinkListTail->next = new HashedKeyLinkListElement(hashedKey);
+		elementsLinkListTail = elementsLinkListTail->next;
+	}
+
+	// does not update the size
+	bool removeTheOldestElementFromLinkList(unsigned removedHashedKey){
+		ASSERT((elementsLinkListHead == NULL && elementsLinkListTail == NULL) ||
+				(elementsLinkListHead != NULL && elementsLinkListTail != NULL) );
+		if(elementsLinkListHead == NULL && elementsLinkListTail == NULL){
+			return false; // nothing in linked list to remove
+		}
+		if(elementsLinkListHead == elementsLinkListTail){ // there is only one element
+			removedHashedKey = elementsLinkListHead->hashedKey;
+			delete elementsLinkListHead;
+			elementsLinkListHead = elementsLinkListTail = NULL;
+			return true;
+		}
+		HashedKeyLinkListElement * newHead = elementsLinkListHead->next;
+		removedHashedKey = elementsLinkListHead->hashedKey;
+		delete elementsLinkListHead;
+		elementsLinkListHead = newHead;
+		return true;
+	}
+
+	unsigned getNumberOfBytesUsedByEntry(CacheEntry<T> * entry){
+		/*
+		 * entry + unsigned hashedKey + linkedList element
+		 */
+		return entry->getSizeInBytes() + sizeof(unsigned) + sizeof(HashedKeyLinkListElement);
+	}
+
+	// computes the hash value of a string
+	unsigned hashDJB2(const char *str) const
+	{
+	    unsigned hash = 5381;
+	    unsigned c;
+	    do
+	    {
+	        c = *str;
+	        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	    }while(*str++);
+	    return hash;
+	}
 };
 
 
