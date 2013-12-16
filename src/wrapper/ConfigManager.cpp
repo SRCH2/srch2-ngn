@@ -1067,7 +1067,9 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
-                        if (! this->isValidFieldType(tempUse , true)) {
+                        if (isValidFieldType(tempUse , true)) {
+							coreParseState->searchableFieldTypesVector.push_back(tempUse);
+						} else {
                             parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
                             parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
                             configSuccess = false;
