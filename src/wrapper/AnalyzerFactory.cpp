@@ -63,7 +63,16 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
 		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(config));
 	}
-	return _ts_analyzer_object.get();
+
+	Analyzer* analyzer = _ts_analyzer_object.get();
+
+	// clear the initial states of the filters in the analyzer, e.g.,
+	// for those filters that have an internal buffer to keep tokens.
+	// Such an internal buffer can have leftover tokens from
+	// the previous query (possibly an invalid query)
+	analyzer->clearFilterStates();
+
+	return analyzer;
 }
 
 void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf) {

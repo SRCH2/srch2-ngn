@@ -73,6 +73,8 @@
         -->
         <indexType>0</indexType>
 
+        <enablePositionIndex>1</enablePositionIndex>
+
         
 		<!--
             0: don't support swap operation in edit distance

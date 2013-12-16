@@ -479,13 +479,26 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
-            //for ( int index = 0; index < root.size(); ++index )  // Iterates over the sequence elements.
-            //{
-            const Json::Value doc = root;
-            IndexWriteUtil::_insertCommand(server->indexer,
-                    server->indexDataConfig, doc, record, log_str);
-            record->clear();
-            //}
+            if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+                // Iterates over the sequence elements.
+                for ( int index = 0; index < root.size(); ++index ) {
+                    Json::Value defaultValueToReturn = Json::Value("");
+                    const Json::Value doc = root.get(index,
+                                                defaultValueToReturn);
+
+                    IndexWriteUtil::_insertCommand(server->indexer,
+                            server->indexDataConfig, doc, record, log_str);
+                    record->clear();
+
+                    if (index < root.size() - 1)
+                        log_str << ",";
+                }
+            } else {  // only one json object needs to be inserted
+                const Json::Value doc = root;
+                IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataConfig, doc, record, log_str);
+                record->clear();
+            }
             delete record;
         }
         //std::cout << log_str.str() << std::endl;
@@ -553,17 +566,36 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
         } else {
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
-
             Record *record = new Record(server->indexer->getSchema());
-            const Json::Value doc = root;
 
-            IndexWriteUtil::_updateCommand(server->indexer,
-                    server->indexDataConfig, headers, doc, record,
-                    log_str);
+            if (root.type() == Json::arrayValue) {
+                //the record parameter is an array of json objects
+                for(Json::UInt index = 0; index < root.size(); index++) {
+                    Json::Value defaultValueToReturn = Json::Value("");
+                    const Json::Value doc = root.get(index,
+                                                defaultValueToReturn);
 
-            record->clear();
+                    IndexWriteUtil::_updateCommand(server->indexer,
+                            server->indexDataConfig, headers, doc, record,
+                            log_str);
+
+                    record->clear();
+
+                    if (index < root.size() - 1)
+                        log_str << ",";
+                }
+            } else {
+                // the record parameter is a single json object
+                const Json::Value doc = root;
+
+                IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataConfig, headers, doc, record,
+                        log_str);
+
+                record->clear();
+            }
+
             delete record;
-
             evhttp_clear_headers(&headers);
         }
         //std::cout << log_str.str() << std::endl;
