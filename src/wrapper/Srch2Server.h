@@ -60,13 +60,13 @@ public:
     Srch2Server()
     {
         this->indexer = NULL;
-	this->indexDataConfig = NULL;
+		this->indexDataConfig = NULL;
     }
 
     void init(const ConfigManager *config)
     {
-        indexDataConfig = config->getCoreSettings(getCoreName());
-	createAndBootStrapIndexer();
+        indexDataConfig = config->getCoreInfo(getCoreName());
+		createAndBootStrapIndexer();
     }
 
     // Check if index files already exist.

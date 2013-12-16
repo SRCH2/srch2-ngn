@@ -187,7 +187,7 @@ void test1(int argc, char** argv) {
 
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
-	srch2http::CoreInfo_t *core = serverConf->getDefaultDataSource();
+	srch2http::CoreInfo_t *core = serverConf->getDefaultCoreInfo();
 
     std::stringstream message;
     message << "Srch2Home: " << core->getSrch2Home() << "\n";
@@ -287,7 +287,7 @@ bool test2(int argc, char** argv) {
 
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
-	srch2http::CoreInfo_t *core = serverConf->getDefaultDataSource();
+	srch2http::CoreInfo_t *core = serverConf->getDefaultCoreInfo();
 
     string srch2home = core->getSrch2Home();
     string licenseKeyFile =core->getLicenseKeyFileName();

@@ -94,7 +94,7 @@ public:
 class CoreInfo_t;
 
 // helper state between different sections of the config file
-struct ParseState_t {
+struct CoreConfigParseState_t {
     bool hasLatitude;
     bool hasLongitude;
     vector<string> searchableFieldsVector;
@@ -102,7 +102,7 @@ struct ParseState_t {
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
 
-    ParseState_t() : hasLatitude(false), hasLongitude(false) {};
+    CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
 class ConfigManager {
@@ -139,16 +139,12 @@ private:
 
     unsigned defaultNumberOfSuggestions;
 
-
     // <config><query><queryResponseWriter>
     int searchResponseJsonFormat;
     vector<string> attributesToReturn;
 
-
     // <config><query>
-    DataSourceType dataSourceType;
     WriteApiType writeApiType;
-
 
     // <config><updatehandler>
     uint64_t memoryLimit;
@@ -203,7 +199,7 @@ private:
     bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType, bool isMultiValued);
     bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
     bool isValidBool(string& fieldType);
-    bool isValidBoostFields(const CoreInfo_t *settings, map <string, unsigned>& boosts);
+    bool isValidBoostFields(const CoreInfo_t *coreInfo, map <string, unsigned>& boosts);
     bool isValidQueryTermBoost(string& quertTermBoost);
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
@@ -239,34 +235,35 @@ private:
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
 protected:
-    CoreInfoMap_t coreSettings;
+    CoreInfoMap_t coreInfoMap;
 
     // <config><cores>
     string defaultCoreName;
 
     // parsing helper functions for modularity
-    void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *settings, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-    void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-    void parseQuery(const xml_node &queryNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseCore(const xml_node &parentNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-    void parseCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all settings for a single data source, either under <config> or within a <core>
-    void parseDataSource(const xml_node &parentNode, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseSchema(const xml_node &schemaNode, ParseState_t *parseState, CoreInfo_t *settings, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
 
-    CoreInfo_t *getCoreSettings(const string &coreName) const;
-    CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreSettings.begin(); }
-    CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreSettings.end(); }
+    CoreInfo_t *getCoreInfoMap(const string &coreName) const;
+    CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
+    CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
+	const CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
 
     void _setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector);
 
@@ -322,7 +319,6 @@ public:
 
     int getNumberOfThreads() const;
 
-    DataSourceType getDataSourceType() const;
     WriteApiType getWriteApiType() const;
 
     srch2::instantsearch::ResponseType getSearchResponseFormat() const;
@@ -392,7 +388,7 @@ public:
         return defaultCoreName;
     }
 
-    CoreInfo_t *getDefaultDataSource() const;
+    CoreInfo_t *getDefaultCoreInfo() const;
 
 private:
 
@@ -482,13 +478,12 @@ private:
     static const char* const keywordPopularityThresholdString;
     static const char* const getAllResultsMaxResultsThreshold;
     static const char* const getAllResultsKAlternative;
-    static const char* const coresString;
-    static const char* const coreString;
+    static const char* const multipleCoresString;
+    static const char* const singleCoreString;
     static const char* const defaultCoreNameString;
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
-    static const char* const uLogDirString;
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
