@@ -383,7 +383,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
  */
 unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const CoreInfo_t *indexDataContainerConf)
 {
-    string filePath = indexDataContainerConf->getFilePath();
+    string filePath = indexDataContainerConf->getDataFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {

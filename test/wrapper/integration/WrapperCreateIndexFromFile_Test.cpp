@@ -193,7 +193,7 @@ void test1(int argc, char** argv) {
     message << "Srch2Home: " << core->getSrch2Home() << "\n";
     message << "LicenseKeyFileName: " << core->getLicenseKeyFileName() << "\n";
     message << "IndexPath: " << core->getIndexPath() << "\n";
-    message << "FilePath: " << core->getFilePath() << "\n";
+    message << "FilePath: " << core->getDataFilePath() << "\n";
     message << "HTTPServerListeningHostname: " << core->getHTTPServerListeningHostname() << "\n";
     message << "HTTPServerListeningPort: " << core->getHTTPServerListeningPort() << "\n";
     message << "\n";
@@ -297,9 +297,9 @@ bool test2(int argc, char** argv) {
     string accessLogFile = core->getHTTPServerAccessLogFile();
     cout << "-  Log File: " << accessLogFile << endl;
 
-    string dataFile =  core->getFilePath();
+    string dataFile =  core->getDataFilePath();
     cout << "-  Data File: " << dataFile << endl;
-    core->setFilePath(dataFile);
+    core->setDataFilePath(dataFile);
 
     cout << "-  index File: " << core->getIndexPath()<< endl;
     // check the license file

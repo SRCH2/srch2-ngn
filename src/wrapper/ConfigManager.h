@@ -117,8 +117,6 @@ private:
     string httpServerListeningHostname;
     string httpServerListeningPort;
     string srch2Home;
-    string filePath;
-
 
     // <config><query><rankingAlgorithm>
     string scoringExpressionString;
@@ -275,7 +273,6 @@ public:
     uint64_t getMemoryLimit() const;
 
     const std::string& getIndexPath(const string &coreName) const;
-    const std::string& getFilePath() const;
     const std::string& getPrimaryKey(const string &coreName) const;
 
     const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes(const string &coreName) const;
@@ -374,9 +371,6 @@ public:
     const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const {
     	return this->getAllResultsNumberOfResultsToFindInEstimationMode;
     }
-
-    // THIS FUNCTION IS JUST FOR WRAPPER TEST
-    void setFilePath(const string& dataFile);
 
     bool isPositionIndexEnabled(const string &coreName) const;
 
@@ -503,10 +497,10 @@ public:
     const string &getIndexPath() const { return indexPath; }
     DataSourceType getDataSourceType() const { return dataSourceType; }
     const string &getDataFile() const { return dataFile; }
-    const string &getFilePath() const { return filePath; }
+    const string &getDataFilePath() const { return dataFilePath; }
 
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
-    void setFilePath(const string& dataFile) { configManager->setFilePath(dataFile); }
+    void setDataFilePath(const string& path);
 
     const string &getMongoServerHost() const { return mongoHost; }
     const string &getMongoServerPort() const { return mongoPort; }
@@ -625,7 +619,7 @@ protected:
     string indexPath; // srch2Home + dataDir
     DataSourceType dataSourceType;
     string dataFile;
-    string filePath;
+    string dataFilePath;
 
     // mongo db related settings
     string mongoHost;
