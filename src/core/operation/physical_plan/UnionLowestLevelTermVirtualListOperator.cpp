@@ -41,7 +41,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     // heapItems. In this case shouldIterateToLeafNodesAndScoreOfTopRecord is not equal to -1
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
@@ -52,7 +52,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
             initialiseTermVirtualListElement(prefixNode, leafNode, distance);
         }
     } else { // case 2: Term is complete
-        ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
@@ -175,7 +175,7 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
 }
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = NULL;
@@ -185,7 +185,7 @@ bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanR
 		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
 	}
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 
 }
 // The cost of open of a child is considered only once in the cost computation

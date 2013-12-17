@@ -42,32 +42,16 @@ public:
 	unsigned estimatedNumberOfResults;
 	float estimatedProbability;
 	unsigned estimatedNumberOfLeafNodes;
-	PrefixActiveNodeSet * activeNodeSetExact;
-	PrefixActiveNodeSet * activeNodeSetFuzzy;
+	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
+	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
 
 	LogicalPlanNodeAnnotation(){
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
-		activeNodeSetExact = NULL;
-		activeNodeSetFuzzy = NULL;
 	}
 	~LogicalPlanNodeAnnotation(){
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
-		if(activeNodeSetExact != NULL){
-			if (activeNodeSetExact->isResultsCached() == true){
-				activeNodeSetExact->busyBit->setFree();
-			}else{
-				delete activeNodeSetExact;
-			}
-		}
-		if(activeNodeSetFuzzy != NULL){
-			if (activeNodeSetFuzzy->isResultsCached() == true){
-				activeNodeSetFuzzy->busyBit->setFree();
-			}else{
-				delete activeNodeSetFuzzy;
-			}
-		}
 	}
 	unsigned getEstimatedNumberOfResults() const{
 		return this->estimatedNumberOfResults;
@@ -90,12 +74,10 @@ public:
 	void setEstimatedProbability(float p){
 		estimatedProbability = p;
 	}
-	PrefixActiveNodeSet * getActiveNodeSetForEstimation(bool isFuzzy){
+	ts_shared_ptr<PrefixActiveNodeSet> getActiveNodeSetForEstimation(bool isFuzzy){
 		if(isFuzzy == true){
-			ASSERT(activeNodeSetFuzzy != NULL);
 			return activeNodeSetFuzzy;
 		}
-		ASSERT(activeNodeSetExact != NULL);
 		return activeNodeSetExact;
 	}
 };
@@ -130,7 +112,7 @@ private:
 	void annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy);
 	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
-	PrefixActiveNodeSet * computeActiveNodeSet(Term *term) const;
+	ts_shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
 			unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const;
 	unsigned computeEstimatedNumberOfResults(float probability);

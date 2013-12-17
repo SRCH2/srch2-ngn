@@ -29,7 +29,7 @@ bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters
 }
 bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = NULL;
@@ -39,7 +39,7 @@ bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRand
 		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
 	}
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 
 }
 // The cost of open of a child is considered only once in the cost computation

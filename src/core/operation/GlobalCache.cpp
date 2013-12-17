@@ -26,7 +26,7 @@ namespace instantsearch
 
 GlobalCache* GlobalCache::create(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
 {
-    return dynamic_cast<GlobalCache*>( new CacheManager(byteSizeOfCache, noOfCacheEntries) );
+    return dynamic_cast<GlobalCache*>( new CacheManager(byteSizeOfCache) );
 }
 
 }}

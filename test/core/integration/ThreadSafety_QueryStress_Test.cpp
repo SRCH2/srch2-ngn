@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    indexerDataContainer.cache = new srch2is::CacheManager(134217728,20000); // 134217728 bytes = 1GB
+    indexerDataContainer.cache = new srch2is::CacheManager(134217728); // 134217728 bytes = 1GB
     IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,

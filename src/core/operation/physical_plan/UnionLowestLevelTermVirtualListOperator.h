@@ -129,7 +129,7 @@ private:
     //int numberOfLeafNodes;
     //int totalInveretListLength ;
 
-    PrefixActiveNodeSet *prefixActiveNodeSet;
+    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     const InvertedIndex *invertedIndex;
     vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap;
     Term *term;

@@ -84,10 +84,8 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 		case LogicalPlanNodeTypeNot:
 			break;
 		case LogicalPlanNodeTypeTerm:
-			if(node->stats->activeNodeSetExact == NULL){
-				node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
-			}
-			if(isFuzzy == true && node->stats->activeNodeSetFuzzy == NULL){
+			node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
+			if(isFuzzy == true){
 				node->stats->activeNodeSetFuzzy = computeActiveNodeSet(node->fuzzyTerm);
 			}
 			break;
@@ -157,10 +155,10 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 		case LogicalPlanNodeTypeTerm:
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
-			PrefixActiveNodeSet * activeNodeSetForEstimation = node->stats->getActiveNodeSetForEstimation(isFuzzy);
+			ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
 			float termProbability;
 			unsigned numberOfLeafNodes;
-			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation, thresholdForEstimation, termProbability, numberOfLeafNodes);
+			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
@@ -190,7 +188,7 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 	}
 }
 
-PrefixActiveNodeSet *HistogramManager::computeActiveNodeSet(Term *term) const
+ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *term) const
 {
     // it should not be an empty std::string
     string *keyword = term->getKeyword();
@@ -205,39 +203,31 @@ PrefixActiveNodeSet *HistogramManager::computeActiveNodeSet(Term *term) const
 
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
-    PrefixActiveNodeSet *initialPrefixActiveNodeSet = NULL;
-    int cacheResponse = this->queryEvaluator->cacheManager->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
+    ts_shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
+    int cacheResponse = this->queryEvaluator->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
-    if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) { // NO CacheHit,  response = 0
+    if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
-        initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
-        		term->getThreshold(), this->queryEvaluator->indexData->getSchema()->getSupportSwapInEditDistance());
-        initialPrefixActiveNodeSet->busyBit->setBusy();
+    	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
+    			term->getThreshold(), this->queryEvaluator->indexData->getSchema()->getSupportSwapInEditDistance()));
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
-    PrefixActiveNodeSet *prefixActiveNodeSet = initialPrefixActiveNodeSet;
+    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
 
     for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
         CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
 
-        PrefixActiveNodeSet *newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
-        newPrefixActiveNodeSet->busyBit->setBusy();
+        ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
 
-        // If the last result was not put into the cache successfully (e.g., due to
-        // limited cache size), we can safely delete it now
-        if (prefixActiveNodeSet->isResultsCached() == false) {
-            //if (prefixActiveNodeSet->busyBit->isBusy())
-            delete prefixActiveNodeSet;
-        }
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
-            cacheResponse = this->queryEvaluator->cacheManager->setPrefixActiveNodeSet(prefixActiveNodeSet);
+            cacheResponse = this->queryEvaluator->cacheManager->getActiveNodesCache()->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }
     // Possible memory leak due to last prefixActiveNodeSet not being cached. This is checked for

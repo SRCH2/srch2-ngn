@@ -18,7 +18,7 @@ void PrefixActiveNodeSet::getComputedSimilarPrefixes(const Trie *trie, std::vect
     }
 }
 
-PrefixActiveNodeSet *PrefixActiveNodeSet::computeActiveNodeSetIncrementally(const CharType additionalChar)
+ts_shared_ptr<PrefixActiveNodeSet> PrefixActiveNodeSet::computeActiveNodeSetIncrementally(const CharType additionalChar)
 {
     // form the new string. // TODO (OPT): avoid string copy
     std::vector<CharType> newString = this->prefix;
@@ -33,7 +33,9 @@ PrefixActiveNodeSet *PrefixActiveNodeSet::computeActiveNodeSetIncrementally(cons
         _addPANSetForOneNode(mapIterator->first, mapIterator->second, additionalChar, newActiveNodeSet);
     }
 
-    return newActiveNodeSet;
+    ts_shared_ptr<PrefixActiveNodeSet> newActiveNodeSetSharedPtr;
+    newActiveNodeSetSharedPtr.reset(newActiveNodeSet);
+    return newActiveNodeSetSharedPtr;
 }
 
 void PrefixActiveNodeSet::printActiveNodes(const Trie* trie) const// Deprecated due to removal of TrieNode->getParent() pointers.

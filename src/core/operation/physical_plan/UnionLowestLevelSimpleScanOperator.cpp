@@ -29,11 +29,11 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 		term = logicalPlanNode->exactTerm;
 	}
 	// 3. Get the ActiveNodeSet from the logical plan
-	PrefixActiveNodeSet * activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
+	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
 
 	// 4. Create the iterator and save it as a member of the class for future calls to getNext
 	if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term
-        for (LeafNodeSetIterator iter (activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        for (LeafNodeSetIterator iter (activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
@@ -49,7 +49,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             this->invertedListIDs.push_back(leafNode->getInvertedListOffset());
         }
 	}else{ // complete term
-        for (ActiveNodeSetIterator iter(activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        for (ActiveNodeSetIterator iter(activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
@@ -176,7 +176,7 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 }
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = NULL;
@@ -186,7 +186,7 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
 		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
 	}
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 }
 
 

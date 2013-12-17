@@ -38,7 +38,7 @@ namespace instantsearch
 {
 
 
-int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
+int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in){
 
 	// find the longest prefix with active nodes in the cache
 	unsigned termThreshold = term->getThreshold();
@@ -48,8 +48,8 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr
 		string prefix = keyword->substr(0, i);
 		std::string exactOrFuzzy =  termThreshold == 0?"0":"1";
 		string key = prefix + exactOrFuzzy;
-		boost::shared_ptr<PrefixActiveNodeSet> cacheHit;
-		if(this->cacheContainer->get(key , cacheHit) == true){
+		ts_shared_ptr<PrefixActiveNodeSet> cacheHit;
+		if(this->cacheContainer->get(key , cacheHit) == true && cacheHit->getEditDistanceThreshold() >= termThreshold){
 			in = cacheHit;
 			return 1;
 		}
@@ -60,15 +60,23 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr
 }
 
 
-int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
+int ActiveNodesCache::setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
 	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
 	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
 	string key = getUtf8String(*prefix) + exactOrFuzzy;
 	this->cacheContainer->put(key , prefixActiveNodeSet);
+	return 1;
+}
+int ActiveNodesCache::clear(){
+	return this->cacheContainer->clear();
 }
 
 ActiveNodesCache * CacheManager::getActiveNodesCache(){
 	return this->aCache;
+}
+
+int CacheManager::clear(){
+	return this->aCache->clear();
 }
 
 }}

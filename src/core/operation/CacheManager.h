@@ -39,8 +39,9 @@ public:
 	ActiveNodesCache(unsigned long byteSizeOfCache = 134217728){
 		this->cacheContainer = new CacheContainer<PrefixActiveNodeSet>(byteSizeOfCache);
 	}
-	int findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in);
-	int setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet);
+	int findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in);
+	int setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet);
+	int clear();
 private:
 	CacheContainer<PrefixActiveNodeSet> * cacheContainer;
 
@@ -61,6 +62,7 @@ public:
     	delete aCache;
     }
 
+    int clear();
     ActiveNodesCache * getActiveNodesCache();
 
 private:

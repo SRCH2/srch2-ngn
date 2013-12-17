@@ -28,8 +28,10 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
 	/*
 	 * Maybe we can get this value from a constant later
 	 */
+	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSets =
+			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     queryEvaluatorIntrnal->findKMostPopularSuggestionsSorted(term ,
-    		this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy) ,
+    		activeNodeSets.get() ,
     		numberOfSuggestionsToFind , suggestionPairs);
 
     suggestionPairCursor = invertedListCursor = 0;

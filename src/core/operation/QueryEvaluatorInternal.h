@@ -129,7 +129,7 @@ public:
         return this->indexData->trie;
     }
 
-    PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
+    ts_shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 
     void cacheClear() ;
     /**

@@ -20,10 +20,15 @@
 #define __CACHEBASE_H__
 
 #include <instantsearch/GlobalCache.h>
+#include "util/ReadWriteMutex.h"
 #include <instantsearch/Term.h>
 #include "util/BusyBit.h"
 #include "operation/ActiveNode.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+#include "util/ts_shared_ptr.h"
 #include <string>
 #include <map>
 
@@ -37,9 +42,10 @@ namespace instantsearch
 template <class T>
 class CacheEntry{
 public:
-	CacheEntry::CacheEntry(string key, boost::shared_ptr<T> objectPointer){
+	CacheEntry(string key, ts_shared_ptr<T> objectPointer){
 		this->setKey(key);
 		this->setObjectPointer(objectPointer);
+		this->numberOfBytes = 0;
 	}
 
 	void setKey(string key){
@@ -49,19 +55,23 @@ public:
 		return key;
 	}
 
-	void setObjectPointer(boost::shared_ptr<T> objectPointer){
+	void setObjectPointer(ts_shared_ptr<T> objectPointer){
 		this->objectPointer = objectPointer;
 	}
-	boost::shared_ptr<T> getObjectPointer(){
+	ts_shared_ptr<T> getObjectPointer(){
 		return this->objectPointer;
 	}
 
-	unsigned getSizeInBytes(){
-		return sizeof(this->key) + this->objectPointer->getSizeInBytes();
+	unsigned getNumberOfBytes(){
+		if(numberOfBytes == 0){
+			numberOfBytes = sizeof(numberOfBytes) + sizeof(this->key) + this->objectPointer->getNumberOfBytes();
+		}
+		return numberOfBytes;
 	}
 private:
 	string key;
-	boost::shared_ptr<T> objectPointer;
+	ts_shared_ptr<T> objectPointer;
+	unsigned numberOfBytes ;
 };
 
 /*
@@ -89,21 +99,31 @@ public:
 		elementsLinkListFirst = elementsLinkListLast = NULL;
 	}
 	~CacheContainer(){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		HashedKeyLinkListElement * nextToDelete = elementsLinkListFirst;
-		while(elementsLinkListFirst != NULL){
+		while(nextToDelete != NULL){
 			HashedKeyLinkListElement * nextOfNextToDelete = nextToDelete->next;
 			delete nextToDelete;
 			nextToDelete = nextOfNextToDelete;
 		}
+		for(typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.begin();
+				cacheEntry != cacheEntries.end() ; ++cacheEntry){
+			delete cacheEntry->second.first ;
+		}
 		cacheEntries.clear();
 	};
 
-	bool put(string key, boost::shared_ptr<T> objectPointer){
+	bool put(string key, ts_shared_ptr<T> objectPointer){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+//		cout << "PUT" << endl;
+//		ASSERT(checkCacheConsistency());
 		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
 		unsigned numberOfBytesNeededForNewEntry = getNumberOfBytesUsedByEntry(newEntry);
 		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET){
 			// we cannot accept this entry, it's bigger than our budget
 			delete newEntry;
+//			cout << "/PUT" << endl;
+			lock.unlock();
 			return false;
 		}
 		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET - totalSizeUsed){ // size is bigger than our left budget, we should remove some entries
@@ -119,7 +139,7 @@ public:
 		// 1. first find the hashedKey
 		unsigned newEntryHashedKey = hashDJB2(key.c_str());
 		// 2. check to see if this hashKey is in the map
-		map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntryWithSameHashedKey = cacheEntries.find(newEntryHashedKey);
+		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntryWithSameHashedKey = cacheEntries.find(newEntryHashedKey);
 		if(cacheEntryWithSameHashedKey != cacheEntries.end()){ // hashed key exists
 			// replace the old cache entry with the new one and update the size info
 			unsigned sizeOfEntryToRemove = getNumberOfBytesUsedByEntry(cacheEntryWithSameHashedKey->second.first);
@@ -133,6 +153,8 @@ public:
 			cacheEntryWithSameHashedKey->second.first = newEntry;
 			// move the linked list element to front to make it kicked out later
 			moveLinkedListElementToLast(cacheEntryWithSameHashedKey->second.second);
+//			cout << "/PUT" << endl;
+			lock.unlock();
 			return true;
 		}
 		// 3. if it's not in map push it to the map, append hashedKey to the linkedlist and update the size
@@ -140,31 +162,138 @@ public:
 		cacheEntries[newEntryHashedKey] = std::make_pair(  newEntry, elementsLinkListLast );
 		totalSizeUsed += numberOfBytesNeededForNewEntry;
 		ASSERT(totalSizeUsed <= BYTE_BUDGET);
-
-
+//		cout << "/PUT" << endl;
+		lock.unlock();
 		return true;
 	}
-	bool get(string key, boost::shared_ptr<T> & objectPointer) const{
-
+	bool get(string key, ts_shared_ptr<T> & objectPointer) {
+		boost::upgrade_lock< boost::shared_mutex > lock(_access);
+//		cout << "GET" << endl;
+//		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key
 		unsigned hashedKeyToFind = hashDJB2(key.c_str());
-		map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
+		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
 		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
+//			cout << "/GET" << endl;
+			lock.unlock();
+			return false;
+		}
+		if(cacheEntry->second.first->getKey().compare(key) != 0){
+//			cout << "/GET" << endl;
+			lock.unlock();
 			return false;
 		}
 		// cache hit , move the corresponding linked list element to the last position to make it
 		// get kicked out laster
-		moveLinkedListElementToLast(cacheEntry->second.second);
+
+		{
+			boost::upgrade_to_unique_lock< boost::shared_mutex > uniqueLock(lock);
+			moveLinkedListElementToLast(cacheEntry->second.second);
+		}
 		// and return the object
 		objectPointer = cacheEntry->second.first->getObjectPointer();
-
+//		cout << "/GET" << endl;
+		lock.unlock();
 		return true;
 	}
 
 
-private:
-	map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > > cacheEntries;
+	bool checkCacheConsistency() {
+		boost::shared_lock< boost::shared_mutex > lock(_access);
+		// 1 . check the consistency of linked list
+		if( elementsLinkListFirst == NULL && elementsLinkListLast == NULL ){
+			lock.unlock();
+			return true;
+		}else{
+			if(! (elementsLinkListFirst != NULL && elementsLinkListLast != NULL)){
+				lock.unlock();
+				return false;
+			}
+		}
+		// we know first and last are not null
 
+		if(elementsLinkListFirst->previous != NULL){
+			lock.unlock();
+			return false;
+		}
+		HashedKeyLinkListElement * nextToCheck = elementsLinkListFirst;
+		while(nextToCheck != NULL){
+			if(nextToCheck->previous == NULL){
+				if(nextToCheck != elementsLinkListFirst){
+					lock.unlock();
+					return false;
+				}
+			}else{
+				if(nextToCheck->previous->next != nextToCheck){
+					lock.unlock();
+					return false;
+				}
+			}
+			if(nextToCheck->next == NULL){
+				if(nextToCheck != elementsLinkListLast){
+					lock.unlock();
+					return false;
+				}
+			}else{
+				if(nextToCheck->next->previous != nextToCheck){
+					lock.unlock();
+					return false;
+				}
+			}
+			HashedKeyLinkListElement * nextOfNextToCheck = nextToCheck->next;
+			nextToCheck = nextOfNextToCheck;
+		}
+		// 2. check the consistency of map
+		for(typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::const_iterator cacheEntry = cacheEntries.begin();
+				cacheEntry != cacheEntries.end() ; ++cacheEntry){
+			bool nodeFound = false;
+			HashedKeyLinkListElement * nextToCheck = elementsLinkListFirst;
+			while(nextToCheck != NULL){
+				if(cacheEntry->first == nextToCheck->hashedKey){
+					if(nextToCheck != cacheEntry->second.second){
+						lock.unlock();
+						return false;
+					}
+					if(nodeFound){
+						lock.unlock();
+						return false;
+					}else{
+						nodeFound = true;
+					}
+				}
+				HashedKeyLinkListElement * nextOfNextToCheck = nextToCheck->next;
+				nextToCheck = nextOfNextToCheck;
+			}
+		}
+		lock.unlock();
+		return true;
+
+	}
+
+	bool clear(){
+		boost::unique_lock<boost::shared_mutex> lock(_access);
+//		cout << "CLEAR" << endl;
+
+		for(typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.begin();
+				cacheEntry != cacheEntries.end() ; ++cacheEntry){
+			delete cacheEntry->second.first ;
+		}
+		cacheEntries.clear();
+		HashedKeyLinkListElement * nextToDelete = elementsLinkListFirst;
+		while(nextToDelete != NULL){
+			HashedKeyLinkListElement * nextOfNextToDelete = nextToDelete->next;
+			delete nextToDelete;
+			nextToDelete = nextOfNextToDelete;
+		}
+		elementsLinkListFirst = elementsLinkListLast = NULL;
+//		cout << "/CLEAR" << endl;
+		lock.unlock();
+		return true;
+	}
+private:
+	mutable boost::shared_mutex _access;
+
+	map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > > cacheEntries;
 
 	// LRU replacement policy always removes elements from the beginning
 	HashedKeyLinkListElement * elementsLinkListFirst;
@@ -183,7 +312,7 @@ private:
 		}
 
 		// 2. remove the entry from the map and update the total byte size used
-		map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator entryToRemove = cacheEntries.find(hashedKeyToRemove);
+		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator entryToRemove = cacheEntries.find(hashedKeyToRemove);
 		ASSERT(entryToRemove != cacheEntries.end());
 		unsigned numberOfUsedBytesToGetRidOf = getNumberOfBytesUsedByEntry(entryToRemove->second.first);
 		cacheEntries.erase(entryToRemove); // remove it from map
@@ -251,6 +380,7 @@ private:
 			ASSERT(elementsLinkListLast->next == NULL);
 			elementsLinkListLast->next = element;
 			element->previous = elementsLinkListLast;
+			element->next = NULL;
 			elementsLinkListLast = element;
 			return;
 		}
@@ -258,6 +388,7 @@ private:
 		// 1. connect previous to next and next to previous
 		element->previous->next = element->next;
 		element->next->previous = element->previous;
+		element->next = element->previous = NULL;
 		// 2. put element in the front and make it HEAD
 		ASSERT(elementsLinkListLast->next == NULL);
 		elementsLinkListLast->next = element;
@@ -270,7 +401,7 @@ private:
 		/*
 		 * entry + unsigned hashedKey + linkedList element
 		 */
-		return entry->getSizeInBytes() + sizeof(unsigned) + sizeof(HashedKeyLinkListElement);
+		return entry->getNumberOfBytes() + sizeof(unsigned) + sizeof(HashedKeyLinkListElement *) +  sizeof(HashedKeyLinkListElement);
 	}
 
 	// computes the hash value of a string

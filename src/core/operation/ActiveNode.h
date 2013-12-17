@@ -27,6 +27,7 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "util/ts_shared_ptr.h"
 
 using srch2::util::Logger;
 
@@ -67,8 +68,6 @@ public:
     typedef std::vector<const TrieNode* > TrieNodeSet;
     typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 
-    BusyBit *busyBit;
-
 private:
     std::vector<CharType> prefix;
     unsigned editDistanceThreshold;
@@ -96,7 +95,6 @@ public:
         this->trieNodeSetVectorComputed = false;
 
         this->flagResultsCached = false;
-        this->busyBit = new BusyBit();
 
         this->trieRootNodeSharedPtr = trieRootNodeSharedPtr;
         this->supportSwapInEditDistance = supportSwapInEditDistance;
@@ -145,10 +143,10 @@ public:
     };
 
     virtual ~PrefixActiveNodeSet() {
-        delete this->busyBit;
+
     };
 
-    PrefixActiveNodeSet *computeActiveNodeSetIncrementally(const CharType additionalChar);
+    ts_shared_ptr<PrefixActiveNodeSet> computeActiveNodeSetIncrementally(const CharType additionalChar);
 
     unsigned getEditDistanceThreshold() const {
         return editDistanceThreshold;

@@ -387,7 +387,7 @@ void testDefaultIndex(string index_dir)
 
     // load the index again and validate it
 
-    CacheManager *cache = new CacheManager(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
@@ -432,7 +432,7 @@ void testGeoIndex(string index_dir)
 
     // load the index again and validate it
 
-    CacheManager *cache = new CacheManager(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
