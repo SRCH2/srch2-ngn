@@ -5,6 +5,7 @@
 #include "util/Assert.h"
 #include "operation/HistogramManager.h"
 #include "instantsearch/ResultsPostProcessor.h"
+#include "sstream"
 
 using namespace std;
 
@@ -46,6 +47,27 @@ LogicalPlanNode::~LogicalPlanNode(){
 
 void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 	this->fuzzyTerm = fuzzyTerm;
+}
+
+string LogicalPlanNode::getUniqueStringForCaching(){
+	return getUniqueStringForCachingRecursive(this);
+}
+
+string LogicalPlanNode::getUniqueStringForCachingRecursive(LogicalPlanNode * root){
+	ASSERT(root != NULL);
+	stringstream ss;
+	ss << root->nodeType;
+	for(vector<LogicalPlanNode *>::iterator child = root->children.begin() ; child != root->children.end() ; ++child){
+		ss << getUniqueStringForCachingRecursive(*child).c_str();
+	}
+	if(root->exactTerm != NULL){
+		ss << root->exactTerm->getUniqueStringForCaching();
+	}
+	if(root->fuzzyTerm != NULL){
+		ss << root->fuzzyTerm->getUniqueStringForCaching();
+	}
+	ss << root->forcedPhysicalNode;
+	return ss.str();
 }
 
 //////////////////////////////////////////////// Logical Plan ///////////////////////////////////////////////

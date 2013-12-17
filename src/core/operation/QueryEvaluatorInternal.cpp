@@ -173,6 +173,17 @@ unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * log
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
+
+	ASSERT(logicalPlan != NULL);
+	//1. first check to see if we have this query in cache
+	string key = logicalPlan->getUniqueStringForCaching();
+	cout << "Key : " << key << endl;
+	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
+	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+		// cache hit
+		cachedObject->copyToQueryResultsInternal(queryResults->impl);
+		return queryResults->impl->sortedFinalResults.size();
+	}
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -309,6 +320,14 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
 		delete facetOperatorPtr;
 	}
+
+
+	// save in cache
+	ts_shared_ptr<QueryResultsCacheEntry> cacheObject ;
+	cacheObject.reset(new QueryResultsCacheEntry());
+	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+
 	return queryResults->impl->sortedFinalResults.size();
 
 }

@@ -75,8 +75,24 @@ ActiveNodesCache * CacheManager::getActiveNodesCache(){
 	return this->aCache;
 }
 
-int CacheManager::clear(){
-	return this->aCache->clear();
+QueryResultsCache * CacheManager::getQueryResultsCache(){
+	return this->qCache;
 }
+
+bool QueryResultsCache::getQueryResults(string key, ts_shared_ptr<QueryResultsCacheEntry> & in){
+	return this->cacheContainer->get(key , in);
+}
+void QueryResultsCache::setQueryResults(string key , ts_shared_ptr<QueryResultsCacheEntry> object){
+	this->cacheContainer->put(key , object);
+}
+int QueryResultsCache::clear(){
+	return this->cacheContainer->clear();
+}
+
+int CacheManager::clear(){
+	return this->aCache->clear() && this->qCache->clear();
+}
+
+
 
 }}

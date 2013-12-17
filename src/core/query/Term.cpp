@@ -25,6 +25,7 @@
 #include <string>
 #include <stdint.h>
 #include "util/encoding.h"
+#include <sstream>
 
 using std::string;
 using std::vector;
@@ -42,6 +43,17 @@ struct Term::Impl
     float similarityBoost;
     uint8_t threshold;
     unsigned searchableAttributeIdToFilter;
+
+    string getUniqueStringForCaching(){
+    	std::stringstream ss;
+    	ss << keyword.c_str();
+    	ss << type;
+    	ss << boost;
+    	ss << similarityBoost;
+    	ss << (threshold+1) << "";
+    	ss << (searchableAttributeIdToFilter + 1);
+    	return ss.str();
+    }
 };
 
 Term::Term(const string &keywordStr, TermType type, const float boost, const float fuzzyMatchPenalty, const uint8_t threshold)
@@ -136,6 +148,10 @@ void Term::addAttributeToFilterTermHits(unsigned searchableAttributeId)
 unsigned Term::getAttributeToFilterTermHits() const
 {
     return this->impl->searchableAttributeIdToFilter;
+}
+
+string Term::getUniqueStringForCaching(){
+	return this->impl->getUniqueStringForCaching();
 }
 
 ////////////////////////

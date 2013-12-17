@@ -21,7 +21,7 @@
 
 #include <instantsearch/GlobalCache.h>
 #include "operation/ActiveNode.h"
-
+#include "query/QueryResultsInternal.h"
 #include "CacheBase.h"
 
 #include <boost/shared_ptr.hpp>
@@ -34,7 +34,7 @@ namespace instantsearch
 {
 
 
-class ActiveNodesCache { // TODO : remove busy bit from PrefixActiveNodeSet
+class ActiveNodesCache {
 public:
 	ActiveNodesCache(unsigned long byteSizeOfCache = 134217728){
 		this->cacheContainer = new CacheContainer<PrefixActiveNodeSet>(byteSizeOfCache);
@@ -47,6 +47,70 @@ private:
 
 };
 
+class QueryResultsCacheEntry{
+public:
+	QueryResultsCacheEntry(){
+		factory = new QueryResultFactoryInternal();
+	}
+	~QueryResultsCacheEntry(){
+		delete factory ;
+	}
+    std::vector<QueryResult *> sortedFinalResults;
+    bool resultsApproximated;
+    long int estimatedNumberOfResults;
+	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
+	QueryResultFactoryInternal * factory;
+    void copyToQueryResultsInternal(QueryResultsInternal * destination){
+    	destination->resultsApproximated = resultsApproximated;
+    	destination->estimatedNumberOfResults = estimatedNumberOfResults;
+    	for(std::vector<QueryResult *>::iterator queryResult = sortedFinalResults.begin(); queryResult != sortedFinalResults.end() ; ++ queryResult){
+    		destination->sortedFinalResults.push_back(destination->getReultsFactory()->impl->createQueryResult(*(*queryResult)));
+    	}
+    	destination->facetResults = facetResults;
+    }
+    void copyFromQueryResultsInternal(QueryResultsInternal * destination){
+    	resultsApproximated = destination->resultsApproximated;
+    	estimatedNumberOfResults = destination->estimatedNumberOfResults;
+    	for(std::vector<QueryResult *>::iterator queryResult = destination->sortedFinalResults.begin();
+    			queryResult != destination->sortedFinalResults.end() ; ++ queryResult){
+    		sortedFinalResults.push_back(factory->createQueryResult(*(*queryResult)));
+    	}
+    	facetResults = destination->facetResults;
+    }
+
+    unsigned getNumberOfBytes(){
+    	unsigned result = 0;
+    	for(std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator attr =
+                facetResults.begin(); attr != facetResults.end(); ++attr){
+    		result += sizeof(attr->first);
+    		result += sizeof(attr->second.first);
+    		for(std::vector<std::pair<std::string, float> >::iterator f = attr->second.second.begin() ;
+    				f != attr->second.second.end() ; ++f){
+    			result += sizeof(f->first) + sizeof(float);
+    		}
+    	}
+    	result += sizeof(bool) + sizeof(long int);
+    	for(std::vector<QueryResult *>::iterator q = sortedFinalResults.begin();
+    			q != sortedFinalResults.end() ; ++q){
+    		result += (*q)->getNumberOfBytes();
+    	}
+    	return result;
+    }
+};
+
+class QueryResultsCache {
+public:
+	QueryResultsCache(unsigned long byteSizeOfCache = 134217728){
+		this->cacheContainer = new CacheContainer<QueryResultsCacheEntry>(byteSizeOfCache);
+	}
+
+	bool getQueryResults(string key,  ts_shared_ptr<QueryResultsCacheEntry> & in);
+	void setQueryResults(string key , ts_shared_ptr<QueryResultsCacheEntry> object);
+	int clear();
+private:
+	CacheContainer<QueryResultsCacheEntry> * cacheContainer;
+};
+
 
 /*
  * This class is the cache manager. The CacheManager is the holder of different kinds of Cache, e.g.
@@ -57,16 +121,21 @@ class CacheManager : public GlobalCache
 public:
     CacheManager(unsigned long byteSizeOfCache = 134217728){
     	aCache = new ActiveNodesCache(byteSizeOfCache);
+    	qCache = new QueryResultsCache(byteSizeOfCache);
     }
     virtual ~CacheManager(){
     	delete aCache;
+    	delete qCache;
     }
 
     int clear();
     ActiveNodesCache * getActiveNodesCache();
+    QueryResultsCache * getQueryResultsCache();
 
 private:
     ActiveNodesCache * aCache;
+
+    QueryResultsCache * qCache;
 
 };
 

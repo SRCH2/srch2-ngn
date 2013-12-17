@@ -25,6 +25,7 @@
 #include "util/Assert.h"
 #include <vector>
 #include <string>
+#include <sstream>
 using namespace std;
 
 namespace srch2 {
@@ -50,6 +51,9 @@ public:
 	~LogicalPlanNode();
 
     void setFuzzyTerm(Term * fuzzyTerm);
+
+    string getUniqueStringForCaching();
+    string getUniqueStringForCachingRecursive(LogicalPlanNode * root);
 
 private:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
@@ -203,6 +207,28 @@ public:
 		this->docIdForRetrieveByIdSearchType = docid;
 	}
 
+
+	string getUniqueStringForCaching(){
+		stringstream ss;
+		if(tree != NULL){
+			ss << tree->getUniqueStringForCaching().c_str();
+		}
+		ss << docIdForRetrieveByIdSearchType;
+		if(postProcessingInfo != NULL){
+			ss << postProcessingInfo->getUniqueStringForCaching().c_str();
+		}
+		ss << searchType;
+		ss << offset;
+		ss << numberOfResultsToRetrieve;
+		ss << shouldRunFuzzyQuery;
+		if(exactQuery != NULL){
+			ss << exactQuery->getUniqueStringForCaching().c_str();
+		}
+		if(fuzzyQuery != NULL){
+			ss << fuzzyQuery->getUniqueStringForCaching().c_str();
+		}
+		return ss.str();
+	}
 };
 
 }

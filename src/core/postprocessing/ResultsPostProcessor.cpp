@@ -21,6 +21,7 @@
 #include <instantsearch/QueryEvaluator.h>
 #include "operation/QueryEvaluatorInternal.h"
 #include <instantsearch/ResultsPostProcessor.h>
+#include <sstream>
 
 using namespace std;
 
@@ -116,6 +117,23 @@ void ResultsPostProcessingInfo::setPhraseSearchInfoContainer(PhraseSearchInfoCon
 }
 PhraseSearchInfoContainer * ResultsPostProcessingInfo::getPhraseSearchInfoContainer(){
 	return this->phraseSearchInfoContainer;
+}
+
+string ResultsPostProcessingInfo::getUniqueStringForCaching(){
+	stringstream ss;
+	if(facetInfo != NULL){
+		ss << facetInfo->getUniqueStringForCaching().c_str();
+	}
+	if(sortEvaluator != NULL){
+		ss << sortEvaluator->getUniqueStringForCaching().c_str();
+	}
+	if(filterQueryEvaluator != NULL){
+		ss << filterQueryEvaluator->getUniqueStringForCaching().c_str();
+	}
+	if(phraseSearchInfoContainer != NULL){
+		ss << phraseSearchInfoContainer->getUniqueStringForCaching().c_str();
+	}
+	return ss.str();
 }
 
 }
