@@ -26,12 +26,15 @@ def testEmptyIndex(binary_path):
     os.system(addCommand)
 
     time.sleep(11)
+
     #do query
+    exitCode = 0
     query='http://localhost:' + port + '/search?q=toy'
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     if len(response_json['results']) != 1 or response_json['results'][0]['record']['id'] != "1234":
        print 'test failed'
+       exitCode = 1
 
     #get pid of srch2-search-server and kill the process
     try:
@@ -45,10 +48,12 @@ def testEmptyIndex(binary_path):
         os.system(cmd)
     print 'test pass'
     print '=============================='
+    return exitCode
 
 if __name__ == '__main__':      
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
-    testEmptyIndex(binary_path)
+    exitCode = testEmptyIndex(binary_path)
+    os._exit(exitCode)
 

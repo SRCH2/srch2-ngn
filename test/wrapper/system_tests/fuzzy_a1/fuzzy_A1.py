@@ -41,6 +41,8 @@ def checkResult(query, responseJson,resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
@@ -74,6 +76,7 @@ def testFuzzyA1(queriesAndResultsPath, binary_path):
 
     #construct the query
 
+    failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -90,7 +93,7 @@ def testFuzzyA1(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json['results'], resultValue )
+        failCount += checkResult(query, response_json['results'], resultValue )
     try:
         s = commands.getoutput('ps aux | grep srch2-search-server')
         stat = s.split()
@@ -101,11 +104,13 @@ def testFuzzyA1(queriesAndResultsPath, binary_path):
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':    
    #Path of the query file
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
    binary_path = sys.argv[1]
    queriesAndResultsPath = sys.argv[2]
-   testFuzzyA1(queriesAndResultsPath, binary_path)
+   exitCode = testFuzzyA1(queriesAndResultsPath, binary_path)
+   os._exit(exitCode)
 

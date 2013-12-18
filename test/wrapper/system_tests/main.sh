@@ -138,7 +138,7 @@ if [ $? -gt 0 ]; then
 fi
 echo "-- PASSED: $test_id"
 
-test_id="facted search test"
+test_id="faceted search test"
 echo "---------------------do $test_id-----------------------"
 python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt >> system_test.log 2>&1
 
