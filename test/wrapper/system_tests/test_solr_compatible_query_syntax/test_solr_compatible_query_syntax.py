@@ -24,7 +24,7 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
-                    print responseJson[i]['record']['id']+'||'+resultValue[i]
+                    print str(responseJson[i]['record']['id']) + '||' + resultValue[i]
                 break
     else:
         isPass=0
@@ -33,11 +33,11 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-                 print responseJson[i]['record']['id']+'||'
+                 print str(responseJson[i]['record']['id']) + '||'
             elif i >= len(responseJson):
                  print '  '+'||'+resultValue[i]
             else:
-                 print responseJson[i]['record']['id']+'||'+resultValue[i]
+                 print str(responseJson[i]['record']['id']) + '||' + resultValue[i]
     if isPass == 1:
         isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
 
