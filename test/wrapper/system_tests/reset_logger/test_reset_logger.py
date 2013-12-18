@@ -1,5 +1,5 @@
 
-import os, time, sys, commands, urllib2
+import os, time, sys, commands, urllib2, signal
 
 
 class logTester():
@@ -42,9 +42,10 @@ class logTester():
             s = commands.getoutput('ps aux | grep srch2 | grep config')
             stat = s.split()
             #print '1 ' + stat[1]
-            os.kill(int(stat[1]), signal.CTRL_C_EVENT) # TODO: why does this always throw an exception
+            os.kill(int(stat[1]), signal.SIGTERM)
             #print ("server killed!")
-        except:
+        except Exception, err:
+            print "Kill server exception: " + str(err)
             try:
                 s = commands.getoutput("ps -A | fgrep -v '<defunct>' | grep -m1 srch2 | awk '{print $1}'")
                 a = s.split()
