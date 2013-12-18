@@ -5,6 +5,7 @@
 #include "physical_plan/PhysicalOperators.h"
 #include "QueryEvaluatorInternal.h"
 #include "physical_plan/FilterQueryOperator.h"
+#include "util/Logger.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -59,9 +60,9 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	cout << "========================================================" << endl;
+	Logger::info("========================================================");
 	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	cout << "========================================================" << endl;
+	Logger::info("========================================================");
 //	exit(0);
 	// end : print for test
 

@@ -111,16 +111,23 @@ bool UnionLowestLevelSuggestionOperator::verifyByRandomAccess(PhysicalPlanRandom
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost UnionLowestLevelSuggestionOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	return PhysicalPlanCost(10);
+	PhysicalPlanCost resultCost;
+	resultCost.addMediumFunctionCost();
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost UnionLowestLevelSuggestionOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	return PhysicalPlanCost(5);
+	PhysicalPlanCost resultCost;
+	resultCost.addMediumFunctionCost();
+	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionLowestLevelSuggestionOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	return PhysicalPlanCost(1);
+	PhysicalPlanCost resultCost;
+	resultCost.addSmallFunctionCost();
+	resultCost.addInstructionCost();
+	return resultCost;
 }
 PhysicalPlanCost UnionLowestLevelSuggestionOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	return PhysicalPlanCost(1);

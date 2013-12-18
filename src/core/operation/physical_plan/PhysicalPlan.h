@@ -165,6 +165,24 @@ struct PhysicalPlanCost{
 	PhysicalPlanCost operator+(const unsigned & rightValue){
 		return PhysicalPlanCost(cost + rightValue);
 	}
+	void addInstructionCost(unsigned numberOfInstructions = 1){
+		cost += 2 * numberOfInstructions;
+	}
+	void addFunctionCallCost(unsigned numberOfCalls = 1){
+		cost += 3 * numberOfCalls;
+	}
+	void addSmallFunctionCost(unsigned numberOfCalls = 1){
+		addFunctionCallCost(numberOfCalls);
+		cost += 10 * numberOfCalls;
+	}
+	void addMediumFunctionCost(unsigned numberOfCalls = 1){
+		addFunctionCallCost(numberOfCalls);
+		cost += 50 * numberOfCalls;
+	}
+	void addLargeFunctionCost(unsigned numberOfCalls = 1){
+		addFunctionCallCost(numberOfCalls);
+		cost += 100 * numberOfCalls;
+	}
 };
 
 // The iterator interface used to implement iterator model
