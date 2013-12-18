@@ -6,12 +6,28 @@ SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
+# Test for ruby and node.js frameworks that some tests use
+ruby --version > system_test.log
+if [ $? -eq 0 ]; then
+    HAVE_RUBY=1
+else
+    HAVE_RUBY=0
+    echo "WARNING: Could not find ruby, which some tests require.  Try: sudo apt-get install ruby1.9.1"
+fi
+nodejs --version >> system_test.log
+if [ $? -eq 0 ]; then
+    HAVE_NODE=1
+else
+    HAVE_NODE=0
+    echo "WARNING: Could not find node (node.js), which some tests require.  Try: sudo apt-get install nodejs"
+fi
+
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
 
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt > system_test.log 2>&1
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
