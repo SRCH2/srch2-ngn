@@ -157,8 +157,8 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 		childIndex ++;
 	}
 
-	if(totalNumberOfProducts > 100){
-		totalNumberOfProducts = 100;
+	if(totalNumberOfProducts > 500){
+		totalNumberOfProducts = 500;
 	}
 
 	// now we must find all possible combinations of children options
@@ -201,6 +201,11 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 			if((*ourOption)->validateChildren() == true){
 				treeOptions.push_back(*ourOption);
 			}
+//			else{
+//					cout << "========================== INVALID PLAN==============================" << endl;
+//					(*ourOption)->printSubTree();
+//					cout << "========================================================" << endl;
+//			}
 		}
 	}
 

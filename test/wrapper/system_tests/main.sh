@@ -9,6 +9,17 @@ cd $SYSTEM_TEST_DIR
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ 
 
+test_id="boolean expression test"
+echo "---------------------do $test_id-----------------------"
+python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE_DIR ./boolean-expression-test/queries.txt > system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
+
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt > system_test.log 2>&1
