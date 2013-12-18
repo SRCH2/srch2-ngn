@@ -138,7 +138,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         unsigned counter = 0;
         if (queryPlan.getSearchType() == GeoSearchType
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
-                {
+        {
             for (unsigned i = start; i < end; ++i) {
                 root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
@@ -146,8 +146,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                         || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                    unsigned internalRecordId = queryResults->getInternalRecordId(
-                            i);
+                    unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
 
@@ -166,8 +165,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
-                root["results"][counter]["record_id"] = queryResults->getRecordId(
-                        i);
+                root["results"][counter]["record_id"] = queryResults->getRecordId(i);
                 root["results"][counter]["score"] = queryResults->getResultScore(i)
                         .getFloatTypedValue();
 
@@ -193,8 +191,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                         || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                	unsigned internalRecordId = queryResults->getInternalRecordId(
-                            i);
+                    unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
 
@@ -366,13 +363,11 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
     for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
 
-        root["results"][counter]["record_id"] = queryResults->getRecordId(
-                i);
+        root["results"][counter]["record_id"] = queryResults->getRecordId(i);
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
                 || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-            unsigned internalRecordId = queryResults->getInternalRecordId(
-                    i);
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
             std::string compressedInMemoryRecordString = indexer
                     ->getInMemoryData(internalRecordId);
 

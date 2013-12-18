@@ -31,7 +31,7 @@ const char *HTTPServerEndpoints::index_stop_url = "/srch2/stop";
 		"Content-Length:%s\n"
 		"\r\n";*/
 
-  const char *HTTPServerEndpoints::ajax_search_fail =
+const char *HTTPServerEndpoints::ajax_search_fail =
 		"HTTP/1.1 400 Bad Request\r\n"
 		"Cache: no-cache\r\n"
 		"Content-Type: application/x-javascript\r\n"
@@ -127,12 +127,13 @@ IndexMetaData *Srch2Server::createIndexMetaData(const CoreInfo_t *indexDataConfi
     srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataConfig->getCacheSizeInBytes(), 200000);
 
     // Create an IndexMetaData
-    srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData( cache,
-									indexDataConfig->getMergeEveryNSeconds(),
-									indexDataConfig->getMergeEveryMWrites(),
-									indexDataConfig->getUpdateHistogramEveryPMerges(),
-									indexDataConfig->getUpdateHistogramEveryQWrites(),
-									indexDataConfig->getIndexPath());
+    srch2is::IndexMetaData *indexMetaData =
+        new srch2is::IndexMetaData( cache,
+                                    indexDataConfig->getMergeEveryNSeconds(),
+                                    indexDataConfig->getMergeEveryMWrites(),
+                                    indexDataConfig->getUpdateHistogramEveryPMerges(),
+                                    indexDataConfig->getUpdateHistogramEveryQWrites(),
+                                    indexDataConfig->getIndexPath());
 
     return indexMetaData;
 }
