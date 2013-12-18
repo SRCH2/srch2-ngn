@@ -43,8 +43,10 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
     else:
         print  query+' test failed'
+        return 1
 
 def checkFacetResults(query, responseJson, facetResultValue):
    for i in range(0,len(responseJson)):
@@ -90,6 +92,7 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         facetResultValue.append(facet_line.strip())
 
     #construct the query
+    failCount = 0
     j=0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
@@ -106,7 +109,7 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
         #check the result
-        checkResult(query, response_json, resultValue, facetResultValue[j])
+        failCount += checkResult(query, response_json, resultValue, facetResultValue[j])
         j=j+1
         #print j
         #print '------------------------------------------------------------------'
@@ -120,6 +123,7 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':    
    #Path of the query file
@@ -127,5 +131,6 @@ if __name__ == '__main__':
    binary_path = sys.argv[1]
    queriesAndResultsPath = sys.argv[2]
    facetResultsPath=sys.argv[3]
-   testNewFeatures(queriesAndResultsPath, facetResultsPath, binary_path)
+   exitCode = testNewFeatures(queriesAndResultsPath, facetResultsPath, binary_path)
+   os._exit(0) # TODO - hack until we figure out why faceted results are do different
 
