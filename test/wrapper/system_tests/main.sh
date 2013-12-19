@@ -22,9 +22,9 @@ if [ $? -eq 0 ]; then
     NODE_CMD=nodejs
 else
     # maybe it's called just node, but need to test due to another package with the same name
-    NODE_TEST=`nodejs -e 'console.log(1);'`
+    NODE_TEST=`node -e 'console.log(1);'`
     node --version >> system_test.log
-    if [ $? -eq 0 && ${NODE_TEST} -eq 1 ]; then
+    if [ $? -eq 0 && ${NODE_TEST:-0} -eq 1 ]; then
 	HAVE_NODE=1
 	NODE_CMD=node
     else
