@@ -365,6 +365,12 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 		(*treeOption)->printSubTree();
 		Logger::info("========================================================" );
 
+		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){
+			minPlan = (*treeOption);
+			minCost = cost.cost;
+			break;
+		}
+
 		if(minPlan == NULL){
 			minPlan = (*treeOption);
 			minCost = cost.cost;
