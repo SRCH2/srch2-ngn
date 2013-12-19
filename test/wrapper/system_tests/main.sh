@@ -19,6 +19,7 @@ cd $SYSTEM_TEST_DIR
 if [ ! -d "$SRCH2_ENGINE_DIR" ]; then
     echo "$0: Search engine directory \"$SRCH2_ENGINE_DIR\" not an existing directory."
     exit 1
+fi
 
 echo ''
 echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will intefere with this testing."
@@ -52,7 +53,7 @@ else
 fi
 
 # We remove the old indexes, if any, before doing the test.
-rm -rf data/ 
+rm -rf data/ *.idx
 
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
@@ -63,6 +64,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+
+rm -rf data/ *.idx
 
 test_id="multi valued attribute"
 echo "---------------------do $test_id-----------------------"
