@@ -360,10 +360,10 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 
-//		cout << "========================================================" << endl;
-//		cout << "Cost is " << cost.cost << endl;
-//		(*treeOption)->printSubTree();
-//		cout << "========================================================" << endl;
+		Logger::info("========================================================" );
+		Logger::info("Cost is %d" , cost.cost);
+		(*treeOption)->printSubTree();
+		Logger::info("========================================================" );
 
 		if(minPlan == NULL){
 			minPlan = (*treeOption);
