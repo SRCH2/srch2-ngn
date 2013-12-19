@@ -6,8 +6,12 @@ SRCH2_ENGINE_DIR=$2
 PWD_DIR=$(pwd)
 cd $SYSTEM_TEST_DIR
 
+echo ''
+echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will intefere with this testing."
+echo ''
+
 # Test for ruby framework for some tests
-ruby --version > system_test.log
+ruby --version > system_test.log 2>&1
 if [ $? -eq 0 ]; then
     HAVE_RUBY=1
 else
@@ -16,15 +20,15 @@ else
 fi
 
 # Test for node.js framework
-nodejs --version >> system_test.log
+nodejs --version >> system_test.log 2>&1
 if [ $? -eq 0 ]; then
     HAVE_NODE=1
     NODE_CMD=nodejs
 else
     # maybe it's called just node, but need to test due to another package with the same name
-    NODE_TEST=`node -e 'console.log(1);'`
-    node --version >> system_test.log
-    if [ $? -eq 0 && ${NODE_TEST:-0} -eq 1 ]; then
+    NODE_TEST=`node -e 'console.log(1);'` 2>> system_test.log
+    node --version >> system_test.log 2>&1
+    if [ $? -eq 0 ] && [ "${NODE_TEST:-0}" -eq 1 ]; then
 	HAVE_NODE=1
 	NODE_CMD=node
     else
