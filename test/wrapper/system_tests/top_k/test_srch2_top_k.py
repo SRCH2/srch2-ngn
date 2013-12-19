@@ -92,23 +92,28 @@ if __name__ == "__main__":
         if (sys.argv[3] < sys.argv[4]):
             topk_A = str(sys.argv[3])
             topk_B = str(sys.argv[4])
+            exitCode = 0
         else:
             topk_B = str(sys.argv[3])
             topk_A = str(sys.argv[4])
-            base_url = base + "/search?fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query
-            url_A = base_url + "&rows="+topk_A
-            print 'URL A : ' + url_A
-            url_B = base_url + "&rows="+topk_B
-            jsonTop10 = urllib2.urlopen(url_A).read()
-            jsonTop20 = urllib2.urlopen(url_B).read()
-            if ( verify(jsonTop10, topk_A,  jsonTop20, topk_B) ):
-                print "Test passed."
-            else:
-                print "Test failed."
+
+        base_url = base + "/search?fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query
+        url_A = base_url + "&rows="+topk_A
+        print 'URL A : ' + url_A
+        url_B = base_url + "&rows="+topk_B
+        jsonTop10 = urllib2.urlopen(url_A).read()
+        jsonTop20 = urllib2.urlopen(url_B).read()
+        if ( verify(jsonTop10, topk_A,  jsonTop20, topk_B) ):
+            print "Test passed."
+            exitCode = 0
+        else:
+            print "Test failed."
+            exitCode = 1
     else:
         print "Usage:"
         print "python test_srch2_top_k.py test+obam 10 20"
         print "python test_srch2_top_k.py ${query} ${topk_A} ${topk_B}"
+        exitCode = 1
 
         #get pid of srch2-search-server and kill the process
     print "======================================="
@@ -121,3 +126,4 @@ if __name__ == "__main__":
         a = s.split()
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd) 
+    os._exit(exitCode)

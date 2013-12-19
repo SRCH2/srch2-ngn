@@ -12,7 +12,7 @@
 # check the returned message 
 # search for 'wonderful' to see if all the new records are returned
 
-import os, time, sys, commands, urllib2
+import os, time, sys, commands, urllib2, signal
 
 
 class InsertTester:
@@ -43,12 +43,13 @@ class InsertTester:
             #print ("killing srch2 server")
             s = commands.getoutput('ps aux | grep srch2 | grep config')
             stat = s.split()
-            #print '2 ' + stat[2]
-            os.kill(int(stat[2]), signal.SIGUSR1)
+            #print '1 ' + stat[1]
+            os.kill(int(stat[1]), signal.SIGUSR1)
             #print ("server killed!")
-        except:
+        except Exception, err:
+            print "Kill server exception: " + str(err)
             try:
-                s = commands.getoutput("ps -A | grep -m1 srch2 | awk '{print $1}'")
+                s = commands.getoutput("ps -A | fgrep -v '<defunct>' | grep -m1 srch2 | awk '{print $1}'")
                 a = s.split()
                 cmd = "kill {0}".format(a[-1])
                 os.system(cmd)
@@ -128,7 +129,7 @@ if __name__ == '__main__':
     tester.killServer()
 
     print '=====================Batch Insert Test Passed!=========================='
-
+    os._exit(0)
 
 
 
