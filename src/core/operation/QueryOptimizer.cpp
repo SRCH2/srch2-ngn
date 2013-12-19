@@ -369,7 +369,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 			minPlan = (*treeOption);
 			minCost = cost.cost;
 		}else{
-			if(minCost < cost.cost){
+			if(minCost > cost.cost){
 				minPlan = (*treeOption);
 				minCost = cost.cost;
 			}
