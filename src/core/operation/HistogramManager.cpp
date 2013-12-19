@@ -48,7 +48,6 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		case LogicalPlanNodeTypeNot:
 		{
 			ASSERT(node->children.size() == 1);
-			unsigned numberOfTermsInChildren = 0;
 			markTermToForceSuggestionPhysicalOperator(node->children.at(0) , isFuzzy);
 			return;
 		}

@@ -458,6 +458,14 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationNotOperator();
 			break;
 		}
+		case PhysicalPlanNode_UnionLowestLevelSuggestion:{
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOperator();
+			break;
+		}
+		default:
+			ASSERT(false);
+			break;
 	}
 	optimizationResult->setLogicalPlanNode(chosenTree->getLogicalPlanNode());
 	optimizationResult->setExecutableNode(executableResult);
