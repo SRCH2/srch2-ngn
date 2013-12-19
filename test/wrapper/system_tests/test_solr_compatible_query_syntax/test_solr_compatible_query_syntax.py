@@ -132,5 +132,5 @@ if __name__ == '__main__':
    queriesAndResultsPath = sys.argv[2]
    facetResultsPath=sys.argv[3]
    exitCode = testNewFeatures(queriesAndResultsPath, facetResultsPath, binary_path)
-   os._exit(0) # TODO - hack until we figure out why faceted results are do different
+   os._exit(exitCode)
 
