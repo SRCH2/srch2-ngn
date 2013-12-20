@@ -60,9 +60,9 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-//	Logger::info("========================================================");
-//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-//	Logger::info("========================================================");
+	Logger::info("========================================================");
+	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+	Logger::info("========================================================");
 //	exit(0);
 	// end : print for test
 

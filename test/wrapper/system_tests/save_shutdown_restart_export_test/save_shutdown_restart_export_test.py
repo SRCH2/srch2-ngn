@@ -61,10 +61,11 @@ def testSaveShutdownRestart(binary_path):
     os.kill(int(stat[1]), signal.SIGUSR1)
     print 'test pass'
     print '=============================='
+    return 0
 
 if __name__ == '__main__':      
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
-    testSaveShutdownRestart(binary_path)
-
+    exitCode = testSaveShutdownRestart(binary_path)
+    os._exit(exitCode)

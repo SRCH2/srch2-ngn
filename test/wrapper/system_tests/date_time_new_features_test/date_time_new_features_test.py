@@ -41,9 +41,8 @@ def checkResult(query, responseJsonAll,resultValue):
                  print responseJson[i]['record']['id']+'||'+resultValue[i]
     if isPass == 1:
         print  query+' test pass'
-
-    return True
-
+        return 0
+    return 1
 
 def testDateAndTime(queriesAndResultsPath , binary_path):
     # Start the engine server
@@ -56,6 +55,7 @@ def testDateAndTime(queriesAndResultsPath , binary_path):
 
     #construct the query
 
+    failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -66,25 +66,25 @@ def testDateAndTime(queriesAndResultsPath , binary_path):
         query='http://localhost:' + port + '/search?'
         query = query + queryValue
         #print query
-        
 
         # do the query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json, resultValue )
+        failCount += checkResult(query, response_json, resultValue )
 
     #get pid of srch2-search-server and kill the process
     s = commands.getoutput('ps aux | grep srch2-search-server')
     stat = s.split() 
     os.kill(int(stat[1]), signal.SIGUSR1)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':    
    #Path of the query file
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
    binary_path = sys.argv[1]
    queriesAndResultsPath = sys.argv[2]
-   testDateAndTime(queriesAndResultsPath,  binary_path)
-
+   exitCode = testDateAndTime(queriesAndResultsPath,  binary_path)
+   os._exit(exitCode)

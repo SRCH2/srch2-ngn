@@ -51,6 +51,8 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 def checkFacetResults(query, responseJson, resultValue):
    if len(responseJson) != len(resultValue):
@@ -125,6 +127,7 @@ def testMultiValuedAttributes(f_in , f_facet, binary_path):
     facet_parser.add_argument('-f',  metavar='facet', nargs='+', 
                                                     action='append')
     #construct the query
+    exitCodeTotal = 0
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
@@ -152,13 +155,14 @@ def testMultiValuedAttributes(f_in , f_facet, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json, resultValue , facetResultValue )
+        exitCodeTotal += checkResult(query, response_json, resultValue , facetResultValue )
 
     #get pid of srch2-search-server and kill the process
     s = commands.getoutput('ps aux | grep srch2-search-server')
     stat = s.split() 
     os.kill(int(stat[1]), signal.SIGUSR1)
     print '=============================='
+    return exitCodeTotal
 
 if __name__ == '__main__':    
    #Path of the query file
@@ -177,5 +181,6 @@ if __name__ == '__main__':
    binary_path = args.binary_path
    queriesAndResultsPath = args.queriesAndResults
    facetResultsPath = args.facetResults
-   testMultiValuedAttributes(queriesAndResultsPath, facetResultsPath, binary_path)
-
+   exitCode = testMultiValuedAttributes(queriesAndResultsPath, facetResultsPath, binary_path)
+   
+   os._exit(exitCode)
