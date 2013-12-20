@@ -609,11 +609,11 @@ int main(int argc, char** argv) {
 
     // create a server (core) for each data source in config file
     for (ConfigManager::CoreInfoMap_t::iterator iterator = serverConf->coreInfoIterateBegin();
-		 iterator != serverConf->coreInfoIterateEnd(); iterator++) {
+         iterator != serverConf->coreInfoIterateEnd(); iterator++) {
 
         srch2http::Srch2Server *core = new srch2http::Srch2Server;
-		core->setCoreName(iterator->second->getName());
-		servers[iterator->second->getName()] = core;
+        core->setCoreName(iterator->second->getName());
+        servers[iterator->second->getName()] = core;
     }
 
     // make sure we have identified the default core
@@ -626,16 +626,15 @@ int main(int argc, char** argv) {
         ASSERT(defaultCore == NULL);
 
         defaultCore = new srch2http::Srch2Server();
-		defaultCore->setCoreName(serverConf->getDefaultCoreName());
-		servers[defaultCore->getCoreName()] = defaultCore;
+        defaultCore->setCoreName(serverConf->getDefaultCoreName());
+        servers[defaultCore->getCoreName()] = defaultCore;
     }
 
     //load the index from the data source
     try{
-
-		for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
-			iterator->second->init(serverConf);
-		}
+        for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+            iterator->second->init(serverConf);
+        }
     }catch(exception& ex) {
     	/*
     	 *  We got some fatal error during server initialization. Print the error message and
@@ -650,15 +649,15 @@ int main(int argc, char** argv) {
     }
     //cout << "srch2 server started." << endl;
 
-	for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
-		const srch2http::CoreInfo_t *coreInfo = serverConf->getCoreInfo(iterator->second->getCoreName());
-		if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-			// set current time as cut off time for further updates
-			// this is a temporary solution. TODO
-			srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-			srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
-		}
-	}
+    for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+        const srch2http::CoreInfo_t *coreInfo = serverConf->getCoreInfo(iterator->second->getCoreName());
+        if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+            // set current time as cut off time for further updates
+            // this is a temporary solution. TODO
+            srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+            srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+        }
+    }
 
     http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
     http_addr =
