@@ -40,6 +40,8 @@ def checkResult(query, responseJson, resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 #prepare the query based on the valid syntax
 def prepareQuery(ct_lat,ct_long,ct_radius):
@@ -62,6 +64,7 @@ def testGeo(queriesAndResultsPath, binary_path):
     pingServer()
 
     #construct the query
+    failCount = 0
     radius=0.25
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
@@ -79,7 +82,7 @@ def testGeo(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json['results'], resultValue )
+        failCount += checkResult(query, response_json['results'], resultValue )
 
     #get pid of srch2-search-server and kill the process
     print '=============================='
@@ -92,10 +95,12 @@ def testGeo(queriesAndResultsPath, binary_path):
         a = s.split()
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd)
+    return failCount
+
 if __name__ == '__main__':   
     #Path of the query file
     #  each line like "-149.880918+61.155358||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testGeo(queriesAndResultsPath, binary_path)
-    
+    exitCount = testGeo(queriesAndResultsPath, binary_path)
+    os._exit(exitCount)
