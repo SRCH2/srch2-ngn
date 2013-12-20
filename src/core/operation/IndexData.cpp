@@ -63,7 +63,7 @@ IndexData::IndexData(const string &directoryName,
         if (createDir(directoryName.c_str()) == -1){
             throw std::runtime_error("Index Directory can not be created");
         }
-	}
+    }
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -72,10 +72,13 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex =new  InvertedIndex(this->forwardIndex);
-    else
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+        this->invertedIndex =new InvertedIndex(this->forwardIndex);
+        this->quadTree = NULL;
+    } else {
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
+        this->invertedIndex = NULL;
+    }
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
@@ -91,7 +94,7 @@ IndexData::IndexData(const string& directoryName)
     if(!checkDirExistence(directoryName.c_str())){
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
-	}
+    }
     Serializer serializer;
     try{
     	this->schemaInternal = new SchemaInternal();
@@ -102,7 +105,9 @@ IndexData::IndexData(const string& directoryName)
     	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    		this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+            this->invertedIndex = new InvertedIndex(this->forwardIndex);
+        else
+            this->invertedIndex = NULL;
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
