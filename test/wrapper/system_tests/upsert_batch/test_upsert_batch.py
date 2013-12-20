@@ -24,6 +24,7 @@ class UpsertTester:
     def startServer(self):
         os.popen('rm -rf ./upsert_batch/logs/')
 	os.popen('rm -rf ./upsert_batch/indexes/')
+	os.popen('rm -rf ./data/upsert_batch')
         #print ('starting engine: {0}'.format(self.startServerCommand))
         os.popen(self.startServerCommand)
 	#print 'server started'
