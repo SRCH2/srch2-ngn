@@ -24,29 +24,71 @@ bool SortByScoreOperator::open(QueryEvaluatorInternal * queryEvaluator, Physical
 		if(nextRecord == NULL){
 			break;
 		}
-		records.push_back(nextRecord);
+		// if topKBestRecords has less than K records insert this record into topKBestRecords
+		// ---- and if the size becomes K heapify it
+		// else
+		// check to see if this record is smaller than top record of topKBestRecords heap (minHeap)
+		// if it's smaller, then insert it in recordsAfterTopK,
+		// otherwise, pop the smallest element and insert it into recordsAfterTopK and insert this new record in topKBestRecords
+		if(topKBestRecords.size() < params.k){
+			topKBestRecords.push_back(nextRecord);
+			if(topKBestRecords.size() == params.k){
+				// heapify
+				std::make_heap(topKBestRecords.begin(),topKBestRecords.end(), SortByScoreOperator::SortByScoreRecordMinHeapComparator() );
+			}
+		}else{ // we must decide whether we want to add this record to top K records or not
+			PhysicalPlanRecordItem * kthBestRecordSoFar = topKBestRecords.front();
+			if(SortByScoreOperator::SortByScoreRecordMinHeapComparator()(kthBestRecordSoFar , nextRecord) == true){  // kthBestRecordSoFar > nextRecord
+				recordsAfterTopK.push_back(nextRecord);
+			}else{ // kthBestRecordSoFar < nextRecord
+				std::pop_heap (topKBestRecords.begin(),topKBestRecords.end() , SortByScoreOperator::SortByScoreRecordMinHeapComparator());
+				topKBestRecords.pop_back();
+				topKBestRecords.push_back(nextRecord);
+				std::push_heap (topKBestRecords.begin(),topKBestRecords.end(), SortByScoreOperator::SortByScoreRecordMinHeapComparator());
+				recordsAfterTopK.push_back(kthBestRecordSoFar);
+			}
+		}
 	}
 
-	// heapify the records to get the smallest one on top
-	std::make_heap(records.begin(),records.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+
+	// sort the topKBestRecords vector in ascending order (we should use maxHeap comparator)
+	// and we get the records from the tail because it's easier to remove the last element of vector
+	std::sort(topKBestRecords.begin(), topKBestRecords.end() , SortByScoreOperator::SortByScoreRecordMaxHeapComparator() );
+
+	isRecordsAfterTopKVectorSorted = false;
 	return true;
 }
 PhysicalPlanRecordItem * SortByScoreOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 
-	if(records.size() == 0){
+	if(topKBestRecords.size() > 0){
+		// get the next record to return
+		PhysicalPlanRecordItem * toReturn = topKBestRecords.front();
+		topKBestRecords.pop_back();
+		return toReturn;
+	}
+	// topKBestRecords vector was exhausted just in the last getNext call
+	// so now we should heapify the rest of records one time
+	if(isRecordsAfterTopKVectorSorted == false){
+
+		// make a max heap of these records
+		std::make_heap(recordsAfterTopK.begin(),recordsAfterTopK.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+		isRecordsAfterTopKVectorSorted = true;
+	}
+
+	if(recordsAfterTopK.size() == 0){
 		return NULL;
 	}
 
 	// get the next record to return
-	PhysicalPlanRecordItem * toReturn = records.front();
-	std::pop_heap(records.begin(),records.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
-	records.pop_back();
+	PhysicalPlanRecordItem * toReturn = recordsAfterTopK.front();
+	std::pop_heap(recordsAfterTopK.begin(),recordsAfterTopK.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+	recordsAfterTopK.pop_back();
 
 	return toReturn;
 }
 bool SortByScoreOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
-	records.clear();
+	recordsAfterTopK.clear();
 	return true;
 }
 bool SortByScoreOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

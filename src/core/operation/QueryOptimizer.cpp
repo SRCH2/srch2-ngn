@@ -60,9 +60,9 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	Logger::info("========================================================");
-	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	Logger::info("========================================================");
+//	Logger::info("========================================================");
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	Logger::info("========================================================");
 //	exit(0);
 	// end : print for test
 
@@ -360,10 +360,10 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 
-		Logger::info("========================================================" );
-		Logger::info("Cost is %d" , cost.cost);
-		(*treeOption)->printSubTree();
-		Logger::info("========================================================" );
+//		Logger::info("========================================================" );
+//		Logger::info("Cost is %d" , cost.cost);
+//		(*treeOption)->printSubTree();
+//		Logger::info("========================================================" );
 
 //		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
 //			minPlan = (*treeOption);
