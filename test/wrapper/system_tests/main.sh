@@ -64,6 +64,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 rm -rf data/ *.idx
 
@@ -76,7 +77,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
-
+rm -rf data/ *.idx
 
 test_id="save_shutdown_restart test"
 echo "---------------------do $test_id-----------------------"
@@ -86,6 +87,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="empty_index test"
@@ -96,6 +98,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="high_insert test"
@@ -107,6 +110,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 test_id="exact_A1 test"
 echo "---------------------do $test_id-----------------------"
@@ -117,6 +121,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="fuzzy_A1 test"
 echo "---------------------do $test_id-----------------------"
@@ -127,6 +133,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="exact_M1 test"
 echo "---------------------do $test_id-----------------------"
@@ -137,6 +145,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="fuzzy_M1 test"
 echo "---------------------do $test_id-----------------------"
@@ -147,6 +157,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="exact_Attribute_Based_Search test"
 echo "---------------------do $test_id-----------------------"
@@ -156,6 +168,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 test_id="fuzzy_Attribute_Based_Search test"
 echo "---------------------do $test_id-----------------------"
@@ -165,6 +178,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="exact_Attribute_Based_Search_Geo test"
 echo "---------------------do $test_id-----------------------"
@@ -175,6 +190,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="fuzzy_Attribute_Based_Search_Geo test"
 echo "---------------------do $test_id-----------------------"
@@ -185,6 +202,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="faceted search test"
 echo "---------------------do $test_id-----------------------"
@@ -195,6 +214,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="sort filter test"
 echo "---------------------do $test_id-----------------------"
@@ -205,6 +226,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="filter query test"
 echo "---------------------do $test_id-----------------------"
@@ -215,6 +238,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="test_solr_compatible_query_syntax"
 echo "---------------------do $test_id-----------------------"
@@ -222,6 +247,8 @@ python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py 
 
 # TODO - hack until we figure out why faceted results are do different
 echo "-- IGNORING FAILURE: $test_id"
+rm -rf data/ *.idx
+
 
 #if [ $? -gt 0 ]; then
 #    echo "FAILED: $test_id"
@@ -238,7 +265,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED:$test_id"
-
+rm -rf data/ *.idx
 
 
 test_id="date and time implementation test"
@@ -250,6 +277,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="geo test"
@@ -261,6 +289,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="term type test"
@@ -272,6 +301,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="analyzer end to end test"
@@ -283,6 +313,7 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 
 test_id="top_k test"
@@ -294,6 +325,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="reset logger test"
 echo "---------------------do $test_id-----------------------"
@@ -305,6 +338,8 @@ if [ $? -gt 0 ]; then
     exit 255
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="tests_used_for_statemedia"
 echo "---------------------do $test_id-----------------------"
@@ -313,6 +348,8 @@ ${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE_DIR >> s
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
 # won't run and tests_used_for_statemedia/update_endpoint_test
 echo "-- IGNORING FAILURE: $test_id"
+rm -rf data/ *.idx
+
 
 #if [ $? -gt 0 ]; then
 #    echo "FAILED: $test_id"
@@ -329,6 +366,8 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 test_id="test for batch insert"
 echo "---------------------do $test_id-----------------------"
@@ -339,6 +378,8 @@ if [ $? -gt 0 ]; then
     exit -1
 fi
 echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
+
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
