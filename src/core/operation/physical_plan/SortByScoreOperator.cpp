@@ -62,7 +62,7 @@ PhysicalPlanRecordItem * SortByScoreOperator::getNext(const PhysicalPlanExecutio
 
 	if(topKBestRecords.size() > 0){
 		// get the next record to return
-		PhysicalPlanRecordItem * toReturn = topKBestRecords.front();
+		PhysicalPlanRecordItem * toReturn = topKBestRecords.at(topKBestRecords.size()-1);
 		topKBestRecords.pop_back();
 		return toReturn;
 	}
