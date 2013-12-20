@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/fuzzy_attribute_based_search/</dataDir>
+    <dataDir>./data/exact_attribute_based_search_w_positional_info/</dataDir>
      
     <!--
         Data File
