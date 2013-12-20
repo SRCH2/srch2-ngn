@@ -215,20 +215,32 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
 // of parent open function.
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(estimatedNumberOfTerminalNodes); // cost of going over leaf nodes.
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(3);
+	resultCost.addInstructionCost(3 + 3 * estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	return resultCost ; // cost of going over leaf nodes.
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	return PhysicalPlanCost(5); // cost of sequential access
+
+	PhysicalPlanCost resultCost;
+	resultCost.addLargeFunctionCost();
+	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	return PhysicalPlanCost(1); // cost 1
+	PhysicalPlanCost resultCost;
+	resultCost.addSmallFunctionCost();
+	return resultCost;
 }
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(20 * estimatedNumberOfTerminalNodes); // cost of random access
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(5);
+	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	return resultCost;
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 	// no output property

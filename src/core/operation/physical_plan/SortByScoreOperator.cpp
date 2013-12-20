@@ -24,29 +24,71 @@ bool SortByScoreOperator::open(QueryEvaluatorInternal * queryEvaluator, Physical
 		if(nextRecord == NULL){
 			break;
 		}
-		records.push_back(nextRecord);
+		// if topKBestRecords has less than K records insert this record into topKBestRecords
+		// ---- and if the size becomes K heapify it
+		// else
+		// check to see if this record is smaller than top record of topKBestRecords heap (minHeap)
+		// if it's smaller, then insert it in recordsAfterTopK,
+		// otherwise, pop the smallest element and insert it into recordsAfterTopK and insert this new record in topKBestRecords
+		if(topKBestRecords.size() < params.k){
+			topKBestRecords.push_back(nextRecord);
+			if(topKBestRecords.size() == params.k){
+				// heapify
+				std::make_heap(topKBestRecords.begin(),topKBestRecords.end(), SortByScoreOperator::SortByScoreRecordMinHeapComparator() );
+			}
+		}else{ // we must decide whether we want to add this record to top K records or not
+			PhysicalPlanRecordItem * kthBestRecordSoFar = topKBestRecords.front();
+			if(SortByScoreOperator::SortByScoreRecordMinHeapComparator()(kthBestRecordSoFar , nextRecord) == true){  // kthBestRecordSoFar > nextRecord
+				recordsAfterTopK.push_back(nextRecord);
+			}else{ // kthBestRecordSoFar < nextRecord
+				std::pop_heap (topKBestRecords.begin(),topKBestRecords.end() , SortByScoreOperator::SortByScoreRecordMinHeapComparator());
+				topKBestRecords.pop_back();
+				topKBestRecords.push_back(nextRecord);
+				std::push_heap (topKBestRecords.begin(),topKBestRecords.end(), SortByScoreOperator::SortByScoreRecordMinHeapComparator());
+				recordsAfterTopK.push_back(kthBestRecordSoFar);
+			}
+		}
 	}
 
-	// heapify the records to get the smallest one on top
-	std::make_heap(records.begin(),records.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+
+	// sort the topKBestRecords vector in ascending order (we should use maxHeap comparator)
+	// and we get the records from the tail because it's easier to remove the last element of vector
+	std::sort(topKBestRecords.begin(), topKBestRecords.end() , SortByScoreOperator::SortByScoreRecordMaxHeapComparator() );
+
+	isRecordsAfterTopKVectorSorted = false;
 	return true;
 }
 PhysicalPlanRecordItem * SortByScoreOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 
-	if(records.size() == 0){
+	if(topKBestRecords.size() > 0){
+		// get the next record to return
+		PhysicalPlanRecordItem * toReturn = topKBestRecords.front();
+		topKBestRecords.pop_back();
+		return toReturn;
+	}
+	// topKBestRecords vector was exhausted just in the last getNext call
+	// so now we should heapify the rest of records one time
+	if(isRecordsAfterTopKVectorSorted == false){
+
+		// make a max heap of these records
+		std::make_heap(recordsAfterTopK.begin(),recordsAfterTopK.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+		isRecordsAfterTopKVectorSorted = true;
+	}
+
+	if(recordsAfterTopK.size() == 0){
 		return NULL;
 	}
 
 	// get the next record to return
-	PhysicalPlanRecordItem * toReturn = records.front();
-	std::pop_heap(records.begin(),records.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
-	records.pop_back();
+	PhysicalPlanRecordItem * toReturn = recordsAfterTopK.front();
+	std::pop_heap(recordsAfterTopK.begin(),recordsAfterTopK.end(), SortByScoreOperator::SortByScoreRecordMaxHeapComparator());
+	recordsAfterTopK.pop_back();
 
 	return toReturn;
 }
 bool SortByScoreOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
-	records.clear();
+	recordsAfterTopK.clear();
 	return true;
 }
 bool SortByScoreOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
@@ -61,16 +103,20 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfOpen(const PhysicalPl
 	 * =
 	 * O(1) + cost(child's open) + (cost(child's getNext) + O(1))*estimatedNumberOfResults + estimatedNumberOfResultsOfChild
 	 */
-	PhysicalPlanCost resultCost(1); // O(1)
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params); // cost(child's open)
 	// cost of fetching all the child's records
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	resultCost.addFunctionCallCost(2 * estimatedNumberOfResults);
+	resultCost.addInstructionCost(estimatedNumberOfResults);
 	resultCost = resultCost +
-			(1 + this->getChildAt(0)->getCostOfGetNext(params).cost) * estimatedNumberOfResults; // (cost(child's getNext) + O(1))*estimatedNumberOfResults
-	resultCost = resultCost + estimatedNumberOfResults; // make_heap (O(n))
+			(this->getChildAt(0)->getCostOfGetNext(params).cost) * estimatedNumberOfResults; // (cost(child's getNext) + O(1))*estimatedNumberOfResults
+	// sorting
+	resultCost.addMediumFunctionCost(); // make_ueap
+	resultCost.addSmallFunctionCost(estimatedNumberOfResults); // we assume make_heap calls estimatedNumberOfResults small functions
 
 	return resultCost;
-
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
@@ -78,21 +124,24 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfGetNext(const Physica
 	/*
 	 * cost : O(1) + log(estimatedNumberOfResults)
 	 */
-	PhysicalPlanCost resultCost(1); // O(1)
+	PhysicalPlanCost resultCost;
+	resultCost.addSmallFunctionCost(5);
+	resultCost.addInstructionCost();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	resultCost = resultCost + (unsigned)(log2((double)estimatedNumberOfResults));
+	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfResults + 1))); // + 1 is to avoid 0
+	// we assume make_heap calls estimatedNumberOfResults small functions
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost ;
-	resultCost = resultCost + 1;
+	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
 	return resultCost;
 }
 PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }

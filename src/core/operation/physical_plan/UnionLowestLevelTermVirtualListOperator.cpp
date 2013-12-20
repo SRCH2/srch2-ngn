@@ -191,24 +191,41 @@ bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanR
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	// cost of going over leaf nodes and making the heap
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(estimatedNumberOfTerminalNodes +
-			(unsigned)(estimatedNumberOfTerminalNodes * log2((double)estimatedNumberOfTerminalNodes))); // cost of going over leaf nodes and making the heap
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(3);
+	resultCost.addInstructionCost(3 + 3 * estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	// make_heap
+	resultCost.addFunctionCallCost();
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	return resultCost ; // cost of going over leaf nodes.
+
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(5 + (unsigned)(log2((double)estimatedNumberOfTerminalNodes))); // cost of sequential access + heap access
+	PhysicalPlanCost resultCost;
+	resultCost.addLargeFunctionCost();
+	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfTerminalNodes)));
+	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(estimatedNumberOfTerminalNodes); // cost of deleting heap items
+	PhysicalPlanCost resultCost;
+	resultCost.addInstructionCost(2 + estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(3);
+	return resultCost; // cost of deleting heap items
 }
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
-	return PhysicalPlanCost(20 * estimatedNumberOfTerminalNodes); // cost of random access
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(5);
+	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	return resultCost;
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
     prop.addProperty(PhysicalPlanIteratorProperty_SortByScore);

@@ -5,6 +5,7 @@
 #include "physical_plan/PhysicalOperators.h"
 #include "QueryEvaluatorInternal.h"
 #include "physical_plan/FilterQueryOperator.h"
+#include "util/Logger.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -59,9 +60,9 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	cout << "========================================================" << endl;
-	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	cout << "========================================================" << endl;
+//	Logger::info("========================================================");
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	Logger::info("========================================================");
 //	exit(0);
 	// end : print for test
 
@@ -157,8 +158,8 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 		childIndex ++;
 	}
 
-	if(totalNumberOfProducts > 100){
-		totalNumberOfProducts = 100;
+	if(totalNumberOfProducts > 500){
+		totalNumberOfProducts = 500;
 	}
 
 	// now we must find all possible combinations of children options
@@ -201,6 +202,11 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 			if((*ourOption)->validateChildren() == true){
 				treeOptions.push_back(*ourOption);
 			}
+//			else{
+//					cout << "========================== INVALID PLAN==============================" << endl;
+//					(*ourOption)->printSubTree();
+//					cout << "========================================================" << endl;
+//			}
 		}
 	}
 
@@ -354,16 +360,22 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 
-//		cout << "========================================================" << endl;
-//		cout << "Cost is " << cost.cost << endl;
+//		Logger::info("========================================================" );
+//		Logger::info("Cost is %d" , cost.cost);
 //		(*treeOption)->printSubTree();
-//		cout << "========================================================" << endl;
+//		Logger::info("========================================================" );
+
+//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+//			minPlan = (*treeOption);
+//			minCost = cost.cost;
+//			break;
+//		}
 
 		if(minPlan == NULL){
 			minPlan = (*treeOption);
 			minCost = cost.cost;
 		}else{
-			if(minCost < cost.cost){
+			if(minCost > cost.cost){
 				minPlan = (*treeOption);
 				minCost = cost.cost;
 			}
@@ -452,6 +464,14 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationNotOperator();
 			break;
 		}
+		case PhysicalPlanNode_UnionLowestLevelSuggestion:{
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOptimizationOperator();
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOperator();
+			break;
+		}
+		default:
+			ASSERT(false);
+			break;
 	}
 	optimizationResult->setLogicalPlanNode(chosenTree->getLogicalPlanNode());
 	optimizationResult->setExecutableNode(executableResult);

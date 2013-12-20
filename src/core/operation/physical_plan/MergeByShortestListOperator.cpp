@@ -160,12 +160,13 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
+	resultCost.addSmallFunctionCost(); // clear()
+	resultCost.addFunctionCallCost(2 + this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;
@@ -192,39 +193,42 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 		if(childOffset == indexOfShortestList){
 			continue;
 		}
-		recordProcessingCost = recordProcessingCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		recordProcessingCost.addMediumFunctionCost(this->getChildrenCount()); // cost of verify record with children
 	}
-	recordProcessingCost = recordProcessingCost + 1;
+	recordProcessingCost.addFunctionCallCost(15); // function calls
+	recordProcessingCost.addInstructionCost(4); // simple instructions and conditions
+	recordProcessingCost.addSmallFunctionCost(5); // small functions like push_back
 
 
 	recordProcessingCost.cost = (unsigned)( recordProcessingCost.cost * ( (estimatedLengthOfShortestList * 1.0) / (estimatedNumberOfResults) ));
+	// we assume results are distributed normally in the shortest list
 
-	// O(1)
-	recordProcessingCost = recordProcessingCost + 1;
 
 	return recordProcessingCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
+	resultCost.addSmallFunctionCost(); // clear()
+	resultCost.addFunctionCallCost(2 + 4 * this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;
 }
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addFunctionCallCost(2);
+	resultCost.addSmallFunctionCost();
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;

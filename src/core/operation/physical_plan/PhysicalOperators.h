@@ -234,6 +234,15 @@ public:
 			}
 		}
 	};
+	struct SortByScoreRecordMinHeapComparator{
+		bool operator()(const PhysicalPlanRecordItem * left , const PhysicalPlanRecordItem * right) const{
+			if(left->getRecordRuntimeScore() == right->getRecordRuntimeScore()){
+				return (left->getRecordId() < right->getRecordId());
+			}else{
+				return (left->getRecordRuntimeScore() > right->getRecordRuntimeScore());
+			}
+		}
+	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
@@ -241,7 +250,9 @@ public:
 	~SortByScoreOperator();
 private:
 	SortByScoreOperator() ;
-	vector< PhysicalPlanRecordItem * > records;
+	vector< PhysicalPlanRecordItem * > recordsAfterTopK;
+	bool isRecordsAfterTopKVectorSorted ;
+	vector< PhysicalPlanRecordItem * > topKBestRecords;
 };
 
 class SortByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {

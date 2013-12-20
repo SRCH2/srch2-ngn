@@ -38,19 +38,20 @@ bool RandomAccessVerificationAndOperator::verifyByRandomAccess(PhysicalPlanRando
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost RandomAccessVerificationAndOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addInstructionCost(2 + 2 * this->getChildrenCount()); // 2 + number of open calls + number of getNext calls
+	resultCost.addSmallFunctionCost(2); // clear()
+	resultCost.addFunctionCallCost(8 * this->getChildrenCount()); // 4 * (  number of open calls + number of getNext calls
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	// cost of initializing nextItems vector
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfGetNext(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;
@@ -58,29 +59,29 @@ PhysicalPlanCost RandomAccessVerificationAndOptimizationOperator::getCostOfOpen(
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost RandomAccessVerificationAndOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	return PhysicalPlanCost(); // cost is zero
+	return PhysicalPlanCost(1); // cost is zero
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost RandomAccessVerificationAndOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addInstructionCost(this->getChildrenCount()); // 3 + number of close calls
+	resultCost.addFunctionCallCost(4 * this->getChildrenCount()); // 2 + number of close calls
 
-	// cost of opening children
+	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationAndOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
+	resultCost.addSmallFunctionCost();
+	resultCost.addFunctionCallCost();
 
 	// cost of verifying children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
-		resultCost = resultCost + 1; // O(1)
 	}
 
 	return resultCost;
