@@ -86,7 +86,7 @@ python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -98,7 +98,7 @@ echo "---------------------do $test_id-----------------------"
 python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -111,7 +111,7 @@ echo "---------------------do $test_id-----------------------"
 python ./empty_index/empty_index.py $SRCH2_ENGINE_DIR >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -125,7 +125,7 @@ echo "---------------------do $test_id-----------------------"
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -138,7 +138,7 @@ python ./exact_a1/exact_A1.py $SRCH2_ENGINE_DIR ./exact_a1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -152,7 +152,7 @@ python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE_DIR ./fuzzy_a1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -166,7 +166,7 @@ python ./exact_m1/exact_M1.py $SRCH2_ENGINE_DIR ./exact_m1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -180,7 +180,7 @@ python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE_DIR ./fuzzy_m1/queriesAndResults.txt
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
@@ -193,7 +193,7 @@ echo "---------------------do $test_id-----------------------"
 python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./exact_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 fi
