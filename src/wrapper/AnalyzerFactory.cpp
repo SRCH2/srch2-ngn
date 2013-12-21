@@ -20,12 +20,12 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
+Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config) {
 
 	// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
 	StemmerNormalizerFlagType stemmerFlag;
 	// gets the stem flag and set the stemType
-	if (configMgr->getStemmerFlag()) {
+	if (config->getStemmerFlag()) {
 		stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
 	} else {
 		stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
@@ -33,18 +33,18 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 	// This flag shows if we need to keep the origin word or not.
 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 	// gets the stem flag and set the stemType
-	if (configMgr->getSynonymKeepOrigFlag()) {
+	if (config->getSynonymKeepOrigFlag()) {
 		synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
 	} else {
 		synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
 	}
 
 	// append the stemmer file to the install directory
-	std::string stemmerFilterFilePath = configMgr->getStemmerFile();
+	std::string stemmerFilterFilePath = config->getStemmerFile();
 	// gets the path of stopFilter
-	std::string stopFilterFilePath = configMgr->getStopFilePath();
+	std::string stopFilterFilePath = config->getStopFilePath();
 	// gets the path of stopFilter
-	std::string  synonymFilterFilePath = configMgr->getSynonymFilePath();
+	std::string  synonymFilterFilePath = config->getSynonymFilePath();
 
 	// Create an analyzer
 	return new Analyzer(stemmerFlag,
@@ -52,16 +52,16 @@ Analyzer* AnalyzerFactory::createAnalyzer(const ConfigManager* configMgr) {
 			stopFilterFilePath,
 			synonymFilterFilePath,
 			synonymKeepOriginFlag,
-			configMgr->getRecordAllowedSpecialCharacters());
+			config->getRecordAllowedSpecialCharacters());
 }
 
-Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configMgr) {
+Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 
 	static boost::thread_specific_ptr<Analyzer> _ts_analyzer_object;
 	if (_ts_analyzer_object.get() == NULL)
 	{
 		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
-		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(configMgr));
+		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(config));
 	}
 
 	Analyzer* analyzer = _ts_analyzer_object.get();
@@ -75,7 +75,7 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const ConfigManager* configM
 	return analyzer;
 }
 
-void AnalyzerHelper::initializeAnalyzerResource (const ConfigManager* conf) {
+void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf) {
 	if (conf->getProtectedWordsFilePath().compare("") != 0) {
 		ProtectedWordsContainer::getInstance().initProtectedWordsContainer(conf->getProtectedWordsFilePath());
 	}
@@ -90,7 +90,7 @@ void AnalyzerHelper::initializeAnalyzerResource (const ConfigManager* conf) {
 	}
 }
 
-void AnalyzerHelper::loadAnalyzerResource(const ConfigManager* conf) {
+void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
 	try{
 		const std::string& directoryName = conf->getIndexPath();
 		std::ifstream ifs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
@@ -113,7 +113,7 @@ void AnalyzerHelper::loadAnalyzerResource(const ConfigManager* conf) {
 	}
 }
 
-void AnalyzerHelper::saveAnalyzerResource(const ConfigManager* conf) {
+void AnalyzerHelper::saveAnalyzerResource(const CoreInfo_t* conf) {
 	try{
 		const std::string& directoryName = conf->getIndexPath();
 		std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);

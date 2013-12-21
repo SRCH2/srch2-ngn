@@ -49,7 +49,7 @@ class QueryPlanGen
 {
 public:
 
-	QueryPlanGen(const ParsedParameterContainer & paramsContainer , const ConfigManager *indexDataContainerConf );
+	QueryPlanGen(const ParsedParameterContainer & paramsContainer , const CoreInfo_t *config );
 
 
 	/*
@@ -60,7 +60,7 @@ public:
 
 private:
 	const ParsedParameterContainer & paramsContainer;
-	const ConfigManager *indexDataContainerConf ;
+	const CoreInfo_t *indexDataConfig ;
 
 	// creates a post processing plan based on information from Query
 	void createPostProcessingPlan(QueryPlan * plan);

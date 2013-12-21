@@ -28,30 +28,30 @@ namespace httpwrapper {
 // in the system.
 class SearchableAttributeInfoContainer {
 public:
-	SearchableAttributeInfoContainer(){
-		attributeName = "";
-		required = false;
-		defaultValue = "";
-		offset = 0;
-		boost = 1;
-		isMultiValued = false;
-	}
-	SearchableAttributeInfoContainer(const string & name,
-			const bool required,
-			const string & defaultValue ,
-			const unsigned offset,
-			const unsigned boost,
-			const bool isMultiValued){
-		this->attributeName = name;
-		this->required = required;
-		this->defaultValue = defaultValue;
-		this->offset = offset;
-		this->boost = boost;
-		this->isMultiValued = isMultiValued;
-	}
- 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
-	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
-	// VALUES AND HAS NO BEHAVIOUR
+    SearchableAttributeInfoContainer(){
+        attributeName = "";
+	required = false;
+	defaultValue = "";
+	offset = 0;
+	boost = 1;
+	isMultiValued = false;
+    }
+    SearchableAttributeInfoContainer(const string & name,
+				     const bool required,
+				     const string & defaultValue ,
+				     const unsigned offset,
+				     const unsigned boost,
+				     const bool isMultiValued){
+        this->attributeName = name;
+        this->required = required;
+        this->defaultValue = defaultValue;
+        this->offset = offset;
+        this->boost = boost;
+        this->isMultiValued = isMultiValued;
+    }
+    // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+    // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+    // VALUES AND HAS NO BEHAVIOUR
     string attributeName;
     bool required;
     string defaultValue;
@@ -62,175 +62,130 @@ public:
 
 class RefiningAttributeInfoContainer {
 public:
-	RefiningAttributeInfoContainer(){
-		attributeName = "";
-		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
-		attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
-		defaultValue = "";
-		required = false;
-		isMultiValued = false;
-	}
-	RefiningAttributeInfoContainer(const string & name,
-			srch2::instantsearch::FilterType type,
-				const string & defaultValue,
-				const bool required,
-				const bool isMultiValued){
-		this->attributeName = name;
-		this->attributeType = type;
-		this->defaultValue = defaultValue;
-		this->required = required;
-		this->isMultiValued = isMultiValued;
-	}
- 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
-	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
-	// VALUES AND HAS NO BEHAVIOUR
-	string attributeName;
-	srch2::instantsearch::FilterType attributeType;
-	string defaultValue;
-	bool required;
-	bool isMultiValued;
+    RefiningAttributeInfoContainer(){
+        attributeName = "";
+	// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
+	attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+	defaultValue = "";
+	required = false;
+	isMultiValued = false;
+    }
+    RefiningAttributeInfoContainer(const string & name,
+				   srch2::instantsearch::FilterType type,
+				   const string & defaultValue,
+				   const bool required,
+				   const bool isMultiValued){
+        this->attributeName = name;
+	this->attributeType = type;
+	this->defaultValue = defaultValue;
+	this->required = required;
+	this->isMultiValued = isMultiValued;
+    }
+    // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
+    // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
+    // VALUES AND HAS NO BEHAVIOUR
+    string attributeName;
+    srch2::instantsearch::FilterType attributeType;
+    string defaultValue;
+    bool required;
+    bool isMultiValued;
+};
+
+class CoreInfo_t;
+
+// helper state between different sections of the config file
+struct CoreConfigParseState_t {
+    bool hasLatitude;
+    bool hasLongitude;
+    vector<string> searchableFieldsVector;
+	vector<string> searchableFieldTypesVector;
+    vector<bool> searchableAttributesRequiredFlagVector;
+    vector<string> searchableAttributesDefaultVector;
+    vector<bool> searchableAttributesIsMultiValued;
+
+    CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
 class ConfigManager {
+public:
+    typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+
 private:
 
-	// <config>
-	string licenseKeyFile;
-	string httpServerListeningHostname;
-	string httpServerListeningPort;
-	string srch2Home;
-	string indexPath;
-	string filePath;
+    // <config>
+    string licenseKeyFile;
+    string httpServerListeningHostname;
+    string httpServerListeningPort;
+    string srch2Home;
+
+    // <config><query><rankingAlgorithm>
+    string scoringExpressionString;
 
 
-	// <confgi><indexConfig>
-	bool recordBoostFieldFlag;
-	string recordBoostField;
-	unsigned queryTermBoost;
-	IndexCreateOrLoad indexCreateOrLoad;
+    // <config><query>
+    float fuzzyMatchPenalty;
+    float queryTermSimilarityThreshold;
+    float queryTermLengthBoost;
+    float prefixMatchPenalty;
+    vector<string> sortableAttributes;
+    vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
+    vector<string> sortableAttributesDefaultValue;
+    unsigned cacheSizeInBytes;
+    int resultsToRetrieve;
+    int numberOfThreads;
+    bool exactFuzzy;
+    bool queryTermPrefixType;
 
+    unsigned defaultNumberOfSuggestions;
 
-	// <config><query><rankingAlgorithm>
-	string scoringExpressionString;
+    // <config><query><queryResponseWriter>
+    int searchResponseJsonFormat;
+    vector<string> attributesToReturn;
 
+    // <config><query>
+    WriteApiType writeApiType;
 
-	// <config><query>
-	float fuzzyMatchPenalty;
-	float queryTermSimilarityThreshold;
-	float queryTermLengthBoost;
-	float prefixMatchPenalty;
-	vector<string> sortableAttributes;
-	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-	vector<string> sortableAttributesDefaultValue;
-	unsigned cacheSizeInBytes;
-	int resultsToRetrieve;
-	int numberOfThreads;
-	int searchType;
-	bool exactFuzzy;
-	bool queryTermPrefixType;
+    // <config><updatehandler>
+    uint64_t memoryLimit;
+    uint32_t documentLimit;
 
-	unsigned defaultNumberOfSuggestions;
+    // <config><updatehandler><mergePolicy>
+    unsigned mergeEveryNSeconds;
+    unsigned mergeEveryMWrites;
 
+    // no config option for this yet
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
 
-	// <config><query><queryResponseWriter>
-	int searchResponseJsonFormat;
-	vector<string> attributesToReturn;
+    // <config><keywordPopularitythreshold>
+    unsigned keywordPopularityThreshold;
 
-
-	// <config><query>
-	DataSourceType dataSourceType;
-	WriteApiType writeApiType;
-
-
-	// <config><updatehandler>
-	uint64_t memoryLimit;
-	uint32_t documentLimit;
-
-	// <config><updatehandler><mergePolicy>
-	unsigned mergeEveryNSeconds;
-	unsigned mergeEveryMWrites;
-
-	// no config option for this yet
-	unsigned updateHistogramEveryPMerges;
-	unsigned updateHistogramEveryQWrites;
-
-	// <config><keywordPopularitythreshold>
-	unsigned keywordPopularityThreshold;
-
-	// <config><updatehandler><updateLog>
-	Logger::LogLevel loglevel;
+    // <config><updatehandler><updateLog>
+    Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
     string httpServerErrorLogFile;
 
-    // <schema><fields>
-	string fieldLatitude;
-	string fieldLongitude;
-	int indexType;
+    uint32_t writeReadBufferInBytes;
 
-	// <schema>
-	string primaryKey;
+    float defaultSpatialQueryBoundingBox;
 
-	// <schema><types><fieldType><analyzer><filter>
-	bool stemmerFlag;
-	std::string stemmerFile;
-	std::string synonymFilterFilePath;
-	bool synonymKeepOrigFlag;
-	std::string stopFilterFilePath;
-	std::string protectedWordsFilePath;
+    srch2::instantsearch::ResponseType searchResponseFormat;
+    string attributeStringForMySQLQuery;
 
-	string trieBootstrapDictFile;
-	uint32_t writeReadBufferInBytes;
+    //vector<string> searchableAttributes;
 
-    bool supportSwapInEditDistance;
-	float defaultSpatialQueryBoundingBox;
+    //vector<unsigned> attributesBoosts;
 
-	srch2::instantsearch::ResponseType searchResponseFormat;
-	string attributeStringForMySQLQuery;
-
-	//vector<string> searchableAttributes;
-
-    map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
-	string attributeRecordBoost;
-
-	map<string , RefiningAttributeInfoContainer > RefiningAttributesInfo;
-
-
-
-	// facet
-	bool facetEnabled;
-	vector<int> facetTypes; // 0 : simple , 1 : range
-	vector<string> facetAttributes;
-	vector<string> facetStarts;
-	vector<string> facetEnds;
-	vector<string> facetGaps;
-
-
-	//vector<unsigned> attributesBoosts;
-
-	std::string allowedRecordTokenizerCharacters;
-	int isPrimSearchable;
-	bool supportAttributeBasedSearch;
-
-	bool enablePositionIndex;
-	int attributeToSort;
-	int ordering;
-	//string httpServerDocumentRoot;
+    int attributeToSort;
+    int ordering;
+    //string httpServerDocumentRoot;
     string configFile;
 
-    // mongo db related settings
-	string mongoHost;
-	string mongoPort;
-	string mongoDbName;
-	string mongoCollection;
-	unsigned mongoListenerWaitTime;
-	// stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-	unsigned mongoListenerMaxRetryOnFailure;
-
-	// related to optimizing getAllResults. If the estimated number of results is
-	// greater than getAllResultsNumberOfResultsThreshold, getAllResults only find
-	// getAllResultsNumberOfResultsToFindInEstimationMode results.
-	unsigned getAllResultsNumberOfResultsThreshold;
-	unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
+    // related to optimizing getAllResults. If the estimated number of results is
+    // greater than getAllResultsNumberOfResultsThreshold, getAllResults only find
+    // getAllResultsNumberOfResultsToFindInEstimationMode results.
+    unsigned getAllResultsNumberOfResultsThreshold;
+    unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
 
 
     void splitString(string str, const string& delimiter, vector<string>& result);
@@ -243,7 +198,7 @@ private:
     bool isValidFieldDefaultValue(string& defaultValue, srch2::instantsearch::FilterType fieldType, bool isMultiValued);
     bool isValidBoostFieldValues(map<string, unsigned>& boostMap);
     bool isValidBool(string& fieldType);
-    bool isValidBoostFields(map <string, unsigned>& boosts);
+    bool isValidBoostFields(const CoreInfo_t *coreInfo, map <string, unsigned>& boosts);
     bool isValidQueryTermBoost(string& quertTermBoost);
     bool isValidIndexCreateOrLoad(string& indexCreateLoad);
     bool isValidRecordScoreExpession(string& recordScoreExpression);
@@ -278,131 +233,136 @@ private:
 
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
+protected:
+    CoreInfoMap_t coreInfoMap;
+
+    // <config><cores>
+    string defaultCoreName;
+
+    // parsing helper functions for modularity
+    void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    // parse all data source settings (can handle multiple cores or default/no core)
+    void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    // parse all settings for a single data source, either under <config> or within a <core>
+    void parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    
 public:
     ConfigManager(const string& configfile);
-	virtual ~ConfigManager();
+    virtual ~ConfigManager();
 
-	void _setDefaultSearchableAttributeBoosts(			const vector<string> &searchableAttributesVector);
+    CoreInfo_t *getCoreInfoMap(const string &coreName) const;
+    CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
+    CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
+	const CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
 
-	void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void _setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector);
 
-	const std::string& getCustomerName() const; //XXX: REMOVE?
-	uint32_t getDocumentLimit() const;
-	uint64_t getMemoryLimit() const;
+    void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-	const std::string& getIndexPath() const;
-	const std::string& getFilePath() const;
-	const std::string& getPrimaryKey() const;
+    const std::string& getCustomerName() const; //XXX: REMOVE?
+    uint32_t getDocumentLimit() const;
+    uint64_t getMemoryLimit() const;
 
-	const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes() const;
+    const std::string& getIndexPath(const string &coreName) const;
+    const std::string& getPrimaryKey(const string &coreName) const;
 
-	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes() const;
+    const map<string, SearchableAttributeInfoContainer > * getSearchableAttributes(const string &coreName) const;
 
-    const vector<string> * getAttributesToReturnName() const;
+    const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes(const string &coreName) const;
 
+    //const vector<unsigned>* getAttributesBoosts() const;
+    const std::string& getAttributeRecordBoostName(const string &coreName) const;
+    //string getDefaultAttributeRecordBoost() const;
+    const std::string& getScoringExpressionString() const;
 
+    const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
+    int getSearchType(const string &coreName) const;
+    int getIsPrimSearchable(const string &coreName) const;
+    bool getIsFuzzyTermsQuery() const;
+    bool getQueryTermPrefixType() const;
+    bool getStemmerFlag(const string &coreName) const;
+    const string &getSynonymFilePath(const string &coreName) const;
+    const string &getProtectedWordsFilePath(const string &coreName) const;
+    bool getSynonymKeepOrigFlag(const string &coreName) const; // Synonym: if we want to keep the original word or replace the synonym with it.
+    const string &getStopFilePath(const string &coreName) const; // StopFilter File Path
+    const string &getStemmerFile(const string &coreName) const; // stemmer file
+    const string &getSrch2Home() const; // Srch2Home Directory
+    unsigned getQueryTermBoost(const string &coreName) const;
+    float getFuzzyMatchPenalty() const;
+    float getQueryTermSimilarityThreshold() const ;
+    float getQueryTermLengthBoost() const;
+    float getPrefixMatchPenalty() const;
+    bool getSupportAttributeBasedSearch(const string &coreName) const;
+    int getDefaultResultsToRetrieve() const;
+    int getAttributeToSort() const;
+    int getOrdering() const;
 
-	//const vector<unsigned>* getAttributesBoosts() const;
-	const std::string& getAttributeRecordBoostName() const;
-	//string getDefaultAttributeRecordBoost() const;
-	const std::string& getScoringExpressionString() const;
+    uint32_t getCacheSizeInBytes() const;
+    uint32_t getMergeEveryNSeconds() const;
+    uint32_t getMergeEveryMWrites() const;
 
-	const std::string& getRecordAllowedSpecialCharacters() const;
-	int getSearchType() const;
-	int getIsPrimSearchable() const;
-	bool getIsFuzzyTermsQuery() const;
-	bool getQueryTermPrefixType() const;
-	bool getStemmerFlag() const;
-	string getSynonymFilePath() const;
-	string getProtectedWordsFilePath() const;
-	bool getSynonymKeepOrigFlag() const; // Synonym: if we want to keep the original word or replace the synonym with it.
-	string getStopFilePath() const; // StopFilter File Path
-	string getStemmerFile() const; // stemmer file
-	string getSrch2Home() const; // Srch2Home Directory
-	unsigned getQueryTermBoost() const;
-	float getFuzzyMatchPenalty() const;
-	float getQueryTermSimilarityThreshold() const ;
-	float getQueryTermLengthBoost() const;
-	float getPrefixMatchPenalty() const;
-	bool getSupportAttributeBasedSearch() const;
-	int getDefaultResultsToRetrieve() const;
-	int getAttributeToSort() const;
-	int getOrdering() const;
+    uint32_t getUpdateHistogramEveryPMerges() const;
+    uint32_t getUpdateHistogramEveryQWrites() const;
 
-	uint32_t getCacheSizeInBytes() const;
-	uint32_t getMergeEveryNSeconds() const;
-	uint32_t getMergeEveryMWrites() const;
+    unsigned getKeywordPopularityThreshold() const ;
 
-	uint32_t getUpdateHistogramEveryPMerges() const;
-	uint32_t getUpdateHistogramEveryQWrites() const;
+    int getNumberOfThreads() const;
 
-	unsigned getKeywordPopularityThreshold() const ;
+    WriteApiType getWriteApiType() const;
 
-	int getNumberOfThreads() const;
+    srch2::instantsearch::ResponseType getSearchResponseFormat() const;
+    const std::string& getAttributeStringForMySQLQuery() const;
+    int getSearchResponseJSONFormat() const;
 
-	DataSourceType getDataSourceType() const;
-	WriteApiType getWriteApiType() const;
+    const std::string& getLicenseKeyFileName() const;
 
-	srch2::instantsearch::ResponseType getSearchResponseFormat() const;
-	const std::string& getAttributeStringForMySQLQuery() const;
-	int getSearchResponseJSONFormat() const;
+    const std::string& getHTTPServerAccessLogFile() const;
+    const Logger::LogLevel& getHTTPServerLogLevel() const;
+    const std::string& getHTTPServerListeningHostname() const;
+    const std::string& getHTTPServerListeningPort() const;
 
-	const std::string& getLicenseKeyFileName() const;
-	const std::string& getTrieBootstrapDictFileName() const;
+    bool isRecordBoostAttributeSet(const string &coreName) const;
 
-	const std::string& getHTTPServerAccessLogFile() const;
-	const Logger::LogLevel& getHTTPServerLogLevel() const;
-	const std::string& getHTTPServerListeningHostname() const;
-	const std::string& getHTTPServerListeningPort() const;
+    int getIndexType(const string &coreName) const;
+    bool getSupportSwapInEditDistance(const string &coreName) const;
+    const std::string& getAttributeLatitude(const string &coreName) const;
+    const std::string& getAttributeLongitude(const string &coreName) const;
+    float getDefaultSpatialQueryBoundingBox() const;
 
-	bool isRecordBoostAttributeSet() const;
-
-	int getIndexType() const;
-	bool getSupportSwapInEditDistance() const;
-	const std::string& getAttributeLatitude() const;
-	const std::string& getAttributeLongitude() const;
-	float getDefaultSpatialQueryBoundingBox() const;
-
-	vector<string> getAttributesToReturn() const {
-		return attributesToReturn;
-	}
-
-	void setAttributesToReturn(vector<string> attributesToReturn) {
-		this->attributesToReturn = attributesToReturn;
-	}
-
-
-	bool isFacetEnabled() const;
-
-	const vector<string> * getFacetAttributes() const ;
-	const vector<int> * getFacetTypes() const;
-	const vector<string> * getFacetStarts() const ;
-	const vector<string> * getFacetEnds() const ;
-
-	const vector<string> * getFacetGaps() const ;
-
-	void loadConfigFile() ;
-
-	// Mongo related getter/setter
-	const string& getMongoServerHost() const{
-		return mongoHost;
-	}
-	const string& getMongoServerPort() const{
-		return mongoPort;
-	}
-    const string& getMongoDbName() const{
-    	return mongoDbName;
-    }
-    const string& getMongoCollection () const{
-    	return mongoCollection;
-    }
-    const unsigned getMongoListenerWaitTime () const{
-    	return mongoListenerWaitTime;
+    const vector<string> *getAttributesToReturn() const {
+        return &attributesToReturn;
     }
 
-    const unsigned getMongoListnerMaxRetryCount() const {
-    	return mongoListenerMaxRetryOnFailure;
+    void setAttributesToReturn(vector<string> attributesToReturn) {
+        this->attributesToReturn = attributesToReturn;
     }
+
+    bool isFacetEnabled(const string &coreName) const;
+
+    const vector<string> * getFacetAttributes(const string &coreName) const ;
+    const vector<int> * getFacetTypes(const string &coreName) const;
+    const vector<string> * getFacetStarts(const string &coreName) const ;
+    const vector<string> * getFacetEnds(const string &coreName) const ;
+    const vector<string> * getFacetGaps(const string &coreName) const ;
+
+    void loadConfigFile() ;
+
+    // Mongo related getter/setter
+    const string& getMongoServerHost(const string &coreName) const;
+    const string& getMongoServerPort(const string &coreName) const;
+    const string& getMongoDbName(const string &coreName) const;
+    const string& getMongoCollection (const string &coreName) const;
+    const unsigned getMongoListenerWaitTime (const string &coreName) const;
+    const unsigned getMongoListenerMaxRetryCount(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
     	return this->getAllResultsNumberOfResultsThreshold;
@@ -412,14 +372,18 @@ public:
     	return this->getAllResultsNumberOfResultsToFindInEstimationMode;
     }
 
-    // THIS FUNCTION IS JUST FOR WRAPPER TEST
-    void setFilePath(const string& dataFile);
-
-    bool isPositionIndexEnabled() const;
+    bool isPositionIndexEnabled(const string &coreName) const;
 
     unsigned getDefaultNumberOfSuggestionsToReturn() const {
     	return defaultNumberOfSuggestions;
     }
+
+    const string &getDefaultCoreName() const
+    {
+        return defaultCoreName;
+    }
+
+    CoreInfo_t *getDefaultCoreInfo() const;
 
 private:
 
@@ -509,6 +473,213 @@ private:
     static const char* const keywordPopularityThresholdString;
     static const char* const getAllResultsMaxResultsThreshold;
     static const char* const getAllResultsKAlternative;
+    static const char* const multipleCoresString;
+    static const char* const singleCoreString;
+    static const char* const defaultCoreNameString;
+    static const char* const hostPortString;
+    static const char* const instanceDirString;
+    static const char* const schemaFileString;
+};
+
+// definitions for data source(s) (srch2Server objects within one HTTP server)
+class CoreInfo_t {
+
+public:
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
+    CoreInfo_t(const CoreInfo_t &src);
+
+    friend class ConfigManager;
+
+    // **** accessors for settings in every core ****
+    const string &getName() const { return name; }
+
+    const string &getDataDir() const { return dataDir; }
+    const string &getIndexPath() const { return indexPath; }
+    DataSourceType getDataSourceType() const { return dataSourceType; }
+    const string &getDataFile() const { return dataFile; }
+    const string &getDataFilePath() const { return dataFilePath; }
+
+    // THIS FUNCTION IS JUST FOR WRAPPER TEST
+    void setDataFilePath(const string& path);
+
+    const string &getMongoServerHost() const { return mongoHost; }
+    const string &getMongoServerPort() const { return mongoPort; }
+    const string &getMongoDbName() const { return mongoDbName; }
+    const string &getMongoCollection() const { return mongoCollection; }
+    unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
+    unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
+    unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
+
+    int getIndexType() const { return indexType; }
+    int getSearchType() const { return searchType; }
+    int getSearchType(const string &coreName) const { return configManager->getSearchType(coreName); }
+    const string &getPrimaryKey() const { return primaryKey; }
+    int getIsPrimSearchable() const { return isPrimSearchable; }
+
+    bool isPositionIndexEnabled() const { return enablePositionIndex; }
+
+    bool getSupportSwapInEditDistance() const
+        { return supportSwapInEditDistance; }
+    bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
+    unsigned getQueryTermBoost() const { return queryTermBoost; }
+    int getOrdering() const { return configManager->getOrdering(); }
+
+    const map<string, SearchableAttributeInfoContainer > *getSearchableAttributes() const
+        { return &searchableAttributesInfo; }
+    const map<string, RefiningAttributeInfoContainer > *getRefiningAttributes() const
+      { return &refiningAttributesInfo; }
+    bool isRecordBoostAttributeSet() const { return recordBoostFieldFlag; }
+    const std::string& getAttributeRecordBoostName() const { return recordBoostField; }
+
+    bool isFacetEnabled() const { return facetEnabled; }
+    const vector<string> *getFacetAttributes() const { return &facetAttributes; }
+    const vector<string> *getFacetStarts() const { return &facetStarts; }
+    const vector<string> *getFacetEnds() const { return &facetEnds; }
+    const vector<string> *getFacetGaps() const { return &facetGaps; }
+    const vector<int> *getFacetTypes() const { return &facetTypes; }
+
+    string getAttributeLatitude() const { return fieldLatitude; }
+    string getAttributeLongitude() const { return fieldLongitude; }
+
+    bool getStemmerFlag() const { return stemmerFlag; }
+    bool getSynonymKeepOrigFlag() const { return synonymKeepOrigFlag; }
+    const string &getStemmerFile() const { return stemmerFile; }
+    const string &getSynonymFilePath() const { return synonymFilterFilePath; }
+    const string &getStopFilePath() const { return stopFilterFilePath; }
+    const string &getProtectedWordsFilePath() const { return protectedWordsFilePath; }
+    const string& getRecordAllowedSpecialCharacters() const
+        { return allowedRecordTokenizerCharacters; }
+
+
+    // **** accessors for settings in ConfigManager (global to all cores) ****
+    const string &getSrch2Home() const { return configManager->getSrch2Home(); }
+    const string& getLicenseKeyFileName() const { return configManager->getLicenseKeyFileName(); }
+    const string& getHTTPServerListeningHostname() const
+	    { return configManager->getHTTPServerListeningHostname(); }
+    const string& getHTTPServerListeningPort() const { return configManager->getHTTPServerListeningPort(); }
+    const string& getHTTPServerAccessLogFile() const { return configManager->getHTTPServerAccessLogFile(); }
+    const Logger::LogLevel& getHTTPServerLogLevel() const
+        { return configManager->getHTTPServerLogLevel(); }
+
+    uint32_t getDocumentLimit() const { return configManager->getDocumentLimit(); }
+    uint64_t getMemoryLimit() const { return configManager->getMemoryLimit(); }
+    int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
+
+    srch2::instantsearch::ResponseType getSearchResponseFormat() const
+      { return configManager->getSearchResponseFormat(); }
+    int getSearchResponseJSONFormat() const { return configManager->getSearchResponseJSONFormat(); }
+
+    bool getIsFuzzyTermsQuery() const { return configManager->getIsFuzzyTermsQuery(); }
+    int getDefaultResultsToRetrieve() const
+        { return configManager->getDefaultResultsToRetrieve(); }
+    float getQueryTermLengthBoost() const { return configManager->getQueryTermLengthBoost(); }
+    float getPrefixMatchPenalty() const { return configManager->getPrefixMatchPenalty(); }
+
+    const vector<string> *getAttributesToReturn() const
+        { return configManager->getAttributesToReturn(); }
+    int getAttributeToSort() const { return configManager->getAttributeToSort(); }
+
+    float getDefaultSpatialQueryBoundingBox() const
+	    { return configManager->getDefaultSpatialQueryBoundingBox(); }
+
+    unsigned int getKeywordPopularityThreshold() const
+        { return configManager->getKeywordPopularityThreshold(); }
+    const std::string& getScoringExpressionString() const
+        { return configManager->getScoringExpressionString(); }
+    float getQueryTermSimilarityThreshold() const
+        { return configManager->getQueryTermSimilarityThreshold(); }
+    bool getQueryTermPrefixType() const
+        { return configManager->getQueryTermPrefixType(); }
+
+    const unsigned getGetAllResultsNumberOfResultsThreshold() const
+        { return configManager->getGetAllResultsNumberOfResultsThreshold(); }
+    const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const
+        { return configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode(); }
+    unsigned getDefaultNumberOfSuggestionsToReturn() const
+        { return configManager->getDefaultNumberOfSuggestionsToReturn(); }
+    float getFuzzyMatchPenalty() const { return configManager->getFuzzyMatchPenalty(); }
+
+    uint32_t getUpdateHistogramEveryPMerges() const
+        { return configManager->getUpdateHistogramEveryPMerges(); }
+    uint32_t getUpdateHistogramEveryQWrites() const
+        { return configManager->getUpdateHistogramEveryQWrites(); }
+
+    uint32_t getCacheSizeInBytes() const { return configManager->getCacheSizeInBytes(); }
+    uint32_t getMergeEveryNSeconds() const { return configManager->getMergeEveryNSeconds(); }
+    uint32_t getMergeEveryMWrites() const { return configManager->getMergeEveryMWrites(); }
+
+    WriteApiType getWriteApiType() const { return configManager->getWriteApiType(); }
+
+protected:
+    string name; // of core
+
+    ConfigManager *configManager;
+
+    string dataDir;
+    string indexPath; // srch2Home + dataDir
+    DataSourceType dataSourceType;
+    string dataFile;
+    string dataFilePath;
+
+    // mongo db related settings
+    string mongoHost;
+    string mongoPort;
+    string mongoDbName;
+    string mongoCollection;
+    unsigned mongoListenerWaitTime;
+
+    // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
+    unsigned mongoListenerMaxRetryOnFailure;
+
+    int isPrimSearchable;
+
+    // <schema>
+    string primaryKey;
+
+    // <schema><fields>
+    string fieldLatitude;
+    string fieldLongitude;
+
+    int indexType;
+
+    map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
+    map<string , RefiningAttributeInfoContainer > refiningAttributesInfo;
+
+    // <IndexConfig>
+    bool supportSwapInEditDistance;
+
+    bool enablePositionIndex;
+
+    bool recordBoostFieldFlag;
+    string recordBoostField;
+    string getrecordBoostField() const { return recordBoostField; }
+    unsigned queryTermBoost;
+    IndexCreateOrLoad indexCreateOrLoad;
+    IndexCreateOrLoad getindexCreateOrLoad() const { return indexCreateOrLoad; }
+
+    // <config><query>
+    int searchType;
+
+    bool supportAttributeBasedSearch;
+
+    // facet
+    bool facetEnabled;
+    vector<int> facetTypes; // 0 : simple , 1 : range
+    vector<string> facetAttributes;
+    vector<string> facetStarts;
+    vector<string> facetEnds;
+    vector<string> facetGaps;
+
+    // <schema><types><fieldType><analyzer><filter>
+    bool stemmerFlag;
+    std::string stemmerFile;
+    std::string synonymFilterFilePath;
+    bool synonymKeepOrigFlag;
+    std::string stopFilterFilePath;
+    std::string protectedWordsFilePath;
+
+    std::string allowedRecordTokenizerCharacters;
+
 };
 
 }

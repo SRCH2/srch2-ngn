@@ -45,7 +45,7 @@ void buildIndex(string data_file, string index_dir)
     unsigned updateHistogramEveryQWrites = 5;
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *index = Indexer::load(indexMetaData);
 
     cout << "Index loaded." << endl;

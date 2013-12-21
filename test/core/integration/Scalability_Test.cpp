@@ -41,7 +41,7 @@ void buildIndex(string dataFile, string indexDir) {
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -110,7 +110,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -353,7 +353,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *index = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcher = IndexSearcher::create(index);
 

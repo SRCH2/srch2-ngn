@@ -1,4 +1,4 @@
-
+\
 // $Id: EditDistance_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
@@ -71,7 +71,7 @@ void buildLocalIndex(string INDEX_DIR)
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
@@ -129,7 +129,7 @@ void test1()
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(true);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
@@ -238,7 +238,7 @@ void test2()
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(false);
     IndexSearcher *indexSearcher = IndexSearcher::create(indexer);

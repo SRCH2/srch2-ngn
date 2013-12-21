@@ -80,7 +80,7 @@ void addSimpleRecords()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
     
@@ -308,7 +308,7 @@ void test1()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     indexer = Indexer::load(indexMetaData1);
 
     //threadNumber = 1000;

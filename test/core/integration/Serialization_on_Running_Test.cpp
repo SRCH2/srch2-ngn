@@ -45,7 +45,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -185,7 +185,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -390,7 +390,7 @@ void testDefaultIndex(string index_dir)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
@@ -435,7 +435,7 @@ void testGeoIndex(string index_dir)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);

@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     indexerDataContainer.indexer = Indexer::load(indexMetaData1);
     indexerDataContainer.analyzer = getAnalyzer();
 

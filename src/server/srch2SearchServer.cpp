@@ -34,6 +34,7 @@
 #include <signal.h>
 
 #include <sys/types.h>
+#include <map>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -59,7 +60,10 @@ using std::string;
 #define MAX_SESSIONS 2
 #define SESSION_TTL 120
 
-srch2http::Srch2Server server;
+// named access to multiple "cores" (ala Solr)
+typedef std::map<const std::string, srch2http::Srch2Server *> ServerMap_t;
+ServerMap_t servers;
+srch2http::Srch2Server *defaultCore = NULL;
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -598,13 +602,39 @@ int main(int argc, char** argv) {
         Logger::setOutputFile(stdout);
         Logger::error("Open Log file %s failed.",
                 serverConf->getHTTPServerAccessLogFile().c_str());
-    } else
+    } else {
         Logger::setOutputFile(logFile);
+    }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
+
+    // create a server (core) for each data source in config file
+    for (ConfigManager::CoreInfoMap_t::iterator iterator = serverConf->coreInfoIterateBegin();
+         iterator != serverConf->coreInfoIterateEnd(); iterator++) {
+
+        srch2http::Srch2Server *core = new srch2http::Srch2Server;
+        core->setCoreName(iterator->second->getName());
+        servers[iterator->second->getName()] = core;
+    }
+
+    // make sure we have identified the default core
+    if (defaultCore == NULL && serverConf->getDefaultCoreName().compare("") != 0) {
+        defaultCore = servers[serverConf->getDefaultCoreName()];
+    }
+
+    // if no core created from ConfigManager, then create a default one
+    if (servers.empty()) {
+        ASSERT(defaultCore == NULL);
+
+        defaultCore = new srch2http::Srch2Server();
+        defaultCore->setCoreName(serverConf->getDefaultCoreName());
+        servers[defaultCore->getCoreName()] = defaultCore;
+    }
 
     //load the index from the data source
     try{
-    	server.init(serverConf);
+        for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+            iterator->second->init(serverConf);
+        }
     }catch(exception& ex) {
     	/*
     	 *  We got some fatal error during server initialization. Print the error message and
@@ -618,14 +648,16 @@ int main(int argc, char** argv) {
     	exit(-1);
     }
     //cout << "srch2 server started." << endl;
-    if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-    	// set current time as cut off time for further updates
-    	// this is a temporary solution. TODO
-    	srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-    	srch2http::MongoDataSource::spawnUpdateListener(&server);
-    }
 
-    //sleep(200);
+    for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+        const srch2http::CoreInfo_t *coreInfo = serverConf->getCoreInfo(iterator->second->getCoreName());
+        if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+            // set current time as cut off time for further updates
+            // this is a temporary solution. TODO
+            srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+            srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+        }
+    }
 
     http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
     http_addr =
@@ -656,23 +688,23 @@ int main(int argc, char** argv) {
     /* 3). set general callback of http request */
     evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
 
-    if (server.indexDataContainerConf->getWriteApiType()
+    if (defaultCore->indexDataConfig->getWriteApiType()
             == srch2http::HTTPWRITEAPI) {
         //std::cout << "HTTPWRITEAPI:ON" << std::endl;
         //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
         //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
 
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, &server); // CHENLI: we use v0
+        evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, defaultCore); // CHENLI: we use v0
 
-        evhttp_set_cb(http_server, "/update", cb_bmupdate, &server);
+        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
 
-        evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
+        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
 
-        evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
+        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
 
-        evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
 
-        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
+        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
     }
 
     /* 4). bind socket */
@@ -690,7 +722,7 @@ int main(int argc, char** argv) {
      * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
      * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
      * */
-    while (not server.indexer->isCommited()) {
+    while (not defaultCore->indexer->isCommited()) {
         /* This schedules an exit ten seconds from now. */
         event_base_loopexit(evbase, &ten_sec);
         event_base_dispatch(evbase);
@@ -725,7 +757,7 @@ int main(int argc, char** argv) {
 
         http_server = evhttp_new(evbase);
         http_servers.push_back(http_server);
-        //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
+        //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataConfig->getWriteReadBufferInBytes() );
 
         if (NULL == http_server) {
             perror("evhttp_new");
@@ -733,29 +765,29 @@ int main(int argc, char** argv) {
         }
 
         //http_server = evhttp_start(http_addr, http_port);
-        evhttp_set_cb(http_server, "/search", cb_bmsearch, &server);
+        evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
 
-        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, &server);
+        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, defaultCore);
 
-        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, &server);
-        evhttp_set_cb(http_server, "/info", cb_bminfo, &server);
+        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
+        evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
 
-        if (server.indexDataContainerConf->getWriteApiType()
+        if (defaultCore->indexDataConfig->getWriteApiType()
                 == srch2http::HTTPWRITEAPI) {
             // std::cout << "HTTPWRITEAPI:ON" << std::endl;
-            //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
-            //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
-            evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, &server); // CHENLI: we use v0
+            //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, defaultCore);
+            //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, defaultCore);
+            evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, defaultCore); // CHENLI: we use v0
 
-            evhttp_set_cb(http_server, "/update", cb_bmupdate, &server);
+            evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
 
-            evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
+            evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
 
-            evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
+            evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
 
-            evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
+            evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
 
-            evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
+            evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -796,7 +828,7 @@ int main(int argc, char** argv) {
     }
 
     delete[] threads;
-    server.indexer->save();
+    defaultCore->indexer->save();
 // free resources before we exit
     for (int i = 0; i < MAX_THREADS; i++) {
         evhttp_free(http_servers[i]);

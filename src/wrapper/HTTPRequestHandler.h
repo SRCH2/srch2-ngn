@@ -49,7 +49,7 @@ class HTTPRequestHandler
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const QueryPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,
@@ -62,7 +62,7 @@ class HTTPRequestHandler
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const QueryPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,
 				const string & message,
