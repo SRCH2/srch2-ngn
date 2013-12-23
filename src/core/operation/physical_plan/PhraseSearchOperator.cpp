@@ -94,13 +94,6 @@ PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 	this->queryEvaluatorInternal = NULL;
 }
 
-//PhysicalPlanRecordItem * PhraseSearchOperator::getNextCandidateRecord(const PhysicalPlanExecutionParameters & params) {
-//	for (unsigned int i =0; i < this->getPhysicalPlanOptimizationNode()->getChildrenCount(); ++i)
-//	{
-//		PhysicalPlanRecordItem * record = this->getPhysicalPlanOptimizationNode()->getChildAt(i)->getExecutableNode()->getNext(params);
-//	}
-//	return NULL;
-//}
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
 bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo) {
 
@@ -213,22 +206,32 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 // of parent open function.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {
 
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params);
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(3);
+	resultCost.addLargeFunctionCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfGetNext(params);
+	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
+	return resultCost;
 }
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	// Random access is not implmented.
+	return resultCost;
 }
 void PhraseSearchOptimizationOperator::getOutputProperties(IteratorProperties & prop){
 

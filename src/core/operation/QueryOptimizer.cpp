@@ -221,43 +221,18 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 void QueryOptimizer::buildIncompleteSubTreeOptionsPhrase(LogicalPlanNode * root,
 											vector<PhysicalPlanOptimizationNode *> & treeOptions) {
 
-	vector<vector<PhysicalPlanOptimizationNode *> > candidatesOfChildren;
-	unsigned * domains = new unsigned[root->children.size()];
-	unsigned totalNumberOfProducts = 1;
-	unsigned childIndex = 0;
-	typedef vector<LogicalPlanNode *>::const_iterator LogicalPlanNodeIter;
+	vector<PhysicalPlanOptimizationNode *> childTreeOptions;
+	buildIncompleteSubTreeOptions(root->children.at(0), childTreeOptions);
 
-	//TODO: there should be only one child ..remove loop
-	for(LogicalPlanNodeIter child = root->children.begin() ; child != root->children.end(); ++child){
-		vector<PhysicalPlanOptimizationNode *> childTreeOptions;
-		buildIncompleteSubTreeOptions(*child, childTreeOptions);
-		candidatesOfChildren.push_back(childTreeOptions);
-		domains[childIndex] = childTreeOptions.size();
-		totalNumberOfProducts *= childTreeOptions.size();
-		childIndex ++;
-	}
-
-	unsigned * cartProductResults = new unsigned[totalNumberOfProducts * root->children.size()];
-	srch2::util::QueryOptimizerUtil::cartesianProduct(root->children.size(), domains, cartProductResults, totalNumberOfProducts);
-
-	for(unsigned p = 0 ; p < totalNumberOfProducts ; ++p){
-
+	for(unsigned p = 0 ; p < childTreeOptions.size(); ++p) {
 		PhysicalPlanOptimizationNode * phraseSearchOptNode = (PhysicalPlanOptimizationNode *)
 				this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOptimzationOperator();
 		phraseSearchOptNode->setLogicalPlanNode(root);
-		//TODO: there should be only one child ..remove loop
-		for(unsigned d = 0; d < root->children.size() ; d++){
-			vector<PhysicalPlanOptimizationNode *> * candidatesOfThisChild = &(candidatesOfChildren.at(d));
-			unsigned indexOfChildOptionToChoose = cartProductResults[root->children.size() * p + d];
-			phraseSearchOptNode->addChild(candidatesOfThisChild->at(indexOfChildOptionToChoose));
-		}
-		if(phraseSearchOptNode->validateChildren() == true){
+		phraseSearchOptNode->addChild(childTreeOptions[p]);
+		if(phraseSearchOptNode->validateChildren() == true) {
 			treeOptions.push_back(phraseSearchOptNode);
 		}
 	}
-
-	delete domains;
-	delete cartProductResults;
 }
 
 void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){

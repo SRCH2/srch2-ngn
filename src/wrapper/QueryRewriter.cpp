@@ -835,27 +835,6 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
         plan.getPostProcessingInfo()->setFilterQueryEvaluator(paramContainer->filterQueryContainer->evaluator);
     }
 
-//    if (paramContainer->hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...
-//    	srch2is::PhraseSearchInfoContainer * phraseSearchInfoContainer = new PhraseSearchInfoContainer();
-//		ParseTreeNode * leafNode;
-//		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
-//		while(termIterator.hasMore()){
-//			leafNode = termIterator.getNext();
-//    		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag == false)
-//    			continue;
-//    		vector<string> phraseKeywords;
-//    		boost::algorithm::split(phraseKeywords, leafNode->termIntermediateStructure->rawQueryKeyword,
-//                                    boost::is_any_of("\t "));
-//    		std::map<string, vector<unsigned> >::const_iterator iter =
-//    				paramContainer->PhraseKeyWordsPositionMap.find(leafNode->termIntermediateStructure->rawQueryKeyword);
-//    		ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
-//    		ASSERT(iter->second.size() == phraseKeywords.size());
-//    		phraseSearchInfoContainer->addPhrase(phraseKeywords,iter->second, leafNode->termIntermediateStructure->phraseSlop,
-//    				leafNode->termIntermediateStructure->fieldFilterNumber);
-//		}
-//        plan.getPostProcessingInfo()->setPhraseSearchInfoContainer(phraseSearchInfoContainer);
-//    }
-
     // 3. look for Sort and Facet
 	// look for SortFiler
 	if (paramContainer->hasParameterInQuery(SortQueryHandler)) { // there is a sort filter

@@ -230,18 +230,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 				topOperator = sortOperator;
 			}
 		}
-//		if(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
-//			phraseOperator = new PhraseSearchOperator(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer());
-//			PhraseSearchOptimizationOperator * phraseOpOp = new PhraseSearchOptimizationOperator();
-//			phraseOperator->setPhysicalPlanOptimizationNode(phraseOpOp);
-//			phraseOpOp->setExecutableNode(phraseOperator);
-//
-//			if(topOperator != NULL){
-//				topOperator->getPhysicalPlanOptimizationNode()->addChild(phraseOpOp);
-//			}else{
-//				topOperator = phraseOperator;
-//			}
-//		}
 	}
 
 
