@@ -39,8 +39,7 @@ class QueryEvaluatorInternal;
  */
 class QueryOptimizer {
 public:
-	QueryOptimizer(QueryEvaluatorInternal * queryEvaluator,
-			LogicalPlan * logicalPlan);
+	QueryOptimizer(QueryEvaluatorInternal * queryEvaluator);
 
 	/*
 	 * 1. Find the search type based on searchType coming from wrapper layer and
@@ -54,7 +53,7 @@ public:
 	 *           and makes sure inputs and outputs of operators are consistent.
 	 * ---- 2.2. Applies optimization rules on the physical plan
 	 */
-	void buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan);
+	void buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan, LogicalPlan * logicalPlan);
 
 private:
 

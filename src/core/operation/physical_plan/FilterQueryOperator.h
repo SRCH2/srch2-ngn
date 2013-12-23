@@ -30,6 +30,24 @@ namespace srch2
 namespace instantsearch
 {
 
+
+
+/*
+ * The following two classes implement filter_query as a physical operator.
+ * This operator only exists if a filter_query request comes with the query.
+ * For example query : q = A AND B OR C & fq = "model='TOYOTA'"
+ * If this operator exists, it goes exactly one top of lowest level
+ * term nodes so that it filters the records as soon as the come out of
+ * inverted index.
+ * The core physical plan of this example is :
+ *
+ *
+ * [OR sorted by ID]___[SORT BY ID]____[FilterQueryOperator]____[SCAN C]
+ *       |
+ *       |_____________[SORT BY ID]___[Merge TopK]____[FilterQueryOperator]____[TVL A]
+ *                                          |_________[FilterQueryOperator]____[TVL B]
+ *
+ */
 class FilterQueryOperator : public PhysicalPlanNode {
 public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);

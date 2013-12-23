@@ -256,6 +256,12 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(this->queryEvaluatorInternal,params);
     return true;
 }
+
+/*
+ * Each time getNext is called, the next record, if any, is retrieved from the child and
+ * the facet info is updated by using the refining attribute value from forward index.
+ * That record is returned to the user and facet info is retrieved from facet at the end by the caller.
+ */
 PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 
     Schema * schema = this->queryEvaluatorInternal->getSchema();

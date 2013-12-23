@@ -34,6 +34,11 @@ namespace instantsearch {
 
 typedef const TrieNode* TrieNodePointer;
 
+/*
+ * The instance of this structure is the container which moves the needed
+ * runtime parameters (like isFuzzy of K in topK) through the physical plan.
+ */
+
 struct PhysicalPlanExecutionParameters {
 	unsigned k;
 	// if this variable is false the operator only returns exact matches by calling getNext(...)
@@ -54,7 +59,7 @@ struct PhysicalPlanExecutionParameters {
 			case srch2is::SearchTypeMapQuery:
 				this->ranker = new SpatialRanker();
 				break;
-			case srch2is::SearchTypeRetrievById:
+			case srch2is::SearchTypeRetrieveById:
 				this->ranker = new DefaultTopKRanker();
 				break;
 		}
@@ -68,18 +73,28 @@ struct PhysicalPlanExecutionParameters {
 };
 
 class PhysicalPlanRecordItem;
+/*
+ * This structure is used to move information when verifyByRandomAccess() of an
+ * operator is called.
+ * Other than the recordId to get verified there is more to move.
+ * For example, if the record has a match, the information about the matching
+ * prefix or the runtime score of the match needs to be returned back to the caller.
+ */
 struct PhysicalPlanRandomAccessVerificationParameters {
 	Ranker * ranker ;
 	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker){
 		this->ranker = ranker;
 	}
 
+	// if a term is verified, some infomation like staticscore or matching prefix
+	// is calculated at that time and will be saved in these variables.
     float runTimeTermRecordScore;
     float staticTermRecordScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;
     std::vector<unsigned> positionIndexOffsets;
+    // the record which is going to be verified by forward index
     PhysicalPlanRecordItem * recordToVerify;
     bool isFuzzy;
 	float prefixMatchPenalty ;
@@ -93,8 +108,11 @@ public:
 	vector<PhysicalPlanIteratorProperty> properties;
 };
 
-// This class is the ancestor of all different kinds of list items in this iterator model.
-// Regardless of what kind of iterator we have, lists are implemented as sequences of PhysicalPlanIterable.
+/*
+ * This class is the 'tuple' in this iterator model.
+ * When the physical plan is being executed, the pointers to
+ * PhysicalPlanRecordItem objects are passed around.
+ */
 class PhysicalPlanRecordItem{
 public:
 	// getters
@@ -127,12 +145,25 @@ private:
 	vector<unsigned> positionIndexOffsets;
 };
 
+/*
+ * The factory class of PhysicalPlanRecordItem;
+ */
 class PhysicalPlanRecordItemFactory{
 public:
 	PhysicalPlanRecordItem * createRecordItem(){
 		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 		objects.push_back(newObj);
 		return newObj;
+	}
+
+	~PhysicalPlanRecordItemFactory(){
+		for(unsigned i =0 ; i< objects.size() ; ++i){
+			if(objects.at(i) == NULL){
+				ASSERT(false);
+			}else{
+				delete objects.at(i);
+			}
+		}
 	}
 private:
 	vector<PhysicalPlanRecordItem *> objects;
@@ -148,6 +179,17 @@ public:
 	virtual ~PhysicalPlanIteratorExecutionInterface(){};
 };
 
+
+/*
+ * This structure is used to implement the notion of COST of a physical plan.
+ * The cost must be estimated so that QueryOptimizer can choose the cheapest plan.
+ * The cost of different functions of each operator is estimated by roughly counting the number
+ * of instructions done in that function. For example, suppose a function sorts all the records from
+ * its child. The cost is :
+ * estimatedNumberOfRecordsComingFromChild (R) <- HistogramManager
+ *
+ * cost = RlogR * some number of instructions  + R * cost of child's getNext
+ */
 struct PhysicalPlanCost{
 	unsigned cost;
 	PhysicalPlanCost(){
@@ -206,6 +248,12 @@ public:
 class PhysicalPlan;
 class PhysicalPlanNode;
 
+/*
+ * All optimization nodes inherit from this class.
+ * this class has two major capabilities :
+ * 1. tree primitives like going to children and counting them and ...
+ * 2. cost functions which are used in optimization
+ */
 class PhysicalPlanOptimizationNode : public PhysicalPlanIteratorOptimizationInterface{
 	friend class PhysicalPlan;
 public:
@@ -245,12 +293,24 @@ private:
 	LogicalPlanNode * logicalPlanNode;
 };
 
+
+/*
+ * All execution nodes inherit from this class.
+ * Execution nodes are the actual nodes which are executed and produce results.
+ * Each execution node is connected to an optimization node which enables it to
+ * access it's children.
+ */
 class PhysicalPlanNode : public PhysicalPlanIteratorExecutionInterface{
 	friend class PhysicalPlan;
 public:
 	void setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode);
 	PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode();
 
+	// this function checks to see if a record (that its id can be found in parameters) is among the
+	// results if this subtree. Different operators have different implementations this function.
+	// When verification is performed, some information like match prefix is calculated and saved in
+	// members of parameters argument, so if this function returns true, we use parameters members to
+	// get that information.
 	virtual bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) = 0;
 private:
 	PhysicalPlanOptimizationNode * optimizationNode;
@@ -261,8 +321,8 @@ private:
 
 /*
  * Implements the physical plan of the query which will be executed.
- * Each node in this plan (PhysicalPlanNode) is a PhysicalPlanIterator and has required API
- * to implement iterator model.
+ * Just a wrapper which includes the actual physical plan tree (tree) and
+ * some more information that must be saved in the physical plan like searchType or parameters container.
  */
 class PhysicalPlan{
 public:
