@@ -52,9 +52,19 @@ public:
 
 
 /*
- * This operator output the best K results coming from input.
- * The assumption of this operator is that input is sorted based on score.
- * This function is the core of TopK and implements the threshold algorithm.
+ * This operator uses the Threshold Algorithm (Fagin's Algorithm) to find the best record of
+ * its subtree. Every time getNext is called threshold algorithm is used and it retrieves
+ * records by calling getNext of children to find and return the best remaining record in the subtree.
+ * The assumption of this operator is that input is sorted based on score (monotonicity property of Fagin's algorithm)
+ * This operator is used in the most popular physical plan for instant search :
+ * Example :
+ * q = A AND B AND C
+ *
+ * [MergeTopKOperator]_____ [TVL A]
+ *        |
+ *        |_____ [TVL B]
+ *        |
+ *        |_____ [TVL C]
  */
 class MergeTopKOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;

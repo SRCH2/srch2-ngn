@@ -32,6 +32,18 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+
+/*
+ * KeywordSearchOperator is a special operator which does the main search.
+ * It can be viewed as a controller and executor of other search modules.
+ * These tasks are done in this operator:
+ * 1. Exact/Fuzzy policy is implemented in this operator. So tasks 2 to ??? are repeated for fuzzy query if
+ * ---- we don't get enough results from exact.
+ * 2. The number of results that we need is calculated based on searchType and postProcessing request (like having Facet)
+ * 3. It uses HistogramManager to annotate the LogicalPlan for further steps.
+ * 4. It uses QueryOptimizer to build a good physical plan (which is the core plan)
+ * 5. It opens the plan (by calling open(...)) and calls getNext as many times as needed .
+ */
 class KeywordSearchOperator : public PhysicalPlanNode {
 public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);

@@ -46,7 +46,8 @@ public:
 	 *       |
 	 *       |____ {yellow}
 	 *
-	 *  after removing stopwords, it should look like :
+	 *  after removing stopwords by some module like analyzer, function will be called
+	 *   and then the tree should look like :
 	 *
 	 *  [OR]___ {hello}
 	 *    |
@@ -107,7 +108,7 @@ public:
 	 * becomes :
 	 * [NOT]___{A}
 	 *
-	 * 2. It merges similar levels of boolean operators together
+	 * 2. It merges same-operator levels together
 	 * Example :
 	 * [AND]____ ...
 	 *   |
@@ -124,14 +125,14 @@ public:
 	 *   |...
 	 *
 	 */
-	static ParseTreeNode * mergeTwoSimilarLevels(ParseTreeNode * subTreeRoot){
+	static ParseTreeNode * mergeSameOperatorLevels(ParseTreeNode * subTreeRoot){
 		if(subTreeRoot == NULL) return subTreeRoot;
 
 		ParseTreeNode * parent = subTreeRoot->parent;
 
 		vector<ParseTreeNode *> newChildrenList;
 		for(vector<ParseTreeNode *>::iterator child = subTreeRoot->children.begin() ; child != subTreeRoot->children.end() ; ++child){
-			*child = mergeTwoSimilarLevels(*child);
+			*child = mergeSameOperatorLevels(*child);
 
 			/*
 			 * Example :
@@ -205,7 +206,7 @@ public:
 private:
 
 	/*
-	 * This function remobes nodeToRemove from its parent's children list
+	 * This function removes nodeToRemove from its parent's children list
 	 */
 	static void removeFromParentChildren(ParseTreeNode * nodeToRemove){
 		if(nodeToRemove == NULL) return;

@@ -11,12 +11,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	bool isFuzzy = logicalPlan->isFuzzy();
 	// we set fuzzy to false to the first session which is exact
 	logicalPlan->setFuzzy(false);
-	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getSearchType());
+	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
 	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
-	for(unsigned fuzzyPolicyIter=0;fuzzyPolicyIter<2;fuzzyPolicyIter++){ // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
+	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
+	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
 		/*
 		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
@@ -33,9 +34,9 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		 * ---- 2.2. Applies optimization rules on the physical plan
 		 * ---- 2.3. ...
 		 */
-		QueryOptimizer queryOptimizer(queryEvaluator,logicalPlan);
+		QueryOptimizer queryOptimizer(queryEvaluator);
 		PhysicalPlan physicalPlan(queryEvaluator);
-		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan);
+		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
 
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 

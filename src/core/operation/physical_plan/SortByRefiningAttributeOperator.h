@@ -51,6 +51,37 @@ public:
     }
 };
 
+
+/*
+ * The following two classes implement Sort Filter as a physical operator.
+ * this operator is always above the root physical operator and it sorts the
+ * input based on the value of a refining attribute given in query and stored
+ * in forward index. Results are returned to the parent (which might be another
+ * post processing operator) only sorted and untouched in other aspects.
+ * Example :
+ * q = A AND B OR C & sort=price
+ * the core plan for query execution (one possible plan):
+ * [OR sorted by ID]___[SORT BY ID]___[SCAN C]
+ *       |
+ *       |_____________[SORT BY ID]___[Merge TopK]____[TVL A]
+ *                                          |_________[TVL B]
+ *
+ * but the complete plan tree looks like this :
+ *
+ * [SortByRefiningAttributeOperator price]
+ *        |
+ * [KeywordSearchOperator]
+ * { // the core plan is built and optimized in open function of KeywordSearchOperator
+ * [OR sorted by ID]___[SORT BY ID]___[SCAN C]
+ *       |
+ *       |_____________[SORT BY ID]___[Merge TopK]____[TVL A]
+ *                                          |_________[TVL B]
+ * }
+ *
+ * and the results are collected by calling getNext of SortByRefiningAttributeOperator iteratively .
+ *
+ */
+
 class SortByRefiningAttributeOperator : public PhysicalPlanNode {
 public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);

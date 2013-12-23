@@ -152,7 +152,7 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
-	this->listsHaveMoreRecordsInThem = true;
+	this->listsHaveMoreRecordsInThem = false;
 	return true;
 }
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

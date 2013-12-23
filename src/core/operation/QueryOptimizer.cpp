@@ -10,8 +10,7 @@
 namespace srch2 {
 namespace instantsearch {
 
-QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator,
-		LogicalPlan * logicalPlan): logicalPlan(logicalPlan){
+QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator){
 	this->queryEvaluator = queryEvaluator;
 }
 
@@ -22,7 +21,7 @@ QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator,
  *           and makes sure inputs and outputs of operators are consistent.
  * ---- 2. Applies optimization rules on the physical plan
  */
-void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan){
+void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan){
 
 	// Build physical plan
 	buildPhysicalPlanFirstVersion(physicalPlan);
@@ -74,7 +73,7 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
  */
 void QueryOptimizer::chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan){
 	// TODO : for now, we just simply pass the same search type
-	physicalPlan.setSearchType(logicalPlan->getSearchType());
+	physicalPlan.setSearchType(logicalPlan->getQueryType());
 }
 
 void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan){
@@ -86,7 +85,7 @@ void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physic
 	}
 	// Parameter exactOnly for exact/fuzzy policy.
 	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(),
-			logicalPlan->exactQuery->getPrefixMatchPenalty(), logicalPlan->getSearchType());
+			logicalPlan->exactQuery->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
 	physicalPlan.setExecutionParameters(parameters);
 }
@@ -173,7 +172,6 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 	for(unsigned p = 0 ; p < totalNumberOfProducts ; ++p){
 		// add AND implementation options that we have
 		vector<PhysicalPlanOptimizationNode *> ourOptions;
-		// TODO :we should use searchType here !!!!!!!!!
 		if(root->nodeType == LogicalPlanNodeTypeAnd){
 			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeTopKOptimizationOperator());
 			ourOptions.push_back((PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createMergeByShortestListOptimizationOperator());

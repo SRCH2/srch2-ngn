@@ -32,7 +32,13 @@ namespace srch2 {
 namespace instantsearch {
 
 /*
- * This operator is TermVirtualList implementation as a physical operator.
+ * This operator is a simple scan operator. It starts with a set of activenodes,
+ * finds all the leaf nodes based on the term type (prefix or complete),
+ * saves all the connected inverted lists, and then in each getNext call returns
+ * one record from a list until all lists are iterated completely.
+ * The difference between this operator and TVL is that this operator doesn't give
+ * any guarantee of order for its output (the output is NOT sorted by score) and
+ * it doesn't have the overhead of HEAP that TVL has.
  */
 class UnionLowestLevelSimpleScanOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;

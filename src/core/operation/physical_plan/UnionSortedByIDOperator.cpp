@@ -16,11 +16,11 @@ bool UnionSortedByIDOperator::open(QueryEvaluatorInternal * queryEvaluator, Phys
 	 * 1. open all children (no parameters known to pass as of now)
 	 * 2. initialize nextRecordItems vector.
 	 */
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	for(unsigned childOffset = 0 ; childOffset < numberOfChildren ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
 	}
 
-	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		PhysicalPlanRecordItem * recordItem =
 				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
@@ -116,7 +116,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 }
 bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	// close children
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+	for(unsigned childOffset = 0 ; childOffset < this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
 	this->listsHaveMoreRecordsInThem = true;

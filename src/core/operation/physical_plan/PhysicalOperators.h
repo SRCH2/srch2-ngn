@@ -44,10 +44,23 @@ class FilterQueryOptimizationOperator;
 class PhysicalOperatorFactory;
 
 /*
- * This operator is can only appear at the lowest level of the physical plan.
- * This operator acts like an always empty list. for example getNext always returns NULL for in this operator.
- * An example of the case for which this operator can be used is when we decide to build term virtual list only for the shortest list
- * and use other keywords only for forward index verification. In this case all other keywords will be mapped to this operator.
+ * The following two operators are used for verifying a term/record match using forward index.
+ * This operator can only appear at the lowest level of the physical plan.
+ * This operator acts like an always empty list. for example getNext always returns NULL for this operator.
+ * An example of the case in which this operator can be used is when we decide to merge by shortest list
+ * and only one child returns records and the rest of keywords are only used for forward index verification.
+ * In this case all other keywords will be mapped to this operator. Please note that for this example, if we
+ * set other keywords to TVL, it would still work correctly because verifyByRandomAccess is also implemented for
+ * TVL operator, however, TVL has the overhead of iterating on leaf nodes which is not needed for the case of
+ * shortest list use.
+ * Example :
+ * q = A and B and C
+ * [sort by score]
+ *      |
+ * [merge by shortest list]
+ *      |_______[R.A.V. on A]
+ *      |_______[R.A.V. on B]
+ *      |_______[SCAN on C] // assuming C is the most selective keyword
  */
 class RandomAccessVerificationTermOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -80,6 +93,21 @@ public:
 	bool validateChildren();
 };
 
+
+/*
+ * This operator has the same purpose as RandomAccessVerificationTermOperator
+ * (please read the comments of that class as well) but the difference is that this
+ * operator maps an AND logical operator. A record is verified by this node only if all children of
+ * this node verify it (AND logic). Example :
+ * q = A AND NOT (B AND C)
+ * [sort by score]
+ *       |
+ * [merge by shortest list]
+ *       |_____ [SCAN A]
+ *       |
+ *       |_____ [R.A.V.NOT]______ [R.A.V.AND]____[R.A.V. B]
+ *                                     |_________[R.A.V. C]
+ */
 class RandomAccessVerificationAndOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
@@ -110,7 +138,12 @@ public:
 	bool validateChildren();
 };
 
-
+/*
+ * Please read the comments for RandomAccessVerificationTermOperator
+ * and RandomAccessVerificationAndOperator.
+ * This operator verifies a record if at least one of the children returns
+ * true (OR logic).
+ */
 class RandomAccessVerificationOrOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
@@ -142,6 +175,13 @@ public:
 };
 
 
+/*
+ * Please read the comments for RandomAccessVerificationTermOperator
+ * and RandomAccessVerificationAndOperator.
+ * The only physical operator option for NOT is RandomAccessVerificationNotOperator.
+ * This node verifies a record if its child (it only has one child) return
+ * false (NOT logic).
+ */
 class RandomAccessVerificationNotOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
@@ -176,6 +216,12 @@ public:
 /*
  * This operator sorts the input based on ID. Calling open results in fetching all the results from
  * input and sorting them. Sorted results will be buffered and returned later by calling get next.
+ * NOTE: one tricky optimization is implemented in sort:
+ * instead of sorting the results after loading them (O(NlogN)), we only build a heap (O(N)).
+ * then, in each getNext call the top of this heap is removed and its heapified again (O(logN)).
+ * This approach saves us some computation in topK search type because we don't need all results.
+ * sort approach complexity                      heap approach complexity
+ *      O(NlogN) + k*O(1)                            O(N) + kO(logN) // second is better for large N and small K
  */
 class SortByIdOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -219,8 +265,12 @@ public:
 
 
 /*
- * This operator sorts the input based on ID. Calling open results in fetching all the results from
+ * This operator sorts the input based on runtime score. Calling open results in fetching all the results from
  * input and sorting them. Sorted results will be buffered and returned later by calling get next.
+ * Please read the comments of SortByIdOperator to understand the optimization used here.
+ * There is only a small change in this sort operator. Instead of making the complete heap in OPEN
+ * we only compute and keep a sorted vector of top K results. If getNext is called more than K times, then the rest of
+ * records are heapified and that trick is used.
  */
 class SortByScoreOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -276,6 +326,18 @@ public:
 /*
  * This operator merges the inputs assuming they are sorted by ID.
  * It moves down on all inputs in parallel and merges the them.
+ * And example of a physical plan can be :
+ * q = A AND B OR C
+ * [sort by score]
+ *       |
+ * [OR sorted by on ID]
+ *       |
+ *       |______ [sort by ID]___[SCAN C]
+ *       |
+ *       |______ [merge sorted by ID]
+ *                       |______ [sort by ID]___[SCAN A]
+ *                       |
+ *                       |______ [sort by ID]___[SCAN B]
  */
 class MergeSortedByIDOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -316,6 +378,18 @@ public:
 /*
  * This operator merges the input lists by moving on the shortest one and doing
  * forward index validation.
+ * Mostly, the following plan is chosen when there is a prefix in query which is too
+ * popular and iterating on leaf nodes becomes too expensive.
+ *
+ * q = python AND p     // python is selective but p is the prefix of many many words in a big dataset
+ * main core plan is :
+ *
+ * [sort by score]
+ *       |
+ * [merge by shortest list] _____ [R.A.V. p]
+ *       |
+ *       |______ [SCAN python]
+ *
  */
 class MergeByShortestListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -361,7 +435,7 @@ public:
 
 /*
  * This operator unions the inputs assuming they are sorted by ID.
- * It moves down on all inputs in parallel and unions the them.
+ * It moves down on all inputs in parallel and unions them.
  */
 class UnionSortedByIDOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -406,6 +480,11 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+ * Physical operators (except for post processing operators such as SortByRefiningAttribute and Facet)
+ * use a factory model for instantiation to avoid memory leaks. This class is the factory which has one function per
+ * class.
+ */
 class PhysicalOperatorFactory{
 public:
 

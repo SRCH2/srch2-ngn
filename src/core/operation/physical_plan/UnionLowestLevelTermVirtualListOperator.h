@@ -85,6 +85,7 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
 
 /*
  * This operator is TermVirtualList implementation as a physical operator.
+ * Most of this operator is copied from TermVirtualList old implementation.
  */
 class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
@@ -107,6 +108,11 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	// this function checks to see if a record (that its id can be found in parameters) is among the
+	// results if this subtree. Different operators have different implementations this function.
+	// When verification is performed, some information like match prefix is calculated and saved in
+	// members of parameters argument, so if this function returns true, we use parameters members to
+	// get that information.
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionLowestLevelTermVirtualListOperator();
 

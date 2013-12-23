@@ -9,6 +9,13 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+
+/*
+ * The following 4 functions are helper functions which are used in verifyByRandomAccess() implementation of
+ * different operators. The first function (right below) is the main one which accesses forward index to see if
+ * the record contains a term or not.
+ */
+
 bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
 	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance

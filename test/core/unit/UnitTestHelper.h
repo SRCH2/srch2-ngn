@@ -36,7 +36,7 @@ LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQu
 	logicalPlan->numberOfResultsToRetrieve = resultsToRetrieve;
 	logicalPlan->offset = offset;
 	logicalPlan->shouldRunFuzzyQuery = shouldRunFuzzyQuery;
-	logicalPlan->searchType = searchType;
+	logicalPlan->queryType = searchType;
 
 	logicalPlan->setTree(logicalPlan->createOperatorLogicalPlanNode(LogicalPlanNodeTypeAnd));
 

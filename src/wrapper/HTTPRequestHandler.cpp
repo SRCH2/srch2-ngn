@@ -135,7 +135,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         root["results"].resize(end - start);
         unsigned counter = 0;
-        if (queryPlan.getSearchType() == srch2is::SearchTypeMapQuery
+        if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
                 {
             for (unsigned i = start; i < end; ++i) {
@@ -228,7 +228,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getSearchType() != srch2is::SearchTypeMapQuery
+    	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
     			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             root["query_keywords"].resize(query->getQueryTerms()->size());
@@ -256,7 +256,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
     // return some meta data
 
-    root["type"] = queryPlan.getSearchType();
+    root["type"] = queryPlan.getQueryType();
     root["offset"] = start;
     root["limit"] = end - start;
 
@@ -397,7 +397,7 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
     // return some meta data
 
-    root["type"] = queryPlan.getSearchType();
+    root["type"] = queryPlan.getQueryType();
     root["results_found"] = queryResults->getNumberOfResults();
 
     root["message"] = message;
@@ -965,7 +965,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     //5. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
-    switch (logicalPlan.getSearchType()) {
+    switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         finalResults->printStats();
         HTTPRequestHandler::printResults(req, headers, logicalPlan,
@@ -998,7 +998,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         }
         break;
-    case srch2is::SearchTypeRetrievById:
+    case srch2is::SearchTypeRetrieveById:
         finalResults->printStats();
         HTTPRequestHandler::printOneResultRetrievedById(req,
                 headers,

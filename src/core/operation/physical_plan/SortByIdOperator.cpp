@@ -29,6 +29,12 @@ bool SortByIdOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPla
 	}
 
 	// heapify the records to get the smallest one on top
+	/*
+	 * Instead of sorting the results and then returning them one by one, we heapify all of them
+	 * and then after returning each one we do one more heapification.
+	 * If the user needs K results, the time complexity is klog(N) + N (because bulk heapify is N)
+	 * while normal sort approach is NlogN which is larger
+	 */
 	std::make_heap(records.begin(),records.end(), SortByIdOperator::SortByIdRecordMinHeapComparator());
 	return true;
 }
