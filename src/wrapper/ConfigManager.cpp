@@ -32,6 +32,7 @@ namespace srch2 {
 namespace httpwrapper { 
 
 // configuration file tag and attribute names for ConfigManager
+// *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
@@ -119,10 +120,7 @@ const char* const ConfigManager::getAllResultsMaxResultsThreshold = "getallresul
 const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalternative";
 const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
-const char* const ConfigManager::defaultCoreNameString = "defaultCoreName";
-const char* const ConfigManager::hostPortString = "hostPort";
-const char* const ConfigManager::instanceDirString = "instanceDir";
-const char* const ConfigManager::schemaFileString = "schemaFile";
+const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
 
 ConfigManager::ConfigManager(const string& configFile)
 {
@@ -620,7 +618,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     if (childNode) {
         string type = childNode.attribute(typeString).value();
         if (isValidResponseContentType(type)) {
-            searchResponseFormat = (ResponseType)childNode.attribute("type").as_int();
+            searchResponseFormat = (ResponseType)childNode.attribute(typeString).as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
@@ -658,7 +656,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
-    // <core dataDir="core0/data"
+    // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
         coreInfo->dataDir = parentNode.attribute(dataDirString).value();
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
@@ -679,7 +677,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         if (coresNode.attribute(defaultCoreNameString) && string(coresNode.attribute(defaultCoreNameString).value()).compare("") != 0) {
             defaultCoreName = coresNode.attribute(defaultCoreNameString).value();
         } else {
-            parseWarnings << "Cores defaultCoreName never set";
+            parseWarnings << "Cores defaultCoreName not set <cores defaultCoreName=...>";
         }
 
         // parse zero or more individual core settings
@@ -714,12 +712,16 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     CoreConfigParseState_t coreParseState;
 
     // <config><dataDir>core0/data OR <core><dataDir>
-    if (parentNode.child(dataDirString) && parentNode.child(dataDirString).text()) {
-        coreInfo->dataDir = parentNode.child(dataDirString).value();
+    xml_node childNode = parentNode.child(dataDirString);
+    if (childNode && childNode.text()) {
+        coreInfo->dataDir = string(childNode.text().get());
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
+    if (coreInfo->dataDir.length() == 0) {
+        parseWarnings << "Core " << coreInfo->name.c_str() << " has null dataDir\n";
+    }
 
-    xml_node childNode = parentNode.child(dataSourceTypeString);
+    childNode = parentNode.child(dataSourceTypeString);
     if (childNode && childNode.text()) {
         int dataSourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
         switch(dataSourceValue) {
@@ -902,9 +904,11 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
 
     // <cores>
     xml_node childNode = configNode.child(multipleCoresString);
-    parseMultipleCores(childNode, configSuccess, parseError, parseWarnings);
-    if (configSuccess == false) {
-        return;
+    if (childNode) {
+        parseMultipleCores(childNode, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
     }
 }
 
@@ -1396,15 +1400,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 {
     string tempUse = ""; // This is just for temporary use.
 
-    // create a default core for settings outside of <cores>
     CoreInfo_t *defaultCoreInfo = NULL;
-    if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
-        defaultCoreInfo = new CoreInfo_t(this);
-        defaultCoreInfo->name = getDefaultCoreName();
-        coreInfoMap[defaultCoreInfo->name] = defaultCoreInfo;
-    } else {
-        defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
-    }
 
     xml_node configNode = configDoc.child(configString);
 
@@ -1420,12 +1416,27 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
+    // check if data source exists at the top level
+    xml_node topDataFileNode = childNode.child(dataFileString);
+    if (topDataFileNode) {
+        // create a default core for settings outside of <cores>
+        if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
+            defaultCoreInfo = new CoreInfo_t(this);
+            defaultCoreInfo->name = getDefaultCoreName();
+            coreInfoMap[defaultCoreInfo->name] = defaultCoreInfo;
+        } else {
+            defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+        }
+    }
+
     // parse all data source settings - no core (default core) and multiples core handled
     // requires indexType to have been loaded by parseIndexConfig()
     parseDataConfiguration(configNode, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
     }
+
+    defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
 
     /*
      * <Config> in config.xml file
