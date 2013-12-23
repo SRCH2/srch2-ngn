@@ -531,6 +531,18 @@ void makeHttpRequest(){
     evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
 }
 #endif
+
+static bool AreAllServersCommitted(const ServerMap_t *servers)
+{
+    bool committed = true;
+    for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
+        if (! iterator->second->indexer->isCommited()) {
+            committed = false;
+        }
+    }
+    return committed;
+}
+
 /**
  * Kill the server.  This function can be called from another thread to kill the server
  */
@@ -608,7 +620,7 @@ int main(int argc, char** argv) {
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
     // create a server (core) for each data source in config file
-    for (ConfigManager::CoreInfoMap_t::iterator iterator = serverConf->coreInfoIterateBegin();
+    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = serverConf->coreInfoIterateBegin();
          iterator != serverConf->coreInfoIterateEnd(); iterator++) {
 
         srch2http::Srch2Server *core = new srch2http::Srch2Server;
@@ -623,7 +635,7 @@ int main(int argc, char** argv) {
 
     // if no core created from ConfigManager, then create a default one
     if (servers.empty()) {
-        ASSERT(defaultCore == NULL);
+        ASSERT(defaultCore != NULL);
 
         defaultCore = new srch2http::Srch2Server();
         defaultCore->setCoreName(serverConf->getDefaultCoreName());
@@ -649,7 +661,7 @@ int main(int argc, char** argv) {
     }
     //cout << "srch2 server started." << endl;
 
-    for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+    for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = serverConf->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
             // set current time as cut off time for further updates
@@ -722,7 +734,7 @@ int main(int argc, char** argv) {
      * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
      * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
      * */
-    while (not defaultCore->indexer->isCommited()) {
+    while (not AreAllServersCommitted(&servers)) {
         /* This schedules an exit ten seconds from now. */
         event_base_loopexit(evbase, &ten_sec);
         event_base_dispatch(evbase);
@@ -764,6 +776,7 @@ int main(int argc, char** argv) {
             return 2;
         }
 
+        // setup default core callbacks
         //http_server = evhttp_start(http_addr, http_port);
         evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
 
@@ -788,6 +801,46 @@ int main(int argc, char** argv) {
             evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
 
             evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
+        }
+
+        // setup named core callbacks
+        for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+
+            string path = string("/") + iterator->second->getCoreName() + string("/search");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmsearch, iterator->second);
+
+            path = string("/") + iterator->second->getCoreName() + string("/suggest");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmsuggest, iterator->second);
+
+            //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, iterator->second);
+
+            path = string("/") + iterator->second->getCoreName() + string("/info");
+            evhttp_set_cb(http_server, path.c_str(), cb_bminfo, iterator->second);
+
+            if (iterator->second->indexDataConfig->getWriteApiType()
+                == srch2http::HTTPWRITEAPI) {
+                // std::cout << "HTTPWRITEAPI:ON" << std::endl;
+                //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, iterator->second);
+                //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/docs");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite_v0, iterator->second); // CHENLI: we use v0
+
+                path = string("/") + iterator->second->getCoreName() + string("/update");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/save");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/export");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/activate");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
+            }
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -828,7 +881,11 @@ int main(int argc, char** argv) {
     }
 
     delete[] threads;
-    defaultCore->indexer->save();
+
+    for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
+        iterator->second->indexer->save();
+    }
+
 // free resources before we exit
     for (int i = 0; i < MAX_THREADS; i++) {
         evhttp_free(http_servers[i]);
