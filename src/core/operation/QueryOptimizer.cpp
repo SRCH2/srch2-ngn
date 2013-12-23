@@ -136,6 +136,9 @@ void QueryOptimizer::buildIncompleteSubTreeOptions(LogicalPlanNode * root, vecto
 		case LogicalPlanNodeTypeNot:
 			buildIncompleteSubTreeOptionsNot(root, treeOptions);
 			break;
+		case LogicalPlanNodeTypePhrase:
+			buildIncompleteSubTreeOptionsPhrase(root, treeOptions);
+			break;
 		case LogicalPlanNodeTypeTerm:
 			buildIncompleteSubTreeOptionsTerm(root, treeOptions);
 			break;
@@ -214,6 +217,49 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 	delete cartProductResults;
 
 }
+
+void QueryOptimizer::buildIncompleteSubTreeOptionsPhrase(LogicalPlanNode * root,
+											vector<PhysicalPlanOptimizationNode *> & treeOptions) {
+
+	vector<vector<PhysicalPlanOptimizationNode *> > candidatesOfChildren;
+	unsigned * domains = new unsigned[root->children.size()];
+	unsigned totalNumberOfProducts = 1;
+	unsigned childIndex = 0;
+	typedef vector<LogicalPlanNode *>::const_iterator LogicalPlanNodeIter;
+
+	//TODO: there should be only one child ..remove loop
+	for(LogicalPlanNodeIter child = root->children.begin() ; child != root->children.end(); ++child){
+		vector<PhysicalPlanOptimizationNode *> childTreeOptions;
+		buildIncompleteSubTreeOptions(*child, childTreeOptions);
+		candidatesOfChildren.push_back(childTreeOptions);
+		domains[childIndex] = childTreeOptions.size();
+		totalNumberOfProducts *= childTreeOptions.size();
+		childIndex ++;
+	}
+
+	unsigned * cartProductResults = new unsigned[totalNumberOfProducts * root->children.size()];
+	srch2::util::QueryOptimizerUtil::cartesianProduct(root->children.size(), domains, cartProductResults, totalNumberOfProducts);
+
+	for(unsigned p = 0 ; p < totalNumberOfProducts ; ++p){
+
+		PhysicalPlanOptimizationNode * phraseSearchOptNode = (PhysicalPlanOptimizationNode *)
+				this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOptimzationOperator();
+		phraseSearchOptNode->setLogicalPlanNode(root);
+		//TODO: there should be only one child ..remove loop
+		for(unsigned d = 0; d < root->children.size() ; d++){
+			vector<PhysicalPlanOptimizationNode *> * candidatesOfThisChild = &(candidatesOfChildren.at(d));
+			unsigned indexOfChildOptionToChoose = cartProductResults[root->children.size() * p + d];
+			phraseSearchOptNode->addChild(candidatesOfThisChild->at(indexOfChildOptionToChoose));
+		}
+		if(phraseSearchOptNode->validateChildren() == true){
+			treeOptions.push_back(phraseSearchOptNode);
+		}
+	}
+
+	delete domains;
+	delete cartProductResults;
+}
+
 void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
 	// TODO For now NOT just passes the options up
 	// NOTE : This is WRONG because it's ignoring NOT
@@ -467,6 +513,14 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 		case PhysicalPlanNode_UnionLowestLevelSuggestion:{
 			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOptimizationOperator();
 			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOperator();
+			break;
+		}
+		case PhysicalPlanNode_PhraseSearch:{
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOptimzationOperator();
+			LogicalPlanNode * logPlanNode = chosenTree->getLogicalPlanNode();
+			ASSERT(logPlanNode != NULL);	//TODO: throw exception ...phrase opertator cannot work without phrase info stored in logical node.
+			LogicalPlanPhraseNode * phraseLogicalNode = reinterpret_cast<LogicalPlanPhraseNode *>(logPlanNode);
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOperator(phraseLogicalNode->getPhraseInfo());
 			break;
 		}
 		default:

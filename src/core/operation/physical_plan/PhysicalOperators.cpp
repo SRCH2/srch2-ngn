@@ -5,6 +5,7 @@
 #include "UnionLowestLevelSuggestionOperator.h"
 #include "MergeTopKOperator.h"
 #include "FilterQueryOperator.h"
+#include "PhraseSearchOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -161,5 +162,17 @@ FilterQueryOptimizationOperator * PhysicalOperatorFactory::createFilterQueryOpti
 	optimizationNodes.push_back(filterQueryOpOp);
 	return filterQueryOpOp;
 }
+
+PhraseSearchOperator * PhysicalOperatorFactory::createPhraseSearchOperator(PhraseInfo * phraseSearchInfo) {
+	PhraseSearchOperator * object = new PhraseSearchOperator(*phraseSearchInfo);
+	executionNodes.push_back(object);
+	return object;
+}
+PhraseSearchOptimizationOperator * PhysicalOperatorFactory::createPhraseSearchOptimzationOperator() {
+	PhraseSearchOptimizationOperator * object = new PhraseSearchOptimizationOperator();
+	optimizationNodes.push_back(object);
+	return object;
+}
+
 }
 }

@@ -403,7 +403,8 @@ public:
 };
 
 
-
+class PhraseSearchOperator;
+class PhraseSearchOptimizationOperator;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class PhysicalOperatorFactory{
@@ -440,7 +441,8 @@ public:
 	UnionLowestLevelSuggestionOptimizationOperator * createUnionLowestLevelSuggestionOptimizationOperator();
 	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator);
 	FilterQueryOptimizationOperator * createFilterQueryOptimizationOperator();
-
+	PhraseSearchOperator * createPhraseSearchOperator(PhraseInfo * phraseSearchInfo);
+	PhraseSearchOptimizationOperator * createPhraseSearchOptimzationOperator();
 
 private:
 	vector<PhysicalPlanNode *> executionNodes;

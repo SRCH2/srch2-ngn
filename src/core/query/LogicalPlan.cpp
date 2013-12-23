@@ -75,6 +75,14 @@ LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType
 	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
 	return node;
 }
+LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
+		const vector<unsigned>& phraseKeywordsPosition,
+		short slop, unsigned fieldFilter) {
+
+	LogicalPlanNode * node = new LogicalPlanPhraseNode(phraseKeyWords, phraseKeywordsPosition,
+			slop, fieldFilter);
+	return node;
+}
 
 
 }
