@@ -181,6 +181,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 		// cache hit
+		Logger::info("Cache hit, key : " , key.c_str());
 		cachedObject->copyToQueryResultsInternal(queryResults->impl);
 		return queryResults->impl->sortedFinalResults.size();
 	}
