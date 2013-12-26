@@ -178,12 +178,15 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	//1. first check to see if we have this query in cache
 	string key = logicalPlan->getUniqueStringForCaching();
 //	cout << "Key : " << key << endl;
+	Logger::info("key : %s " , key.c_str());
 	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 		// cache hit
-		Logger::info("Cache hit, key : %s " , key.c_str());
+		Logger::info("Cache hit.") ;
 		cachedObject->copyToQueryResultsInternal(queryResults->impl);
 		return queryResults->impl->sortedFinalResults.size();
+	}else{
+		Logger::info("No cache hit.") ;
 	}
 	 /*
 	  * 3. Execute physical plan
