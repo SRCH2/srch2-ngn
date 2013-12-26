@@ -186,6 +186,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfO
 	// make_heap
 	resultCost.addFunctionCallCost();
 	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	Logger::info("TVL open cost : %d",  resultCost.cost);
 	return resultCost ; // cost of going over leaf nodes.
 
 }
@@ -196,6 +197,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfG
 	PhysicalPlanCost resultCost;
 	resultCost.addLargeFunctionCost();
 	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfTerminalNodes)));
+	Logger::info("TVL getNext cost : %d",  resultCost.cost);
 	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.

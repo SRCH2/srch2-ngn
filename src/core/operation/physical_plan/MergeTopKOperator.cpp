@@ -338,6 +338,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 
 
 	resultCost.addMediumFunctionCost(); // finding the records
+	Logger::info("TopK cost : %d" , resultCost.cost );
 	return resultCost;
 
 }
