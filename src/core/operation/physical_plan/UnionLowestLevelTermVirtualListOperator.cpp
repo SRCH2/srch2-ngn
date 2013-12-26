@@ -210,9 +210,11 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfC
 }
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	Logger::info("Estimated number of leaf nodes : %d",estimatedNumberOfTerminalNodes);
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
 	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	Logger::info(" TVL verification cost : %d" , resultCost.cost);
 	return resultCost;
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
