@@ -23,6 +23,8 @@ QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator){
  */
 void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan){
 
+	this->logicalPlan = logicalPlan;
+
 	// Build physical plan
 	buildPhysicalPlanFirstVersion(physicalPlan);
 
