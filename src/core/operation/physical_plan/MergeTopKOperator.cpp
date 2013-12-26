@@ -325,15 +325,22 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	ASSERT(this->getChildrenCount() != 0);
 	costOfVisitingOneRecord = costOfVisitingOneRecord / this->getChildrenCount();
 
+	Logger::info("Cost of visiting one record : %d" , costOfVisitingOneRecord);
+
+	Logger::info("Children lists : ================== " );
 	unsigned sumOfChildrenLenghts = 0 ;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		sumOfChildrenLenghts += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		Logger::info("List length : %d" , this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults());
 	}
+	Logger::info("Children lists : ================== " );
 
 	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	Logger::info("Estimated number of cadidates : %d" , estimatedTotalNumberOfCandidates);
+
 	double estimatedNumberOfRecordsToVisitForOneCandidate =
 			( (sumOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates*this->getChildrenCount()) ) + 1;
-
+	Logger::info("estimatedNumberOfRecordsToVisitForOneCandidate : %f",estimatedNumberOfRecordsToVisitForOneCandidate);
 	PhysicalPlanCost resultCost;
 	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 1 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
 
