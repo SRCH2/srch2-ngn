@@ -177,7 +177,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	ASSERT(logicalPlan != NULL);
 	//1. first check to see if we have this query in cache
 	string key = logicalPlan->getUniqueStringForCaching();
-	cout << "Key : " << key << endl;
+//	cout << "Key : " << key << endl;
 	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 		// cache hit
