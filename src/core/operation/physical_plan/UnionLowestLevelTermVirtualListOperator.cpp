@@ -213,7 +213,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfV
 	Logger::info("Estimated number of leaf nodes : %d",estimatedNumberOfTerminalNodes);
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
-	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
 	Logger::info(" TVL verification cost : %d" , resultCost.cost);
 	return resultCost;
 }

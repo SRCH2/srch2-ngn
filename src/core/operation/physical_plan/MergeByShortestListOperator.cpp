@@ -189,7 +189,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 * (estimated length of shortest list / estimated number of results of this and) * ( child's getNextCost + sum of verification costs + O(1) ) + O(1)
 	 */
 	unsigned indexOfShortestList = getShortestListOffsetInChildren();
-	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->estimatedNumberOfResults;
+	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	if(estimatedNumberOfResults == 0){
 		estimatedNumberOfResults = 1;
