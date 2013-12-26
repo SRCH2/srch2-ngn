@@ -269,7 +269,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	unsigned numberOfIterations ;
-	if(logicalPlan->getSearchType() == SearchTypeTopKQuery){
+	if(logicalPlan->getQueryType() == SearchTypeTopKQuery){
 		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 	}else{
 		numberOfIterations = -1; // to set it to a very big number
@@ -292,7 +292,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 		queryResult->internalRecordId = newRecord->getRecordId();
 		//
-		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());//TODO
+		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){

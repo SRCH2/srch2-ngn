@@ -22,12 +22,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
 	// 1. get the pointer to logical plan node
 	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
 	// 2. Get the Term object
-	Term * term = NULL;
-	if(params.isFuzzy){
-		term = logicalPlanNode->fuzzyTerm;
-	}else{
-		term = logicalPlanNode->exactTerm;
-	}
+	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 
 	this->invertedIndex = queryEvaluator->getInvertedIndex();
     this->prefixActiveNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
@@ -36,10 +31,6 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
     this->currentRecordID = -1;
-    // this flag indicates whether this TVL is for a tooPopular term or not.
-    // If it is a TVL of a too popular term, this TVL is disabled, meaning it should not be used for iteration over
-    // heapItems. In this case shouldIterateToLeafNodesAndScoreOfTopRecord is not equal to -1
-    // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
@@ -178,12 +169,7 @@ bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanR
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
-	Term * term = NULL;
-	if(parameters.isFuzzy){
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
-	}else{
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
-	}
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
 	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 

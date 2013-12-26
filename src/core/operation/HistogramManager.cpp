@@ -56,7 +56,7 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 			node->forcedPhysicalNode = PhysicalPlanNode_UnionLowestLevelSuggestion;
 			return;
 		}
-	}
+    }
 }
 
 // traverses the tree (by recursive calling) and allocates the annotation object for each node
@@ -195,8 +195,6 @@ ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *
     utf8StringToCharTypeVector(*keyword, charTypeKeyword);
     unsigned keywordLength = charTypeKeyword.size();
     ASSERT(keywordLength > 0);
-
-    //std::cout << "Keyword:" << *keyword;
 
     // We group the active trie nodes based on their edit distance to the term prefix
 

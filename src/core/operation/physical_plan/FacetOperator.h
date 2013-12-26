@@ -131,7 +131,34 @@ public:
 
 };
 
-
+/*
+ * The following two classes implement Facet as a physical operator.
+ * this operator is always on top of the root physical operator and it computes facets
+ * while retrieving all records from its child and returning them to its parent
+ * (which might be another post processing operator) untouched.
+ * Example :
+ * q = A AND B OR C & facet=true & facet.field=model
+ * the core plan for query execution (one possible plan):
+ * [OR sorted by ID]___[SORT BY ID]___[SCAN C]
+ *       |
+ *       |_____________[SORT BY ID]___[Merge TopK]____[TVL A]
+ *                                          |_________[TVL B]
+ *
+ * but the complete plan tree looks like this :
+ *
+ * [FacetOperator]
+ *        |
+ * [KeywordSearchOperator]
+ * { // the core plan is built and optimized in open function of KeywordSearchOperator
+ * [OR sorted by ID]___[SORT BY ID]___[SCAN C]
+ *       |
+ *       |_____________[SORT BY ID]___[Merge TopK]____[TVL A]
+ *                                          |_________[TVL B]
+ * }
+ *
+ * and the results are collected by calling getNext of FacetOperator iteratively .
+ *
+ */
 class FacetOperator : public PhysicalPlanNode {
 public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);

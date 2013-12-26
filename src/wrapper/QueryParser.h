@@ -556,11 +556,11 @@ private:
      * This function extracts the boolean parse tree of the query and
      * attaches a tree to root.
      * Example:
-     * (Author:Kundera AND mark~0.8*) OR (NOT hello AND apple)
+     * (Author:Kundera AND mark*~0.8) OR (NOT hello AND apple)
      * ======>
      * [OR]____ [AND]____ {Author:Kundera}
      *   |        |
-     *   |        |______ {mark~0.8*}
+     *   |        |______ {mark*~0.8}
      *   |
      *   |_____ [AND]____ [NOT]____ {hello}
      *            |

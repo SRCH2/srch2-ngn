@@ -113,6 +113,10 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		if(childOffset == this->indexOfShortestListChild){
+			/*
+			 * No verification is needed for the shortest list itself, we should only
+			 * copy the vefirication info (like matching prefix and editdistance) to the output
+			 */
 			runTimeTermRecordScores.push_back(recordItem->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(recordItem->getRecordStaticScore());
 			vector<TrieNodePointer> matchingPrefixes;
@@ -128,6 +132,10 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
 			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
 		}else{
+			/*
+			 * We should verify this record with all children (except for the shortest list one) and if all of them
+			 * pass, then we should copy the verification info.
+			 */
 			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;

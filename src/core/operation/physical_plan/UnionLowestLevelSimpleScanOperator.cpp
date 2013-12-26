@@ -22,12 +22,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	// 1. get the pointer to logical plan node
 	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
 	// 2. Get the Term object
-	Term * term = NULL;
-	if(params.isFuzzy){
-		term = logicalPlanNode->fuzzyTerm;
-	}else{
-		term = logicalPlanNode->exactTerm;
-	}
+	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 	// 3. Get the ActiveNodeSet from the logical plan
 	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
 
@@ -74,12 +69,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	// 1. get the pointer to logical plan node
 	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
 	// 2. Get the Term object
-	Term * term = NULL;
-	if(params.isFuzzy){
-		term = logicalPlanNode->fuzzyTerm;
-	}else{
-		term = logicalPlanNode->exactTerm;
-	}
+	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 
 	// find the next record and check the its validity
 	unsigned recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
@@ -179,17 +169,18 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
-	Term * term = NULL;
-	if(parameters.isFuzzy){
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
-	}else{
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
-	}
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
 	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 }
 
 
+
+/*
+ * This function continues traversing the trie from the prefix trie node
+ * to reach to all leaf nodes which are within the allowed edit-distance.
+ * So if the term type is prefix, and the match is exact, still we can have multiple leaf nodes.
+ */
 void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
 		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned distance, unsigned bound){
     if (trieNode->isTerminalNode()){

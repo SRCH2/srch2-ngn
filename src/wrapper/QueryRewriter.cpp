@@ -443,7 +443,7 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 	// if search type is RetrieveByIdSearchType, only docid must be set in QueryPlan, no other information is needed in QueryPlan
 	if(paramContainer->hasParameterInQuery(RetrieveByIdSearchType)){
 		plan.setDocIdForRetrieveByIdSearchType(paramContainer->docIdForRetrieveByIdSearchType);
-		plan.setSearchType(srch2is::SearchTypeRetrievById);
+		plan.setQueryType(srch2is::SearchTypeRetrieveById);
 		return;
 	}
     createExactAndFuzzyQueries(plan);
@@ -464,7 +464,7 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 
 void QueryRewriter::rewriteParseTree(){
 	// rule 1 : merge similar levels in the tree
-	paramContainer->parseTreeRoot = TreeOperations::mergeTwoSimilarLevels(paramContainer->parseTreeRoot);
+	paramContainer->parseTreeRoot = TreeOperations::mergeSameOperatorLevels(paramContainer->parseTreeRoot);
 }
 
 void QueryRewriter::buildLogicalPlan(LogicalPlan & logicalPlan){
@@ -516,11 +516,11 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
     //1. first find the search type
     if (paramContainer->hasParameterInQuery(TopKSearchType)) { // search type is TopK
-        plan.setSearchType(srch2is::SearchTypeTopKQuery);
+        plan.setQueryType(srch2is::SearchTypeTopKQuery);
     } else if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results
-        plan.setSearchType(srch2is::SearchTypeGetAllResultsQuery);
+        plan.setQueryType(srch2is::SearchTypeGetAllResultsQuery);
     } else if (paramContainer->hasParameterInQuery(GeoSearchType)) { // GEO
-        plan.setSearchType(srch2is::SearchTypeMapQuery);
+        plan.setQueryType(srch2is::SearchTypeMapQuery);
     } // else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
@@ -554,7 +554,7 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
     }
 
     // 5. based on the search type, get needed information and create the query objects
-    switch (plan.getSearchType()) {
+    switch (plan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         createExactAndFuzzyQueriesForTopK(plan);
         break;

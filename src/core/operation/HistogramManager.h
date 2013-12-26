@@ -37,6 +37,13 @@ namespace srch2
 namespace instantsearch
 {
 
+
+/*
+ * This class keeps the meta-data of each logical plan node. LogicalPlanNode has a
+ * pointer to this class which is null until logicalPlan comes into the core. These
+ * objects (all over the logical plan tree) are then initialized and filled by the
+ *  HistogramManager as the first step of query optimization.
+ */
 class LogicalPlanNodeAnnotation{
 public:
 	unsigned estimatedNumberOfResults;

@@ -64,7 +64,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
 
     //do the search
-    switch (queryPlan.getSearchType()) {
+    switch (queryPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery: //TopK
     case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
         executeKeywordSearch(finalResults);
@@ -72,7 +72,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     case srch2is::SearchTypeMapQuery: //MapQuery
         executeGeo(finalResults);
         break;
-    case srch2is::SearchTypeRetrievById:
+    case srch2is::SearchTypeRetrieveById:
     	executeRetrieveById(finalResults);
     	break;
     default:

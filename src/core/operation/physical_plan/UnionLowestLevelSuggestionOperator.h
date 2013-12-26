@@ -32,7 +32,9 @@ namespace srch2 {
 namespace instantsearch {
 
 /*
- * This operator is suggestion implementation as a physical operator.
+ * This operator is a suggestion opertor. As of Dec,23rd,2013 this operator is only used when there is
+ * a single keyword in the query which is too popular and we decide to return the results of most likely
+ * completions instead of returning the results of the query itself. It's also known as H1 heuristic.
  */
 class UnionLowestLevelSuggestionOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;

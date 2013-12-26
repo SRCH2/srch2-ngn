@@ -90,7 +90,7 @@ typedef enum
     SearchTypeTopKQuery ,
     SearchTypeGetAllResultsQuery ,
     SearchTypeMapQuery,
-    SearchTypeRetrievById
+    SearchTypeRetrieveById
 } QueryType;
 
 //TODO add prefix OP

@@ -54,6 +54,13 @@ public:
 
     string getUniqueStringForCaching();
     string getUniqueStringForCachingRecursive(LogicalPlanNode * root);
+    Term * getTerm(bool isFuzzy){
+    	if(isFuzzy){
+    		return this->fuzzyTerm;
+    	}else{
+    		return this->exactTerm;
+    	}
+    }
 
 private:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
@@ -97,7 +104,8 @@ public:
 	ResultsPostProcessorPlan * postProcessingPlan;
 	ResultsPostProcessingInfo * postProcessingInfo;
 	/// Plan related information
-	srch2::instantsearch::QueryType searchType;
+	srch2::instantsearch::QueryType queryType;
+	// the offset of requested results in the result set
 	int offset;
 	int numberOfResultsToRetrieve;
 	bool shouldRunFuzzyQuery;
@@ -141,6 +149,8 @@ public:
 		this->tree = tree;
 	}
 
+	// if this function returns true we must use fuzzy search
+	// if we dont find enough exact results;
 	bool isFuzzy() const {
 		return shouldRunFuzzyQuery;
 	}
@@ -165,8 +175,8 @@ public:
 		this->numberOfResultsToRetrieve = resultsToRetrieve;
 	}
 
-	srch2is::QueryType getSearchType() const {
-		return searchType;
+	srch2is::QueryType getQueryType() const {
+		return queryType;
 	}
 	Query* getExactQuery() const{
 		return exactQuery;
@@ -195,8 +205,8 @@ public:
 	    }
 	}
 
-	void setSearchType(srch2is::QueryType searchType) {
-		this->searchType = searchType;
+	void setQueryType(srch2is::QueryType queryType) {
+		this->queryType = queryType;
 	}
 
 	std::string getDocIdForRetrieveByIdSearchType(){
@@ -217,7 +227,7 @@ public:
 		if(postProcessingInfo != NULL){
 			ss << postProcessingInfo->getUniqueStringForCaching().c_str();
 		}
-		ss << searchType;
+		ss << queryType;
 		ss << offset;
 		ss << numberOfResultsToRetrieve;
 		ss << shouldRunFuzzyQuery;

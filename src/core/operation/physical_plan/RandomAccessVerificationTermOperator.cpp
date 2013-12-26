@@ -32,12 +32,7 @@ bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRand
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
-	Term * term = NULL;
-	if(parameters.isFuzzy){
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
-	}else{
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
-	}
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);;
 
 	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 

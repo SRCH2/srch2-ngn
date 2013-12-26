@@ -18,12 +18,7 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
 
 	this->queryEvaluatorIntrnal = queryEvaluatorIntrnal;
 	// 1. first iterate on active nodes and find best estimated leaf nodes.
-	Term * term = NULL;
-	if(params.isFuzzy == true){
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
-	}else{
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
-	}
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
 	unsigned numberOfSuggestionsToFind = 10;
 	/*
 	 * Maybe we can get this value from a constant later
@@ -39,12 +34,7 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     return true;
 }
 PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-	Term * term = NULL;
-	if(params.isFuzzy == true){
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->fuzzyTerm;
-	}else{
-		term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->exactTerm;
-	}
+	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
 	shared_ptr<vectorview<unsigned> > invertedListReadView;
 	queryEvaluatorIntrnal->getInvertedIndex()->
 				getInvertedListReadView(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
