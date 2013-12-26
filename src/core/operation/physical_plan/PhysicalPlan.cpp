@@ -70,7 +70,7 @@ PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getParent(){
 
 void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 	PhysicalPlanNodeType type = getType();
-	srch2::util::QueryOptimizerUtil::printIndentations(indent);
+	//srch2::util::QueryOptimizerUtil::printIndentations(indent);
 	switch (type) {
 		case PhysicalPlanNode_SortById:
 			Logger::info("[SortByID]");
