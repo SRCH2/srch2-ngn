@@ -360,10 +360,10 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 
-//		Logger::info("========================================================" );
-//		Logger::info("Cost is %d" , cost.cost);
-//		(*treeOption)->printSubTree();
-//		Logger::info("========================================================" );
+		Logger::info("========================================================" );
+		Logger::info("Cost is %d" , cost.cost);
+		(*treeOption)->printSubTree();
+		Logger::info("========================================================" );
 
 //		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
 //			minPlan = (*treeOption);
