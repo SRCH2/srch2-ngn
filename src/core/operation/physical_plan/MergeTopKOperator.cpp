@@ -39,9 +39,6 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	return true;
 }
 PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-
-    struct timespec tstart;
-    clock_gettime(CLOCK_REALTIME, &tstart);
 	/*
 	 * PhysicalPlanRecordItem * topRecordToReturn = NULL;
 	 *
@@ -105,11 +102,19 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 			return topRecordToReturn;
 		}
 		//2.2.
+	    struct timespec tstart;
+	    clock_gettime(CLOCK_REALTIME, &tstart);
 		if(std::find(visitedRecords.begin(),visitedRecords.end(),nextRecord->getRecordId()) == visitedRecords.end()){
 			visitedRecords.push_back(nextRecord->getRecordId());
 		}else{ // already visited
 			continue;
 		}
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "visited records lookup : " << ts1  << endl;
+		cout << "visited records size : " << visitedRecords.size() <<endl;
 
 		//3.
         std::vector<float> runTimeTermRecordScores;
@@ -158,11 +163,6 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		// 5.2: go to the beginning of the loop again
 	}
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    cout << "getNext topk " << ts1  << endl;
 	return topRecordToReturn;
 
 }
