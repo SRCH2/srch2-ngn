@@ -25,8 +25,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 		 * ---- 1.3. ...
 		 */
-		struct timespec tend, tstart;
-		clock_gettime(CLOCK_REALTIME, &tstart);
+//		struct timespec tend, tstart;
+//		clock_gettime(CLOCK_REALTIME, &tstart);
 		HistogramManager histogramManager(queryEvaluator);
 		histogramManager.annotate(logicalPlan);
 		/*
@@ -40,10 +40,10 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		PhysicalPlan physicalPlan(queryEvaluator);
 		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
 
-	    clock_gettime(CLOCK_REALTIME, &tend);
-	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
-	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-//	    cout << "Time of building and optimizing the plan : " << ts2 << endl;
+//	    clock_gettime(CLOCK_REALTIME, &tend);
+//	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+//	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+////	    cout << "Time of building and optimizing the plan : " << ts2 << endl;
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
@@ -68,10 +68,24 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		}
 		params.k = numberOfIterations;
 		//1. Open the physical plan by opening the root
+	    struct timespec tstart;
+	    clock_gettime(CLOCK_REALTIME, &tstart);
 		physicalPlan.getPlanTree()->open(queryEvaluator , params);
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "Physical plan open : " <<  ts1 << endl;
 		//2. call getNext for K times
 		for(unsigned i=0;(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery ? true : (i < numberOfIterations) );i++){
+		    struct timespec tstart;
+		    clock_gettime(CLOCK_REALTIME, &tstart);
 			PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
+		    struct timespec tend;
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		    cout << "Physical plan getNext : " <<  ts1 << endl;
 			if(newRecord == NULL){
 				break;
 			}
