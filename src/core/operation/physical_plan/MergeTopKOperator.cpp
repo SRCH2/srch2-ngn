@@ -346,7 +346,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	double estimatedNumberOfRecordsToVisitForOneCandidate = ((minOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates + 1)) *
 			this->getChildrenCount();
-	cout << "Estimated number of records visited for one : " << estimatedNumberOfRecordsToVisitForOneCandidate << endl;
+	estimatedNumberOfRecordsToVisitForOneCandidate *= 2;
 	PhysicalPlanCost resultCost;
 	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 50 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
 
