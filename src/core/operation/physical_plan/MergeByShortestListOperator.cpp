@@ -189,7 +189,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 * (estimated length of shortest list / estimated number of results of this and) * ( child's getNextCost + sum of verification costs + O(1) ) + O(1)
 	 */
 	unsigned indexOfShortestList = getShortestListOffsetInChildren();
-	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->estimatedNumberOfResults;
+	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	if(estimatedNumberOfResults == 0){
 		estimatedNumberOfResults = 1;
@@ -201,8 +201,10 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 		if(childOffset == indexOfShortestList){
 			continue;
 		}
-		recordProcessingCost.addMediumFunctionCost(this->getChildrenCount()); // cost of verify record with children
+		recordProcessingCost = recordProcessingCost +
+				this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
+	recordProcessingCost.addMediumFunctionCost(); // cost of verify record with children
 	recordProcessingCost.addFunctionCallCost(15); // function calls
 	recordProcessingCost.addInstructionCost(4); // simple instructions and conditions
 	recordProcessingCost.addSmallFunctionCost(5); // small functions like push_back

@@ -230,7 +230,7 @@ PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerify
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
-	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
 	return resultCost;
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){

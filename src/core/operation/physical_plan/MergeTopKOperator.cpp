@@ -313,25 +313,28 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * 				10
 	 */
 	double costOfVisitingOneRecord = 0;
-	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+	for(unsigned childOffset = 0 ; childOffset < this->getChildrenCount() ; ++childOffset){
 		costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
 		for(unsigned childOffset2 = 0 ; childOffset2 != this->getChildrenCount() ; ++childOffset2){
 			if(childOffset == childOffset2){
 				continue;
 			}
-			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost;
+			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset2)->getCostOfVerifyByRandomAccess(params).cost;
 		}
 	}
 	ASSERT(this->getChildrenCount() != 0);
 	costOfVisitingOneRecord = costOfVisitingOneRecord / this->getChildrenCount();
 
-	unsigned sumOfChildrenLenghts = 0 ;
-	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		sumOfChildrenLenghts += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	unsigned minOfChildrenLenghts =  this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	for(unsigned childOffset = 1 ; childOffset < this->getChildrenCount() ; ++childOffset){
+		if(minOfChildrenLenghts > this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
+			minOfChildrenLenghts = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		}
 	}
 
 	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	double estimatedNumberOfRecordsToVisitForOneCandidate = ( (sumOfChildrenLenghts * 1.0) / estimatedTotalNumberOfCandidates ) + 1;
+	double estimatedNumberOfRecordsToVisitForOneCandidate = ((minOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates + 1)) *
+			this->getChildrenCount();
 
 	PhysicalPlanCost resultCost;
 	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 50 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
