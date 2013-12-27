@@ -25,6 +25,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 		 * ---- 1.3. ...
 		 */
+		struct timespec tend, tstart;
+		clock_gettime(CLOCK_REALTIME, &tstart);
 		HistogramManager histogramManager(queryEvaluator);
 		histogramManager.annotate(logicalPlan);
 		/*
@@ -38,6 +40,10 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		PhysicalPlan physicalPlan(queryEvaluator);
 		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
 
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "Time of building and optimizing the plan : " << ts2 << endl;
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
