@@ -111,8 +111,8 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 	    struct timespec tend;
 	    clock_gettime(CLOCK_REALTIME, &tend);
-	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
 	    cout << "visited records lookup : " << ts1  << endl;
 		cout << "visited records size : " << visitedRecords.size() <<endl;
 
