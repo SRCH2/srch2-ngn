@@ -91,6 +91,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		return topRecordToReturn;
 	}
 
+	unsigned numberOfRecordsVisitedForOneResult = 0;
 	// Part2.
 	while(true){
 		//1.
@@ -109,6 +110,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}else{
 			continue;
 		}
+		numberOfRecordsVisitedForOneResult++;
 		//3.
         std::vector<float> runTimeTermRecordScores;
         std::vector<float> staticTermRecordScores;
@@ -161,6 +163,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     cout << "topk getNext : " << ts1  << endl;
+    cout << "Number of records visited for one : " << numberOfRecordsVisitedForOneResult << endl;
 	return topRecordToReturn;
 
 }
@@ -343,7 +346,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	double estimatedNumberOfRecordsToVisitForOneCandidate = ((minOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates + 1)) *
 			this->getChildrenCount();
-
+	cout << "Estimated number of records visited for one : " << estimatedNumberOfRecordsToVisitForOneCandidate << endl;
 	PhysicalPlanCost resultCost;
 	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 50 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
 
