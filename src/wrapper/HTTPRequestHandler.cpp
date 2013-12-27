@@ -948,6 +948,13 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     LogicalPlan logicalPlan;
     qr.rewrite(logicalPlan);
 
+
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts3 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    cout << "time before execution : " << ts3 << endl;
+
     //4. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();
@@ -958,10 +965,11 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     qe.execute(finalResults);
 
     // compute elapsed time in ms , end the timer
-    struct timespec tend;
+//    struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    cout << "time after execution : " << ts1 << endl;
 
     //5. call the print function to print out the results
     // TODO : re-implement a print function which print the results in JSON format.
@@ -1015,6 +1023,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     // 6. delete allocated structures
     // Free the objects
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts4 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    cout << "time after print : " << ts4 << endl;
     evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
