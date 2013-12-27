@@ -122,10 +122,26 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
         std::vector<unsigned> attributeBitmaps;
         std::vector<unsigned> prefixEditDistances;
         std::vector<unsigned> positionIndexOffsets;
+
+        struct timespec tstart;
+        clock_gettime(CLOCK_REALTIME, &tstart);
+
 		if(verifyRecordWithChildren(nextRecord, childToGetNextRecordFrom,  runTimeTermRecordScores, staticTermRecordScores,
 				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
+		    struct timespec tend;
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		    cout << "topK verify by random access : " << ts1 << endl;
 			continue;	// 3.1. and 3.2.
 		}
+
+
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "topK verify by random access : " << ts1 << endl;
 		// from this point, nextRecord is a candidate
 		//4.
 		// set the members
@@ -177,16 +193,7 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-    struct timespec tstart;
-    clock_gettime(CLOCK_REALTIME, &tstart);
-	bool result = verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    cout << "topK verify by random access : " << ts1 << endl;
-    return result;
-
+	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
 
 
@@ -255,7 +262,6 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 					positionIndexOffsets.end(),parameters.positionIndexOffsets.begin(),parameters.positionIndexOffsets.end());
 		}
 	}
-
     return true;
 
 }
