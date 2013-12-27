@@ -378,11 +378,11 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 //		(*treeOption)->printSubTree();
 //		cout << "========================================================" << endl;
 
-		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
-			minPlan = (*treeOption);
-			minCost = cost.cost;
-			break;
-		}
+//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+//			minPlan = (*treeOption);
+//			minCost = cost.cost;
+//			break;
+//		}
 
 		if(minPlan == NULL){
 			minPlan = (*treeOption);

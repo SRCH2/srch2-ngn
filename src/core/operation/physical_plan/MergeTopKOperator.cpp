@@ -103,11 +103,6 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 			return topRecordToReturn;
 		}
 		//2.2.
-//		if(std::find(visitedRecords.begin(),visitedRecords.end(),nextRecord->getRecordId()) == visitedRecords.end()){
-//			visitedRecords.push_back(nextRecord->getRecordId());
-//		}else{ // already visited
-//			continue;
-//		}
 
 		if(visitedRecords.find(nextRecord->getRecordId()) == visitedRecords.end()){
 			visitedRecords.insert(nextRecord->getRecordId());
@@ -163,8 +158,8 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 	}
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
     cout << "topk getNext : " << ts1  << endl;
 	return topRecordToReturn;
 

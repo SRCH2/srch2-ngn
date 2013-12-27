@@ -116,22 +116,52 @@ public:
 class PhysicalPlanRecordItem{
 public:
 	// getters
-	unsigned getRecordId() const ;
-	float getRecordStaticScore() const;
-	float getRecordRuntimeScore() const;
-	void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const;
-	void getRecordMatchEditDistances(vector<unsigned> & editDistances) const;
-	void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const;
-	void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const ;
+	inline unsigned getRecordId() const {
+		return this->recordId;
+	}
+	inline float getRecordStaticScore() const{
+		return this->recordStaticScore;
+	}
+	inline float getRecordRuntimeScore() const{
+		return this->recordRuntimeScore;
+	}
+	inline void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const{
+		matchingPrefixes.insert(matchingPrefixes.end(),this->matchingPrefixes.begin(),this->matchingPrefixes.end());
+	}
+	inline void getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
+		editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
+	}
+	inline void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
+		attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
+	}
+	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
+		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
+	}
 
 	// setters
-	void setRecordId(unsigned id) ;
-	void setRecordStaticScore(float staticScore) ;
-	void setRecordRuntimeScore(float runtimeScore) ;
-	void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) ;
-	void setRecordMatchEditDistances(const vector<unsigned> & editDistances) ;
-	void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) ;
-	void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets);
+	inline void setRecordId(unsigned id) {
+		this->recordId = id;
+	}
+	inline void setRecordStaticScore(float staticScore) {
+		this->recordStaticScore = staticScore;
+	}
+	inline void setRecordRuntimeScore(float runtimeScore) {
+		this->recordRuntimeScore = runtimeScore;
+	}
+	inline void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) {
+		this->matchingPrefixes = matchingPrefixes;
+	}
+	inline void setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
+		this->editDistances = editDistances;
+	}
+	inline void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
+		this->attributeBitmaps = attributeBitmaps;
+	}
+	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
+		this->positionIndexOffsets = positionIndexOffsets;
+	}
+
+
 	~PhysicalPlanRecordItem(){};
 
     std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
