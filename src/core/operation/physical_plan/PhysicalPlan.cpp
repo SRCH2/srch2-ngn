@@ -30,17 +30,6 @@ void IteratorProperties::addProperty(PhysicalPlanIteratorProperty prop){
 }
 
 
-unsigned PhysicalPlanOptimizationNode::getChildrenCount() {
-	return children.size();
-}
-
-PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getChildAt(unsigned offset) {
-	if(offset >= children.size()){
-		ASSERT(false);
-		return NULL;
-	}
-	return children.at(offset);
-}
 
 void PhysicalPlanOptimizationNode::setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) {
 	if(offset >= children.size()){
@@ -128,9 +117,6 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 
 void PhysicalPlanNode::setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode){
 	this->optimizationNode = optimizationNode;
-}
-PhysicalPlanOptimizationNode * PhysicalPlanNode::getPhysicalPlanOptimizationNode(){
-	return this->optimizationNode;
 }
 
 PhysicalPlan::PhysicalPlan(	QueryEvaluatorInternal * queryEvaluator){

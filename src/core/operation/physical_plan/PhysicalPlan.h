@@ -261,8 +261,16 @@ public:
 	// this function checks the types and properties of children to see if it's
 	// meaningful to have this node with this children.
 	virtual bool validateChildren() = 0;
-	unsigned getChildrenCount() ;
-	PhysicalPlanOptimizationNode * getChildAt(unsigned offset) ;
+	inline unsigned getChildrenCount() {
+		return children.size();
+	}
+	inline PhysicalPlanOptimizationNode * getChildAt(unsigned offset) {
+		if(offset >= children.size()){
+			ASSERT(false);
+			return NULL;
+		}
+		return children.at(offset);
+	}
 	void setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) ;
 	void addChild(PhysicalPlanOptimizationNode * child) ;
 	void setParent(PhysicalPlanOptimizationNode * parent);
@@ -271,14 +279,14 @@ public:
 	void setExecutableNode(PhysicalPlanNode * node){
 		this->executableNode = node;
 	}
-	PhysicalPlanNode * getExecutableNode(){
+	inline PhysicalPlanNode * getExecutableNode(){
 		return this->executableNode;
 	}
 
 	void setLogicalPlanNode(LogicalPlanNode * node){
 		this->logicalPlanNode = node;
 	}
-	LogicalPlanNode * getLogicalPlanNode(){
+	inline LogicalPlanNode * getLogicalPlanNode(){
 		return this->logicalPlanNode;
 	}
 
@@ -304,7 +312,9 @@ class PhysicalPlanNode : public PhysicalPlanIteratorExecutionInterface{
 	friend class PhysicalPlan;
 public:
 	void setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode);
-	PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode();
+	inline PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode(){
+		return this->optimizationNode;
+	}
 
 	// this function checks to see if a record (that its id can be found in parameters) is among the
 	// results if this subtree. Different operators have different implementations this function.
