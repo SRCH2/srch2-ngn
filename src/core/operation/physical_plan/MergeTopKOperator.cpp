@@ -177,7 +177,14 @@ bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificatio
 PhysicalPlanRecordItem * MergeTopKOperator::getNextRecordOfChild(unsigned childOffset , const PhysicalPlanExecutionParameters & params){
 	ASSERT(childOffset < this->nextItemsFromChildren.size());
 	PhysicalPlanRecordItem * toReturn = nextItemsFromChildren.at(childOffset);
+    struct timespec tstart;
+    clock_gettime(CLOCK_REALTIME, &tstart);
 	nextItemsFromChildren.at(childOffset) = this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    cout << "TVL get next : " << ts1 << endl;
 	return toReturn;
 }
 
