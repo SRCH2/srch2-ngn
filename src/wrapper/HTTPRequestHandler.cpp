@@ -948,6 +948,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     LogicalPlan logicalPlan;
     qr.rewrite(logicalPlan);
 
+
     //4. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
             new srch2is::QueryResultFactory();

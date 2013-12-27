@@ -201,8 +201,10 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 		if(childOffset == indexOfShortestList){
 			continue;
 		}
-		recordProcessingCost.addMediumFunctionCost(this->getChildrenCount()); // cost of verify record with children
+		recordProcessingCost = recordProcessingCost +
+				this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
+	recordProcessingCost.addMediumFunctionCost(); // cost of verify record with children
 	recordProcessingCost.addFunctionCallCost(15); // function calls
 	recordProcessingCost.addInstructionCost(4); // simple instructions and conditions
 	recordProcessingCost.addSmallFunctionCost(5); // small functions like push_back

@@ -66,7 +66,8 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 	 * 5.1. if maxScore < 'topRecordToReturn'.score, STOP, return 'topRecordToReturn'
 	 * 5.2. else, go to 1
 	 */
-
+//    struct timespec tstart;
+//    clock_gettime(CLOCK_REALTIME, &tstart);
 	PhysicalPlanRecordItem * topRecordToReturn = NULL;
 
 	// Part 1.
@@ -90,6 +91,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		return topRecordToReturn;
 	}
 
+	unsigned numberOfRecordsVisitedForOneResult = 0;
 	// Part2.
 	while(true){
 		//1.
@@ -102,12 +104,13 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 			return topRecordToReturn;
 		}
 		//2.2.
-		if(std::find(visitedRecords.begin(),visitedRecords.end(),nextRecord->getRecordId()) == visitedRecords.end()){
-			visitedRecords.push_back(nextRecord->getRecordId());
-		}else{ // already visited
+
+		if(visitedRecords.find(nextRecord->getRecordId()) == visitedRecords.end()){
+			visitedRecords.insert(nextRecord->getRecordId());
+		}else{
 			continue;
 		}
-
+		numberOfRecordsVisitedForOneResult++;
 		//3.
         std::vector<float> runTimeTermRecordScores;
         std::vector<float> staticTermRecordScores;
@@ -115,10 +118,13 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
         std::vector<unsigned> attributeBitmaps;
         std::vector<unsigned> prefixEditDistances;
         std::vector<unsigned> positionIndexOffsets;
+
 		if(verifyRecordWithChildren(nextRecord, childToGetNextRecordFrom,  runTimeTermRecordScores, staticTermRecordScores,
 				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
 			continue;	// 3.1. and 3.2.
 		}
+
+
 		// from this point, nextRecord is a candidate
 		//4.
 		// set the members
@@ -152,6 +158,12 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		// 5.2: go to the beginning of the loop again
 	}
+//    struct timespec tend;
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+//    cout << "topk getNext : " << ts1  << endl;
+//    cout << "Number of records visited for one : " << numberOfRecordsVisitedForOneResult << endl;
 	return topRecordToReturn;
 
 }
@@ -239,7 +251,6 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 					positionIndexOffsets.end(),parameters.positionIndexOffsets.begin(),parameters.positionIndexOffsets.end());
 		}
 	}
-
     return true;
 
 }
@@ -313,34 +324,30 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * 				10
 	 */
 	double costOfVisitingOneRecord = 0;
-	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+	for(unsigned childOffset = 0 ; childOffset < this->getChildrenCount() ; ++childOffset){
 		costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
 		for(unsigned childOffset2 = 0 ; childOffset2 != this->getChildrenCount() ; ++childOffset2){
 			if(childOffset == childOffset2){
 				continue;
 			}
-			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost;
+			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset2)->getCostOfVerifyByRandomAccess(params).cost;
 		}
 	}
 	ASSERT(this->getChildrenCount() != 0);
 	costOfVisitingOneRecord = costOfVisitingOneRecord / this->getChildrenCount();
 
-	Logger::info("Cost of visiting one record : %d" , costOfVisitingOneRecord);
-
-	Logger::info("Children lists : ================== " );
-	unsigned sumOfChildrenLenghts = 0 ;
-	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		sumOfChildrenLenghts += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-		Logger::info("List length : %d" , this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults());
+	unsigned minOfChildrenLenghts =  this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	for(unsigned childOffset = 1 ; childOffset < this->getChildrenCount() ; ++childOffset){
+		if(minOfChildrenLenghts > this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
+			minOfChildrenLenghts = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		}
 	}
 	Logger::info("Children lists : ================== " );
 
 	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	Logger::info("Estimated number of cadidates : %d" , estimatedTotalNumberOfCandidates);
-
-	double estimatedNumberOfRecordsToVisitForOneCandidate =
-			( (sumOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates*this->getChildrenCount() + 1) );
-		Logger::info("estimatedNumberOfRecordsToVisitForOneCandidate : %f",estimatedNumberOfRecordsToVisitForOneCandidate);
+	double estimatedNumberOfRecordsToVisitForOneCandidate = ((minOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates + 1)) *
+			this->getChildrenCount();
+	estimatedNumberOfRecordsToVisitForOneCandidate *= 10;
 	PhysicalPlanCost resultCost;
 	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 1 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
 

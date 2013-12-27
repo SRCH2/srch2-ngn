@@ -30,17 +30,6 @@ void IteratorProperties::addProperty(PhysicalPlanIteratorProperty prop){
 }
 
 
-unsigned PhysicalPlanOptimizationNode::getChildrenCount() {
-	return children.size();
-}
-
-PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getChildAt(unsigned offset) {
-	if(offset >= children.size()){
-		ASSERT(false);
-		return NULL;
-	}
-	return children.at(offset);
-}
 
 void PhysicalPlanOptimizationNode::setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) {
 	if(offset >= children.size()){
@@ -73,40 +62,52 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 	//srch2::util::QueryOptimizerUtil::printIndentations(indent);
 	switch (type) {
 		case PhysicalPlanNode_SortById:
-			Logger::info("[SortByID]");
+//			Logger::info("[SortByID]");
+			cout << "[SortByID]" << endl;
 			break;
 		case PhysicalPlanNode_SortByScore:
-			Logger::info("[SortByScore]");
+//			Logger::info("[SortByScore]");
+			cout << "[SortByScore]" << endl;
 			break;
 		case PhysicalPlanNode_MergeTopK:
-			Logger::info("[AND TopK]");
+//			Logger::info("[AND TopK]");
+			cout << "[AND TopK]" << endl;
 			break;
 		case PhysicalPlanNode_MergeSortedById:
-			Logger::info("[AND SortedByID]");
+//			Logger::info("[AND SortedByID]");
+			cout << "[AND SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_MergeByShortestList:
-			Logger::info("[AND ShortestList]");
+//			Logger::info("[AND ShortestList]");
+			cout << "[AND ShortestList]" << endl;
 			break;
 		case PhysicalPlanNode_UnionSortedById:
 			Logger::info("[OR SortedByID]");
+			cout << "[OR SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
-			Logger::info("[TVL]");
+//			Logger::info("[TVL]");
+			cout << "[TVL]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
-			Logger::info("[SCAN]");
+//			Logger::info("[SCAN]");
+			cout << "[SCAN]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessTerm:
-			Logger::info("[TERM]" );
+//			Logger::info("[TERM]" );
+			cout << "[TERM]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessAnd:
-			Logger::info("[R.A.AND]");
+//			Logger::info("[R.A.AND]");
+			cout << "[R.A.AND]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessOr:
-			Logger::info("[R.A.OR]");
+//			Logger::info("[R.A.OR]");
+			cout << "[R.A.OR]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessNot:
-			Logger::info("[R.A.NOT]");
+//			Logger::info("[R.A.NOT]");
+			cout << "[R.A.NOT]" << endl;
 			break;
 	}
 	for(vector<PhysicalPlanOptimizationNode *>::iterator child = children.begin(); child != children.end() ; ++child){
@@ -116,9 +117,6 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 
 void PhysicalPlanNode::setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode){
 	this->optimizationNode = optimizationNode;
-}
-PhysicalPlanOptimizationNode * PhysicalPlanNode::getPhysicalPlanOptimizationNode(){
-	return this->optimizationNode;
 }
 
 PhysicalPlan::PhysicalPlan(	QueryEvaluatorInternal * queryEvaluator){
@@ -168,51 +166,5 @@ PhysicalPlanExecutionParameters * PhysicalPlan::getExecutionParameters(){
 	return this->executionParameters;
 }
 
-
-// getters
-unsigned PhysicalPlanRecordItem::getRecordId() const {
-	return this->recordId;
-}
-float PhysicalPlanRecordItem::getRecordStaticScore() const{
-	return this->recordStaticScore;
-}
-float PhysicalPlanRecordItem::getRecordRuntimeScore() const{
-	return this->recordRuntimeScore;
-}
-void PhysicalPlanRecordItem::getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const{
-	matchingPrefixes.insert(matchingPrefixes.end(),this->matchingPrefixes.begin(),this->matchingPrefixes.end());
-}
-void PhysicalPlanRecordItem::getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
-	editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
-}
-void PhysicalPlanRecordItem::getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
-	attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
-}
-void PhysicalPlanRecordItem::getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
-	positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
-}
-
-// setters
-void PhysicalPlanRecordItem::setRecordId(unsigned id) {
-	this->recordId = id;
-}
-void PhysicalPlanRecordItem::setRecordStaticScore(float staticScore) {
-	this->recordStaticScore = staticScore;
-}
-void PhysicalPlanRecordItem::setRecordRuntimeScore(float runtimeScore) {
-	this->recordRuntimeScore = runtimeScore;
-}
-void PhysicalPlanRecordItem::setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) {
-	this->matchingPrefixes = matchingPrefixes;
-}
-void PhysicalPlanRecordItem::setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
-	this->editDistances = editDistances;
-}
-void PhysicalPlanRecordItem::setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
-	this->attributeBitmaps = attributeBitmaps;
-}
-void PhysicalPlanRecordItem::setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
-	this->positionIndexOffsets = positionIndexOffsets;
-}
 
 }}

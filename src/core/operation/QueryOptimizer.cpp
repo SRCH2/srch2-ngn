@@ -61,10 +61,13 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	Logger::info("========================================================");
-	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	Logger::info("========================================================");
+//	Logger::info("========================================================");
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	Logger::info("========================================================");
 //	exit(0);
+//	cout << "========================================================" << endl;
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	cout << "========================================================" << endl;
 	// end : print for test
 
 }
@@ -354,16 +357,26 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
 			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 		}
+
+//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+//			continue;
+//		}
+
+//		cout << "========================================================" << endl;
+//		cout << "Number of getNextCalls : " << numberOfGetNextCalls;
 		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+//		cout << "Cost of open : " << cost.cost << endl;
 		cost = cost +
 				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
 				numberOfGetNextCalls;
-		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+//		cout << "Cost of each get next : "
+//				<< (*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost << endl;
+		cost = cost + (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
-		Logger::info("========================================================" );
-		Logger::info("Cost is %d" , cost.cost);
-		(*treeOption)->printSubTree();
-		Logger::info("========================================================" );
+//		cout << "Cost of close : " << (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters())).cost << endl;
+//		cout << "Total Cost is" <<  cost.cost << endl;
+//		(*treeOption)->printSubTree();
+//		cout << "========================================================" << endl;
 
 //		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
 //			minPlan = (*treeOption);
