@@ -39,6 +39,9 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	return true;
 }
 PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+
+    struct timespec tstart;
+    clock_gettime(CLOCK_REALTIME, &tstart);
 	/*
 	 * PhysicalPlanRecordItem * topRecordToReturn = NULL;
 	 *
@@ -72,14 +75,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 	// Part 1.
 	if(candidatesList.size() > 0){
 		// 1.
-	    struct timespec tstart;
-	    clock_gettime(CLOCK_REALTIME, &tstart);
 		std::sort(candidatesList.begin() ,candidatesList.end() , PhysicalPlanRecordItemComparator()); // change candidatesList to a priority queue
-	    struct timespec tend;
-	    clock_gettime(CLOCK_REALTIME, &tend);
-	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	    cout << "Sorting Candidate list which has " << candidatesList.size() << " elements : "  << ts1 << endl;
 		// 2.
 		topRecordToReturn= candidatesList.at(0);
 		candidatesList.erase(candidatesList.begin());
@@ -123,25 +119,12 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
         std::vector<unsigned> prefixEditDistances;
         std::vector<unsigned> positionIndexOffsets;
 
-        struct timespec tstart;
-        clock_gettime(CLOCK_REALTIME, &tstart);
-
 		if(verifyRecordWithChildren(nextRecord, childToGetNextRecordFrom,  runTimeTermRecordScores, staticTermRecordScores,
 				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
-		    struct timespec tend;
-		    clock_gettime(CLOCK_REALTIME, &tend);
-		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-		    cout << "topK verify by random access : " << ts1 << endl;
 			continue;	// 3.1. and 3.2.
 		}
 
 
-	    struct timespec tend;
-	    clock_gettime(CLOCK_REALTIME, &tend);
-	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	    cout << "topK verify by random access : " << ts1 << endl;
 		// from this point, nextRecord is a candidate
 		//4.
 		// set the members
@@ -175,6 +158,11 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		// 5.2: go to the beginning of the loop again
 	}
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    cout << "getNext topk " << ts1  << endl;
 	return topRecordToReturn;
 
 }
