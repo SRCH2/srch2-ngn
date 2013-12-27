@@ -27,6 +27,11 @@ bool RandomAccessVerificationNotOperator::close(PhysicalPlanExecutionParameters 
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+void RandomAccessVerificationNotOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 
 	bool resultFromChild = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);

@@ -100,6 +100,12 @@ bool SortByRefiningAttributeOperator::close(PhysicalPlanExecutionParameters & pa
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
     return true;
 }
+
+void SortByRefiningAttributeOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
+
 bool SortByRefiningAttributeOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

@@ -43,6 +43,11 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+void FilterQueryOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

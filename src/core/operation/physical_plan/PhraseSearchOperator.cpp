@@ -91,6 +91,11 @@ bool PhraseSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+void PhraseSearchOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

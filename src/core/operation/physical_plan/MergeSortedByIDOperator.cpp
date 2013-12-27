@@ -155,6 +155,11 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	this->listsHaveMoreRecordsInThem = false;
 	return true;
 }
+
+void MergeSortedByIDOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }

@@ -164,6 +164,11 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 
 	return true;
 }
+
+void UnionLowestLevelSimpleScanOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =

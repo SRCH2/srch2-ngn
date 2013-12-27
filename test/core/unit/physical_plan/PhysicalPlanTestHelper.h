@@ -22,6 +22,11 @@ public:
 		cursor = 0;
 		return true;
 	}
+
+	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+	}
+
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 		for(unsigned i=0; i<records.size(); i++){
 			if(records.at(i)->getRecordId() == parameters.recordToVerify->getRecordId()){

@@ -91,6 +91,11 @@ bool SortByScoreOperator::close(PhysicalPlanExecutionParameters & params){
 	recordsAfterTopK.clear();
 	return true;
 }
+
+void SortByScoreOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool SortByScoreOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

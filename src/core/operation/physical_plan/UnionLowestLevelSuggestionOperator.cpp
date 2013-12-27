@@ -95,6 +95,11 @@ bool UnionLowestLevelSuggestionOperator::close(PhysicalPlanExecutionParameters &
 	suggestionPairCursor = invertedListCursor = 0;
 	return true;
 }
+
+void UnionLowestLevelSuggestionOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool UnionLowestLevelSuggestionOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false); // this operator should be used only when there is a single keyword in the query
 	return true;

@@ -56,6 +56,12 @@ bool SortByIdOperator::close(PhysicalPlanExecutionParameters & params){
 	records.clear();
 	return true;
 }
+
+void SortByIdOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
+
 bool SortByIdOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

@@ -55,8 +55,22 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
         }
     }
 
-    // Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
-    make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+    if(params.cacheObject == NULL){
+		// Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
+		make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+    }else{
+    	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
+    			(UnionLowestLevelTermVirtualListCacheEntry *)params.cacheObject;
+    	itemsHeap.clear();
+    	cursorVector.clear();
+    	for(unsigned i = 0; i < cacheEntry->itemsHeap.size() ; ++i){
+    		this->itemsHeap.push_back(
+    				new UnionLowestLevelTermVirtualListOperatorHeapItem(*(cacheEntry->itemsHeap.at(i))));
+    	}
+    	this->cursorVector = cacheEntry->cursorVector;
+    	this->currentMaxEditDistanceOnHeap = cacheEntry->currentMaxEditDistanceOnHeap;
+    	this->numberOfItemsInPartialHeap = cacheEntry->numberOfItemsInPartialHeap;
+    }
 
     return true;
 }
@@ -150,6 +164,13 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
 }
 bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParameters & params){
+
+	// set cache object
+	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
+			new UnionLowestLevelTermVirtualListCacheEntry(this->itemsHeap,
+					this->numberOfItemsInPartialHeap , this->currentMaxEditDistanceOnHeap , this->cursorVector);
+	params.cacheObject = cacheEntry;
+
     queryEvaluator = NULL;
     for (vector<UnionLowestLevelTermVirtualListOperatorHeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
         UnionLowestLevelTermVirtualListOperatorHeapItem *currentItem = *iter;
@@ -164,6 +185,11 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
     // We don't delete activenodesets here. Be careful to delete them by PhysicalPlanNode
     return true;
 }
+
+void UnionLowestLevelTermVirtualListOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+	uniqueString += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getUniqueStringForCaching();
+}
+
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =

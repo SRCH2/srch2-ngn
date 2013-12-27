@@ -31,6 +31,12 @@ bool RandomAccessVerificationOrOperator::close(PhysicalPlanExecutionParameters &
 	}
 	return true;
 }
+
+void RandomAccessVerificationOrOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
+
 bool RandomAccessVerificationOrOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessOrHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }

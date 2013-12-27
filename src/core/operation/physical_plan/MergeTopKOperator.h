@@ -53,6 +53,47 @@ public:
 
 
 
+class MergeTopKCacheEntry : public PhysicalOperatorCacheObject {
+public:
+	vector<PhysicalPlanRecordItem *> candidatesList;
+	vector<PhysicalPlanRecordItem *> nextItemsFromChildren;
+	boost::unordered_set<unsigned> visitedRecords;
+	bool listsHaveMoreRecordsInThem;
+	unsigned childRoundRobinOffset;
+
+	MergeTopKCacheEntry(	QueryEvaluatorInternal * queryEvaluator,
+			                vector<PhysicalPlanRecordItem *> candidatesList,
+							vector<PhysicalPlanRecordItem *> nextItemsFromChildren,
+							boost::unordered_set<unsigned> visitedRecords,
+							bool listsHaveMoreRecordsInThem,
+							unsigned childRoundRobinOffset){
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+					cloneForCache(candidatesList.at(i)));
+		}
+
+		for(unsigned i = 0; i < nextItemsFromChildren.size() ; ++i){
+			this->nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+					cloneForCache(nextItemsFromChildren.at(i)));
+		}
+
+		this->visitedRecords = visitedRecords;
+		this->listsHaveMoreRecordsInThem = listsHaveMoreRecordsInThem;
+		this->childRoundRobinOffset = childRoundRobinOffset;
+	}
+
+	~MergeTopKCacheEntry(){
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			delete candidatesList.at(i);
+		}
+		for(unsigned i=0; i < nextItemsFromChildren.size() ; ++i){
+			delete nextItemsFromChildren.at(i);
+		}
+	}
+};
+
+
+
 /*
  * This operator uses the Threshold Algorithm (Fagin's Algorithm) to find the best record of
  * its subtree. Every time getNext is called threshold algorithm is used and it retrieves
@@ -75,6 +116,7 @@ public:
 	PhysicalPlanRecordItem *
 	getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeTopKOperator();
 private:
@@ -112,7 +154,7 @@ private:
 	 * This function does the first call to getNext of all the children and puts the results in
 	 * the nextItemsFromChildren vector. This vector is used later by getNextRecordOfChild(...)
 	 */
-	void initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params);
+	void initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params , unsigned fromIndex = 0);
 
 
 	unsigned childRoundRobinOffset;

@@ -112,6 +112,11 @@ bool KeywordSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	logicalPlan = NULL;
 	return true;
 }
+
+void KeywordSearchOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool KeywordSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

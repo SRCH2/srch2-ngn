@@ -123,6 +123,11 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	visitedRecords.clear();
 	return true;
 }
+
+void UnionSortedByIDOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessOrHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }

@@ -27,6 +27,12 @@ bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
 }
+
+void RandomAccessVerificationTermOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
+
 bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
 	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =

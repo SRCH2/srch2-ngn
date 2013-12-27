@@ -95,6 +95,11 @@ bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params
 	return true;
 
 }
+
+void MergeByShortestListOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+
+}
+
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
