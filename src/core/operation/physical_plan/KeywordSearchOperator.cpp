@@ -13,8 +13,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
-	struct timespec tstart,tend;
-    clock_gettime(CLOCK_REALTIME, &tstart);
 
 	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
@@ -22,6 +20,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
+		struct timespec tstart,tend;
+		clock_gettime(CLOCK_REALTIME, &tstart);
 		/*
 		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
 		 * ---- 1.1. computes and attaches active node sets for each term
