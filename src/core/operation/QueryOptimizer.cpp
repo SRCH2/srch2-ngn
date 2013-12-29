@@ -347,11 +347,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
 //	minPlan = treeOptions.at(5);
-	unsigned planCounter = 0;
 	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
-		if(planCounter ++ == 5){
-			continue;
-		}
 		PhysicalPlanCost cost;
 		unsigned numberOfGetNextCalls = 0;
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
