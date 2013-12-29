@@ -346,55 +346,55 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
-//	minPlan = treeOptions.at(5);
-	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
-		PhysicalPlanCost cost;
-		unsigned numberOfGetNextCalls = 0;
-		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
-			numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;
-			if((*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
-				numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-			}
-		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
-			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-		}
-
-//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
-//			continue;
+	minPlan = treeOptions.at(0);
+//	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
+//		PhysicalPlanCost cost;
+//		unsigned numberOfGetNextCalls = 0;
+//		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
+//			numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;
+//			if((*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
+//				numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+//			}
+//		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
+//			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 //		}
-
-//		cout << "========================================================" << endl;
-//		cout << "Number of getNextCalls : " << numberOfGetNextCalls;
-		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
-//		cout << "Cost of open : " << cost.cost << endl;
-		cost = cost +
-				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
-				numberOfGetNextCalls;
-//		cout << "Cost of each get next : "
-//				<< (*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost << endl;
-		cost = cost + (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters()));
-
-//		cout << "Cost of close : " << (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters())).cost << endl;
-//		cout << "Total Cost is" <<  cost.cost << endl;
-//		(*treeOption)->printSubTree();
-//		cout << "========================================================" << endl;
-
-//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+//
+////		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+////			continue;
+////		}
+//
+////		cout << "========================================================" << endl;
+////		cout << "Number of getNextCalls : " << numberOfGetNextCalls;
+//		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+////		cout << "Cost of open : " << cost.cost << endl;
+//		cost = cost +
+//				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
+//				numberOfGetNextCalls;
+////		cout << "Cost of each get next : "
+////				<< (*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost << endl;
+//		cost = cost + (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters()));
+//
+////		cout << "Cost of close : " << (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters())).cost << endl;
+////		cout << "Total Cost is" <<  cost.cost << endl;
+////		(*treeOption)->printSubTree();
+////		cout << "========================================================" << endl;
+//
+////		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
+////			minPlan = (*treeOption);
+////			minCost = cost.cost;
+////			break;
+////		}
+//
+//		if(minPlan == NULL){
 //			minPlan = (*treeOption);
 //			minCost = cost.cost;
-//			break;
+//		}else{
+//			if(minCost > cost.cost){
+//				minPlan = (*treeOption);
+//				minCost = cost.cost;
+//			}
 //		}
-
-		if(minPlan == NULL){
-			minPlan = (*treeOption);
-			minCost = cost.cost;
-		}else{
-			if(minCost > cost.cost){
-				minPlan = (*treeOption);
-				minCost = cost.cost;
-			}
-		}
-	}
+//	}
 	return minPlan;
 }
 
