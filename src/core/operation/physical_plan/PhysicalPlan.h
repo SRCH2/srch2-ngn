@@ -41,7 +41,9 @@ public:
 
 	vector<PhysicalOperatorCacheObject * > children;
 
-	~PhysicalOperatorCacheObject(){
+    virtual unsigned getNumberOfBytes() = 0;
+
+	virtual ~PhysicalOperatorCacheObject(){
 		for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
 			if(children.at(childOffset) != NULL){
 				delete children.at(childOffset);
@@ -180,6 +182,15 @@ public:
 		this->positionIndexOffsets = positionIndexOffsets;
 	}
 
+    unsigned getNumberOfBytes(){
+    	return sizeof(recordId) +
+    			sizeof(recordRuntimeScore) +
+    			sizeof(recordStaticScore) +
+    			sizeof(TrieNodePointer) * matchingPrefixes.size() +
+    			sizeof(unsigned) * editDistances.size() +
+    			sizeof(unsigned) * attributeBitmaps.size() +
+    			sizeof(unsigned) * positionIndexOffsets.size();
+    }
 
 	~PhysicalPlanRecordItem(){};
 
@@ -211,16 +222,16 @@ public:
 		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 		newObj->setRecordId(oldObj->getRecordId());
 		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> & matchingPrefixes;
+		vector<TrieNodePointer> matchingPrefixes;
 		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
 		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> & editDistances;
+		vector<unsigned> editDistances;
 		oldObj->getRecordMatchEditDistances(editDistances);
 		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> & attributeBitmaps;
+		vector<unsigned> attributeBitmaps;
 		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
 		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> & positionIndexOffsets;
+		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
 
@@ -234,16 +245,16 @@ public:
 		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 		newObj->setRecordId(oldObj->getRecordId());
 		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> & matchingPrefixes;
+		vector<TrieNodePointer> matchingPrefixes;
 		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
 		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> & editDistances;
+		vector<unsigned> editDistances;
 		oldObj->getRecordMatchEditDistances(editDistances);
 		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> & attributeBitmaps;
+		vector<unsigned> attributeBitmaps;
 		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
 		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> & positionIndexOffsets;
+		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
 

@@ -33,6 +33,23 @@ namespace srch2
 namespace instantsearch
 {
 
+class PhysicalOperatorCacheObject;
+
+class PhysicalOperatorsCache {
+	public:
+	PhysicalOperatorsCache(unsigned long byteSizeOfCache = 134217728){
+		this->cacheContainer = new CacheContainer<PhysicalOperatorCacheObject>(byteSizeOfCache);
+	}
+	bool getPhysicalOperatosInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in);
+	void setPhysicalOperatosInfo(string key , ts_shared_ptr<PhysicalOperatorCacheObject> object);
+	int clear();
+	~PhysicalOperatorsCache(){
+		delete this->cacheContainer;
+	}
+private:
+	CacheContainer<PhysicalOperatorCacheObject> * cacheContainer;
+};
+
 
 class ActiveNodesCache {
 public:
@@ -42,6 +59,9 @@ public:
 	int findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in);
 	int setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet);
 	int clear();
+	~ActiveNodesCache(){
+		delete cacheContainer;
+	}
 private:
 	CacheContainer<PrefixActiveNodeSet> * cacheContainer;
 
@@ -107,6 +127,9 @@ public:
 	bool getQueryResults(string key,  ts_shared_ptr<QueryResultsCacheEntry> & in);
 	void setQueryResults(string key , ts_shared_ptr<QueryResultsCacheEntry> object);
 	int clear();
+	~QueryResultsCache(){
+		delete this->cacheContainer;
+	}
 private:
 	CacheContainer<QueryResultsCacheEntry> * cacheContainer;
 };
@@ -122,20 +145,25 @@ public:
     CacheManager(unsigned long byteSizeOfCache = 134217728){
     	aCache = new ActiveNodesCache(byteSizeOfCache);
     	qCache = new QueryResultsCache(byteSizeOfCache);
+    	pCache = new PhysicalOperatorsCache(byteSizeOfCache);
     }
     virtual ~CacheManager(){
     	delete aCache;
     	delete qCache;
+    	delete pCache;
     }
 
     int clear();
     ActiveNodesCache * getActiveNodesCache();
     QueryResultsCache * getQueryResultsCache();
+    PhysicalOperatorsCache * getPhysicalOperatorsCache();
 
 private:
     ActiveNodesCache * aCache;
 
     QueryResultsCache * qCache;
+
+    PhysicalOperatorsCache * pCache;
 
 };
 

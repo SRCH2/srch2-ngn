@@ -44,6 +44,19 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
     unsigned ed;
     bool isPrefixMatch;
 
+    unsigned getNumberOfBytes(){
+    	return sizeof(invertedListId) +
+    			sizeof(attributeBitMap) +
+    			sizeof(cursorVectorPosition) +
+    			sizeof(recordId) +
+    			sizeof(termRecordRuntimeScore) +
+    			sizeof(termRecordStaticScore) +
+    			sizeof(positionIndexOffset) +
+    			sizeof(trieNode) +
+    			sizeof(ed) +
+    			sizeof(isPrefixMatch);
+    }
+
     UnionLowestLevelTermVirtualListOperatorHeapItem() {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
@@ -117,6 +130,17 @@ public:
     		this->itemsHeap.push_back(
     				new UnionLowestLevelTermVirtualListOperatorHeapItem(*(itemsHeap.at(i))));
     	}
+    }
+
+    unsigned getNumberOfBytes(){
+    	unsigned numberOfBytes = 0;
+    	for(unsigned itemsOffset = 0 ; itemsOffset < itemsHeap.size(); ++itemsOffset){
+    		numberOfBytes += itemsHeap.at(itemsOffset)->getNumberOfBytes();
+    	}
+    	numberOfBytes += sizeof(numberOfItemsInPartialHeap) +
+    			sizeof(currentMaxEditDistanceOnHeap) +
+    			sizeof(unsigned) * cursorVector.size();
+    	return numberOfBytes;
     }
 
     ~UnionLowestLevelTermVirtualListCacheEntry(){

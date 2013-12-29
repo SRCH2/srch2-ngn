@@ -87,6 +87,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 		}
 
+		physicalPlan.getPlanTree()->close(params);
+
 		if(isFuzzy == false || results.size() >= numberOfIterations){
 			break;
 		}else{

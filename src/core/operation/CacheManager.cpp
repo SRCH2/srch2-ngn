@@ -21,7 +21,7 @@
 #include "CacheManager.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
-
+#include "operation/physical_plan/PhysicalPlan.h"
 #include <string>
 #include <map>
 #include <stddef.h>
@@ -37,6 +37,16 @@ namespace srch2
 namespace instantsearch
 {
 
+
+bool PhysicalOperatorsCache::getPhysicalOperatosInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
+	return this->cacheContainer->get(key , in);
+}
+void PhysicalOperatorsCache::setPhysicalOperatosInfo(string key , ts_shared_ptr<PhysicalOperatorCacheObject> object){
+	this->cacheContainer->put(key , object);
+}
+int PhysicalOperatorsCache::clear(){
+	this->cacheContainer->clear();
+}
 
 int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in){
 
@@ -79,6 +89,10 @@ QueryResultsCache * CacheManager::getQueryResultsCache(){
 	return this->qCache;
 }
 
+PhysicalOperatorsCache * CacheManager::getPhysicalOperatorsCache(){
+	return this->pCache;
+}
+
 bool QueryResultsCache::getQueryResults(string key, ts_shared_ptr<QueryResultsCacheEntry> & in){
 	return this->cacheContainer->get(key , in);
 }
@@ -90,7 +104,7 @@ int QueryResultsCache::clear(){
 }
 
 int CacheManager::clear(){
-	return this->aCache->clear() && this->qCache->clear();
+	return this->aCache->clear() && this->qCache->clear() && this->pCache->clear();
 }
 
 

@@ -73,14 +73,36 @@ public:
 		}
 
 		for(unsigned i = 0; i < nextItemsFromChildren.size() ; ++i){
-			this->nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
-					cloneForCache(nextItemsFromChildren.at(i)));
+			if(nextItemsFromChildren.at(i) == NULL){
+				this->nextItemsFromChildren.push_back(NULL);
+			}else{
+				this->nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+						cloneForCache(nextItemsFromChildren.at(i)));
+			}
 		}
 
 		this->visitedRecords = visitedRecords;
 		this->listsHaveMoreRecordsInThem = listsHaveMoreRecordsInThem;
 		this->childRoundRobinOffset = childRoundRobinOffset;
 	}
+
+    unsigned getNumberOfBytes() {
+    	unsigned numberOfButes = 0;
+    	for(unsigned i = 0 ; i < candidatesList.size() ; ++i){
+    		numberOfButes += candidatesList.at(i)->getNumberOfBytes();
+    	}
+    	for(unsigned i = 0 ; i < nextItemsFromChildren.size() ; i++){
+    		if(nextItemsFromChildren.at(i) != NULL){
+				numberOfButes += nextItemsFromChildren.at(i)->getNumberOfBytes();
+    		}
+    	}
+    	numberOfButes += sizeof(unsigned) * visitedRecords.size() +
+    			sizeof(listsHaveMoreRecordsInThem) + sizeof(childRoundRobinOffset);
+    	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
+    		numberOfButes += children.at(childOffset)->getNumberOfBytes();
+    	}
+    	return numberOfButes;
+    }
 
 	~MergeTopKCacheEntry(){
 		for(unsigned i = 0; i < candidatesList.size() ; ++i){
@@ -121,6 +143,8 @@ public:
 	~MergeTopKOperator();
 private:
 
+	QueryEvaluatorInternal * queryEvaluator;
+
 	/* this vector always contains the next record coming out of children
 	* this means each record first goes to this vector and then it can be used
 	* by the operator.
@@ -134,7 +158,7 @@ private:
 	 * top results in the next calls of getNext
 	 */
 	vector<PhysicalPlanRecordItem *> candidatesList;
-
+	vector<PhysicalPlanRecordItem *> fullCandidatesListForCache;
 	/*
 	 * This vector keeps all the records that have been visited so far (including
 	 * the returned ones and the candidates and even those records which are not verified)

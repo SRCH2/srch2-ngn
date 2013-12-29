@@ -149,6 +149,10 @@ public:
     QueryEvaluatorRuntimeParametersContainer * getQueryEvaluatorRuntimeParametersContainer();
 
 
+    CacheManager * getCacheManager(){
+    	return this->cacheManager;
+    }
+
 public:
     IndexReadStateSharedPtr_Token indexReadToken;
     void findKMostPopularSuggestionsSorted(Term *term ,
