@@ -13,6 +13,9 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
+	struct timespec tstart,tend;
+    clock_gettime(CLOCK_REALTIME, &tstart);
+
 	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
@@ -87,6 +90,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 		}
 
+		physicalPlan.getPlanTree()->close(params);
+
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "\t" << ts2 << "\t" ;
+
 		if(isFuzzy == false || results.size() >= numberOfIterations){
 			break;
 		}else{
@@ -94,6 +104,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			params.isFuzzy = true;
 		}
 	}
+
+	cout << endl;
 
 
 	cursorOnResults = 0;
