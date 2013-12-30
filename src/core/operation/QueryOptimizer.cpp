@@ -346,10 +346,8 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
-	if(treeOptions.size() != 6){
-		cout << "Number of plans is NOT 6." << endl;
-	}
 //	minPlan = treeOptions.at(5);
+	cout << "Total number of potential plans : " << treeOptions.size() << endl;
 	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
 		PhysicalPlanCost cost;
 		unsigned numberOfGetNextCalls = 0;
@@ -378,9 +376,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 		cost = cost + (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
 //		cout << "Cost of close : " << (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters())).cost << endl;
-//		cout << "Total Cost is" <<  cost.cost << endl;
-//		(*treeOption)->printSubTree();
-//		cout << "========================================================" << endl;
+		cout << "Total Cost is" <<  cost.cost << endl;
+		(*treeOption)->printSubTree();
+		cout << "========================================================" << endl;
 
 //		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
 //			minPlan = (*treeOption);
@@ -398,6 +396,10 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 			}
 		}
 	}
+
+	cout << "Chosen plan : "  << endl;
+	minPlan->printSubTree();
+	cout << "========================================================" << endl;
 	return minPlan;
 }
 
