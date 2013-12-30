@@ -95,7 +95,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	    clock_gettime(CLOCK_REALTIME, &tend);
 	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
 	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	    cout << "\t" << ts2 << "\t" ;
+	    cout << "Time : " << ts2 << "\t" << endl;
 
 		if(isFuzzy == false || results.size() >= numberOfIterations){
 			break;
