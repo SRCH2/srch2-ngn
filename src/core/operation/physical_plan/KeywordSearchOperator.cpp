@@ -18,7 +18,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
-	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
+	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 7 ; fuzzyPolicyIter++ ){
 
 //		struct timespec tstart,tend;
 //		clock_gettime(CLOCK_REALTIME, &tstart);
@@ -41,7 +41,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		 */
 		QueryOptimizer queryOptimizer(queryEvaluator);
 		PhysicalPlan physicalPlan(queryEvaluator);
-		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
+		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,fuzzyPolicyIter);
 
 //	    clock_gettime(CLOCK_REALTIME, &tend);
 //	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
@@ -97,12 +97,12 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 	    cout << "Time : " << ts2 << "\t" << endl;
 
-		if(isFuzzy == false || results.size() >= numberOfIterations){
-			break;
-		}else{
-			logicalPlan->setFuzzy(true);
-			params.isFuzzy = true;
-		}
+//		if(isFuzzy == false || results.size() >= numberOfIterations){
+//			break;
+//		}else{
+//			logicalPlan->setFuzzy(true);
+//			params.isFuzzy = true;
+//		}
 	}
 
 //	cout << endl;
