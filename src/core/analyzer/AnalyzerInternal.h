@@ -49,6 +49,8 @@ public:
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;
+        tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+        prepareRegexExpression();
     }
 
 	virtual TokenStream * createOperatorFlow() = 0;
@@ -59,15 +61,18 @@ public:
      *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
      *  for setting/getting the special characters.
      */
-    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters) {
-            this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-            CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters)
+    {
+        this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+        if (tokenStream != NULL) {
+            tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+        }
     }
 
 	void prepareRegexExpression() {
 		//allow all characters
 		string regexString = "[^A-Za-z0-9 "
-				+ CharSet::getRecordAllowedSpecialCharacters() + "\x80-\xFF"
+				+ tokenStream->characterSet.getRecordAllowedSpecialCharacters() + "\x80-\xFF"
 				+ "]";
 		try {
 			disallowedCharactersRegex = boost::regex(regexString);

@@ -10,19 +10,21 @@
 namespace srch2 {
 namespace instantsearch {
 
-NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream):
-		TokenFilter(tokenStream), protectedWordsContainer(ProtectedWordsContainer::getInstance()) {
-	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
+NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream) :
+    TokenFilter(tokenStream),
+    protectedWordsContainer(ProtectedWordsContainer::getInstance() )
+{
+    this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
 
 void NonAlphaNumericFilter::clearState() {
-  // clear the state of the filter in the upstream
-  if (this->tokenStream != NULL)
-    this->tokenStream->clearState();
+    // clear the state of the filter in the upstream
+    if (this->tokenStream != NULL)
+        this->tokenStream->clearState();
   
-  // clear our own states
-  while (!this->internalTokenBuffer.empty())
-    this->internalTokenBuffer.pop();
+    // clear our own states
+    while (!this->internalTokenBuffer.empty())
+        this->internalTokenBuffer.pop();
 }
 
 /*
@@ -39,7 +41,8 @@ void NonAlphaNumericFilter::clearState() {
  *    output tokens = {  I love c++ and java-script programming }  , c++ is a protected keyword
  *    but java-script is not a protected keyword.
  */
-bool NonAlphaNumericFilter::processToken() {
+bool NonAlphaNumericFilter::processToken()
+{
 	while(1) {
 		// if we have tokens in the filter's internal buffer then flush them out one by one before
 		// requesting a new token from the upstream.
@@ -61,7 +64,7 @@ bool NonAlphaNumericFilter::processToken() {
 			while (currOffset < charTypeBuffer.size()) {
 				const CharType& c = charTypeBuffer[currOffset];
 				currOffset++;
-				switch (CharSet::getCharacterType(c)) {
+				switch (characterSet.getCharacterType(c)) {
 				case CharSet::DELIMITER_TYPE:
 				case CharSet::WHITESPACE:
 					if (!tempToken.empty()) {

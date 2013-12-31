@@ -84,8 +84,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
         const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
 
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-    CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-    prepareRegexExpression();
     this->stemmerFlag = stemmerFlag;
     this->stemmerFilePath = stemmerFilePath;
     this->stopWordFilePath = stopWordFilePath;

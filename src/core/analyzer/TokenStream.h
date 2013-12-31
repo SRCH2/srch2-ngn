@@ -62,6 +62,7 @@ public:
     virtual ~TokenStream() {
     }
 
+    CharSet characterSet;
 };
 }
 }
