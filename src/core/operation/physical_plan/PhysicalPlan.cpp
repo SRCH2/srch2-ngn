@@ -126,7 +126,7 @@ PhysicalPlan::PhysicalPlan(	QueryEvaluatorInternal * queryEvaluator){
 }
 
 PhysicalPlan::~PhysicalPlan(){
-	if(tree != NULL) delete tree;
+//	if(tree != NULL) delete tree;
 	if(executionParameters != NULL) delete executionParameters;
 }
 

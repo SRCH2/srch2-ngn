@@ -79,11 +79,11 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 				break;
 			}
 			// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-			if(fuzzyPolicyIter > 0){
-				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-					continue;
-				}
-			}
+//			if(fuzzyPolicyIter > 0){
+//				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+//					continue;
+//				}
+//			}
 			//
 			resultIds.push_back(newRecord->getRecordId());
 			results.push_back(newRecord);
