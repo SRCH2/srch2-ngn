@@ -1,5 +1,11 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#! /usr/bin/python
+
+# Test case to test multi-core functionality
+# The configuration file for this test case specifies 3 different cores, each with a different
+# data source.  Three search terms are tested, each expected to be returned by one and only one
+# of the cores.  The usual syntax of the queriesAndResults.txt file has been extended to the
+# following format: <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
+# where each ID result set is a space separated list of record IDs expected from the server.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, re
 
@@ -99,7 +105,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
             #do the query
             response = urllib2.urlopen(query).read()
 
-            # TODO - Replace srch2 bad JSON (spurious comma).  Ticket already filed.
+            # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
             response = re.sub('[,][}]', '}', response)
             #print query + ' Got ==> ' + response
 

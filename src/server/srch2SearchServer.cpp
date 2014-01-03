@@ -273,12 +273,12 @@ void cb_bminfo(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmwrite_v0(evhttp_request *req, void *arg) {
+void cb_bmwrite(evhttp_request *req, void *arg) {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
     try {
-        HTTPRequestHandler::writeCommand_v0(req, server);
+        HTTPRequestHandler::writeCommand(req, server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -341,25 +341,6 @@ void cb_bmresetLogger(evhttp_request *req, void *arg) {
     }
 }
 
-
-/**
- * 'write/v2/' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-void cb_bmwrite_v1(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::writeCommand_v1(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
 
 /**
  * 'activate' callback function
@@ -532,7 +513,7 @@ void makeHttpRequest(){
 }
 #endif
 
-static bool AreAllServersCommitted(const ServerMap_t *servers)
+static bool areAllServersCommitted(const ServerMap_t *servers)
 {
     bool committed = true;
     for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
@@ -706,7 +687,7 @@ int main(int argc, char** argv) {
         //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
         //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
 
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, defaultCore); // CHENLI: we use v0
+        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
 
         evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
 
@@ -734,7 +715,7 @@ int main(int argc, char** argv) {
      * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
      * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
      * */
-    while (not AreAllServersCommitted(&servers)) {
+    while (not areAllServersCommitted(&servers)) {
         /* This schedules an exit ten seconds from now. */
         event_base_loopexit(evbase, &ten_sec);
         event_base_dispatch(evbase);
@@ -790,7 +771,7 @@ int main(int argc, char** argv) {
             // std::cout << "HTTPWRITEAPI:ON" << std::endl;
             //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, defaultCore);
             //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, defaultCore);
-            evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, defaultCore); // CHENLI: we use v0
+            evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
 
             evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
 
@@ -819,12 +800,9 @@ int main(int argc, char** argv) {
 
             if (iterator->second->indexDataConfig->getWriteApiType()
                 == srch2http::HTTPWRITEAPI) {
-                // std::cout << "HTTPWRITEAPI:ON" << std::endl;
-                //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, iterator->second);
-                //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, iterator->second);
 
                 path = string("/") + iterator->second->getCoreName() + string("/docs");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite_v0, iterator->second); // CHENLI: we use v0
+                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
 
                 path = string("/") + iterator->second->getCoreName() + string("/update");
                 evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);

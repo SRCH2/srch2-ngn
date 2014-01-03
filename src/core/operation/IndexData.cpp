@@ -121,6 +121,7 @@ IndexData::IndexData(const string& directoryName)
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
+                quadTree = NULL;
     	} else {
     		this->quadTree = new QuadTree();
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
