@@ -25,7 +25,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
 
-    tokenStream = new NonAlphaNumericFilter(tokenStream);
+        tokenStream = new NonAlphaNumericFilter(tokenStream, protectedWordFilePath);
 
 	if (this->stopWordFilePath.compare("") != 0) {
 		struct stat stResult;

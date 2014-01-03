@@ -45,11 +45,13 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config) {
 	std::string stopFilterFilePath = config->getStopFilePath();
 	// gets the path of stopFilter
 	std::string  synonymFilterFilePath = config->getSynonymFilePath();
+        std::string protectedWordFilePath = config->getProtectedWordsFilePath();
 
 	// Create an analyzer
 	return new Analyzer(stemmerFlag,
 			stemmerFilterFilePath,
 			stopFilterFilePath,
+                        protectedWordFilePath,
 			synonymFilterFilePath,
 			synonymKeepOriginFlag,
 			config->getRecordAllowedSpecialCharacters());
@@ -75,19 +77,20 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 	return analyzer;
 }
 
-void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf) {
-	if (conf->getProtectedWordsFilePath().compare("") != 0) {
-		ProtectedWordsContainer::getInstance().initProtectedWordsContainer(conf->getProtectedWordsFilePath());
-	}
-	if (conf->getSynonymFilePath().compare("") != 0) {
-		SynonymContainer::getInstance().initSynonymContainer(conf->getSynonymFilePath());
-	}
-	if (conf->getStemmerFile().compare("") != 0) {
-		StemmerContainer::getInstance().initStemmerContainer(conf->getStemmerFile());
-	}
-	if (conf->getStopFilePath().compare("") != 0) {
-		StopWordContainer::getInstance().initStopWordContainer(conf->getStopFilePath());
-	}
+void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
+{
+    if (conf->getProtectedWordsFilePath().compare("") != 0) {
+        ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath()).init(conf->getProtectedWordsFilePath());
+    }
+    if (conf->getSynonymFilePath().compare("") != 0) {
+        SynonymContainer::getInstance(conf->getSynonymFilePath()).init(conf->getSynonymFilePath());
+    }
+    if (conf->getStemmerFile().compare("") != 0) {
+        StemmerContainer::getInstance(conf->getStemmerFile()).init(conf->getStemmerFile());
+    }
+    if (conf->getStopFilePath().compare("") != 0) {
+        StopWordContainer::getInstance(conf->getStopFilePath()).init(conf->getStopFilePath());
+    }
 }
 
 void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
@@ -97,16 +100,16 @@ void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
 		if (ifs.good())
 		{
 			boost::archive::binary_iarchive ia(ifs);
-			SynonymContainer::getInstance().loadSynonymContainer(ia);
-			StemmerContainer::getInstance().loadStemmerContainer(ia);
-			StopWordContainer::getInstance().loadStopWordContainer(ia);
+			SynonymContainer::getInstance(conf->getSynonymFilePath()).loadSynonymContainer(ia);
+			StemmerContainer::getInstance(conf->getStemmerFile()).loadStemmerContainer(ia);
+			StopWordContainer::getInstance(conf->getStopFilePath()).loadStopWordContainer(ia);
 			ifs.close();
 		}else {
 			ifs.close();
 			initializeAnalyzerResource(conf);
 			saveAnalyzerResource(conf);
 		}
-		ProtectedWordsContainer::getInstance().initProtectedWordsContainer(conf->getProtectedWordsFilePath());
+		ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath()).init(conf->getProtectedWordsFilePath());
 	}catch (std::exception& ex){
 		Logger::error("Error while loading Analyzer resource files");
 		Logger::error(ex.what());
@@ -119,9 +122,9 @@ void AnalyzerHelper::saveAnalyzerResource(const CoreInfo_t* conf) {
 		std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
 		if (ofs.good()) {
 			boost::archive::binary_oarchive oa(ofs);
-			SynonymContainer::getInstance().saveSynonymContainer(oa);
-			StemmerContainer::getInstance().saveStemmerContainer(oa);
-			StopWordContainer::getInstance().saveStopWordContainer(oa);
+			SynonymContainer::getInstance(conf->getSynonymFilePath()).saveSynonymContainer(oa);
+			StemmerContainer::getInstance(conf->getStemmerFile()).saveStemmerContainer(oa);
+			StopWordContainer::getInstance(conf->getStopFilePath()).saveStopWordContainer(oa);
 		}
 		ofs.close();
 	}catch(std::exception& ex){

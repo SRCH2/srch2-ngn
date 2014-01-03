@@ -36,7 +36,8 @@ void buildIndex(string data_file, string index_dir)
 
     /// Create an Analyzer
     Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;

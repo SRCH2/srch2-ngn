@@ -21,7 +21,7 @@ namespace instantsearch {
 
 class NonAlphaNumericFilter: public TokenFilter {
 public:
-	NonAlphaNumericFilter(TokenStream *tokenStream);
+	NonAlphaNumericFilter(TokenStream *tokenStream, const std::string &protectedWordsFilePath);
 	void clearState();
 	bool processToken();
 	virtual ~NonAlphaNumericFilter();

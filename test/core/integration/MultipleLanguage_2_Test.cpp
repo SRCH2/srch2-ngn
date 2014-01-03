@@ -44,7 +44,7 @@ void addPolishRecords() {
 	Record *record = new Record(schema);
 
 	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                          "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -175,7 +175,7 @@ void addPortugueseRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -325,7 +325,7 @@ void addRomanianRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -458,7 +458,7 @@ void addRussianRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -593,7 +593,7 @@ void addSerbianRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -724,7 +724,7 @@ void addSlovakRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -859,7 +859,7 @@ void addSlovenianRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -992,7 +992,7 @@ void addSpanishRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1141,7 +1141,7 @@ void addSwedishRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1275,7 +1275,7 @@ void addThaiRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1409,7 +1409,7 @@ void addTurkishRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1542,7 +1542,7 @@ void addUkrainianRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1674,7 +1674,7 @@ void addVietnameseRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1808,7 +1808,7 @@ void addFarsiRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -1925,7 +1925,7 @@ void addArabicRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2196,7 +2196,7 @@ void addHebrewRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2322,7 +2322,7 @@ void addKazakhRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2430,7 +2430,7 @@ void addBurmeseRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2537,7 +2537,7 @@ void addPortugueseBrazilRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2642,7 +2642,7 @@ void addSpanishLatinRecords() {
 
 	Analyzer *analyzer = new Analyzer(
 			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+			"", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -2751,7 +2751,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	Record *record = new Record(schema);
     Analyzer *analyzer = new Analyzer(
             srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+            "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;

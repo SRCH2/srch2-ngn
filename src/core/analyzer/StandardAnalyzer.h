@@ -26,18 +26,21 @@ public:
 	StandardAnalyzer(const StemmerNormalizerFlagType &stemmerFlag =
 			DISABLE_STEMMER_NORMALIZER, const std::string &stemmerFilePath = "",
 			const std::string &stopWordFilePath = "",
+                         const std::string &protectedWordFilePath = "",
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag =
 					SYNONYM_KEEP_ORIGIN,
 			const std::string &recordAllowedSpecialCharacters = "") :
-			AnalyzerInternal(stemmerFlag,
-						recordAllowedSpecialCharacters,
-						stemmerFilePath,
-						stopWordFilePath,
-						synonymFilePath,
-						synonymKeepOriginFlag) {
-		this->analyzerType = STANDARD_ANALYZER;
-	}
+            AnalyzerInternal(stemmerFlag,
+                             recordAllowedSpecialCharacters,
+                             stemmerFilePath,
+                             stopWordFilePath,
+                             protectedWordFilePath,
+                             synonymFilePath,
+                             synonymKeepOriginFlag)
+            {
+                this->analyzerType = STANDARD_ANALYZER;
+            }
 
 	StandardAnalyzer(const StandardAnalyzer &standardAnalyzer) :
 			AnalyzerInternal(standardAnalyzer) {

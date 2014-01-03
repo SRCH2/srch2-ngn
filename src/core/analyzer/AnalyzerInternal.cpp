@@ -73,23 +73,25 @@ AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
     this->stemmerFlag = analyzerInternal.stemmerFlag;
     this->stemmerFilePath = analyzerInternal.stemmerFilePath;
     this->stopWordFilePath = analyzerInternal.stopWordFilePath;
+    this->protectedWordFilePath = analyzerInternal.protectedWordFilePath;
     this->synonymFilePath = analyzerInternal.synonymFilePath;
     this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
 }
 
 AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-        const string &recordAllowedSpecialCharacters,
-        const string &stemmerFilePath, const string &stopWordFilePath,
-        const string &synonymFilePath,
-        const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
-
+                                   const string &recordAllowedSpecialCharacters,
+                                   const string &stemmerFilePath, const string &stopWordFilePath,
+                                   const string &protectedWordFilePath,
+                                   const string &synonymFilePath,
+                                   const SynonymKeepOriginFlag &synonymKeepOriginFlag)
+{
     this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
     this->stemmerFlag = stemmerFlag;
     this->stemmerFilePath = stemmerFilePath;
     this->stopWordFilePath = stopWordFilePath;
+    this->protectedWordFilePath = protectedWordFilePath;
     this->synonymFilePath = synonymFilePath;
     this->synonymKeepOriginFlag = synonymKeepOriginFlag;
-
 }
 
 string AnalyzerInternal::applyFilters(string input, bool isPrefix) {

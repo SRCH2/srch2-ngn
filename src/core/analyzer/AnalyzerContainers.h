@@ -21,18 +21,35 @@
 namespace srch2 {
 namespace instantsearch{
 
-class SynonymContainer {
+// helper class for analyzer file based resources
+class AnalyzerContainer {
+
+ public:
+    virtual void init(const std::string &filePath) = 0;
+    virtual ~AnalyzerContainer();
+
+    void free(const string &path);
+    static void freeAll();
+
+ protected:
+
+    // generic map that can hold any path based analyzer resource
+    // path must be unique
+    typedef map <const string, AnalyzerContainer *> Map_t;
+    static Map_t containers;
+};
+
+class SynonymContainer : public AnalyzerContainer {
 public:
-	void initSynonymContainer(const std::string filePath);
+	void init(const std::string &filePath);
 	void loadSynonymContainer(boost::archive::binary_iarchive& ia);
 	void saveSynonymContainer(boost::archive::binary_oarchive& oa);
 	bool contains(const std::string& str);
 	void getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue);
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static SynonymContainer& getInstance();
-	static void free();
+	static SynonymContainer& getInstance(const std::string &filePath);
+
 private:
-	static SynonymContainer *synonymContainer;
 	std::map<std::string, std::pair<SynonymTokenType, std::string> > synonymMap;
 	const std::string synonymDelimiter;
 	SynonymContainer(const std::string &delimiter):synonymDelimiter(delimiter) {}
@@ -40,34 +57,32 @@ private:
 	void operator == (const SynonymContainer&){}
 };
 
-class StemmerContainer {
+class StemmerContainer : public AnalyzerContainer {
 public:
-	void initStemmerContainer(const std::string filePath);
+	void init(const std::string &filePath);
 	void loadStemmerContainer(boost::archive::binary_iarchive& ia);
 	void saveStemmerContainer(boost::archive::binary_oarchive& oa);
 	bool contains(const std::string& str);
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static StemmerContainer& getInstance();
-	static void free();
+	static StemmerContainer& getInstance(const std::string &filePath);
+
 private:
-	static StemmerContainer *stemmerContainer;
 	std::map<std::string, int> dictionaryWords;
 	StemmerContainer() {}
 	StemmerContainer(const StemmerContainer&) {}
 	void operator == (const StemmerContainer&){}
 };
 
-class StopWordContainer {
+class StopWordContainer : public AnalyzerContainer {
 public:
-	void initStopWordContainer(const std::string filePath);
+	void init(const std::string &filePath);
 	void loadStopWordContainer(boost::archive::binary_iarchive& ia);
 	void saveStopWordContainer(boost::archive::binary_oarchive& oa);
 	bool contains(const std::string& str);
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static StopWordContainer& getInstance();
-	static void free();
+	static StopWordContainer& getInstance(const std::string &filePath);
+
 private:
-	static StopWordContainer *stopWordContainer;
 	std::set<std::string> stopWordsSet;
 	StopWordContainer() {}
 	StopWordContainer(const StopWordContainer&) {}
@@ -77,15 +92,13 @@ private:
 /*
  *   This class is container which stores the protected words required by the protectedWordFilter.
  */
-
-class ProtectedWordsContainer {
+class ProtectedWordsContainer : public AnalyzerContainer {
 public:
-	void initProtectedWordsContainer(const std::string filePath);
-	bool isProtected(const string& val) { return protectedWords.count(val) > 0; }
-	static ProtectedWordsContainer& getInstance();
-	static void free();
+	void init(const std::string &filePath);
+	bool isProtected(const string& val);
+	static ProtectedWordsContainer& getInstance(const std::string &filePath);
+
 private:
-	static ProtectedWordsContainer *protectedWordsContainer;
 	set<string> protectedWords;
 	ProtectedWordsContainer() {}
 	ProtectedWordsContainer(const ProtectedWordsContainer&) {}

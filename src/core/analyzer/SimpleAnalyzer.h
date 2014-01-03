@@ -26,14 +26,16 @@ public:
 			const std::string &synonymFilePath = "",
 			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN,
 			const std::string &recordAllowedSpecialCharacters = "") :
-			AnalyzerInternal(stemmerFlag,
-							recordAllowedSpecialCharacters,
-							stemmerFilePath,
-							stopWordFilePath,
-							synonymFilePath,
-							synonymKeepOriginFlag) {
-		this->analyzerType = SIMPLE_ANALYZER;
-	}
+            AnalyzerInternal(stemmerFlag,
+                             recordAllowedSpecialCharacters,
+                             stemmerFilePath,
+                             stopWordFilePath,
+                             "",
+                             synonymFilePath,
+                             synonymKeepOriginFlag)
+            {
+                this->analyzerType = SIMPLE_ANALYZER;
+            }
 
 	SimpleAnalyzer(const SimpleAnalyzer &simpleAnalyzer) :
 			AnalyzerInternal(simpleAnalyzer) {

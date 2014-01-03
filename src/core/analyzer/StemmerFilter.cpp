@@ -38,15 +38,16 @@ using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
+
 // TODO: width limit 80 chars
 StemmerFilter::StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath) :
-		TokenFilter(tokenStream),stemmerContainer(StemmerContainer::getInstance()) {
-	// Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
-	const std::string stemmerFiltePath = stemmerFilePath;
+    TokenFilter(tokenStream), stemmerContainer(StemmerContainer::getInstance(stemmerFilePath))
+{
+    // Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
+    const std::string stemmerFiltePath = stemmerFilePath;
 
-	// copies the shared_ptr: sharedToken
-	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
-
+    // copies the shared_ptr: sharedToken
+    this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
 
 StemmerFilter::~StemmerFilter() {

@@ -41,7 +41,7 @@ public:
 	 * Constructor of the Stemmer Filter.
 	 * It is the second constructor of the StemmerFilter. This calls a function (creatHeadWordsMap()) to construct the dictionary.
 	 * */
-	StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath);
+    StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath);
 
 	/*
 	 * searchHeadWords() search if the given string is present in the HeadWordsDictionary \

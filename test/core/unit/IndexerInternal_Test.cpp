@@ -47,7 +47,7 @@ void testIndexData()
 
     /// Create Analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     /// Create IndexData
     string INDEX_DIR = ".";
@@ -178,7 +178,7 @@ void test1()
 
     // create an analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -241,7 +241,7 @@ void addRecords()
     
     Record *record = new Record(schema);
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -297,7 +297,7 @@ void test3()
     /// Test the Trie
 
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-       		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

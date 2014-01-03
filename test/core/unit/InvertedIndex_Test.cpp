@@ -44,7 +44,7 @@ void addRecords()
     Record *record = new Record(schema);
 
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;

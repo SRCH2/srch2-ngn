@@ -573,7 +573,7 @@ void testSmallInitLargeInsertion(const string directoryName)
 
     // Create an analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -635,7 +635,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
 
     // Create an analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;

@@ -37,7 +37,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
 
     /// Create an Analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2::instantsearch::STANDARD_ANALYZER);
+                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "",
+                                      srch2::instantsearch::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;

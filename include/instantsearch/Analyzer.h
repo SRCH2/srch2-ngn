@@ -73,6 +73,7 @@ public:
     Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
             const std::string &stemmerFilePath,
             const std::string &stopWordFilePath,
+             const std::string &protectedWordFilePath,
             const std::string &synonymFilePath,
             const SynonymKeepOriginFlag &synonymKeepOriginFlag,
             const std::string &delimiters,

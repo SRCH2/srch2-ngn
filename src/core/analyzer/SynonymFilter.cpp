@@ -41,7 +41,9 @@ namespace instantsearch {
 SynonymFilter::SynonymFilter(TokenStream * tokenStream,
 		const std::string &synonymFilterFilePath,
 		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-		TokenFilter(tokenStream), synonymContainer(SynonymContainer::getInstance())  {
+		TokenFilter(tokenStream),
+                synonymContainer(SynonymContainer::getInstance(synonymFilterFilePath))
+{
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
 	this->keepOriginFlag = synonymKeepOriginFlag;
 }

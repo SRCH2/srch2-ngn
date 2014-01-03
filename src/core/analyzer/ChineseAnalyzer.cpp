@@ -19,6 +19,7 @@ ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile, const
             recordAllowedSpecialCharacters,
             "", // The Chinese language does not need stemming as English
             stopWordFilePath,
+            "", // TODO - protected words in Chinese?
             synonymFilePath,
             synonymKeepOriginFlag), mDictFilePath(chineseDictionaryFile)
 {

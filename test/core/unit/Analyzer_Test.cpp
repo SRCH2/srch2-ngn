@@ -161,6 +161,7 @@ void testLowerCase() {
             "",
             "",
             "",
+            "", // protected word file path
             SYNONYM_DONOT_KEEP_ORIGIN);
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
@@ -343,6 +344,7 @@ void testStopFilter(string dataDir) {
             dataDir + "/StemmerHeadwords.txt",
             dataDir + "/stopWordsFile.txt",
             "",
+            "", // protected word file path
             SYNONYM_DONOT_KEEP_ORIGIN);
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
@@ -891,6 +893,7 @@ void testAnalyzerSerilization(string dataDir) {
             ENABLE_STEMMER_NORMALIZER,
             dataDir + "/StemmerHeadwords.txt",
             dataDir + "/stopWordsFile.txt",
+            dataDir + "/protectedWords.txt",
             dataDir + "/synonymFile.txt",
             SYNONYM_KEEP_ORIGIN, "", SIMPLE_ANALYZER);
 
@@ -947,6 +950,7 @@ void testAnalyzerSerilization(string dataDir) {
             DISABLE_STEMMER_NORMALIZER,
             dataDir + "/StemmerHeadwords.txt",
             "",
+            dataDir + "/protectedWords.txt",
             dataDir + "/synonymFile.txt",
             SYNONYM_DONOT_KEEP_ORIGIN, "", STANDARD_ANALYZER);
 
@@ -995,6 +999,7 @@ void runAnalyzer(TokenStream * tokenStream , const vector<string>& tokenizedWord
 		vector<CharType> charVector;
 		charVector = tokenStream->getProcessedToken();
 		charTypeVectorToUtf8String(charVector, token);
+                cout << "Expecting " << tokenizedWords[i] << " for " << i << "th word; got " << token << endl;
 		ASSERT(i < tokenizedWords.size());
 		ASSERT(tokenizedWords[i] == token);
 		i++;
@@ -1009,6 +1014,7 @@ void testLastTokenAsStopWord(string dataDir){
             "",
             dataDir + "/stopWordsFile.txt",
             "",
+            "", // protected word file path
             SYNONYM_DONOT_KEEP_ORIGIN);
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
 
@@ -1033,6 +1039,7 @@ void testProtectedWords(string dataDir){
             ENABLE_STEMMER_NORMALIZER,
             "",
             "",
+            dataDir + "/protectedWords.txt",
             "",
             SYNONYM_DONOT_KEEP_ORIGIN);
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
@@ -1070,7 +1077,6 @@ void testProtectedWords(string dataDir){
 	tokenizedWords.push_back("s");
 	tokenizedWords.push_back("javascript");
 	tokenizedWords.push_back("engine");
-
 
 	runAnalyzer(tokenStream, tokenizedWords);
 
@@ -1117,9 +1123,9 @@ int main() {
 
     string dataDir(getenv("dataDir"));
 
-    SynonymContainer::getInstance().initSynonymContainer(dataDir + "/synonymFile.txt" );
-	StemmerContainer::getInstance().initStemmerContainer(dataDir + "/StemmerHeadwords.txt" );
-	StopWordContainer::getInstance().initStopWordContainer(dataDir + "/stopWordsFile.txt" );
+    SynonymContainer::getInstance(dataDir + "/synonymFile.txt").init(dataDir + "/synonymFile.txt");
+    StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt").init(dataDir + "/StemmerHeadwords.txt");
+    StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt").init(dataDir + "/stopWordsFile.txt");
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;
@@ -1148,7 +1154,7 @@ int main() {
     testLastTokenAsStopWord(dataDir);
     cout << "Last stopword is not dropped... test passed" << endl;
 
-    ProtectedWordsContainer::getInstance().initProtectedWordsContainer(dataDir + "/protectedWords.txt");
+    ProtectedWordsContainer::getInstance(dataDir + "/protectedWords.txt").init(dataDir + "/protectedWords.txt");
     testProtectedWords(dataDir);
     cout << "Protected words test passed" << endl;
 

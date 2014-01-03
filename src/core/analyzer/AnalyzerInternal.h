@@ -35,11 +35,12 @@ public:
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
 
 	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-			const std::string &recordAllowedSpecialCharacters,
-			const std::string &stemmerFilePath = "",
-			const std::string &stopWordFilePath = "",
-			const std::string &synonymFilePath = "",
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
+                         const std::string &recordAllowedSpecialCharacters,
+                         const std::string &stemmerFilePath = "",
+                         const std::string &stopWordFilePath = "",
+                         const std::string &protectedWordFilePath = "",
+                         const std::string &synonymFilePath = "",
+                         const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
 
 
 	string applyFilters(string input, bool isPrefix) ;
@@ -157,6 +158,7 @@ protected:
 	string stopWordFilePath;
 	string synonymFilePath;
 	string stemmerFilePath;
+        string protectedWordFilePath;
 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
 	boost::regex disallowedCharactersRegex;

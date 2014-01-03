@@ -891,9 +891,9 @@ int main(int argc, char** argv) {
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);
     }
-    StemmerContainer::free();
-    SynonymContainer::free();
-    StopWordContainer::free();
+
+    AnalyzerContainer::freeAll();
+
     Logger::console("Server stopped successfully");
     // if no log file is set in config file. This variable should be null.
     // Hence, we should do null check before calling fclose

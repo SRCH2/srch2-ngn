@@ -320,7 +320,8 @@ bool test2(int argc, char** argv) {
 
     // Create an analyzer
     srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, core->getRecordAllowedSpecialCharacters());
+                                               "", SYNONYM_DONOT_KEEP_ORIGIN,
+                                               core->getRecordAllowedSpecialCharacters());
 
     // Create a schema to the data source definition in the Srch2ServerConf
     srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(core);

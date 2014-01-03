@@ -104,7 +104,7 @@ void buildIndex(string indexDir)
 
     // create an analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
+                                      "", "", "" , "", SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -195,7 +195,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
 
     // create an analyzer
     Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
+                                      "", "", "" , "", SYNONYM_DONOT_KEEP_ORIGIN, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -1362,7 +1362,7 @@ void csvline_populate(vector<string> &record, const string& line, char delimiter
 
 Analyzer * getAnalyzer() {
 	 return new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-     		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+                             "", "","", "", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
 }
 
 #endif /* __INTEGRATIONTESTHELPER_H__ */

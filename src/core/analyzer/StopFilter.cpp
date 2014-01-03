@@ -39,8 +39,10 @@ namespace srch2 {
 namespace instantsearch {
 
 StopFilter::StopFilter(TokenStream *tokenStream,
-		std::string &stopFilterFilePath) : TokenFilter(tokenStream),
-				stopWordsContainer(StopWordContainer::getInstance()) {
+                       std::string &stopFilterFilePath) :
+    TokenFilter(tokenStream),
+    stopWordsContainer(StopWordContainer::getInstance(stopFilterFilePath))
+{
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
 }
 
