@@ -39,6 +39,7 @@
 
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#formula">2. Ranking Formula</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dynamicRanking">3. Dynamic Ranking</a></br><br>
 </td></tr></tbody></table>
 
 
@@ -63,24 +64,24 @@
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Ranking</center></h1>
 <h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
-<h2 id="overview">Overview</h2>
+<h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:</p>
 <ul>
 <li>How much penalty we want give to partial matches (e.g., "candy" vs "can" ) compared to complete-keyword matches (e.g., "can" vs "can), using the parameter "PrefixMatchPenalty"; and</li>
 <li>How much penalty we want give to fuzzy matches (e.g., "schwazeneger" vs "schwarzenegger") compared to exact matches using the parameter "FuzzyMatchPenalty".</li>
 </ul>
-<h2 id="formula">Ranking Formula</h2>
+<h2 id="formula">2. Ranking Formula</h2>
 <p>Now we give the details of the ranking function. Intuitively, for a query and a candidate record (document), we compute the score of each term in the query for the record, and take the summation of these scores as the overall score. We order the records based on their overall score. The engine guarantees that exact results are always ranked higher than fuzzy results.</p>
 <p>Formally, let <i>Q</i> be a query with terms (keywords) <i>t_1</i>, <i>t_2</i>, ..., <i>t_k</i>. Let <i>r</i> be a record. We compute the score of <i>r</i> for <i>Q</i> as follows:</p>
 <p><center> score(<i>r</i>, <i>Q</i>) = TermScore(<i>r</i>, <i>t_1</i>) + TermScore(<i>r</i>, <i>t_2</i>) + ... + TermScore(<i>r</i>, <i>t_k</i>).</center></p>
 <p>For each term <i>t_i</i>, let <i>w_i</i> be a keyword in <i>r</i> that matches <i>t_i</i> (exactly or fuzzily). The TermScore(<i>r</i>, <i>t_i</i>) is computed as follows:</p>
 <p><center> TermScore(<i>r</i>, <i>t_i</i>) = TermRecordStaticScore(<i>r</i>, <i>t_i</i>) * NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) * PrefixMatchPenalty.</center></p>
 <p>The formula uses the following parameters:</p>
-<p><b>1. NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It is calculated as follows:</p>
+<p><b>1) NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>)</b>: it is the similarity between the query term and the record term, based on their edit distance and normalized by the length of the record term. It is calculated as follows:</p>
 <p><center> NormalizedEdSimilarity(<i>w_i</i>, <i>t_i</i>) = (1 - ed(<i>w_i</i>, <i>t_i</i>)/length(<i>t_i</i>)) * FuzzyMatchPenalty^ed. </center></p>
 <p>In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i</i> and <i>t_i</i>, with length(<i>t_i</i>) as its upper bound. The value "FuzzyMatchPenalty" (between 0 and 1) is specified in the configuration file. Its default value is 1.0.</p>
-<p><b>2. PrefixMatchPenalty</b>: It is 1 if term <i>t_i</i> is a complete keyword. If term <i>t_i</i> is a prefix, then PrefixMatchPenalty takes the value of the parameter "prefixMatchPenalty" specified in the <a href="example-demo/srch2-config.xml">configuration file</a>.</p>
-<p><b>3. TermRecordStaticScore(r, t_i)</b>: It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters:</p>
+<p><b>2) PrefixMatchPenalty</b>: It is 1 if term <i>t_i</i> is a complete keyword. If term <i>t_i</i> is a prefix, then PrefixMatchPenalty takes the value of the parameter "prefixMatchPenalty" specified in the <a href="example-demo/srch2-config.xml">configuration file</a>.</p>
+<p><b>3) TermRecordStaticScore(r, t_i)</b>: It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters:</p>
 <ul>
 <li><b>idf_score</b>: internal IDF score;</li>
 <li><b>doc_boost</b>: the boost value of the record as specified in an attribute;</li>
@@ -93,6 +94,25 @@
 <p>The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as follows:</p>
 <p><center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center></p>
 <p>In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.</p>
+<h2 id="dynamicRanking">3. Dynamic Ranking</h2>
+<p>The final score of results can also be modified on a per-query basis by appending a "qf" parameter to the query string. The "qf" string allows boosting of results based on the number of keywords of the query which fall in a particular attribute.
+<p>
+For example: the string </p>
+<pre><code>&quot;q=terminator&amp;qf=title^10&quot; 
+</code></pre>
+
+<p>will boost the runtime TermScore of the keyword "terminator" by a factor of 10, for the movie titled "Terminator 2", since the keyword appears in the "title" attribute of the record.
+<p>
+For a record where multiple query keywords fall into the required attribute, each of those keywords' runtime TermScore will be boosted by a factor of the logarithmic value of the total number of matching keywords in that attribute.
+<p>
+For example, using the query string </p>
+<pre><code>&quot;q=Monty AND Grail&amp;qf=title^10&quot;
+</code></pre>
+
+<p>the TermScore of "Monty" and "Grail" independently will be boosted by 10*log_e(e+2-1) for the movie "Monty Python and the Holy Grail".  We use "2" in the formula since both keywords "Monty" and "Grail" fall in the "title" attribute.</p>
+<p>
+Multiple attributes can also be boosted at once by concatenating them together with a plus in the "qf" string.  For example, using the query string "q=Carter&qf=title^10+director^5", 
+the runtime TermScore of "Carter" for the movie "Coach Carter" will be translated to the dynamic TermScore: TermScore(Carter)*10*log_e(e+1-1)+TermScore(Carter)*5*log_e(e+1-1), since "Carter" appears in both the "title" and the "director" attributes.
 
 </table>
 <hr>

@@ -65,6 +65,16 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+test_id="qf_dynamic_ranking"
+echo "---------------------do $test_id-----------------------"
+python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE_DIR ./qf_dynamic_ranking/queriesAndResults.txt > system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    exit -1
+fi
+echo "-- PASSED: $test_id"
+
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt >> system_test.log 2>&1
@@ -441,6 +451,8 @@ if [ $? -gt 0 ]; then
 fi
 echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
+
+
 
 
 # clear the output directory. First make sure that we are in correct directory
