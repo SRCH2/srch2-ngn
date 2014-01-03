@@ -467,7 +467,7 @@ void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListV
 		grandBuffer.push_back(buffer[k]);
 
 	if (buffer)
-		free(buffer);
+		delete [] buffer;
 }
 
 // TODO check if this is still useful

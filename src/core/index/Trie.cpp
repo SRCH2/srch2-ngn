@@ -45,7 +45,7 @@ TrieNode::TrieNode()
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -64,7 +64,7 @@ TrieNode::TrieNode(bool create_root)
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -81,7 +81,7 @@ TrieNode::TrieNode(int depth, CharType character)
 
     this->setDepth(depth);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -98,7 +98,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->terminalFlag1bDepth7b = src->terminalFlag1bDepth7b;
     this->childrenPointerList.resize(src->childrenPointerList.size());
     std::copy(src->childrenPointerList.begin(), src->childrenPointerList.end(), this->childrenPointerList.begin());
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(src->getLeftInsertCounter());
     this->setRightInsertCounter(src->getRightInsertCounter());
 }

@@ -220,7 +220,7 @@ public:
 
     virtual ~ForwardList() {
         if(data != NULL){
-        	delete data;
+        	delete[] data;  // data is allocated as an array with new[]
         }
     }
 
