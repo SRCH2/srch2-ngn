@@ -52,6 +52,8 @@ private:
      */
     bool validateExistenceOfAttributesInFieldList();
 
+    bool validateExistenceOfAttributesInQueryFieldBoost();
+
     bool validateExistenceOfAttributesInSortFiler();
 
     bool validateExistenceOfAttributesInFacetFiler();
