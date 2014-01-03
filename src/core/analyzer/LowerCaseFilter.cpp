@@ -23,6 +23,7 @@ void LowerCaseFilter::transformToLowerCase(vector<CharType> &token) {
         }
     }
 }
+
 bool LowerCaseFilter::processToken() {
     if (this->tokenStream->processToken()) {
         transformToLowerCase(tokenStreamContainer->currentToken);

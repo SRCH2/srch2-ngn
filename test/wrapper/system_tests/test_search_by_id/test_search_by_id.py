@@ -41,8 +41,10 @@ def checkResult(query, responseJsonAll,resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
     else:
         print  query+' test failed'
+        return 1
 
 # This test tests search by ID api
 # 1. it searches for id=2 and it should find it
@@ -68,7 +70,7 @@ def testNewFeatures( binary_path):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,['2'] )
+    failCount = checkResult(query, response_json,['2'] )
 
     # second search for 200 which is not there    
     query = 'http://localhost:' + port + '/search?docid=200'
@@ -76,7 +78,7 @@ def testNewFeatures( binary_path):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,[] )
+    failCount += checkResult(query, response_json,[] )
 
     # now insert 200
     insertCommand = 'curl "http://localhost:'+port+'/docs" -i -X PUT -d \'{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}\''
@@ -90,7 +92,7 @@ def testNewFeatures( binary_path):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,['200'] )
+    failCount += checkResult(query, response_json,['200'] )
 
 
     # now delete record 2
@@ -105,7 +107,7 @@ def testNewFeatures( binary_path):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,[] )
+    failCount += checkResult(query, response_json,[] )
 
 
     # now insert 2
@@ -120,7 +122,7 @@ def testNewFeatures( binary_path):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,['2'] )
+    failCount += checkResult(query, response_json,['2'] )
     try:
         s = commands.getoutput('ps aux | grep srch2-search-server')
         stat = s.split()
@@ -131,10 +133,12 @@ def testNewFeatures( binary_path):
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':    
    #Path of the query file
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
    binary_path = sys.argv[1]
-   testNewFeatures(binary_path)
+   exitCode = testNewFeatures(binary_path)
+   os._exit(exitCode)
 

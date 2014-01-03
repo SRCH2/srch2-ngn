@@ -44,7 +44,8 @@ def checkResult(query, responseJson,resultValue):
 
     if isPass == 1:
         print  query+' test pass'
-
+        return 0
+    return 1
 
 
 def testPhraseSearch(queriesAndResultsPath, binary_path):
@@ -58,6 +59,7 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
 
     #construct the query
     #format : phrase,proximity||rid1 rid2 rid3 ...ridn
+    failTotal = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         value=line.split('||')
@@ -69,7 +71,7 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
         #print response_json['results']
         #check the result
-        checkResult(query, response_json['results'], expectedRecordIds)
+        failTotal += checkResult(query, response_json['results'], expectedRecordIds)
 
     #get pid of srch2-search-server and kill the process
     try:
@@ -82,10 +84,11 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
         cmd = "kill -9 {0}".format(a[-1])
         os.system(cmd)
     print '=============================='
+    return failTotal
 
 if __name__ == '__main__':      
     #Path of the query file
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testPhraseSearch(queriesAndResultsPath, binary_path)
-
+    exitCode = testPhraseSearch(queriesAndResultsPath, binary_path)
+    os._exit(exitCode)

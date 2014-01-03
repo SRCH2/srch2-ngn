@@ -22,6 +22,7 @@ namespace instantsearch {
 class NonAlphaNumericFilter: public TokenFilter {
 public:
 	NonAlphaNumericFilter(TokenStream *tokenStream);
+	void clearState();
 	bool processToken();
 	virtual ~NonAlphaNumericFilter();
 	bool isProtectWord(const string& val) { return protectedWordsContainer.isProtected(val); }

@@ -53,6 +53,7 @@ public:
 	 * */
 	std::string stemToken(const std::string &token) const;
 
+
 	/*
 	 * incrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
 	 * */

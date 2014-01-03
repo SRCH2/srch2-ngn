@@ -1,9 +1,0 @@
-
-*------------------------------------------------------------------
-*  RELEASE NOTES Version 4.3.0
-*  Date: {MONTH} {DAY}, YEAR
-*------------------------------------------------------------------
-
-* Introduced a new filter called "protectedKeyWordsFilter" to preserve special keywords such as .NET, AT&T, and C++.
-
-* Strip leading and trailing whitespace from configuration file values that are directory paths or filenames.
