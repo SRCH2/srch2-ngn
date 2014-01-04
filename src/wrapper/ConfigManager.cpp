@@ -335,10 +335,10 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
             configSuccess = false;
             return;
         }
-        coreInfo->supportAttributeBasedSearch = coreInfo->enablePositionIndex;
         if (coreInfo->enablePositionIndex) {
             Logger::info("turning on attribute based search because position index is enabled");
-        }
+            coreInfo->supportAttributeBasedSearch = true;
+        } // else leave supportAttributeBasedSearch set to previous value
     }
 
     childNode = indexConfigNode.child(fieldBoostString);
