@@ -720,7 +720,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
     if (coreInfo->dataDir.length() == 0) {
-        parseWarnings << "Core " << coreInfo->name.c_str() << " has null dataDir\n" ;
+        parseWarnings << "Core " << coreInfo->name.c_str() << " has null dataDir\n";
     }
 
     childNode = parentNode.child(dataSourceTypeString);

@@ -150,6 +150,15 @@ public:
 	}
 };
 
+struct QueryFieldAttributeBoost{
+  std::string attribute;
+  float boost;
+};
+
+struct QueryFieldBoostContainer {
+  std::vector<QueryFieldAttributeBoost> boosts;
+};
+
 class ParsedParameterContainer {
 public:
 
@@ -173,6 +182,7 @@ public:
         isFqBooleanOperatorSet=false;
         resultsStartOffset=0; // defaults to 0
         numberOfResults=10; // defaults to 10
+        qfContainer= NULL;
     }
 
     ~ParsedParameterContainer() {
@@ -231,6 +241,9 @@ public:
 
     // filter query parser parameters
     FilterQueryContainer * filterQueryContainer; // contains all filter query related info.
+
+    // query field boost parser parameters
+    QueryFieldBoostContainer * qfContainer; 
 
     // different search type specific parameters
     TopKParameterContainer * topKParameterContainer; // contains all Top k only parameters. currently none.
