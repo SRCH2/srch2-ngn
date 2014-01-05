@@ -387,6 +387,14 @@ Trie::~Trie()
         TrieNode* childNode = root->getChild(childIterator);
         this->deleteTrieNode( childNode );
     }
+
+    /* Free root_writeview pointer. The if condition is a defensive check to make sure
+     * that we do not get into a double free situation. 'root_readview' is a shared_pointer
+     * which automatically deletes the pointer it is holding.
+     */
+    if (this->root_writeview != this->root_readview->root)
+        delete this->root_writeview;
+
     pthread_spin_destroy(&m_spinlock);
 }
 
