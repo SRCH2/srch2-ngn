@@ -403,6 +403,15 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
         {
             bool parseSuccess = false;
 
+	    // remove the trailing space or "," characters
+	    while (!line.empty() && (
+				    line.at(line.length() - 1) == ' ' || 
+                                    line.at(line.length() - 1) == ','
+                                    )
+                  ) {
+              line.erase(line.length() - 1);
+	    }
+
             std::stringstream error;
             parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
 
