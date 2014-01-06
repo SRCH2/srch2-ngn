@@ -139,9 +139,10 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
   // If one query keyword doesn't exist on the trie,
   // the filter becomes a "no-op".
   if(!getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
-      root->root, *query->getQueryTerms(), queryKeywordIDs))
+      root->root, *query->getQueryTerms(), queryKeywordIDs)) {
+    delete [] queryKeywordIDs;
     return;
-
+  }
 
   std::vector<QueryResult*>& results= output->impl->sortedFinalResults;
 
