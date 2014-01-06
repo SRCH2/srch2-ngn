@@ -82,7 +82,7 @@ float dynamicRuntimeScore(const ForwardList& record,
     const SchemaInternal *const schema,
     DynamicScoringFilter& filter,
     const unsigned *const queryKeywordIDs, unsigned numberOfKeywords) {
-  struct KeywordBoost keywordBoosts[numberOfKeywords];
+  struct KeywordBoost *keywordBoosts = new KeywordBoost[numberOfKeywords];
 
   // For each keyword in Query 
   {
@@ -109,6 +109,7 @@ float dynamicRuntimeScore(const ForwardList& record,
   for(unsigned i=0; i < filter.numberOfAttributes; ++i) 
     filter.attributeBoosts[i].hitCount=0;
 
+  delete [] keywordBoosts;
   return rtn;
 }
 
@@ -128,7 +129,7 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
     forwardIndex(*((IndexSearcherInternal*) indexSearcher)->getForwardIndex());
   //Get Read Lock on Trie
   boost::shared_ptr<TrieRootNodeAndFreeList> root;
-  unsigned queryKeywordIDs[query->getQueryTerms()->size()];
+  unsigned *queryKeywordIDs = new unsigned[query->getQueryTerms()->size()];
 
   output->copyForPostProcessing(input);
 
@@ -138,9 +139,10 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
   // If one query keyword doesn't exist on the trie,
   // the filter becomes a "no-op".
   if(!getQueryKeywordIds(*((IndexSearcherInternal*) indexSearcher)->getTrie(),
-      root->root, *query->getQueryTerms(), queryKeywordIDs))
+      root->root, *query->getQueryTerms(), queryKeywordIDs)) {
+    delete [] queryKeywordIDs;
     return;
-
+  }
 
   std::vector<QueryResult*>& results= output->impl->sortedFinalResults;
 
@@ -160,6 +162,7 @@ void DynamicScoringFilter::doFilter(IndexSearcher *indexSearcher,
   }
       
   std::sort(results.begin(), results.end(), QueryResultCompareScore);
+  delete [] queryKeywordIDs;
 }
 
 }}
