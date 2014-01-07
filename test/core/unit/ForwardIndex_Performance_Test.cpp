@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 	schema->setSearchableAttribute("description", 2); // searchable text
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	AnalyzerInternal *analyzer = new StandardAnalyzer(NULL, NULL, NULL, NULL, "");
 
 	/// Initialise Index Structures
 	Trie_Internal *trie = new Trie_Internal();
