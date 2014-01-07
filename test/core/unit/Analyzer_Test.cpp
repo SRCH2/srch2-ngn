@@ -46,7 +46,7 @@ using namespace srch2::instantsearch;
 void testSimpleAnalyzer()
 {
     string src="We are美丽 Chinese";
-    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer();
+    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(NULL, NULL, NULL, NULL, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
     tokenStream->fillInCharacters(src);
     vector<string> vectorString;
@@ -68,8 +68,14 @@ void testSimpleAnalyzer()
 //StandardAnalyzer organizes a tokenizer treating characters >= 256 as a single token and   a "ToLowerCase" filter
 void testStandardAnalyzer()
 {
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_KEEP_ORIGIN);
+    StopWordContainer *stop = StopWordContainer::getInstance("");
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
+    StemmerContainer *stem = StemmerContainer::getInstance("");
+    stem->init();
+
     string src="We are美丽 Chineseㄓㄠ";
-    AnalyzerInternal *standardAnalyzer = new StandardAnalyzer();
+    AnalyzerInternal *standardAnalyzer = new StandardAnalyzer(NULL, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
     tokenStream->fillInCharacters(src);
     vector<string> vectorString;
@@ -90,6 +96,10 @@ void testStandardAnalyzer()
     }
     delete tokenStream;
     delete standardAnalyzer;
+    stem->free();
+    stop->free();
+    syn->free();
+    prot->free();
 }
 
 void testChineseAnalyzer(const string &dataDir){
@@ -97,7 +107,7 @@ void testChineseAnalyzer(const string &dataDir){
     string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从４月１０号起，“一票制” 朱镕基";
     src +="!，。》@##%     在民国时期，插画Picture在中国曾经盛极一时。";
     src += "END";
-    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath);
+    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath, NULL, NULL, NULL, string(""));
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
     tokenStream->fillInCharacters(src);
     vector<string> vectorString;
@@ -156,13 +166,9 @@ void testLowerCase() {
     cout << "#########################################################################" << endl;
     cout << "#########################################################################" << "LowerCase Filter" << endl;
 
-    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
-            DISABLE_STEMMER_NORMALIZER,
-            "",
-            "",
-            "",
-            "", // protected word file path
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
+    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(NULL, NULL, prot, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     string src = "Here IS A Set OF some inStructIOns fOR WHo has the bOOks";
@@ -209,6 +215,8 @@ void testLowerCase() {
     // deleting the objects
     delete tokenStream;
     delete simpleAnlyzer;
+    syn->free();
+    prot->free();
 }
 
 
@@ -219,10 +227,9 @@ void testStemmerFilter(string dataDir) {
     cout << "stemmer File: " << dataDir + "/StemmerHeadwords.txt" << "\n\n";
 
     // when you are running ctest you should be in the build directory
-    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            "", "", SYNONYM_DONOT_KEEP_ORIGIN );
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    StemmerContainer *stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
+    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     cout << "TEST 1: No Stemming" << endl;
@@ -328,6 +335,8 @@ void testStemmerFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete simpleAnlyzer;
+    syn->free();
+    stem->free();
 }
 
 void testStopFilter(string dataDir) {
@@ -339,13 +348,10 @@ void testStopFilter(string dataDir) {
 
     // if it is true, it prints the results of the test, else id doesn't
 
-    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            "",
-            "", // protected word file path
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    StemmerContainer *stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
+    StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(stem, stop, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     string src = "Here IS A Set OF some instructions for who has the books";
@@ -388,12 +394,16 @@ void testStopFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete simpleAnlyzer;
+    syn->free();
+    stem->free();
+    stop->free();
 
+    stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(
             dataDir + "/srch2_dict_ch.core", 
-            "", // special characters
-            dataDir + "/stopWordsFile.txt",
-            ""
+            stop,
+            NULL, NULL,
+            "" // special characters
             );
     tokenStream = chineseAnalyzer->createOperatorFlow();
 
@@ -422,7 +432,7 @@ void testStopFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete chineseAnalyzer;
-
+    stop->free();
 }
 
 void testSynonymFilter(string dataDir) {
@@ -435,12 +445,11 @@ void testSynonymFilter(string dataDir) {
 
     // if it is true, it prints the results of the test, else id doesn't
 
-    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    SynonymContainer *syn = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN);
+    StemmerContainer *stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
+    stem->init();
+    StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
 
     // TEST 1
@@ -472,12 +481,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 2
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new wal new wal mart new york new new york city";
     tokenStream->fillInCharacters(src);
@@ -513,12 +517,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 3
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
     tokenStream->fillInCharacters(src);
@@ -557,12 +556,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 4
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            "",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b c d e f g a b c d e f t a b c d e f";
     tokenStream->fillInCharacters(src);
@@ -607,12 +601,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 5
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            "",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
     tokenStream->fillInCharacters(src);
@@ -672,12 +661,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 6
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "bill";
     tokenStream->fillInCharacters(src);
@@ -699,12 +683,10 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->free();
+    syn = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
 
     // TEST 7
@@ -731,12 +713,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 8
     // input string
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new wal new wal mart new york new new york city";
     tokenStream->fillInCharacters(src);
@@ -762,12 +739,7 @@ void testSynonymFilter(string dataDir) {
     }
 
     // TEST 9
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
     tokenStream->fillInCharacters(src);
@@ -796,12 +768,7 @@ void testSynonymFilter(string dataDir) {
 
 
     // TEST 10
-    simpleAnlyzer = new SimpleAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            "",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
     src = "a b c d e f g a b c d e f t a b c d e f";
     tokenStream->fillInCharacters(src);
@@ -834,11 +801,7 @@ void testSynonymFilter(string dataDir) {
     // TEST 11 : Test ChineseAnayzer
     Logger::info("current dir:%s", dataDir.c_str());
     AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer(
-            dataDir + "/srch2_dict_ch.core", 
-            "", // special characters
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+            dataDir + "/srch2_dict_ch.core", stop, NULL, syn, "");
     tokenStream = chineseAnalyzer->createOperatorFlow();
     src = "ok~dd 美丽还是美";
     tokenStream->fillInCharacters(src);
@@ -865,6 +828,9 @@ void testSynonymFilter(string dataDir) {
     // deleting the objects
     delete tokenStream;
     delete chineseAnalyzer;
+    syn->free();
+    stem->free();
+    stop->free();
 }
 
 void testAnalyzerSerilization(string dataDir) {
@@ -888,15 +854,12 @@ void testAnalyzerSerilization(string dataDir) {
 
     Record *record = new Record(schema);
 
+    SynonymContainer *syn = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN);
+    StemmerContainer *stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
+    StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance(dataDir + "/protectedWords.txt");
 
-    Analyzer *analyzer = new Analyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            dataDir + "/stopWordsFile.txt",
-            dataDir + "/protectedWords.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_KEEP_ORIGIN, "", SIMPLE_ANALYZER);
-
+    Analyzer *analyzer = new Analyzer(stem, stop, prot, syn, string(""), SIMPLE_ANALYZER);
 
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
@@ -919,6 +882,10 @@ void testAnalyzerSerilization(string dataDir) {
     delete analyzer;
     delete index;
     delete indexMetaData;
+    syn->free();
+    prot->free();
+    stop->free();
+    stem->free();
 
     // LOADING
     IndexMetaData *indexMetaData2 = new IndexMetaData( GlobalCache::create(1000,1000),
@@ -945,14 +912,11 @@ void testAnalyzerSerilization(string dataDir) {
 
     Record *record2 = new Record(schema2);
 
+    syn = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_DONOT_KEEP_ORIGIN);
+    stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
+    prot = ProtectedWordsContainer::getInstance(dataDir + "/protectedWords.txt");
 
-    Analyzer *analyzer2 = new Analyzer(
-            DISABLE_STEMMER_NORMALIZER,
-            dataDir + "/StemmerHeadwords.txt",
-            "",
-            dataDir + "/protectedWords.txt",
-            dataDir + "/synonymFile.txt",
-            SYNONYM_DONOT_KEEP_ORIGIN, "", STANDARD_ANALYZER);
+    Analyzer *analyzer2 = new Analyzer(stem, NULL, prot, syn, string(""), STANDARD_ANALYZER);
 
     IndexMetaData *indexMetaData3 = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
@@ -975,6 +939,9 @@ void testAnalyzerSerilization(string dataDir) {
     delete analyzer2;
     delete index2;
     delete indexMetaData3;
+    syn->free();
+    stem->free();
+    prot->free();
 
     // LOADING
     IndexMetaData *indexMetaData4 = new IndexMetaData( GlobalCache::create(1000,1000),
@@ -1009,13 +976,12 @@ void runAnalyzer(TokenStream * tokenStream , const vector<string>& tokenizedWord
 void testLastTokenAsStopWord(string dataDir){
 	cout << "#########################################################################" << endl;
 
-    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            "",
-            dataDir + "/stopWordsFile.txt",
-            "",
-            "", // protected word file path
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    StemmerContainer *stem = StemmerContainer::getInstance("");
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
+
+    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(stem, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
 
 	string src = "the"; //"the last word is theater"
@@ -1029,19 +995,23 @@ void testLastTokenAsStopWord(string dataDir){
 	// deleting the objects
 	delete tokenStream;
 	delete standardAnlyzer;
-
+    stop->free();
+    syn->free();
+    stem->free();
+    prot->free();
 }
 
 void testProtectedWords(string dataDir){
 	cout << "#########################################################################" << endl;
 
-    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(
-            ENABLE_STEMMER_NORMALIZER,
-            "",
-            "",
-            dataDir + "/protectedWords.txt",
-            "",
-            SYNONYM_DONOT_KEEP_ORIGIN);
+    StopWordContainer *stop = StopWordContainer::getInstance("");
+    stop->init();
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance(dataDir + "/protectedWords.txt");
+    prot->init();
+
+    AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(NULL, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
 
 	string src = "C++ is successor of C. .NET Framework (pronounced dot net) is developed by Microsoft.";
@@ -1109,6 +1079,10 @@ void testProtectedWords(string dataDir){
 	// deleting the objects
 	delete tokenStream;
 	delete standardAnlyzer;
+
+    syn->free();
+    prot->free();
+    stop->free();
 }
 
 
@@ -1123,9 +1097,9 @@ int main() {
 
     string dataDir(getenv("dataDir"));
 
-    SynonymContainer::getInstance(dataDir + "/synonymFile.txt").init(dataDir + "/synonymFile.txt");
-    StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt").init(dataDir + "/StemmerHeadwords.txt");
-    StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt").init(dataDir + "/stopWordsFile.txt");
+    SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN)->init();
+    StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt")->init();
+    StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt")->init();
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;
@@ -1154,7 +1128,6 @@ int main() {
     testLastTokenAsStopWord(dataDir);
     cout << "Last stopword is not dropped... test passed" << endl;
 
-    ProtectedWordsContainer::getInstance(dataDir + "/protectedWords.txt").init(dataDir + "/protectedWords.txt");
     testProtectedWords(dataDir);
     cout << "Protected words test passed" << endl;
 

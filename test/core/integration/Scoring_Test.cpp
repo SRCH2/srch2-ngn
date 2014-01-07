@@ -32,8 +32,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "",
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
                                       srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
@@ -111,8 +110,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "",
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
                                       srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer

@@ -319,8 +319,7 @@ bool test2(int argc, char** argv) {
     srch2is::IndexMetaData *indexMetaData = srch2Server.createIndexMetaData(core);
 
     // Create an analyzer
-    srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-                                               "", SYNONYM_DONOT_KEEP_ORIGIN,
+    srch2is::Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL,
                                                core->getRecordAllowedSpecialCharacters());
 
     // Create a schema to the data source definition in the Srch2ServerConf

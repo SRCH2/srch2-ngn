@@ -36,8 +36,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     schema->setRefiningAttribute("latitude", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-                                      "", "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "",
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
                                       srch2::instantsearch::STANDARD_ANALYZER);
 
     /// Create an index writer
