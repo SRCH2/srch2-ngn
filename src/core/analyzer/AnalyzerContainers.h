@@ -25,11 +25,15 @@ namespace instantsearch{
 class AnalyzerContainer {
 
  public:
-    virtual void init(const std::string &filePath) = 0;
+
+    virtual void init() = 0;
     virtual ~AnalyzerContainer();
 
-    void free(const string &path);
+    const string &getFilePath() const { return filePath; };
+
+    static void free(const string &path);
     static void freeAll();
+    void free() { AnalyzerContainer::free(filePath); }
 
  protected:
 
@@ -37,34 +41,42 @@ class AnalyzerContainer {
     // path must be unique
     typedef map <const string, AnalyzerContainer *> Map_t;
     static Map_t containers;
+
+    string filePath;
 };
 
 class SynonymContainer : public AnalyzerContainer {
 public:
-	void init(const std::string &filePath);
+	void init();
 	void loadSynonymContainer(boost::archive::binary_iarchive& ia);
 	void saveSynonymContainer(boost::archive::binary_oarchive& oa);
-	bool contains(const std::string& str);
-	void getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue);
+	bool contains(const std::string& str) const;
+	void getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue) const;
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static SynonymContainer& getInstance(const std::string &filePath);
+	static SynonymContainer *getInstance(const std::string &filePath,
+                                             SynonymKeepOriginFlag synonymKeepOriginFlag);
+
+        SynonymKeepOriginFlag keepOrigin() const { return synonymKeepOriginFlag; }
 
 private:
 	std::map<std::string, std::pair<SynonymTokenType, std::string> > synonymMap;
 	const std::string synonymDelimiter;
-	SynonymContainer(const std::string &delimiter):synonymDelimiter(delimiter) {}
+
+        SynonymKeepOriginFlag synonymKeepOriginFlag;
+
+        SynonymContainer(const std::string &delimiter) : synonymDelimiter(delimiter) {}
 	SynonymContainer(const SynonymContainer&) {}
 	void operator == (const SynonymContainer&){}
 };
 
 class StemmerContainer : public AnalyzerContainer {
 public:
-	void init(const std::string &filePath);
+	void init();
 	void loadStemmerContainer(boost::archive::binary_iarchive& ia);
 	void saveStemmerContainer(boost::archive::binary_oarchive& oa);
-	bool contains(const std::string& str);
+	bool contains(const std::string& str) const;
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static StemmerContainer& getInstance(const std::string &filePath);
+	static StemmerContainer *getInstance(const std::string &filePath);
 
 private:
 	std::map<std::string, int> dictionaryWords;
@@ -75,12 +87,12 @@ private:
 
 class StopWordContainer : public AnalyzerContainer {
 public:
-	void init(const std::string &filePath);
+	void init();
 	void loadStopWordContainer(boost::archive::binary_iarchive& ia);
 	void saveStopWordContainer(boost::archive::binary_oarchive& oa);
-	bool contains(const std::string& str);
+	bool contains(const std::string& str) const;
 	// this is thread unsafe. Make sure you call it from main thread only.
-	static StopWordContainer& getInstance(const std::string &filePath);
+	static StopWordContainer *getInstance(const std::string &filePath);
 
 private:
 	std::set<std::string> stopWordsSet;
@@ -94,9 +106,9 @@ private:
  */
 class ProtectedWordsContainer : public AnalyzerContainer {
 public:
-	void init(const std::string &filePath);
-	bool isProtected(const string& val);
-	static ProtectedWordsContainer& getInstance(const std::string &filePath);
+	void init();
+	bool isProtected(const string& val) const;
+	static ProtectedWordsContainer *getInstance(const std::string &filePath);
 
 private:
 	set<string> protectedWords;

@@ -11,9 +11,9 @@ namespace srch2 {
 namespace instantsearch {
 
 NonAlphaNumericFilter::NonAlphaNumericFilter(TokenStream *tokenStream,
-                                             const std::string &protectedWordsFilePath) :
+                                             const ProtectedWordsContainer *_protectedWordsContainer) :
     TokenFilter(tokenStream),
-    protectedWordsContainer(ProtectedWordsContainer::getInstance(protectedWordsFilePath))
+    protectedWordsContainer(_protectedWordsContainer)
 {
     this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }

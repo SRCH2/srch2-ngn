@@ -10,39 +10,38 @@
 namespace srch2{
 namespace instantsearch{
 
-ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile, const std::string &recordAllowedSpecialCharacters ,
-            const std::string &stopWordFilePath ,
-            const std::string &synonymFilePath ,
-            const SynonymKeepOriginFlag &synonymKeepOriginFlag 
-            )
-    :AnalyzerInternal(DISABLE_STEMMER_NORMALIZER,
-            recordAllowedSpecialCharacters,
-            "", // The Chinese language does not need stemming as English
-            stopWordFilePath,
-            "", // TODO - protected words in Chinese?
-            synonymFilePath,
-            synonymKeepOriginFlag), mDictFilePath(chineseDictionaryFile)
+ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile,
+                                 const StopWordContainer *stopWords,
+                                 const ProtectedWordsContainer *protectedWords,
+                                 const SynonymContainer *synonyms,
+                                 const std::string &delimiters)
+    : AnalyzerInternal(NULL/*stemmer*/, stopWords, protectedWords, synonyms, delimiters),
+      mDictFilePath(chineseDictionaryFile)
 {
     this->analyzerType = CHINESE_ANALYZER;
 }
 
 ChineseAnalyzer::ChineseAnalyzer(const ChineseAnalyzer &analyzer)
-    : AnalyzerInternal(analyzer), mDictFilePath(analyzer.mDictFilePath){
+    : AnalyzerInternal(analyzer), mDictFilePath(analyzer.mDictFilePath)
+{
     this->analyzerType = CHINESE_ANALYZER;
 }
   
+AnalyzerType ChineseAnalyzer::getAnalyzerType() const
+{
+    return CHINESE_ANALYZER;
+}
+
 TokenStream* ChineseAnalyzer::createOperatorFlow(){
     TokenStream *tokenStream = new ChineseTokenizer(mDictFilePath);
     tokenStream = new LowerCaseFilter(tokenStream);
 
-    if (this->stopWordFilePath.compare("") != 0) {
-        //TODO: The file os error should be solved by exception
-        tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
+    if (this->stopWords != NULL) {
+        tokenStream = new StopFilter(tokenStream, this->stopWords);
     }
 
-    if (this->synonymFilePath.compare("") != 0) {
-        //TODO: The file os error should be solved by exception
-        tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
+    if (this->synonyms != NULL) {
+        tokenStream = new SynonymFilter(tokenStream, this->synonyms);
     }
 
     return tokenStream;

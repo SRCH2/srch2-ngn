@@ -21,13 +21,19 @@ namespace instantsearch {
 
 class NonAlphaNumericFilter: public TokenFilter {
 public:
-	NonAlphaNumericFilter(TokenStream *tokenStream, const std::string &protectedWordsFilePath);
+	NonAlphaNumericFilter(TokenStream *tokenStream, const ProtectedWordsContainer *protectedWordsFilePath);
 	void clearState();
 	bool processToken();
 	virtual ~NonAlphaNumericFilter();
-	bool isProtectWord(const string& val) { return protectedWordsContainer.isProtected(val); }
+	bool isProtectWord(const string& val)
+        {
+            if (protectedWordsContainer != NULL)
+                return protectedWordsContainer->isProtected(val);
+            return false;
+        }
+
 private:
-	ProtectedWordsContainer& protectedWordsContainer;
+	const ProtectedWordsContainer *protectedWordsContainer;
 	queue<vector<CharType> > internalTokenBuffer;
 };
 
