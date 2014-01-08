@@ -600,6 +600,33 @@ int main(int argc, char** argv) {
     }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
+    // Step 1: Waiting server
+    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
+    /* 1). event initialization */
+    http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
+    http_addr =
+            serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+    struct evhttp *http_server = NULL;
+    struct event_base *evbase = NULL;
+
+    evbase = event_init();
+    if (NULL == evbase) {
+        perror("event_base_new");
+        return 1;
+    }
+
+    /* 2). event http initialization */
+    http_server = evhttp_new(evbase);
+    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
+
+    if (NULL == http_server) {
+        perror("evhttp_new");
+        return 2;
+    }
+
+    /* 3). set general callback of http request */
+    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
+
     // create a server (core) for each data source in config file
     for (ConfigManager::CoreInfoMap_t::const_iterator iterator = serverConf->coreInfoIterateBegin();
          iterator != serverConf->coreInfoIterateEnd(); iterator++) {
@@ -613,15 +640,17 @@ int main(int argc, char** argv) {
     if (defaultCore == NULL && serverConf->getDefaultCoreName().compare("") != 0) {
         defaultCore = servers[serverConf->getDefaultCoreName()];
     }
+    ASSERT(defaultCore != NULL);
 
-    // if no core created from ConfigManager, then create a default one
-    if (servers.empty()) {
-        ASSERT(defaultCore != NULL);
-
-        defaultCore = new srch2http::Srch2Server();
-        defaultCore->setCoreName(serverConf->getDefaultCoreName());
-        servers[defaultCore->getCoreName()] = defaultCore;
+    /* 4). bind socket */
+    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
+        perror("evhttp_bind_socket");
+        return 3;
     }
+
+    /* 6). free resource before exit */
+    evhttp_free(http_server);
+    event_base_free(evbase);
 
     //load the index from the data source
     try{
@@ -652,78 +681,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
-    http_addr =
-            serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
-    struct evhttp *http_server = NULL;
-    struct event_base *evbase = NULL;
-
     //std::cout << "Started Srch2 server:" << http_addr << ":" << http_port << std::endl;
-
-    // Step 1: Waiting server
-    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
-    /* 1). event initialization */
-    evbase = event_init();
-    if (NULL == evbase) {
-        perror("event_base_new");
-        return 1;
-    }
-
-    /* 2). event http initialization */
-    http_server = evhttp_new(evbase);
-    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
-
-    if (NULL == http_server) {
-        perror("evhttp_new");
-        return 2;
-    }
-
-    /* 3). set general callback of http request */
-    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
-
-    if (defaultCore->indexDataConfig->getWriteApiType()
-            == srch2http::HTTPWRITEAPI) {
-        //std::cout << "HTTPWRITEAPI:ON" << std::endl;
-        //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
-        //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
-
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
-
-        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
-
-        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
-
-        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
-
-        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
-
-        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
-    }
-
-    /* 4). bind socket */
-    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
-        perror("evhttp_bind_socket");
-        return 3;
-    }
-
-    /* 5). start http server */
-    struct timeval ten_sec;
-    ten_sec.tv_sec = 1;
-    ten_sec.tv_usec = 0;
-
-    /* Now we run the event_base for a series of 5-second intervals, checking every 5 seconds if index was commited.
-     * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
-     * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
-     * */
-    while (not areAllServersCommitted(&servers)) {
-        /* This schedules an exit ten seconds from now. */
-        event_base_loopexit(evbase, &ten_sec);
-        event_base_dispatch(evbase);
-    }
-
-    /* 6). free resource before exit */
-    evhttp_free(http_server);
-    event_base_free(evbase);
 
     MAX_THREADS = serverConf->getNumberOfThreads();
 
@@ -760,29 +718,17 @@ int main(int argc, char** argv) {
         // setup default core callbacks
         //http_server = evhttp_start(http_addr, http_port);
         evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
-
         evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, defaultCore);
 
         //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
         evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
 
-        if (defaultCore->indexDataConfig->getWriteApiType()
-                == srch2http::HTTPWRITEAPI) {
-            // std::cout << "HTTPWRITEAPI:ON" << std::endl;
-            //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, defaultCore);
-            //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, defaultCore);
-            evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
-
-            evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
-
-            evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
-
-            evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
-
-            evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
-
-            evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
-        }
+        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
+        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
+        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
+        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
+        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
+        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
 
         // setup named core callbacks
         for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
