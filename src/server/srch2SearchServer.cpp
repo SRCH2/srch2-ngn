@@ -544,6 +544,192 @@ static void killServer(int signal) {
 #endif
 }
 
+/*
+ * Start the srch2 servers, one per core in the config
+ */
+static int startServers(ConfigManager *config, ServerMap_t *servers, vector<struct event_base *> *evbases, vector<struct evhttp *> *http_servers)
+{
+    // Step 1: Waiting server
+    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
+    /* 1). event initialization */
+    http_port = atoi(config->getHTTPServerListeningPort().c_str());
+    http_addr =
+            config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+    struct evhttp *http_server = NULL;
+    struct event_base *evbase = NULL;
+
+    evbase = event_init();
+    if (NULL == evbase) {
+        perror("event_base_new");
+        return 1;
+    }
+
+    /* 2). event http initialization */
+    http_server = evhttp_new(evbase);
+    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
+
+    if (NULL == http_server) {
+        perror("evhttp_new");
+        return 2;
+    }
+
+    /* 3). set general callback of http request */
+    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
+
+    // create a server (core) for each data source in config file
+    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
+         iterator != config->coreInfoIterateEnd(); iterator++) {
+
+        srch2http::Srch2Server *core = new srch2http::Srch2Server;
+        core->setCoreName(iterator->second->getName());
+        (*servers)[iterator->second->getName()] = core;
+    }
+
+    // make sure we have identified the default core
+    if (defaultCore == NULL && config->getDefaultCoreName().compare("") != 0) {
+        defaultCore = (*servers)[config->getDefaultCoreName()];
+    }
+    ASSERT(defaultCore != NULL);
+
+    /* 4). bind socket */
+    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
+        perror("evhttp_bind_socket");
+        return 3;
+    }
+
+    /* 6). free resource before exit */
+    evhttp_free(http_server);
+    event_base_free(evbase);
+
+    //load the index from the data source
+    try{
+        for (ServerMap_t::iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
+            iterator->second->init(config);
+        }
+    }catch(exception& ex) {
+    	/*
+    	 *  We got some fatal error during server initialization. Print the error message and
+    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
+    	 *  exception reaches this point. All exceptions that reach here are considered fatal
+    	 *  and the server will stop.
+    	 */
+    	Logger::error(ex.what());
+    	return(-1);
+    }
+    //cout << "srch2 server started." << endl;
+
+    for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
+        const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
+        if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+            // set current time as cut off time for further updates
+            // this is a temporary solution. TODO
+            srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+            srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+        }
+    }
+
+    //std::cout << "Started Srch2 server:" << http_addr << ":" << http_port << std::endl;
+
+    MAX_THREADS = config->getNumberOfThreads();
+
+    Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
+            MAX_THREADS, http_addr, http_port);
+
+    //string meminfo;
+    //getMemoryInfo(meminfo);
+
+    //std::cout << meminfo << std::endl;
+    // Step 2: Serving server
+
+    int fd = bindSocket(http_addr, http_port);
+    threads = new pthread_t[MAX_THREADS];
+    for (int i = 0; i < MAX_THREADS; i++) {
+        evbase = event_init();
+        evbases->push_back(evbase);
+        if (NULL == evbase) {
+            perror("event_base_new");
+            return 1;
+        }
+
+        http_server = evhttp_new(evbase);
+        http_servers->push_back(http_server);
+        //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataConfig->getWriteReadBufferInBytes() );
+
+        if (NULL == http_server) {
+            perror("evhttp_new");
+            return 2;
+        }
+
+        // setup default core callbacks
+        //http_server = evhttp_start(http_addr, http_port);
+        evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
+        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, defaultCore);
+
+        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
+        evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
+
+        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
+        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
+        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
+        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
+        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
+        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
+
+        // setup named core callbacks
+        for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
+
+            string path = string("/") + iterator->second->getCoreName() + string("/search");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmsearch, iterator->second);
+
+            path = string("/") + iterator->second->getCoreName() + string("/suggest");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmsuggest, iterator->second);
+
+            //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, iterator->second);
+
+            path = string("/") + iterator->second->getCoreName() + string("/info");
+            evhttp_set_cb(http_server, path.c_str(), cb_bminfo, iterator->second);
+
+            if (iterator->second->indexDataConfig->getWriteApiType()
+                == srch2http::HTTPWRITEAPI) {
+
+                path = string("/") + iterator->second->getCoreName() + string("/docs");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/update");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/save");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/export");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/activate");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
+
+                path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
+                evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
+            }
+        }
+
+        evhttp_set_gencb(http_server, cb_notfound, NULL);
+
+        /* 4). bind socket */
+        //if(0 != evhttp_bind_socket(http_server, http_addr, http_port))
+        if (0 != evhttp_accept_socket(http_server, fd)) {
+            perror("evhttp_bind_socket");
+            return 3;
+        }
+
+        //fprintf(stderr, "Server started on port %d\n", http_port);
+        //event_base_dispatch(evbase);
+        if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if (argc > 1) {
         if (strcmp(argv[1], "--version") == 0) {
@@ -600,186 +786,14 @@ int main(int argc, char** argv) {
     }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
-    // Step 1: Waiting server
-    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
-    /* 1). event initialization */
-    http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
-    http_addr =
-            serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
-    struct evhttp *http_server = NULL;
-    struct event_base *evbase = NULL;
-
-    evbase = event_init();
-    if (NULL == evbase) {
-        perror("event_base_new");
-        return 1;
-    }
-
-    /* 2). event http initialization */
-    http_server = evhttp_new(evbase);
-    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
-
-    if (NULL == http_server) {
-        perror("evhttp_new");
-        return 2;
-    }
-
-    /* 3). set general callback of http request */
-    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
-
-    // create a server (core) for each data source in config file
-    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = serverConf->coreInfoIterateBegin();
-         iterator != serverConf->coreInfoIterateEnd(); iterator++) {
-
-        srch2http::Srch2Server *core = new srch2http::Srch2Server;
-        core->setCoreName(iterator->second->getName());
-        servers[iterator->second->getName()] = core;
-    }
-
-    // make sure we have identified the default core
-    if (defaultCore == NULL && serverConf->getDefaultCoreName().compare("") != 0) {
-        defaultCore = servers[serverConf->getDefaultCoreName()];
-    }
-    ASSERT(defaultCore != NULL);
-
-    /* 4). bind socket */
-    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
-        perror("evhttp_bind_socket");
-        return 3;
-    }
-
-    /* 6). free resource before exit */
-    evhttp_free(http_server);
-    event_base_free(evbase);
-
-    //load the index from the data source
-    try{
-        for (ServerMap_t::iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
-            iterator->second->init(serverConf);
-        }
-    }catch(exception& ex) {
-    	/*
-    	 *  We got some fatal error during server initialization. Print the error message and
-    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
-    	 *  exception reaches at this point. All exceptions reached here are considered fatal
-    	 *  and server will stop.
-    	 */
-    	Logger::error(ex.what());
-        if (logFile)
-            fclose(logFile);
-    	exit(-1);
-    }
-    //cout << "srch2 server started." << endl;
-
-    for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
-        const srch2http::CoreInfo_t *coreInfo = serverConf->getCoreInfo(iterator->second->getCoreName());
-        if (coreInfo != NULL && coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-            // set current time as cut off time for further updates
-            // this is a temporary solution. TODO
-            srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-            srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
-        }
-    }
-
-    //std::cout << "Started Srch2 server:" << http_addr << ":" << http_port << std::endl;
-
-    MAX_THREADS = serverConf->getNumberOfThreads();
-
-    Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
-            MAX_THREADS, http_addr, http_port);
-
-    //string meminfo;
-    //getMemoryInfo(meminfo);
-
-    //std::cout << meminfo << std::endl;
-    // Step 2: Serving server
-
-    int fd = bindSocket(http_addr, http_port);
-    threads = new pthread_t[MAX_THREADS];
     vector<struct event_base *> evbases;
     vector<struct evhttp *> http_servers;
-    for (int i = 0; i < MAX_THREADS; i++) {
-        evbase = event_init();
-        evbases.push_back(evbase);
-        if (NULL == evbase) {
-            perror("event_base_new");
-            return 1;
-        }
 
-        http_server = evhttp_new(evbase);
-        http_servers.push_back(http_server);
-        //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataConfig->getWriteReadBufferInBytes() );
-
-        if (NULL == http_server) {
-            perror("evhttp_new");
-            return 2;
-        }
-
-        // setup default core callbacks
-        //http_server = evhttp_start(http_addr, http_port);
-        evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
-        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, defaultCore);
-
-        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
-        evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
-
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
-        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
-        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
-        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
-        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
-        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
-
-        // setup named core callbacks
-        for (ServerMap_t::const_iterator iterator = servers.begin(); iterator != servers.end(); iterator++) {
-
-            string path = string("/") + iterator->second->getCoreName() + string("/search");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmsearch, iterator->second);
-
-            path = string("/") + iterator->second->getCoreName() + string("/suggest");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmsuggest, iterator->second);
-
-            //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, iterator->second);
-
-            path = string("/") + iterator->second->getCoreName() + string("/info");
-            evhttp_set_cb(http_server, path.c_str(), cb_bminfo, iterator->second);
-
-            if (iterator->second->indexDataConfig->getWriteApiType()
-                == srch2http::HTTPWRITEAPI) {
-
-                path = string("/") + iterator->second->getCoreName() + string("/docs");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/update");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/save");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/export");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/activate");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
-            }
-        }
-
-        evhttp_set_gencb(http_server, cb_notfound, NULL);
-
-        /* 4). bind socket */
-        //if(0 != evhttp_bind_socket(http_server, http_addr, http_port))
-        if (0 != evhttp_accept_socket(http_server, fd)) {
-            perror("evhttp_bind_socket");
-            return 3;
-        }
-
-        //fprintf(stderr, "Server started on port %d\n", http_port);
-        //event_base_dispatch(evbase);
-        if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
-            return -1;
+    int start = startServers(serverConf, &servers, &evbases, &http_servers);
+    if (start != 0) {
+        if (logFile)
+            fclose(logFile);
+        return start; // startup failed
     }
 
     /* Set signal handlers */
