@@ -16,7 +16,7 @@ fi
 SYSTEM_TEST_DIR=$1
 if [ ! -d "$SYSTEM_TEST_DIR" ]; then
     echo "$0: \"$SYSTEM_TEST_DIR\" not an existing directory."
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 1
     fi
 fi
@@ -26,13 +26,13 @@ cd $SYSTEM_TEST_DIR
 SRCH2_ENGINE_DIR=$2
 if [ ! -d "$SRCH2_ENGINE_DIR" ]; then
     echo "$0: Search engine directory \"$SRCH2_ENGINE_DIR\" not an existing directory."
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 1
     fi
 fi
 
 echo ''
-echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will intefere with this testing."
+echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will interfere with this testing."
 echo ''
 
 # Test for ruby framework for some tests
@@ -71,18 +71,7 @@ python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE_DIR ./qf_dynamic
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit 255
-else
-    echo "-- PASSED: $test_id"
-fi
-
-test_id="phrase search test"
-echo "---------------------do $test_id-----------------------"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt >> system_test.log 2>&1
-
-if [ $? -gt 0 ]; then
-    echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
@@ -90,6 +79,18 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="phrase search test"
+echo "---------------------do $test_id-----------------------"
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
 rm -rf data/ *.idx
 
 test_id="multi valued attribute"
@@ -484,7 +485,7 @@ python ./multicore/multicore.py $SRCH2_ENGINE_DIR ./multicore/queriesAndResults.
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
