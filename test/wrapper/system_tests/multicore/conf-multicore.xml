@@ -6,6 +6,11 @@
     documentation version.
 
     Please email contact@srch2.com if you have questions.
+
+    This configuration file defines 3 separate cores (data sources) in order to allow testing of
+    basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
+    of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
+    test database).
 -->
  
 <config>
@@ -19,6 +24,9 @@
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8081</listeningPort>
 
+    <!-- moved from <query> which is now per core -->
+    <maxSearchThreads>2</maxSearchThreads>
+        
     <!-- Testing multiple cores here -->
     <cores defaultCoreName="core1">
         <core name="core1">
@@ -32,6 +40,23 @@
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
             </indexConfig>
+	    <query>
+	        <rankingAlgorithm>
+		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+	        </rankingAlgorithm>
+		<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.95</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>1</fieldBasedSearch>
+		<searcherType>0</searcherType>
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+		<queryTermPrefixType>0</queryTermPrefixType>
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
             <schema name="SRCH2" version="3">
                 <fields>
                     <field name="title" type="text" indexed="true"/>
@@ -77,6 +102,24 @@
                 <enablePositionIndex>1</enablePositionIndex> 
             </indexConfig>
             
+	    <query>
+	        <rankingalgorithm>
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+		<queryTermPrefixType>0</queryTermPrefixType>
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
             <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
             <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
             <getAllResultsKAlternative>500</getAllResultsKAlternative>
@@ -167,6 +210,138 @@
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
             </indexConfig>
 
+	    <query>
+	        <!-- 
+		   Ranking Algorithm
+		   
+		   
+		   The following comments and parameters are related to ranking.  
+		   Please see http://www.srch2.com/download.html for ranking-related information
+		   #record-score-expression=doc_boost+(1/(doc_length+1))
+		   record-score-expression=idf_score*doc_boost
+		-->
+		<rankingAlgorithm>
+		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+		</rankingAlgorithm>
+		<!--
+		  Query Term Fuzzy Penalty
+		  Optional
+		  
+		  Defaults to 1
+		-->
+		<fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+	      
+		<!--
+		  Query Term Length Boost
+		  Optional
+		  
+		  Defaults to 0.5
+		-->
+		<queryTermLengthBoost>0.5</queryTermLengthBoost>
+	      
+		<!--
+		  Prefix Match Penalty
+		  Optional
+		  
+		  Penalty for a prefix match.  This value is used to multiply the score of record for a term.
+		  The value should be in the range of 0 to 1
+		  Defaults to 0.95
+		-->
+		<prefixMatchPenalty>0.95</prefixMatchPenalty>
+	      
+		<!--
+		  Cache Size
+		  Optional
+		  
+		  Number of bytes in the cache. It should be in the range [50MB, 500MB].
+		  Its default value is 50MB.
+		-->
+		<cacheSize>65536000</cacheSize>
+		<!--
+		  Rows
+		  Optional
+		  
+		  Number of results to retrieve
+		  Defaults to 10.
+		-->
+		<rows>10</rows>
+		<!--
+		  Field Based Search
+		  Optional
+		  
+		  Flag to indicate whether the attribute-based search is supported.
+		  0 - Disable
+		  1 - Enable
+		  Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
+		-->
+		<fieldBasedSearch>0</fieldBasedSearch>
+	      
+		<!-- 
+		   Searcher Type
+		   Optional
+		   
+		   in the query result
+		   0 if topk,
+		   1 if advanced
+		   
+		   Defaults to 0
+		-->
+		<searcherType>0</searcherType>
+	      
+		<!--
+		  Query Term Match Type
+		  Optional
+		  
+		  0: exact match
+		  1: fuzzy match
+		  Defaults to 0
+		-->
+		<queryTermFuzzyType>0</queryTermFuzzyType>
+	      
+		<!--
+		  Query Term Type
+		  Optional
+		  
+		  
+		  0: a term is treated as a prefix;
+		  1: a term is treated as a complete term;
+		  Defaults to 0
+		-->
+		<queryTermPrefixType>0</queryTermPrefixType>
+	      
+		<queryResponseWriter>
+		<!--
+		    Response Format
+		    Optional
+		    
+		    0: JSON
+		    1: JSONP           
+		    Defaults to 0
+		-->
+		<responseFormat>0</responseFormat>
+		
+		
+		<!--
+		    Response Content
+		    Optionl
+		    
+		    
+		    Format of each json search response.
+		    You should set the type by one of the following options:
+                    0: format "rid,edit_dist,matching_prefix,in_memory_record";
+                    1: format "rid,edit_dist,matching_prefix".
+                    2: format "rid,edit_dist,matching_prefix,feilds_to_return".
+		    Defaults to 0
+		    It is REQUIRED to set fields_to_return if search-response-format=2
+		    These are attributes returned to the user.
+		    For Example:
+                    <responseContent type="2">lat,lng</responseContent>
+		-->
+		<responseContent type="0"></responseContent>
+		
+	      </queryResponseWriter>
+	    </query>
+	    
             <schema name="SRCH2" version="3">
           
                 <fields>
@@ -295,37 +470,6 @@
         </core>
     </cores>
 
-    <query>
-        <rankingAlgorithm>
-            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingAlgorithm>
- 
-        <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
-
-        <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
-         
-        <prefixMatchPenalty>0.95</prefixMatchPenalty>
- 
-        <cacheSize>65536000</cacheSize>
-
-        <rows>10</rows>
-
-        <maxSearchThreads>2</maxSearchThreads>
-        
-        <fieldBasedSearch>1</fieldBasedSearch>
-         
-        <searcherType>0</searcherType>
-         
-        <queryTermFuzzyType>1</queryTermFuzzyType>
-         
-        <queryTermPrefixType>0</queryTermPrefixType>
- 
-        <queryResponseWriter>
-            <responseFormat>1</responseFormat>
-        </queryResponseWriter>
-
-    </query>
-  
     <updatehandler>
 
         <maxDocs>15000000</maxDocs>

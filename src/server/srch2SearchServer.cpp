@@ -463,8 +463,8 @@ void parseProgramArguments(int argc, char** argv,
     }
 }
 
-pthread_t *threads;
-int MAX_THREADS;
+pthread_t *threads = NULL;
+unsigned int MAX_THREADS = 0;
 
 // These are global variables that store host and port information for srch2 engine
 short http_port;
@@ -689,27 +689,23 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
             path = string("/") + iterator->second->getCoreName() + string("/info");
             evhttp_set_cb(http_server, path.c_str(), cb_bminfo, iterator->second);
 
-            if (iterator->second->indexDataConfig->getWriteApiType()
-                == srch2http::HTTPWRITEAPI) {
+            path = string("/") + iterator->second->getCoreName() + string("/docs");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
 
-                path = string("/") + iterator->second->getCoreName() + string("/docs");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
+            path = string("/") + iterator->second->getCoreName() + string("/update");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
 
-                path = string("/") + iterator->second->getCoreName() + string("/update");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
+            path = string("/") + iterator->second->getCoreName() + string("/save");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
 
-                path = string("/") + iterator->second->getCoreName() + string("/save");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
+            path = string("/") + iterator->second->getCoreName() + string("/export");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
 
-                path = string("/") + iterator->second->getCoreName() + string("/export");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
+            path = string("/") + iterator->second->getCoreName() + string("/activate");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
 
-                path = string("/") + iterator->second->getCoreName() + string("/activate");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
-
-                path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
-                evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
-            }
+            path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
+            evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);

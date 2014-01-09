@@ -435,13 +435,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
                                std::stringstream &parseWarnings)
 {
     // scoringExpressionString is an optional field
-    scoringExpressionString = "1"; // By default it is 1
+    coreInfo->scoringExpressionString = "1"; // By default it is 1
     xml_node childNode = queryNode.child(rankingAlgorithmString).child(recordScoreExpressionString);
     if (childNode && childNode.text()) {
         string exp = childNode.text().get();
         boost::algorithm::trim(exp);
         if (isValidRecordScoreExpession(exp)) {
-            scoringExpressionString = exp;
+            coreInfo->scoringExpressionString = exp;
         } else {
             configSuccess = false;
             parseError << "The expression provided for recordScoreExpression is not a valid.";
@@ -450,12 +450,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // fuzzyMatchPenalty is an optional field
-    fuzzyMatchPenalty = 1; // By default it is 1
+    coreInfo->fuzzyMatchPenalty = 1; // By default it is 1
     childNode = queryNode.child(fuzzyMatchPenaltyString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
         if (isValidFuzzyMatchPenalty(qtsb)) {
-            fuzzyMatchPenalty = childNode.text().as_float();
+            coreInfo->fuzzyMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
@@ -465,14 +465,14 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
 
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
-    queryTermSimilarityThreshold = 0.5;
+    coreInfo->queryTermSimilarityThreshold = 0.5;
     childNode = queryNode.child(queryTermSimilarityThresholdString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
         if (isValidQueryTermSimilarityThreshold(qtsb)) {
-            queryTermSimilarityThreshold = childNode.text().as_float();
-            if (queryTermSimilarityThreshold < 0 || queryTermSimilarityThreshold > 1 ){
-                queryTermSimilarityThreshold = 0.5;
+            coreInfo->queryTermSimilarityThreshold = childNode.text().as_float();
+            if (coreInfo->queryTermSimilarityThreshold < 0 || coreInfo->queryTermSimilarityThreshold > 1 ){
+                coreInfo->queryTermSimilarityThreshold = 0.5;
                 parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
             }
         } else {
@@ -483,12 +483,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermLengthBoost is an optional field
-    queryTermLengthBoost = 0.5; // By default it is 0.5
+    coreInfo->queryTermLengthBoost = 0.5; // By default it is 0.5
     childNode = queryNode.child(queryTermLengthBoostString);
     if (childNode && childNode.text()) {
         string qtlb = childNode.text().get();
         if (isValidQueryTermLengthBoost(qtlb)) {
-            queryTermLengthBoost = childNode.text().as_float();
+            coreInfo->queryTermLengthBoost = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermLengthBoost is not a valid.";
@@ -497,13 +497,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // prefixMatchPenalty is an optional field.
-    prefixMatchPenalty = 0.95; // By default it is 0.5
+    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.5
     childNode = queryNode.child(prefixMatchPenaltyString);
     if (childNode && childNode.text()) {
         string pm = childNode.text().get();
 
         if (isValidPrefixMatch(pm)) {
-            prefixMatchPenalty = childNode.text().as_float();
+            coreInfo->prefixMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The value provided for prefixMatch is not a valid.";
@@ -512,12 +512,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // cacheSize is an optional field
-    cacheSizeInBytes = 50 * 1048576;
+    coreInfo->cacheSizeInBytes = 50 * 1048576;
     childNode = queryNode.child(cacheSizeString);
     if (childNode && childNode.text()) {
         string cs = childNode.text().get();
         if (isValidCacheSize(cs)) {
-            cacheSizeInBytes = childNode.text().as_uint();
+            coreInfo->cacheSizeInBytes = childNode.text().as_uint();
         } else {
             parseError << "cache size provided is not set correctly.\n";
             configSuccess = false;
@@ -526,28 +526,14 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // rows is an optional field
-    resultsToRetrieve = 10; // by default it is 10
+    coreInfo->resultsToRetrieve = 10; // by default it is 10
     childNode = queryNode.child(rowsString);
     if (childNode && childNode.text()) {
         string row = childNode.text().get();
         if (isValidRows(row)) {
-            resultsToRetrieve = childNode.text().as_int();
+            coreInfo->resultsToRetrieve = childNode.text().as_int();
         } else {
             parseError << "rows is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // maxSearchThreads is an optional field
-    numberOfThreads = 1; // by default it is 1
-    childNode = queryNode.child(maxSearchThreadsString);
-    if (childNode && childNode.text()) {
-        string mst = childNode.text().get();
-        if (isValidMaxSearchThreads(mst)) {
-            numberOfThreads = childNode.text().as_int();
-        } else {
-            parseError << "maxSearchThreads is not set correctly.\n";
             configSuccess = false;
             return;
         }
@@ -573,12 +559,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermFuzzyType is an optional field
-    exactFuzzy = false; // by default it is false
+    coreInfo->exactFuzzy = false; // by default it is false
     childNode = queryNode.child(queryTermFuzzyTypeString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
         if (isValidQueryTermFuzzyType(qtmt)) {
-            exactFuzzy = childNode.text().as_bool();
+            coreInfo->exactFuzzy = childNode.text().as_bool();
         } else {
             parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
@@ -587,12 +573,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermPrefixType is an optional field
-    queryTermPrefixType = false;
+    coreInfo->queryTermPrefixType = false;
     childNode = queryNode.child(queryTermPrefixTypeString);
     if (childNode && childNode.text()) {
         string qt = childNode.text().get();
         if (isValidQueryTermPrefixType(qt)) {
-            queryTermPrefixType = childNode.text().as_bool();
+            coreInfo->queryTermPrefixType = childNode.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -601,12 +587,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // responseFormat is an optional field
-    searchResponseJsonFormat = 0; // by default it is 10
+    coreInfo->searchResponseJsonFormat = 0; // by default it is 0
     childNode = queryNode.child(queryResponseWriterString).child(responseFormatString);
     if (childNode && childNode.text()) {
         string rf = childNode.text().get();
         if (isValidResponseFormat(rf)) {
-            searchResponseJsonFormat = childNode.text().as_int();
+            coreInfo->searchResponseJsonFormat = childNode.text().as_int();
         } else {
             parseError << "The provided responseFormat is not valid";
             configSuccess = false;
@@ -615,21 +601,21 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // responseContent is an optional field
-    searchResponseFormat = (ResponseType)0; // by default it is 0
+    coreInfo->searchResponseContent = (ResponseType)0; // by default it is 0
     childNode = queryNode.child(queryResponseWriterString).child(responseContentString);
     if (childNode) {
         string type = childNode.attribute(typeString).value();
         if (isValidResponseContentType(type)) {
-            searchResponseFormat = (ResponseType)childNode.attribute(typeString).as_int();
+            coreInfo->searchResponseContent = (ResponseType)childNode.attribute(typeString).as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
             return;
         }
 
-        if (searchResponseFormat == 2) {
+        if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
-                splitString(string(childNode.text().get()), ",", attributesToReturn);
+                splitString(string(childNode.text().get()), ",", coreInfo->attributesToReturn);
             } else {
                 parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
@@ -696,12 +682,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         }
     }
 }
-/*
- * Only called by parseMultipleCores().  This function is specific to parsing the <core> node defining
- * a single core (data source).  However, it doesn't do much itself.  It relies on parseDataFieldSettings() to
- * parse most of the values, including schema, because those specifications can occur under <config>
- * directly as well as under <core>.
- */
 
 /*
  * parentNode is either <config> or <core>.  parseDataFieldSettings() is responsible for loading the settings
@@ -780,11 +760,25 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         return;
     }
 
+    coreInfo->allowedRecordTokenizerCharacters = "";
+    coreInfo->attributeToSort = 0;
+
+    // set default number of suggestions because we don't have any config options for this yet
+    coreInfo->defaultNumberOfSuggestions = 5;
+
     xml_node indexConfigNode = parentNode.child(indexConfigString);
     map<string, unsigned> boostsMap;
     parseIndexConfig(indexConfigNode, coreInfo, boostsMap, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
+    }
+
+    childNode = parentNode.child(queryString);
+    if (childNode) {
+        parseQuery(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
     }
 
     // <schema>
@@ -904,8 +898,22 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
         coreInfoMap[coreInfo->name] = coreInfo;
     }
 
+    // maxSearchThreads is an optional field
+    numberOfThreads = 1; // by default it is 1
+    xml_node childNode = configNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
+        if (isValidMaxSearchThreads(mst)) {
+            numberOfThreads = childNode.text().as_int();
+        } else {
+            parseError << "maxSearchThreads is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
     // <cores>
-    xml_node childNode = configNode.child(multipleCoresString);
+    childNode = configNode.child(multipleCoresString);
     if (childNode) {
         parseMultipleCores(childNode, configSuccess, parseError, parseWarnings);
         if (configSuccess == false) {
@@ -1475,14 +1483,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    childNode = configNode.child(queryString);
-    parseQuery(childNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
-    if (configSuccess == false) {
-        return;
-    }
-
-    this->writeApiType = HTTPWRITEAPI;
-
     childNode = configNode.child(updateHandlerString).child(maxDocsString);
     bool mdflag = false;
     if (childNode && childNode.text()) {
@@ -1588,10 +1588,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-
-    defaultCoreInfo->allowedRecordTokenizerCharacters = "";
+    // TODO - move to individual cores?
     this->ordering = 0;
-    this->attributeToSort = 0;
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
     // is no option in xml for this one yet
@@ -1600,9 +1598,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         ( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
     this->updateHistogramEveryQWrites =
         (unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
-
-    // set default number of suggestions because we don't have any config options for this yet
-    this->defaultNumberOfSuggestions = 5;
 
     // setting default values for getAllResults optimization parameters
     // <getAllResultsMaxResultsThreshold>10000</getAllResultsMaxResultsThreshold>
@@ -1738,12 +1733,9 @@ float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
     return defaultSpatialQueryBoundingBox;
 }
 
-int ConfigManager::getNumberOfThreads() const {
+unsigned int ConfigManager::getNumberOfThreads() const
+{
     return numberOfThreads;
-}
-
-WriteApiType ConfigManager::getWriteApiType() const {
-    return writeApiType;
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
@@ -1891,11 +1883,12 @@ const string& ConfigManager::getAttributeRecordBoostName(const string &coreName)
   return defaultAttributeRecordBoost;
   }*/
 
-const std::string& ConfigManager::getScoringExpressionString() const {
+const std::string& CoreInfo_t::getScoringExpressionString() const
+{
     return scoringExpressionString;
 }
 
-int ConfigManager::getSearchResponseJSONFormat() const {
+int CoreInfo_t::getSearchResponseJSONFormat() const {
     return searchResponseJsonFormat;
 }
 
@@ -1922,11 +1915,13 @@ int ConfigManager::getIsPrimSearchable(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->isPrimSearchable;
 }
 
-bool ConfigManager::getIsFuzzyTermsQuery() const {
+bool CoreInfo_t::getIsFuzzyTermsQuery() const
+{
     return exactFuzzy;
 }
 
-bool ConfigManager::getQueryTermPrefixType() const {
+bool CoreInfo_t::getQueryTermPrefixType() const
+{
     return queryTermPrefixType;
 }
 
@@ -1938,19 +1933,23 @@ unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->queryTermBoost;
 }
 
-float ConfigManager::getFuzzyMatchPenalty() const {
+float CoreInfo_t::getFuzzyMatchPenalty() const
+{
     return fuzzyMatchPenalty;
 }
 
-float ConfigManager::getQueryTermSimilarityThreshold() const {
+float CoreInfo_t::getQueryTermSimilarityThreshold() const
+{
     return queryTermSimilarityThreshold;
 }
 
-float ConfigManager::getQueryTermLengthBoost() const {
+float CoreInfo_t::getQueryTermLengthBoost() const
+{
     return queryTermLengthBoost;
 }
 
-float ConfigManager::getPrefixMatchPenalty() const {
+float CoreInfo_t::getPrefixMatchPenalty() const
+{
     return prefixMatchPenalty;
 }
 
@@ -1962,8 +1961,9 @@ bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->supportAttributeBasedSearch;
 }
 
-ResponseType ConfigManager::getSearchResponseFormat() const {
-    return searchResponseFormat;
+ResponseType CoreInfo_t::getSearchResponseFormat() const
+{
+    return searchResponseContent;
 }
 
 const string& ConfigManager::getLicenseKeyFileName() const {
@@ -1978,11 +1978,13 @@ const string& ConfigManager::getHTTPServerListeningPort() const {
     return httpServerListeningPort;
 }
 
-int ConfigManager::getDefaultResultsToRetrieve() const {
+int CoreInfo_t::getDefaultResultsToRetrieve() const
+{
     return resultsToRetrieve;
 }
 
-int ConfigManager::getAttributeToSort() const {
+int CoreInfo_t::getAttributeToSort() const
+{
     return attributeToSort;
 }
 
@@ -2006,7 +2008,8 @@ const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const {
     return loglevel;
 }
 
-unsigned ConfigManager::getCacheSizeInBytes() const {
+unsigned CoreInfo_t::getCacheSizeInBytes() const
+{
     return cacheSizeInBytes;
 }
 

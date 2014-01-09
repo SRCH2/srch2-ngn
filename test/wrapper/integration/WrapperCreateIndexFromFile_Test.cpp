@@ -234,7 +234,6 @@ void test1(int argc, char** argv) {
     message << "FuzzyMatchPenalty: " << core->getFuzzyMatchPenalty() << "\n";
     message << "RecordAllowedSpecialCharacters: " << core->getRecordAllowedSpecialCharacters() << "\n";
     message << "CacheSizeInBytes: " << core->getCacheSizeInBytes() << "\n";
-    message << "WriteApiType: " << core->getWriteApiType() << "\n";
     message << "SearchResponseFormat: " << core->getSearchResponseFormat() << "\n";
 
     message << "HTTPServerAccessLogFile: " << core->getHTTPServerAccessLogFile() << "\n";
