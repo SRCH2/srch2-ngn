@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -324,7 +324,7 @@ deletion, and substitution operations. By default it is true.</p>
 </code></pre>
 
 <h3 id="ResponseContent">9.1. Response Content, Optional</h3>
-<p>It specifies the format of each JSON search response. You should set the type to one of the following options: <br></p>
+<p>ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. You should set the type to one of the following options: <br></p>
 <blockquote>
 <p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 1: format "rid,edit_dist,matching_prefix". <br>
@@ -338,6 +338,13 @@ deletion, and substitution operations. By default it is true.</p>
 <pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
 </code></pre>
 
+<h3 id="ResponseFormat">9.2 JSON Response Format, Optional</h3>
+<p>ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br></p>
+<blockquote>
+<p>0: JSON
+1: JSONP           </p>
+</blockquote>
+<p>The default value is 0.</p>
 <h2 id="updateHandler">10. Update Handler</h2>
 <p>This tag includes tags related to configuring the engine to handle update requests.</p>
 <pre><code>&lt;updatehandler&gt;

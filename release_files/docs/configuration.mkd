@@ -334,7 +334,7 @@ This tag has parameters related to configuring the response of a query.
 
 ###9.1. Response Content, Optional{id="ResponseContent"}
 
-It specifies the format of each JSON search response. You should set the type to one of the following options: <br>
+ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. You should set the type to one of the following options: <br>
 > 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
 > 1: format "rid,edit_dist,matching_prefix". <br>
 > 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
@@ -349,6 +349,14 @@ or
 ```
 <responseContent type="2">lat,lng</responseContent>
 ```
+
+###9.2 JSON Response Format, Optional{id="ResponseFormat"}
+
+ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br>
+> 0: JSON
+> 1: JSONP           
+
+The default value is 0.
 
 ##10. Update Handler###{id="updateHandler"}
 
