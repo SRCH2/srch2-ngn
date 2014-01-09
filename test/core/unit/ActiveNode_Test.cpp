@@ -747,6 +747,7 @@ void testLeafNodeIteratorWithTrieUpdate()
     ASSERT(checkContainment(leafIteratorResultVector, "can", "cancer", 0));
     ASSERT(checkContainment(leafIteratorResultVector, "can", "canteen", 0));
 
+    delete newPrefixActiveNodeSet;
     prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
     newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('p'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
     newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;

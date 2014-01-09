@@ -772,6 +772,9 @@ IndexData::~IndexData()
 
     delete this->schemaInternal;
     delete this->rwMutexForIdReassign;
+    delete this->readCounter;
+    delete this->writeCounter;
+    delete this->rankerExpression;
 }
 
 

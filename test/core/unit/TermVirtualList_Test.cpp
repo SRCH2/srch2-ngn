@@ -152,6 +152,7 @@ void addRecords()
     delete record;
     delete analyzer;
     delete index;
+    delete indexMetaData;
 }
 
 //TODO:Not complete, check case where termvirtualList is empty and change resultSet to a vector
@@ -381,7 +382,6 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     delete term0;
     delete termVirtualList;
     //delete keywords;
-
 }
 
 void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
@@ -473,7 +473,9 @@ void TermVirtualList_Tests()
     Test_Complete_Fuzzy(indexSearcherInternal);
     Test_Prefix_Fuzzy(indexSearcherInternal);
 
+    delete indexSearcherInternal;
     delete indexer;
+    delete indexMetaData;
 }
 
 int main(int argc, char *argv[])
