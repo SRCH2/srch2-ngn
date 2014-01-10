@@ -196,7 +196,8 @@ std::string getCurrentVersion() {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmsearch(evhttp_request *req, void *arg) {
+static void cb_search(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -214,7 +215,8 @@ void cb_bmsearch(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmsuggest(evhttp_request *req, void *arg) {
+static void cb_suggest(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -232,7 +234,8 @@ void cb_bmsuggest(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmlookup(evhttp_request *req, void *arg) {
+static void cb_lookup(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -251,7 +254,8 @@ void cb_bmlookup(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bminfo(evhttp_request *req, void *arg) {
+static void cb_info(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -273,7 +277,8 @@ void cb_bminfo(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmwrite(evhttp_request *req, void *arg) {
+static void cb_write(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -287,7 +292,8 @@ void cb_bmwrite(evhttp_request *req, void *arg) {
 
 }
 
-void cb_bmupdate(evhttp_request *req, void *arg) {
+static void cb_update(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -301,7 +307,8 @@ void cb_bmupdate(evhttp_request *req, void *arg) {
 
 }
 
-void cb_bmsave(evhttp_request *req, void *arg) {
+static void cb_save(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -315,7 +322,7 @@ void cb_bmsave(evhttp_request *req, void *arg) {
 
 }
 
-void cb_bmexport(evhttp_request *req, void *arg)
+static void cb_export(evhttp_request *req, void *arg)
 {
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
@@ -328,7 +335,8 @@ void cb_bmexport(evhttp_request *req, void *arg)
  *  @param req evhttp request object
  *  @param arg optional argument
  */
-void cb_bmresetLogger(evhttp_request *req, void *arg) {
+static void cb_resetLogger(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -347,7 +355,8 @@ void cb_bmresetLogger(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmactivate(evhttp_request *req, void *arg) {
+static void cb_activate(evhttp_request *req, void *arg)
+{
     Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
@@ -366,7 +375,8 @@ void cb_bmactivate(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_notfound(evhttp_request *req, void *arg) {
+static void cb_notfound(evhttp_request *req, void *arg)
+{
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
     try {
@@ -383,7 +393,8 @@ void cb_notfound(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_busy_indexing(evhttp_request *req, void *arg) {
+static void cb_busy_indexing(evhttp_request *req, void *arg)
+{
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
     try {
@@ -662,50 +673,50 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
 
         // setup default core callbacks
         //http_server = evhttp_start(http_addr, http_port);
-        evhttp_set_cb(http_server, "/search", cb_bmsearch, defaultCore);
-        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, defaultCore);
+        evhttp_set_cb(http_server, "/search", cb_search, defaultCore);
+        evhttp_set_cb(http_server, "/suggest", cb_suggest, defaultCore);
 
-        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, defaultCore);
-        evhttp_set_cb(http_server, "/info", cb_bminfo, defaultCore);
+        //evhttp_set_cb(http_server, "/lookup", cb_lookup, defaultCore);
+        evhttp_set_cb(http_server, "/info", cb_info, defaultCore);
 
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite, defaultCore);
-        evhttp_set_cb(http_server, "/update", cb_bmupdate, defaultCore);
-        evhttp_set_cb(http_server, "/save", cb_bmsave, defaultCore);
-        evhttp_set_cb(http_server, "/export", cb_bmexport, defaultCore);
-        evhttp_set_cb(http_server, "/activate", cb_bmactivate, defaultCore);
-        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, defaultCore);
+        evhttp_set_cb(http_server, "/docs", cb_write, defaultCore);
+        evhttp_set_cb(http_server, "/update", cb_update, defaultCore);
+        evhttp_set_cb(http_server, "/save", cb_save, defaultCore);
+        evhttp_set_cb(http_server, "/export", cb_export, defaultCore);
+        evhttp_set_cb(http_server, "/activate", cb_activate, defaultCore);
+        evhttp_set_cb(http_server, "/resetLogger", cb_resetLogger, defaultCore);
 
         // setup named core callbacks
         for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
 
             string path = string("/") + iterator->second->getCoreName() + string("/search");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmsearch, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_search, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/suggest");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmsuggest, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_suggest, iterator->second);
 
-            //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, iterator->second);
+            //evhttp_set_cb(http_server, "/lookup", cb_lookup, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/info");
-            evhttp_set_cb(http_server, path.c_str(), cb_bminfo, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_info, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/docs");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmwrite, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_write, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/update");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmupdate, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_update, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/save");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmsave, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_save, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/export");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmexport, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_export, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/activate");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmactivate, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_activate, iterator->second);
 
             path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
-            evhttp_set_cb(http_server, path.c_str(), cb_bmresetLogger, iterator->second);
+            evhttp_set_cb(http_server, path.c_str(), cb_resetLogger, iterator->second);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
