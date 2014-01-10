@@ -32,7 +32,7 @@ bool parseQfAttribute(std::string& input, std::string& output) {
     ASSERT((*(--output.end()) == '^')); 
     output.erase(--output.end()); // erases the '^' character at end of string
     //erase the begin + sign if a conjuctive
-    if((*(output.begin()) == '+')) {
+    if(*(output.begin()) == '+') {
       output.erase(output.begin());
     }
     return true;
