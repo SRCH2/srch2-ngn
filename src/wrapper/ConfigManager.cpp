@@ -646,7 +646,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
-        coreInfo->dataDir = parentNode.attribute(dataDirString).value();
+        coreInfo->dataDir = parentNode.attribute(dataDirString).value() + string("/") + coreInfo->getName();
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
 
@@ -696,7 +696,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     // <config><dataDir>core0/data OR <core><dataDir>
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
-        coreInfo->dataDir = string(childNode.text().get());
+        coreInfo->dataDir = string(childNode.text().get()) + string("/") + coreInfo->getName();
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
     if (coreInfo->dataDir.length() == 0) {
@@ -731,7 +731,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
             tempUse = string(childNode.text().get());
             trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-            coreInfo->dataFilePath = this->srch2Home + tempUse;
+            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + tempUse;
         } else {
             parseError << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default") <<
                 " core path to the data file is not set. "
@@ -1512,7 +1512,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     if (childNode && childNode.text()) {
         tempUse = string(childNode.text().get());
         trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + tempUse;
+        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;

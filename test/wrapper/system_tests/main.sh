@@ -461,7 +461,7 @@ if [ $? -gt 0 ]; then
 else
     echo "-- PASSED: $test_id"
 fi
-rm -rf data/ *.idx upsert_batch/indexes
+rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
 
 
 test_id="test for batch insert"
@@ -476,11 +476,12 @@ if [ $? -gt 0 ]; then
 else
     echo "-- PASSED: $test_id"
 fi
-rm -rf data/ *.idx
+rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
 
 test_id="multicore"
 echo "---------------------do $test_id-----------------------"
+rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
 python ./multicore/multicore.py $SRCH2_ENGINE_DIR ./multicore/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
@@ -491,7 +492,7 @@ if [ $? -gt 0 ]; then
 else
     echo "-- PASSED: $test_id"
 fi
-rm -rf data/ *.idx
+rm -rf data/ multicore/core?/*.idx
 
 
 # clear the output directory. First make sure that we are in correct directory
