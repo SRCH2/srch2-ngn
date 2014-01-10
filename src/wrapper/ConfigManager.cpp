@@ -861,6 +861,15 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         parseError << "Boost values that are provided in the boostField are not in the range [1 to 100].";
         return;
     }
+
+    // <config><updateHandler> OR <core><updateHandler>
+    childNode = parentNode.child(updateHandlerString);
+    if (childNode) {
+        parseUpdateHandler(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
+    }
 }
 
 void ConfigManager::parseDataConfiguration(const xml_node &configNode,
@@ -1403,6 +1412,114 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
      */
 }
 
+void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    string tempUse = "";
+
+    xml_node childNode = updateHandlerNode.child(maxDocsString);
+    bool mdflag = false;
+    if (childNode && childNode.text()) {
+        string md = childNode.text().get();
+        if (this->isValidMaxDoc(md)) {
+            coreInfo->documentLimit = childNode.text().as_uint();
+            mdflag = true;
+        }
+    }
+    if (!mdflag) {
+        parseError << "MaxDoc is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    coreInfo->memoryLimit = 100000;
+    bool mmflag = false;
+    childNode = updateHandlerNode.child(maxMemoryString);
+    if (childNode && childNode.text()) {
+        string mm = childNode.text().get();
+        if (this->isValidMaxMemory(mm)) {
+            coreInfo->memoryLimit = childNode.text().as_uint();
+            mmflag = true;
+        }
+    }
+    if (!mmflag) {
+        parseError << "MaxDoc is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    // mergeEveryNSeconds
+    childNode = updateHandlerNode.child(mergePolicyString).child(mergeEveryNSecondsString);
+    bool mensflag = false;
+    if (childNode && childNode.text()) {
+        string mens = childNode.text().get();
+        if (this->isValidMergeEveryNSeconds(mens)) {
+            coreInfo->mergeEveryNSeconds = childNode.text().as_uint();
+            mensflag = true;
+        }
+    }
+    if (!mensflag) {
+        parseError << "mergeEveryNSeconds is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    // mergeEveryMWrites
+    childNode = updateHandlerNode.child(mergePolicyString).child(mergeEveryMWritesString);
+    bool memwflag = false;
+    if (childNode && childNode.text()) {
+        string memw = childNode.text().get();
+
+        if (this->isValidMergeEveryMWrites(memw)) {
+            coreInfo->mergeEveryMWrites = childNode.text().as_uint();
+            memwflag = true;
+        }
+    }
+    if (!memwflag) {
+        parseError << "mergeEveryMWrites is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
+    // is no option in xml for this one yet
+    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
+    coreInfo->updateHistogramEveryPMerges = (unsigned)
+        ( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
+    coreInfo->updateHistogramEveryQWrites =
+        (unsigned)((coreInfo->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
+
+    // TODO - logging per core
+    // logLevel is required
+    this->loglevel = Logger::SRCH2_LOG_INFO;
+    childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
+    bool llflag = true;
+    if (childNode && childNode.text()) {
+        string ll = childNode.text().get();
+        if (this->isValidLogLevel(ll)) {
+            this->loglevel = static_cast<Logger::LogLevel>(childNode.text().as_int());
+        } else {
+            llflag = false;
+        }
+    }
+    if (!llflag) {
+        parseError << "Log Level is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    // accessLogFile is required
+    childNode = updateHandlerNode.child(updateLogString).child(accessLogFileString);
+    if (childNode && childNode.text()) {
+        tempUse = string(childNode.text().get());
+        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
+        this->httpServerAccessLogFile = this->srch2Home + tempUse;
+    } else {
+        parseError << "httpServerAccessLogFile is not set.\n";
+        configSuccess = false;
+        return;
+    }
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1483,104 +1600,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    childNode = configNode.child(updateHandlerString).child(maxDocsString);
-    bool mdflag = false;
-    if (childNode && childNode.text()) {
-        string md = childNode.text().get();
-        if (this->isValidMaxDoc(md)) {
-            this->documentLimit = childNode.text().as_uint();
-            mdflag = true;
-        }
-    }
-    if (!mdflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    this->memoryLimit = 100000;
-    bool mmflag = false;
-    childNode = configNode.child(updateHandlerString).child(maxMemoryString);
-    if (childNode && childNode.text()) {
-        string mm = childNode.text().get();
-        if (this->isValidMaxMemory(mm)) {
-            this->memoryLimit = childNode.text().as_uint();
-            mmflag = true;
-        }
-    }
-    if (!mmflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    // mergeEveryNSeconds
-    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryNSecondsString);
-    bool mensflag = false;
-    if (childNode && childNode.text()) {
-        string mens = childNode.text().get();
-        if (this->isValidMergeEveryNSeconds(mens)) {
-            this->mergeEveryNSeconds = childNode.text().as_uint();
-            mensflag = true;
-        }
-    }
-    if (!mensflag) {
-        parseError << "mergeEveryNSeconds is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    // mergeEveryMWrites
-    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryMWritesString);
-    bool memwflag = false;
-    if (childNode && childNode.text()) {
-        string memw = childNode.text().get();
-
-        if (this->isValidMergeEveryMWrites(memw)) {
-            this->mergeEveryMWrites = childNode.text().as_uint();
-            memwflag = true;
-        }
-    }
-    if (!memwflag) {
-        parseError << "mergeEveryMWrites is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    // logLevel is required
-    this->loglevel = Logger::SRCH2_LOG_INFO;
-    childNode = configNode.child(updateHandlerString).child(updateLogString).child(logLevelString);
-    bool llflag = true;
-    if (childNode && childNode.text()) {
-        string ll = childNode.text().get();
-        if (this->isValidLogLevel(ll)) {
-            this->loglevel = static_cast<Logger::LogLevel>(childNode.text().as_int());
-        } else {
-            llflag = false;
-        }
-    }
-    if (!llflag) {
-        parseError << "Log Level is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    // accessLogFile is required
-    childNode = configNode.child(updateHandlerString).child(updateLogString).child(accessLogFileString);
-    if (childNode && childNode.text()) {
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + tempUse;
-    } else {
-        parseError << "httpServerAccessLogFile is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    /*
-     * query: END
-     */
-
     if (defaultCoreInfo->supportAttributeBasedSearch && defaultCoreInfo->searchableAttributesInfo.size() > 31) {
         parseError
             << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
@@ -1590,14 +1609,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     // TODO - move to individual cores?
     this->ordering = 0;
-
-    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
-    // is no option in xml for this one yet
-    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
-    this->updateHistogramEveryPMerges = (unsigned)
-        ( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
-    this->updateHistogramEveryQWrites =
-        (unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 
     // setting default values for getAllResults optimization parameters
     // <getAllResultsMaxResultsThreshold>10000</getAllResultsMaxResultsThreshold>
@@ -1669,27 +1680,27 @@ ConfigManager::~ConfigManager()
     coreInfoMap.clear();
 }
 
-uint32_t ConfigManager::getDocumentLimit() const {
+uint32_t CoreInfo_t::getDocumentLimit() const {
     return documentLimit;
 }
 
-uint64_t ConfigManager::getMemoryLimit() const {
+uint64_t CoreInfo_t::getMemoryLimit() const {
     return memoryLimit;
 }
 
-uint32_t ConfigManager::getMergeEveryNSeconds() const {
+uint32_t CoreInfo_t::getMergeEveryNSeconds() const {
     return mergeEveryNSeconds;
 }
 
-uint32_t ConfigManager::getMergeEveryMWrites() const {
+uint32_t CoreInfo_t::getMergeEveryMWrites() const {
     return mergeEveryMWrites;
 }
 
-uint32_t ConfigManager::getUpdateHistogramEveryPMerges() const {
+uint32_t CoreInfo_t::getUpdateHistogramEveryPMerges() const {
     return updateHistogramEveryPMerges;
 }
 
-uint32_t ConfigManager::getUpdateHistogramEveryQWrites() const {
+uint32_t CoreInfo_t::getUpdateHistogramEveryQWrites() const {
     return updateHistogramEveryQWrites;
 }
 

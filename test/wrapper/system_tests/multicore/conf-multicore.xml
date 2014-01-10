@@ -86,6 +86,18 @@
                     </fieldType>
                 </types>
             </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>./logs/core1-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
         </core>
 
         <core name="core2">
@@ -155,6 +167,18 @@
                     </fieldType>
                 </types>
             </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>./logs/core2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
         </core>
 
         <core name="core3">
@@ -467,25 +491,62 @@
                     </fieldType>
                 </types>
             </schema>
+	    <updatehandler>
+                <!--
+		  Maximum Number of Documents
+		  Required
+		  
+		  Maximum number of records that can be inserted into the engine.
+		  The number depends on the size of each record and the available memory
+		-->
+		  <maxDocs>15000000</maxDocs>
+	      
+		<!--
+		  Maximum Number of Documents
+		  Required
+		  
+		  Maximum size of memory that can be used.
+		-->
+		  <maxMemory>100000</maxMemory>
+	      
+		<!--
+		  Merge Policies
+		  Required
+		  
+		  mergeEveryNSeconds:
+		  The number of seconds after which newly inserted/deleted records are merged into the indexes.
+		  Its minimum value is 10 (seconds).
+		  mergeEveryMWrites:
+		  The number of write operations after which newly inserted/deleted records are merged into the indexes.
+		-->
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>100</mergeEveryMWrites>
+		</mergePolicy>
+	      
+		<updateLog>
+		    <!-- 
+		     Log Level
+		     Optional
+		     
+		     Log level
+		     0 SILENT
+		     1 ERROR
+		     2 WARN
+		     3 INFO
+		     Defaults to 3 INFO
+		    -->
+		    <logLevel>3</logLevel>
+		
+		    <!--
+		    Access Log File
+		    Required
+		    
+		    Path to Access Log File
+		    -->
+		    <accessLogFile>./logs/core3-log.txt</accessLogFile>
+                </updateLog>
+	    </updatehandler>
         </core>
     </cores>
-
-    <updatehandler>
-
-        <maxDocs>15000000</maxDocs>
- 
-        <maxMemory>10000000</maxMemory>
-        
-        <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
-          <mergeEveryMWrites>10</mergeEveryMWrites>
-        </mergePolicy>
-         
-        <updateLog>
-            <logLevel>3</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-        </updateLog>
-     
-    </updatehandler>
-
 </config>

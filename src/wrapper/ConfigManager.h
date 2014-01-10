@@ -120,18 +120,6 @@ private:
 
     unsigned int numberOfThreads;
 
-    // <config><updatehandler>
-    uint64_t memoryLimit;
-    uint32_t documentLimit;
-
-    // <config><updatehandler><mergePolicy>
-    unsigned mergeEveryNSeconds;
-    unsigned mergeEveryMWrites;
-
-    // no config option for this yet
-    unsigned updateHistogramEveryPMerges;
-    unsigned updateHistogramEveryQWrites;
-
     // <config><keywordPopularitythreshold>
     unsigned keywordPopularityThreshold;
 
@@ -214,10 +202,13 @@ protected:
 
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
@@ -227,6 +218,8 @@ protected:
     void parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     
 public:
     ConfigManager(const string& configfile);
@@ -242,8 +235,6 @@ public:
     void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     const std::string& getCustomerName() const; //XXX: REMOVE?
-    uint32_t getDocumentLimit() const;
-    uint64_t getMemoryLimit() const;
 
     const std::string& getIndexPath(const string &coreName) const;
     const std::string& getPrimaryKey(const string &coreName) const;
@@ -272,12 +263,6 @@ public:
     bool getSupportAttributeBasedSearch(const string &coreName) const;
 
     int getOrdering() const;
-
-    uint32_t getMergeEveryNSeconds() const;
-    uint32_t getMergeEveryMWrites() const;
-
-    uint32_t getUpdateHistogramEveryPMerges() const;
-    uint32_t getUpdateHistogramEveryQWrites() const;
 
     unsigned getKeywordPopularityThreshold() const ;
 
@@ -519,6 +504,14 @@ public:
     const string& getRecordAllowedSpecialCharacters() const
         { return allowedRecordTokenizerCharacters; }
 
+    uint32_t getDocumentLimit() const;
+    uint64_t getMemoryLimit() const;
+
+    uint32_t getMergeEveryNSeconds() const;
+    uint32_t getMergeEveryMWrites() const;
+
+    uint32_t getUpdateHistogramEveryPMerges() const;
+    uint32_t getUpdateHistogramEveryQWrites() const;
 
     // **** accessors for settings in ConfigManager (global to all cores) ****
     const string &getSrch2Home() const { return configManager->getSrch2Home(); }
@@ -529,9 +522,6 @@ public:
     const string& getHTTPServerAccessLogFile() const { return configManager->getHTTPServerAccessLogFile(); }
     const Logger::LogLevel& getHTTPServerLogLevel() const
         { return configManager->getHTTPServerLogLevel(); }
-
-    uint32_t getDocumentLimit() const { return configManager->getDocumentLimit(); }
-    uint64_t getMemoryLimit() const { return configManager->getMemoryLimit(); }
 
     bool getIsFuzzyTermsQuery() const;
 
@@ -546,14 +536,6 @@ public:
         { return configManager->getGetAllResultsNumberOfResultsThreshold(); }
     const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const
         { return configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode(); }
-
-    uint32_t getUpdateHistogramEveryPMerges() const
-        { return configManager->getUpdateHistogramEveryPMerges(); }
-    uint32_t getUpdateHistogramEveryQWrites() const
-        { return configManager->getUpdateHistogramEveryQWrites(); }
-
-    uint32_t getMergeEveryNSeconds() const { return configManager->getMergeEveryNSeconds(); }
-    uint32_t getMergeEveryMWrites() const { return configManager->getMergeEveryMWrites(); }
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
@@ -653,6 +635,17 @@ protected:
 
     std::string allowedRecordTokenizerCharacters;
 
+    // <core><updatehandler>
+    uint64_t memoryLimit;
+    uint32_t documentLimit;
+
+    // <config><updatehandler><mergePolicy>
+    unsigned mergeEveryNSeconds;
+    unsigned mergeEveryMWrites;
+
+    // no config option for this yet
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
 };
 
 }
