@@ -31,7 +31,7 @@
     <cores defaultCoreName="core1">
         <core name="core1">
             <dataFile>movie-data.json</dataFile>
-            <dataDir>./indexes/core1</dataDir>
+            <dataDir>.</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>
                 <indexType>0</indexType>
@@ -95,13 +95,13 @@
 		</mergePolicy>
 		<updateLog>
 		    <logLevel>3</logLevel>
-		    <accessLogFile>./logs/core1-log.txt</accessLogFile>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
 		</updateLog>
 	    </updatehandler>
         </core>
 
         <core name="core2">
-            <dataDir>./indexes/core2</dataDir>
+            <dataDir>.</dataDir>
             <dataSourceType>1</dataSourceType>
             <dataFile>stackoverflow-data-100.json</dataFile>
             <indexConfig>
@@ -176,14 +176,14 @@
 		</mergePolicy>
 		<updateLog>
 		    <logLevel>3</logLevel>
-		    <accessLogFile>./logs/core2-log.txt</accessLogFile>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
 		</updateLog>
 	    </updatehandler>
         </core>
 
         <core name="core3">
             <dataFile>business-directory-data.json</dataFile>
-            <dataDir>./indexes/core3</dataDir>
+            <dataDir>.</dataDir>
             <indexConfig>
                 <!--
                     Index Type
@@ -544,7 +544,7 @@
 		    
 		    Path to Access Log File
 		    -->
-		    <accessLogFile>./logs/core3-log.txt</accessLogFile>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
                 </updateLog>
 	    </updatehandler>
         </core>
