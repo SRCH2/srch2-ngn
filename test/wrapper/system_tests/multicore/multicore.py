@@ -60,11 +60,11 @@ def prepareQuery(queryKeywords):
     #################  prepare main query part
     query = query + 'q='
     # local parameters
-    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
+#    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
     # keywords section
     for i in range(0, len(queryKeywords)):
         if i == (len(queryKeywords)-1):
-            query=query+queryKeywords[i]+'*' # last keyword prefix
+            query=query+queryKeywords[i] # last keyword prefix
         else:
             query=query+queryKeywords[i]+'%20AND%20'
     
@@ -74,7 +74,7 @@ def prepareQuery(queryKeywords):
     
 
 
-def testMultipleCores(queriesAndResultsPath, binary_path):
+def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path):
     #Start the engine server
     binary= binary_path + '/srch2-search-server'
     binary= binary+' --config-file=./multicore/conf-multicore.xml &'
@@ -82,9 +82,13 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     os.popen(binary)
 
     pingServer()
-
-    #construct the query
     failCount = 0
+
+    #######################################
+    # Basic multi-core functional testing #
+    #######################################
+
+    print "Test suite #1 - basic multi-core functionality"
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -117,6 +121,42 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
 
             coreNum += 1
 
+    ##########################################################################
+    # Core 1 and Core 4 have different configurations, but on the same data. #
+    # We now test for the differences in those settings.                     #
+    ##########################################################################
+
+    print "\nSecond suite #2: Comparing different engine configurations on the same data source"
+    f_in = open(queriesAndResultsPath2, 'r')
+    for line in f_in:
+        #get the query keyword and results
+        value=line.split('||')
+        queryValue=value[0].split()
+        allResults=value[1].split('@')
+
+        coreNum=[ 1, 4 ] # coreNum are the literal core numbers to use in path this time
+        index = 0 # and index iterates coreNum
+        for coreResult in allResults:
+            resultValue=coreResult.split()
+            #construct the query
+            query='http://localhost:' + port + '/core' + str(coreNum[index]) + '/search?'
+            query = query + prepareQuery(queryValue) 
+
+            #do the query
+            print query
+            response = urllib2.urlopen(query).read()
+
+            # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
+            #response = re.sub('[,][}]', '}', response)
+            #print query + ' Got ==> ' + response
+
+            response_json = json.loads(response)
+
+            #check the result
+            failCount += checkResult(query, response_json['results'], resultValue)
+
+            index += 1
+
     #get pid of srch2-search-server and kill the process
     try:
         s = commands.getoutput('ps aux | grep srch2-search-server | grep -v grep')
@@ -135,5 +175,6 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testMultipleCores(queriesAndResultsPath, binary_path)
+    queriesAndResultsPath2 = sys.argv[3]
+    exitCode = testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path)
     os._exit(exitCode)
