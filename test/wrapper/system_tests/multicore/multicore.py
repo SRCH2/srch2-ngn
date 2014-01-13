@@ -42,11 +42,11 @@ def checkResult(query, responseJson,resultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-             print responseJson[i]['record']['id']+'||'
+                print str(responseJson[i]['record']['id'])+'||'
             elif i >= len(responseJson):
-             print '  '+'||'+resultValue[i]
+                print '  '+'||'+resultValue[i]
             else:
-             print responseJson[i]['record']['id']+'||'+resultValue[i]
+                print responseJson[i]['record']['id']+'||'+resultValue[i]
 
     if isPass == 1:
         print  query+' test pass'
@@ -67,9 +67,6 @@ def prepareQuery(queryKeywords):
             query=query+queryKeywords[i]+'*' # last keyword prefix
         else:
             query=query+queryKeywords[i]+'%20AND%20'
-    
-    ################# fuzzy parameter
-    query = query + '&fuzzy=false'
     
 #    print 'Query : ' + query
     ##################################
@@ -95,18 +92,22 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         allResults=value[1].split('@')
 
-        coreNum=1
+        coreNum=0
         for coreResult in allResults:
             resultValue=coreResult.split()
             #construct the query
-            query='http://localhost:' + port + '/core' + str(coreNum) + '/search?'
+            if coreNum == 0:
+                # test default core (unnamed core) on 0th iteration
+                query='http://localhost:' + port + '/search?'
+            else:
+                query='http://localhost:' + port + '/core' + str(coreNum) + '/search?'
             query = query + prepareQuery(queryValue) 
 
             #do the query
             response = urllib2.urlopen(query).read()
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
-            response = re.sub('[,][}]', '}', response)
+            #response = re.sub('[,][}]', '}', response)
             #print query + ' Got ==> ' + response
 
             response_json = json.loads(response)

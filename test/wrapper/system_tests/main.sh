@@ -2,8 +2,8 @@
 PWD_DIR=$(pwd)
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 [-f] <system-test-director> <server-executable-directory>"
-    #exit 1
+    echo "Usage: $0 [-f] <system-test-directory> <server-executable-directory>"
+    exit 1
 fi
 
 force=0

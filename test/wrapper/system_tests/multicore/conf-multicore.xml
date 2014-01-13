@@ -547,7 +547,7 @@
         </core>
 
         <core name="core4">
-            <dataFile>movie-data.json</dataFile>
+            <dataFile>../core1/movie-data.json</dataFile>
             <dataDir>./indexes/core4</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>
