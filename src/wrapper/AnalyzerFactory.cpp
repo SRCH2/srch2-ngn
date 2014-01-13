@@ -100,6 +100,12 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(config));
 	}
 
+        /*
+          TODO: This will fail if different types of analyzers are needed.  createAnalyzer() currently
+          * defaults to always creating a StandardAnalyzer.  But if a later request is made for a
+          * ChineseAnalyzer, as would happen if there are both English language and Chinese data sources
+          * loaded in different cores, a previously created Analyzer of the wrong type could be returned.
+          */
 	Analyzer* analyzer = _ts_analyzer_object.get();
 
 	// clear the initial states of the filters in the analyzer, e.g.,
