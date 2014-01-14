@@ -119,6 +119,7 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 
 void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
 {
+    // TODO - Move init() to getInstance() when we refactor this code
     if (conf->getProtectedWordsFilePath().compare("") != 0) {
         ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->init();
     }
@@ -162,6 +163,7 @@ void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
 			initializeAnalyzerResource(conf);
 			saveAnalyzerResource(conf);
 		}
+                // TODO - Move init() to getInstance() when we refactor this code
 		ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->init();
 	}catch (std::exception& ex){
 		Logger::error("Error while loading Analyzer resource files");
