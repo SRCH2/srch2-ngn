@@ -86,7 +86,7 @@
                     <fieldType name="text_en">
                         <analyzer>
                             <filter name="PorterStemFilter" dictionary="" />
-                            <filter name="StopFilter" words="" />
+                            <filter name="StopFilter" words="stop-words.txt" />
                         </analyzer>
                     </fieldType>
                 </types>
@@ -548,7 +548,7 @@
 
         <core name="core4">
             <dataFile>../core1/movie-data.json</dataFile>
-            <dataDir>./indexes/core4</dataDir>
+            <dataDir>.</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>
                 <indexType>0</indexType>
@@ -603,7 +603,7 @@
                     <fieldType name="text_en">
                         <analyzer>
                             <filter name="PorterStemFilter" dictionary="" />
-                            <filter name="StopFilter" words="" />
+                            <filter name="StopFilter" words="stop-words2.txt" />
                         </analyzer>
                     </fieldType>
                 </types>
