@@ -6,8 +6,8 @@
 
 typedef DefaultBufferAllocator Alloc;
 
-void compare(char const *expected, char const *exact, size_t num) {
-  std::assert(memcmp(expected, exact, num));
+void compare(char const *expected, char const *actual, size_t num) {
+  assert(!memcmp(expected, actual, num));
 }
 
 static char testSingleStringExpected[] = {
@@ -30,11 +30,34 @@ void testSingleString(Alloc &alloc) {
   compare(testSingleStringExpected, buffer, 13);
 }
 
+static char testMultipleStringsExpected[] = {
+  0xc, 0x0, 0x0, 0x0,
+  0x11, 0x0, 0x0, 0x0,
+  0x14, 0x0, 0x0, 0x0,
+  'a', 'p', 'p', 'l', 'e',
+  'c', ' ', '+' };
+
+void testMultipleStrings(Alloc& alloc) {
+  srch2::instantsearch::Schema *schema = 
+    srch2::instantsearch::Schema::create(srch2::instantsearch::DefaultIndex);
+
+  int NameID = schema->setSearchableAttribute("name");
+  int addressID = schema->setSearchableAttribute("address");
+
+  Serializer s(*schema, alloc);
+
+  s.addSearchableAttribute(NameID, std::string("apple"));
+  s.addSearchableAttribute(addressID, std::string("c +"));
+
+  char *buffer = (char*) s.serialize();
+
+  compare(testMultipleStringsExpected, buffer, 20);
+}
 
 void testStringSerialization(Alloc& allocator) {
 
   testSingleString(allocator);
-  //testMultipleStrings(allocator);
+  testMultipleStrings(allocator);
 }
 
 int main(int argc, char *argv[]) {

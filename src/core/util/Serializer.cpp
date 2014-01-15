@@ -62,6 +62,7 @@ bool Serializer::repositionBuffer(offset_type bufferOffset,
 inline offset_type
 Serializer::calculateVariableLengthOffset(variable_length_types, 
     offset_type offset) {
+  //not at start of writen array
   while(offset != variableLengthOffsetStart) {
     if(dereferenceOffset(buffer, offset)) {
       return dereferenceOffset(buffer, offset);
@@ -99,8 +100,10 @@ void Serializer::add<std::string>(
 
     //write out offset
     add(offset, offsetToWriteStringAt);
-    add(offset + sizeof(offset_type), 
-        offsetToWriteStringAt + attribute.length());
+    //explicted cast needed since attribute.length return size_t which can
+    //be unsigned long
+    add(nextOffset(offset), 
+        (offset_type) (offsetToWriteStringAt + attribute.length()));
 
     lastOffsetOfWrittenBuffer += attribute.length();
 
