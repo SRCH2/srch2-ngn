@@ -31,7 +31,7 @@
     <cores defaultCoreName="core1">
         <core name="core1">
             <dataFile>movie-data.json</dataFile>
-            <dataDir>.</dataDir>
+            <dataDir>core1</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>
                 <indexType>0</indexType>
@@ -106,7 +106,7 @@
         </core>
 
         <core name="core2">
-            <dataDir>.</dataDir>
+            <dataDir>core2</dataDir>
             <dataSourceType>1</dataSourceType>
             <dataFile>stackoverflow-data-100.json</dataFile>
             <indexConfig>
@@ -193,7 +193,7 @@
 
         <core name="core3">
             <dataFile>business-directory-data.json</dataFile>
-            <dataDir>.</dataDir>
+            <dataDir>core3</dataDir>
             <indexConfig>
                 <!--
                     Index Type
@@ -548,7 +548,7 @@
 
         <core name="core4">
             <dataFile>../core1/movie-data.json</dataFile>
-            <dataDir>.</dataDir>
+            <dataDir>core4</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>
                 <indexType>0</indexType>

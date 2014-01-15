@@ -470,10 +470,14 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     if (defaultCore == NULL)
     {
         perror("Null default core");
-        return 3;
+        return 255;
     }
 
     int fd = bindSocket(http_addr, http_port);
+    if (fd < 0) {
+        perror("socket bind error");
+        return 255;
+    }
 
     //load the index from the data source
     try{
@@ -488,7 +492,7 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     	 *  and the server will stop.
     	 */
     	Logger::error(ex.what());
-    	return 5;
+    	return 255;
     }
     //cout << "srch2 server started." << endl;
 
@@ -502,17 +506,11 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
         }
     }
 
-    //string meminfo;
-    //getMemoryInfo(meminfo);
-    //std::cout << meminfo << std::endl;
-
     MAX_THREADS = config->getNumberOfThreads();
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
             MAX_THREADS, http_addr, http_port);
 
     // Step 2: Serving server
-    //    int fd = bindSocket(http_addr, http_port);
-
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
         struct evhttp *http_server = NULL;
@@ -522,7 +520,7 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
         evbases->push_back(evbase);
         if (NULL == evbase) {
             perror("event_base_new");
-            return 1;
+            return 255;
         }
 
         http_server = evhttp_new(evbase);
@@ -531,7 +529,7 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
 
         if (NULL == http_server) {
             perror("evhttp_new");
-            return 2;
+            return 255;
         }
 
         // setup default core callbacks
@@ -588,13 +586,13 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
         //if(0 != evhttp_bind_socket(http_server, http_addr, http_port))
         if (0 != evhttp_accept_socket(http_server, fd)) {
             perror("evhttp_bind_socket");
-            return 3;
+            return 255;
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
         //event_base_dispatch(evbase);
         if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
-            return -1;
+            return 255;
     }
 
     return 0;

@@ -137,11 +137,11 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
     #    Core1 has prefix matching off and core4 allows prefixes to match,   #
     #    so only core4 should return any results                             #
     # 3) monkeys||135001@                                                    #
-    #    Core4 uses stop-words2.txt which has monkeys, so core4 should not   #
+    #    Core4 uses stop-words2.txt which has "monkeys", so core4 should not #
     #    return results.  Core1 has the usual stop words file and should     #
-    #    find monkeys.                                                       #
+    #    find "monkeys".                                                     #
     # 4) martn~||156001 525017 693000@                                       #
-    #    Core1 will fuzzy match martn against Martin in 3 records, because   #
+    #    Core1 will fuzzy match martn against "Martin" in 3 records, because #
     #    it's similarity threshold is 0.75.  Core4 has a higher threshold    #
     #    of 0.85, and should not return any matching records.                #
     ##########################################################################

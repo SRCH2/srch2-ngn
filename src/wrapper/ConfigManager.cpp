@@ -646,7 +646,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
-        coreInfo->dataDir = coreInfo->getName() + string("/") + parentNode.attribute(dataDirString).value();
+        coreInfo->dataDir = parentNode.attribute(dataDirString).value();
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
 
@@ -696,7 +696,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     // <config><dataDir>core0/data OR <core><dataDir>
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
-        coreInfo->dataDir = coreInfo->getName() + string("/") + string(childNode.text().get());
+        coreInfo->dataDir = string(childNode.text().get());
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
     if (coreInfo->dataDir.length() == 0) {
@@ -1564,6 +1564,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     }
 
     defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+    if (defaultCoreInfo == NULL) {
+        parseError << "Default core " << getDefaultCoreName() << " not found\n";
+        configSuccess = false;
+        return;
+    }
 
     /*
      * <Config> in config.xml file

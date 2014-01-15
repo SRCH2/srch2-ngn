@@ -235,8 +235,12 @@ parameter is used. Its default value is 0.5.
 ```
 <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
 ```
-This value specifies the maximum edit distance we allow in fuzzy search
-for a search term. The value must lie in [0,1], with 1 representing exact
+This value is used in the computation of the maximum edit distance we allow in fuzzy search
+for a search term. Edit distance is the minimum number of single character changes required
+transform a search term into a term in a record.  Conceptually, edit distance represents the
+similarity between the search term and a word in a record.
+
+The value of queryTermSimilarityThreshold must lie in [0,1], with 1 representing exact
 match, and 0 being the largest possible error tolerance. The default
 value is 0.5.
 
