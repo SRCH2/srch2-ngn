@@ -69,6 +69,8 @@ ADD_TEST(ReadWriteMutexCondWait_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadW
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")
+
+ADD_TEST(Serializer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Serializer_Test "--verbose")
 ############INTEGRATION TESTS#################
     
 SET(INTEGRATION_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/integration/test_data/)
