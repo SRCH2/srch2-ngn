@@ -87,109 +87,9 @@ void bytesToHuman(char *s, unsigned long long n) {
     }
 }
 
-// Uses spinlock and volatile to increment count.
-#define PREFIX_SIZE (sizeof(size_t))
-/*
- static size_t used_memory = 0;
- pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER;
-
- struct MemCounter
- {
- static void increment(size_t size)
- {
- pthread_mutex_lock(&used_memory_mutex);
- used_memory += size;
- pthread_mutex_unlock(&used_memory_mutex);
- }
-
- static void decrement(size_t size)
- {
- pthread_mutex_lock(&used_memory_mutex);
- used_memory -= size;
- pthread_mutex_unlock(&used_memory_mutex);
- }
-
- static size_t getUsedMemory()
- {
- return used_memory;
- }
- };*/
-
-// http://stackoverflow.com/questions/852072/simple-c-implementation-to-track-memory-malloc-free
-// http://eli.thegreenplace.net/2011/02/17/the-many-faces-of-operator-new-in-c/
-/*void* operator new(size_t size) throw (std::bad_alloc)
- {
- //cerr << "allocating " << sz << " bytes\n";
- void *ptr = malloc(size+PREFIX_SIZE);
-
- *((size_t*)ptr) = size;
- MemCounter::increment(size + PREFIX_SIZE);
-
-
- if (ptr)
- return (char*)ptr+PREFIX_SIZE;
- else
- throw std::bad_alloc();
- }
-
- void operator delete(void* ptr) throw()
- {
- void *realptr;
- size_t oldsize;
-
- if (ptr == NULL) return;
-
- realptr = (char*)ptr-PREFIX_SIZE;
- oldsize = *((size_t*)realptr);
-
- MemCounter::decrement(oldsize+PREFIX_SIZE);
-
- free(realptr);
- }*/
-/*
- void getMemoryInfo(std::string &meminfo)
- {
- char hmem[64];
- //char peak_hmem[64];
-
- bytesToHuman(hmem, MemCounter::getUsedMemory());
- //bytesToHuman(peak_hmem,server.stat_peak_memory);
-
- //if (sections++) info = sdscat(info,"\r\n");
- stringstream mem_info;
- mem_info
- << "{" << "\"used_memory\":" << MemCounter::getUsedMemory()
- << ",\"used_memory_human\":\"" << hmem << "\"}";
-
- meminfo = mem_info.str();
- }*/
-
 std::string getCurrentVersion() {
     return Version::getCurrentVersion();
 }
-
-/*
- // A handler for the ajax get message endpoint.
- static void ajax_search_command(struct mg_connection *conn,
- const struct mg_request_info *request_info,
- Srch2Server *server)
- {
- HTTPRequestHandler::searchCommand(conn, request_info, server);
- }
- */
-
-/*// A handler for the /ajax/send_message endpoint.
- static void ajax_health_command(struct mg_connection *conn,
- const struct mg_request_info *request_info,
- Srch2Server *server)
- {
- std::stringstream str;
- str << HTTPServerEndpoints::ajax_search_pass
- << server->indexer->getIndexHealth()
- << "Memory usage:"
- << get_memory_usage(getpid())/1024;
- mg_write(conn, str.str().c_str(), str.str().length() );
- }*/
 
 /**
  * 'search' callback function
@@ -524,17 +424,6 @@ void makeHttpRequest(){
 }
 #endif
 
-static bool areAllServersCommitted(const ServerMap_t *servers)
-{
-    bool committed = true;
-    for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
-        if (! iterator->second->indexer->isCommited()) {
-            committed = false;
-        }
-    }
-    return committed;
-}
-
 /**
  * Kill the server.  This function can be called from another thread to kill the server
  */
@@ -564,29 +453,7 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
     /* 1). event initialization */
     http_port = atoi(config->getHTTPServerListeningPort().c_str());
-    http_addr =
-            config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
-    struct evhttp *http_server = NULL;
-    struct event_base *evbase = NULL;
-
-    evbase = event_init();
-    if (NULL == evbase) {
-        perror("event_base_new");
-        return 1;
-    }
-
-    /* 2). event http initialization */
-    http_server = evhttp_new(evbase);
-    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
-
-    if (NULL == http_server) {
-        perror("evhttp_new");
-        return 2;
-    }
-
-    /* 3). set general callback of http request */
-    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
-
+    http_addr = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
     // create a server (core) for each data source in config file
     for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
          iterator != config->coreInfoIterateEnd(); iterator++) {
@@ -600,17 +467,13 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     if (defaultCore == NULL && config->getDefaultCoreName().compare("") != 0) {
         defaultCore = (*servers)[config->getDefaultCoreName()];
     }
-    ASSERT(defaultCore != NULL);
-
-    /* 4). bind socket */
-    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
-        perror("evhttp_bind_socket");
+    if (defaultCore == NULL)
+    {
+        perror("Null default core");
         return 3;
     }
 
-    /* 6). free resource before exit */
-    evhttp_free(http_server);
-    event_base_free(evbase);
+    int fd = bindSocket(http_addr, http_port);
 
     //load the index from the data source
     try{
@@ -625,7 +488,7 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     	 *  and the server will stop.
     	 */
     	Logger::error(ex.what());
-    	return(-1);
+    	return 5;
     }
     //cout << "srch2 server started." << endl;
 
@@ -639,22 +502,22 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
         }
     }
 
-    //std::cout << "Started Srch2 server:" << http_addr << ":" << http_port << std::endl;
+    //string meminfo;
+    //getMemoryInfo(meminfo);
+    //std::cout << meminfo << std::endl;
 
     MAX_THREADS = config->getNumberOfThreads();
-
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
             MAX_THREADS, http_addr, http_port);
 
-    //string meminfo;
-    //getMemoryInfo(meminfo);
-
-    //std::cout << meminfo << std::endl;
     // Step 2: Serving server
+    //    int fd = bindSocket(http_addr, http_port);
 
-    int fd = bindSocket(http_addr, http_port);
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
+        struct evhttp *http_server = NULL;
+        struct event_base *evbase = NULL;
+
         evbase = event_init();
         evbases->push_back(evbase);
         if (NULL == evbase) {
@@ -831,7 +694,7 @@ int main(int argc, char** argv) {
         iterator->second->indexer->save();
     }
 
-// free resources before we exit
+    // free resources before we exit
     for (int i = 0; i < MAX_THREADS; i++) {
         evhttp_free(http_servers[i]);
         event_base_free(evbases[i]);

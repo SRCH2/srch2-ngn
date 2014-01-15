@@ -62,7 +62,7 @@
 		    <responseFormat>1</responseFormat>
 		</queryResponseWriter>
 	    </query>
-            <schema name="SRCH2" version="3">
+            <schema>
                 <fields>
                     <field name="title" type="text" indexed="true"/>
                     <field name="director" type="text" indexed="true"/>
@@ -145,7 +145,7 @@
             <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
             <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
             <getAllResultsKAlternative>500</getAllResultsKAlternative>
-            <schema name="SRCH2" version="3">
+            <schema>
                 <fields>
                     <field name="title"          type="text"    indexed="true"/>
                     <field name="body"           type="text"    indexed="true"/>
@@ -363,7 +363,7 @@
 	      </queryResponseWriter>
 	    </query>
 	    
-            <schema name="SRCH2" version="3">
+            <schema>
           
                 <fields>
                     <!--
@@ -552,7 +552,7 @@
             <dataSourceType>1</dataSourceType>
             <indexConfig>
                 <indexType>0</indexType>
-                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <supportSwapInEditDistance>false</supportSwapInEditDistance>
                 <fieldBoost>title^2 director^1</fieldBoost>
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
@@ -561,11 +561,11 @@
 	        <rankingAlgorithm>
 		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
 	        </rankingAlgorithm>
-		<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
-		<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+		<fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.85</queryTermSimilarityThreshold>
 		<prefixMatchPenalty>0.95</prefixMatchPenalty>
 		<cacheSize>65536000</cacheSize>
-		<rows>10</rows>
+		<rows>5</rows>
 		<fieldBasedSearch>1</fieldBasedSearch>
 		<searcherType>0</searcherType>
 
@@ -579,7 +579,7 @@
 		    <responseFormat>1</responseFormat>
 		</queryResponseWriter>
 	    </query>
-            <schema name="SRCH2" version="3">
+            <schema>
                 <fields>
                     <field name="title" type="text" indexed="true"/>
                     <field name="director" type="text" indexed="true"/>

@@ -238,18 +238,22 @@ parameter is used. Its default value is 0.5.</p>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.75&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
-<p>It specifies how much error tolerance we want to have for this term in
-fuzzy search. Its value must lie in [0,1], with 1 representing exact
-match, and 0 being the largest possible error tolerance. Its default
+<p>This value specifies the maximum edit distance we allow in fuzzy search
+for a search term. The value must lie in [0,1], with 1 representing exact
+match, and 0 being the largest possible error tolerance. The default
 value is 0.5.</p>
 <p>This threshold is normalized by the length of the query term. The
 engine uses the following formula the compute the edit distance
-threshold for this term: floor((1-queryTermSimilarityThreshold) <em>
-length(query term)). For instance, suppose the query term is
+threshold for this term:</p>
+<blockquote>
+<p>floor((1-queryTermSimilarityThreshold) * length(query term)).</p>
+</blockquote>
+<p>For instance, suppose the query term is
 "schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the
-threshold of edit distance for this term is: floor((1-0.8)</em>16) = 3.</p>
-<h3>8.4. Support Swap as an Edit Distance Operation</h3>
-<p>Optional{id="supportSwapInEditDistance"}</p>
+threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
+Records containing no terms with an edit distance of 3 or less will
+be excluded from the result set.</p>
+<h3 id="supportSwapInEditDistance">8.4. Support Swap as an Edit Distance Operation, Optional</h3>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 

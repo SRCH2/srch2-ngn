@@ -55,7 +55,7 @@ def checkResult(query, responseJson,resultValue):
 
 
 #prepare the query based on the valid syntax
-def prepareQuery(queryKeywords):
+def prepareQuery(queryKeywords, fuzzy):
     query = ''
     #################  prepare main query part
     query = query + 'q='
@@ -63,10 +63,15 @@ def prepareQuery(queryKeywords):
 #    query = query + '%7BdefaultPrefixComplete=COMPLETE%7D'
     # keywords section
     for i in range(0, len(queryKeywords)):
-        if i == (len(queryKeywords)-1):
-            query=query+queryKeywords[i] # last keyword prefix
+        if fuzzy:
+            keyword = queryKeywords[i] + '~'
         else:
-            query=query+queryKeywords[i]+'%20AND%20'
+            keyword = queryKeywords[i]
+
+        if i == (len(queryKeywords)-1):
+            query=query+keyword # last keyword prefix
+        else:
+            query=query+keyword+'%20AND%20'
     
 #    print 'Query : ' + query
     ##################################
@@ -105,7 +110,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
                 query='http://localhost:' + port + '/search?'
             else:
                 query='http://localhost:' + port + '/core' + str(coreNum) + '/search?'
-            query = query + prepareQuery(queryValue) 
+            query = query + prepareQuery(queryValue, False)
 
             #do the query
             response = urllib2.urlopen(query).read()
@@ -124,6 +129,21 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
     ##########################################################################
     # Core 1 and Core 4 have different configurations, but on the same data. #
     # We now test for the differences in those settings.                     #
+    # In queriesAndResults2.txt, here is an explanation of each test:        #
+    # 1) Aviatro||@156001 693000                                             #
+    #    Fuzzy match is off in core1 and on in core4, so only core4 should   #
+    #    return any result records                                           #
+    # 2) Aviat||@156001 693000                                               #
+    #    Core1 has prefix matching off and core4 allows prefixes to match,   #
+    #    so only core4 should return any results                             #
+    # 3) monkeys||135001@                                                    #
+    #    Core4 uses stop-words2.txt which has monkeys, so core4 should not   #
+    #    return results.  Core1 has the usual stop words file and should     #
+    #    find monkeys.                                                       #
+    # 4) martn~||156001 525017 693000@                                       #
+    #    Core1 will fuzzy match martn against Martin in 3 records, because   #
+    #    it's similarity threshold is 0.75.  Core4 has a higher threshold    #
+    #    of 0.85, and should not return any matching records.                #
     ##########################################################################
 
     print "\nSecond suite #2: Comparing different engine configurations on the same data source"
@@ -140,7 +160,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             resultValue=coreResult.split()
             #construct the query
             query='http://localhost:' + port + '/core' + str(coreNum[index]) + '/search?'
-            query = query + prepareQuery(queryValue) 
+            query = query + prepareQuery(queryValue, False)
 
             #do the query
             print query
