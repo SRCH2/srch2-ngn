@@ -6,45 +6,47 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">3. License File</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">4. Hostname & Port</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">5. Data Directory</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source Information</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Data Source Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. Data File</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">6.3. MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost Field</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">8.1. Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">8.2. Fuzzy Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">8.3. Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">8.4. Support Swap in Edit Distance</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">8.5. Prefix Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">8.6. Cache Size</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">8.7. Rows to be returned</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">8.8. Searcher Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.9. Enabling Field Based Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.10. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.11. Term Fuzzy Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.12. Term Prefix Type</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">10.1. Max Documents</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">10.2. Merge Policy</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateLog">10.3. Logging</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#logLevel">10.3.1. Log Level</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#accessLogFile">10.3.2. Log File</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">11. Data Schema</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">11.1. Primary Key</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">11.2. Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">11.3. Enable Facets</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">11.4. Facet Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">6. Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">7. Data Source Information</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">7.1. Data Source Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7.2. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">7.3. MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">8. Index Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">8.1. Index Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">8.2. Field Boosts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">8.3. Record Boost Field</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">8.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">8.5. Enable Positional Index</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">9. Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">9.1. Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">9.2. Fuzzy Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">9.3. Term Similarity Threshold</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">9.4. Support Swap in Edit Distance</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.5. Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.6. Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.7. Rows to be returned</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.8. Enabling Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.9. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">9.10. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">9.11. Term Prefix Type</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">11.1. Max Documents</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">11.2. Merge Policy</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateLog">11.3. Logging</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#logLevel">11.3.1. Log Level</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#accessLogFile">11.3.2. Log File</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">12. Data Schema</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">12.1. Primary Key</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">12.2. Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">12.3. Enable Facets</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">12.4. Facet Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">12.5. Analyzer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">13 Cores</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">13.1 Core</a></br><br>
 </td></tr></tbody></table>
 
 </div> <!-- Table of content, id=content-->
@@ -105,9 +107,15 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 ```
 It specifies the path of a folder where the engine stores serialized index files. <br>
 
-##6. Data ##{id="data"}
+##6. Number of search threads, Optional:{id="maxSearchThreads"}
+```
+<maxSearchThreads>2</maxSearchThreads>
+```
+It specifies the number of threads that serve search requests. Its default value is 1. <br>
 
-###6.1. Data Source, Optional {id="dataSource"}
+##7. Data ##{id="data"}
+
+###7.1. Data Source, Optional {id="dataSource"}
 
 ```
 <dataSourceType>1</dataSourceType>
@@ -117,14 +125,14 @@ It specifies the type of data source to build the indexes from.
 >  1: json data file. (Default)
 >  2: MongoDB.
 
-###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
+###7.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
 ```
 <dataFile>./example-demo/data.json</dataFile>
 ```
 It specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to [srch2Home](#srch2Home).<br>
 
-###6.3. MongoDB, Required if "dataSourceType" is 2 {id="mongodb"}
+###7.3. MongoDB, Required if "dataSourceType" is 2 {id="mongodb"}
 ```
 <mongodb>
     <host>www.my-company.com</host>
@@ -136,7 +144,7 @@ It specifies a JSON data file to be loaded by the engine. Notice that it is a pa
 ```
 It specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
 
-##7. Index Config:##{id="indexConfig"}
+##8. Index Config:##{id="indexConfig"}
 
 This tag includes parameters related to customizing the indexes.
 ```
@@ -145,7 +153,7 @@ This tag includes parameters related to customizing the indexes.
 </indexConfig>
 ```
 
-###7.1. Index Type, Required{id="indexType"}
+###8.1. Index Type, Required{id="indexType"}
 ```
 <indexType>0</indexType>
 ```
@@ -153,7 +161,7 @@ This tag includes parameters related to customizing the indexes.
 > 1: Text + Geo Indexes, which support location-based search. <br>
 
 
-###7.2. Field Boosts, Optional{id="fieldBoost"}
+###8.2. Field Boosts, Optional{id="fieldBoost"}
 ```
 <fieldBoost></fieldBoost>
 ```
@@ -173,20 +181,20 @@ value is not provided for a field, the engine uses a default value of
 1. In the example above, the filed "title" will have a boost value of
 1.<br>
 
-###7.3. Record Boost Field, Optional{id="recordBoostField"}
+###8.3. Record Boost Field, Optional{id="recordBoostField"}
 ```
 <recordBoostField>relevance</recordBoostField>
 ```
 It specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".
 
-###7.4. Default Query Term Boost, Optional{id="defaultQueryTermBoost"}
+###8.4. Default Query Term Boost, Optional{id="defaultQueryTermBoost"}
 ```
 <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 It specifies a default query term boost. If the parameter is not given, the engine uses 1 as the default value.<br>
 
 
-###7.5. Enable Positional Index, Optional{id="enablePositionIndex"}
+###8.5. Enable Positional Index, Optional{id="enablePositionIndex"}
 
 A positional index supports queries with conditions related to keyword positions in a record, such as [proximity search](restful-search.html#proximitySearch). The "enablePositionIndex" tag can be used to enable or disable positional indexing.  For instance, the following
 example shows how to enable this indexing:
@@ -197,7 +205,7 @@ example shows how to enable this indexing:
 Notice that the positional index takes more memory resources. By default it is disabled.<br>
 
 
-##8. Query Parameters:##{id="queryConfig"}
+##9. Query Parameters:##{id="queryConfig"}
 
 The following tag includes parameters related to queries.
 ```
@@ -205,7 +213,7 @@ The following tag includes parameters related to queries.
 ...
 </query>
 ```
-###8.1. Ranking:{id="rankingAlgorithm"}
+###9.1. Ranking:{id="rankingAlgorithm"}
 
 The following tags and parameters are related to ranking. 
 
@@ -222,7 +230,7 @@ This expression is used to compute the static score of a record with respect to 
 
 The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [Ranking Section](ranking.html) to see how this static score is used in ranking.
 
-###8.2. Fuzzy Match Penalty, Optional{id="fuzzyMatchPenalty"}
+###9.2. Fuzzy Match Penalty, Optional{id="fuzzyMatchPenalty"}
 
 ```
 <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
@@ -231,14 +239,14 @@ It is used to decide how much penalty we want to give to a fuzzy
 match. See the [Ranking Section](ranking.html) section about how this
 parameter is used. Its default value is 0.5.
 
-###8.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
+###9.3. Term Similarity Threshold, Optional{id="queryTermSimilarityThreshold"}
 ```
 <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
 ```
 This value is used in the computation of the maximum edit distance we allow in fuzzy search
 for a search term. Edit distance is the minimum number of single character changes required
 transform a search term into a term in a record.  Conceptually, edit distance represents the
-similarity between the search term and a word in a record.
+difference between the search term and a word in a record.
 
 The value of queryTermSimilarityThreshold must lie in [0,1], with 1 representing exact
 match, and 0 being the largest possible error tolerance. The default
@@ -256,7 +264,7 @@ threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
 Records containing no terms with an edit distance of 3 or less will
 be excluded from the result set.
 
-###8.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
+###9.4. Support Swap as an Edit Distance Operation, Optional{id="supportSwapInEditDistance"}
 ```
 <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
@@ -264,7 +272,7 @@ It specifies whether we support swap operation (e.g., "iphone" versus
 "ipohne") in the edit distance function, in addition to insertion,
 deletion, and substitution operations. By default it is true.
 
-###8.5. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
+###9.5. Prefix Match Penalty, Optional{id="prefixMatchPenalty"}
 
 ```
 <prefixMatchPenalty>0.95</prefixMatchPenalty>
@@ -272,26 +280,20 @@ deletion, and substitution operations. By default it is true.
 It specifies the penalty for a prefix match. Its value should be in the range of 0 to 1, with a default value of 0.95. See the [ranking section](ranking.html) for more information.<br>
 
 
-###8.6. Cache Size, Optional{id="cacheSize"}
+###9.6. Cache Size, Optional{id="cacheSize"}
 
 ```
 <cacheSize>65536000</cacheSize>
 ```
 It specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br>
 
-###8.7. Default value for number of returned results, Optional{id="rows"}
+###9.7. Default value for number of returned results, Optional{id="rows"}
 ```
 <rows>10</rows>
 ```
 It specifies the number of results retrieved. Its default value is 10. <br>
 
-###8.8. Number of search threads, Optional:{id="maxSearchThreads"}
-```
-<maxSearchThreads>2</maxSearchThreads>
-```
-It specifies the number of threads that serve search requests. Its default value is 1. <br>
-
-###8.9. Field-Based Search, Optional{id="fieldBasedSearch"}
+###9.8. Field-Based Search, Optional{id="fieldBasedSearch"}
 ```
 <fieldBasedSearch>0</fieldBasedSearch>
 ```
@@ -301,7 +303,7 @@ It is a flag to toggle attribute-based search. An attribute-based search applies
 
 Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.
 
-###8.10. Search Type, Optional{id="searcherType"}
+###9.9. Search Type, Optional{id="searcherType"}
 ```
 <searcherType>0</searcherType>
 ```
@@ -311,7 +313,7 @@ It sets the default search type of a query to the engine. <br>
 
 Its default value is 0.<br>
 
-###8.11. Query Term Fuzzy Type, Optional{id="queryTermFuzzyType"}
+###9.10. Query Term Fuzzy Type, Optional{id="queryTermFuzzyType"}
 ```
 <queryTermFuzzyType>1</queryTermFuzzyType>
 ```
@@ -321,7 +323,7 @@ It specifies how to treat a term by default with respect to match fuzziness.
 
 Its default value is 0.
 
-###8.12. Query Term Prefix Type, Optional{id="queryTermPrefixType"}
+###9.11. Query Term Prefix Type, Optional{id="queryTermPrefixType"}
 ```
 <queryTermPrefixType>1</queryTermPrefixType>
 ```
@@ -331,7 +333,7 @@ It specifies how to treat a term by default with respect to match completeness.
 
 Its default value is 0.
 
-##9. Response Writer:##{id="queryResponseWriter"}
+##10. Response Writer:##{id="queryResponseWriter"}
 
 This tag has parameters related to configuring the response of a query.
 ```
@@ -340,7 +342,7 @@ This tag has parameters related to configuring the response of a query.
 </queryResponseWriter>
 ```
 
-###9.1. Response Content, Optional{id="ResponseContent"}
+###10.1. Response Content, Optional{id="ResponseContent"}
 
 ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. You should set the type to one of the following options: <br>
 > 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
@@ -358,7 +360,7 @@ or
 <responseContent type="2">lat,lng</responseContent>
 ```
 
-###9.2 JSON Response Format, Optional{id="ResponseFormat"}
+###10.2 JSON Response Format, Optional{id="ResponseFormat"}
 
 ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br>
 > 0: JSON
@@ -366,7 +368,7 @@ ResponseFormat specifies if the response should be JSON or JSONP formatted.  Pos
 
 The default value is 0.
 
-##10. Update Handler###{id="updateHandler"}
+##11. Update Handler###{id="updateHandler"}
 
 This tag includes tags related to configuring the engine to handle update requests.
 ```
@@ -374,13 +376,13 @@ This tag includes tags related to configuring the engine to handle update reques
 ...
 </updatehandler>
 ```
-###10.1. Maximum Number of Documents, Required{id="maxDocs"}
+###11.1. Maximum Number of Documents, Required{id="maxDocs"}
 ```
 <maxDocs>15000000</maxDocs>
 ```
 It specifies the maximum number of records indexable by the engine. Inserting more records than what is specified here will cause the insertions to fail.
 
-###10.2. Merge Policy, Required{id="mergePolicy"}
+###11.2. Merge Policy, Required{id="mergePolicy"}
 
 ```
 <mergePolicy>
@@ -392,7 +394,7 @@ It specifies the maximum number of records indexable by the engine. Inserting mo
  
   - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes that can wake up the thread to do the merge.  This number should be at least 1. <br>
 
-###10.3. Logging:{id="updateLog"}
+###11.3. Logging:{id="updateLog"}
 
 The following tag includes parameters related to logging in SRCH2.
 ```
@@ -400,7 +402,7 @@ The following tag includes parameters related to logging in SRCH2.
 ...
 </updateLog>
 ```
-####10.3.1. Log Level, Optional{id="logLevel"}
+####11.3.1. Log Level, Optional{id="logLevel"}
 ```
 <logLevel>3</logLevel>
 ```
@@ -412,7 +414,7 @@ The parameter decides the amount of feedback information the engine will report 
 
 Its default value is 3.
 
-####10.3.2. Log File, Required{id="accessLogFile"}
+####11.3.2. Log File, Required{id="accessLogFile"}
 ```
 <accessLogFile>./indexes/log.txt</accessLogFile>
 ```
@@ -423,7 +425,7 @@ manage the log messages.  Check [this
 page](restful-control.html#reset-log) for more information about how
 to manage this log file using third-party tools such as "logrotate".<br>
 
-##11. Data Schema:##{id="schemaTag"}
+##12. Data Schema:##{id="schemaTag"}
 
 The following sections explain each sub-tag under the <i>schema</i>
 component.
@@ -433,13 +435,13 @@ component.
 </schema>
 ```
 
-###11.1. Primary Key, Required{id="uniqueKey"}
+###12.1. Primary Key, Required{id="uniqueKey"}
 ```
 <uniqueKey>id</uniqueKey>
 ```
 It specifies the attribute used as the primary key to reference each record in the data. If a new record has a primary key conflicting with an existing record, the new record will be rejected by the engine. The attribute needs to be of text type.<br>
 
-###11.2. Fields, Required{id="fields"}
+###12.2. Fields, Required{id="fields"}
 ```
 <fields>
 ...
@@ -493,7 +495,7 @@ Note:
  - The primary key is optional to be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 
-###11.3. Enable Facet, Optional{id="facetEnabled"}
+###12.3. Enable Facet, Optional{id="facetEnabled"}
 
 It toggles faceted search feature.<br>
 ```
@@ -501,7 +503,7 @@ It toggles faceted search feature.<br>
 ```
 Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br>
 
-###11.4. Facet Fields:{id="facetFields"}
+###12.4. Facet Fields:{id="facetFields"}
 
 This tag contains all facet-related tags.
 ```
@@ -531,7 +533,7 @@ value, not the "facetEnd" value. Therefore, the last interval may not
 stretch the entire facetGap. Also all facet fields must be declared in
 <a href=#fields>fields tag</a> as well (with refining="true") <br> 
 
-###11.5. Analyzer:{id="analyzer"}
+###12.5. Analyzer:{id="analyzer"}
 
 It specifies the analyzer used by the engine. <br>
 ```
@@ -543,16 +545,40 @@ It specifies the analyzer used by the engine. <br>
   </fieldType>
 </types>
 ```
-###11.5.1 Stemmer, Optional{id="PorterStemFilter"}
+###12.5.1 Stemmer, Optional{id="PorterStemFilter"}
 
 The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). It uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.
 ```
 <filter name="PorterStemFilter" dictionary="srch2_stemmer_dictionary.txt" />
 ```
-###11.5.2 Stop Words, Optional{id="StopFilter"}
+###12.5.2 Stop Words, Optional{id="StopFilter"}
 
 It specifies a file of stop words that are ignored by the engine. Providing an empty string ("") for the "words" parameter disables this filter.
 ```
 <filter name="StopFilter" words="srch2_stop_words.txt" />
 ```
 
+##13. Cores, Optional{id="Cores"}
+
+Cores supports the creation of multiple search engines within the same server.  Typically, each engine
+has a different data source.  However, all cores are running within the same server process, so
+multi-core functionality is not a means to improve performance or increase scale.  A query can only
+name a single core, so multiple cores is also not sharding or joining across different data sources.
+
+Cores supports one attribute: defaultCoreName.  When instantiated with multiple cores, queries
+specify the core by name that is to process the query:
+```
+http://localhost:8081/example-core/search/q=term
+```
+requests that "example-core" process a search request for "term".  In the case when no core is
+specified in a query to a multi-core server, defaultCoreName specifies
+the core to which the query will be sent.
+
+###13.1 Core, Optional{id="Core"}
+
+Each Core tag under Cores specifies a server core to be created.  Each core requires a name attribute
+that sets the name of this core.  This name is used in query URI paths, as well as the aforementioned
+defaultCoreName attribute of Cores.  Nearly all server configuration settings documented above can
+also appear under a Core tag.  The exceptions are licenseFile, listeningHostName, listeningPort,
+maxSearchThreads, Cores, and Core.  Each Core must define all it's own data source and behavioral
+rules, so for example, dataDir and schema are typically defined under each Core.
