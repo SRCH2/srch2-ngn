@@ -21,7 +21,9 @@ class Serializer {
   //first: searchable Offset and second: Refining Offsets
   const std::pair<std::vector<offset_type>, std::vector<offset_type> > 
     offsets;
+  //marks the end of the fixed size buffer, ie. all the offsets & fixed values
   const offset_type fixedSizedOffset;
+  //marks the begin of offset to variable length code
   const offset_type variableLengthOffsetStart;
   char *buffer;
 

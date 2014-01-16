@@ -10,12 +10,12 @@ inline offset_type nextOffset(const offset_type& offset, int amount) {
 inline offset_type nextOffset(const offset_type& offset) {
   return nextOffset(offset, 1);
 }
-inline void incrementOffset(offset_type& offset, int amount) {
-  offset += sizeof(offset_type) * amount;
+inline offset_type incrementOffset(offset_type& offset, int amount) {
+  return offset += sizeof(offset_type) * amount;
 }
 
-inline void incrementOffset(offset_type& offset) {
-  incrementOffset(offset, 1);
+inline offset_type  incrementOffset(offset_type& offset) {
+  return incrementOffset(offset, 1);
 }
 
 void Serializer::expandBuffer(size_t needAddition) {
@@ -54,6 +54,7 @@ bool Serializer::repositionBuffer(offset_type bufferOffset,
     if((currentOffset = dereferenceOffset(buffer, bufferOffset))) {
       add(bufferOffset, currentOffset + length);
     }
+    incrementOffset(bufferOffset);
   }
 
   return false;
@@ -62,13 +63,13 @@ bool Serializer::repositionBuffer(offset_type bufferOffset,
 inline offset_type
 Serializer::calculateVariableLengthOffset(variable_length_types, 
     offset_type offset) {
-  //not at start of writen array
-  while(offset != variableLengthOffsetStart) {
+  //find out if we have written buffer out of place, by seeing if
+  //a later element is already written
+  do { 
     if(dereferenceOffset(buffer, offset)) {
       return dereferenceOffset(buffer, offset);
     }
-    offset -= sizeof(offset_type);
-  }
+  } while(incrementOffset(offset) != fixedSizedOffset);
 
   return lastOffsetOfWrittenBuffer;
 }
@@ -117,7 +118,7 @@ void Serializer::add<std::string>(
 void* Serializer::serialize() {
   char* rtn = buffer;
   buffer = allocator.allocate(maxOffsetOfBuffer);
-  std::memset(buffer, '0', fixedSizedOffset); 
+  std::memset(buffer, 0x0, fixedSizedOffset); 
   return rtn;
 }
 
@@ -250,6 +251,6 @@ Serializer::Serializer(srch2::instantsearch::Schema& schema,
   //rounds default size of the nearest allocation page size
   maxOffsetOfBuffer = allocator.round(fixedSizedOffset + 
       DEFAULT_VARIBLE_ATTRIBUTE_LENGTH * (offsets.first.size()));
-  char* buffer = allocator.allocate(maxOffsetOfBuffer);
-  std::memset(buffer, '0', fixedSizedOffset); 
+  buffer = allocator.allocate(maxOffsetOfBuffer);
+  std::memset(buffer, 0x0, fixedSizedOffset); 
 }
