@@ -560,7 +560,7 @@ It specifies a file of stop words that are ignored by the engine. Providing an e
 
 ##13. Cores, Optional{id="Cores"}
 
-The "Cores" tag can be used to support the creation of multiple search engines within the same server.  Typically, each engine
+The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
 has a different data source.  All cores run within the same server process.  A query can only
 name a single core.
 
