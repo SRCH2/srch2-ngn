@@ -234,7 +234,6 @@ void test1(int argc, char** argv) {
     message << "FuzzyMatchPenalty: " << core->getFuzzyMatchPenalty() << "\n";
     message << "RecordAllowedSpecialCharacters: " << core->getRecordAllowedSpecialCharacters() << "\n";
     message << "CacheSizeInBytes: " << core->getCacheSizeInBytes() << "\n";
-    message << "WriteApiType: " << core->getWriteApiType() << "\n";
     message << "SearchResponseFormat: " << core->getSearchResponseFormat() << "\n";
 
     message << "HTTPServerAccessLogFile: " << core->getHTTPServerAccessLogFile() << "\n";
@@ -319,8 +318,8 @@ bool test2(int argc, char** argv) {
     srch2is::IndexMetaData *indexMetaData = srch2Server.createIndexMetaData(core);
 
     // Create an analyzer
-    srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, core->getRecordAllowedSpecialCharacters());
+    srch2is::Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL,
+                                               core->getRecordAllowedSpecialCharacters());
 
     // Create a schema to the data source definition in the Srch2ServerConf
     srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(core);

@@ -12,6 +12,7 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/IndexSearcher.h>
 #include <instantsearch/GlobalCache.h>
+#include "analyzer/AnalyzerContainers.h"
 
 using namespace std;
 using namespace srch2::instantsearch;
@@ -572,8 +573,8 @@ void testSmallInitLargeInsertion(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -617,6 +618,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     delete analyzer;
     delete schema;
     delete indexMetaData;
+    syn->free();
 }
 
 void testIncrementalUpdateGeoIndex(const string directoryName)
@@ -634,8 +636,8 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -679,6 +681,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     delete analyzer;
     delete schema;
     delete indexMetaData;
+    syn->free();
 
     cout<<"Increment insertion and deletion test cases pass" << endl;
 

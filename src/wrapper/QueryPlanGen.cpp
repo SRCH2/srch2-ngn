@@ -138,7 +138,7 @@ void QueryPlanGen::createPostProcessingPlan(QueryPlan * plan) {
 
     if (paramsContainer.hasParameterInQuery(QueryFieldBoostFlag)) { 
        const map<string, SearchableAttributeInfoContainer>*attributes=
-          indexDataContainerConf->getSearchableAttributes();
+          indexDataConfig->getSearchableAttributes();
 
        // there is a dynamic ranking 
        srch2is::DynamicScoringFilter& scoringFilter =

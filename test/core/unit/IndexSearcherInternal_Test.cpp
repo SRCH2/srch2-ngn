@@ -5,6 +5,7 @@
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "analyzer/AnalyzerInternal.h"
+#include "analyzer/AnalyzerContainers.h"
 
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -57,8 +58,9 @@ void ActiveNodeSet_test()
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
 	Record *record = new Record(schema);
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+        SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+        syn->init();
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
@@ -102,6 +104,7 @@ void ActiveNodeSet_test()
     // We don't need to delete prefixActiveNodeSet since it's cached and will be
     // deleted in the destructor of indexSearchInternal
     delete indexSearcherInternal;
+    syn->free();
 }
 
 /**
@@ -124,8 +127,9 @@ void addRecords() {
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

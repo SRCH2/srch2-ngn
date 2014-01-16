@@ -444,7 +444,7 @@ void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &
 }
 
 
-void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
+void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
     switch (req->type) {
@@ -607,91 +607,6 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-    }
-    };
-}
-
-void HTTPRequestHandler::writeCommand_v1(evhttp_request *req,
-        Srch2Server *server) {
-    /* Yes, we are expecting a post request */
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-        size_t length = EVBUFFER_LENGTH(req->input_buffer);
-
-        if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
-            Logger::warn("http body is empty");
-            break;
-        }
-
-        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-        //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
-
-        std::stringstream log_str;
-        // Parse example data
-        Json::Value root;
-        Json::Reader reader;
-        bool parseSuccess = reader.parse(post_data, root, false);
-
-        if (parseSuccess == false) {
-            log_str << "JSON object parse error";
-        } else {
-            if (root.type() == Json::arrayValue) {
-                Record *record = new Record(server->indexer->getSchema());
-                for (int index = 0; index < root.size(); ++index) // Iterates over the sequence elements.
-                        {
-                    Json::Value defaultValueToReturn = Json::Value("");
-                    const Json::Value doc = root.get(index,
-                            defaultValueToReturn);
-
-                    /*Json::FastWriter writer;
-                     std::cout << "[" << writer.write(doc)  << "]" << std::endl;*/
-
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataConfig, doc, record,
-                            log_str);
-                    record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
-                }
-                delete record;
-            }
-        }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-        break;
-    }
-    case EVHTTP_REQ_DELETE: {
-        std::stringstream log_str;
-
-        evkeyvalq headers;
-        evhttp_parse_query(req->uri, &headers);
-
-        IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataConfig, headers, log_str);
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-
-        // Free the objects
-        evhttp_clear_headers(&headers);
-
-        Logger::info("%s", log_str.str().c_str());
-
-        break;
-    }
-    default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
     }
     };
 }

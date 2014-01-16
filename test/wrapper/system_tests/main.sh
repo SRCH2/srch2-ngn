@@ -2,8 +2,8 @@
 PWD_DIR=$(pwd)
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 [-f] <system-test-director> <server-executable-directory>"
-    #exit 1
+    echo "Usage: $0 [-f] <system-test-directory> <server-executable-directory>"
+    exit 1
 fi
 
 force=0
@@ -16,7 +16,7 @@ fi
 SYSTEM_TEST_DIR=$1
 if [ ! -d "$SYSTEM_TEST_DIR" ]; then
     echo "$0: \"$SYSTEM_TEST_DIR\" not an existing directory."
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 1
     fi
 fi
@@ -26,13 +26,13 @@ cd $SYSTEM_TEST_DIR
 SRCH2_ENGINE_DIR=$2
 if [ ! -d "$SRCH2_ENGINE_DIR" ]; then
     echo "$0: Search engine directory \"$SRCH2_ENGINE_DIR\" not an existing directory."
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 1
     fi
 fi
 
 echo ''
-echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will intefere with this testing."
+echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will interfere with this testing."
 echo ''
 
 # Test for ruby framework for some tests
@@ -71,9 +71,13 @@ python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE_DIR ./qf_dynamic
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    exit -1
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
+rm -rf data/ *.idx
 
 test_id="phrase search test"
 echo "---------------------do $test_id-----------------------"
@@ -81,13 +85,12 @@ python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
-rm -rf data/ *.idx
-
 rm -rf data/ *.idx
 
 test_id="multi valued attribute"
@@ -99,8 +102,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 test_id="save_shutdown_restart test"
@@ -111,8 +115,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -124,8 +129,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -138,8 +144,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 test_id="exact_A1 test"
@@ -151,8 +158,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -165,8 +173,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -179,8 +188,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -193,8 +203,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -206,8 +217,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 test_id="fuzzy_Attribute_Based_Search test"
@@ -215,7 +227,7 @@ echo "---------------------do $test_id-----------------------"
 python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE_DIR ./fuzzy_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 #if [ $? -gt 0 ]; then
 #    echo "FAILED: $test_id"
-#    exit -1
+#    exit 255
 #fi
 echo "-- IGNORING FAILURE: $test_id"
 rm -rf data/ *.idx
@@ -230,8 +242,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -244,8 +257,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -258,8 +272,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -272,8 +287,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -286,8 +302,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -317,8 +334,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED:$test_id"
 fi
-echo "-- PASSED:$test_id"
 rm -rf data/ *.idx
 
 
@@ -331,8 +349,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -345,8 +364,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -359,8 +379,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -373,8 +394,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -387,8 +409,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx
 
 
@@ -402,8 +425,9 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
 rm -rf data/ *.idx reset_logger/indexes
 
 
@@ -434,9 +458,10 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
-rm -rf data/ *.idx upsert_batch/indexes
+rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
 
 
 test_id="test for batch insert"
@@ -448,11 +473,26 @@ if [ $? -gt 0 ]; then
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+else
+    echo "-- PASSED: $test_id"
 fi
-echo "-- PASSED: $test_id"
-rm -rf data/ *.idx
+rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
 
+test_id="multicore"
+echo "---------------------do $test_id-----------------------"
+rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
+python ./multicore/multicore.py $SRCH2_ENGINE_DIR ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ multicore/core?/*.idx
 
 
 # clear the output directory. First make sure that we are in correct directory

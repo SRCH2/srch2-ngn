@@ -4,7 +4,6 @@
  *  Created on: 2013-5-18
  */
 
-#include <sys/stat.h>
 #include "SimpleAnalyzer.h"
 #include "WhiteSpaceTokenizer.h"
 #include "LowerCaseFilter.h"
@@ -20,41 +19,29 @@ namespace instantsearch {
 // create operator flow and link share pointer to the data
 TokenStream * SimpleAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new WhiteSpaceTokenizer();
+
 	tokenStream = new LowerCaseFilter(tokenStream);
-
-	if (this->stopWordFilePath.compare("") != 0) {
-		struct stat stResult;
-		if(stat(this->stopWordFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
-		} else {
-            Logger::error("The stop word file %s is not valid. Please provide a valid file path.", this->stopWordFilePath.c_str());
-		}
-	}
-
-	if (this->synonymFilePath.compare("") != 0) {
-		struct stat stResult;
-		if(stat(this->synonymFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
-		} else {
-            Logger::error("The synonym file %s. Please provide a valid file path.", this->synonymFilePath.c_str());
-		}
-	}
-
-	if (this->stemmerFlag == ENABLE_STEMMER_NORMALIZER) {
-		struct stat stResult;
-		if(stat(this->stemmerFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new StemmerFilter(tokenStream, this->stemmerFilePath);
-		} else {
-			this->stemmerFlag = DISABLE_STEMMER_NORMALIZER;
-            Logger::error("The stemmer file %s is not valid. Please provide a valid file path." , this->stemmerFilePath.c_str());
-		}
-	}
+        if (stopWords != NULL) {
+            tokenStream = new StopFilter(tokenStream, stopWords);
+        }
+        if (synonyms != NULL) {
+            tokenStream = new SynonymFilter(tokenStream, synonyms);
+        }
+        if (stemmer != NULL) {
+            tokenStream = new StemmerFilter(tokenStream, stemmer);
+        }
 
 	return tokenStream;
 }
 SimpleAnalyzer::~SimpleAnalyzer() {
 	// TODO Auto-generated destructor stub
 }
+
+AnalyzerType SimpleAnalyzer::getAnalyzerType() const
+{
+    return SIMPLE_ANALYZER;
+}
+
 }
 }
 
