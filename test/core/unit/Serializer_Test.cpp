@@ -5,7 +5,7 @@
 #include <cstring>
 #include <cassert>
 
-typedef DefaultBufferAllocator Alloc;
+typedef SingleBufferAllocator Alloc;
 
 void compare(char const *expected, char const *actual, size_t num) {
   assert(!memcmp(expected, actual, num));
@@ -104,11 +104,32 @@ void testIntAndString(Alloc& alloc) {
   compare(testIntAndStringExpected, buffer, 20);
 }
 
+void testReuseBuffer(Alloc& alloc) {
+  srch2::instantsearch::Schema *schema = 
+    srch2::instantsearch::Schema::create(srch2::instantsearch::DefaultIndex);
+
+  int nameID = schema->setSearchableAttribute("name");
+  int addressID = 
+    schema->setRefiningAttribute("address", 
+        srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
+
+  Serializer s(*schema, alloc);
+  
+  for(int i=0; i < 5; ++i) {
+    s.addRefiningAttribute(addressID, 20);
+    s.addSearchableAttribute(nameID, std::string("happy"));
+    
+    char *buffer = (char*) s.serialize();
+    compare(testIntAndStringExpected, buffer, 20);
+  }
+}
+
 void testStringSerialization(Alloc& allocator) {
   testSingleString(allocator);
   testMultipleStrings(allocator);
   testMultipleStringsOutOfOrder(allocator);
   testIntAndString(allocator);
+  testReuseBuffer(allocator);
 }
 
 

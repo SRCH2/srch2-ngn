@@ -14,7 +14,10 @@ enum variable_length_types {
 };
 
 class Serializer {
-  DefaultBufferAllocator& allocator;
+ public:
+  typedef SingleBufferAllocator Alloc;
+ private:
+  Alloc& allocator;
   srch2::instantsearch::Schema& schema;
   offset_type maxOffsetOfBuffer;
   offset_type lastOffsetOfWrittenBuffer;
@@ -36,7 +39,8 @@ class Serializer {
   bool repositionBuffer(offset_type, offset_type, offset_type); 
 
  public:
-  Serializer(srch2::instantsearch::Schema&, DefaultBufferAllocator&);
+
+  Serializer(srch2::instantsearch::Schema&, Alloc&);
 
   template<typename T>
   void addRefiningAttribute(const int, const T&);

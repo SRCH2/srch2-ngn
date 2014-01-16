@@ -119,6 +119,7 @@ void* Serializer::serialize() {
   char* rtn = buffer;
   buffer = allocator.allocate(maxOffsetOfBuffer);
   std::memset(buffer, 0x0, fixedSizedOffset); 
+  lastOffsetOfWrittenBuffer = fixedSizedOffset;
   return rtn;
 }
 
@@ -240,7 +241,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 }
 
 Serializer::Serializer(srch2::instantsearch::Schema& schema, 
-    DefaultBufferAllocator& allocator) : allocator(allocator), schema(schema),
+    Alloc& allocator) : allocator(allocator), schema(schema),
   maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),
   offsets(initAttributeOffsetArray(schema, maxOffsetOfBuffer,
         lastOffsetOfWrittenBuffer)),
