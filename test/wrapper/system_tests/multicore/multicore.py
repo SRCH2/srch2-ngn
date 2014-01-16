@@ -126,25 +126,28 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
             coreNum += 1
 
-    ##########################################################################
-    # Core 1 and Core 4 have different configurations, but on the same data. #
-    # We now test for the differences in those settings.                     #
-    # In queriesAndResults2.txt, here is an explanation of each test:        #
-    # 1) Aviatro||@156001 693000                                             #
-    #    Fuzzy match is off in core1 and on in core4, so only core4 should   #
-    #    return any result records                                           #
-    # 2) Aviat||@156001 693000                                               #
-    #    Core1 has prefix matching off and core4 allows prefixes to match,   #
-    #    so only core4 should return any results                             #
-    # 3) monkeys||135001@                                                    #
-    #    Core4 uses stop-words2.txt which has "monkeys", so core4 should not #
-    #    return results.  Core1 has the usual stop words file and should     #
-    #    find "monkeys".                                                     #
-    # 4) martn~||156001 525017 693000@                                       #
-    #    Core1 will fuzzy match martn against "Martin" in 3 records, because #
-    #    it's similarity threshold is 0.75.  Core4 has a higher threshold    #
-    #    of 0.85, and should not return any matching records.                #
-    ##########################################################################
+    #######################################################################################
+    # Core 1 and Core 4 have different configurations, but on the same data.              #
+    # We now test for the differences in those settings.                                  #
+    # In queriesAndResults2.txt, here is an explanation of each test:                     #
+    # 1) Aviatro||@156001 693000                                                          #
+    #    Fuzzy match is off in core1 and on in core4, so only core4 should                #
+    #    return any result records                                                        #
+    # 2) Aviat||@156001 693000                                                            #
+    #    Core1 has prefix matching off and core4 allows prefixes to match,                #
+    #    so only core4 should return any results                                          #
+    # 3) monkeys||135001@                                                                 #
+    #    Core4 uses stop-words2.txt which has "monkeys", so core4 should not              #
+    #    return results.  Core1 has the usual stop words file and should                  #
+    #    find "monkeys".                                                                  #
+    # 4) Rings||908 927 492002 492003 634004 634005 634006@908 927 492002 492003 634004   #
+    #    Test different <rows> setting.  Core1 can return up to 10 records, but Core4 is  #
+    #    limited to just 5.                                                               #
+    # 5) martn~||156001 525017 693000@                                                    #
+    #    Core1 will fuzzy match martn against "Martin" in 3 records, because              #
+    #    it's similarity threshold is 0.75.  Core4 has a higher threshold                 #
+    #    of 0.85, and should not return any matching records.                             #
+    #######################################################################################
 
     print "\nSecond suite #2: Comparing different engine configurations on the same data source"
     f_in = open(queriesAndResultsPath2, 'r')
