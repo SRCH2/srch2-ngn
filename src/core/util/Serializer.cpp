@@ -219,19 +219,16 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 
   variableLengthOffsetStart = offset;
 
-  if(refiningStrings.size() != 0) {
     initializeOffsetArray(refiningStrings, refiningOffsets, offset, 
         sizeof(offset_type));
-    incrementOffset(offset);
-  }
-  if(refiningMultiValued.size() != 0) {
     initializeOffsetArray(refiningMultiValued, refiningOffsets, offset, 
         sizeof(offset_type));
-    incrementOffset(offset);
-  }
-  if(searchableStrings.size() != 0) {
     initializeOffsetArray(searchableStrings, searchableOffsets, offset, 
         sizeof(offset_type));
+
+  //have variable sized
+  if(refiningStrings.size() || searchableStrings.size() ||
+      refiningMultiValued.size()) {
     incrementOffset(offset);
   }
 
