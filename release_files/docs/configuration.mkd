@@ -6,7 +6,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">3. License File</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">4. Hostname & Port</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">5. Data Directory</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">6. Searcher Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">6. Number of Search Threads</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">7. Data Source Information</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">7.1. Data Source Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7.2. Data File</a></br><br>
@@ -107,7 +107,7 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 ```
 It specifies the path of a folder where the engine stores serialized index files. <br>
 
-##6. Number of search threads, Optional:{id="maxSearchThreads"}
+##6. Number of Search Threads, Optional:{id="maxSearchThreads"}
 ```
 <maxSearchThreads>2</maxSearchThreads>
 ```
@@ -560,25 +560,23 @@ It specifies a file of stop words that are ignored by the engine. Providing an e
 
 ##13. Cores, Optional{id="Cores"}
 
-Cores supports the creation of multiple search engines within the same server.  Typically, each engine
-has a different data source.  However, all cores are running within the same server process, so
-multi-core functionality is not a means to improve performance or increase scale.  A query can only
-name a single core, so multiple cores is also not sharding or joining across different data sources.
+The "Cores" tag can be used to support the creation of multiple search engines within the same server.  Typically, each engine
+has a different data source.  All cores run within the same server process.  A query can only
+name a single core.
 
-Cores supports one attribute: defaultCoreName.  When instantiated with multiple cores, queries
-specify the core by name that is to process the query:
+The "Cores" tag supports one attribute: "defaultCoreName".  When instantiated with multiple cores, queries
+specify the core by name that is to process the query.  For instance, the following query:
 ```
 http://localhost:8081/example-core/search/q=term
 ```
 requests that "example-core" process a search request for "term".  In the case when no core is
-specified in a query to a multi-core server, defaultCoreName specifies
-the core to which the query will be sent.
+specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".
 
 ###13.1 Core, Optional{id="Core"}
 
-Each Core tag under Cores specifies a server core to be created.  Each core requires a name attribute
-that sets the name of this core.  This name is used in query URI paths, as well as the aforementioned
-defaultCoreName attribute of Cores.  Nearly all server configuration settings documented above can
-also appear under a Core tag.  The exceptions are licenseFile, listeningHostName, listeningPort,
-maxSearchThreads, Cores, and Core.  Each Core must define all it's own data source and behavioral
-rules, so for example, dataDir and schema are typically defined under each Core.
+Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
+attribute.  This name is used in query URI paths, as well as the aforementioned
+"defaultCoreName" attribute of "Cores".  Nearly all server configuration settings documented above can
+also appear under a "Core" tag.  The exceptions are "licenseFile", "listeningHostName", "listeningPort",
+"maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
+and behavioral rules, so for example, "dataDir" and "schema" are typically defined under each core.
