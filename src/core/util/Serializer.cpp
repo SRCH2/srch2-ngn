@@ -241,7 +241,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 }
 
 //              variableLengthOffsetStart
-//                           ^       ______________
+//                           ^       _____________
 //                           |      |             |
 //   |______________________||____________||______V___________________|
 //     int,date(long),float     offsets       strings/variable length
@@ -258,6 +258,22 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 //
 Serializer::Serializer(srch2::instantsearch::Schema& schema, 
     Alloc& allocator) : allocator(allocator), schema(schema),
+  maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),
+  offsets(initAttributeOffsetArray(schema, maxOffsetOfBuffer,
+        lastOffsetOfWrittenBuffer)),
+  fixedSizedOffset(maxOffsetOfBuffer),
+  variableLengthOffsetStart(lastOffsetOfWrittenBuffer) {
+
+  lastOffsetOfWrittenBuffer = fixedSizedOffset;
+  //rounds default size of the nearest allocation page size
+  maxOffsetOfBuffer = allocator.round(fixedSizedOffset + 
+      DEFAULT_VARIBLE_ATTRIBUTE_LENGTH * (offsets.first.size()));
+  buffer = allocator.allocate(maxOffsetOfBuffer);
+  std::memset(buffer, 0x0, fixedSizedOffset); 
+}
+
+Serializer::Serializer(srch2::instantsearch::Schema& schema) : 
+  allocator(defaultAllocator), schema(schema),
   maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),
   offsets(initAttributeOffsetArray(schema, maxOffsetOfBuffer,
         lastOffsetOfWrittenBuffer)),

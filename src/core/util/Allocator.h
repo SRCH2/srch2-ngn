@@ -115,7 +115,9 @@ SingleBufferAllocator::allocate(size_type n, const_pointer) {
 inline void SingleBufferAllocator::construct(pointer p, const_reference val) {}
 inline void SingleBufferAllocator::destroy(pointer p) {}
 
-inline size_t maxSize() { return  1 << ((sizeof(size_t) == 8) ?  64 : 32); }
+inline size_t maxSize() { 
+  return  ((size_t) 1) << ((sizeof(size_t) == 8) ?  63 : 31); 
+}
 
 inline SingleBufferAllocator::SingleBufferAllocator() 
   : buffer(NULL), powerOfTwoSizeOfBuffer(0) {}
