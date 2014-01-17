@@ -27,7 +27,7 @@ static inline size_t round(size_t input) {
 }
 
 //Used to Allocate memory from the heap in the same way as the standard
-//template libary's allocator; however, it rounds allocation to the nearest
+//template library's allocator; however, it rounds allocation to the nearest
 //power of two greater than it
 struct DefaultBufferAllocator : public std::allocator<char> {
   size_t round(size_t input) {
@@ -95,7 +95,7 @@ SingleBufferAllocator::allocate(size_type n, const_pointer) {
   size_t allocateRound = round(n);
   char allocatePowerOfTwo = (char) __builtin_ffs(allocateRound);
 
-  //must also check buffer in case it was accidently explictedly deleted
+  //must also check buffer in case it was accidently explicitly deleted
   //by user
   if(allocatePowerOfTwo == powerOfTwoSizeOfBuffer && buffer) {
     return buffer;

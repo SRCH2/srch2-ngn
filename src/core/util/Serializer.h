@@ -2,73 +2,75 @@
 #define __SERIALIZER_H__
 
 //
-//  This class is reponsible for create a compact representation of a given set
-//  of inputs, which all adhere to a given schema.
+//  This class creates a compact representation from a given set of inputs,
+//  which all adhere to a given schema.
 //
 //    So let the input Schema be
-//               0 -> refiningInt: "reviews"
-//               1 -> refiningString-Multivalued: "category"
+//               0 -> refiningInt: "numberOfReviews"
+//               1 -> refiningString-Multivalued: "genres"
 //               2 -> refiningFloat: "averageNumberOfStars"
 //               3 -> refiningDate: "lastReviewed"
 //               4 -> refiningString: "city"
 //               0 -> searchableString: "placeName"
 //               1 -> searchableString: "address"
 //               2 -> searchableString: "description
-//               5 -> refiningInt: "events"
+//               5 -> refiningInt: "numberOfEvents"
 //
 //     Class would construct an "imaginary buffer" in the following format
 //
 //         refiningInts refiningDate refingFloats refiningString 
 //         multivalued  searchableString
 //
+//      with each string position storing an additional offset to its
+//      actual position.
 //
 //      so the following example would be
 //
-//         reviews [4 bytes]  events [4 bytes]  lastReviewed [8 bytes] 
-//         averageNumberOfStars [4 bytes]    city [4 bytes]
-//         category [4 bytes]   placeName [4] bytes   address [4 bytes]
-//         descripton [4 bytes]
+//         numberOfReviews [4 bytes]   numberOfEvents [4 bytes] 
+//         lastReviewed [8 bytes]   averageNumberOfStars [4 bytes] 
+//         city [4 bytes]    category [4 bytes]   placeName [4] bytes
+//         address [4 bytes]    description [4 bytes]
 //         
-//       or in by ids :   
+//       or by ids :   
 //                        0 5 3 2 4 1 0 1 2 
 //
 //        and the variable 'offsets' = the following pair
 //
-//                   offsets.first  = [ 28 32 36]  the searchable attributes
-//                   offsets.second = [ 0 24 16 8 20 4]
+//          offsets.first  = [ 28 32 36]  // offset of searchable attributes
+//          offsets.second = [ 0 24 16 8 20 4] //offset of refining attributes
 //
 //
-//         so if the user input the following records
+//         so if the user inputs the following records
 //
-//             { 2343, 20, 12/20/13, 3.44, "Los Angles", "Food", 
+//             { 2343, 20, 12/20/13, 3.44, "Los Angeles", "Food", 
 //               "Diplomate Cafe", , "yum" }
 //
 //
 //          through the following commands: 
-//                  Serializer serializerAttribute(yelpSchema);
+//                  Serializer serializer(yelpSchema);
 //
 //                                                       (epoch value)
-//                  serializer.addRefiningAttribute('3', 1387507479); 
-//                  serializer.addRefiningAttribute('0', 2343); 
-//                  serializer.addRefiningAttribute('1', "Food");
-//                  serializer.addRefiningAttribute('5', 20);
-//                  serializer.addRefiningAttribute('4, "Los Angles");
-//                  serializer.addRefiningAttribute('2',3.44);
-//                  serializer.addSearchableAttribute('0', "Diplomate Cafe");
-//                  serializer.addSearchableAttribute('2', "yum");
+//                  serializer.addRefiningAttribute(3, 1387507479); 
+//                  serializer.addRefiningAttribute(0, 2343); 
+//                  serializer.addRefiningAttribute(1,"Food");
+//                  serializer.addRefiningAttribute(5, 20);
+//                  serializer.addRefiningAttribute(4 "Los Angeles");
+//                  serializer.addRefiningAttribute(2, 3.44);
+//                  serializer.addSearchableAttribute(0, "Diplomate Cafe");
+//                  serializer.addSearchableAttribute(2, "yum");
 //
 //
-//        Then the .serialize() method will return a [temporary] buffer
+//        Then the .serialize() method will return a temporary buffer
 //
-//  offset1 records  events   last    rating  city  cat'g name addr desc end
-//     [     2343     20   1387507479  3.44    40    50    54   68   68   71 
+//  offset1 reviews  events   last    rating  city  cat'g name addr desc end
+//     [     2343     20   1387507479  3.44    40    51    55   69   69   72 
 //
-//                  offset40    offset50   offset54      offset68  offset71
+//                  offset40    offset51   offset55      offset69  offset72
 //                Los Angles      Food   Diplomate Cafe   yum         ]  
 //
 //
 //     * Remember to call nextRecord to serialize the next record this will
-//       destroy the current buffer though
+//       destroy the current buffer 
 
 #include "Allocator.h"
 #include "instantsearch/Schema.h"

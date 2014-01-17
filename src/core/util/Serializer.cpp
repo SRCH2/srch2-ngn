@@ -101,7 +101,7 @@ void Serializer::add<std::string>(
 
     //write out offset
     add(offset, offsetToWriteStringAt);
-    //explicted cast needed since attribute.length() is size_t which can
+    //explicit cast needed since attribute.length() is size_t which can
     //be unsigned long
     add(nextOffset(offset), 
         (offset_type) (offsetToWriteStringAt + attribute.length()));
@@ -252,7 +252,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 //                                 fixedSizedOffset
 //
 // offsets() creates a pair of arrays with offset at each index to its 
-// asscociated Attribute's offset in the returned serialized buffer
+// associated Attribute's offset in the returned serialized buffer
 //   It uses maxOffsetBuffer and lastOffsetOfWrittenBuffer as temporary
 //   holders to fill in the const members: fixedSizedOffset,
 //   variableLengthOffsetStart
