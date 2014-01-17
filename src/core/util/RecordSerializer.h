@@ -48,7 +48,7 @@
 //
 //
 //          through the following commands: 
-//                  Serializer serializer(yelpSchema);
+//                  RecordSerializer serializer(yelpSchema);
 //
 //                                                       (epoch value)
 //                  serializer.addRefiningAttribute(3, 1387507479); 
@@ -83,13 +83,16 @@ using namespace srch2::instantsearch;
 
 #include "Assert.h"
 
+namespace srch2 {
+namespace util {
+
 typedef unsigned offset_type;
 
 enum variable_length_types {
   VARIABLE_LENGTH_TYPE_STRING 
 };
 
-class Serializer {
+class RecordSerializer {
  public:
   typedef SingleBufferAllocator Alloc;
  private:
@@ -117,8 +120,8 @@ class Serializer {
 
  public:
 
-  Serializer(srch2::instantsearch::Schema&, Alloc&);
-  Serializer(srch2::instantsearch::Schema&);
+  RecordSerializer(srch2::instantsearch::Schema&, Alloc&);
+  RecordSerializer(srch2::instantsearch::Schema&);
 
   template<typename T>
   void addRefiningAttribute(const int, const T&);
@@ -132,26 +135,26 @@ class Serializer {
   void* serialize();
 
   //Cleans up after previous serialize call
-  Serializer& nextRecord();
+  RecordSerializer& nextRecord();
 };
 
 template <> void
-Serializer::add<std::string>(const offset_type, const std::string&);
+RecordSerializer::add<std::string>(const offset_type, const std::string&);
 
-inline
-offset_type Serializer::getSearchableOffset(const unsigned searchableId) {
+inline offset_type 
+RecordSerializer::getSearchableOffset(const unsigned searchableId) {
   ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   return offsets.first.at(searchableId);
 }
 
 inline
-offset_type Serializer::getRefiningOffset(const unsigned refiningId) {
+offset_type RecordSerializer::getRefiningOffset(const unsigned refiningId) {
   ASSERT(0 <= refiningId && refiningId < offsets.second.size());
   return offsets.second.at(refiningId);
 }
 
 template<typename T> inline
-void Serializer::addRefiningAttribute(const int refiningId, 
+void RecordSerializer::addRefiningAttribute(const int refiningId, 
     const T& attribute) {
   ASSERT(0 <= refiningId && refiningId < offsets.second.size());
 
@@ -159,7 +162,7 @@ void Serializer::addRefiningAttribute(const int refiningId,
 }
 
 template<typename T> inline
-void Serializer::addSearchableAttribute(const int searchableId,
+void RecordSerializer::addSearchableAttribute(const int searchableId,
     const T& attribute) {
   ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   
@@ -167,8 +170,10 @@ void Serializer::addSearchableAttribute(const int searchableId,
 }
 
 template<typename T> inline
-void Serializer::add(const unsigned offset, const T& attribute) {
+void RecordSerializer::add(const unsigned offset, const T& attribute) {
   *((T*) (buffer + offset)) = attribute;
 }
 
+}
+}
 #endif

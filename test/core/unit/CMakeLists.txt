@@ -113,9 +113,9 @@ ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
-ADD_EXECUTABLE(Serializer_Test Serializer_Test.cpp)
-TARGET_LINK_LIBRARIES(Serializer_Test  ${UNIT_TEST_LIBS})  
-LIST(APPEND UNIT_TESTS Serializer_Test)
+ADD_EXECUTABLE(RecordSerializer_Test RecordSerializer_Test.cpp)
+TARGET_LINK_LIBRARIES(RecordSerializer_Test  ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RecordSerializer_Test)
 
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )

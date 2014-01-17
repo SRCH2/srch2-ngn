@@ -1,11 +1,13 @@
 #include "instantsearch/Schema.h"
 #include "instantsearch/Constants.h"
-#include "util/Serializer.h"
+#include "util/RecordSerializer.h"
 #include <cstdio>
 #include <cstring>
 #include <cassert>
 
 typedef SingleBufferAllocator Alloc;
+
+using namespace srch2::util;
 
 void compare(char const *expected, char const *actual, size_t num) {
   assert(!memcmp(expected, actual, num));
@@ -22,7 +24,7 @@ void testSingleString(Alloc &alloc) {
 
   int nameID = schema->setSearchableAttribute("name");
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
 
   s.addSearchableAttribute(nameID, std::string("apple"));
 
@@ -45,7 +47,7 @@ void testMultipleStrings(Alloc& alloc) {
   int nameID = schema->setSearchableAttribute("name");
   int addressID = schema->setSearchableAttribute("address");
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
 
   s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
@@ -69,7 +71,7 @@ void testMultipleStringsOutOfOrder(Alloc& alloc) {
   int addressID = schema->setSearchableAttribute("address");
   int nameID = schema->setSearchableAttribute("name");
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
 
   s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
@@ -94,7 +96,7 @@ void testIntAndString(Alloc& alloc) {
     schema->setRefiningAttribute("address", 
         srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
 
   s.addRefiningAttribute(addressID, 20);
   s.addSearchableAttribute(nameID, std::string("happy"));
@@ -113,7 +115,7 @@ void testReuseBuffer(Alloc& alloc) {
     schema->setRefiningAttribute("address", 
         srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
   
   for(int i=0; i < 5; ++i) {
     s.nextRecord().addRefiningAttribute(addressID, 20);
@@ -154,7 +156,7 @@ void testIntAndStringOutOfOrder(Alloc& alloc) {
     schema->setRefiningAttribute("int4", 
         srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, std::string("0"));
 
-  Serializer s(*schema, alloc);
+  RecordSerializer s(*schema, alloc);
   
   for(int i=0; i < 5; ++i) {
     s.nextRecord().addSearchableAttribute(str3ID, std::string("python"));
@@ -181,7 +183,7 @@ void testLongSerialization(Alloc& alloc) {
     schema->setRefiningAttribute("long1", 
         srch2::instantsearch::ATTRIBUTE_TYPE_TIME, std::string("0"));
 
-  Serializer s(*schema);
+  RecordSerializer s(*schema);
 
   s.addRefiningAttribute(long1ID, (unsigned long) 2);
 
@@ -208,7 +210,7 @@ int main(int argc, char *argv[]) {
 
     testStringSerialization(alloc);
 
-    printf("Serializer unit tests: Passed\n");
+    printf("RecordSerializer unit tests: Passed\n");
 
     return 0;
 }

@@ -1,7 +1,9 @@
-#include "Serializer.h"
+#include "RecordSerializer.h"
 #include "Assert.h"
 #include <cstring>
 #include "instantsearch/Constants.h"
+
+using namespace srch2::util;
 
 inline offset_type nextOffset(const offset_type& offset, int amount) {
   return offset + sizeof(offset_type) * amount;
@@ -18,7 +20,7 @@ inline offset_type  incrementOffset(offset_type& offset) {
   return incrementOffset(offset, 1);
 }
 
-void Serializer::expandBuffer(size_t needAddition) {
+void RecordSerializer::expandBuffer(size_t needAddition) {
   //rounds default size of the nearest allocation page size
   size_t newBufferSize = allocator.round(maxOffsetOfBuffer +  needAddition);
   char* oldBuffer = buffer;
@@ -35,7 +37,7 @@ inline offset_type dereferenceOffset(char *buffer, offset_type offset) {
   return *((offset_type*) (buffer + offset));
 }
 
-bool Serializer::repositionBuffer(offset_type bufferOffset,
+bool RecordSerializer::repositionBuffer(offset_type bufferOffset,
     offset_type offsetToWriteAt, offset_type length) {
   if(lastOffsetOfWrittenBuffer + length > maxOffsetOfBuffer) {
     return true;
@@ -60,7 +62,7 @@ bool Serializer::repositionBuffer(offset_type bufferOffset,
 }
 
 inline offset_type
-Serializer::calculateVariableLengthOffset(variable_length_types, 
+RecordSerializer::calculateVariableLengthOffset(variable_length_types, 
     offset_type offset) {
   //find out if we have written buffer out of place, by seeing if
   //a later element is already written
@@ -74,7 +76,7 @@ Serializer::calculateVariableLengthOffset(variable_length_types,
 }
 
 template<>
-void Serializer::add<std::string>(
+void RecordSerializer::add<std::string>(
     const offset_type offset, const std::string& attribute) {
   offset_type offsetToWriteStringAt;
   //writes out length
@@ -114,13 +116,13 @@ void Serializer::add<std::string>(
   }
 }
 
-void* Serializer::serialize() {
+void* RecordSerializer::serialize() {
   char* rtn = buffer;
   buffer = allocator.allocate(maxOffsetOfBuffer);
   return rtn;
 }
 
-Serializer& Serializer::nextRecord() {
+RecordSerializer& RecordSerializer::nextRecord() {
   std::memset(buffer, 0x0, fixedSizedOffset); 
   lastOffsetOfWrittenBuffer = fixedSizedOffset;
   return *this;
@@ -256,7 +258,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 //   holders to fill in the const members: fixedSizedOffset,
 //   variableLengthOffsetStart
 //
-Serializer::Serializer(srch2::instantsearch::Schema& schema, 
+RecordSerializer::RecordSerializer(srch2::instantsearch::Schema& schema, 
     Alloc& allocator) : allocator(allocator), schema(schema),
   maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),
   offsets(initAttributeOffsetArray(schema, maxOffsetOfBuffer,
@@ -272,7 +274,7 @@ Serializer::Serializer(srch2::instantsearch::Schema& schema,
   std::memset(buffer, 0x0, fixedSizedOffset); 
 }
 
-Serializer::Serializer(srch2::instantsearch::Schema& schema) : 
+RecordSerializer::RecordSerializer(srch2::instantsearch::Schema& schema) : 
   allocator(defaultAllocator), schema(schema),
   maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),
   offsets(initAttributeOffsetArray(schema, maxOffsetOfBuffer,
