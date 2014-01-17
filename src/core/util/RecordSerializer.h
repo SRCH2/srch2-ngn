@@ -92,6 +92,13 @@ enum variable_length_types {
   VARIABLE_LENGTH_TYPE_STRING 
 };
 
+struct RecordSerializerBuffer {
+  const void* start;
+  const size_t length;
+
+  RecordSerializerBuffer(void* start, size_t length);
+};
+
 class RecordSerializer {
  public:
   typedef SingleBufferAllocator Alloc;
@@ -132,12 +139,13 @@ class RecordSerializer {
   offset_type getSearchableOffset(const unsigned);
   offset_type getRefiningOffset(const unsigned);
 
-  void* serialize();
-  size_t length();
+  RecordSerializerBuffer serialize();
 
   //Cleans up after previous serialize call
   RecordSerializer& nextRecord();
 };
+inline RecordSerializerBuffer::RecordSerializerBuffer(void* start,
+    size_t length) : start(start), length(length) {}
 
 template <> void
 RecordSerializer::add<std::string>(const offset_type, const std::string&);
@@ -174,8 +182,6 @@ template<typename T> inline
 void RecordSerializer::add(const unsigned offset, const T& attribute) {
   *((T*) (buffer + offset)) = attribute;
 }
-
-inline size_t length() { return lastOffsetOfWrittenBuffer;}
 
 }
 }

@@ -28,7 +28,7 @@ void testSingleString(Alloc &alloc) {
 
   s.addSearchableAttribute(nameID, std::string("apple"));
 
-  char *buffer = (char*) s.serialize();
+  char *buffer = (char*) s.serialize().start;
 
   compare(testSingleStringExpected, buffer, 13);
 }
@@ -52,7 +52,7 @@ void testMultipleStrings(Alloc& alloc) {
   s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
 
-  char *buffer = (char*) s.serialize();
+  char *buffer = (char*) s.serialize().start;;
 
   compare(testMultipleStringsExpected, buffer, 20);
 }
@@ -76,7 +76,7 @@ void testMultipleStringsOutOfOrder(Alloc& alloc) {
   s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
 
-  char *buffer = (char*) s.serialize();
+  char *buffer = (char*) s.serialize().start;;
 
   compare(testMultipleStringsOutofOrderExpected, buffer, 20);
 }
@@ -101,7 +101,7 @@ void testIntAndString(Alloc& alloc) {
   s.addRefiningAttribute(addressID, 20);
   s.addSearchableAttribute(nameID, std::string("happy"));
 
-  char *buffer = (char*) s.serialize();
+  char *buffer = (char*) s.serialize().start;;
 
   compare(testIntAndStringExpected, buffer, 20);
 }
@@ -121,7 +121,7 @@ void testReuseBuffer(Alloc& alloc) {
     s.nextRecord().addRefiningAttribute(addressID, 20);
     s.addSearchableAttribute(nameID, std::string("happy"));
     
-    char *buffer = (char*) s.serialize();
+    char *buffer = (char*) s.serialize().start;;
     compare(testIntAndStringExpected, buffer, 20);
   }
 }
@@ -166,7 +166,7 @@ void testIntAndStringOutOfOrder(Alloc& alloc) {
     s.addSearchableAttribute(str2ID, std::string("open"));
     s.addRefiningAttribute(str4ID, std::string("refining"));
 
-    char *buffer = (char*) s.serialize();
+    char *buffer = (char*) s.serialize().start;;
     compare(testIntAndStringOutOfOrderExpected, buffer, 39);
   }
 }
@@ -187,7 +187,7 @@ void testLongSerialization(Alloc& alloc) {
 
   s.addRefiningAttribute(long1ID, (unsigned long) 2);
 
-  char *buffer = (char*) s.serialize();
+  char *buffer = (char*) s.serialize().start;;
   compare(testLongSerializationExpected, buffer, 8);
 }
 
