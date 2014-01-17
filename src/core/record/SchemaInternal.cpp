@@ -132,6 +132,7 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
     if (iter != this->searchableAttributeNameToId.end()) {
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
         this->searchableAttributeIsMultiValuedVector[iter->second] = isMultiValued;
+        return iter->second;
     } else {
         int searchAttributeMapSize = this->searchableAttributeNameToId.size();
         this->searchableAttributeNameToId[attributeName] =
@@ -152,6 +153,7 @@ int SchemaInternal::setRefiningAttribute(const std::string &attributeName,
                 defaultValue;
         this->refiningAttributeTypeVector[iter->second] = type;
         this->refiningAttributeIsMultiValuedVector[iter->second] = isMultiValued;
+        return iter->second;
     } else {
         unsigned sizeNonSearchable = this->refiningAttributeNameToId.size();
         this->refiningAttributeNameToId[attributeName] = sizeNonSearchable;

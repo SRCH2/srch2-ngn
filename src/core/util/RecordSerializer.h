@@ -133,6 +133,7 @@ class RecordSerializer {
   offset_type getRefiningOffset(const unsigned);
 
   void* serialize();
+  size_t length();
 
   //Cleans up after previous serialize call
   RecordSerializer& nextRecord();
@@ -173,6 +174,8 @@ template<typename T> inline
 void RecordSerializer::add(const unsigned offset, const T& attribute) {
   *((T*) (buffer + offset)) = attribute;
 }
+
+inline size_t length() { return lastOffsetOfWrittenBuffer;}
 
 }
 }
