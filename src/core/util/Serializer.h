@@ -28,16 +28,17 @@
 //
 //         numberOfReviews [4 bytes]   numberOfEvents [4 bytes] 
 //         lastReviewed [8 bytes]   averageNumberOfStars [4 bytes] 
-//         city [4 bytes]    category [4 bytes]   placeName [4] bytes
-//         address [4 bytes]    description [4 bytes]
+//         city offset [4 bytes]    category offset [4 bytes]
+//         placeName offset [4] bytes   address offset [4 bytes]
+//         description offset [4 bytes]
 //         
 //       or by ids :   
 //                        0 5 3 2 4 1 0 1 2 
 //
 //        and the variable 'offsets' = the following pair
 //
-//          offsets.first  = [ 28 32 36]  // offset of searchable attributes
-//          offsets.second = [ 0 24 16 8 20 4] //offset of refining attributes
+//          offsets.first  = [ 28 32 36]  // offsets of searchable attributes
+//          offsets.second = [ 0 24 16 8 20 4] //offsets of refining attributes
 //
 //
 //         so if the user inputs the following records

@@ -21,14 +21,13 @@ inline offset_type  incrementOffset(offset_type& offset) {
 void Serializer::expandBuffer(size_t needAddition) {
   //rounds default size of the nearest allocation page size
   size_t newBufferSize = allocator.round(maxOffsetOfBuffer +  needAddition);
-  char* newBuffer = allocator.allocate(newBufferSize);
+  char* oldBuffer = buffer;
+  char* buffer = allocator.allocate(newBufferSize);
 
-  std::memcpy(buffer, newBuffer, maxOffsetOfBuffer);
-
-  allocator.deallocate(buffer, maxOffsetOfBuffer);
-  allocator.destroy(buffer); 
+  std::memcpy(buffer, oldBuffer, maxOffsetOfBuffer);
   
-  buffer = newBuffer;
+  allocator.deallocate(oldBuffer, maxOffsetOfBuffer);
+  
   maxOffsetOfBuffer = newBufferSize;
 }
 
