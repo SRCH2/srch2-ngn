@@ -101,7 +101,7 @@ void Serializer::add<std::string>(
 
     //write out offset
     add(offset, offsetToWriteStringAt);
-    //explicted cast needed since attribute.length return size_t which can
+    //explicted cast needed since attribute.length() is size_t which can
     //be unsigned long
     add(nextOffset(offset), 
         (offset_type) (offsetToWriteStringAt + attribute.length()));
@@ -118,9 +118,13 @@ void Serializer::add<std::string>(
 void* Serializer::serialize() {
   char* rtn = buffer;
   buffer = allocator.allocate(maxOffsetOfBuffer);
+  return rtn;
+}
+
+Serializer& Serializer::nextRecord() {
   std::memset(buffer, 0x0, fixedSizedOffset); 
   lastOffsetOfWrittenBuffer = fixedSizedOffset;
-  return rtn;
+  return *this;
 }
 
 inline
@@ -237,6 +241,22 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
       refiningOffsets);
 }
 
+//              variableLengthOffsetStart
+//                           ^        ______________
+//                           |      |             |
+//   |______________________||____________||______V___________________|
+//     int,date(long),float     offsets       strings/variable length
+//   |____________________________________|
+//                Fixed Length            |
+//                                        V
+//                                 fixedSizedOffset
+//
+// offsets() creates a pair of arrays with offset at each index to its 
+// asscociated Attribute's offset in the returned serialized buffer
+//   It uses maxOffsetBuffer and lastOffsetOfWrittenBuffer as temporary
+//   holders to fill in the const members: fixedSizedOffset,
+//   variableLengthOffsetStart
+//
 Serializer::Serializer(srch2::instantsearch::Schema& schema, 
     Alloc& allocator) : allocator(allocator), schema(schema),
   maxOffsetOfBuffer(0), lastOffsetOfWrittenBuffer(0),

@@ -7,6 +7,10 @@
 
 #define DEFAULT_VARIBLE_ATTRIBUTE_LENGTH 64
 
+using namespace srch2::instantsearch;
+
+#include "Assert.h"
+
 typedef unsigned offset_type;
 
 enum variable_length_types {
@@ -52,6 +56,9 @@ class Serializer {
   offset_type getRefiningOffset(const unsigned);
 
   void* serialize();
+
+  //Cleans up after previous serialize call
+  Serializer& nextRecord();
 };
 
 template <> void
@@ -59,18 +66,20 @@ Serializer::add<std::string>(const offset_type, const std::string&);
 
 inline
 offset_type Serializer::getSearchableOffset(const unsigned searchableId) {
+  ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   return offsets.first.at(searchableId);
 }
 
 inline
 offset_type Serializer::getRefiningOffset(const unsigned refiningId) {
+  ASSERT(0 <= refiningId && refiningId < offsets.second.size());
   return offsets.second.at(refiningId);
 }
 
 template<typename T> inline
 void Serializer::addRefiningAttribute(const int refiningId, 
     const T& attribute) {
- // ASSERT(0 < refiningID && refiningID < offsets.second.size());
+  ASSERT(0 <= refiningId && refiningId < offsets.second.size());
 
   add(offsets.second.at(refiningId), attribute);
 }
@@ -78,7 +87,7 @@ void Serializer::addRefiningAttribute(const int refiningId,
 template<typename T> inline
 void Serializer::addSearchableAttribute(const int searchableId,
     const T& attribute) {
- // ASSERT(0 < refiningID && refiningID < offsets.first.size());
+  ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   
   add(offsets.first.at(searchableId), attribute);
 }

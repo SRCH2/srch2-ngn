@@ -5,30 +5,38 @@
 #include <cstddef>
 #include <climits>
 
-#define IS_64_BIT ((sizeof(int) == 8) ? 1 : 0)
-
+// ceilings input to the closest power of two greater, unless it is smaller an
+// 64 is which case it returns 256
 static inline size_t round(size_t input) {
+#ifdef __GNUC__
     if(input == 0) return 1;
-    int allocSize = 1 << (((IS_64_BIT) ? 64 : 32) - __builtin_clz(input));
+    int allocSize = 
+      1 << (((sizeof(int) == 8) ? 64 : 32) - __builtin_clz(input));
     return (allocSize == 0) ? UINT_MAX : (allocSize < 64) ? 256 : allocSize;
-  /* else if not GCC
+#else
      input--;
-     input |= v >> 1;
-     input |= v >> 2;
-     input |= v >> 4;
-     input |= v >> 8;
-     input |= v >> 16;
+     input |= input >> 1;
+     input |= input >> 2;
+     input |= input >> 4;
+     input |= input >> 8;
+     input |= input >> 16;
      if(64 bit) input >> 32;
      input++;
-   */
-  }
+     return (input == 0) ? UINT_MAX : (input < 64) ? 256 : input;
+#endif
+}
 
+//Used to Allocate memory from the heap in the same way as the standard
+//template libary's allocator; however, it rounds allocation to the nearest
+//power of two greater than it
 struct DefaultBufferAllocator : public std::allocator<char> {
   size_t round(size_t input) {
     return ::round(input);
   }
 };
 
+// Reuses the same piece of memory over and over again. The size of this 
+// memory piece is at least the size of the largest allocated unit
 struct SingleBufferAllocator {
   typedef char value_type;
   typedef char* pointer;
@@ -69,26 +77,41 @@ SingleBufferAllocator::address(const_reference x) {
   return &x;
 }
 
+inline void SingleBufferAllocator::deallocate(pointer p, size_type) {
+  //Can not deallocate part of current buffer or an empty pointer
+  if(!p || p == buffer || 
+      (p > buffer && p < buffer + (1 << powerOfTwoSizeOfBuffer)))  {
+      return;
+  }
+
+  delete [] p;
+
+  //null pointer for safety: Dangling Pointers :(
+  buffer = NULL;
+}
+
 inline SingleBufferAllocator::pointer 
 SingleBufferAllocator::allocate(size_type n, const_pointer) {
   size_t allocateRound = round(n);
   char allocatePowerOfTwo = (char) __builtin_ffs(allocateRound);
 
-  if(allocatePowerOfTwo == powerOfTwoSizeOfBuffer) {
+  //must also check buffer in case it was accidently explictedly deleted
+  //by user
+  if(allocatePowerOfTwo == powerOfTwoSizeOfBuffer && buffer) {
     return buffer;
   }
-
+  
+  char *oldBuffer = buffer;
   buffer = new char[allocateRound];
-  allocatePowerOfTwo = powerOfTwoSizeOfBuffer;
+
+  //deallocate the oldBuffer to prevent leaks
+  if(oldBuffer) delete [] oldBuffer;
+
+  powerOfTwoSizeOfBuffer = allocatePowerOfTwo;
 
   return buffer;
 }
-inline void SingleBufferAllocator::deallocate(pointer p, size_type) {
-  if(p == buffer) return;
 
-  delete [] buffer;
-
-}
 inline void SingleBufferAllocator::construct(pointer p, const_reference val) {}
 inline void SingleBufferAllocator::destroy(pointer p) {}
 
@@ -96,6 +119,7 @@ inline size_t maxSize() { return ((size_t) 1) << 63; }
 
 inline SingleBufferAllocator::SingleBufferAllocator() 
   : buffer(NULL), powerOfTwoSizeOfBuffer(0) {}
+
 inline SingleBufferAllocator::~SingleBufferAllocator() {
   if(buffer) {
     delete [] buffer;

@@ -20,11 +20,11 @@ void testSingleString(Alloc &alloc) {
   srch2::instantsearch::Schema *schema = 
     srch2::instantsearch::Schema::create(srch2::instantsearch::DefaultIndex);
 
-  int NameID = schema->setSearchableAttribute("name");
+  int nameID = schema->setSearchableAttribute("name");
 
   Serializer s(*schema, alloc);
 
-  s.addSearchableAttribute(NameID, std::string("apple"));
+  s.addSearchableAttribute(nameID, std::string("apple"));
 
   char *buffer = (char*) s.serialize();
 
@@ -42,12 +42,12 @@ void testMultipleStrings(Alloc& alloc) {
   srch2::instantsearch::Schema *schema = 
     srch2::instantsearch::Schema::create(srch2::instantsearch::DefaultIndex);
 
-  int NameID = schema->setSearchableAttribute("name");
+  int nameID = schema->setSearchableAttribute("name");
   int addressID = schema->setSearchableAttribute("address");
 
   Serializer s(*schema, alloc);
 
-  s.addSearchableAttribute(NameID, std::string("apple"));
+  s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
 
   char *buffer = (char*) s.serialize();
@@ -67,11 +67,11 @@ void testMultipleStringsOutOfOrder(Alloc& alloc) {
     srch2::instantsearch::Schema::create(srch2::instantsearch::DefaultIndex);
 
   int addressID = schema->setSearchableAttribute("address");
-  int NameID = schema->setSearchableAttribute("name");
+  int nameID = schema->setSearchableAttribute("name");
 
   Serializer s(*schema, alloc);
 
-  s.addSearchableAttribute(NameID, std::string("apple"));
+  s.addSearchableAttribute(nameID, std::string("apple"));
   s.addSearchableAttribute(addressID, std::string("c +"));
 
   char *buffer = (char*) s.serialize();
@@ -116,7 +116,7 @@ void testReuseBuffer(Alloc& alloc) {
   Serializer s(*schema, alloc);
   
   for(int i=0; i < 5; ++i) {
-    s.addRefiningAttribute(addressID, 20);
+    s.nextRecord().addRefiningAttribute(addressID, 20);
     s.addSearchableAttribute(nameID, std::string("happy"));
     
     char *buffer = (char*) s.serialize();
@@ -157,7 +157,7 @@ void testIntAndStringOutOfOrder(Alloc& alloc) {
   Serializer s(*schema, alloc);
   
   for(int i=0; i < 5; ++i) {
-    s.addSearchableAttribute(str3ID, std::string("python"));
+    s.nextRecord().addSearchableAttribute(str3ID, std::string("python"));
     s.addRefiningAttribute(int2ID, 512);
     s.addSearchableAttribute(str1ID, std::string("attic"));
     s.addRefiningAttribute(int1ID, 98543423);
