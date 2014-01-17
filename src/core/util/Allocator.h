@@ -11,7 +11,7 @@ static inline size_t round(size_t input) {
 #ifdef __GNUC__
     if(input == 0) return 1;
     int allocSize = 
-      1 << (((sizeof(int) == 8) ? 64 : 32) - __builtin_clz(input));
+      1 << (((sizeof(size_t) == 8) ? 64 : 32) - __builtin_clz(input));
     return (allocSize == 0) ? UINT_MAX : (allocSize < 64) ? 256 : allocSize;
 #else
      input--;
@@ -115,7 +115,7 @@ SingleBufferAllocator::allocate(size_type n, const_pointer) {
 inline void SingleBufferAllocator::construct(pointer p, const_reference val) {}
 inline void SingleBufferAllocator::destroy(pointer p) {}
 
-inline size_t maxSize() { return ((size_t) 1) << 63; }
+inline size_t maxSize() { return  1 << ((sizeof(size_t) == 8) ?  64 : 32); }
 
 inline SingleBufferAllocator::SingleBufferAllocator() 
   : buffer(NULL), powerOfTwoSizeOfBuffer(0) {}

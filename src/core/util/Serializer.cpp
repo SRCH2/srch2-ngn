@@ -230,7 +230,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
     initializeOffsetArray(searchableStrings, searchableOffsets, offset, 
         sizeof(offset_type));
 
-  //have variable sized
+  //have variable sized Attributes
   if(refiningStrings.size() || searchableStrings.size() ||
       refiningMultiValued.size()) {
     incrementOffset(offset);
@@ -242,7 +242,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 }
 
 //              variableLengthOffsetStart
-//                           ^        ______________
+//                           ^       ______________
 //                           |      |             |
 //   |______________________||____________||______V___________________|
 //     int,date(long),float     offsets       strings/variable length
