@@ -278,7 +278,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 
 		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
-			continue;
+			continue; // because for some operators like facet, it needs us to call getNext until the end
 		}
 
 		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();

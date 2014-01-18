@@ -2,34 +2,33 @@
 
 #include "KeywordSearchOperator.h"
 #include "../QueryEvaluatorInternal.h"
+//#include <gperftools/profiler.h>
 
 namespace srch2 {
 namespace instantsearch {
 
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & p){
+
+
+
 	//1. Find the right value for K (if search type is topK)
 	bool isFuzzy = logicalPlan->isFuzzy();
+
 	// we set fuzzy to false to the first session which is exact
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
-
-	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
-	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 7 ; fuzzyPolicyIter++ ){
+	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
-//		struct timespec tstart,tend;
-//		clock_gettime(CLOCK_REALTIME, &tstart);
 		/*
 		 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
 		 * ---- 1.1. computes and attaches active node sets for each term
 		 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 		 * ---- 1.3. ...
 		 */
-		struct timespec tend, tstart;
-		clock_gettime(CLOCK_REALTIME, &tstart);
 		HistogramManager histogramManager(queryEvaluator);
 		histogramManager.annotate(logicalPlan);
 		/*
@@ -41,12 +40,11 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		 */
 		QueryOptimizer queryOptimizer(queryEvaluator);
 		PhysicalPlan physicalPlan(queryEvaluator);
-		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,fuzzyPolicyIter);
+		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
 
-//	    clock_gettime(CLOCK_REALTIME, &tend);
-//	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
-//	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-////	    cout << "Time of building and optimizing the plan : " << ts2 << endl;
+		if(physicalPlan.getPlanTree() == NULL){
+			return true;
+		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
@@ -70,6 +68,9 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			}
 		}
 		params.k = numberOfIterations;
+
+
+
 		//1. Open the physical plan by opening the root
 		physicalPlan.getPlanTree()->open(queryEvaluator , params);
 		//2. call getNext for K times
@@ -79,11 +80,14 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 				break;
 			}
 			// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-//			if(fuzzyPolicyIter > 0){
-//				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-//					continue;
-//				}
-//			}
+			if(fuzzyPolicyIter > 0){
+				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+					continue;
+				}
+			}
+			if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+				continue;
+			}
 			//
 			resultIds.push_back(newRecord->getRecordId());
 			results.push_back(newRecord);
@@ -92,22 +96,17 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 		physicalPlan.getPlanTree()->close(params);
 
-	    clock_gettime(CLOCK_REALTIME, &tend);
-	    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
-	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	    cout << "Time : " << ts2 << "\t" << endl;
 
-//		if(isFuzzy == false || results.size() >= numberOfIterations){
-//			break;
-//		}else{
-//			logicalPlan->setFuzzy(true);
-//			params.isFuzzy = true;
-//		}
+	    if(fuzzyPolicyIter == 0){
+	    	if(isFuzzy == true && results.size() < numberOfIterations){
+	    		logicalPlan->setFuzzy(true);
+	    		params.isFuzzy = true;
+	    	}else{
+	    		break;
+	    	}
+	    }
+
 	}
-
-//	cout << endl;
-
-
 	cursorOnResults = 0;
 	return true;
 }

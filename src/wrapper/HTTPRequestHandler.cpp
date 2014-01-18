@@ -894,7 +894,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     // start the timer for search
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
-
     const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
 
     ParsedParameterContainer paramContainer;
@@ -902,9 +901,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    cout << "-------------------------------------------------------" << endl;
-    cout << "Query : " ;
-    cout << req->uri << endl ;
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);
@@ -915,20 +911,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 paramContainer.getMessageString(), headers);
         return;
     }
-
-//    if(paramContainer.parseTreeRoot->checkValiditiyOfPointers() == false){
-//    	cout << "Pointers are not valid." << endl;
-//    }
-//    paramContainer.parseTreeRoot->print();
-//
-//    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
-//	ParseTreeNode * leafNode;
-//	ParseTreeLeadNodeIterator termIterator(paramContainer.parseTreeRoot);
-//	while(termIterator.hasMore()){
-//		leafNode = termIterator.getNext();
-//		leafNode->temporaryTerm->print();
-//	}
-//	return;
 
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
@@ -968,7 +950,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     //5. call the print function to print out the results
-    // TODO : re-implement a print function which print the results in JSON format.
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         finalResults->printStats();
@@ -1016,6 +997,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     default:
         break;
     }
+
+
 
     // 6. delete allocated structures
     // Free the objects

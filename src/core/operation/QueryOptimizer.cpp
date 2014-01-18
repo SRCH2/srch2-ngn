@@ -21,12 +21,16 @@ QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator){
  *           and makes sure inputs and outputs of operators are consistent.
  * ---- 2. Applies optimization rules on the physical plan
  */
-void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan, unsigned planToChoose){
+void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan){
 
 	this->logicalPlan = logicalPlan;
 
 	// Build physical plan
-	buildPhysicalPlanFirstVersion(physicalPlan, planToChoose);
+	buildPhysicalPlanFirstVersion(physicalPlan);
+
+	if(physicalPlan.getPlanTree() == NULL){
+		return;
+	}
 
 	// apply optimization rules
 	applyOptimizationRulesOnThePlan(physicalPlan);
@@ -38,7 +42,7 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,Lo
  * This function maps LogicalPlan nodes to Physical nodes and builds a very first
  * version of the PhysicalPlan. This plan will optimizer in next steps.
  */
-void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, unsigned planToChoose){
+void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 
 	//1. Choose the search type based on user's request and post processing
 	chooseSearchTypeOfPhysicalPlan(physicalPlan);
@@ -54,7 +58,12 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, 
 	buildIncompleteTreeOptions(treeOptions);
 
 	//4. Find the option which has the minimum cost
-	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan, planToChoose);
+	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan);
+
+	if(chosenTree == NULL){
+		physicalPlan.setPlanTree(NULL);
+		return;
+	}
 
 	// 5. Build the complete version of physical plan tree from the chosen tree structure
 	// --- and set in the plan object
@@ -343,72 +352,48 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 	}
 }
 
-PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan, unsigned planToChoose){
+PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
 
-	if(planToChoose < 6){
-		cout << "Choosing the " << planToChoose << " plan manually." << endl;
-		minPlan = treeOptions.at(planToChoose);
-		cout << "Chosen plan : "  << endl;
-		minPlan->printSubTree();
-		cout << "========================================================" << endl;
-		return minPlan;
+	if(treeOptions.size() == 1){
+		return treeOptions.at(0);
 	}
 
-	cout << "Total number of potential plans (running cost based optimizer) : " << treeOptions.size() << endl;
-	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
+	unsigned treeOptionIndexChosen = 0 ;
+	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size() ; treeOptionIndex++){
+		PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
 		PhysicalPlanCost cost;
 		unsigned numberOfGetNextCalls = 0;
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
 			numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;
-			if((*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
-				numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+			if(treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
+				numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 			}
 		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
-			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+			numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 		}
 
-//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
-//			continue;
-//		}
-
-//		cout << "========================================================" << endl;
-//		cout << "Number of getNextCalls : " << numberOfGetNextCalls;
-		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
-//		cout << "Cost of open : " << cost.cost << endl;
+		cost = cost + treeOption->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 		cost = cost +
-				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
+				treeOption->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
 				numberOfGetNextCalls;
-//		cout << "Cost of each get next : "
-//				<< (*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost << endl;
-		cost = cost + (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters()));
-
-//		cout << "Cost of close : " << (*treeOption)->getCostOfClose(*(physicalPlan.getExecutionParameters())).cost << endl;
-		cout << "Total Cost is" <<  cost.cost << endl;
-		(*treeOption)->printSubTree();
-		cout << "========================================================" << endl;
-
-//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
-//			minPlan = (*treeOption);
-//			minCost = cost.cost;
-//			break;
-//		}
+		cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
 		if(minPlan == NULL){
-			minPlan = (*treeOption);
+			minPlan = treeOption;
 			minCost = cost.cost;
+			treeOptionIndexChosen = treeOptionIndex;
 		}else{
 			if(minCost > cost.cost){
-				minPlan = (*treeOption);
+				minPlan = treeOption;
 				minCost = cost.cost;
+				treeOptionIndexChosen = treeOptionIndex;
 			}
 		}
 	}
 
-	cout << "Chosen plan : "  << endl;
-	minPlan->printSubTree();
-	cout << "========================================================" << endl;
+
 	return minPlan;
 }
 

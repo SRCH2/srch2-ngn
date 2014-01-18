@@ -130,13 +130,18 @@ void testIndexData()
 #if ASSERT_LEVEL > 0
     unsigned attributeBitmap = 0;
 #endif
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
+    bool forwardListValid = false;
+    const ForwardList* fl = forwardIndex->getForwardList(0, forwardListValid);
+    ASSERT(forwardListValid);
+    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
+    fl = forwardIndex->getForwardList(1, forwardListValid);
+    ASSERT(forwardListValid);
+    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex

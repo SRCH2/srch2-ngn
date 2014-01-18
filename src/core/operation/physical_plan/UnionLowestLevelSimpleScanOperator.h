@@ -56,7 +56,8 @@ private:
 
 	QueryEvaluatorInternal * queryEvaluator;
 
-	vector< shared_ptr<vectorview<unsigned> > > invertedLists;
+	vector< vectorview<unsigned> * > invertedLists;
+	vector< shared_ptr<vectorview<unsigned> > > invertedListsSharedPointers;
 	vector< unsigned > invertedListDistances;
 	vector< TrieNodePointer > invertedListPrefixes;
 	vector< TrieNodePointer > invertedListLeafNodes;
