@@ -29,12 +29,12 @@ namespace httpwrapper {
 pthread_t * MongoDataSource::mongoListenerThread = new pthread_t;
 time_t MongoDataSource::bulkLoadEndTime = 0;
 
-unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager) {
+unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const CoreInfo_t *config) {
 
-    string dbNameWithCollection = configManager->getMongoDbName() +
-            "."  + configManager->getMongoCollection();
-    string host = configManager->getMongoServerHost();
-    string port = configManager->getMongoServerPort();
+    string dbNameWithCollection = config->getMongoDbName() +
+            "."  + config->getMongoCollection();
+    string host = config->getMongoServerHost();
+    string port = config->getMongoServerPort();
     boost::algorithm::trim(host);
     try {
         string hostAndport = host;
@@ -50,7 +50,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Conf
         if (collectionCount > 0) {
             srch2is::Record *record = new srch2is::Record(indexer->getSchema());
             // create new analyzer
-            srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(configManager);
+            srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(config);
             // query the mongo database for all the objects in collection. mongo::BSONObj() means get
             // all records from mongo db
             auto_ptr<mongo::DBClientCursor> cursor = mongoConnector->conn().query(dbNameWithCollection, mongo::BSONObj());
@@ -60,7 +60,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Conf
                 mongo::BSONElement bsonElmt;
                 bsonObj.getObjectID(bsonElmt);
                 // parse BSON object returned by cursor and fill in record object
-                bool result = BSONParser::parse(record, bsonObj, configManager);
+                bool result = BSONParser::parse(record, bsonObj, config);
                 if (result) {
                     indexer->addRecord(record, analyzer);
                     ++indexedRecordsCount;
@@ -100,12 +100,12 @@ void MongoDataSource::spawnUpdateListener(Srch2Server * server){
 void* MongoDataSource::runUpdateListener(void *searchServer){
     Logger::console("MOGNOLISTENER: thread started ...");
     Srch2Server * server =(Srch2Server *)searchServer;
-    const ConfigManager *configManager = server->indexDataContainerConf;
+    const CoreInfo_t *config = server->indexDataConfig;
     string mongoNamespace= "local.oplog.rs";
     string filterNamespace = "";
-    filterNamespace.append(configManager->getMongoDbName()).append(".").append(configManager->getMongoCollection());
-    string host = configManager->getMongoServerHost();
-    string port = configManager->getMongoServerPort();
+    filterNamespace.append(config->getMongoDbName()).append(".").append(config->getMongoCollection());
+    string host = config->getMongoServerHost();
+    string port = config->getMongoServerPort();
     unsigned retryCount = 0;
   retry:
     try {
@@ -166,7 +166,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
                     printOnce = false;
                 }
                 retryCount = 0; // reset retryCount
-                sleep(configManager->getMongoListenerWaitTime());  // sleep...do not hog the CPU
+                sleep(config->getMongoListenerWaitTime());  // sleep...do not hog the CPU
             }
         }
     }
@@ -175,8 +175,8 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     } catch (const exception& ex){
     	Logger::console("Unknown exception : %s", ex.what());
     }
-    sleep(configManager->getMongoListenerWaitTime());
-    if (retryCount++ < configManager->getMongoListnerMaxRetryCount()) {
+    sleep(config->getMongoListenerWaitTime());
+    if (retryCount++ < config->getMongoListenerMaxRetryCount()) {
     	Logger::console("MONGOLISTENER: trying again ...");
     	goto retry;
     }
@@ -185,10 +185,10 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     return NULL;
 }
 
-bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const ConfigManager* configManager){
+bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const CoreInfo_t* config){
 
     stringstream error;
-    bool result = JSONRecordParser::populateRecordFromJSON(bsonObj.jsonString(), configManager, record, error);
+    bool result = JSONRecordParser::populateRecordFromJSON(bsonObj.jsonString(), config, record, error);
     if(!result)
         cout << error.str() << endl;
     return result;
@@ -221,7 +221,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         operation = "x"; // undefined operation
     }
 
-    const ConfigManager *configManager = server->indexDataContainerConf;
+    const CoreInfo_t *config = server->indexDataConfig;
     stringstream errorMsg;
 
     switch(operation[0])
@@ -242,7 +242,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         } else {
             srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
             IndexWriteUtil::_insertCommand(server->indexer,
-                    configManager, root, record, errorMsg);
+                    config, root, record, errorMsg);
             record->clear();
             delete record;
         }
@@ -257,17 +257,17 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             Logger::error("MONGO_LISTENER:DELETE: \"o\" element is not an Object type!! ..Cannot update engine");
             break;
         }
-        mongo::BSONElement pk = _oElement.Obj().getField(configManager->getPrimaryKey().c_str());
+        mongo::BSONElement pk = _oElement.Obj().getField(config->getPrimaryKey().c_str());
         string primaryKeyStringValue;
         //mongo::BSONElement pk = bobj.getField(cmPtr->getPrimaryKey().c_str());
-        if (pk.type() == mongo::jstOID && configManager->getPrimaryKey().compare("_id") == 0){
+        if (pk.type() == mongo::jstOID && config->getPrimaryKey().compare("_id") == 0){
             mongo::OID oid = pk.OID();
             primaryKeyStringValue = oid.str();
         }
         else{
             primaryKeyStringValue = pk.valuestrsafe();
         }
-        Logger::debug("Delete: pk = %s  val =  %s ", configManager->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
+        Logger::debug("Delete: pk = %s  val =  %s ", config->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
         if (primaryKeyStringValue.size()) {
             errorMsg << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
             //delete the record from the index
@@ -307,9 +307,9 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             Logger::error("MONGO_LISTENER:UPDATE: updated record could not be found in db!! ..Cannot update engine");
             break;
         }
-        mongo::BSONElement pk = updateRecord.getField(configManager->getPrimaryKey().c_str());
+        mongo::BSONElement pk = updateRecord.getField(config->getPrimaryKey().c_str());
         string primaryKeyStringValue ;
-        if (pk.type() == mongo::jstOID && configManager->getPrimaryKey().compare("_id") == 0){
+        if (pk.type() == mongo::jstOID && config->getPrimaryKey().compare("_id") == 0){
             mongo::OID oid = pk.OID();
             primaryKeyStringValue = oid.str();
         }
@@ -317,7 +317,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             primaryKeyStringValue = pk.valuestrsafe();
         }
         Logger::debug("MONGO_LISTENER:UPDATE: pk = %s  val =  %s ",
-        		configManager->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
+        		config->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
         unsigned deletedInternalRecordId;
         if (primaryKeyStringValue.size()) {
             srch2is::INDEXWRITE_RETVAL ret =
@@ -330,7 +330,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             else
                 Logger::debug("MONGO_LISTENER:UPDATE: deleted record ");
 
-            if ( server->indexer->getNumberOfDocumentsInIndex() < configManager->getDocumentLimit() )
+            if ( server->indexer->getNumberOfDocumentsInIndex() < config->getDocumentLimit() )
             {
                 Json::Value root;
                 Json::Reader reader;
@@ -341,7 +341,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                 } else {
                     srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
                     IndexWriteUtil::_insertCommand(server->indexer,
-                            configManager, root, record, errorMsg);
+                            config, root, record, errorMsg);
                     record->clear();
                     delete record;
                 }

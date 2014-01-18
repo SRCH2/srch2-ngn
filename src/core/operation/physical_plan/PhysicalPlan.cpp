@@ -62,53 +62,55 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 	//srch2::util::QueryOptimizerUtil::printIndentations(indent);
 	switch (type) {
 		case PhysicalPlanNode_SortById:
-//			Logger::info("[SortByID]");
-			cout << "[SortByID]" << endl;
+			Logger::info("[SortByID]");
+//			cout << "[SortByID]" << endl;
 			break;
 		case PhysicalPlanNode_SortByScore:
-//			Logger::info("[SortByScore]");
-			cout << "[SortByScore]" << endl;
+			Logger::info("[SortByScore]");
+//			cout << "[SortByScore]" << endl;
 			break;
 		case PhysicalPlanNode_MergeTopK:
-//			Logger::info("[AND TopK]");
-			cout << "[AND TopK]" << endl;
+			Logger::info("[AND TopK]");
+//			cout << "[AND TopK]" << endl;
 			break;
 		case PhysicalPlanNode_MergeSortedById:
-//			Logger::info("[AND SortedByID]");
-			cout << "[AND SortedByID]" << endl;
+			Logger::info("[AND SortedByID]");
+//			cout << "[AND SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_MergeByShortestList:
-//			Logger::info("[AND ShortestList]");
-			cout << "[AND ShortestList]" << endl;
+			Logger::info("[AND ShortestList]");
+//			cout << "[AND ShortestList]" << endl;
 			break;
 		case PhysicalPlanNode_UnionSortedById:
 			Logger::info("[OR SortedByID]");
-			cout << "[OR SortedByID]" << endl;
+//			cout << "[OR SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
-//			Logger::info("[TVL]");
-			cout << "[TVL]" << endl;
+			Logger::info("[TVL]");
+//			cout << "[TVL]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
-//			Logger::info("[SCAN]");
-			cout << "[SCAN]" << endl;
+			Logger::info("[SCAN]");
+//			cout << "[SCAN]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessTerm:
-//			Logger::info("[TERM]" );
-			cout << "[TERM]" << endl;
+			Logger::info("[TERM]" );
+//			cout << "[TERM]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessAnd:
-//			Logger::info("[R.A.AND]");
-			cout << "[R.A.AND]" << endl;
+			Logger::info("[R.A.AND]");
+//			cout << "[R.A.AND]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessOr:
-//			Logger::info("[R.A.OR]");
-			cout << "[R.A.OR]" << endl;
+			Logger::info("[R.A.OR]");
+//			cout << "[R.A.OR]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessNot:
-//			Logger::info("[R.A.NOT]");
-			cout << "[R.A.NOT]" << endl;
+			Logger::info("[R.A.NOT]");
+//			cout << "[R.A.NOT]" << endl;
 			break;
+		default:
+			Logger::info("Somthing else");
 	}
 	for(vector<PhysicalPlanOptimizationNode *>::iterator child = children.begin(); child != children.end() ; ++child){
 		(*child)->printSubTree(indent+1);
@@ -126,7 +128,7 @@ PhysicalPlan::PhysicalPlan(	QueryEvaluatorInternal * queryEvaluator){
 }
 
 PhysicalPlan::~PhysicalPlan(){
-	if(tree != NULL) delete tree;
+//	if(tree != NULL) delete tree;
 	if(executionParameters != NULL) delete executionParameters;
 }
 

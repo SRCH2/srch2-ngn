@@ -54,7 +54,6 @@ namespace instantsearch {
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
-        const string &trieBootstrapFileNameWithPath,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
 
@@ -64,7 +63,7 @@ IndexData::IndexData(const string &directoryName,
         if (createDir(directoryName.c_str()) == -1){
             throw std::runtime_error("Index Directory can not be created");
         }
-	}
+    }
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -73,16 +72,17 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex =new  InvertedIndex(this->forwardIndex);
-    else
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+        this->invertedIndex =new InvertedIndex(this->forwardIndex);
+        this->quadTree = NULL;
+    } else {
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
+        this->invertedIndex = NULL;
+    }
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
-
-    this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
@@ -94,7 +94,7 @@ IndexData::IndexData(const string& directoryName)
     if(!checkDirExistence(directoryName.c_str())){
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
-	}
+    }
     Serializer serializer;
     try{
     	this->schemaInternal = new SchemaInternal();
@@ -105,7 +105,9 @@ IndexData::IndexData(const string& directoryName)
     	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    		this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+            this->invertedIndex = new InvertedIndex(this->forwardIndex);
+        else
+            this->invertedIndex = NULL;
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
@@ -119,6 +121,7 @@ IndexData::IndexData(const string& directoryName)
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
+                quadTree = NULL;
     	} else {
     		this->quadTree = new QuadTree();
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
@@ -310,48 +313,6 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
     }
 
     return returnValue;
-}
-
-void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer* analyzer)
-{
-    try
-    {
-        std::ifstream infile;
-        infile.open (trieBootstrapFileNameWithPath.c_str());
-        if (infile.good())
-        {
-            std::string line;
-            while ( std::getline(infile, line) )
-            {
-                std::vector<PositionalTerm> tokensInfo;
-                //char c = '.';
-//                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                analyzer->tokenizeQuery(line, tokensInfo);
-
-                for (std::vector<PositionalTerm>::const_iterator kiter = tokensInfo.begin();
-                            kiter != tokensInfo.end();
-                            ++kiter)
-                {
-                    /// add words to trie
-                    unsigned invertedIndexOffset = 0;
-                    unsigned keywordId = 0;
-                    string keyword = kiter->term;
-                    keywordId = this->trie->addKeyword(getCharTypeVector(keyword), invertedIndexOffset);
-                    this->invertedIndex->incrementDummyHitCount(invertedIndexOffset);
-                }
-            }
-
-            // All the dummy keywords that are used to bootstrap trie have a unique keywordId and hence a invertedList.
-            // The invertedList cannot be of size 0 and also, it is initialised to have "0"s.
-            // We create a dummy first record to occupy internalRid "0" in forwardList.
-
-            this->forwardIndex->addDummyFirstRecord();
-        }
-    }
-    catch (std::exception& e)
-    {
-        Logger::error("trie bootstrap with english dictionary failed. File read error");
-    }
 }
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail

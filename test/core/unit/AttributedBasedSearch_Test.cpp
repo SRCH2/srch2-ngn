@@ -8,6 +8,7 @@
 #include <instantsearch/QueryResults.h>
 #include "analyzer/StandardAnalyzer.h"
 #include "UnitTestHelper.h"
+#include "analyzer/AnalyzerContainers.h"
 
 #include <iostream>
 #include <fstream>
@@ -32,8 +33,11 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER, "","","",
-            srch2is::SYNONYM_DONOT_KEEP_ORIGIN,"",srch2is::STANDARD_ANALYZER);
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
+    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(NULL, NULL, prot, syn, string(""));
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, prot, syn, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -43,7 +47,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -96,6 +100,9 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     indexer->commit();
 
     data.close();
+
+    prot->free();
+    syn->free();
 
     return indexer;
 }

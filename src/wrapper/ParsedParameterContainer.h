@@ -45,6 +45,10 @@ class TermIntermediateStructure{
 public:
 	TermIntermediateStructure(){
 		fieldFilterNumber = 0;
+		keywordBoostLevel = 1;
+		keywordSimilarityThreshold = 1;
+		keywordPrefixComplete = TERM_TYPE_NOT_SPECIFIED;
+		isPhraseKeywordFlag = false;
 	}
 	// termQueryString contains the keyword and all the modifiers. It's the original
 	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
@@ -260,6 +264,15 @@ public:
 	}
 };
 
+struct QueryFieldAttributeBoost{
+  std::string attribute;
+  float boost;
+};
+
+struct QueryFieldBoostContainer {
+  std::vector<QueryFieldAttributeBoost> boosts;
+};
+
 class ParsedParameterContainer {
 public:
 
@@ -283,6 +296,7 @@ public:
         resultsStartOffset=0; // defaults to 0
         numberOfResults=10; // defaults to 10
         parseTreeRoot = NULL;
+        qfContainer= NULL;
     }
 
     ~ParsedParameterContainer() {
@@ -343,10 +357,12 @@ public:
     // filter query parser parameters
     FilterQueryContainer * filterQueryContainer; // contains all filter query related info.
 
-	// facet parser parameters
-	FacetQueryContainer * facetQueryContainer;
-	// sort parser parameters
-	SortQueryContainer * sortQueryContainer;
+    // facet parser parameters
+    FacetQueryContainer * facetQueryContainer;
+    // sort parser parameters
+    SortQueryContainer * sortQueryContainer;
+    // query field boost parser parameters
+    QueryFieldBoostContainer * qfContainer; 
 
     // different search type specific parameters
     TopKParameterContainer * topKParameterContainer; // contains all Top k only parameters. currently none.

@@ -22,6 +22,7 @@
 #include "util/Assert.h"
 #include <iostream>
 #include <math.h>
+#include "util/AttributeIterator.h"
 #include <cfloat>
 
 using std::vector;
@@ -244,7 +245,6 @@ double SpatialRanker::degreeToRadian(double degreeValue) const
     return degreeValue * PI / 180.0;
 }
 
-
 uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold)
 {
 	if(similarityThreshold < 0 || similarityThreshold > 1) {
@@ -255,7 +255,5 @@ uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityTh
 	float fresult = keywordLength * (1 - similarityThreshold + FLT_EPSILON);
 	return fresult; // casting to unsigned int will do the floor operation automatically.
 }
-}
-}
 
-
+}}

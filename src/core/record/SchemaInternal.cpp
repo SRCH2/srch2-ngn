@@ -160,7 +160,7 @@ int SchemaInternal::setRefiningAttribute(const std::string &attributeName,
         this->refiningAttributeTypeVector.push_back(type);
         this->refiningAttributeIsMultiValuedVector.push_back(isMultiValued);
     }
-    return this->refiningAttributeNameToId.size();
+    return this->refiningAttributeNameToId.size() - 1;
 
 }
 

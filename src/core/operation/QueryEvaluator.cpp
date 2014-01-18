@@ -34,6 +34,10 @@ QueryEvaluator::QueryEvaluator(Indexer *indexer , QueryEvaluatorRuntimeParameter
 	this->impl = new QueryEvaluatorInternal(dynamic_cast<IndexReaderWriter *>(indexer), parameters);
 }
 
+QueryEvaluator::~QueryEvaluator(){
+	delete this->impl;
+}
+
 /*
  * Finds the suggestions for a keyword based on fuzzyMatchPenalty.
  * Returns the number of suggestions found.

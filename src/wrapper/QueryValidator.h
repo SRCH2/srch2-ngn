@@ -35,7 +35,7 @@ class QueryValidator {
 public:
 
     QueryValidator(const Schema & schema,
-            const ConfigManager &indexDataContainerConf,
+            const CoreInfo_t &indexDataContainerConf,
             ParsedParameterContainer * paramContainer);
 
     // this function goes through the summary and based on that validates the query.
@@ -44,13 +44,15 @@ public:
 private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
-    const ConfigManager &indexDataContainerConf;
+    const CoreInfo_t &indexDataContainerConf;
 
     /*
      * This function goes over the field names in Filter List and
      * checks to make sure all of them are in the list of searchable attributes. existence
      */
     bool validateExistenceOfAttributesInFieldList();
+
+    bool validateExistenceOfAttributesInQueryFieldBoost();
 
     bool validateExistenceOfAttributesInSortFiler();
 

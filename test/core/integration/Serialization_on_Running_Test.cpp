@@ -38,14 +38,14 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -178,14 +178,14 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -391,7 +391,7 @@ void testDefaultIndex(string index_dir)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexerLoaded, &runtimeParameters);
@@ -436,7 +436,7 @@ void testGeoIndex(string index_dir)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
     QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexer,&runTimeParameters );

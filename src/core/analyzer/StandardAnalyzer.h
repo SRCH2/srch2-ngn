@@ -15,6 +15,11 @@
 namespace srch2 {
 namespace instantsearch {
 
+class StemmerContainer;
+class StopWordContainer;
+class SynonymContainer;
+class ProtectedWordsContainer;
+
 /*
  *  StandardAnalyzer use DELIMITER_TYPE to separate the LATIN_TYPE string and BOPOMOFO_TYPE.
  *  for OTHER_TYPE, each character is a token
@@ -23,21 +28,11 @@ namespace instantsearch {
  */
 class StandardAnalyzer: public AnalyzerInternal {
 public:
-	StandardAnalyzer(const StemmerNormalizerFlagType &stemmerFlag =
-			DISABLE_STEMMER_NORMALIZER, const std::string &stemmerFilePath = "",
-			const std::string &stopWordFilePath = "",
-			const std::string &synonymFilePath = "",
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag =
-					SYNONYM_KEEP_ORIGIN,
-			const std::string &recordAllowedSpecialCharacters = "") :
-			AnalyzerInternal(stemmerFlag,
-						recordAllowedSpecialCharacters,
-						stemmerFilePath,
-						stopWordFilePath,
-						synonymFilePath,
-						synonymKeepOriginFlag) {
-		this->analyzerType = STANDARD_ANALYZER;
-	}
+    StandardAnalyzer(const StemmerContainer *stemmer,
+                     const StopWordContainer *stopWords,
+                     const ProtectedWordsContainer *protectedWords,
+                     const SynonymContainer *synonyms,
+                     const std::string &allowedRecordSpecialCharacters);
 
 	StandardAnalyzer(const StandardAnalyzer &standardAnalyzer) :
 			AnalyzerInternal(standardAnalyzer) {
@@ -48,6 +43,11 @@ public:
 
 	TokenStream *createOperatorFlow();
 	virtual ~StandardAnalyzer();
+
+    AnalyzerType getAnalyzerType() const;
+
+ protected:
+
 };
 
 }

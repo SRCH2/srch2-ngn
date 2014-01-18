@@ -18,23 +18,54 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch{
 
-SynonymContainer* SynonymContainer::synonymContainer = NULL;
+AnalyzerContainer::Map_t AnalyzerContainer::containers;
 
-// this is thread unsafe. Make sure you call it from main thread only.
-SynonymContainer& SynonymContainer::getInstance() {
-	if (synonymContainer == NULL)
-	{
-		synonymContainer = new SynonymContainer("=>");
-	}
-	return *synonymContainer;
+void AnalyzerContainer::free(const string &path)
+{
+    Map_t::iterator target = containers.find(path);
+    if (target != containers.end()) {
+        containers.erase(target); // map::erase also calls delete on target
+    }
 }
 
-void SynonymContainer::free() {
-	if (synonymContainer)
-	{
-		delete synonymContainer;
-		synonymContainer = NULL;
-	}
+void AnalyzerContainer::freeAll()
+{
+    if (containers.size() > 0) {
+        containers.erase(containers.begin(), containers.end());
+    }
+}
+
+AnalyzerContainer::~AnalyzerContainer()
+{
+}
+
+// this is thread unsafe. Make sure you call it from main thread only.
+SynonymContainer *SynonymContainer::getInstance(const std::string &filePath,
+                                                SynonymKeepOriginFlag synonymKeepOriginFlag)
+{
+    SynonymContainer *synonymContainer = NULL;
+    char buffer[32];
+
+    sprintf(buffer, "SynonymContainer:%d:", synonymKeepOriginFlag);
+    string key(buffer);
+    key.append(filePath);
+
+    Map_t::iterator iterator = containers.find(key);
+    if (iterator == containers.end()) {
+        synonymContainer = new SynonymContainer("=>");
+        synonymContainer->filePath = filePath;
+        synonymContainer->synonymKeepOriginFlag = synonymKeepOriginFlag;
+        containers[key] = synonymContainer;
+    } else {
+        synonymContainer = dynamic_cast<SynonymContainer *> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (synonymContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of SynonymContainer",
+                         filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(synonymContainer != NULL);
+    }
+    return synonymContainer;
 }
 
 /*
@@ -51,13 +82,13 @@ void SynonymContainer::free() {
  * bill => <SYNONYM_COMPLETE_ONLY, 'william'>
  * orange: Nothing will be in the map for it.
  */
-void SynonymContainer::initSynonymContainer (const std::string synonymFilePath) {
+void SynonymContainer::init() {
 	// using file path to create an ifstream object
-	std::ifstream input(synonymFilePath.c_str());
+	std::ifstream input(filePath.c_str());
 
 	if (!input.good())
 	{
-		Logger::warn("The synonym file = \"%s\" could not be opened.", synonymFilePath.c_str());
+		Logger::warn("The synonym file = \"%s\" could not be opened.", filePath.c_str());
 		return;
 	}
 	this->synonymMap.clear();
@@ -128,7 +159,8 @@ void SynonymContainer::initSynonymContainer (const std::string synonymFilePath) 
 
 }
 
-bool SynonymContainer::contains(const std::string& str) {
+bool SynonymContainer::contains(const std::string& str) const
+{
 	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = synonymMap.find(str);
 	if (pos != this->synonymMap.end())
 		return true;
@@ -136,7 +168,8 @@ bool SynonymContainer::contains(const std::string& str) {
 		return false;
 }
 
-void SynonymContainer::getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue) {
+void SynonymContainer::getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue) const
+{
 	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = synonymMap.find(str);
 	if (pos != this->synonymMap.end()) {
 		returnValue = pos->second;
@@ -154,28 +187,33 @@ void SynonymContainer::saveSynonymContainer (boost::archive::binary_oarchive& oa
 	oa << synonymMap;
 }
 
-StemmerContainer* StemmerContainer::stemmerContainer = NULL;
-StemmerContainer& StemmerContainer::getInstance() {
-	if (stemmerContainer == NULL)
-	{
-		stemmerContainer = new StemmerContainer();
-	}
-	return *stemmerContainer;
+
+StemmerContainer *StemmerContainer::getInstance(const std::string &filePath)
+{
+    StemmerContainer *stemmerContainer = NULL;
+    Map_t::iterator iterator = containers.find(string("StemmerContainer:") + filePath);
+    if (iterator == containers.end()) {
+        stemmerContainer = new StemmerContainer();
+        stemmerContainer->filePath = filePath;
+        containers[string("StemmerContainer:") + filePath] = stemmerContainer;
+    } else {
+        stemmerContainer = dynamic_cast<StemmerContainer *> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (stemmerContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of StemmerContainer",
+                         filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(stemmerContainer != NULL);
+    }
+    return stemmerContainer;
 }
 
-void StemmerContainer::free() {
-	if (stemmerContainer)
-	{
-		delete stemmerContainer;
-		stemmerContainer = NULL;
-	}
-}
-
-void StemmerContainer::initStemmerContainer( const std::string stemmerFilePath) {
-	std::ifstream input(stemmerFilePath.c_str());
+void StemmerContainer::init()
+{
+	std::ifstream input(filePath.c_str());
 	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-        Logger::warn("The stemmer file = \"%s\" could not be opened.", stemmerFilePath.c_str());
+        Logger::warn("The stemmer file = \"%s\" could not be opened.", filePath.c_str());
  		return;
 	}
 	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
@@ -187,7 +225,8 @@ void StemmerContainer::initStemmerContainer( const std::string stemmerFilePath) 
 	}
 }
 
-bool StemmerContainer::contains(const std::string& str){
+bool StemmerContainer::contains(const std::string& str) const
+{
 	std::map<std::string, int>::const_iterator iter = this->dictionaryWords.find(str);
 	if (iter != this->dictionaryWords.end()) {
 		return true;
@@ -204,28 +243,35 @@ void StemmerContainer::saveStemmerContainer(boost::archive::binary_oarchive& oa)
 	oa << dictionaryWords;
 }
 
-StopWordContainer* StopWordContainer::stopWordContainer = NULL;
-StopWordContainer& StopWordContainer::getInstance() {
-	if (stopWordContainer == NULL)
-	{
-		stopWordContainer = new StopWordContainer();
-	}
-	return *stopWordContainer;
+
+StopWordContainer *StopWordContainer::getInstance(const std::string &filePath)
+{
+    StopWordContainer *stopWordContainer = NULL;
+    Map_t::iterator iterator = containers.find(string("StopWordContainer:") + filePath);
+    if (iterator == containers.end()) {
+        stopWordContainer = new StopWordContainer();
+        stopWordContainer->filePath = filePath;
+        containers[string("StopWordContainer:") + filePath] = stopWordContainer;
+    } else {
+        stopWordContainer = dynamic_cast<StopWordContainer *> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (stopWordContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of StopWordContainer",
+                         filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(stopWordContainer != NULL);
+    }
+    return stopWordContainer;
 }
-void StopWordContainer::free() {
-	if (stopWordContainer)
-	{
-		delete stopWordContainer;
-		stopWordContainer = NULL;
-	}
-}
-void StopWordContainer::initStopWordContainer(const std::string stopWordsFilePath) {
+
+void StopWordContainer::init()
+{
 	std::string str;
 	//  using file path to create an ifstream object
-	std::ifstream input(stopWordsFilePath.c_str());
+	std::ifstream input(filePath.c_str());
 		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
 	if (input.fail()) {
-	    Logger::warn("The stop words file = \"%s\" could not be opened.", stopWordsFilePath.c_str());
+	    Logger::warn("The stop words file = \"%s\" could not be opened.", filePath.c_str());
 		return;
 	}
 	//	Reads the stop word files line by line and fills the vector
@@ -236,7 +282,8 @@ void StopWordContainer::initStopWordContainer(const std::string stopWordsFilePat
 	}
 }
 
-bool StopWordContainer::contains(const std::string& str) {
+bool StopWordContainer::contains(const std::string& str) const
+{
 	return (this->stopWordsSet.find(str) != this->stopWordsSet.end());
 }
 void StopWordContainer::loadStopWordContainer( boost::archive::binary_iarchive& ia) {
@@ -248,22 +295,28 @@ void StopWordContainer::saveStopWordContainer(boost::archive::binary_oarchive& o
 }
 
 
-ProtectedWordsContainer* ProtectedWordsContainer::protectedWordsContainer = NULL;
-ProtectedWordsContainer& ProtectedWordsContainer::getInstance() {
-	if (protectedWordsContainer == NULL)
-	{
-		protectedWordsContainer = new ProtectedWordsContainer();
-	}
-	return *protectedWordsContainer;
+ProtectedWordsContainer *ProtectedWordsContainer::getInstance(const std::string &filePath)
+{
+    ProtectedWordsContainer *protectedWordsContainer = NULL;
+    Map_t::iterator iterator = containers.find(string("ProtectedWordsContainer:") + filePath);
+    if (iterator == containers.end()) {
+        protectedWordsContainer = new ProtectedWordsContainer();
+        protectedWordsContainer->filePath = filePath;
+        containers[string("ProtectedWordsContainer:") + filePath] = protectedWordsContainer;
+    } else {
+        protectedWordsContainer = dynamic_cast<ProtectedWordsContainer *> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (protectedWordsContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of ProtectedWordsContainer",
+                         filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(protectedWordsContainer != NULL);
+    }
+    return protectedWordsContainer;
 }
-void ProtectedWordsContainer::free() {
-	if (protectedWordsContainer)
-	{
-		delete protectedWordsContainer;
-		protectedWordsContainer = NULL;
-	}
-}
-void ProtectedWordsContainer::initProtectedWordsContainer(const std::string filePath) {
+
+void ProtectedWordsContainer::init()
+{
 	std::string str;
 	//  using file path to create an ifstream object
 	std::ifstream input(filePath.c_str());
@@ -279,6 +332,11 @@ void ProtectedWordsContainer::initProtectedWordsContainer(const std::string file
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 		this->protectedWords.insert(str);
 	}
+}
+
+bool ProtectedWordsContainer::isProtected(const string& val) const
+{
+    return protectedWords.count(val) > 0; 
 }
 
 } // instantsearch

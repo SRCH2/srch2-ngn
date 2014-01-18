@@ -527,7 +527,7 @@ public:
             unsigned &matchingKeywordId,
             unsigned &matchingKeywordAttributeBitmap,
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
-    bool haveWordInRange(const unsigned recordId, const unsigned minId,
+    bool haveWordInRange(const unsigned recordId, const ForwardList* fl, const unsigned minId,
             const unsigned maxId,
             const unsigned termSearchableAttributeIdToFilterTermHits,
             unsigned &matchingKeywordId,

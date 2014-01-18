@@ -31,8 +31,8 @@ namespace httpwrapper {
 // we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
 // in the case of getAllResults.
 QueryExecutor::QueryExecutor(LogicalPlan & queryPlan,
-        QueryResultFactory * resultsFactory, Srch2Server *server, const ConfigManager * configManager) :
-        queryPlan(queryPlan), configManager(configManager) {
+        QueryResultFactory * resultsFactory, Srch2Server *server, const CoreInfo_t * config) :
+        queryPlan(queryPlan), configuration(config) {
     this->queryResultFactory = resultsFactory;
     this->server = server;
 }
@@ -58,9 +58,9 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     //evhttp_clear_headers(&headers);
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
-    QueryEvaluatorRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold(),
-    		this->server->indexDataContainerConf->getGetAllResultsNumberOfResultsThreshold() ,
-    		this->server->indexDataContainerConf->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
+    		configuration->getGetAllResultsNumberOfResultsThreshold() ,
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
     this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
 
     //do the search

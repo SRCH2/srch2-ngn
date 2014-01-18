@@ -224,9 +224,8 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
 {
      // CREATE NEW Index
      this->index =  IndexData::create(indexMetaData->directoryName,
-     		                         analyzer,
+     		                          analyzer,
                                       schema,
-                                      indexMetaData->trieBootstrapFileNameWithPath,
                                       srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                       );
      this->initIndexReaderWriter(indexMetaData);

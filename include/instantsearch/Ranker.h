@@ -28,10 +28,8 @@
 
 using std::vector;
 
-namespace srch2
-{
-    namespace instantsearch
-    {
+namespace srch2 {
+  namespace instantsearch {
     // TODO: Copy comments from wiki page and expand it for each function
     class Ranker
     {

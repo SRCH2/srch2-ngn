@@ -67,8 +67,7 @@ void addRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -77,7 +76,7 @@ void addRecords()
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -462,7 +461,7 @@ void TermVirtualList_Tests()
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
        Indexer *indexer = Indexer::load(indexMetaData);
     
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;

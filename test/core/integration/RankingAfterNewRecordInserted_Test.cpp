@@ -35,8 +35,8 @@ void buildIndex(string data_file, string index_dir)
     schema->setScoringExpression("idf_score*doc_boost");
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -46,7 +46,7 @@ void buildIndex(string data_file, string index_dir)
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -125,8 +125,8 @@ void updateIndex(string data_file, Indexer *index)
     /// Read records from file
     /// the file should have two fields, seperated by '^'
     /// the first field is the primary key, the second field is a searchable attribute
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                                "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
     while(getline(data,line))
     {
         unsigned cellCounter = 0;
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
     IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *index = Indexer::load(indexMetaData);
     index->createAndStartMergeThreadLoop();
 
@@ -261,8 +261,8 @@ int main(int argc, char **argv)
 
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     checkTopK1andTopK2(query_file, primaryKey_file, analyzer, queryEvaluator, 10, 25);
 

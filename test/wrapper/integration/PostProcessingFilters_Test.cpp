@@ -89,9 +89,7 @@ void addRecords() {
     schema->setRefiningAttribute("class", ATTRIBUTE_TYPE_TEXT, "Z");
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(
-            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 
     unsigned mergeEveryNSeconds = 3;
@@ -101,7 +99,7 @@ void addRecords() {
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(NULL,
             mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-            INDEX_DIR, "");
+            INDEX_DIR);
     srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer,
             schema);
 
@@ -893,7 +891,7 @@ void Searcher_Tests() {
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
             new CacheManager(), mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges , updateHistogramEveryQWrites,
-            INDEX_DIR, "");
+            INDEX_DIR);
 
     Indexer* indexer = Indexer::load(indexMetaData);
 

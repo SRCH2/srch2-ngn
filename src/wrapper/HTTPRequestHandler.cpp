@@ -109,7 +109,7 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
  */
 void HTTPRequestHandler::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
-        const ConfigManager *indexDataContainerConf,
+        const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
@@ -137,16 +137,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         unsigned counter = 0;
         if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
-                {
+        {
             for (unsigned i = start; i < end; ++i) {
                 root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
                 root["results"][counter]["score"] = (0
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
-                if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                        || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                    unsigned internalRecordId = queryResults->getInternalRecordId(
-                            i);
+                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                        || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                    unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
 
@@ -165,8 +164,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
-                root["results"][counter]["record_id"] = queryResults->getRecordId(
-                        i);
+                root["results"][counter]["record_id"] = queryResults->getRecordId(i);
                 root["results"][counter]["score"] = queryResults->getResultScore(i)
                         .getFloatTypedValue();
 
@@ -190,10 +188,9 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                             matchingKeywords[j];
                 }
 
-                if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                        || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-                	unsigned internalRecordId = queryResults->getInternalRecordId(
-                            i);
+                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                        || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                    unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     std::string compressedInMemoryRecordString = indexer
                             ->getInMemoryData(internalRecordId);
 
@@ -344,7 +341,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
  */
 void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
-        const ConfigManager *indexDataContainerConf,
+        const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults,
         const srch2is::Indexer *indexer,
         const string & message,
@@ -365,13 +362,11 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
     for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
 
-        root["results"][counter]["record_id"] = queryResults->getRecordId(
-                i);
+        root["results"][counter]["record_id"] = queryResults->getRecordId(i);
 
-        if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                || indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
-            unsigned internalRecordId = queryResults->getInternalRecordId(
-                    i);
+        if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
             std::string compressedInMemoryRecordString = indexer
                     ->getInMemoryData(internalRecordId);
 
@@ -448,7 +443,7 @@ void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &
 }
 
 
-void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
+void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
     switch (req->type) {
@@ -486,7 +481,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
                                                 defaultValueToReturn);
 
                     IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataContainerConf, doc, record, log_str);
+                            server->indexDataConfig, doc, record, log_str);
                     record->clear();
 
                     if (index < root.size() - 1)
@@ -495,7 +490,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
                 IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataContainerConf, doc, record, log_str);
+                        server->indexDataConfig, doc, record, log_str);
                 record->clear();
             }
             delete record;
@@ -515,7 +510,7 @@ void HTTPRequestHandler::writeCommand_v0(evhttp_request *req,
         evhttp_parse_query(req->uri, &headers);
 
         IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataContainerConf, headers, log_str);
+                server->indexDataConfig, headers, log_str);
 
         Logger::info("%s", log_str.str().c_str());
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -575,7 +570,7 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
                                                 defaultValueToReturn);
 
                     IndexWriteUtil::_updateCommand(server->indexer,
-                            server->indexDataContainerConf, headers, doc, record,
+                            server->indexDataConfig, headers, doc, record,
                             log_str);
 
                     record->clear();
@@ -588,7 +583,7 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
                 const Json::Value doc = root;
 
                 IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataContainerConf, headers, doc, record,
+                        server->indexDataConfig, headers, doc, record,
                         log_str);
 
                 record->clear();
@@ -615,91 +610,6 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
     };
 }
 
-void HTTPRequestHandler::writeCommand_v1(evhttp_request *req,
-        Srch2Server *server) {
-    /* Yes, we are expecting a post request */
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-        size_t length = EVBUFFER_LENGTH(req->input_buffer);
-
-        if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
-            Logger::warn("http body is empty");
-            break;
-        }
-
-        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-        //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
-
-        std::stringstream log_str;
-        // Parse example data
-        Json::Value root;
-        Json::Reader reader;
-        bool parseSuccess = reader.parse(post_data, root, false);
-
-        if (parseSuccess == false) {
-            log_str << "JSON object parse error";
-        } else {
-            if (root.type() == Json::arrayValue) {
-                Record *record = new Record(server->indexer->getSchema());
-                for (int index = 0; index < root.size(); ++index) // Iterates over the sequence elements.
-                        {
-                    Json::Value defaultValueToReturn = Json::Value("");
-                    const Json::Value doc = root.get(index,
-                            defaultValueToReturn);
-
-                    /*Json::FastWriter writer;
-                     std::cout << "[" << writer.write(doc)  << "]" << std::endl;*/
-
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataContainerConf, doc, record,
-                            log_str);
-                    record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
-                }
-                delete record;
-            }
-        }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-        break;
-    }
-    case EVHTTP_REQ_DELETE: {
-        std::stringstream log_str;
-
-        evkeyvalq headers;
-        evhttp_parse_query(req->uri, &headers);
-
-        IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataContainerConf, headers, log_str);
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-
-        // Free the objects
-        evhttp_clear_headers(&headers);
-
-        Logger::info("%s", log_str.str().c_str());
-
-        break;
-    }
-    default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
-    }
-    };
-}
-
 void HTTPRequestHandler::activateCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
@@ -710,7 +620,7 @@ void HTTPRequestHandler::activateCommand(evhttp_request *req,
 
         std::stringstream log_str;
         IndexWriteUtil::_commitCommand(server->indexer,
-                server->indexDataContainerConf, 0, log_str);
+                server->indexDataConfig, 0, log_str);
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The initialization phase has started successfully\", \"log\":["
@@ -759,21 +669,21 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         // create a FILE* pointer to point to the new logger file "logger.txt"
-        FILE *logFile = fopen(server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str(),
+        FILE *logFile = fopen(server->indexDataConfig->getHTTPServerAccessLogFile().c_str(),
                     "a");
 
         if (logFile == NULL) {
             Logger::error("Reopen Log file %s failed.",
-                    server->indexDataContainerConf->getHTTPServerAccessLogFile().c_str());
+                    server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
                 "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
-                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
-                         + server->indexDataContainerConf->getHTTPServerAccessLogFile() + "]}\n");
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
         }
         break;
     }
@@ -793,8 +703,8 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                            || server->indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+        if (server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
+                            || server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
@@ -847,7 +757,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
@@ -895,7 +805,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
 
     ParsedParameterContainer paramContainer;
 
@@ -913,23 +823,9 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
-//    if(paramContainer.parseTreeRoot->checkValiditiyOfPointers() == false){
-//    	cout << "Pointers are not valid." << endl;
-//    }
-//    paramContainer.parseTreeRoot->print();
-//
-//    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
-//	ParseTreeNode * leafNode;
-//	ParseTreeLeadNodeIterator termIterator(paramContainer.parseTreeRoot);
-//	while(termIterator.hasMore()){
-//		leafNode = termIterator.getNext();
-//		leafNode->temporaryTerm->print();
-//	}
-//	return;
-
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataContainerConf), &paramContainer);
+            *(server->indexDataConfig), &paramContainer);
 
     bool valid = qv.validate();
 
@@ -941,12 +837,17 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     }
 
     //3. rewrite the query and apply analyzer and other stuff ...
-    QueryRewriter qr(server->indexDataContainerConf,
+    QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     LogicalPlan logicalPlan;
-    qr.rewrite(logicalPlan);
+    if(qr.rewrite(logicalPlan) == false){
+        // if the query is not valid, print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                paramContainer.getMessageString(), headers);
+        return;
+    }
 
 
     //4. now execute the plan
@@ -965,7 +866,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     //5. call the print function to print out the results
-    // TODO : re-implement a print function which print the results in JSON format.
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         finalResults->printStats();
@@ -1014,6 +914,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         break;
     }
 
+
+
     // 6. delete allocated structures
     // Free the objects
     evhttp_clear_headers(&headers);
@@ -1027,7 +929,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     clock_gettime(CLOCK_REALTIME, &tstart);
 
 
-    const ConfigManager *indexDataContainerConf = server->indexDataContainerConf;
+    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
 
     // 1. first parse the headers
     evkeyvalq headers;
@@ -1051,6 +953,9 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
             break;
         case MessageWarning:
             messagesString += "WARNING : " + m->second + "\n";
+            break;
+        case MessageNotice:
+            messagesString += "NOTICE : " + m->second + "\n";
             break;
         }
     }
