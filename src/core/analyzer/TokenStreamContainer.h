@@ -18,10 +18,11 @@ namespace instantsearch
 
 class TokenStreamContainer {
 public:
-	TokenStreamContainer():offset(0), currentTokenPosition(0){}
+	TokenStreamContainer():offset(0), currentTokenPosition(0), currentTokenOffset(0){}
     void fillInCharacters(const std::vector<CharType> &charVector, bool isPrefix=false){
         currentToken.clear();
         completeCharVector = charVector;
+        currentTokenOffset = 0;
         currentTokenPosition = 0;
         offset = 0;
         this->isPrefix = isPrefix;
@@ -36,6 +37,7 @@ public:
 	std::vector<CharType> completeCharVector; 	//complete char vector of a string
 	int offset;									//the offset of current position to process
 	unsigned currentTokenPosition;
+	unsigned currentTokenOffset;
 	bool isPrefix;
 };
 }}

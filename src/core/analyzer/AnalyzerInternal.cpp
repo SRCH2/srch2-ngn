@@ -154,7 +154,6 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     const Schema *schema = record->getSchema();
     // token string to vector<CharType>
     vector<PositionalTerm> tokens;
-
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
@@ -176,10 +175,11 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 				{
 					vector<CharType> charVector;
 					charVector = tokenStream->getProcessedToken();
-					unsigned position = tokenStream->getProcessedTokenPosition();
+					unsigned termOffset = tokenStream->getProcessedTokenPosition();
+					unsigned charOffset = tokenStream->getProcessedTokenOffset();
 					charTypeVectorToUtf8String(charVector, currentToken);
 					// Bumps are added to the positions after tokenizer gives us the values.
-					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP};
+					PositionalTerm pterm = {currentToken, termOffset + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP, charOffset};
 					tokens.push_back(pterm);
 				}
 
@@ -189,6 +189,8 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
 							setAttributePositionBitVector(attributeIterator,
 									tokens[i].position));
+					tokenAttributeHitsMap[tokens[i].term].offsetOfTermInOrigRecord.push_back(
+							tokens[i].charPosition);
 				}
 			}
 

@@ -38,6 +38,7 @@ class AnalyzerInternal;
 struct PositionalTerm {
 	string term;
 	unsigned position;
+	unsigned charPosition;
 };
 
 struct TokenAttributeHits {
@@ -58,6 +59,7 @@ struct TokenAttributeHits {
      *
      */
     vector<unsigned> attributeList;
+    vector<unsigned> offsetOfTermInOrigRecord;
 };
 
 

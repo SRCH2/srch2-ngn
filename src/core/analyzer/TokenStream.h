@@ -49,6 +49,10 @@ public:
             return tokenStreamContainer->currentTokenPosition;
     }
 
+    unsigned getProcessedTokenOffset() {
+    	return tokenStreamContainer->currentTokenOffset;
+    }
+
     bool isEnd() const {
         return tokenStreamContainer->offset >= 
             (tokenStreamContainer->completeCharVector).size();
