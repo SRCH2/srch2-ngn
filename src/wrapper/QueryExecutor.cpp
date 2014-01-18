@@ -31,8 +31,8 @@ namespace httpwrapper {
 // we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
 // in the case of getAllResults.
 QueryExecutor::QueryExecutor(LogicalPlan & queryPlan,
-        QueryResultFactory * resultsFactory, Srch2Server *server, const ConfigManager * configManager) :
-        queryPlan(queryPlan), configManager(configManager) {
+        QueryResultFactory * resultsFactory, Srch2Server *server, const CoreInfo_t * config) :
+        queryPlan(queryPlan), configuration(config) {
     this->queryResultFactory = resultsFactory;
     this->server = server;
 }

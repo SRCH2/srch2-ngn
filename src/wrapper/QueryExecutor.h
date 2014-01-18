@@ -39,7 +39,7 @@ class QueryExecutor
 
 public:
 
-	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const ConfigManager * configManager );
+	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const CoreInfo_t * configuration );
 
 	void execute(QueryResults * finalResults);
 	void executeKeywordSearch(QueryResults * finalResults);
@@ -54,7 +54,7 @@ private:
 	QueryResultFactory * queryResultFactory;
 	Srch2Server * server;
 	QueryEvaluator * queryEvaluator;
-	const ConfigManager * configManager;
+	const CoreInfo_t * configuration;
 };
 
 }

@@ -35,14 +35,13 @@ void buildIndex(string data_file, string index_dir)
     schema->setScoringExpression("idf_score*doc_boost");
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -203,7 +202,7 @@ int main(int argc, char **argv)
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *index = Indexer::load(indexMetaData);
     index->createAndStartMergeThreadLoop();
     cout << "Index loaded." << endl;

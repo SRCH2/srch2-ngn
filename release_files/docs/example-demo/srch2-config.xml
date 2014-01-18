@@ -104,7 +104,7 @@
      
     </updatehandler>
 
-    <schema name="SRCH2" version="3">
+    <schema>
        <fields>
           <field name="title" type="text" indexed="true"/>
           <field name="director" type="text" indexed="true"/>

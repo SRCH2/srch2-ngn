@@ -34,11 +34,11 @@ void buildIndexWithDefaultStemmerAndNormalizer(string INDEX_DIR)
 	schema->setSearchableAttribute("article_authors", 2); // searchable text
 	schema->setSearchableAttribute("article_title", 7); // searchable text
 
-	// Create stemmer type
-	srch2is::StemmerNormalizerFlagType stemType = srch2is::ENABLE_STEMMER_NORMALIZER;
+	// Create stemmer
+        StemmerContainer *stem = StemmerContainer::getInstance("");
 
 	// Create an analyzer
-	srch2is::Analyzer *analyzer = srch2is::new Analyzer(stemType, " ");
+	srch2is::Analyzer *analyzer = srch2is::new Analyzer(stem, NULL, NULL, NULL, " ");
 
 	// Create an index writer
 	unsigned mergeEveryNSeconds = 3;	

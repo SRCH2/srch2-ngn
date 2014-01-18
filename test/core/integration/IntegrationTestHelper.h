@@ -102,8 +102,7 @@ void buildIndex(string indexDir)
     }
 
     // create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -113,7 +112,7 @@ void buildIndex(string indexDir)
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -193,8 +192,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     }
 
     // create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "" , SYNONYM_DONOT_KEEP_ORIGIN, " ");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, " ");
 
     // create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -204,7 +202,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
     
     Record *record = new Record(schema);
@@ -1200,9 +1198,9 @@ void csvline_populate(vector<string> &record, const string& line, char delimiter
     return;
 }
 
-Analyzer * getAnalyzer() {
-	 return new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-     		"", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+Analyzer * getAnalyzer()
+{
+    return new Analyzer(NULL, NULL, NULL, NULL, "", srch2is::STANDARD_ANALYZER);
 }
 
 #endif /* __INTEGRATIONTESTHELPER_H__ */

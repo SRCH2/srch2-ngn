@@ -43,15 +43,14 @@ void addPolishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -128,7 +127,7 @@ void testPolish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -174,16 +173,14 @@ void addPortugueseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -262,7 +259,7 @@ void testPortuguese() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -325,16 +322,14 @@ void addRomanianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -412,7 +407,7 @@ void testRomanian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -459,16 +454,14 @@ void addRussianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -546,7 +539,7 @@ void testRussian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -595,16 +588,14 @@ void addSerbianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -680,7 +671,7 @@ void testSerbian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -727,16 +718,14 @@ void addSlovakRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -814,7 +803,7 @@ void testSlovak() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -863,16 +852,14 @@ void addSlovenianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -950,7 +937,7 @@ void testSlovenian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -997,16 +984,14 @@ void addSpanishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1085,7 +1070,7 @@ void testSpanish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1147,16 +1132,14 @@ void addSwedishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1235,7 +1218,7 @@ void testSwedish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1282,16 +1265,14 @@ void addThaiRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1370,7 +1351,7 @@ void testThai() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1417,16 +1398,14 @@ void addTurkishRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1504,7 +1483,7 @@ void testTurkish() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1551,16 +1530,14 @@ void addUkrainianRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1637,7 +1614,7 @@ void testUkrainian() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1684,16 +1661,14 @@ void addVietnameseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1772,7 +1747,7 @@ void testVietnamese() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1819,16 +1794,14 @@ void addFarsiRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -1890,7 +1863,7 @@ void testFarsi() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -1937,16 +1910,14 @@ void addArabicRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2099,7 +2070,7 @@ void testArabic() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2209,16 +2180,14 @@ void addHebrewRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2289,7 +2258,7 @@ void testHebrew() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2336,16 +2305,14 @@ void addKazakhRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2412,7 +2379,7 @@ void testKazakh()
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-			INDEX_DIR, "");
+			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2445,16 +2412,14 @@ void addBurmeseRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2521,7 +2486,7 @@ void testBurmese()
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-			INDEX_DIR, "");
+			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2553,16 +2518,14 @@ void addPortugueseBrazilRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2627,7 +2590,7 @@ void testPortugueseBrazil()
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2659,16 +2622,14 @@ void addSpanishLatinRecords() {
 
 	Record *record = new Record(schema);
 
-	Analyzer *analyzer = new Analyzer(
-			srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -2735,7 +2696,7 @@ void testSpanishLatin()
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-			INDEX_DIR, "");
+			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -2769,16 +2730,14 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 
 
 	Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(
-            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-            "", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+        Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 	unsigned mergeEveryNSeconds = 3;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new Cache(),
-			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR, "");
+			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 

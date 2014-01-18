@@ -31,7 +31,7 @@ const char *HTTPServerEndpoints::index_stop_url = "/srch2/stop";
 		"Content-Length:%s\n"
 		"\r\n";*/
 
-  const char *HTTPServerEndpoints::ajax_search_fail =
+const char *HTTPServerEndpoints::ajax_search_fail =
 		"HTTP/1.1 400 Bad Request\r\n"
 		"Cache: no-cache\r\n"
 		"Content-Type: application/x-javascript\r\n"
@@ -97,6 +97,137 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
 		"Cache: no-cache\r\n"
 		"Content-Type: application/x-javascript\r\n"
 		"\r\n";
+
+bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig)
+{
+    const string &directoryName = indexDataConfig->getIndexPath();
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::forwardIndexFileName).c_str()))
+        return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
+        return false;
+    if (indexDataConfig->getIndexType() == srch2::instantsearch::DefaultIndex){
+        // Check existence of the inverted index file for basic keyword search ("A1")
+        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+	    return false;
+    }else{
+        // Check existence of the quadtree index file for geo keyword search ("M1")
+        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
+	    return false;
+    }
+    return true;
+}
+
+IndexMetaData *Srch2Server::createIndexMetaData(const CoreInfo_t *indexDataConfig)
+{
+    //Create a cache
+    srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataConfig->getCacheSizeInBytes(), 200000);
+
+    // Create an IndexMetaData
+    srch2is::IndexMetaData *indexMetaData =
+        new srch2is::IndexMetaData( cache,
+                                    indexDataConfig->getMergeEveryNSeconds(),
+                                    indexDataConfig->getMergeEveryMWrites(),
+                                    indexDataConfig->getUpdateHistogramEveryPMerges(),
+                                    indexDataConfig->getUpdateHistogramEveryQWrites(),
+                                    indexDataConfig->getIndexPath());
+
+    return indexMetaData;
+}
+
+void Srch2Server::createAndBootStrapIndexer()
+{
+    // create IndexMetaData
+    IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataConfig);
+    IndexCreateOrLoad indexCreateOrLoad;
+    if(checkIndexExistence(indexDataConfig))
+        indexCreateOrLoad = srch2http::INDEXLOAD;
+    else
+        indexCreateOrLoad = srch2http::INDEXCREATE;
+
+    switch (indexCreateOrLoad)
+    {
+    case srch2http::INDEXCREATE:
+	{
+	    AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
+	    // Create a schema to the data source definition in the Srch2ServerConf
+	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
+	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
+	    indexer = Indexer::create(indexMetaData, analyzer, schema);
+	    delete analyzer;
+	    delete schema;
+	    switch(indexDataConfig->getDataSourceType())
+	    {
+	    case srch2http::DATA_SOURCE_JSON_FILE:
+	        {
+		    // Create from JSON and save to index-dir
+		    Logger::console("Creating indexes from JSON file...");
+		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataConfig);
+		    /*
+		     *  commit the indexes once bulk load is done and then save it to the disk only
+		     *  if number of indexed record is > 0.
+		     */
+		    indexer->commit();
+		    if (indexedCounter > 0) {
+		        indexer->save();
+			Logger::console("Indexes saved.");
+		    }
+		    break;
+		}
+	    case srch2http::DATA_SOURCE_MONGO_DB:
+	        {
+		    Logger::console("Creating indexes from a MongoDb instance...");
+		    unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
+		    indexer->commit();
+		    if (indexedCounter > 0) {
+		        indexer->save();
+			Logger::console("Indexes saved.");
+		    }
+		    break;
+		}
+	    default:
+	        {
+		    Logger::console("Creating new empty index");
+		}
+	    };
+	    AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
+	    break;
+	}
+    case srch2http::INDEXLOAD:
+        {
+	    // Load from index-dir directly, skip creating an index initially.
+	    indexer = Indexer::load(indexMetaData);
+	    // Load Analayzer data from disk
+	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
+	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
+	    bool isAttributeBasedSearch = false;
+	    if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
+		indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FULL) {
+	        isAttributeBasedSearch =true;
+	    }
+	    if(isAttributeBasedSearch != indexDataConfig->getSupportAttributeBasedSearch())
+	    {
+	        cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
+	    }
+	    break;
+	}
+    }
+    // start merger thread
+    indexer->createAndStartMergeThreadLoop();
+}
+
+void Srch2Server::setCoreName(const string &name)
+{
+    coreName = name;
+}
+
+const string &Srch2Server::getCoreName()
+{
+    return coreName;
+}
 
 }
 }

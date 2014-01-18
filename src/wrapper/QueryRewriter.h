@@ -42,7 +42,7 @@ namespace httpwrapper{
 class QueryRewriter
 {
 public:
-	QueryRewriter(const ConfigManager *indexDataContainerConf,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
+	QueryRewriter(const CoreInfo_t *indexDataConfig,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
 
 	void rewrite(LogicalPlan & logicalPlan);
 
@@ -50,7 +50,7 @@ private:
 	const Schema & schema;
 	const Analyzer & analyzer ;
 	ParsedParameterContainer * paramContainer;
-	const ConfigManager *indexDataContainerConf;
+	const CoreInfo_t *indexDataConfig;
 
 	void prepareKeywordInfo();
 	void applyAnalyzer();
