@@ -500,6 +500,7 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 
 	if(filterQueryOp != NULL){
 		filterQueryOp->getPhysicalPlanOptimizationNode()->addChild(optimizationResult);
+		filterQueryOp->getPhysicalPlanOptimizationNode()->setLogicalPlanNode(optimizationResult->getLogicalPlanNode());
 		executableResult = (PhysicalPlanNode *)filterQueryOp;
 	}
 

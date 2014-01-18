@@ -52,11 +52,13 @@ QueryRewriter::QueryRewriter(const CoreInfo_t *config,
     indexDataConfig = config;
 }
 
-void QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
+bool QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 
 	// If search type is RetrievByIdSearchType, no need to continue rewriting.
 	if(this->paramContainer->hasParameterInQuery(RetrieveByIdSearchType)){
-		return;
+		logicalPlan.setQueryType(srch2is::SearchTypeRetrieveById);
+		logicalPlan.setDocIdForRetrieveByIdSearchType(this->paramContainer->docIdForRetrieveByIdSearchType);
+		return true;
 	}
     // go through the queryParameters and call the analyzer on the query if needed.
 
@@ -87,7 +89,9 @@ void QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 
     // apply the analyzer on the query, ]
     // The following code should e temporary.
-    applyAnalyzer();
+    if(applyAnalyzer() == false){
+    	return false;
+    }
 
 
 	///////////////////////////////////////////////////////////////////
@@ -105,7 +109,7 @@ void QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 	///////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////
 
-
+    return true;
 }
 
 void QueryRewriter::prepareKeywordInfo() {
@@ -146,7 +150,7 @@ void QueryRewriter::prepareKeywordInfo() {
 	}
 }
 
-void QueryRewriter::applyAnalyzer() {
+bool QueryRewriter::applyAnalyzer() {
     Analyzer & analyzerNotConst = const_cast<Analyzer &>(analyzer); // because of bad design on analyzer
     vector<ParseTreeNode *> keywordPointersToErase; // stop word indexes, to be removed later
     // first apply the analyzer
@@ -201,8 +205,10 @@ void QueryRewriter::applyAnalyzer() {
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "After ignoring stop words no keyword is left to search."));
+            return false;
         }
     }
+    return true;
 
 }
 
@@ -488,14 +494,14 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 			result = logicalPlan.createTermLogicalPlanNode(root->termIntermediateStructure->rawQueryKeyword ,
 					root->termIntermediateStructure->keywordPrefixComplete,
 					root->termIntermediateStructure->keywordBoostLevel ,
-					indexDataContainerConf->getFuzzyMatchPenalty(),
+					indexDataConfig->getFuzzyMatchPenalty(),
 					0,
 					root->termIntermediateStructure->fieldFilterNumber);
 			if(logicalPlan.isFuzzy()){
 				Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
 						root->termIntermediateStructure->keywordPrefixComplete,
 						root->termIntermediateStructure->keywordBoostLevel ,
-						indexDataContainerConf->getFuzzyMatchPenalty(),
+						indexDataConfig->getFuzzyMatchPenalty(),
 						computeEditDistanceThreshold(getUtf8StringCharacterNumber(
 												root->termIntermediateStructure->rawQueryKeyword) ,
 												root->termIntermediateStructure->keywordSimilarityThreshold));
@@ -534,7 +540,7 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
         plan.setFuzzy(paramContainer->isFuzzy
                         && (numberOfKeywords != 0));
     } else { // get it from configuration file
-        plan.setFuzzy(indexDataContainerConf->getIsFuzzyTermsQuery()
+        plan.setFuzzy(indexDataConfig->getIsFuzzyTermsQuery()
                         && (numberOfKeywords != 0));
     }
 
@@ -550,7 +556,7 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
         plan.setNumberOfResultsToRetrieve(paramContainer->numberOfResults);
     } else { // get it from configuration file
         plan.setNumberOfResultsToRetrieve(
-                indexDataContainerConf->getDefaultResultsToRetrieve());
+        		indexDataConfig->getDefaultResultsToRetrieve());
     }
 
     // 5. based on the search type, get needed information and create the query objects
@@ -589,10 +595,10 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     } else { // get it from configuration file
         plan.getExactQuery()->setLengthBoost(
-                indexDataContainerConf->getQueryTermLengthBoost());
+        		indexDataConfig->getQueryTermLengthBoost());
         if (plan.isFuzzy()) {
             plan.getFuzzyQuery()->setLengthBoost(
-                    indexDataContainerConf->getQueryTermLengthBoost());
+            		indexDataConfig->getQueryTermLengthBoost());
         }
     }
 
@@ -606,10 +612,10 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
         }
     } else { // get it from configuration file
         plan.getExactQuery()->setPrefixMatchPenalty(
-                indexDataContainerConf->getPrefixMatchPenalty());
+        		indexDataConfig->getPrefixMatchPenalty());
         if (plan.isFuzzy()) {
             plan.getFuzzyQuery()->setPrefixMatchPenalty(
-                    indexDataContainerConf->getPrefixMatchPenalty());
+            		indexDataConfig->getPrefixMatchPenalty());
         }
     }
 
@@ -618,7 +624,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(KeywordSimilarityThreshold) == false) { // get it from configuration file
-			leafNode->termIntermediateStructure->keywordSimilarityThreshold = indexDataContainerConf->getQueryTermSimilarityThreshold();
+			leafNode->termIntermediateStructure->keywordSimilarityThreshold = indexDataConfig->getQueryTermSimilarityThreshold();
 		}
 	}
 
@@ -626,7 +632,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 	while(termIterator.hasMore()){
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(KeywordBoostLevel) == false) { // get it from configuration file
-			leafNode->termIntermediateStructure->keywordBoostLevel = indexDataContainerConf->getQueryTermBoost();
+			leafNode->termIntermediateStructure->keywordBoostLevel = indexDataConfig->getQueryTermBoost();
 		}
 	}
 
@@ -635,7 +641,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		leafNode = termIterator.getNext();
 		if (paramContainer->hasParameterInQuery(QueryPrefixCompleteFlag) == false) { // get it from configuration file
 			leafNode->termIntermediateStructure->keywordPrefixComplete =
-					indexDataContainerConf->getQueryTermPrefixType() ?
+					indexDataConfig->getQueryTermPrefixType() ?
                     srch2is::TERM_TYPE_COMPLETE :
                     srch2is::TERM_TYPE_PREFIX;
 		}
@@ -667,7 +673,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 
 			exactTerm = new srch2is::Term(leafNode->termIntermediateStructure->rawQueryKeyword,
 					leafNode->termIntermediateStructure->keywordPrefixComplete, leafNode->termIntermediateStructure->keywordBoostLevel,
-					indexDataContainerConf->getFuzzyMatchPenalty(), 0);
+					indexDataConfig->getFuzzyMatchPenalty(), 0);
 			exactTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
 
 			plan.getExactQuery()->add(exactTerm);
@@ -697,7 +703,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
             srch2is::Term *fuzzyTerm;
             fuzzyTerm = new srch2is::Term(leafNode->termIntermediateStructure->rawQueryKeyword,
             		leafNode->termIntermediateStructure->keywordPrefixComplete, leafNode->termIntermediateStructure->keywordBoostLevel,
-                    indexDataContainerConf->getFuzzyMatchPenalty(),
+            		indexDataConfig->getFuzzyMatchPenalty(),
                     computeEditDistanceThreshold(getUtf8StringCharacterNumber(leafNode->termIntermediateStructure->rawQueryKeyword) , leafNode->termIntermediateStructure->keywordSimilarityThreshold));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
@@ -721,10 +727,10 @@ void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
         LogicalPlan & plan) {
     plan.setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
-            (indexDataContainerConf->getOrdering() == 0) ?
+            (indexDataConfig->getOrdering() == 0) ?
                     srch2is::SortOrderAscending : srch2is::SortOrderDescending;
     plan.getExactQuery()->setSortableAttribute(
-            indexDataContainerConf->getAttributeToSort(), order);
+    		indexDataConfig->getAttributeToSort(), order);
     // TODO : sortableAttribute and order must be removed from here, all sort jobs must be transfered to
     //        to sort filter, now, when it's GetAllResults, it first finds the results based on an the order given here
     //        and then also applies the sort filter. When this is removed, core also must be changed to not need this
@@ -733,7 +739,7 @@ void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
     if (plan.isFuzzy()) {
         plan.setFuzzyQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
         plan.getFuzzyQuery()->setSortableAttribute(
-                indexDataContainerConf->getAttributeToSort(), order);
+        		indexDataConfig->getAttributeToSort(), order);
     }
 }
 

@@ -100,9 +100,9 @@ python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/queries.
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
+#    if [ $force -eq 0 ]; then
+#	exit 255
+#    fi
 else
     echo "-- PASSED: $test_id"
 fi
@@ -244,7 +244,15 @@ python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENG
 #    echo "FAILED: $test_id"
 #    exit 255
 #fi
-echo "-- IGNORING FAILURE: $test_id"
+#echo "-- IGNORING FAILURE: $test_id"
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
 rm -rf data/ *.idx
 
 

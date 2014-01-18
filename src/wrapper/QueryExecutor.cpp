@@ -58,9 +58,9 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     //evhttp_clear_headers(&headers);
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
-    QueryEvaluatorRuntimeParametersContainer runTimeParameters(this->server->indexDataContainerConf->getKeywordPopularityThreshold(),
-    		this->server->indexDataContainerConf->getGetAllResultsNumberOfResultsThreshold() ,
-    		this->server->indexDataContainerConf->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
+    		configuration->getGetAllResultsNumberOfResultsThreshold() ,
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
     this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
 
     //do the search

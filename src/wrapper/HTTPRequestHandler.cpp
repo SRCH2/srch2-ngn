@@ -842,7 +842,12 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     LogicalPlan logicalPlan;
-    qr.rewrite(logicalPlan);
+    if(qr.rewrite(logicalPlan) == false){
+        // if the query is not valid, print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                paramContainer.getMessageString(), headers);
+        return;
+    }
 
 
     //4. now execute the plan

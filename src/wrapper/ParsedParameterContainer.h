@@ -45,6 +45,10 @@ class TermIntermediateStructure{
 public:
 	TermIntermediateStructure(){
 		fieldFilterNumber = 0;
+		keywordBoostLevel = 1;
+		keywordSimilarityThreshold = 1;
+		keywordPrefixComplete = TERM_TYPE_NOT_SPECIFIED;
+		isPhraseKeywordFlag = false;
 	}
 	// termQueryString contains the keyword and all the modifiers. It's the original
 	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
