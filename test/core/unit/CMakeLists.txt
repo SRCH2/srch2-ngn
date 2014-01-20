@@ -113,6 +113,9 @@ ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
+ADD_EXECUTABLE(Highlighter_Test Highlighter_Test.cpp)
+TARGET_LINK_LIBRARIES(Highlighter_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS Highlighter_Test)
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

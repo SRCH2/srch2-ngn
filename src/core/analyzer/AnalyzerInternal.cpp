@@ -325,6 +325,8 @@ const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
     return this->recordAllowedSpecialCharacters;
 }
 
-
+TokenStream* AnalyzerInternal::getTokenStream() {
+	return this->tokenStream;
+}
 }
 }

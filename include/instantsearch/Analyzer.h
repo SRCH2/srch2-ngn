@@ -68,7 +68,7 @@ class StemmerContainer;
 class StopWordContainer;
 class  ProtectedWordsContainer;
 class  SynonymContainer;
-
+typedef unsigned CharType;
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -124,7 +124,10 @@ public:
 			const std::map<std::string, unsigned> &searchableAttributesNameToId,
 			std::vector<unsigned> &filter) const ;
 
-
+	void fillInCharacters(const char * data);
+	bool processToken();
+	std::vector<CharType> & getProcessedToken();
+	unsigned getProcessedTokenOffset();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */

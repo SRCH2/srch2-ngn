@@ -16,6 +16,7 @@ StandardTokenizer::StandardTokenizer()
 
 bool StandardTokenizer::incrementToken() {
     (tokenStreamContainer->currentToken).clear();
+    tokenStreamContainer->currentTokenOffset = tokenStreamContainer->offset + 1;
     CharType previousChar = (CharType) ' ';
     //originally, set the previous character is ' ';
     while (true) {
