@@ -681,9 +681,8 @@ void testSingleNodeQuadTree(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -693,7 +692,7 @@ void testSingleNodeQuadTree(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -741,9 +740,8 @@ void testCircleRange(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -753,7 +751,7 @@ void testCircleRange(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -793,9 +791,8 @@ void testInsertingRecordsWithSameLocation(const string &directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -806,7 +803,7 @@ void testInsertingRecordsWithSameLocation(const string &directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
 	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/sameLocation100");
@@ -839,9 +836,8 @@ void testSpecialQueryRange(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -851,7 +847,7 @@ void testSpecialQueryRange(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -899,9 +895,8 @@ void testThousandRecordsQuadTree(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -911,7 +906,7 @@ void testThousandRecordsQuadTree(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges , updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -960,9 +955,8 @@ void testPrefixSearch(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -972,7 +966,7 @@ void testPrefixSearch(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1079,9 +1073,8 @@ void autoGeneratedTestCases(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1091,7 +1084,7 @@ void autoGeneratedTestCases(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1125,9 +1118,8 @@ void testFuzzySearch(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1137,7 +1129,7 @@ void testFuzzySearch(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1164,9 +1156,8 @@ void testSerialization(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1176,7 +1167,7 @@ void testSerialization(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1200,8 +1191,7 @@ void testDeserialization(string directoryName)
 	schema->setPrimaryKey("list_id"); // integer, by default not searchable
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -1210,7 +1200,7 @@ void testDeserialization(string directoryName)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
 
 	// load the quadtree from disk
     Indexer *indexer1 = Indexer::load(indexMetaData);
@@ -1256,7 +1246,7 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName+"/1M", "");
+    		directoryName+"/1M");
 
 	if(flag == 1 || flag == 2)
 	{
@@ -1267,8 +1257,7 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
 		schema->setSearchableAttribute("address", 7); // searchable text
 
 		// Create an analyzer
-		analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-				"", "", "", SYNONYM_DONOT_KEEP_ORIGIN,"");
+		analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 		indexer = Indexer::create(indexMetaData, analyzer, schema);
 
@@ -1389,7 +1378,7 @@ void singleTest(string directoryName, unsigned threshold)
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		"/home/xiang/data/factual/Dec082011/5MIndex", "");
+    		"/home/xiang/data/factual/Dec082011/5MIndex");
 	Indexer *indexer = Indexer::load(indexMetaData);
 
 	timespec ts1;

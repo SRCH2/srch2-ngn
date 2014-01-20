@@ -192,7 +192,12 @@ void sequentialAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeyword
             {
                 clock_gettime(CLOCK_REALTIME, &t1);
 
-                bool result = forwardIndex->haveWordInRange(i, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, attributeBitmap, score);
+                bool valid = false;
+				const ForwardList* fl = forwardIndex->getForwardList(i, valid);
+                bool result = false;
+                if(valid == true){
+                	forwardIndex->haveWordInRange(i, fl, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, attributeBitmap, score);
+                }
 
                 clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -261,7 +266,12 @@ void randomAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeywordInfo
                 
             clock_gettime(CLOCK_REALTIME, &t1);
 
-            bool result = forwardIndex->haveWordInRange(recordId, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, attributeBitmap, score);
+            bool valid = false;
+			const ForwardList* fl = forwardIndex->getForwardList(recordId, valid);
+            bool result = false;
+            if(valid == true){
+            	forwardIndex->haveWordInRange(recordId,fl, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, attributeBitmap, score);
+            }
         
             clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -291,7 +301,7 @@ int main(int argc, char *argv[])
 	schema->setSearchableAttribute("description", 2); // searchable text
 
 	/// Create an Analyzer
-	AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+	AnalyzerInternal *analyzer = new StandardAnalyzer(NULL, NULL, NULL, NULL, "");
 
 	/// Initialise Index Structures
 	Trie_Internal *trie = new Trie_Internal();

@@ -113,8 +113,9 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfOpen(const PhysicalPl
 	resultCost = resultCost +
 			(this->getChildAt(0)->getCostOfGetNext(params).cost) * estimatedNumberOfResults; // (cost(child's getNext) + O(1))*estimatedNumberOfResults
 	// sorting
-	resultCost.addMediumFunctionCost(); // make_ueap
-	resultCost.addSmallFunctionCost(estimatedNumberOfResults); // we assume make_heap calls estimatedNumberOfResults small functions
+	resultCost.addMediumFunctionCost(); // sort
+	resultCost.addSmallFunctionCost(estimatedNumberOfResults - params.k); // we assume make_heap calls estimatedNumberOfResults small functions
+	resultCost.addSmallFunctionCost(log2((double)params.k + 1) * params.k);
 
 	return resultCost;
 }
@@ -128,6 +129,9 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfGetNext(const Physica
 	resultCost.addSmallFunctionCost(5);
 	resultCost.addInstructionCost();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	if(params.k < estimatedNumberOfResults){
+		estimatedNumberOfResults = params.k;
+	}
 	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfResults + 1))); // + 1 is to avoid 0
 	// we assume make_heap calls estimatedNumberOfResults small functions
 	return resultCost;

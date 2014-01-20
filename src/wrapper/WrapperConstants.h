@@ -56,7 +56,8 @@ typedef enum {
     FacetQueryHandler,
     SortQueryHandler,
     GeoTypeRectangular,
-    GeoTypeCircular
+    GeoTypeCircular,
+    QueryFieldBoostFlag
 } ParameterName;
 
 typedef enum {

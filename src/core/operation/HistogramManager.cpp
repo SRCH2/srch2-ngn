@@ -186,7 +186,11 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 		{
 			return 1;
 		}
+		default:
+			ASSERT(false);
+			return 0;
 	}
+
 }
 
 PrefixActiveNodeSet *HistogramManager::computeActiveNodeSet(Term *term) const

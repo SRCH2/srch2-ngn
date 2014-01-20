@@ -210,7 +210,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfV
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
-	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
 	return resultCost;
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){

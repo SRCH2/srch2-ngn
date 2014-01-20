@@ -15,7 +15,8 @@ namespace instantsearch {
  */
 class TokenFilter: public TokenStream {
 public:
-    TokenFilter(TokenStream* tokenStream) {
+    TokenFilter(TokenStream* tokenStream)
+    {
         this->tokenStream = tokenStream;
     }
     virtual ~TokenFilter() {

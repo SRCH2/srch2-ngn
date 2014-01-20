@@ -1,4 +1,4 @@
-
+\
 // $Id: EditDistance_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
 /*
@@ -54,8 +54,7 @@ void buildLocalIndex(string INDEX_DIR)
     //schema->setAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     // create a record of 3 attributes
     Record *record = new Record(schema);
@@ -71,7 +70,7 @@ void buildLocalIndex(string INDEX_DIR)
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
 
     // add a record
@@ -129,7 +128,7 @@ void test1()
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(true);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
@@ -239,7 +238,7 @@ void test2()
     IndexMetaData *indexMetaData = new IndexMetaData( cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *indexer = Indexer::load(indexMetaData);
     indexer->getSchema()->setSupportSwapInEditDistance(false);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;

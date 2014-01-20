@@ -2,18 +2,22 @@
 
 #include "KeywordSearchOperator.h"
 #include "../QueryEvaluatorInternal.h"
+//#include <gperftools/profiler.h>
 
 namespace srch2 {
 namespace instantsearch {
 
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & p){
+
+
+
 	//1. Find the right value for K (if search type is topK)
 	bool isFuzzy = logicalPlan->isFuzzy();
+
 	// we set fuzzy to false to the first session which is exact
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 
-	// TODO : possible optimization: if we save some records from exact session it might help in fuzzy session
 	//2. Apply exact/fuzzy policy and run
 	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
@@ -38,6 +42,9 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		PhysicalPlan physicalPlan(queryEvaluator);
 		queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan);
 
+		if(physicalPlan.getPlanTree() == NULL){
+			return true;
+		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
@@ -61,6 +68,9 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			}
 		}
 		params.k = numberOfIterations;
+
+
+
 		//1. Open the physical plan by opening the root
 		physicalPlan.getPlanTree()->open(queryEvaluator , params);
 		//2. call getNext for K times
@@ -75,21 +85,28 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 					continue;
 				}
 			}
+			if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+				continue;
+			}
 			//
 			resultIds.push_back(newRecord->getRecordId());
 			results.push_back(newRecord);
 
 		}
 
-		if(isFuzzy == false || results.size() >= numberOfIterations){
-			break;
-		}else{
-			logicalPlan->setFuzzy(true);
-			params.isFuzzy = true;
-		}
+		physicalPlan.getPlanTree()->close(params);
+
+
+	    if(fuzzyPolicyIter == 0){
+	    	if(isFuzzy == true && results.size() < numberOfIterations){
+	    		logicalPlan->setFuzzy(true);
+	    		params.isFuzzy = true;
+	    	}else{
+	    		break;
+	    	}
+	    }
+
 	}
-
-
 	cursorOnResults = 0;
 	return true;
 }

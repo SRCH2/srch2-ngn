@@ -38,15 +38,15 @@ using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
+
 // TODO: width limit 80 chars
-StemmerFilter::StemmerFilter(TokenStream* tokenStream, const string &stemmerFilePath) :
-		TokenFilter(tokenStream),stemmerContainer(StemmerContainer::getInstance()) {
-	// Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
-	const std::string stemmerFiltePath = stemmerFilePath;
+StemmerFilter::StemmerFilter(TokenStream* tokenStream, const StemmerContainer *_stemmerContainer) :
+    TokenFilter(tokenStream), stemmerContainer(_stemmerContainer)
+{
+    // Based on StemmerType value it should be decided to use PORTER or MIRROR or ...
 
-	// copies the shared_ptr: sharedToken
-	this->tokenStreamContainer = tokenStream->tokenStreamContainer;
-
+    // copies the shared_ptr: sharedToken
+    this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
 
 StemmerFilter::~StemmerFilter() {
@@ -54,7 +54,7 @@ StemmerFilter::~StemmerFilter() {
 
 //  search if the given string is present in the DictionaryWords
 bool StemmerFilter::searchWord(const std::string &searchWord) const {
-	return stemmerContainer.contains(searchWord);
+	return stemmerContainer->contains(searchWord);
 }
 
 /* Stems the input Token to be stemmed

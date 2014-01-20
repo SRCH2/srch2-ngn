@@ -180,31 +180,26 @@ PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfOpen(const Physic
 PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	/*
 	 * We suppose all cursors move with the same speed
-	 * So the total number of children getNexts that we call is the length of the shortest child for each child
-	 * so the average cost of each getNext is :
-	 * ((numberOfChildren * estimatedLengthOfShortestList) / estimatedNumberOfResults) * ( children getNextCost average + O(1) ) + O(1)
+	 * total cost for each getNext is :
+	 * sum(over all lists I) : (lengthOfListI / estimatedNumberOfResults) * getNextCost of listI
+	 *
 	 */
 	unsigned numberOfChildren = this->getChildrenCount();
-	unsigned estimatedLengthOfShortestList = 0 ;
+	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	if(estimatedNumberOfResults == 0){
+		estimatedNumberOfResults = 1;
+	}
+	unsigned numberOfGetNextCallsOfChildren = 0;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		unsigned thisChildsLength = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-		if(estimatedLengthOfShortestList < thisChildsLength){
-			estimatedLengthOfShortestList = thisChildsLength;
-		}
+		numberOfGetNextCallsOfChildren +=
+				((thisChildsLength * 1.0) / estimatedNumberOfResults) * this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
 	}
-	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	float childrenGetNextAverage = 0;
-	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		childrenGetNextAverage += this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
-	}
-	childrenGetNextAverage = childrenGetNextAverage / numberOfChildren;
-
 	PhysicalPlanCost resultCost ;
 	// cost of other instructions in getNext
-	resultCost.addMediumFunctionCost((unsigned)((numberOfChildren * estimatedLengthOfShortestList * 1.0) / estimatedNumberOfResults));
+	resultCost.addSmallFunctionCost(numberOfGetNextCallsOfChildren);
+	resultCost.addMediumFunctionCost(); // copying the result
 
-	resultCost = resultCost +
-			(unsigned)(((numberOfChildren * estimatedLengthOfShortestList * 1.0) / estimatedNumberOfResults) * ( childrenGetNextAverage + 1 ));
 
 	return resultCost;
 }

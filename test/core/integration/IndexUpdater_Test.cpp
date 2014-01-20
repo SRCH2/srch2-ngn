@@ -56,8 +56,7 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
@@ -66,7 +65,7 @@ void addSimpleRecords()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
@@ -114,8 +113,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -123,7 +121,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 
     record->setPrimaryKey(1001);
@@ -176,7 +174,7 @@ void test1()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -274,7 +272,7 @@ void test2()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -364,7 +362,7 @@ void test3()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -446,7 +444,7 @@ void test4()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -506,7 +504,7 @@ void test5()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -571,7 +569,7 @@ void test6()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -681,7 +679,7 @@ void test8()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -765,7 +763,7 @@ void test9()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -847,7 +845,7 @@ void test10()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::load(indexMetaData1);
     index->createAndStartMergeThreadLoop();
@@ -943,8 +941,7 @@ void test11()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 3;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -952,7 +949,7 @@ void test11()
     IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
            
     Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
 

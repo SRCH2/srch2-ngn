@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-			"", index_dir);
+			index_dir);
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;

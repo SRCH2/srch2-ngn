@@ -19,8 +19,6 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 
 	this->isShortestListFinished = false;
 
-	this->previousResultsFound.clear();
-
 	this->indexOfShortestListChild =
 			((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
 
@@ -49,10 +47,6 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 			return NULL;
 		}
 
-		//TODO possible optimization
-		if(find(this->previousResultsFound.begin(),this->previousResultsFound.end(), nextRecord->getRecordId()) != this->previousResultsFound.end()){
-			continue;
-		}
 		// validate the record with other children
 		//2.
 		std::vector<float> runTimeTermRecordScores;
@@ -75,7 +69,6 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
 		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 		// save it in previousResultsVector
-		this->previousResultsFound.push_back(nextRecord->getRecordId());
 		return nextRecord;
 	}
 
@@ -91,7 +84,6 @@ bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
 	}
 	this->isShortestListFinished = false;
-	this->previousResultsFound.clear();
 	return true;
 
 }
@@ -189,7 +181,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 * (estimated length of shortest list / estimated number of results of this and) * ( child's getNextCost + sum of verification costs + O(1) ) + O(1)
 	 */
 	unsigned indexOfShortestList = getShortestListOffsetInChildren();
-	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->estimatedNumberOfResults;
+	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 	if(estimatedNumberOfResults == 0){
 		estimatedNumberOfResults = 1;
@@ -201,8 +193,10 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 		if(childOffset == indexOfShortestList){
 			continue;
 		}
-		recordProcessingCost.addMediumFunctionCost(this->getChildrenCount()); // cost of verify record with children
+		recordProcessingCost = recordProcessingCost +
+				this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
+	recordProcessingCost.addMediumFunctionCost(); // cost of verify record with children
 	recordProcessingCost.addFunctionCallCost(15); // function calls
 	recordProcessingCost.addInstructionCost(4); // simple instructions and conditions
 	recordProcessingCost.addSmallFunctionCost(5); // small functions like push_back

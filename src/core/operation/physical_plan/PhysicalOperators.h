@@ -411,7 +411,6 @@ private:
 	MergeByShortestListOperator() ;
 	unsigned indexOfShortestListChild ;
 	bool isShortestListFinished;
-	vector<unsigned> previousResultsFound;
 };
 
 class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationNode {

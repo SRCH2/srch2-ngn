@@ -37,7 +37,8 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             shared_ptr<vectorview<unsigned> > invertedListReadView;
             this->queryEvaluator->getInvertedIndex()->
             		getInvertedListReadView(leafNode->getInvertedListOffset() , invertedListReadView);
-            this->invertedLists.push_back(invertedListReadView);
+            this->invertedListsSharedPointers.push_back(invertedListReadView);
+            this->invertedLists.push_back(invertedListReadView.get());
             this->invertedListPrefixes.push_back(prefixNode);
             this->invertedListLeafNodes.push_back(leafNode);
             this->invertedListDistances.push_back(distance);
@@ -153,6 +154,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 }
 bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
 
+	this->invertedListsSharedPointers.clear();
 	this->invertedLists.clear();
 	this->invertedListDistances.clear();
 	this->invertedListLeafNodes.clear();
@@ -188,7 +190,8 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
         shared_ptr<vectorview<unsigned> > invertedListReadView;
         this->queryEvaluator->getInvertedIndex()->
         		getInvertedListReadView(trieNode->getInvertedListOffset() , invertedListReadView);
-        this->invertedLists.push_back(invertedListReadView);
+        this->invertedListsSharedPointers.push_back(invertedListReadView);
+        this->invertedLists.push_back(invertedListReadView.get());
         this->invertedListPrefixes.push_back(prefixNode);
         this->invertedListLeafNodes.push_back(trieNode);
         this->invertedListDistances.push_back(distance);
@@ -230,7 +233,7 @@ PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerify
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
-	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
 	return resultCost;
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){

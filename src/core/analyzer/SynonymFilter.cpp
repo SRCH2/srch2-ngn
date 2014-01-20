@@ -39,17 +39,19 @@ namespace srch2 {
 namespace instantsearch {
 
 SynonymFilter::SynonymFilter(TokenStream * tokenStream,
-		const std::string &synonymFilterFilePath,
-		const SynonymKeepOriginFlag &synonymKeepOriginFlag) :
-		TokenFilter(tokenStream), synonymContainer(SynonymContainer::getInstance())  {
+                             const SynonymContainer *_synonymContainer) :
+    TokenFilter(tokenStream),
+    synonymContainer(_synonymContainer)
+{
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
-	this->keepOriginFlag = synonymKeepOriginFlag;
+	this->keepOriginFlag = synonymContainer->keepOrigin();
 }
 
 
-pair<SynonymTokenType, std::string> SynonymFilter::getValuePairOf(const std::string &key) {
+pair<SynonymTokenType, std::string> SynonymFilter::getValuePairOf(const std::string &key) const
+{
 	pair<SynonymTokenType, std::string> valuePair;
-	synonymContainer.getValue(key, valuePair);
+	synonymContainer->getValue(key, valuePair);
 	return valuePair;
 }
 
@@ -68,7 +70,7 @@ void SynonymFilter::pushSynonymsOfExistingTokensInEmitBuffer() {
 			}
 			tempToken = tempToken.substr(0, tempToken.length() - 1);
 			pair<SynonymTokenType, std::string> valuePair;
-			synonymContainer.getValue(tempToken, valuePair);
+			synonymContainer->getValue(tempToken, valuePair);
 
 			if (valuePair.first == SYNONYM_COMPLETE_ONLY || valuePair.first == SYNONYM_PREFIX_AND_COMPLETE) {
 				if (this->keepOriginFlag == SYNONYM_KEEP_ORIGIN) { // checks the flag of Keeping origin word

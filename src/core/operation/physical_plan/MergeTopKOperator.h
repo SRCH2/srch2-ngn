@@ -26,6 +26,8 @@
 #include "operation/HistogramManager.h"
 #include "PhysicalPlan.h"
 
+#include <boost/unordered_set.hpp>
+
 using namespace std;
 
 namespace srch2 {
@@ -95,8 +97,9 @@ private:
 	 * This vector keeps all the records that have been visited so far (including
 	 * the returned ones and the candidates and even those records which are not verified)
 	 */
-	vector<unsigned> visitedRecords; // TODO :  THIS MIGHT BE A BOTTLENECK, maybe we should change it to hash table ?
+//	vector<unsigned> visitedRecords; // TODO :  THIS MIGHT BE A BOTTLENECK, maybe we should change it to hash table ?
 
+	boost::unordered_set<unsigned> visitedRecords;
 
 	/*
 	 * This variable is true unless one of the children lists become empty

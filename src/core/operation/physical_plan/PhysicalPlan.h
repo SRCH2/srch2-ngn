@@ -116,22 +116,52 @@ public:
 class PhysicalPlanRecordItem{
 public:
 	// getters
-	unsigned getRecordId() const ;
-	float getRecordStaticScore() const;
-	float getRecordRuntimeScore() const;
-	void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const;
-	void getRecordMatchEditDistances(vector<unsigned> & editDistances) const;
-	void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const;
-	void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const ;
+	inline unsigned getRecordId() const {
+		return this->recordId;
+	}
+	inline float getRecordStaticScore() const{
+		return this->recordStaticScore;
+	}
+	inline float getRecordRuntimeScore() const{
+		return this->recordRuntimeScore;
+	}
+	inline void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const{
+		matchingPrefixes.insert(matchingPrefixes.end(),this->matchingPrefixes.begin(),this->matchingPrefixes.end());
+	}
+	inline void getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
+		editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
+	}
+	inline void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
+		attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
+	}
+	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
+		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
+	}
 
 	// setters
-	void setRecordId(unsigned id) ;
-	void setRecordStaticScore(float staticScore) ;
-	void setRecordRuntimeScore(float runtimeScore) ;
-	void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) ;
-	void setRecordMatchEditDistances(const vector<unsigned> & editDistances) ;
-	void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) ;
-	void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets);
+	inline void setRecordId(unsigned id) {
+		this->recordId = id;
+	}
+	inline void setRecordStaticScore(float staticScore) {
+		this->recordStaticScore = staticScore;
+	}
+	inline void setRecordRuntimeScore(float runtimeScore) {
+		this->recordRuntimeScore = runtimeScore;
+	}
+	inline void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) {
+		this->matchingPrefixes = matchingPrefixes;
+	}
+	inline void setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
+		this->editDistances = editDistances;
+	}
+	inline void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
+		this->attributeBitmaps = attributeBitmaps;
+	}
+	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
+		this->positionIndexOffsets = positionIndexOffsets;
+	}
+
+
 	~PhysicalPlanRecordItem(){};
 
     std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
@@ -261,8 +291,16 @@ public:
 	// this function checks the types and properties of children to see if it's
 	// meaningful to have this node with this children.
 	virtual bool validateChildren() = 0;
-	unsigned getChildrenCount() ;
-	PhysicalPlanOptimizationNode * getChildAt(unsigned offset) ;
+	inline unsigned getChildrenCount() {
+		return children.size();
+	}
+	inline PhysicalPlanOptimizationNode * getChildAt(unsigned offset) {
+		if(offset >= children.size()){
+			ASSERT(false);
+			return NULL;
+		}
+		return children.at(offset);
+	}
 	void setChildAt(unsigned offset, PhysicalPlanOptimizationNode * child) ;
 	void addChild(PhysicalPlanOptimizationNode * child) ;
 	void setParent(PhysicalPlanOptimizationNode * parent);
@@ -271,14 +309,14 @@ public:
 	void setExecutableNode(PhysicalPlanNode * node){
 		this->executableNode = node;
 	}
-	PhysicalPlanNode * getExecutableNode(){
+	inline PhysicalPlanNode * getExecutableNode(){
 		return this->executableNode;
 	}
 
 	void setLogicalPlanNode(LogicalPlanNode * node){
 		this->logicalPlanNode = node;
 	}
-	LogicalPlanNode * getLogicalPlanNode(){
+	inline LogicalPlanNode * getLogicalPlanNode(){
 		return this->logicalPlanNode;
 	}
 
@@ -304,7 +342,9 @@ class PhysicalPlanNode : public PhysicalPlanIteratorExecutionInterface{
 	friend class PhysicalPlan;
 public:
 	void setPhysicalPlanOptimizationNode(PhysicalPlanOptimizationNode * optimizationNode);
-	PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode();
+	inline PhysicalPlanOptimizationNode * getPhysicalPlanOptimizationNode(){
+		return this->optimizationNode;
+	}
 
 	// this function checks to see if a record (that its id can be found in parameters) is among the
 	// results if this subtree. Different operators have different implementations this function.

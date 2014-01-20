@@ -23,8 +23,14 @@ QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator){
  */
 void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan){
 
+	this->logicalPlan = logicalPlan;
+
 	// Build physical plan
 	buildPhysicalPlanFirstVersion(physicalPlan);
+
+	if(physicalPlan.getPlanTree() == NULL){
+		return;
+	}
 
 	// apply optimization rules
 	applyOptimizationRulesOnThePlan(physicalPlan);
@@ -54,15 +60,23 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	//4. Find the option which has the minimum cost
 	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan);
 
+	if(chosenTree == NULL){
+		physicalPlan.setPlanTree(NULL);
+		return;
+	}
+
 	// 5. Build the complete version of physical plan tree from the chosen tree structure
 	// --- and set in the plan object
 	physicalPlan.setPlanTree(buildPhysicalPlanFirstVersionFromTreeStructure(chosenTree));
 
 	// print for test
-	Logger::info("========================================================");
-	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
-	Logger::info("========================================================");
+//	Logger::info("========================================================");
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	Logger::info("========================================================");
 //	exit(0);
+//	cout << "========================================================" << endl;
+//	physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+//	cout << "========================================================" << endl;
 	// end : print for test
 
 }
@@ -362,44 +376,45 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
-	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin() ; treeOption != treeOptions.end() ; ++treeOption){
+
+	if(treeOptions.size() == 1){
+		return treeOptions.at(0);
+	}
+
+	unsigned treeOptionIndexChosen = 0 ;
+	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size() ; treeOptionIndex++){
+		PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
 		PhysicalPlanCost cost;
 		unsigned numberOfGetNextCalls = 0;
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
 			numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;
-			if((*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
-				numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+			if(treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() < numberOfGetNextCalls){
+				numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 			}
 		}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
-			numberOfGetNextCalls = (*treeOption)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+			numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 		}
-		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
+
+		cost = cost + treeOption->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
 		cost = cost +
-				(*treeOption)->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
+				treeOption->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
 				numberOfGetNextCalls;
-		cost = cost + (*treeOption)->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
-
-//		Logger::info("========================================================" );
-//		Logger::info("Cost is %d" , cost.cost);
-//		(*treeOption)->printSubTree();
-//		Logger::info("========================================================" );
-
-//		if((*treeOption)->getType() == PhysicalPlanNode_MergeTopK){ // This code is for TEST. Do not keep it uncommented
-//			minPlan = (*treeOption);
-//			minCost = cost.cost;
-//			break;
-//		}
+		cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
 		if(minPlan == NULL){
-			minPlan = (*treeOption);
+			minPlan = treeOption;
 			minCost = cost.cost;
+			treeOptionIndexChosen = treeOptionIndex;
 		}else{
 			if(minCost > cost.cost){
-				minPlan = (*treeOption);
+				minPlan = treeOption;
 				minCost = cost.cost;
+				treeOptionIndexChosen = treeOptionIndex;
 			}
 		}
 	}
+
+
 	return minPlan;
 }
 
@@ -514,6 +529,7 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 
 	if(filterQueryOp != NULL){
 		filterQueryOp->getPhysicalPlanOptimizationNode()->addChild(optimizationResult);
+		filterQueryOp->getPhysicalPlanOptimizationNode()->setLogicalPlanNode(optimizationResult->getLogicalPlanNode());
 		executableResult = (PhysicalPlanNode *)filterQueryOp;
 	}
 

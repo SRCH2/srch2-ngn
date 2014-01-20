@@ -34,13 +34,12 @@ class HTTPRequestHandler
         static void searchCommand(evhttp_request *req, Srch2Server *server);
         static void suggestCommand(evhttp_request *req, Srch2Server *server);
         static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
-        static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
+        static void writeCommand(evhttp_request *req, Srch2Server *server);
         static void updateCommand(evhttp_request *req, Srch2Server *server);
         static void saveCommand(evhttp_request *req, Srch2Server *server);
         static void exportCommand(evhttp_request *req, Srch2Server *server);
         static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
-		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
 		static void handleException(evhttp_request *req);
 
@@ -48,7 +47,7 @@ class HTTPRequestHandler
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,
@@ -61,7 +60,7 @@ class HTTPRequestHandler
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,
 				const string & message,

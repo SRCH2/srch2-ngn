@@ -199,9 +199,9 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	 */
 
 	PhysicalPlanNode * topOperator = NULL;
+	PhysicalPlanNode * bottomOfChain = NULL;
 	FacetOperator * facetOperatorPtr = NULL;
 	SortByRefiningAttributeOperator * sortOperator = NULL;
-	PhraseSearchOperator * phraseOperator = NULL;
 	if(logicalPlan->getPostProcessingInfo() != NULL){
 		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
 			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
@@ -215,7 +215,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			facetOperatorPtr->setPhysicalPlanOptimizationNode(facetOptimizationOperatorPtr);
 			facetOptimizationOperatorPtr->setExecutableNode(facetOperatorPtr);
 
-			topOperator =  facetOperatorPtr;
+			topOperator = bottomOfChain =  facetOperatorPtr;
 		}
 		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
 			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
@@ -224,10 +224,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
 			sortOpOperator->setExecutableNode(sortOperator);
 
-			if(topOperator != NULL){
-				topOperator->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+			if(bottomOfChain != NULL){
+				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
 			}else{
-				topOperator = sortOperator;
+				topOperator = bottomOfChain = sortOperator;
 			}
 		}
 	}
@@ -238,10 +239,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	keywordSearchOperator.setPhysicalPlanOptimizationNode(&keywordSearchOptimizationOperator);
 	keywordSearchOptimizationOperator.setExecutableNode(&keywordSearchOperator);
 
-	if(topOperator != NULL){
-		topOperator->getPhysicalPlanOptimizationNode()->addChild(&keywordSearchOptimizationOperator);
+	if(bottomOfChain != NULL){
+		bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(&keywordSearchOptimizationOperator);
+		bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
 	}else{
-		topOperator = &keywordSearchOperator;
+		topOperator = bottomOfChain = &keywordSearchOperator;
 	}
 
 
@@ -266,7 +268,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 
 		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
-			continue;
+			continue; // because for some operators like facet, it needs us to call getNext until the end
 		}
 
 		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();

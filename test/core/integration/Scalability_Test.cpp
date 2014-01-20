@@ -30,8 +30,8 @@ void buildIndex(string dataFile, string indexDir) {
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -41,7 +41,7 @@ void buildIndex(string dataFile, string indexDir) {
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -99,8 +99,8 @@ void buildGeoIndex(string dataFile, string indexDir) {
     schema->setSearchableAttribute("description", 2);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
@@ -110,7 +110,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -353,7 +353,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		indexDir, "");
+    		indexDir);
     Indexer *index = Indexer::load(indexMetaData);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);

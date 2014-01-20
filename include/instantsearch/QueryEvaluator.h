@@ -131,7 +131,7 @@ public:
     /**
      * Destructor to free persistent resources used by the QueryEvaluator.
      */
-    ~QueryEvaluator() {};
+    ~QueryEvaluator();
 
     QueryEvaluatorInternal * impl;
 

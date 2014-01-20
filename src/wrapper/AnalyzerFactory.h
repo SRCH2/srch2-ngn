@@ -14,21 +14,21 @@ namespace srch2is = srch2::instantsearch;
 namespace srch2 {
     namespace httpwrapper {
 
-        class ConfigManager;
+        class CoreInfo_t;
 
         class AnalyzerFactory {
         public:
-            static srch2is::Analyzer* createAnalyzer(const ConfigManager* conf);
-            static srch2is::Analyzer* getCurrentThreadAnalyzer(const ConfigManager* configMgr);
+            static srch2is::Analyzer* createAnalyzer(const CoreInfo_t* config);
+            static srch2is::Analyzer* getCurrentThreadAnalyzer(const CoreInfo_t* config);
         private:
             AnalyzerFactory();
         };
 
         class AnalyzerHelper {
 		public:
-			static void initializeAnalyzerResource(const ConfigManager* conf);
-			static void loadAnalyzerResource(const ConfigManager* conf);
-			static void saveAnalyzerResource(const ConfigManager* conf);
+			static void initializeAnalyzerResource(const CoreInfo_t* conf);
+			static void loadAnalyzerResource(const CoreInfo_t* conf);
+			static void saveAnalyzerResource(const CoreInfo_t* conf);
 		private:
 			AnalyzerHelper(){}
 		};
