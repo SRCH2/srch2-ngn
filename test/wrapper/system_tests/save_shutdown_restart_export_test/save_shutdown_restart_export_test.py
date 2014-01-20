@@ -3,22 +3,18 @@
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, subprocess
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= [binary_path + '/srch2-search-server', '--config-file=./save_shutdown_restart_export_test/conf.xml', '&']
-    print 'starting engine: '
+    binary= [ binary_path, '--config-file=./save_shutdown_restart_export_test/conf.xml' ]
+    print 'starting engine: ' + binary[0] + ' ' + binary[1]
     proc = subprocess.Popen(binary)
 
-    pingServer()
+    test_lib.pingServer(port)
 
     #save the index
     saveCommand='curl -s http://localhost:' + port + '/save -X PUT'
@@ -41,7 +37,7 @@ def testSaveShutdownRestart(binary_path):
         exit(-1)
     #restart
     proc = subprocess.Popen(binary)
-    pingServer()
+    test_lib.pingServer(port)
     #search a query for checking if the server is shutdown
     query='http://localhost:' + port + '/search?q=good'
     response = urllib2.urlopen(query).read()
@@ -56,9 +52,7 @@ def testSaveShutdownRestart(binary_path):
     os.system(exportCommand)
 
     #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
+    proc.send_signal(signal.SIGUSR1)
     print 'test pass'
     print '=============================='
     return 0

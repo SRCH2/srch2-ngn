@@ -1,11 +1,11 @@
 
 how to run system test case:
 
-/path/to/system/test/dir/main.sh /path/to/system/test/dir /path/to/srch2-engine 
+/path/to/system/test/dir/main.sh /path/to/system/test/dir /path/to/srch2-engine-executable
 
 if you are running it for the sytem test directory itself then 
 
-./main.sh . /path/to/srch2-engine
+./main.sh . /path/to/srch2-search-server
 
 
 

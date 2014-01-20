@@ -9,14 +9,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, re
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -81,12 +77,11 @@ def prepareQuery(queryKeywords, fuzzy):
 
 def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path):
     #Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./multicore/conf-multicore.xml &'
-    print 'starting engine: ' + binary
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./multicore/conf-multicore.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
 
-    pingServer()
+    test_lib.pingServer(port)
     failCount = 0
 
     #######################################
@@ -180,16 +175,9 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
             index += 1
 
-    #get pid of srch2-search-server and kill the process
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server | grep -v grep')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except:
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
+        
+    test_lib.killServer(serverHandle)
+
     print '=============================='
     return failCount
 
