@@ -108,6 +108,17 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="phrase search test with boolean expression"
+echo "---------------------do $test_id-----------------------"
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
+
 test_id="multi valued attribute"
 echo "---------------------do $test_id-----------------------"
 python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE_DIR '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt >> system_test.log 2>&1
