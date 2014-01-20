@@ -20,7 +20,7 @@ using namespace std;
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
-
+IndexMetaData *indexMetaData;
 Indexer *buildIndex(string data_file, string index_dir, string expression)
 {
     /// Set up the Schema
@@ -39,7 +39,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    indexMetaData = new IndexMetaData( new Cache(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir, "");
@@ -96,6 +96,9 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
 
     data.close();
 
+    delete record;
+    delete analyzer;
+    delete schema;
     return indexer;
 }
 
@@ -104,7 +107,8 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
 {
     
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
+    QueryResultFactory * resultFactory = new QueryResultFactory();
+    QueryResults * queryResults = new QueryResults(resultFactory ,indexSearcher, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
     {
@@ -130,6 +134,7 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
 
     delete queryResults;
     delete query;
+    delete resultFactory;
 
 }
 
@@ -244,6 +249,7 @@ void test(string index_dir, string data_file)
 
     delete indexSearcher;
     delete indexer;
+    delete indexMetaData;
 
 }
 

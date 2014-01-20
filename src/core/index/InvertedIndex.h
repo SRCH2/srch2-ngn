@@ -117,7 +117,10 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        ar & invList;
+        cowvector<unsigned> *invListPtr = invList;
+        if (invListPtr == NULL)
+            invListPtr = new cowvector<unsigned>();
+        ar & *invListPtr;
     }
 
 public:
@@ -303,15 +306,25 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
-        ar & invertedIndexVector;
-        ar & keywordIds;
+        cowvector<InvertedListContainerPtr> *invertedIndexVectorPtr = invertedIndexVector;
+        if (invertedIndexVectorPtr == NULL)
+    	    invertedIndexVectorPtr = new cowvector<InvertedListContainerPtr>();
+        ar & *invertedIndexVectorPtr;
+        cowvector<unsigned> *keywordIdsPtr = keywordIds;
+        if (keywordIdsPtr == NULL)
+            keywordIdsPtr = new cowvector<unsigned>();
+        ar & *keywordIdsPtr;
     }
 
     template<class Archive>
     void load(Archive & ar, const unsigned int version)
     {
-        ar & invertedIndexVector;
-        ar & keywordIds;
+        if (invertedIndexVector == NULL)
+            invertedIndexVector = new cowvector<InvertedListContainerPtr>();
+        ar & *invertedIndexVector;
+        if (keywordIds == NULL)
+            keywordIds = new cowvector<unsigned>();
+        ar & *keywordIds;
         commited_WriteView = true;
     }
 
