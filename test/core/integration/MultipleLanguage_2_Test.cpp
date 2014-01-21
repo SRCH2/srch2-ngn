@@ -6,7 +6,7 @@
  */
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -130,7 +130,8 @@ void testPolish() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -140,7 +141,7 @@ void testPolish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -151,13 +152,13 @@ void testPolish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -261,7 +262,8 @@ void testPortuguese() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -271,16 +273,16 @@ void testPortuguese() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -291,21 +293,21 @@ void testPortuguese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -408,7 +410,8 @@ void testRomanian() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -418,7 +421,7 @@ void testRomanian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -430,13 +433,13 @@ void testRomanian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -539,7 +542,8 @@ void testRussian() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -549,7 +553,7 @@ void testRussian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -563,13 +567,13 @@ void testRussian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -670,7 +674,8 @@ void testSerbian() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -680,7 +685,7 @@ void testSerbian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -692,13 +697,13 @@ void testSerbian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -801,7 +806,8 @@ void testSlovak() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -812,7 +818,7 @@ void testSlovak() {
 		//recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -825,13 +831,13 @@ void testSlovak() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -934,7 +940,8 @@ void testSlovenian() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -944,7 +951,7 @@ void testSlovenian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -956,13 +963,13 @@ void testSlovenian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1066,7 +1073,8 @@ void testSpanish() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1075,16 +1083,16 @@ void testSpanish() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
@@ -1095,21 +1103,21 @@ void testSpanish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1213,7 +1221,8 @@ void testSwedish() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1223,7 +1232,7 @@ void testSwedish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1235,13 +1244,13 @@ void testSwedish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1345,7 +1354,8 @@ void testThai() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1355,7 +1365,7 @@ void testThai() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1367,13 +1377,13 @@ void testThai() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1476,7 +1486,8 @@ void testTurkish() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1486,7 +1497,7 @@ void testTurkish() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1498,13 +1509,13 @@ void testTurkish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1606,7 +1617,8 @@ void testUkrainian() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1616,7 +1628,7 @@ void testUkrainian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1628,13 +1640,13 @@ void testUkrainian() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1738,7 +1750,8 @@ void testVietnamese() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -1748,7 +1761,7 @@ void testVietnamese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1760,13 +1773,13 @@ void testVietnamese() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1853,7 +1866,8 @@ void testFarsi() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 	{
 		string query = "چین ";
@@ -1862,7 +1876,7 @@ void testFarsi() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1875,13 +1889,13 @@ void testFarsi() {
 		recordIds.push_back(1101);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2059,7 +2073,8 @@ void testArabic() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 	//We use popular English novel and translate into Arabic,using the content and their titles to test if the engine can support Chinese characters. The data was obtained from www.baidu.com search "中国 诗词名句"
 	//Query: "مثل", hits -> 1103, 1110
@@ -2074,16 +2089,16 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 7, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 7, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 7, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 7, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 7, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 7, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 7, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 7, recordIds)
 						== true);
 	}
 
@@ -2094,16 +2109,16 @@ void testArabic() {
 		recordIds.push_back(1001);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "book", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "book", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "book", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "book", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "book", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "book", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "book", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "book", 2, recordIds)
 						== true);
 	}
 
@@ -2115,16 +2130,16 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 	}
 
@@ -2136,21 +2151,21 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds)
 						== true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2246,7 +2261,8 @@ void testHebrew() {
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 	{
 		string query = "Tomorrow";
@@ -2255,7 +2271,7 @@ void testHebrew() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -2269,12 +2285,12 @@ void testHebrew() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2366,7 +2382,8 @@ void testKazakh()
 			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -2375,12 +2392,12 @@ void testKazakh()
                 recordIds.push_back(1101);
 		recordIds.push_back(1102);
 
-		ASSERT(pingExactComplete(analyzer, indexSearcher, query, 2,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 2,recordIds) == true);
 	}
 
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2472,7 +2489,8 @@ void testBurmese()
 			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -2480,12 +2498,12 @@ void testBurmese()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1102);
 
-		ASSERT(pingExactComplete(analyzer, indexSearcher, query, 1,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds) == true);
 	}
 
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2575,7 +2593,8 @@ void testPortugueseBrazil()
 			mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -2583,12 +2602,12 @@ void testPortugueseBrazil()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1101);
 
-		ASSERT(pingExactComplete(analyzer, indexSearcher, query, 1,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds) == true);
 	}
 
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2680,7 +2699,8 @@ void testSpanishLatin()
 			INDEX_DIR);
 
 	Indexer *index = Indexer::load(indexMetaData1);
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -2688,12 +2708,12 @@ void testSpanishLatin()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1101);
 
-		ASSERT(pingExactComplete(analyzer, indexSearcher, query, 1, recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1, recordIds) == true);
 	}
 
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 

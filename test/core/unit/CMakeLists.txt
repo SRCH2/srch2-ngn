@@ -64,9 +64,9 @@ ADD_EXECUTABLE(TermVirtualList_Test TermVirtualList_Test.cpp)
 TARGET_LINK_LIBRARIES(TermVirtualList_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS TermVirtualList_Test)
 
-ADD_EXECUTABLE(IndexSearcherInternal_Test IndexSearcherInternal_Test.cpp)
-TARGET_LINK_LIBRARIES(IndexSearcherInternal_Test ${UNIT_TEST_LIBS})
-LIST(APPEND UNIT_TESTS IndexSearcherInternal_Test)
+ADD_EXECUTABLE(QueryEvaluator_Test QueryEvaluator_Test.cpp)
+TARGET_LINK_LIBRARIES(QueryEvaluator_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS QueryEvaluator_Test)
 
 ADD_EXECUTABLE(Licensing_Test Licensing_Test.cpp)
 TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS})
@@ -113,6 +113,41 @@ ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
+ADD_EXECUTABLE(MergeByShortestList_Test physical_plan/MergeByShortestList_Test.cpp)
+TARGET_LINK_LIBRARIES(MergeByShortestList_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS MergeByShortestList_Test)
+
+ADD_EXECUTABLE(MergeSortedById_Test physical_plan/MergeSortedById_Test.cpp)
+TARGET_LINK_LIBRARIES(MergeSortedById_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS MergeSortedById_Test)
+
+ADD_EXECUTABLE(MergeTopK_Test physical_plan/MergeTopK_Test.cpp)
+TARGET_LINK_LIBRARIES(MergeTopK_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS MergeTopK_Test)
+
+ADD_EXECUTABLE(SortById_Test physical_plan/SortById_Test.cpp)
+TARGET_LINK_LIBRARIES(SortById_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS SortById_Test)
+
+ADD_EXECUTABLE(SortByScore_Test physical_plan/SortByScore_Test.cpp)
+TARGET_LINK_LIBRARIES(SortByScore_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS SortByScore_Test)
+
+ADD_EXECUTABLE(UnionSortedById_Test physical_plan/UnionSortedById_Test.cpp)
+TARGET_LINK_LIBRARIES(UnionSortedById_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS UnionSortedById_Test)
+
+ADD_EXECUTABLE(RandomAccessVerificationAnd_Test physical_plan/RandomAccessVerificationAnd_Test.cpp)
+TARGET_LINK_LIBRARIES(RandomAccessVerificationAnd_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RandomAccessVerificationAnd_Test)
+
+ADD_EXECUTABLE(RandomAccessVerificationOr_Test physical_plan/RandomAccessVerificationOr_Test.cpp)
+TARGET_LINK_LIBRARIES(RandomAccessVerificationOr_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RandomAccessVerificationOr_Test)
+
+ADD_EXECUTABLE(RandomAccessVerificationNot_Test physical_plan/RandomAccessVerificationNot_Test.cpp)
+TARGET_LINK_LIBRARIES(RandomAccessVerificationNot_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RandomAccessVerificationNot_Test)
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

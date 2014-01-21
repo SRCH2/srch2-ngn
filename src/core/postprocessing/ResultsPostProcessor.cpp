@@ -18,8 +18,8 @@
  */
 
 #include "ResultsPostProcessorInternal.h"
-#include "instantsearch/IndexSearcher.h"
-#include "operation/IndexSearcherInternal.h"
+#include <instantsearch/QueryEvaluator.h>
+#include "operation/QueryEvaluatorInternal.h"
 #include <instantsearch/ResultsPostProcessor.h>
 
 using namespace std;
@@ -68,6 +68,54 @@ bool ResultsPostProcessorPlan::hasMoreFilters() const{
 
 void ResultsPostProcessorPlan::closeIteration(){
 	impl->filterIterator = impl->filterVector.end();
+}
+
+ResultsPostProcessingInfo::ResultsPostProcessingInfo(){
+	facetInfo = NULL;
+	sortEvaluator = NULL;
+	filterQueryEvaluator = NULL;
+	phraseSearchInfoContainer = NULL;
+}
+ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
+	if(facetInfo != NULL){
+		delete facetInfo;
+	}
+	if(sortEvaluator != NULL){
+		delete sortEvaluator;
+	}
+	if(filterQueryEvaluator != NULL){
+		delete filterQueryEvaluator;
+	}
+	if(phraseSearchInfoContainer != NULL){
+		delete phraseSearchInfoContainer;
+	}
+}
+
+FacetQueryContainer * ResultsPostProcessingInfo::getfacetInfo(){
+	return facetInfo;
+}
+void ResultsPostProcessingInfo::setFacetInfo(FacetQueryContainer * facetInfo){
+	this->facetInfo = facetInfo;
+}
+SortEvaluator * ResultsPostProcessingInfo::getSortEvaluator(){
+	return this->sortEvaluator;
+}
+void ResultsPostProcessingInfo::setSortEvaluator(SortEvaluator * evaluator){
+	this->sortEvaluator = evaluator;
+}
+
+void ResultsPostProcessingInfo::setFilterQueryEvaluator(RefiningAttributeExpressionEvaluator * filterQuery){
+	this->filterQueryEvaluator = filterQuery;
+}
+RefiningAttributeExpressionEvaluator * ResultsPostProcessingInfo::getFilterQueryEvaluator(){
+	return this->filterQueryEvaluator;
+}
+
+void ResultsPostProcessingInfo::setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer){
+	this->phraseSearchInfoContainer = phraseSearchInfoContainer;
+}
+PhraseSearchInfoContainer * ResultsPostProcessingInfo::getPhraseSearchInfoContainer(){
+	return this->phraseSearchInfoContainer;
 }
 
 }

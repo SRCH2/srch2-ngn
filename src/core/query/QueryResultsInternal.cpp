@@ -20,7 +20,7 @@
 #include "QueryResultsInternal.h"
 #include "operation/TermVirtualList.h"
 //#include "index/Trie.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "util/Logger.h"
 #include <instantsearch/Query.h>
 //#include <instantsearch/Term.h>
@@ -50,23 +50,23 @@ QueryResultsInternal::QueryResultsInternal() {
 }
 
 void QueryResultsInternal::init(QueryResultFactory * resultsFactory,
-        const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+        const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query) {
     Logger::debug("Query Results internal initialized.");
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
-    this->indexSearcherInternal = indexSearcherInternal;
+    this->queryEvaluatorInternal = queryEvaluatorInternal;
     this->stat = new Stat();
     this->resultsApproximated = false;
     this->estimatedNumberOfResults = -1;
 }
 
 QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
-        const IndexSearcherInternal *indexSearcherInternal, Query *query) {
+		const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query) {
     this->resultsFactory = resultsFactory;
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
-    this->indexSearcherInternal = indexSearcherInternal;
+    this->queryEvaluatorInternal = queryEvaluatorInternal;
     this->stat = new Stat();
     this->resultsApproximated = false;
     this->estimatedNumberOfResults = -1;
@@ -74,7 +74,7 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
 
 // DEBUG function. Used in CacheIntegration_Test
 bool QueryResultsInternal::checkCacheHit(
-        IndexSearcherInternal *indexSearcherInternal, Query *query) {
+        QueryEvaluatorInternal *queryEvaluatorInternal, Query *query) {
     this->query = query;
     this->virtualListVector = new vector<TermVirtualList*>;
 
@@ -85,12 +85,12 @@ bool QueryResultsInternal::checkCacheHit(
             vectorIterator != queryTerms->end(); vectorIterator++) {
         // compute the active nodes for this term
         Term *term = *vectorIterator;
-        PrefixActiveNodeSet *termActiveNodeSet = indexSearcherInternal
+        PrefixActiveNodeSet *termActiveNodeSet = queryEvaluatorInternal
                 ->computeActiveNodeSet(term);
 
         // compute the virtual list for this term
         TermVirtualList *termVirtualList = new TermVirtualList(
-                indexSearcherInternal->getInvertedIndex(), termActiveNodeSet,
+                queryEvaluatorInternal->getInvertedIndex(), termActiveNodeSet,
                 term, query->getPrefixMatchPenalty());
 
         // check if termActiveNodeSet is cached, if not delete it to prevent memory leaks.

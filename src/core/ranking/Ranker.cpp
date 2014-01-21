@@ -113,6 +113,33 @@ namespace srch2
     }
 
 
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+    	float resultScore = 0;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		resultScore += *(score);
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
+
+    	// max
+    	float resultScore = -1;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		if((*score) > resultScore){
+    			resultScore = (*score);
+    		}
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeScoreForNot(float score){
+    	return 1 - score;
+    }
+
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const
       {
       const vector<Term *> *queryTerms = query->getQueryTerms();
@@ -216,41 +243,6 @@ double SpatialRanker::degreeToRadian(double degreeValue) const
 {
     const double PI = 3.1415926535;
     return degreeValue * PI / 180.0;
-}
-
-float DynamicScoringRanker::CalculateDynamicKeywordScore(
-    const KeywordBoost& keyword, DynamicScoringFilter& dynamicScoringFilter) {
-  if(keyword.score == 0) return 0;
-
-  float boostValue= 0;
-  
-  /* Loops over all boosted attributes containing this keyword */
-  for(AttributeIterator attribute(keyword.attributeMask);
-      attribute.hasNext(); ++attribute) {
-    const AttributeBoost& attributeBoost= 
-      *dynamicScoringFilter.getAttributeBoost(*attribute);
-    /* Each attribute boost is the log base e of the number of keyword hits in
-       that attribute plus e-1, ensuring the log is greater than 1, multiplied
-       by the attribute's boosting factor */ 
-    boostValue+= 
-        std::log(attributeBoost.hitCount-1+M_E) * attributeBoost.boostFactor;
-  }
-
-  return boostValue * keyword.score; 
-}
- 
-
-float DynamicScoringRanker::CalculateAndAggregrateDynamicScore(
-    const KeywordBoost* keyword, unsigned numberOfKeywords,
-    DynamicScoringFilter& dynamicScoringFilter) {
-  float score= 0;
-  float boostValue=1;
-  AttributeBoost *attributeBoost;
-
-  for(unsigned i=0; i < numberOfKeywords; ++i, ++keyword) {
-    score+= CalculateDynamicKeywordScore(*keyword, dynamicScoringFilter); 
-  }
-  return score;
 }
 
 uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold)

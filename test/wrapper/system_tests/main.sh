@@ -77,6 +77,21 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+test_id="boolean expression test"
+printTestBanner "$test_id"
+python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt > system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0]; then
+        exit 255
+    fi
+else
+    echo "--PASSED $test_id"
+fi
+rm -rf data/ *.idx
+
+
 test_id="qf_dynamic_ranking"
 printTestBanner "$test_id"
 python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt > system_test.log 2>&1
@@ -97,8 +112,22 @@ python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt 
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
+#    if [ $force -eq 0 ]; then
+#	exit 255
+#    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
+
+test_id="phrase search test with boolean expression"
+printTestBanner "$test_id"
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_idi"
     if [ $force -eq 0 ]; then
-	exit 255
+        exit 255
     fi
 else
     echo "-- PASSED: $test_id"
@@ -242,7 +271,15 @@ python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENG
 #    echo "FAILED: $test_id"
 #    exit 255
 #fi
-echo "-- IGNORING FAILURE: $test_id"
+#echo "-- IGNORING FAILURE: $test_id"
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
 rm -rf data/ *.idx
 
 

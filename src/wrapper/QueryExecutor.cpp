@@ -17,11 +17,11 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 #include "QueryExecutor.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Indexer.h>
 #include "ParsedParameterContainer.h" // only for ParameterName enum , FIXME : must be changed when we fix constants problem
 #include "query/QueryResultsInternal.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "ConfigManager.h"
 #include "util/Assert.h"
 
@@ -30,7 +30,7 @@ namespace httpwrapper {
 
 // we need config manager to pass estimatedNumberOfResultsThresholdGetAll & numberOfEstimatedResultsToFindGetAll
 // in the case of getAllResults.
-QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
+QueryExecutor::QueryExecutor(LogicalPlan & queryPlan,
         QueryResultFactory * resultsFactory, Srch2Server *server, const CoreInfo_t * config) :
         queryPlan(queryPlan), configuration(config) {
     this->queryResultFactory = resultsFactory;
@@ -39,24 +39,40 @@ QueryExecutor::QueryExecutor(QueryPlan & queryPlan,
 
 void QueryExecutor::execute(QueryResults * finalResults) {
 
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * changes:
+	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
+	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
+	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
+	 * 4. No exact/fuzzy policy must be applied here.
+	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
+	 * 6. Post processing filters are applied on results list.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+
     //urlParserHelper.print();
     //evhttp_clear_headers(&headers);
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
-    IndexSearcherRuntimeParametersContainer runTimeParameters(server->indexDataConfig->getKeywordPopularityThreshold());
-    this->indexSearcher = srch2is::IndexSearcher::create(server->indexer , &runTimeParameters );
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
+    		configuration->getGetAllResultsNumberOfResultsThreshold() ,
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
+
     //do the search
-    switch (queryPlan.getSearchType()) {
-    case TopKSearchType: //TopK
-        executeTopK(finalResults);
+    switch (queryPlan.getQueryType()) {
+    case srch2is::SearchTypeTopKQuery: //TopK
+    case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
+        executeKeywordSearch(finalResults);
         break;
-    case GetAllResultsSearchType: //GetAllResults
-        executeGetAllResults(finalResults);
-        break;
-    case GeoSearchType: //MapQuery
+    case srch2is::SearchTypeMapQuery: //MapQuery
         executeGeo(finalResults);
         break;
-    case RetrieveByIdSearchType:
+    case srch2is::SearchTypeRetrieveById:
     	executeRetrieveById(finalResults);
     	break;
     default:
@@ -65,195 +81,42 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     };
 
     // Free objects
-    delete indexSearcher;
+    delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
 
-void QueryExecutor::executeTopK(QueryResults * finalResults) {
+void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
 
 
     // execute post processing
     // since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
+    finalResults->init(this->queryResultFactory, queryEvaluator,
             this->queryPlan.getExactQuery());
 
-    if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
-        return;
-    }
+    int idsFound = 0;
 
-    int idsExactFound = 0;
-
-    srch2is::QueryResults *exactQueryResults = new QueryResults(
-            this->queryResultFactory, indexSearcher,
-            this->queryPlan.getExactQuery());
-    idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(),
-            exactQueryResults, 0,
-            this->queryPlan.getOffset()
-                    + this->queryPlan.getResultsToRetrieve());
-
-    //fill visitedList
-    std::set<std::string> exactVisitedList;
-    for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
-        exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
-    }
-
-    int idsFuzzyFound = 0;
-
-    if (this->queryPlan.isFuzzy()
-            && (idsExactFound
-                    < (int) (this->queryPlan.getResultsToRetrieve()
-                            + this->queryPlan.getOffset()))) {
-        QueryResults *fuzzyQueryResults = new QueryResults(
-                this->queryResultFactory, indexSearcher,
-                this->queryPlan.getFuzzyQuery());
-        idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
-                fuzzyQueryResults, 0,
-                this->queryPlan.getOffset()
-                        + this->queryPlan.getResultsToRetrieve());
-        // create final queryResults to print.
-
-        QueryResultsInternal *exactQueryResultsInternal =
-                exactQueryResults->impl;
-        QueryResultsInternal *fuzzyQueryResultsInternal =
-                fuzzyQueryResults->impl;
-
-        unsigned fuzzyQueryResultsIter = 0;
-
-        while (exactQueryResultsInternal->sortedFinalResults.size()
-                < (unsigned) (this->queryPlan.getOffset()
-                        + this->queryPlan.getResultsToRetrieve())
-                && fuzzyQueryResultsIter
-                        < fuzzyQueryResults->getNumberOfResults()) {
-            std::string recordId = fuzzyQueryResults->getRecordId(
-                    fuzzyQueryResultsIter);
-            if (!exactVisitedList.count(recordId)) // record id not there
-                    {
-                exactQueryResultsInternal->sortedFinalResults.push_back(
-                        fuzzyQueryResultsInternal->sortedFinalResults[fuzzyQueryResultsIter]);
-            }
-            fuzzyQueryResultsIter++;
-        }
-        exactQueryResultsInternal->estimatedNumberOfResults = fuzzyQueryResultsInternal->estimatedNumberOfResults;
-        delete fuzzyQueryResults;
-    }else if (this->queryPlan.isFuzzy()){
-    	// this branch is the case that we have enough results for exact so we do not want to perform a
-    	// fuzzy search, but still we need to get the estimated number of results for fuzzy query.
-    	// The reason is that regardless of our policy (first exact, then fuzzy) we should always return a correct estimation
-    	// of number of results. If we don't use fuzzy query to estimate this number, we get a very smaller number for this estimation
-    	// which is incorrect.
-        QueryResultsInternal *exactQueryResultsInternal =
-                exactQueryResults->impl;
-    	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());
-    }
+    idsFound = queryEvaluator->search(&queryPlan,finalResults);
 
     // this post processing plan will be applied on exactQueryResults object and
     // the final results will be copied into finalResults
-    executePostProcessingPlan(this->queryPlan.getExactQuery(),
-            exactQueryResults, finalResults);
+//    executePostProcessingPlan(this->queryPlan.getExactQuery(),
+//            exactQueryResults, finalResults);
 
-    delete exactQueryResults;
 }
 
-void QueryExecutor::executeGetAllResults(QueryResults * finalResults) {
-
-    // execute post processing
-    // since this object is only allocated with an empty constructor, this init function needs to be called to
-    // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
-            (this->queryPlan.isFuzzy()) ?
-                    this->queryPlan.getFuzzyQuery() :
-                    this->queryPlan.getExactQuery());
-
-    if(this->queryPlan.getExactQuery()->getQueryTerms()->size() == 0){
-        return;
-    }
-
-
-
-
-    int idsExactFound = 0;
-
-    srch2is::QueryResults *exactQueryResults = new QueryResults(
-            this->queryResultFactory, indexSearcher,
-            this->queryPlan.getExactQuery());
-    idsExactFound = indexSearcher->search(this->queryPlan.getExactQuery(),
-    		exactQueryResults, 0 , configuration->getGetAllResultsNumberOfResultsThreshold() ,
-            configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-
-    //fill visitedList
-    std::set<std::string> exactVisitedList;
-    for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
-        exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
-    }
-
-    int idsFuzzyFound = 0;
-
-    // If we got less than getGetAllResultsNumberOfResultsToFindInEstimationMode (e.g. 500) results
-    // we should try fuzzy, otherwise we don't have to because H2 heuristic triggers topK to find
-    // getGetAllResultsNumberOfResultsToFindInEstimationMode results anyways.
-    if (this->queryPlan.isFuzzy()
-            && (idsExactFound < (int) configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode() )) {
-        QueryResults *fuzzyQueryResults = new QueryResults(
-                this->queryResultFactory, indexSearcher,
-                this->queryPlan.getFuzzyQuery());
-        idsFuzzyFound = indexSearcher->search(this->queryPlan.getFuzzyQuery(),
-        		fuzzyQueryResults, 0, configuration->getGetAllResultsNumberOfResultsThreshold() ,
-                configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-        // create final queryResults to print.
-
-        QueryResultsInternal *exactQueryResultsInternal =
-                exactQueryResults->impl;
-        QueryResultsInternal *fuzzyQueryResultsInternal =
-                fuzzyQueryResults->impl;
-
-        unsigned fuzzyQueryResultsIter = 0;
-
-        while (exactQueryResultsInternal->sortedFinalResults.size()
-                < (unsigned) (this->queryPlan.getOffset()
-                        + this->queryPlan.getResultsToRetrieve())
-                && fuzzyQueryResultsIter
-                        < fuzzyQueryResults->getNumberOfResults()) {
-            std::string recordId = fuzzyQueryResults->getRecordId(
-                    fuzzyQueryResultsIter);
-            if (!exactVisitedList.count(recordId)) // record id not there
-                    {
-                exactQueryResultsInternal->sortedFinalResults.push_back(
-                        fuzzyQueryResultsInternal->sortedFinalResults[fuzzyQueryResultsIter]);
-            }
-            fuzzyQueryResultsIter++;
-        }
-        exactQueryResultsInternal->estimatedNumberOfResults = fuzzyQueryResultsInternal->estimatedNumberOfResults;
-        delete fuzzyQueryResults;
-    }else if (this->queryPlan.isFuzzy()){
-    	// this branch is the case that we have enough results for exact so we do not want to perform a
-    	// fuzzy search, but still we need to get the estimated number of results for fuzzy query.
-    	// The reason is that regardless of our policy (first exact, then fuzzy) we should always return a correct estimation
-    	// of number of results. If we don't use fuzzy query to estimate this number, we get a very smaller number for this estimation
-    	// which is incorrect.
-        QueryResultsInternal *exactQueryResultsInternal =
-                exactQueryResults->impl;
-    	exactQueryResultsInternal->estimatedNumberOfResults = indexSearcher->estimateNumberOfResults(this->queryPlan.getFuzzyQuery());
-    }
-
-    // this post processing plan will be applied on exactQueryResults object and
-    // the final results will be copied into finalResults
-    executePostProcessingPlan(this->queryPlan.getExactQuery(), exactQueryResults, finalResults);
-
-    delete exactQueryResults;
-}
 
 void QueryExecutor::executeGeo(QueryResults * finalResults) {
 
     // execute post processing
     // since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
-    finalResults->init(this->queryResultFactory, indexSearcher,
+    finalResults->init(this->queryResultFactory, queryEvaluator,
             this->queryPlan.getExactQuery());
 
     int idsExactFound = 0;
     // for the range query without keywords.
     srch2is::QueryResults *exactQueryResults = new QueryResults(
-            this->queryResultFactory, indexSearcher,
+            this->queryResultFactory, queryEvaluator,
             this->queryPlan.getExactQuery());
     if (this->queryPlan.getExactQuery()->getQueryTerms()->empty()) //check if query type is a range query without keywords
     {
@@ -265,7 +128,7 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             p.x = values[0];
             p.y = values[1];
             Circle *circleRange = new Circle(p, values[2]);
-            indexSearcher->search(*circleRange, exactQueryResults);
+            queryEvaluator->geoSearch(*circleRange, exactQueryResults);
             delete circleRange;
         } else {
             pair<pair<double, double>, pair<double, double> > rect;
@@ -274,12 +137,12 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
             rect.second.first = values[2];
             rect.second.second = values[3];
             Rectangle *rectangleRange = new Rectangle(rect);
-            indexSearcher->search(*rectangleRange, exactQueryResults);
+            queryEvaluator->geoSearch(*rectangleRange, exactQueryResults);
             delete rectangleRange;
         }
     } else // keywords and geo search
     {
-        indexSearcher->search(this->queryPlan.getExactQuery(),
+        queryEvaluator->geoSearch(this->queryPlan.getExactQuery(),
                 exactQueryResults);
         idsExactFound = exactQueryResults->getNumberOfResults();
 
@@ -294,11 +157,11 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
         if (this->queryPlan.isFuzzy()
                 && idsExactFound
                         < (int) (this->queryPlan.getOffset()
-                                + this->queryPlan.getResultsToRetrieve())) {
+                                + this->queryPlan.getNumberOfResultsToRetrieve())) {
             QueryResults *fuzzyQueryResults = new QueryResults(
-                    this->queryResultFactory, indexSearcher,
+                    this->queryResultFactory, queryEvaluator,
                     this->queryPlan.getFuzzyQuery());
-            indexSearcher->search(this->queryPlan.getFuzzyQuery(),
+            queryEvaluator->geoSearch(this->queryPlan.getFuzzyQuery(),
                     fuzzyQueryResults);
             idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
 
@@ -310,7 +173,7 @@ void QueryExecutor::executeGeo(QueryResults * finalResults) {
 
             while (exact_qs->sortedFinalResults.size()
                     < (unsigned) (this->queryPlan.getOffset()
-                            + this->queryPlan.getResultsToRetrieve())
+                            + this->queryPlan.getNumberOfResultsToRetrieve())
                     && fuzzyQueryResultsIter
                             < fuzzyQueryResults->getNumberOfResults()) {
                 std::string recordId = fuzzyQueryResults->getRecordId(
@@ -342,17 +205,16 @@ void QueryExecutor::executeRetrieveById(QueryResults * finalResults){
 	// since this object is only allocated with an empty constructor, this init function needs to be called to
     // initialize the object.
 	// There is no Query object for this type of search, so we pass NULL.
-    finalResults->init(this->queryResultFactory, indexSearcher,NULL);
-    this->indexSearcher->search(this->queryPlan.getDocIdForRetrieveByIdSearchType() , finalResults);
+    finalResults->init(this->queryResultFactory, queryEvaluator,NULL);
+    this->queryEvaluator->search(this->queryPlan.getDocIdForRetrieveByIdSearchType() , finalResults);
 
 }
 
 void QueryExecutor::executePostProcessingPlan(Query * query,
         QueryResults * inputQueryResults, QueryResults * outputQueryResults) {
-    IndexSearcherInternal * indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(indexSearcher);
-    ForwardIndex * forwardIndex = indexSearcherInternal->getForwardIndex();
-    Schema * schema = indexSearcherInternal->getSchema();
+    QueryEvaluatorInternal * queryEvaluatorInternal = this->queryEvaluator->impl;
+    ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
+    Schema * schema = queryEvaluatorInternal->getSchema();
 
     // run a plan by iterating on filters and running
     ResultsPostProcessorPlan * postProcessingPlan =
@@ -380,7 +242,7 @@ void QueryExecutor::executePostProcessingPlan(Query * query,
         // clear the output to be ready to accept the results of the filter
         outputQueryResults->clear();
         // apply the filter on the input and put the results in output
-        filter->doFilter(indexSearcher, query, inputQueryResults,
+        filter->doFilter(queryEvaluator, query, inputQueryResults,
                 outputQueryResults);
         // if there is going to be other filters, chain the output to the input
         if (postProcessingPlan->hasMoreFilters()) {

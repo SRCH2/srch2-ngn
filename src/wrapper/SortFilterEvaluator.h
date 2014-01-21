@@ -16,7 +16,7 @@
 
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
-#include <instantsearch/SortFilter.h>
+#include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/TypedValue.h>
 #include <map>
 #include <string>

@@ -33,7 +33,6 @@
 
 #include "index/InvertedIndex.h"
 #include "operation/IndexerInternal.h"
-#include "operation/IndexSearcherInternal.h"
 #include "util/Assert.h"
 #include "util/cowvector/compression/cowvector_S16.h"
 #include "analyzer/AnalyzerContainers.h"
