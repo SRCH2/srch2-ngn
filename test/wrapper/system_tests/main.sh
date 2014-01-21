@@ -78,8 +78,8 @@ fi
 rm -rf data/ *.idx
 
 test_id="boolean expression test"
-echo "---------------------do $test_id-----------------------"
-python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE_DIR ./boolean-expression-test/queries.txt > system_test.log 2>&1
+printTestBanner "$test_id"
+python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt > system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
@@ -121,11 +121,14 @@ fi
 rm -rf data/ *.idx
 
 test_id="phrase search test with boolean expression"
-echo "---------------------do $test_id-----------------------"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE_DIR ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
+printTestBanner "$test_id"
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "FAILED: $test_id"
+    echo "FAILED: $test_idi"
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
 else
     echo "-- PASSED: $test_id"
 fi

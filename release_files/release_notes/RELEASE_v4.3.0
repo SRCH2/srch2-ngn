@@ -27,6 +27,6 @@
 * Support multiple cores for different data sources, all running within a single web server process.
   See Section 13 in the Configuration chapter of the SRCH2 Manual for more details.
 
-* Support boolean expressions in query. 
+* Support boolean expressions in queries. 
 
 * Improved query performance
