@@ -1,5 +1,14 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+# This test is used for phrase search test
+# Data set used : ps-test.json
+# Query files used : queries.txt, booleanQueries.txt
+# Test cases:
+# 1. Test exact phrase --> "term1 term2"   ( find term1 and term2 next to each other)
+# 2. Test fuzzy phrase --> "term1 term2"~1 ( find term1 and term2 with slop 1)
+# 3. Test exact phrase in particular attribute --> description:"term1 term2"
+#                  ( find term1 and term2 next to each other in a description )
+# 4. Test boolean expression including phrase -->  term1 and "term2 term3" etc.
+# 5. Test top-k query return k rows with phrasesearch ( given there are more than k such matches) 
+#
 
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 
