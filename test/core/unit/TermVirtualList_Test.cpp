@@ -21,7 +21,7 @@
 #include "operation/TermVirtualList.h"
 #include "operation/IndexerInternal.h"
 #include "operation/IndexerInternal.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "analyzer/AnalyzerInternal.h"
 #include "index/Trie.h"
 #include "index/ForwardIndex.h"
@@ -174,7 +174,7 @@ bool checkResults( TermVirtualList *termVirtualList, set<unsigned> *resultSet)
     return false;
 }
 
-void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
+void Test_Complete_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
 {
     /**
      * Keyword: Record
@@ -204,12 +204,12 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
     TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s",(keywords[0]).c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
+    PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
 
-    TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
 
-    prefixActiveNodeSet->printActiveNodes(indexSearcherInternal->getTrie());
+    prefixActiveNodeSet->printActiveNodes(queryEvaluatorInternal->getTrie());
     //termVirtualList->print_test();
 
     ASSERT(checkResults( termVirtualList, &resultSet0));
@@ -220,8 +220,8 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1));
@@ -231,8 +231,8 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2));
@@ -244,7 +244,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal)
 
 }
 
-void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
+void Test_Prefix_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
 {
     /**
      * Keyword: Record
@@ -279,8 +279,8 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
     TermType termType = TERM_TYPE_PREFIX;
     Logger::debug("Query: %s", keywords[0].c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
+    PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
     prefixActiveNodeSet->busyBit->isFree();
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
@@ -290,8 +290,8 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
     prefixActiveNodeSet->busyBit->isFree();
 
@@ -302,8 +302,8 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
     prefixActiveNodeSet->busyBit->isFree();
 
@@ -316,7 +316,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal)
 
 }
 
-void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
+void Test_Complete_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
 {
     /**
      * Keyword: Record
@@ -349,8 +349,8 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s", keywords[0].c_str());
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet, term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
@@ -360,8 +360,8 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1) == true);
@@ -371,8 +371,8 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(),
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet,   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2) == true);
@@ -383,7 +383,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
 }
 
-void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
+void Test_Prefix_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
 {
     /**
      * Keyword: Record
@@ -418,8 +418,8 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
     Logger::debug("Query: %s",keywords[0].c_str());
     TermType termType = TERM_TYPE_PREFIX;
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
+    PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
 
@@ -428,8 +428,8 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet,   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1) == true);
 
@@ -439,8 +439,8 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal)
 
     Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
-    prefixActiveNodeSet = indexSearcherInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(indexSearcherInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
+    prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet, term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2) == true);
 
@@ -463,14 +463,15 @@ void TermVirtualList_Tests()
     		INDEX_DIR);
        Indexer *indexer = Indexer::load(indexMetaData);
     
-    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
-    //IndexSearcherInternal *indexSearcherInternal = new IndexSearcherInternal(indexerInternal, cache);
-    //indexSearcherInternal->getInvertedIndex()->print_test();
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
 
-    Test_Complete_Exact(indexSearcherInternal);
-    Test_Prefix_Exact(indexSearcherInternal);
-    Test_Complete_Fuzzy(indexSearcherInternal);
-    Test_Prefix_Fuzzy(indexSearcherInternal);
+
+    Test_Complete_Exact(queryEvaluatorInternal);
+    Test_Prefix_Exact(queryEvaluatorInternal);
+    Test_Complete_Fuzzy(queryEvaluatorInternal);
+    Test_Prefix_Fuzzy(queryEvaluatorInternal);
 
     delete indexer;
 }

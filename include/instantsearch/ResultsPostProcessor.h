@@ -27,19 +27,21 @@
 
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
-#include "instantsearch/IndexSearcher.h"
+#include "instantsearch/TypedValue.h"
+
 
 namespace srch2
 {
 namespace instantsearch
 {
 
-
+class QueryEvaluator;
+class QueryResults;
 
 class ResultsPostProcessorFilter
 {
 public:
-	virtual void doFilter(IndexSearcher *indexSearcher, const Query * query,
+	virtual void doFilter(QueryEvaluator * queryEvaluator, const Query * query,
 			 QueryResults * input , QueryResults * output) = 0;
 
 	virtual ~ResultsPostProcessorFilter() {};
@@ -66,6 +68,84 @@ private:
 	ResultsPostProcessorPlanInternal * impl;
 };
 
+class FacetQueryContainer {
+
+public:
+    // these vectors must be parallel and same size all the time
+    std::vector<srch2::instantsearch::FacetType> types;
+    std::vector<std::string> fields;
+    std::vector<std::string> rangeStarts;
+    std::vector<std::string> rangeEnds;
+    std::vector<std::string> rangeGaps;
+    std::vector<int> numberOfTopGroupsToReturn;
+};
+
+class SortEvaluator
+{
+public:
+	// pass left and right value to compare. Additionally pass internal record id of both left
+	// and right records which serve as tie breaker.
+	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
+	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
+	virtual ~SortEvaluator(){};
+	SortOrder order;
+};
+
+class RefiningAttributeExpressionEvaluator
+{
+public:
+	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
+	virtual ~RefiningAttributeExpressionEvaluator(){};
+};
+
+class PhraseInfo{
+    public:
+        vector<string> phraseKeyWords;
+        vector<unsigned> keywordIds;
+        vector<unsigned> phraseKeywordPositionIndex;
+        unsigned proximitySlop;
+        unsigned attributeBitMap;
+};
+
+
+class PhraseSearchInfoContainer {
+public:
+	void addPhrase(const vector<string>& phraseKeywords,
+			const vector<unsigned>& phraseKeywordsPositionIndex,
+			unsigned proximitySlop,
+			unsigned attributeBitMap){
+
+		PhraseInfo pi;
+		pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
+		pi.attributeBitMap = attributeBitMap;
+		pi.phraseKeyWords = phraseKeywords;
+		pi.proximitySlop = proximitySlop;
+		phraseInfoVector.push_back(pi);
+	}
+	vector<PhraseInfo> phraseInfoVector;
+};
+
+class ResultsPostProcessingInfo{
+public:
+	ResultsPostProcessingInfo();
+	~ResultsPostProcessingInfo();
+	FacetQueryContainer * getfacetInfo();
+	void setFacetInfo(FacetQueryContainer * facetInfo);
+	SortEvaluator * getSortEvaluator();
+	void setSortEvaluator(SortEvaluator * evaluator);
+
+	void setFilterQueryEvaluator(RefiningAttributeExpressionEvaluator * filterQuery);
+	RefiningAttributeExpressionEvaluator * getFilterQueryEvaluator();
+
+	void setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer);
+	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
+
+private:
+	FacetQueryContainer * facetInfo;
+	SortEvaluator * sortEvaluator;
+	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
+	PhraseSearchInfoContainer * phraseSearchInfoContainer;
+};
 
 
 }

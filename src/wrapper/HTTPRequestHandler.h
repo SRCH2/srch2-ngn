@@ -12,11 +12,10 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/GlobalCache.h>
-#include <instantsearch/IndexSearcher.h>
 
 #include "query/QueryResultsInternal.h"
-#include "operation/IndexSearcherInternal.h"
-
+#include <instantsearch/QueryEvaluator.h>
+#include "operation/QueryEvaluatorInternal.h"
 #include "QueryPlan.h"
 
 #include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change
@@ -47,7 +46,7 @@ class HTTPRequestHandler
 	private:
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
+				const LogicalPlan &queryPlan,
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const Query *query,
@@ -60,7 +59,7 @@ class HTTPRequestHandler
 				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
+				const LogicalPlan &queryPlan,
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,

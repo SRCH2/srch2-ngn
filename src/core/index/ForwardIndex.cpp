@@ -143,20 +143,13 @@ void printVector(const vector<unsigned> *fl) {
 }
 
 // do binary search to probe in forward list
-bool ForwardIndex::haveWordInRange(const unsigned recordId,
+bool ForwardIndex::haveWordInRange(const unsigned recordId, const ForwardList* fl,
         const unsigned minId, const unsigned maxId,
         const unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore) const {
     ASSERT(minId <= maxId);
     ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
-
-    bool valid = false;
-    const ForwardList* fl = this->getForwardList(recordId, valid);
-
-    // Deleted flag is set
-    if (valid == false)
-        return false;
 
     return fl->haveWordInRange(this->schemaInternal, minId, maxId,
             termSearchableAttributeIdToFilterTermHits, matchingKeywordId,
@@ -186,17 +179,17 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
 {
-    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
-    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
-    {
-        valid = false;
-        return NULL;
-    }
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
-    valid = readView->getElement(recordId).second;
-    return readView->getElement(recordId).first;
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
+    if(recordId >= readView->size()){
+    	valid = false;
+    	return NULL;
+    }
+    ForwardListPtr flPtr = readView->getElement(recordId);
+    valid = flPtr.second;
+    return flPtr.first;
 }
 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)

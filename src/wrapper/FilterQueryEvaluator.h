@@ -28,7 +28,6 @@
 #include "ParserUtility.h"
 #include <instantsearch/TypedValue.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <instantsearch/RefiningAttributeExpressionFilter.h>
 #include "instantsearch/Schema.h"
 #include "WrapperConstants.h"
 #include "util/exprtk.hpp"
