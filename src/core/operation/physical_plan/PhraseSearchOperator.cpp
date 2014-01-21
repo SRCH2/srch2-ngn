@@ -1,9 +1,3 @@
-
-
-
-
-
-
 #include "PhraseSearchOperator.h"
 #include "PhysicalOperatorsHelper.h"
 #include <vector>
@@ -36,37 +30,38 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 		queryEvaluatorInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 
-		for ( unsigned i = 0 ; i < phraseSearchInfoContainer->phraseInfoVector.size(); ++i) {
-			PhraseInfo & pi = phraseSearchInfoContainer->phraseInfoVector[i];
-			for (int j = 0; j < pi.phraseKeyWords.size(); ++j) {
-				const string& keywordString = pi.phraseKeyWords[j];
-				const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
-						trieRootNode_ReadView->root, keywordString);
-				if (trieNode == NULL){
-					Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());
-					return false;
-				}
-				unsigned keywordId = trieNode->getId();
-				pi.keywordIds.push_back(keywordId);
+		for (int j = 0; j < phraseSearchInfo.phraseKeyWords.size(); ++j) {
+			const string& keywordString = phraseSearchInfo.phraseKeyWords[j];
+			const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
+					trieRootNode_ReadView->root, keywordString);
+			if (trieNode == NULL){
+				Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());
+				return false;
 			}
+			unsigned keywordId = trieNode->getId();
+			phraseSearchInfo.keywordIds.push_back(keywordId);
 		}
-	}
 
+	}
 
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluatorInternal, params);
 
 	return true;
 }
 PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-    /*
-     *  Loop over the input records  and apply all the phrase filter stored
-     *  in phraseInfoVector
-     */
+
+	if (this->queryEvaluatorInternal == NULL) {
+		return NULL;  // open should be called first
+	}
 
 	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
 
+    /*
+     *  Loop over the input records  and apply the phrase filter
+     */
 	while(true){
-		PhysicalPlanRecordItem * nextRecord = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
+		PhysicalPlanRecordItem * nextRecord =
+				this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
 		if(nextRecord == NULL){
 			return NULL;
 		}
@@ -75,11 +70,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
         if (false == isValid){
         	continue;
         }
-        bool pass = true;
-        for ( unsigned j = 0 ; j < this->phraseSearchInfoContainer->phraseInfoVector.size(); ++j) {
-            pass &= matchPhrase(forwardListPtr, this->phraseSearchInfoContainer->phraseInfoVector[j]);
-        }
-        if (pass){
+        if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
         	return nextRecord;
         }
 	}
@@ -98,8 +89,9 @@ bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerifica
 PhraseSearchOperator::~PhraseSearchOperator(){
 
 }
-PhraseSearchOperator::PhraseSearchOperator(PhraseSearchInfoContainer * phraseSearchInfoContainer) {
-	this->phraseSearchInfoContainer = phraseSearchInfoContainer;
+PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
+	this->phraseSearchInfo = phraseSearchInfo;
+	this->queryEvaluatorInternal = NULL;
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
@@ -213,38 +205,56 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {
-	ASSERT(false);
-	return PhysicalPlanCost(0);
+
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params);
+	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	ASSERT(false);
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost(3);
+	resultCost.addLargeFunctionCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfGetNext(params);
+	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
-	ASSERT(false);
-	return PhysicalPlanCost(0);
+
+	PhysicalPlanCost resultCost;
+	resultCost.addFunctionCallCost();
+	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
+	return resultCost;
 }
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	ASSERT(false);
-	return PhysicalPlanCost(0);
+	PhysicalPlanCost resultCost;
+	// Random access is not implmented.
+	return resultCost;
 }
 void PhraseSearchOptimizationOperator::getOutputProperties(IteratorProperties & prop){
-	ASSERT(false);
+
 	return;
 }
 void PhraseSearchOptimizationOperator::getRequiredInputProperties(IteratorProperties & prop){
-	ASSERT(false);
+
 	return;
 }
 PhysicalPlanNodeType PhraseSearchOptimizationOperator::getType() {
 	return PhysicalPlanNode_PhraseSearch;
 }
-bool PhraseSearchOptimizationOperator::validateChildren(){
-	ASSERT(false);
-	return false;
+bool PhraseSearchOptimizationOperator::validateChildren() {
+	for (unsigned i = 0; i < this->getChildrenCount(); ++i){
+		switch (this->getChildAt(i)->getType()) {
+		case PhysicalPlanNode_MergeSortedById:
+		case PhysicalPlanNode_MergeByShortestList:
+			break; // keep looping
+		default:
+			return false;
+		}
+	}
+	return true;
 }
 
 }

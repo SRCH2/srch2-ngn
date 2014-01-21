@@ -47,7 +47,7 @@ public:
 
 	PhysicalPlanNodeType forcedPhysicalNode;
 
-	~LogicalPlanNode();
+	virtual ~LogicalPlanNode();
 
     void setFuzzyTerm(Term * fuzzyTerm);
 
@@ -59,12 +59,27 @@ public:
     	}
     }
 
-private:
+protected:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
 };
 
-
+class LogicalPlanPhraseNode : public LogicalPlanNode{
+public:
+	LogicalPlanPhraseNode(const vector<string>& phraseKeyWords,
+	    		const vector<unsigned>& phraseKeywordsPosition,
+	    		short slop, unsigned fieldFilter) : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
+		phraseInfo = new PhraseInfo();
+		phraseInfo->attributeBitMap = fieldFilter;
+		phraseInfo->phraseKeyWords = phraseKeyWords;
+		phraseInfo->phraseKeywordPositionIndex = phraseKeywordsPosition;
+		phraseInfo->proximitySlop = slop;
+	}
+	~LogicalPlanPhraseNode() { delete phraseInfo;}
+	PhraseInfo * getPhraseInfo() { return phraseInfo; }
+private:
+	PhraseInfo *phraseInfo;
+};
 /*
  * LogicalPlan is the class which maintains the logical plan of query and its metadata. The logical plan is
  * a tree of operators (AND,OR and NOT) and query terms. For example, for the query:
@@ -118,6 +133,9 @@ public:
     		unsigned fieldFilter);
     // constructs an internal (operator) logical plan node
     LogicalPlanNode * createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType);
+    LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
+    		const vector<unsigned>& phraseKeywordsPosition,
+    		short slop, unsigned fieldFilter) ;
 
 	ResultsPostProcessorPlan* getPostProcessingPlan() const {
 		return postProcessingPlan;

@@ -491,22 +491,78 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 			result = logicalPlan.createOperatorLogicalPlanNode(root->type);
 			break;
 		case LogicalPlanNodeTypeTerm:
-			result = logicalPlan.createTermLogicalPlanNode(root->termIntermediateStructure->rawQueryKeyword ,
-					root->termIntermediateStructure->keywordPrefixComplete,
-					root->termIntermediateStructure->keywordBoostLevel ,
-					indexDataConfig->getFuzzyMatchPenalty(),
-					0,
-					root->termIntermediateStructure->fieldFilterNumber);
-			if(logicalPlan.isFuzzy()){
-				Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
-						root->termIntermediateStructure->keywordPrefixComplete,
-						root->termIntermediateStructure->keywordBoostLevel ,
-						indexDataConfig->getFuzzyMatchPenalty(),
-						computeEditDistanceThreshold(getUtf8StringCharacterNumber(
-												root->termIntermediateStructure->rawQueryKeyword) ,
-												root->termIntermediateStructure->keywordSimilarityThreshold));
-				fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
-				result->setFuzzyTerm(fuzzyTerm);
+			if (root->termIntermediateStructure->isPhraseKeywordFlag) {
+					/*
+					 *   Phrase terms should be broken down to Phrase operator node and Term nodes
+					 *   in a logical plan
+					 *
+					 *   Phrase "a b c" is currently a leaf node {a b c} in the parse tree
+					 *   Transform it to a following structure in the logical plan
+					 *
+					 *                    |-------- {a}
+					 *   [PhraseOP] --[ MergOp]	--- {b}
+					 *   		          |-------- {c}
+					 */
+					ASSERT(root->children.size() == 0);
+					string& phrase = root->termIntermediateStructure->rawQueryKeyword;
+					vector<string> phraseKeyWords;
+					boost::algorithm::split(phraseKeyWords,	phrase, boost::is_any_of("\t "));
+
+					std::map<string, vector<unsigned> >::const_iterator iter =
+							paramContainer->PhraseKeyWordsPositionMap.find(phrase);
+
+					ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
+					ASSERT(iter->second.size() == phraseKeyWords.size());
+					result = logicalPlan.createPhraseLogicalPlanNode(phraseKeyWords,iter->second,
+							        root->termIntermediateStructure->phraseSlop,
+					    			root->termIntermediateStructure->fieldFilterNumber);
+
+					LogicalPlanNode * mergeNode = logicalPlan.createOperatorLogicalPlanNode(LogicalPlanNodeTypeAnd);
+					result->children.push_back(mergeNode);
+
+					for (unsigned pIndx =0; pIndx < phraseKeyWords.size(); ++pIndx) {
+						LogicalPlanNode * termNode = logicalPlan.createTermLogicalPlanNode(
+											phraseKeyWords[pIndx],
+											TERM_TYPE_COMPLETE, // always complete
+											root->termIntermediateStructure->keywordBoostLevel ,
+											1, 				   // no fuzzy match
+											0,
+											root->termIntermediateStructure->fieldFilterNumber);
+						/*
+						 *  Although phrase terms should not have fuzzy terms, it is created and
+						 *  assigned to the term node because it avoids issues with histogram manager that
+						 *  expect fuzzy terms for each term node when the query level fuzziness is enabled.
+						 *  The fuzzy term created is same as exact term.
+						 */
+						if(logicalPlan.isFuzzy()){
+							Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
+									root->termIntermediateStructure->keywordPrefixComplete,
+									root->termIntermediateStructure->keywordBoostLevel ,
+									1,
+									0);
+							fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
+							termNode->setFuzzyTerm(fuzzyTerm);
+						}
+						mergeNode->children.push_back(termNode);
+					}
+			}else{
+                result = logicalPlan.createTermLogicalPlanNode(root->termIntermediateStructure->rawQueryKeyword ,
+                        root->termIntermediateStructure->keywordPrefixComplete,
+                        root->termIntermediateStructure->keywordBoostLevel ,
+                        indexDataConfig->getFuzzyMatchPenalty(),
+                        0,
+                        root->termIntermediateStructure->fieldFilterNumber);
+                if(logicalPlan.isFuzzy()){
+                    Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
+                            root->termIntermediateStructure->keywordPrefixComplete,
+                            root->termIntermediateStructure->keywordBoostLevel ,
+                            indexDataConfig->getFuzzyMatchPenalty(),
+                            computeEditDistanceThreshold(getUtf8StringCharacterNumber(
+                                                    root->termIntermediateStructure->rawQueryKeyword) ,
+                                                    root->termIntermediateStructure->keywordSimilarityThreshold));
+                    fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
+                    result->setFuzzyTerm(fuzzyTerm);
+                }
 			}
 			break;
 	}
@@ -783,27 +839,6 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
     // 2. If there is a filter query, allocate the filter and add it to the plan
     if (paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)) { // there is a filter query
         plan.getPostProcessingInfo()->setFilterQueryEvaluator(paramContainer->filterQueryContainer->evaluator);
-    }
-
-    if (paramContainer->hasParameterInQuery(IsPhraseKeyword)) { // Filter query phrase...
-    	srch2is::PhraseSearchInfoContainer * phraseSearchInfoContainer = new PhraseSearchInfoContainer();
-		ParseTreeNode * leafNode;
-		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
-		while(termIterator.hasMore()){
-			leafNode = termIterator.getNext();
-    		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag == false)
-    			continue;
-    		vector<string> phraseKeywords;
-    		boost::algorithm::split(phraseKeywords, leafNode->termIntermediateStructure->rawQueryKeyword,
-                                    boost::is_any_of("\t "));
-    		std::map<string, vector<unsigned> >::const_iterator iter =
-    				paramContainer->PhraseKeyWordsPositionMap.find(leafNode->termIntermediateStructure->rawQueryKeyword);
-    		ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
-    		ASSERT(iter->second.size() == phraseKeywords.size());
-    		phraseSearchInfoContainer->addPhrase(phraseKeywords,iter->second, leafNode->termIntermediateStructure->phraseSlop,
-    				leafNode->termIntermediateStructure->fieldFilterNumber);
-		}
-        plan.getPostProcessingInfo()->setPhraseSearchInfoContainer(phraseSearchInfoContainer);
     }
 
     // 3. look for Sort and Facet
