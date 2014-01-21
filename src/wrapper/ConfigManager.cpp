@@ -20,6 +20,7 @@
 #include "util/Assert.h"
 
 #include "boost/algorithm/string_regex.hpp"
+#include "boost/filesystem/path.hpp"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -1368,17 +1369,17 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                     coreInfo->stemmerFlag = true;
                                     tempUse = string(field.attribute(dictionaryString).value());
                                     trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
-                                    coreInfo->stemmerFile = this->srch2Home + tempUse;
+                                    coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + tempUse).normalize().string();
                                 }
                             } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
                                     tempUse = string(field.attribute(wordsString).value());
                                     trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
-                                    coreInfo->stopFilterFilePath = this->srch2Home + tempUse;
+                                    coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
                                 if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
-                                this->synonymFilterFilePath = this->srch2Home
+                                this->synonymFilterFilePath = boost::filesystem::path(this->srch2Home).normalize().string();
                                 + string(field.attribute(synonymsString).value());
                                 // checks the validity of boolean provided for 'expand'
                                 tempUse = string(field.attribute(expandString).value());
@@ -1393,10 +1394,10 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                 }
                                 }*/
                             else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
-                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
+                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the file for protected words filter is set.
                                     tempUse = string(field.attribute(wordsString).value());
                                     trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
-                                    coreInfo->protectedWordsFilePath = this->srch2Home + tempUse;
+                                    coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             }
                         }
