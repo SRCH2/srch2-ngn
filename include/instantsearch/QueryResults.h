@@ -32,7 +32,7 @@ namespace instantsearch
 {
 
 class Query;
-class IndexSearcher;
+class QueryEvaluator;
 class TypedValue;
 class QueryResultsInternal;
 class QueryResultFactoryInternal;
@@ -68,11 +68,11 @@ public:
      * @param[in] indexSearcher the reference to an IndexSearcher object.
      * @param[in] query the reference to a Query object.
      */
-    QueryResults(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+    QueryResults(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query);
 
 
 	QueryResults();
-	void init(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query);
+	void init(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query);
 
 
     /**

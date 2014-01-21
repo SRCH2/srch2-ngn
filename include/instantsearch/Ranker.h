@@ -24,7 +24,6 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/TypedValue.h>
-#include <instantsearch/DynamicScoringFilter.h>
 #include <vector>
 
 using std::vector;
@@ -72,6 +71,14 @@ namespace srch2 {
         return 0.0;
         }
         
+        virtual float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeScoreForNot(float score);
+
+
+
         virtual ~Ranker() {};
     };
     
@@ -102,13 +109,6 @@ namespace srch2 {
 
         // Convert degree value to radian value using the formula : radian = degree*PI/180
         virtual double degreeToRadian(double degreeValue) const;
-    };
-    
-    struct DynamicScoringRanker : public Ranker {
-      static float CalculateDynamicKeywordScore(const KeywordBoost&,
-          DynamicScoringFilter&);
-      static float CalculateAndAggregrateDynamicScore(const KeywordBoost*,
-          unsigned, DynamicScoringFilter&);
     };
 
     /*

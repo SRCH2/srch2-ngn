@@ -2,7 +2,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -202,7 +202,8 @@ void testSimpleChinese() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 	//We use popular Chinese poems and their authors to test if the engine can support Chinese characters. The data was obtained from www.baidu.com search "中国 诗词名句"
 	//search Chinese text on the first attribute
@@ -213,16 +214,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "孔子", 3, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "孔子", 3, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "孔子", 3, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 3, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "孔子", 3, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 3, recordIds)
 						== true);
 	}
 
@@ -233,16 +234,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1102);
 		recordIds.push_back(1104);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "长江", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "长江", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "长江", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "长江", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "长江", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "长江", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "长江", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "长江", 2, recordIds)
 						== true);
 	}
 
@@ -253,16 +254,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1003);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 	}
 
@@ -273,16 +274,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "Miss 李清照", 2,
+				pingExactPrefix(analyzer, queryEvaluator, "Miss 李清照", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "Miss 李清照", 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Miss 李清照", 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "Miss 李清照", 2,
+				pingExactComplete(analyzer, queryEvaluator, "Miss 李清照", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "Miss 李清照", 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, "Miss 李清照", 2,
 						recordIds) == true);
 	}
 
@@ -293,19 +294,19 @@ void testSimpleChinese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher,
+				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher,
+				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher,
+				pingExactComplete(analyzer, queryEvaluator,
 						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher,
+				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
 						== true);
 	}
@@ -317,18 +318,18 @@ void testSimpleChinese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher,
+				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds)
 						== false);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher,
+				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher,
+				pingExactComplete(analyzer, queryEvaluator,
 						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds)
 						== false);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher,
+				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds) == true);
 	}
 
@@ -349,8 +350,8 @@ void testSimpleChinese() {
 
 	sleep(mergeEveryNSeconds + 1);
 
-	delete indexSearcher;
-	indexSearcher = IndexSearcher::create(index);
+	delete queryEvaluator;
+	queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
 	//Query: "孔子", hits -> 1101, 1108, 1201，1998, 1999
 	{
@@ -361,16 +362,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 	}
 
@@ -380,16 +381,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1999);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "东山", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "东山", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "东山", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "东山", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "东山", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "东山", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "东山", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "东山", 2, recordIds)
 						== true);
 	}
 
@@ -405,21 +406,21 @@ void testSimpleChinese() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "孔子", 5, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
 						== true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -597,7 +598,8 @@ void testSimpleZhuyin() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//search Zhuyin text on the first attribute
@@ -608,16 +610,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 3, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 3, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 3,
+				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 3,
+				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3,
 						recordIds) == true);
 	}
 
@@ -628,16 +630,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1102);
 		recordIds.push_back(1104);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "ㄔㄤ ㄐㄧㄤ", 2,
+				pingExactComplete(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "ㄔㄤ ㄐㄧㄤ", 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2,
 						recordIds) == true);
 	}
 
@@ -648,16 +650,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1003);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "Mr", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
 						== true);
 	}
 
@@ -668,16 +670,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
+				pingExactPrefix(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
+				pingExactComplete(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
 						recordIds) == true);
 	}
 
@@ -688,19 +690,19 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher,
+				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher,
+				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher,
+				pingExactComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher,
+				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 	}
@@ -712,19 +714,19 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher,
+				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == false);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher,
+				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher,
+				pingExactComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == false);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher,
+				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
 						2, recordIds) == true);
 	}
@@ -748,8 +750,8 @@ void testSimpleZhuyin() {
 
 	sleep(mergeEveryNSeconds + 1);
 
-	delete indexSearcher;
-	indexSearcher = IndexSearcher::create(index);
+	delete queryEvaluator;
+	queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
 	//Query: "ㄎㄨㄥ ㄗ", hits -> 1101,  1108,  1201, 1999, 1998
 	{
@@ -760,16 +762,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5,
+				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5,
+				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
 						recordIds) == true);
 	}
 
@@ -779,16 +781,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1999);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "ㄉㄨㄥ ㄕㄢ", 2,
+				pingExactComplete(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "ㄉㄨㄥ ㄕㄢ", 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2,
 						recordIds) == true);
 	}
 
@@ -804,21 +806,21 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5,
+				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, "ㄎㄨㄥ ㄗ", 5,
+				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -964,7 +966,8 @@ void testJapanese() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 	//We use popular English novel and translate into Japanese,using the content and their titles to test if the engine can support Chinese characters. The data was obtained from www.baidu.com search "中国 诗词名句"
 	//search Japanese text on the first attribute
@@ -979,16 +982,16 @@ void testJapanese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 6,
+				pingExactPrefix(analyzer, queryEvaluator, query, 6,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 6,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 6,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 6,
+				pingExactComplete(analyzer, queryEvaluator, query, 6,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 6,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 6,
 						recordIds) == true);
 	}
 
@@ -1002,16 +1005,16 @@ void testJapanese() {
 		recordIds.push_back(1106);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 4,
+				pingExactPrefix(analyzer, queryEvaluator, query, 4,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 4,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 4,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 4,
+				pingExactComplete(analyzer, queryEvaluator, query, 4,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 4,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 4,
 						recordIds) == true);
 
 	}
@@ -1025,16 +1028,16 @@ void testJapanese() {
 		recordIds.push_back(1001);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -1047,16 +1050,16 @@ void testJapanese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 3,
+				pingExactPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 3,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 3,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 	}
 	//search long English and Japanese text
@@ -1067,16 +1070,16 @@ void testJapanese() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -1099,8 +1102,8 @@ void testJapanese() {
 
 	sleep(mergeEveryNSeconds + 1);
 
-	delete indexSearcher;
-	indexSearcher = IndexSearcher::create(index);
+	delete queryEvaluator;
+	queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	index->commit();
 	index->save(INDEX_DIR);
 
@@ -1114,21 +1117,21 @@ void testJapanese() {
 		recordIds.push_back(1201);
 		recordIds.push_back(1999);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 5,
+				pingExactPrefix(analyzer, queryEvaluator, query, 5,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 5,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 5,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 5,
+				pingExactComplete(analyzer, queryEvaluator, query, 5,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 5,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 5,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1259,7 +1262,8 @@ void testFrench() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//search French text on the first attribute
@@ -1272,16 +1276,16 @@ void testFrench() {
 		recordIds.push_back(1106);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -1294,16 +1298,16 @@ void testFrench() {
 		recordIds.push_back(1103);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 3,
+				pingExactPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 3,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 3,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 
 	}
@@ -1318,16 +1322,16 @@ void testFrench() {
 		recordIds.push_back(1101);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 3,
+				pingExactPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 3,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 3,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 	}
 
@@ -1339,16 +1343,16 @@ void testFrench() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 	//search long English and French text
@@ -1360,7 +1364,7 @@ void testFrench() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1384,8 +1388,9 @@ void testFrench() {
 
 	sleep(mergeEveryNSeconds + 1);
 
-	delete indexSearcher;
-	indexSearcher = IndexSearcher::create(index);
+	delete queryEvaluator;
+	queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
+
 	index->commit();
 	index->save(INDEX_DIR);
 
@@ -1397,12 +1402,12 @@ void testFrench() {
 		recordIds.push_back(1998);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1505,7 +1510,8 @@ void testTranditionalChinese() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "學 ", hits ->1101  1201
@@ -1517,16 +1523,16 @@ void testTranditionalChinese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -1538,21 +1544,21 @@ void testTranditionalChinese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1658,7 +1664,8 @@ void testBulgarian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Спилбърг", hits ->  1102 1103 1201
@@ -1671,7 +1678,7 @@ void testBulgarian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 
 	}
@@ -1683,12 +1690,12 @@ void testBulgarian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1793,7 +1800,8 @@ void testPinyinChinese() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "wen", hits -> 1104,1105
@@ -1806,7 +1814,7 @@ void testPinyinChinese() {
 
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1820,7 +1828,7 @@ void testPinyinChinese() {
 		recordIds.push_back(1106);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1835,7 +1843,7 @@ void testPinyinChinese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -1849,13 +1857,13 @@ void testPinyinChinese() {
 		recordIds.push_back(1105);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -1961,7 +1969,8 @@ void testZhuyinChinese() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "ㄏㄨㄚ", hits -> 1104,1105
@@ -1973,16 +1982,16 @@ void testZhuyinChinese() {
 		recordIds.push_back(1105);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -1995,7 +2004,7 @@ void testZhuyinChinese() {
 		recordIds.push_back(1105);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 
 	}
@@ -2010,7 +2019,7 @@ void testZhuyinChinese() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -2024,12 +2033,12 @@ void testZhuyinChinese() {
 		recordIds.push_back(1105);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2134,7 +2143,8 @@ void testCroatian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "književnosti ", hits ->1101  1201
@@ -2145,16 +2155,16 @@ void testCroatian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -2166,21 +2176,21 @@ void testCroatian() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2287,7 +2297,8 @@ void testCzech() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Miss ", hits ->1003  1103
@@ -2298,16 +2309,16 @@ void testCzech() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -2319,21 +2330,21 @@ void testCzech() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2439,7 +2450,8 @@ void testDanish() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "efterfølger", hits ->1102
@@ -2449,16 +2461,16 @@ void testDanish() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
@@ -2470,21 +2482,21 @@ void testDanish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2590,7 +2602,8 @@ void testDutch() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -2600,16 +2613,16 @@ void testDutch() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -2620,21 +2633,21 @@ void testDutch() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2739,7 +2752,8 @@ void testEstonian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Hendrix ", hits ->1002  1201
@@ -2750,7 +2764,7 @@ void testEstonian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -2763,13 +2777,13 @@ void testEstonian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -2874,7 +2888,8 @@ void testFinnish() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Paul", hits ->1102  1201
@@ -2885,16 +2900,16 @@ void testFinnish() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -2906,21 +2921,21 @@ void testFinnish() {
 		recordIds.push_back(1101);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3026,7 +3041,8 @@ void testGerman() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Kentucky ", hits ->1102
@@ -3036,16 +3052,16 @@ void testGerman() {
 		recordIds.push_back(1102);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
@@ -3057,21 +3073,21 @@ void testGerman() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3177,7 +3193,8 @@ void testGreek() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Desert ", hits ->1003  1103
@@ -3188,16 +3205,16 @@ void testGreek() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -3209,13 +3226,13 @@ void testGreek() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3320,7 +3337,8 @@ void testHungarian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "megérintette ", hits ->1102  1103
@@ -3331,16 +3349,16 @@ void testHungarian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -3352,21 +3370,21 @@ void testHungarian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3470,7 +3488,8 @@ void testIndonesia() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	//Query: "Pemangsa ", hits ->1102  1103
@@ -3481,7 +3500,7 @@ void testIndonesia() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -3495,13 +3514,13 @@ void testIndonesia() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3604,7 +3623,8 @@ void testItalian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -3614,16 +3634,16 @@ void testItalian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 2,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 2,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 	}
 
@@ -3634,21 +3654,21 @@ void testItalian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 1,
+				pingExactPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 1,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 1,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3751,7 +3771,8 @@ void testKorean() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -3763,16 +3784,16 @@ void testKorean() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 3,
+				pingExactPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, indexSearcher, query, 3,
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 3,
+				pingExactComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, indexSearcher, query, 3,
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
 						recordIds) == true);
 	}
 
@@ -3783,17 +3804,17 @@ void testKorean() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactPrefix(analyzer, indexSearcher, query, 2,
+				pingExactPrefix(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -3897,7 +3918,8 @@ void testLatvian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -3907,7 +3929,7 @@ void testLatvian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -3919,13 +3941,13 @@ void testLatvian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 1,
+				pingExactComplete(analyzer, queryEvaluator, query, 1,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -4029,7 +4051,8 @@ void testLithuanian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -4039,7 +4062,7 @@ void testLithuanian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -4052,13 +4075,13 @@ void testLithuanian() {
 		recordIds.push_back(1201);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 
@@ -4162,7 +4185,8 @@ void testNorwegian() {
 
 	Indexer *index = Indexer::load(indexMetaData1);
 	index->createAndStartMergeThreadLoop();
-	IndexSearcher *indexSearcher = IndexSearcher::create(index);
+	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	{
@@ -4172,7 +4196,7 @@ void testNorwegian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
@@ -4184,13 +4208,13 @@ void testNorwegian() {
 		recordIds.push_back(1103);
 
 		ASSERT(
-				pingExactComplete(analyzer, indexSearcher, query, 2,
+				pingExactComplete(analyzer, queryEvaluator, query, 2,
 						recordIds) == true);
 
 	}
 
 	delete analyzer;
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 }
 

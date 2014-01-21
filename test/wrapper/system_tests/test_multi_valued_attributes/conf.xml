@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+\<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./</srch2Home>
+    <srch2Home>./</srch2Home> 
  
     <!--
         License Key File
@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -319,7 +319,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+            <accessLogFile>./data/test_multi_valued_attributes/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
