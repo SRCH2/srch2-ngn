@@ -204,12 +204,11 @@ Notice that a proximity search does not support edit-distance-based fuzzy match,
 
 ### 3.4. Boolean Operators {id="booleanOperators"}
 
-There are three boolean operators supported by SRCH2 engine; AND, OR and NOT. These operators control the result set based on their query keyword containment. For example:
-
+The SRCH2 engine supports three boolean operators: AND, OR, and NOT. These operators control the result set based on their query keyword containment. For example:
 ```
 q=(star^4 AND wars) OR "George Lucas"
 ```
-returns all records which either contain "star" and "wars" or the phrase "George Lucas". As you see Term Modifilers and Phrase Search can be used alonside with a boolean expression. A few more examples are:
+returns all records which either contain "star" and "wars" or the phrase "George Lucas". As you see Term Modifilers and Phrase Search can be used with a boolean expression. A few more examples are:
 
 ```
 q=("star wars" AND "episode 3") OR ("George Lucas" AND NOT "Indiana Jones")
