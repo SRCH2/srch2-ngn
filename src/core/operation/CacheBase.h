@@ -167,7 +167,7 @@ public:
 		return true;
 	}
 	bool get(string key, ts_shared_ptr<T> & objectPointer) {
-		boost::upgrade_lock< boost::shared_mutex > lock(_access);
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		cout << "GET" << endl;
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key
@@ -187,7 +187,7 @@ public:
 		// get kicked out laster
 
 		{
-			boost::upgrade_to_unique_lock< boost::shared_mutex > uniqueLock(lock);
+//			boost::upgrade_to_unique_lock< boost::shared_mutex > uniqueLock(lock);
 			moveLinkedListElementToLast(cacheEntry->second.second);
 		}
 		// and return the object

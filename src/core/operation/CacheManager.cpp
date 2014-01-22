@@ -72,7 +72,10 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<Pre
 
 int ActiveNodesCache::setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
 	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
-	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
+	std::stringstream ss ;
+	ss << prefixActiveNodeSet->getEditDistanceThreshold();
+	std::string exactOrFuzzy = ss.str();
+//	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
 	string key = getUtf8String(*prefix) + exactOrFuzzy;
 	this->cacheContainer->put(key , prefixActiveNodeSet);
 	return 1;

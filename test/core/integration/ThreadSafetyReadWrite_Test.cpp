@@ -468,20 +468,21 @@ void test2()
 int main(int argc, char *argv[])
 {
 	try{
+
+		cout << "Case 0: Multiple Readers - Testing..." << endl;
+		test0();
+		cout << "Test0 Passed" << endl;
+
+		// multiple readers and one writer
+		cout << "Case 1: Multiple Readers and One writer - Testing..." << endl;
+		test1();
+		cout << "Test1 Passed" << endl;
+
+		// mulitple Readers and multiple writers
+		cout << "Case 2: Mulitple Readers and Multiple writers - Testing..." << endl;
+		test2();
+		cout << "Test2 Passed" << endl;
     // multiple readers
-    cout << "Case 0: Multiple Readers - Testing..." << endl;
-    test0();
-    cout << "Test0 Passed" << endl;
-
-    // multiple readers and one writer
-    cout << "Case 1: Multiple Readers and One writer - Testing..." << endl;
-    test1();
-    cout << "Test1 Passed" << endl;
-
-    // mulitple Readers and multiple writers
-    cout << "Case 2: Mulitple Readers and Multiple writers - Testing..." << endl;
-    test2();
-    cout << "Test2 Passed" << endl;
 	}catch(const exception& ex) {
 		cout << ex.what() << endl;
 	}

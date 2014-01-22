@@ -29,7 +29,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	string key;
 	this->getUniqueStringForCache(true , key);
 	ts_shared_ptr<PhysicalOperatorCacheObject> cacheHit;
-	if(this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+	if(this->queryEvaluator != NULL && // this is for CTEST MergeTopK_Test, in normal cases, queryEvaluator cannot be NULL
+			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
 			getPhysicalOperatosInfo(key ,  cacheHit)){ // cache has key
 		MergeTopKCacheEntry * mergeTopKCacheEntry = (MergeTopKCacheEntry *) cacheHit.get();
 		ASSERT(mergeTopKCacheEntry->nextItemsFromChildren.size() == mergeTopKCacheEntry->children.size());
@@ -278,23 +279,25 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 	// cache
 	//1. cache stuff of children is returned through params
 	//2. prepare key
-	string key;
-	this->getUniqueStringForCache(false, key);
-	//3. prepare the cache object of self and add children info to it
-	MergeTopKCacheEntry * mergeTopKCacheEntry = new MergeTopKCacheEntry(this->queryEvaluator ,
-																	fullCandidatesListForCache ,
-																	nextItemsFromChildren,
-																	visitedRecords ,
-																	listsHaveMoreRecordsInThem ,
-																	childRoundRobinOffset);
-	for(unsigned i = 0 ; i < childrenCacheEntries.size() ; ++i){
-		mergeTopKCacheEntry->children.push_back(childrenCacheEntries.at(i));
+	if(this->queryEvaluator != NULL){
+		string key;
+		this->getUniqueStringForCache(false, key);
+		//3. prepare the cache object of self and add children info to it
+		MergeTopKCacheEntry * mergeTopKCacheEntry = new MergeTopKCacheEntry(this->queryEvaluator ,
+																		fullCandidatesListForCache ,
+																		nextItemsFromChildren,
+																		visitedRecords ,
+																		listsHaveMoreRecordsInThem ,
+																		childRoundRobinOffset);
+		for(unsigned i = 0 ; i < childrenCacheEntries.size() ; ++i){
+			mergeTopKCacheEntry->children.push_back(childrenCacheEntries.at(i));
+		}
+		//4. put <key, this object> in the cache
+		ts_shared_ptr<PhysicalOperatorCacheObject> cacheEntry;
+		cacheEntry.reset(mergeTopKCacheEntry);
+		this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+				setPhysicalOperatosInfo(key , cacheEntry);
 	}
-	//4. put <key, this object> in the cache
-	ts_shared_ptr<PhysicalOperatorCacheObject> cacheEntry;
-	cacheEntry.reset(mergeTopKCacheEntry);
-	this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
-			setPhysicalOperatosInfo(key , cacheEntry);
 
 	// self closing stuff
 	candidatesList.clear();
