@@ -1,6 +1,6 @@
 //$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
@@ -12,6 +12,7 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
+#include "UnitTestHelper.h"
 
 #include <iostream>
 #include <functional>
@@ -78,15 +79,16 @@ void ActiveNodeSet_test()
 	indexer->addRecord(record, analyzer);
 	indexer->commit();
 
-    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
+	 QueryEvaluatorRuntimeParametersContainer runTimeParameters(10000, 500, 500);
 
+	QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runTimeParameters);
     unsigned threshold = 2;
     Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
-    PrefixActiveNodeSet *prefixActiveNodeSet = indexSearcherInternal
+    PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluator->impl
             ->computeActiveNodeSet(term);
     vector<string> similarPrefixes;
     prefixActiveNodeSet->getComputedSimilarPrefixes(
-            indexSearcherInternal->getTrie(), similarPrefixes);
+            queryEvaluator->impl->getTrie(), similarPrefixes);
 
     unsigned sim_size = similarPrefixes.size();
 
@@ -103,7 +105,7 @@ void ActiveNodeSet_test()
     delete indexer;
     // We don't need to delete prefixActiveNodeSet since it's cached and will be
     // deleted in the destructor of indexSearchInternal
-    delete indexSearcherInternal;
+    delete queryEvaluator;
     syn->free();
 }
 
@@ -263,7 +265,7 @@ void printResults(QueryResults *queryResults) {
     }
 }
 
-void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal) {
+void Test_Complete_Exact(QueryEvaluator * queryEvaluator) {
     set<unsigned> resultSet0, resultSet1, resultSet2;
     resultSet0.insert(1007);
     resultSet0.insert(1006);
@@ -289,9 +291,10 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
+            queryEvaluator, query);
 
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults);
     ASSERT(checkResults(queryResults, &resultSet0) == true);
     printResults(queryResults);
 
@@ -300,8 +303,10 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
     QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults1, resultCount);
+            queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+
+    resultCount = queryEvaluator->search(logicalPlan, queryResults1);
     checkResults(queryResults1, &resultSet1);
     printResults(queryResults1);
 
@@ -310,8 +315,9 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
     QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults2, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults2);
     checkResults(queryResults2, &resultSet2);
     printResults(queryResults2);
 
@@ -321,7 +327,7 @@ void Test_Complete_Exact(IndexSearcherInternal *indexSearcherInternal) {
     delete queryResults2;
 }
 
-void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal) {
+void Test_Prefix_Exact(QueryEvaluator * queryEvaluator) {
     set<unsigned> resultSet0, resultSet1, resultSet2;
     resultSet0.insert(1007);
     resultSet0.insert(1006);
@@ -349,8 +355,9 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     query->add(term0);
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    		queryEvaluator, query);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults);
     checkResults(queryResults, &resultSet0);
 
     cout << "\nAdding Term:";
@@ -358,8 +365,9 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
     query->add(term1);
     QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults1, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults1);
     checkResults(queryResults1, &resultSet1);
 
     cout << "\nAdding Term:";
@@ -367,8 +375,9 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal) {
     Term *term2 = ExactTerm::create(keywords[2], termType, 1, 1);
     query->add(term2);
     QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults2, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults2);
     checkResults(queryResults2, &resultSet2);
     //printResults(queryResults2);
 
@@ -378,7 +387,7 @@ void Test_Prefix_Exact(IndexSearcherInternal *indexSearcherInternal) {
     delete queryResults2;
 }
 
-void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
+void Test_Complete_Fuzzy(QueryEvaluator * queryEvaluator) {
     set<unsigned> resultSet0, resultSet1, resultSet2;
     resultSet0.insert(1007);
     resultSet0.insert(1006);
@@ -402,8 +411,9 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    		queryEvaluator, query);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults);
     checkResults(queryResults, &resultSet0);
 
     cout << "\nAdding Term:";
@@ -411,8 +421,9 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term1 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
     query->add(term1);
     QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults1, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults1);
     checkResults(queryResults1, &resultSet1);
 
     cout << "\nAdding Term:";
@@ -420,8 +431,9 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term2 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
     query->add(term2);
     QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults2, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults2);
     checkResults(queryResults2, &resultSet2);
 
     delete query;
@@ -430,7 +442,7 @@ void Test_Complete_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     delete queryResults2;
 }
 
-void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
+void Test_Prefix_Fuzzy(QueryEvaluator * queryEvaluator) {
     set<unsigned> resultSet0, resultSet1, resultSet2;
     resultSet0.insert(1007);
     resultSet0.insert(1006);
@@ -458,8 +470,9 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
     query->add(term0);
     QueryResults *queryResults = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults, resultCount);
+    		queryEvaluator, query);
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults);
     checkResults(queryResults, &resultSet0);
 
     cout << "\nAdding Term:";
@@ -467,8 +480,9 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term1 = FuzzyTerm::create(keywords[1], type, 1, 1, 2);
     query->add(term1);
     QueryResults *queryResults1 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults1, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults1);
     checkResults(queryResults1, &resultSet1);
 
     cout << "\nAdding Term:";
@@ -476,8 +490,9 @@ void Test_Prefix_Fuzzy(IndexSearcherInternal *indexSearcherInternal) {
     Term *term2 = FuzzyTerm::create(keywords[2], type, 1, 1, 2);
     query->add(term2);
     QueryResults *queryResults2 = new QueryResults(new QueryResultFactory(),
-            indexSearcherInternal, query);
-    indexSearcherInternal->search(query, queryResults2, resultCount);
+    		queryEvaluator, query);
+    logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    resultCount = queryEvaluator->search(logicalPlan, queryResults2);
     checkResults(queryResults2, &resultSet2);
 
     delete query;
@@ -500,23 +515,25 @@ void Searcher_Tests() {
 
     Indexer* indexer = Indexer::load(indexMetaData);
 
-    IndexSearcherInternal *indexSearcherInternal =
-            dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters(10000, 500, 500);
+    QueryEvaluator * queryEvaluator =
+    		new srch2is::QueryEvaluator(indexer , &runTimeParameters );
+//    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
 
-    Test_Complete_Exact(indexSearcherInternal);
+    Test_Complete_Exact(queryEvaluator);
     std::cout << "test1" << std::endl;
 
-    Test_Prefix_Exact(indexSearcherInternal);
+    Test_Prefix_Exact(queryEvaluator);
     std::cout << "test2" << std::endl;
 
-    Test_Complete_Fuzzy(indexSearcherInternal);
+    Test_Complete_Fuzzy(queryEvaluator);
     std::cout << "test3" << std::endl;
 
-    Test_Prefix_Fuzzy(indexSearcherInternal);
+    Test_Prefix_Fuzzy(queryEvaluator);
     std::cout << "test4" << std::endl;
 
     delete indexer;
-    delete indexSearcherInternal;
+    delete queryEvaluator;
 }
 
 int main(int argc, char *argv[]) {

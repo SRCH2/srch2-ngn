@@ -51,6 +51,11 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 			markTermToForceSuggestionPhysicalOperator(node->children.at(0) , isFuzzy);
 			return;
 		}
+		case LogicalPlanNodeTypePhrase:
+		{
+			markTermToForceSuggestionPhysicalOperator(node->children.at(0) , isFuzzy);
+			return;
+		}
 		case LogicalPlanNodeTypeTerm:
 		{
 			node->forcedPhysicalNode = PhysicalPlanNode_UnionLowestLevelSuggestion;
@@ -151,6 +156,13 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			break;
 		}
+		case LogicalPlanNodeTypePhrase:
+		{
+			float childProbability = node->children.at(0)->stats->getEstimatedProbability();
+			node->stats->setEstimatedProbability(childProbability);
+			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			break;
+		}
 		case LogicalPlanNodeTypeTerm:
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
@@ -183,6 +195,10 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 		case LogicalPlanNodeTypeTerm:
 		{
 			return 1;
+		}
+		case LogicalPlanNodeTypePhrase:
+		{
+			return countNumberOfKeywords(node->children.at(0), isFuzzy);
 		}
 		default:
 			ASSERT(false);

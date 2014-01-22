@@ -1,7 +1,6 @@
 #!/bin/bash 
-SRCH2_ENGINE_DIR=$1
-PORT=8082
-binary=$SRCH2_ENGINE_DIR/srch2-search-server
+SRCH2_ENGINE=$1
+PORT=8087
 
 pingServer(){
     info=$( curl -s http://localhost:$PORT/search?q=p | grep -o results)
@@ -17,7 +16,7 @@ pingServer(){
 }
 
 startServer(){
-    $binary --config-file=high_insert_test/conf.xml &
+    $SRCH2_ENGINE --config-file=high_insert_test/conf.xml &
     PID=$!
     pingServer
 

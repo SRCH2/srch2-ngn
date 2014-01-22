@@ -3,14 +3,11 @@
 
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 
-port = '8081'
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+sys.path.insert(0, 'srch2lib')
+import test_lib
+
+port = '8087'
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -43,21 +40,21 @@ def checkResult(query, responseJson,resultValue):
                 print str(responseJson[i]['record']['id'])+'||'+str(resultValue[i])
 
     if isPass == 1:
-        print  query+' test pass'
+        print  query +' test pass'
+        return 0
+    return 1
 
 
 
 def testBooleanExpression(queriesAndResultsPath, binary_path):
     #Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./boolean-expression-test/config.xml &'
-    print 'starting engine: ' + binary
-    os.popen(binary)
-
-    pingServer()
-
+    args = [ binary_path, '--config-file=./boolean-expression-test/config.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
+    test_lib.pingServer(port)
     #construct the query
     #format : phrase,proximity||rid1 rid2 rid3 ...ridn
+    failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         value=line.split('||')
@@ -69,22 +66,15 @@ def testBooleanExpression(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
         #print response_json['results']
         #check the result
-        checkResult(query, response_json['results'], expectedRecordIds)
+        failCount += checkResult(query, response_json['results'], expectedRecordIds)
 
-    #get pid of srch2-search-server and kill the process
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except:
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
+    test_lib.killServer(serverHandle)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':      
     #Path of the query file
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testBooleanExpression(queriesAndResultsPath, binary_path)
+    exitCode = testBooleanExpression(queriesAndResultsPath, binary_path)
+    os._exit(exitCode)

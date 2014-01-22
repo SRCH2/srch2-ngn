@@ -2,14 +2,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue, facetResultValue):
@@ -78,12 +74,11 @@ def prepareQuery(queryKeywords):
 
 def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_solr_compatible_query_syntax/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./test_solr_compatible_query_syntax/conf.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     # get facet correct result from file
     f_facet = open(facetResultsPath , 'r')
@@ -113,16 +108,8 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         j=j+1
         #print j
         #print '------------------------------------------------------------------'
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
     print '=============================='
+    test_lib.killServer(serverHandle)
     return failCount
 
 if __name__ == '__main__':    

@@ -212,7 +212,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	PhysicalPlanNode * bottomOfChain = NULL;
 	FacetOperator * facetOperatorPtr = NULL;
 	SortByRefiningAttributeOperator * sortOperator = NULL;
-	PhraseSearchOperator * phraseOperator = NULL;
 	if(logicalPlan->getPostProcessingInfo() != NULL){
 		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
 			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
@@ -240,19 +239,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
 			}else{
 				topOperator = bottomOfChain = sortOperator;
-			}
-		}
-		if(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
-			phraseOperator = new PhraseSearchOperator(logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer());
-			PhraseSearchOptimizationOperator * phraseOpOp = new PhraseSearchOptimizationOperator();
-			phraseOperator->setPhysicalPlanOptimizationNode(phraseOpOp);
-			phraseOpOp->setExecutableNode(phraseOperator);
-
-			if(bottomOfChain != NULL){
-				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(phraseOpOp);
-				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
-			}else{
-				topOperator = bottomOfChain = phraseOperator;
 			}
 		}
 	}

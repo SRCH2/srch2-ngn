@@ -56,7 +56,7 @@ ADD_TEST(Licensing_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Licensing_Test "-
 
 ADD_TEST(IndexerInternal_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/IndexerInternal_Test "--verbose")
 	
-ADD_TEST(IndexSearcherInternal_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/IndexSearcherInternal_Test "--verbose")
+ADD_TEST(QueryEvaluator_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QueryEvaluator_Test "--verbose")
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 

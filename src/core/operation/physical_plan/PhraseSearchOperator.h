@@ -39,12 +39,14 @@ public:
 	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~PhraseSearchOperator();
-	PhraseSearchOperator(PhraseSearchInfoContainer * phraseSearchInfoContainer) ;
+	PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) ;
 private:
-	PhraseSearchInfoContainer * phraseSearchInfoContainer;
+	PhraseInfo phraseSearchInfo;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
 	// match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
 	bool matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo);
+	PhysicalPlanRecordItem * getNextCandidateRecord(const PhysicalPlanExecutionParameters & params);
+
 };
 
 class PhraseSearchOptimizationOperator : public PhysicalPlanOptimizationNode {

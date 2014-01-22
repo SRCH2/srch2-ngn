@@ -149,6 +149,9 @@ void QueryOptimizer::buildIncompleteSubTreeOptions(LogicalPlanNode * root, vecto
 		case LogicalPlanNodeTypeNot:
 			buildIncompleteSubTreeOptionsNot(root, treeOptions);
 			break;
+		case LogicalPlanNodeTypePhrase:
+			buildIncompleteSubTreeOptionsPhrase(root, treeOptions);
+			break;
 		case LogicalPlanNodeTypeTerm:
 			buildIncompleteSubTreeOptionsTerm(root, treeOptions);
 			break;
@@ -226,6 +229,24 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
 	delete cartProductResults;
 
 }
+
+void QueryOptimizer::buildIncompleteSubTreeOptionsPhrase(LogicalPlanNode * root,
+											vector<PhysicalPlanOptimizationNode *> & treeOptions) {
+
+	vector<PhysicalPlanOptimizationNode *> childTreeOptions;
+	buildIncompleteSubTreeOptions(root->children.at(0), childTreeOptions);
+
+	for(unsigned p = 0 ; p < childTreeOptions.size(); ++p) {
+		PhysicalPlanOptimizationNode * phraseSearchOptNode = (PhysicalPlanOptimizationNode *)
+				this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOptimzationOperator();
+		phraseSearchOptNode->setLogicalPlanNode(root);
+		phraseSearchOptNode->addChild(childTreeOptions[p]);
+		if(phraseSearchOptNode->validateChildren() == true) {
+			treeOptions.push_back(phraseSearchOptNode);
+		}
+	}
+}
+
 void QueryOptimizer::buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
 	// TODO For now NOT just passes the options up
 	// NOTE : This is WRONG because it's ignoring NOT
@@ -480,6 +501,14 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
 		case PhysicalPlanNode_UnionLowestLevelSuggestion:{
 			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOptimizationOperator();
 			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSuggestionOperator();
+			break;
+		}
+		case PhysicalPlanNode_PhraseSearch:{
+			optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOptimzationOperator();
+			LogicalPlanNode * logPlanNode = chosenTree->getLogicalPlanNode();
+			ASSERT(logPlanNode != NULL);	//TODO: throw exception ...phrase opertator cannot work without phrase info stored in logical node.
+			LogicalPlanPhraseNode * phraseLogicalNode = reinterpret_cast<LogicalPlanPhraseNode *>(logPlanNode);
+			executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOperator(phraseLogicalNode->getPhraseInfo());
 			break;
 		}
 		default:
