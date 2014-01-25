@@ -320,7 +320,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/phraseSearch/srch2-ps-log.txt</accessLogFile>
+            <accessLogFile>./data/boolean-expression-test/srch2-log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
