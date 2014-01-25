@@ -83,7 +83,7 @@ python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-e
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
         exit 255
     fi
 else
