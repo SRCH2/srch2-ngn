@@ -444,16 +444,40 @@ static void killServer(int signal) {
 #endif
 }
 
+
+// map from port numbers (shared among cores) to socket file descriptors
+typedef std::map<unsigned short, int> PortMap_t;
+
+/*
+ * Container for HTTP servers and related information
+ */
+struct Listener_t {
+    struct event_base * evbase;
+    struct evhttp * http_server;
+    PortMap_t portMap;
+};
+
 /*
  * Start the srch2 servers, one per core in the config
  */
-static int startServers(ConfigManager *config, ServerMap_t *servers, vector<struct event_base *> *evbases, vector<struct evhttp *> *http_servers)
+static int startServers(ConfigManager *config, ServerMap_t *servers, vector<Listener_t *> *listeners,
+                        PortMap_t *portMap)
 {
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
     /* 1). event initialization */
     http_port = atoi(config->getHTTPServerListeningPort().c_str());
     http_addr = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+
+    // bind the default port
+    if (http_port > 0 && portMap->find(http_port) == portMap->end()) {
+        (*portMap)[http_port] = bindSocket(http_addr, http_port);
+        if ((*portMap)[http_port] < 0) {
+            perror("socket bind error");
+            return 255;
+        }
+    }
+
     // create a server (core) for each data source in config file
     for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
          iterator != config->coreInfoIterateEnd(); iterator++) {
@@ -470,12 +494,6 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
     if (defaultCore == NULL)
     {
         perror("Null default core");
-        return 255;
-    }
-
-    int fd = bindSocket(http_addr, http_port);
-    if (fd < 0) {
-        perror("socket bind error");
         return 255;
     }
 
@@ -503,9 +521,22 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
             // this is a temporary solution. TODO
             srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
             srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+
+            // bind once each port defined for use by this core
+            for (enum PortType_t portType = 0; portType < EndOfPortType; portType++) {
+                int port = coreInfo->getPort(portType);
+                if (port > 0 && portMap->find(port) == portMap->end()) {
+                    (*portMap)[port] = bindSocket(http_addr, port);
+                    if ((*portMap)[port] < 0) {
+                        perror("socket bind error");
+                        return 255;
+                    }
+                }
+            }
         }
     }
 
+    
     MAX_THREADS = config->getNumberOfThreads();
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
             MAX_THREADS, http_addr, http_port);
@@ -516,21 +547,29 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
         struct evhttp *http_server = NULL;
         struct event_base *evbase = NULL;
 
+        Listener_t *listener = new Listener_t;
+        if (listener == NULL) {
+            perror("listener allocation failure");
+            return 255;
+        }
+
         evbase = event_init();
-        evbases->push_back(evbase);
         if (NULL == evbase) {
             perror("event_base_new");
             return 255;
         }
 
         http_server = evhttp_new(evbase);
-        http_servers->push_back(http_server);
         //evhttp_set_max_body_size(http_server, (size_t)defaultCore->indexDataConfig->getWriteReadBufferInBytes() );
 
         if (NULL == http_server) {
             perror("evhttp_new");
             return 255;
         }
+
+        listener->evbase = evbase;
+        listener->http_server = http_server;
+        listeners->push_back(listener);
 
         // setup default core callbacks
         //http_server = evhttp_start(http_addr, http_port);
@@ -549,44 +588,47 @@ static int startServers(ConfigManager *config, ServerMap_t *servers, vector<stru
 
         // setup named core callbacks
         for (ServerMap_t::const_iterator iterator = servers->begin(); iterator != servers->end(); iterator++) {
+            string coreName = iterator->second->getCoreName();
 
-            string path = string("/") + iterator->second->getCoreName() + string("/search");
+            string path = string("/") + coreName + string("/search");
             evhttp_set_cb(http_server, path.c_str(), cb_search, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/suggest");
+            path = string("/") + coreName + string("/suggest");
             evhttp_set_cb(http_server, path.c_str(), cb_suggest, iterator->second);
 
             //evhttp_set_cb(http_server, "/lookup", cb_lookup, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/info");
+            path = string("/") + coreName + string("/info");
             evhttp_set_cb(http_server, path.c_str(), cb_info, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/docs");
+            path = string("/") + coreName + string("/docs");
             evhttp_set_cb(http_server, path.c_str(), cb_write, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/update");
+            path = string("/") + coreName + string("/update");
             evhttp_set_cb(http_server, path.c_str(), cb_update, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/save");
+            path = string("/") + coreName + string("/save");
             evhttp_set_cb(http_server, path.c_str(), cb_save, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/export");
+            path = string("/") + coreName + string("/export");
             evhttp_set_cb(http_server, path.c_str(), cb_export, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/activate");
+            path = string("/") + coreName + string("/activate");
             evhttp_set_cb(http_server, path.c_str(), cb_activate, iterator->second);
 
-            path = string("/") + iterator->second->getCoreName() + string("/resetLogger");
+            path = string("/") + coreName + string("/resetLogger");
             evhttp_set_cb(http_server, path.c_str(), cb_resetLogger, iterator->second);
         }
 
         evhttp_set_gencb(http_server, cb_notfound, NULL);
 
-        /* 4). bind socket */
-        //if(0 != evhttp_bind_socket(http_server, http_addr, http_port))
-        if (0 != evhttp_accept_socket(http_server, fd)) {
-            perror("evhttp_bind_socket");
-            return 255;
+        /* 4). accept bound socket */
+        for (PortMap_t::iterator iterator = listener->portMap.begin(); iterator != listener->portMap.end(); iterator++) {
+            ASSERT(iterator->second > 0);
+            if (0 != evhttp_accept_socket(http_server, iterator->second)) {
+                perror("evhttp_accept_socket");
+                return 255;
+            }
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
@@ -654,10 +696,10 @@ int main(int argc, char** argv) {
     }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
-    vector<struct event_base *> evbases;
-    vector<struct evhttp *> http_servers;
+    vector<struct Listener_t *> listeners;
+    PortMap_t portMap;  // map of all ports across all cores to shared socket file descriptors
 
-    int start = startServers(serverConf, &servers, &evbases, &http_servers);
+    int start = startServers(serverConf, &servers, &listeners, &portMap);
     if (start != 0) {
         if (logFile)
             fclose(logFile);
@@ -694,8 +736,13 @@ int main(int argc, char** argv) {
 
     // free resources before we exit
     for (int i = 0; i < MAX_THREADS; i++) {
-        evhttp_free(http_servers[i]);
-        event_base_free(evbases[i]);
+        // TODO: iterate over listeners closing fd's
+        evhttp_free(listeners[i]->http_server);
+        event_base_free(listeners[i]->evbase);
+    }
+
+    for (PortMap_t::iterator iterator = portMap.begin(); iterator != portMap.end(); iterator++) {
+        shutdown(iterator->second, SHUT_RD);
     }
 
     AnalyzerContainer::freeAll();

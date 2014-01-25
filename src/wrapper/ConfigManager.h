@@ -98,12 +98,26 @@ struct CoreConfigParseState_t {
     bool hasLatitude;
     bool hasLongitude;
     vector<string> searchableFieldsVector;
-	vector<string> searchableFieldTypesVector;
+    vector<string> searchableFieldTypesVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
+};
+
+// enum to allow loop iteration over listening ports
+enum PortType_t {
+    SearchPort,
+    SuggestPort,
+    InfoPort,
+    DocsPort,
+    UpdatePort,
+    SavePort,
+    ExportPort,
+    ActivatePort,
+    ResetLoggerPort,
+    EndOfPortType // stop value - not valid
 };
 
 class ConfigManager {
@@ -538,6 +552,8 @@ public:
         { return configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode(); }
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
+
+    unsigned short getPort(PortType_t portType) const;
 
 protected:
     string name; // of core

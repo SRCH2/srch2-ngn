@@ -2418,6 +2418,42 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
     //        return coreInfoMap[getDefaultCoreName()];
 }
 
+unsigned short CoreInfo_t::getPort(PortType_t portType) const
+{
+    unsigned short portNumber = 0;
+
+    switch(portType) {
+    case SearchPort:
+        portNumber = searchPort;
+        break;
+    case SuggestPort:
+        portNumber = suggestPort;
+        break;
+    case InfoPort:
+        portNumber = infoPort;
+        break;
+    case DocsPort:
+        portNumber = docsPort;
+        break;
+    case UpdatePort:
+        portNumber = updatePort;
+        break;
+    case SavePort:
+        portNumber = savePort;
+        break;
+    case ExportPort:
+        portNumber = exportPort;
+        break;
+    case ActivatePort:
+        portNumber = activatePort;
+        break;
+    default:
+        portNumber = 0;
+        break;
+    }
+    return portNumber;
+}
+
 // JUST FOR Wrapper TEST
 void CoreInfo_t::setDataFilePath(const string& path) {
     dataFilePath = path;
