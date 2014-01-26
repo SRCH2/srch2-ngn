@@ -53,7 +53,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~FilterQueryOperator();
 	FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) ;

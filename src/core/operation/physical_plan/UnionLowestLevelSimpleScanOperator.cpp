@@ -11,6 +11,7 @@ namespace instantsearch {
 
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
 	queryEvaluator = NULL;
+	parentIsCacheEnabled = false;
 }
 
 UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
@@ -53,8 +54,19 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
         }
 	}
-	this->invertedListOffset = 0;
-	this->cursorOnInvertedList = 0;
+
+	// check cache
+    if(params.parentIsCacheEnabled == true || params.cacheObject == NULL){
+    	// either parent is not passing cache hit info or
+    	// there was no cache hit
+		this->invertedListOffset = 0;
+		this->cursorOnInvertedList = 0;
+    }else if(params.cacheObject != NULL){
+    	UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
+    			(UnionLowestLevelSimpleScanCacheEntry *)params.cacheObject;
+    	this->invertedListOffset = cacheEntry->invertedListOffset;
+    	this->cursorOnInvertedList = cacheEntry->cursorOnInvertedList;
+    }
 
 	return true;
 
@@ -154,6 +166,11 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 }
 bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
 
+	// set cache object
+	UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
+			new UnionLowestLevelSimpleScanCacheEntry(this->invertedListOffset , this->cursorOnInvertedList);
+	params.cacheObject = cacheEntry;
+
 	this->invertedListsSharedPointers.clear();
 	this->invertedLists.clear();
 	this->invertedListDistances.clear();
@@ -167,8 +184,12 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 	return true;
 }
 
-void UnionLowestLevelSimpleScanOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string UnionLowestLevelSimpleScanOperator::toString(){
+	string result = "UnionLowestLevelSimpleScanOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

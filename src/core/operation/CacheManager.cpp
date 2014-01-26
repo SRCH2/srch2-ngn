@@ -38,7 +38,7 @@ namespace instantsearch
 {
 
 
-bool PhysicalOperatorsCache::getPhysicalOperatosInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
+bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
 	return this->cacheContainer->get(key , in);
 }
 void PhysicalOperatorsCache::setPhysicalOperatosInfo(string key , ts_shared_ptr<PhysicalOperatorCacheObject> object){

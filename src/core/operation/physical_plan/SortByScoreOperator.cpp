@@ -92,8 +92,12 @@ bool SortByScoreOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void SortByScoreOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string SortByScoreOperator::toString(){
+	string result = "SortByScoreOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool SortByScoreOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

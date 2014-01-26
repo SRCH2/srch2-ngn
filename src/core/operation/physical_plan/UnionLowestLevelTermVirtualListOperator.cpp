@@ -11,6 +11,7 @@ namespace instantsearch {
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
 UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator() {
+    this->parentIsCacheEnabled = false;
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
@@ -55,10 +56,16 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
         }
     }
 
-    if(params.cacheObject == NULL){
+
+    // check cache
+    parentIsCacheEnabled = params.parentIsCacheEnabled;
+    if(params.parentIsCacheEnabled == false || params.cacheObject == NULL){
+    	// parent is not feeding us with cache info and does not expect cache entry
+    	// or there was no cache hit
 		// Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
 		make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
-    }else{
+    }else if(params.cacheObject != NULL){
+    	// parent is feeding us with cache hit info and does expect newer cache entry.
     	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
     			(UnionLowestLevelTermVirtualListCacheEntry *)params.cacheObject;
     	itemsHeap.clear();
@@ -165,11 +172,14 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 }
 bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParameters & params){
 
-	// set cache object
-	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
-			new UnionLowestLevelTermVirtualListCacheEntry(this->itemsHeap,
-					this->numberOfItemsInPartialHeap , this->currentMaxEditDistanceOnHeap , this->cursorVector);
-	params.cacheObject = cacheEntry;
+	// if parent excepts cache must prepare a newer cache entry
+	if(parentIsCacheEnabled){
+		// set cache object
+		UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
+				new UnionLowestLevelTermVirtualListCacheEntry(this->itemsHeap,
+						this->numberOfItemsInPartialHeap , this->currentMaxEditDistanceOnHeap , this->cursorVector);
+		params.cacheObject = cacheEntry;
+	}
 
     queryEvaluator = NULL;
     for (vector<UnionLowestLevelTermVirtualListOperatorHeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
@@ -186,8 +196,12 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
     return true;
 }
 
-void UnionLowestLevelTermVirtualListOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-	uniqueString += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getUniqueStringForCaching();
+string UnionLowestLevelTermVirtualListOperator::toString(){
+	string result = "UnionLowestLevelTermVirtualListOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
@@ -212,7 +226,6 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfO
 	// make_heap
 	resultCost.addFunctionCallCost();
 	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
-	Logger::info("TVL open cost : %d",  resultCost.cost);
 	return resultCost ; // cost of going over leaf nodes.
 
 }

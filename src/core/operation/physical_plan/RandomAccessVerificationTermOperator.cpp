@@ -15,6 +15,7 @@ RandomAccessVerificationTermOperator::RandomAccessVerificationTermOperator() {
 RandomAccessVerificationTermOperator::~RandomAccessVerificationTermOperator(){
 }
 bool RandomAccessVerificationTermOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
+	// random access needs no caching.
 	this->queryEvaluator = queryEvaluator;
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
@@ -28,8 +29,12 @@ bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters
 	return true;
 }
 
-void RandomAccessVerificationTermOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string RandomAccessVerificationTermOperator::toString(){
+	string result = "RandomAccessVerificationTermOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 

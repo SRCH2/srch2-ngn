@@ -53,12 +53,12 @@ struct Query::Impl
 
     ResultsPostProcessorPlan *  plan;
 
-    string getUniqueStringForCaching(){
+    string toString(){
     	stringstream ss;
     	ss << type;
     	if(terms != NULL){
 			for(unsigned i = 0 ; i < terms->size(); ++i){
-				ss << terms->at(i)->getUniqueStringForCaching().c_str();
+				ss << terms->at(i)->toString().c_str();
 			}
     	}
     	ss << sortableAttributeId;
@@ -256,8 +256,8 @@ ResultsPostProcessorPlan * Query::getPostProcessingPlan(){
 }
 
 
-string Query::getUniqueStringForCaching(){
-	return this->impl->getUniqueStringForCaching();
+string Query::toString(){
+	return this->impl->toString();
 }
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const

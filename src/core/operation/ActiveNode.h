@@ -213,6 +213,12 @@ public:
 
     void printActiveNodes(const Trie* trie) const;// Deprecated due to removal of TrieNode->getParent() pointers.
 
+    /*
+     * This function prepares the 2D vector, trieNodeSetVector, which keeps all trie nodes ordered by their edit-distance.
+     */
+    void prepareForIteration(){
+    	_computeTrieNodeSetVector();
+    }
 private:
 
     //PAN:

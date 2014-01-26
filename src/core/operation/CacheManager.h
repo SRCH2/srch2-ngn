@@ -40,7 +40,7 @@ class PhysicalOperatorsCache {
 	PhysicalOperatorsCache(unsigned long byteSizeOfCache = 134217728){
 		this->cacheContainer = new CacheContainer<PhysicalOperatorCacheObject>(byteSizeOfCache);
 	}
-	bool getPhysicalOperatosInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in);
+	bool getPhysicalOperatorsInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in);
 	void setPhysicalOperatosInfo(string key , ts_shared_ptr<PhysicalOperatorCacheObject> object);
 	int clear();
 	~PhysicalOperatorsCache(){

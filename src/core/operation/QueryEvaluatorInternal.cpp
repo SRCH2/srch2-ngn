@@ -175,19 +175,19 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	ASSERT(logicalPlan != NULL);
-	//1. first check to see if we have this query in cache
-	string key = logicalPlan->getUniqueStringForCaching();
+//	//1. first check to see if we have this query in cache
+//	string key = logicalPlan->getUniqueStringForCaching();
 //	cout << "Key : " << key << endl;
-	Logger::info("key : %s " , key.c_str());
-	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
-	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
-		// cache hit
-		Logger::info("Cache hit.") ;
-		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-		return queryResults->impl->sortedFinalResults.size();
-	}else{
-		Logger::info("No cache hit.") ;
-	}
+//	Logger::info("key : %s " , key.c_str());
+//	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
+//	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+//		// cache hit
+//		Logger::info("Cache hit.") ;
+//		cachedObject->copyToQueryResultsInternal(queryResults->impl);
+//		return queryResults->impl->sortedFinalResults.size();
+//	}else{
+//		Logger::info("No cache hit.") ;
+//	}
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -316,11 +316,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 
-	// save in cache
-	ts_shared_ptr<QueryResultsCacheEntry> cacheObject ;
-	cacheObject.reset(new QueryResultsCacheEntry());
-	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
-	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+//	// save in cache
+//	ts_shared_ptr<QueryResultsCacheEntry> cacheObject ;
+//	cacheObject.reset(new QueryResultsCacheEntry());
+//	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+//	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
 
 	return queryResults->impl->sortedFinalResults.size();
 
@@ -426,6 +426,7 @@ ts_shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
+        	prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet
             cacheResponse = this->cacheManager->getActiveNodesCache()->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }

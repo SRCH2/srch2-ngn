@@ -49,26 +49,29 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 	this->fuzzyTerm = fuzzyTerm;
 }
 
-string LogicalPlanNode::getUniqueStringForCaching(){
-	return getUniqueStringForCachingRecursive(this);
-}
-
-string LogicalPlanNode::getUniqueStringForCachingRecursive(LogicalPlanNode * root){
-	ASSERT(root != NULL);
+string LogicalPlanNode::toString(){
 	stringstream ss;
-	ss << root->nodeType;
-	for(vector<LogicalPlanNode *>::iterator child = root->children.begin() ; child != root->children.end() ; ++child){
-		ss << getUniqueStringForCachingRecursive(*child).c_str();
+	ss << this->nodeType;
+	if(this->exactTerm != NULL){
+		ss << this->exactTerm->toString();
 	}
-	if(root->exactTerm != NULL){
-		ss << root->exactTerm->getUniqueStringForCaching();
+	if(this->fuzzyTerm != NULL){
+		ss << this->fuzzyTerm->toString();
 	}
-	if(root->fuzzyTerm != NULL){
-		ss << root->fuzzyTerm->getUniqueStringForCaching();
-	}
-	ss << root->forcedPhysicalNode;
+	ss << this->forcedPhysicalNode;
 	return ss.str();
 }
+
+string LogicalPlanNode::getSubtreeUniqueString(){
+
+	string result = toString();
+	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
+		ASSERT(this->children.at(childOffset) != NULL);
+		result += this->children.at(childOffset)->getSubtreeUniqueString();
+	}
+	return result;
+}
+
 
 //////////////////////////////////////////////// Logical Plan ///////////////////////////////////////////////
 

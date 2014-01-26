@@ -23,8 +23,8 @@ public:
 		return true;
 	}
 
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+	string toString(){
+		return "TestLowLevelOperator" ;
 	}
 
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

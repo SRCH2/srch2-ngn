@@ -313,7 +313,7 @@ void test0()
     pthread_t *threadReaders;
     pthread_attr_t pthread_custom_attr;
     int n, i;
-    n = 40;
+    n = 50;
 
     addSimpleRecords();
     // create an index

@@ -44,7 +44,7 @@ struct Term::Impl
     uint8_t threshold;
     unsigned searchableAttributeIdToFilter;
 
-    string getUniqueStringForCaching(){
+    string toString(){
     	std::stringstream ss;
     	ss << keyword.c_str();
     	ss << type;
@@ -150,8 +150,8 @@ unsigned Term::getAttributeToFilterTermHits() const
     return this->impl->searchableAttributeIdToFilter;
 }
 
-string Term::getUniqueStringForCaching(){
-	return this->impl->getUniqueStringForCaching();
+string Term::toString(){
+	return this->impl->toString();
 }
 
 ////////////////////////

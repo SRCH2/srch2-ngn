@@ -96,8 +96,12 @@ bool UnionLowestLevelSuggestionOperator::close(PhysicalPlanExecutionParameters &
 	return true;
 }
 
-void UnionLowestLevelSuggestionOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string UnionLowestLevelSuggestionOperator::toString(){
+	string result = "UnionLowestLevelSuggestionOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool UnionLowestLevelSuggestionOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

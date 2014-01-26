@@ -124,8 +124,12 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void UnionSortedByIDOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string UnionSortedByIDOperator::toString(){
+	string result = "UnionSortedByIDOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

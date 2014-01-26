@@ -63,6 +63,8 @@ struct PhysicalPlanExecutionParameters {
 	bool isFuzzy;
 	float prefixMatchPenalty ;
 	Ranker * ranker;
+	// this member is true, then cacheObject contains a cache feed from parent
+	bool parentIsCacheEnabled;
 	PhysicalOperatorCacheObject * cacheObject ;
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
@@ -84,6 +86,7 @@ struct PhysicalPlanExecutionParameters {
 		}
 
 		cacheObject = NULL;
+		parentIsCacheEnabled = false;
 	}
 
 	~PhysicalPlanExecutionParameters(){
@@ -283,13 +286,6 @@ public:
 	virtual bool open(QueryEvaluatorInternal * queryEvaluator,PhysicalPlanExecutionParameters & params) = 0;
 	virtual PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) = 0;
 	virtual bool close(PhysicalPlanExecutionParameters & params) = 0;
-
-	/*
-	 * The implementor of this function is supposed to append a unique string to 'uniqueString'
-	 * which determines the subtree of physical plan uniquely.
-	 */
-	virtual void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString) = 0;
-
 	virtual ~PhysicalPlanIteratorExecutionInterface(){};
 };
 
@@ -436,6 +432,18 @@ public:
 	// members of parameters argument, so if this function returns true, we use parameters members to
 	// get that information.
 	virtual bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) = 0;
+
+
+	/*
+	 * The implementor of this function is supposed to append a unique string to 'uniqueString'
+	 * which determines the subtree of physical plan uniquely.
+	 */
+	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+
+	/*
+	 * returns a unique string which represents this operator
+	 */
+	virtual string toString() = 0;
 private:
 	PhysicalPlanOptimizationNode * optimizationNode;
 };

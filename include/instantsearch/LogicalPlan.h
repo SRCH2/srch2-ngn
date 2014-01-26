@@ -52,8 +52,8 @@ public:
 
     void setFuzzyTerm(Term * fuzzyTerm);
 
-    string getUniqueStringForCaching();
-    string getUniqueStringForCachingRecursive(LogicalPlanNode * root);
+    string toString();
+    string getSubtreeUniqueString();
     Term * getTerm(bool isFuzzy){
     	if(isFuzzy){
     		return this->fuzzyTerm;
@@ -239,21 +239,21 @@ public:
 	string getUniqueStringForCaching(){
 		stringstream ss;
 		if(tree != NULL){
-			ss << tree->getUniqueStringForCaching().c_str();
+			ss << tree->getSubtreeUniqueString().c_str();
 		}
 		ss << docIdForRetrieveByIdSearchType;
 		if(postProcessingInfo != NULL){
-			ss << postProcessingInfo->getUniqueStringForCaching().c_str();
+			ss << postProcessingInfo->toString().c_str();
 		}
 		ss << queryType;
 		ss << offset;
 		ss << numberOfResultsToRetrieve;
 		ss << shouldRunFuzzyQuery;
 		if(exactQuery != NULL){
-			ss << exactQuery->getUniqueStringForCaching().c_str();
+			ss << exactQuery->toString().c_str();
 		}
 		if(fuzzyQuery != NULL){
-			ss << fuzzyQuery->getUniqueStringForCaching().c_str();
+			ss << fuzzyQuery->toString().c_str();
 		}
 		return ss.str();
 	}

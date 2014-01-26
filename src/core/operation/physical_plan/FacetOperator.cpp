@@ -327,10 +327,15 @@ bool FacetOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void FacetOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string FacetOperator::toString(){
+	ASSERT(false); // this function should not be called for this operator
+	// because we don't have any cache functionality for facet as of now.
+	string result = "facetOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
-
 bool FacetOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

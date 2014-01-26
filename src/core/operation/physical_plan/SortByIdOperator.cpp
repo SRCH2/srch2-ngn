@@ -57,8 +57,12 @@ bool SortByIdOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void SortByIdOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string SortByIdOperator::toString(){
+	string result = "SortByIdOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 

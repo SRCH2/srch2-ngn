@@ -83,8 +83,12 @@ bool PhraseSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void PhraseSearchOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string PhraseSearchOperator::toString(){
+	string result = "PhraseSearchOperator" + this->phraseSearchInfo.toString();
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

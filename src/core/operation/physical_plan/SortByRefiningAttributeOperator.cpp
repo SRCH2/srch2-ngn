@@ -101,8 +101,12 @@ bool SortByRefiningAttributeOperator::close(PhysicalPlanExecutionParameters & pa
     return true;
 }
 
-void SortByRefiningAttributeOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string SortByRefiningAttributeOperator::toString(){
+	string result = "SortByRefiningAttributeOperator" + this->sortEvaluator->toString();
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 

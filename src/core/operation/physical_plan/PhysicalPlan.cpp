@@ -169,4 +169,30 @@ PhysicalPlanExecutionParameters * PhysicalPlan::getExecutionParameters(){
 }
 
 
+/*
+ * The implementor of this function is supposed to append a unique string to 'uniqueString'
+ * which determines the subtree of physical plan uniquely.
+ */
+void PhysicalPlanNode::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
+	// get number of children
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+
+	// if we don't have any child,
+	if(numberOfChildren == 0){
+		if(ignoreLastLeafNode){ // if ignoreLastLeafNode is true we should ignore self
+			return;
+		}else{
+			uniqueString += toString();
+		}
+	}else{ // if there are some children, ignoreLastLeafNode can only be true for the last one
+		uniqueString += toString();
+		for(unsigned childOffset = 0 ; childOffset < numberOfChildren - 1 ; childOffset ++){
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->
+					getExecutableNode()->getUniqueStringForCache(false , uniqueString);
+		}
+		this->getPhysicalPlanOptimizationNode()->getChildAt(numberOfChildren - 1)->
+				getExecutableNode()->getUniqueStringForCache(ignoreLastLeafNode , uniqueString);
+	}
+}
+
 }}

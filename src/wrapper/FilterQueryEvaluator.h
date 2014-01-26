@@ -621,7 +621,7 @@ public:
         }
     }
 
-	string getUniqueStringForCaching(){
+	string toString(){
 		stringstream ss;
 		for(std::vector<QueryExpression *>::iterator queryExpression = expressions.begin();
 				queryExpression != expressions.end() ; ++queryExpression){

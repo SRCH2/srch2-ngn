@@ -28,9 +28,14 @@ bool RandomAccessVerificationNotOperator::close(PhysicalPlanExecutionParameters 
 	return true;
 }
 
-void RandomAccessVerificationNotOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string RandomAccessVerificationNotOperator::toString(){
+	string result = "RandomAccessVerificationNotOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
+
 
 bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 

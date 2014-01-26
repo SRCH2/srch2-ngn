@@ -44,8 +44,12 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void FilterQueryOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string FilterQueryOperator::toString(){
+	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

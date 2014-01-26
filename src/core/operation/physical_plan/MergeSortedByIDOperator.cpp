@@ -156,8 +156,12 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void MergeSortedByIDOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string MergeSortedByIDOperator::toString(){
+	string result = "MergeSortedByIDOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

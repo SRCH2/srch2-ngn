@@ -80,7 +80,7 @@ public:
     std::vector<std::string> rangeGaps;
     std::vector<int> numberOfTopGroupsToReturn;
 
-    string getUniqueStringForCaching(){
+    string toString(){
     	stringstream ss;
     	for(unsigned index = 0 ; index < types.size() ; ++index){
     		ss << types[index] << fields[index].c_str() <<
@@ -98,7 +98,7 @@ public:
 	// and right records which serve as tie breaker.
 	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
-	virtual string getUniqueStringForCaching() const = 0;
+	virtual string toString() const = 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;
 };
@@ -108,7 +108,7 @@ class RefiningAttributeExpressionEvaluator
 public:
 	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
 	virtual ~RefiningAttributeExpressionEvaluator(){};
-	virtual string getUniqueStringForCaching() = 0;
+	virtual string toString() = 0;
 };
 
 class PhraseInfo{
@@ -119,7 +119,7 @@ class PhraseInfo{
         unsigned proximitySlop;
         unsigned attributeBitMap;
 
-        string getUniqueStringForCaching(){
+        string toString(){
         	stringstream ss;
         	for(unsigned i = 0 ; i < phraseKeyWords.size() ; ++i ){
         		ss << phraseKeyWords[i].c_str();
@@ -153,10 +153,10 @@ public:
 	}
 	vector<PhraseInfo> phraseInfoVector;
 
-    string getUniqueStringForCaching(){
+    string toString(){
     	stringstream ss;
     	for(unsigned i=0; i< phraseInfoVector.size() ; ++i){
-    		ss << phraseInfoVector[i].getUniqueStringForCaching().c_str();
+    		ss << phraseInfoVector[i].toString().c_str();
     	}
     	return ss.str();
     }
@@ -178,7 +178,7 @@ public:
 	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
 
 
-	string getUniqueStringForCaching();
+	string toString();
 private:
 	FacetQueryContainer * facetInfo;
 	SortEvaluator * sortEvaluator;

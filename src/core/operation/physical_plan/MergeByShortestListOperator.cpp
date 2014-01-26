@@ -16,30 +16,79 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 
 }
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
+	this->queryEvaluator = queryEvaluator;
 
-	this->isShortestListFinished = false;
+	// prepare the cache key
+	string key;
+	this->getUniqueStringForCache(true , key);
+	key += params.isFuzzy?"fuzzy":"exact";
 
-	this->indexOfShortestListChild =
-			((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
 
-	// open children
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	// CHECK CACHE :
+	// 1(if a cache hit). USE CACHE HIT TO START FROM MIDDLE OF LAST EXECUTION
+	// 2(else). OR JUST START A FRESH NEW EXECUTION
+	ts_shared_ptr<PhysicalOperatorCacheObject> cacheHit;
+	if(this->queryEvaluator != NULL && // this is for CTEST ShortestList_Test, in normal cases, queryEvaluator cannot be NULL
+			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+			getPhysicalOperatorsInfo(key ,  cacheHit)){ // cache has key
+		MergeByShortestListCacheEntry * mergeShortestCacheEntry = (MergeByShortestListCacheEntry *) cacheHit.get();
+		this->isShortestListFinished = mergeShortestCacheEntry->isShortestListFinished;
+		this->indexOfShortestListChild = mergeShortestCacheEntry->indexOfShortestListChild;
+		ASSERT(((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren()
+				== this->indexOfShortestListChild);
+		this->indexOfCandidateListFromCache = 0;
+
+		for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+			params.parentIsCacheEnabled = true; // to tell the child that we are giving cache info and
+			if(childOffset >= mergeShortestCacheEntry->children.size()){
+				params.cacheObject = NULL;
+			}else{
+				params.cacheObject = mergeShortestCacheEntry->children.at(childOffset);
+			}
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+		}
+
+		// get candidate lists from cache
+		for(unsigned candidateOffset = 0 ; candidateOffset < mergeShortestCacheEntry->candidatesList.size() ; ++candidateOffset){
+			candidateListFromCache.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+								clone(mergeShortestCacheEntry->candidatesList.at(candidateOffset)));
+		}
+	}else{
+		params.parentIsCacheEnabled = true;
+		this->isShortestListFinished = false;
+		this->indexOfCandidateListFromCache = 0;
+		this->indexOfShortestListChild =
+				((MergeByShortestListOptimizationOperator *)(this->getPhysicalPlanOptimizationNode()))->getShortestListOffsetInChildren();
+
+		// open children
+		for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+		}
 	}
+
 
 	return true;
 
 }
 PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 
-	if(isShortestListFinished == true){
+	if(isShortestListFinished == true &&
+			indexOfCandidateListFromCache >= candidateListFromCache.size()){
 		return NULL;
 	}
 
 	while(true){
+		PhysicalPlanRecordItem * nextRecord = NULL;
+		bool recordComesFromCache = false;
 		//1. get the next record from shortest list
-		PhysicalPlanRecordItem * nextRecord =
-				this->getPhysicalPlanOptimizationNode()->getChildAt(this->indexOfShortestListChild)->getExecutableNode()->getNext(params);
+		if(indexOfCandidateListFromCache < candidateListFromCache.size()){ // get it from cache candidates
+			nextRecord = candidateListFromCache.at(indexOfCandidateListFromCache++);
+			recordComesFromCache = true;
+		}else{ // get a new record from the shortest list
+			nextRecord =
+					this->getPhysicalPlanOptimizationNode()->
+					getChildAt(this->indexOfShortestListChild)->getExecutableNode()->getNext(params);
+		}
 
 
 		if(nextRecord == NULL){
@@ -55,10 +104,24 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		std::vector<unsigned> attributeBitmaps;
 		std::vector<unsigned> prefixEditDistances;
 		std::vector<unsigned> positionIndexOffsets;
-		if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
-				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
-			continue;	// 2.1. and 2.2.
+		if(recordComesFromCache){ // if record is from cache, it has some result info in it
+			runTimeTermRecordScores.push_back(nextRecord->getRecordRuntimeScore());
+			staticTermRecordScores.push_back(nextRecord->getRecordStaticScore());
+			nextRecord->getRecordMatchingPrefixes(termRecordMatchingKeywords);
+			nextRecord->getRecordMatchAttributeBitmaps(attributeBitmaps);
+			nextRecord->getRecordMatchEditDistances(prefixEditDistances);
+			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
+					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params,
+					this->getPhysicalPlanOptimizationNode()->getChildrenCount() - 1) == false){
+				continue;	// 2.1. and 2.2.
+			}
+		}else{
+			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
+					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
+				continue;	// 2.1. and 2.2.
+			}
 		}
+
 		// from this point, nextRecord is a candidate
 		//3.
 		// set the members
@@ -69,6 +132,7 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
 		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 		// save it in previousResultsVector
+		candidateListForCache.push_back(nextRecord);
 		return nextRecord;
 	}
 
@@ -79,19 +143,55 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 
 
 bool MergeByShortestListOperator::close(PhysicalPlanExecutionParameters & params){
+
+
+	// prepare cache entry, first prepare key recursively
+	string key;
+	this->getUniqueStringForCache(false, key);
+	key += params.isFuzzy?"fuzzy":"exact";
+	vector<PhysicalOperatorCacheObject *> childrenCacheEntries;
 	// close the children
+	params.parentIsCacheEnabled = true;
+	params.cacheObject = NULL;
 	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+		childrenCacheEntries.push_back(params.cacheObject);
+		params.cacheObject = NULL;
 	}
+
+	// cache
+	//1. cache stuff of children is returned through params
+	//2. prepare key
+	if(this->queryEvaluator != NULL){
+
+		//3. prepare the cache object of self and add children info to it
+		MergeByShortestListCacheEntry * mergeShortestCacheEntry = new MergeByShortestListCacheEntry(this->queryEvaluator ,
+																	this->indexOfShortestListChild,
+																	this->isShortestListFinished,
+																	this->candidateListForCache);
+		for(unsigned i = 0 ; i < childrenCacheEntries.size() ; ++i){
+			mergeShortestCacheEntry->children.push_back(childrenCacheEntries.at(i));
+		}
+		//4. put <key, this object> in the cache
+		ts_shared_ptr<PhysicalOperatorCacheObject> cacheEntry;
+		cacheEntry.reset(mergeShortestCacheEntry);
+		this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+				setPhysicalOperatosInfo(key , cacheEntry);
+	}
+
+
 	this->isShortestListFinished = false;
 	return true;
 
 }
 
-void MergeByShortestListOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string MergeByShortestListOperator::toString(){
+	string result = "MergeByShortestListOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
-
 bool MergeByShortestListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
@@ -104,11 +204,19 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 					std::vector<unsigned> & attributeBitmaps,
 					std::vector<unsigned> & prefixEditDistances,
 					std::vector<unsigned> & positionIndexOffsets,
-					const PhysicalPlanExecutionParameters & params){
+					const PhysicalPlanExecutionParameters & params, unsigned onlyThisChild){
 
 	// move on children and call verifyByRandomAccess
 	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
-	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+	unsigned startChildOffset = 0;
+	if(onlyThisChild != -1){
+		startChildOffset = onlyThisChild;
+	}
+	unsigned endChildOffset = numberOfChildren;
+	if(onlyThisChild != -1){
+		endChildOffset = onlyThisChild  + 1;
+	}
+	for(unsigned childOffset = startChildOffset; childOffset < endChildOffset; ++childOffset){
 		if(childOffset == this->indexOfShortestListChild){
 			/*
 			 * No verification is needed for the shortest list itself, we should only

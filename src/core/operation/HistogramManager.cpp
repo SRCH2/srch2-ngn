@@ -244,6 +244,7 @@ ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
+        	prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet
             cacheResponse = this->queryEvaluator->cacheManager->getActiveNodesCache()->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }

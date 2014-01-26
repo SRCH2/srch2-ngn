@@ -64,7 +64,7 @@ public:
 
 	}
 
-	string getUniqueStringForCaching() const {
+	string toString() const {
 		stringstream ss;
 		for(unsigned i=0 ; i<field.size() ; ++i){
 			ss << field[i].c_str();

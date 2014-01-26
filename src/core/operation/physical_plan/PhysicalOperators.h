@@ -68,7 +68,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationTermOperator();
 private:
@@ -115,7 +115,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationAndOperator();
 private:
@@ -152,7 +152,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationOrOperator();
 private:
@@ -191,7 +191,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationNotOperator();
 private:
@@ -242,7 +242,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByIdOperator();
 private:
@@ -301,7 +301,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByScoreOperator();
 private:
@@ -351,7 +351,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeSortedByIDOperator();
 private:
@@ -404,7 +404,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	bool verifyRecordWithChildren(PhysicalPlanRecordItem * recordItem ,
 						std::vector<float> & runTimeTermRecordScores,
@@ -413,12 +413,44 @@ public:
 						std::vector<unsigned> & attributeBitmaps,
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
-						const PhysicalPlanExecutionParameters & params);
+						const PhysicalPlanExecutionParameters & params, unsigned onlyThisChild = -1 );
 	~MergeByShortestListOperator();
 private:
 	MergeByShortestListOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
 	unsigned indexOfShortestListChild ;
 	bool isShortestListFinished;
+	unsigned indexOfCandidateListFromCache;
+	vector<PhysicalPlanRecordItem *> candidateListFromCache;
+	vector<PhysicalPlanRecordItem *> candidateListForCache;
+};
+
+class MergeByShortestListCacheEntry : public PhysicalOperatorCacheObject {
+public:
+	unsigned indexOfShortestListChild ;
+	bool isShortestListFinished;
+	vector<PhysicalPlanRecordItem *> candidatesList;
+	MergeByShortestListCacheEntry(	QueryEvaluatorInternal * queryEvaluator,
+												unsigned indexOfShortestListChild,
+												bool isShortestListFinished,
+												vector<PhysicalPlanRecordItem *> candidatesList){
+		this->indexOfShortestListChild = indexOfShortestListChild;
+		this->isShortestListFinished = isShortestListFinished;
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+					cloneForCache(candidatesList.at(i)));
+		}
+	}
+
+    unsigned getNumberOfBytes() {
+    	return sizeof(indexOfShortestListChild) + sizeof(isShortestListFinished);
+    }
+
+	~MergeByShortestListCacheEntry(){
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			delete candidatesList.at(i);
+		}
+	}
 };
 
 class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -450,7 +482,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionSortedByIDOperator();
 private:

@@ -154,7 +154,7 @@ public:
     ResultsPostProcessorPlan * getPostProcessingPlan();
 
 
-    string getUniqueStringForCaching();
+    string toString();
     /*
      * TODO Should change this function's name to
      * getSortOrder

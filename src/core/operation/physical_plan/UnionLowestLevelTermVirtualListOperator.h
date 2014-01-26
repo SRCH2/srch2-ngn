@@ -176,7 +176,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 
 	// this function checks to see if a record (that its id can be found in parameters) is among the
 	// results if this subtree. Different operators have different implementations this function.
@@ -196,6 +196,10 @@ private:
     void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
     //Called when this->numberOfItemsInPartialHeap = 0
     bool _addItemsToPartialHeap();
+
+    //this flag is set to true when the parent is feeding this operator
+    // a cache entry and expects a newer one in close()
+    bool parentIsCacheEnabled;
 
     QueryEvaluatorInternal * queryEvaluator;
     // the current recordId, initial value is -1

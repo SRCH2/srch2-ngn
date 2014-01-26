@@ -68,6 +68,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			}
 		}
 		params.k = numberOfIterations;
+		params.cacheObject = NULL;
 
 
 
@@ -96,7 +97,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 		physicalPlan.getPlanTree()->close(params);
 
-
 	    if(fuzzyPolicyIter == 0){
 	    	if(isFuzzy == true && results.size() < numberOfIterations){
 	    		logicalPlan->setFuzzy(true);
@@ -124,8 +124,13 @@ bool KeywordSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
-void KeywordSearchOperator::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
-
+string KeywordSearchOperator::toString(){
+	ASSERT(false);
+	string result = "KeywordSearchOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
 }
 
 bool KeywordSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {

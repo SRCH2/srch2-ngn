@@ -119,19 +119,19 @@ PhraseSearchInfoContainer * ResultsPostProcessingInfo::getPhraseSearchInfoContai
 	return this->phraseSearchInfoContainer;
 }
 
-string ResultsPostProcessingInfo::getUniqueStringForCaching(){
+string ResultsPostProcessingInfo::toString(){
 	stringstream ss;
 	if(facetInfo != NULL){
-		ss << facetInfo->getUniqueStringForCaching().c_str();
+		ss << facetInfo->toString().c_str();
 	}
 	if(sortEvaluator != NULL){
-		ss << sortEvaluator->getUniqueStringForCaching().c_str();
+		ss << sortEvaluator->toString().c_str();
 	}
 	if(filterQueryEvaluator != NULL){
-		ss << filterQueryEvaluator->getUniqueStringForCaching().c_str();
+		ss << filterQueryEvaluator->toString().c_str();
 	}
 	if(phraseSearchInfoContainer != NULL){
-		ss << phraseSearchInfoContainer->getUniqueStringForCaching().c_str();
+		ss << phraseSearchInfoContainer->toString().c_str();
 	}
 	return ss.str();
 }

@@ -46,7 +46,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
-	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionLowestLevelSimpleScanOperator();
 private:
@@ -54,6 +54,10 @@ private:
 
 	void depthInitializeSimpleScanOperator(
 			const TrieNode* trieNode,const TrieNode* prefixNode, unsigned distance, unsigned bound);
+
+    //this flag is set to true when the parent is feeding this operator
+    // a cache entry and expects a newer one in close()
+    bool parentIsCacheEnabled;
 
 	QueryEvaluatorInternal * queryEvaluator;
 
@@ -65,6 +69,24 @@ private:
 	vector<unsigned> invertedListIDs;
 	unsigned invertedListOffset;
 	unsigned cursorOnInvertedList;
+};
+
+class UnionLowestLevelSimpleScanCacheEntry : public PhysicalOperatorCacheObject {
+public:
+	unsigned invertedListOffset;
+	unsigned cursorOnInvertedList;
+	UnionLowestLevelSimpleScanCacheEntry(	unsigned invertedListOffset,
+										unsigned cursorOnInvertedList){
+		this->invertedListOffset = invertedListOffset;
+		this->cursorOnInvertedList = cursorOnInvertedList;
+	}
+
+    unsigned getNumberOfBytes() {
+    	return sizeof(invertedListOffset) + sizeof(cursorOnInvertedList);
+    }
+
+	~UnionLowestLevelSimpleScanCacheEntry(){
+	}
 };
 
 class UnionLowestLevelSimpleScanOptimizationOperator : public PhysicalPlanOptimizationNode {
