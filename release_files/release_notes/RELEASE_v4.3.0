@@ -30,3 +30,5 @@
 * Support boolean expressions in queries. 
 
 * Improved query performance
+
+* Caching
