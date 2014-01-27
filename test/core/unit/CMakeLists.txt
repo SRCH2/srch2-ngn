@@ -113,6 +113,10 @@ ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
+ADD_EXECUTABLE(RecordSerializer_Test RecordSerializer_Test.cpp)
+TARGET_LINK_LIBRARIES(RecordSerializer_Test  ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RecordSerializer_Test)
+
 ADD_EXECUTABLE(MergeByShortestList_Test physical_plan/MergeByShortestList_Test.cpp)
 TARGET_LINK_LIBRARIES(MergeByShortestList_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS MergeByShortestList_Test)
@@ -148,7 +152,6 @@ LIST(APPEND UNIT_TESTS RandomAccessVerificationOr_Test)
 ADD_EXECUTABLE(RandomAccessVerificationNot_Test physical_plan/RandomAccessVerificationNot_Test.cpp)
 TARGET_LINK_LIBRARIES(RandomAccessVerificationNot_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS RandomAccessVerificationNot_Test)
-
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)
 foreach (target ${UNIT_TESTS})
