@@ -66,7 +66,13 @@ bool QueryValidator::validate() {
     // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
     if (paramContainer->hasParameterInQuery(TopKSearchType)
             || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-        if (paramContainer->rawQueryKeywords.size() == 0) {
+		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
+		unsigned numberOfTerms = 0;
+		while(termIterator.hasMore()){
+			termIterator.getNext();
+			numberOfTerms ++;
+		}
+        if (numberOfTerms == 0) {
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
                             "No keywords provided for search."));
@@ -106,6 +112,18 @@ bool QueryValidator::validate() {
         }
     }
 
+    // validation case : if search type is Geo, we don't support boolean expression queries
+    // --- so the parse tree should be only one AND and a list of TERM children.
+    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
+    	if ( ! validateParseTreeStructureForGeo() ){
+            paramContainer->messages.push_back(
+                    std::make_pair(MessageError,
+                            "Only AND separated list of keywords is accepted for Geo search. e.g. TERM1 AND TERM2"));
+            return false;
+    	}
+    }
+
+
     // validate filter list
     // Example : q= title,name:foo AND body.abstract:bar
     // title, name, body and abstract should be declared as searchable attributes.
@@ -144,6 +162,15 @@ bool QueryValidator::validate() {
         return false;
     }
 
+
+    // validate the structure of the boolean tree
+    // Example :
+    // q= NOT john  ==> this query is not acceptable
+    // q= john AND hello ==> this query is acceptable and correct
+    if(! validateParseTreeBooleanStructure()){
+    	return false;
+    }
+
     return true;
 }
 
@@ -179,21 +206,22 @@ bool QueryValidator::validateExistenceOfAttributesInFieldList() {
 
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
-        for (vector<vector<string> >::iterator fields =
-                paramContainer->fieldFilter.begin();
-                fields != paramContainer->fieldFilter.end(); ++fields) {
-            for (vector<string>::iterator field = fields->begin();
-                    field != fields->end(); ++field) {
-                if (searchableAttributes.find(*field)
-                        == searchableAttributes.end()) { // field does not exist in searchable attributes
-                        // write a warning and change field value to *
-                    paramContainer->messages.push_back(
-                            std::make_pair(MessageWarning,
-                                    "Field " + *field
-                                            + " is not a searchable field. We changed it to * (all fields). "));
-                    *field = "*"; // this * means all fields , query rewriter will interpret this one.
-                }
-            }
+        ParseTreeNode * leafNode;
+        ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
+        while(termIterator.hasMore()){
+        	leafNode = termIterator.getNext();
+        	for (vector<string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
+        			field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
+        		if (searchableAttributes.find(*field)
+        				== searchableAttributes.end()) { // field does not exist in searchable attributes
+        			// write a warning and change field value to *
+        			paramContainer->messages.push_back(
+        					std::make_pair(MessageWarning,
+        							"Field " + *field
+        							+ " is not a searchable field. We changed it to * (all fields). "));
+        			*field = "*"; // this * means all fields , query rewriter will interpret this one.
+        		}
+        	}
         }
     }
     return true;
@@ -201,27 +229,16 @@ bool QueryValidator::validateExistenceOfAttributesInFieldList() {
 
 bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
 
+	if(paramContainer->hasParameterInQuery(SortQueryHandler) == false){
+		return true; // no sort is available to validate
+	}
+
     // first find if we have any sort filter in query
-    SortQueryContainer * sortQueryContainer = NULL;
-    if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-        if (paramContainer->getAllResultsParameterContainer->hasParameterInQuery(
-                SortQueryHandler)) { // we have sort filter
-            sortQueryContainer =
-                    paramContainer->getAllResultsParameterContainer->sortQueryContainer;
-        }
+    SortQueryContainer * sortQueryContainer = paramContainer->sortQueryContainer;;
 
-    }
-
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-        if (paramContainer->geoParameterContainer->hasParameterInQuery(
-                SortQueryHandler)) { // we have sort filter
-            sortQueryContainer =
-                    paramContainer->geoParameterContainer->sortQueryContainer;
-        }
-    }
-
-    if (sortQueryContainer == NULL) { // no sort filter to validate
-        return true;
+    if (sortQueryContainer == NULL) { // we should never go into this if since sortContainer shouldn't be NULL
+    	ASSERT(false);
+        return false;
     }
 
     // now validate the fields , if one field is not found in attributes sort will be canceled.
@@ -243,34 +260,16 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     if (sortFilterShouldBeRemoved) {
         // Warning : Sort will be canceled.
         // The following if-else statement removes the flag of sort filter from the corresponding queryParameters
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-
-            paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.begin(),
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.end(),
-                            SortQueryHandler),
-                    paramContainer->getAllResultsParameterContainer->parametersInQuery.end());
-        } else if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-
-            paramContainer->geoParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->geoParameterContainer->parametersInQuery.begin(),
-                            paramContainer->geoParameterContainer->parametersInQuery.end(),
-                            SortQueryHandler),
-                    paramContainer->geoParameterContainer->parametersInQuery.end());
-        }
+        paramContainer->parametersInQuery.erase(
+                remove(
+                        paramContainer->parametersInQuery.begin(),
+                        paramContainer->parametersInQuery.end(),
+                        SortQueryHandler),
+                paramContainer->parametersInQuery.end());
         // container and its validator must be freed here
         delete sortQueryContainer->evaluator;
         delete sortQueryContainer;
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-            paramContainer->getAllResultsParameterContainer->sortQueryContainer = NULL;
-
-        }
-
-        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-            paramContainer->geoParameterContainer->sortQueryContainer = NULL;
-        }
+		paramContainer->sortQueryContainer = NULL;
     }
 
     return true;
@@ -279,27 +278,15 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
 
 bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
-    FacetQueryContainer * facetQueryContainer = NULL;
-    if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-        if (paramContainer->getAllResultsParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // we have facet filter
-            facetQueryContainer =
-                    paramContainer->getAllResultsParameterContainer->facetQueryContainer;
-        }
+	if(paramContainer->hasParameterInQuery(FacetQueryHandler) == false){
+		return true; // no facet available to validate
+	}
+    FacetQueryContainer * facetQueryContainer = paramContainer->facetQueryContainer;
 
-    }
-
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-        if (paramContainer->geoParameterContainer->hasParameterInQuery(
-                FacetQueryHandler)) { // we have facet filter
-            facetQueryContainer =
-                    paramContainer->geoParameterContainer->facetQueryContainer;
-        }
-    }
-
-    if (facetQueryContainer == NULL) { // there is no facet query to validate
-
-        return true;
+    if (facetQueryContainer == NULL) { // it's just for double check, we should never go into this if
+    	// there is no facet query to validate but FacetQueryHandler is in parameters vector
+    	ASSERT(false);
+        return false;
     }
 
     int facetParallelVectorsIndex = 0;
@@ -435,33 +422,15 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             facetParallelVectorsIndexesToErase.size() == facetQueryContainer->fields.size()) {
         // all facet fields are removed, so there is no facet query anymore
         // facet must be removed from queryParameters
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-
-            paramContainer->getAllResultsParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.begin(),
-                            paramContainer->getAllResultsParameterContainer->parametersInQuery.end(),
-                            FacetQueryHandler),
-                    paramContainer->getAllResultsParameterContainer->parametersInQuery.end());
-        } else if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-
-            paramContainer->geoParameterContainer->parametersInQuery.erase(
-                    remove(
-                            paramContainer->geoParameterContainer->parametersInQuery.begin(),
-                            paramContainer->geoParameterContainer->parametersInQuery.end(),
-                            FacetQueryHandler),
-                    paramContainer->geoParameterContainer->parametersInQuery.end());
-        }
+        paramContainer->parametersInQuery.erase(
+                remove(
+                        paramContainer->parametersInQuery.begin(),
+                        paramContainer->parametersInQuery.end(),
+                        FacetQueryHandler),
+                paramContainer->parametersInQuery.end());
         // facet container should be freed here
         delete facetQueryContainer;
-        if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results search
-            paramContainer->getAllResultsParameterContainer->facetQueryContainer = NULL;
-
-        }
-
-        if (paramContainer->hasParameterInQuery(GeoSearchType)) { // geo search
-            paramContainer->geoParameterContainer->facetQueryContainer = NULL;
-        }
+        paramContainer->facetQueryContainer = NULL;
         return true;
     }
 
@@ -521,6 +490,86 @@ bool QueryValidator::validateFilterQuery(){
         }
     }
     return true;
+}
+
+bool QueryValidator::validateParseTreeBooleanStructure(){
+
+	// validation case : if we traverse the parse tree, there must at least one
+	// --- AND or OR in the path to each NOT. Because cannot handle pure NOT operators
+	// --- and there must be another operator so that NOT prunes the results of that operator.
+	// --- This means that the root of the tree cannot be NOT
+	if(! validateParseTreeStructureWithRegardToComputability() ){
+        paramContainer->messages.push_back(
+                std::make_pair(MessageError,
+                        "Query boolean structure is not supported."));
+		return false;
+	}
+
+
+	return true;
+}
+
+bool QueryValidator::validateParseTreeStructureWithRegardToComputability(){
+	ParseTreeNode * root = paramContainer->parseTreeRoot;
+	if(root == NULL){ // if the tree is empty there is no problem with NOT so we return true
+		return true;
+	}
+
+	return isParseSubtreeComputableRecursive(root);
+
+}
+
+// check recursively if root is computable.
+// Rules are:
+// NOT is not computable
+// AND is computable if at least one child is computable
+// OR is computable only if all children are computable
+bool QueryValidator::isParseSubtreeComputableRecursive(ParseTreeNode * node){
+	switch (node->type) {
+		case LogicalPlanNodeTypeTerm:
+			return true;
+		case LogicalPlanNodeTypeNot:
+			return false;
+		case LogicalPlanNodeTypeAnd:
+			for(unsigned childOffset = 0 ; childOffset < node->children.size() ; ++childOffset){
+				if(isParseSubtreeComputableRecursive(node->children.at(childOffset))){
+					return true;
+				}
+			}
+			return false;
+		case LogicalPlanNodeTypeOr:
+			for(unsigned childOffset = 0 ; childOffset < node->children.size() ; ++childOffset){
+				if(isParseSubtreeComputableRecursive(node->children.at(childOffset)) == false){
+					return false;
+				}
+			}
+			return true;
+			break;
+	}
+	return true;
+}
+
+bool QueryValidator::validateParseTreeStructureForGeo(){
+	// there might be no keywords for Geo
+	if(paramContainer->parseTreeRoot == NULL) {
+		return true;
+	}
+	// root must be AND
+	if( paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeAnd && paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeTerm){
+		return false;
+	}
+	// all children of root must be TERM
+	for(vector<ParseTreeNode *>::iterator child = paramContainer->parseTreeRoot->children.begin() ;
+			child != paramContainer->parseTreeRoot->children.end() ; ++child){
+		if(*child == NULL){
+			ASSERT(false);
+			return false;
+		}
+		if((*child)->type != LogicalPlanNodeTypeTerm){
+			return false;
+		}
+	}
+	return true;
 }
 
 }

@@ -20,6 +20,7 @@
 #include "util/Assert.h"
 
 #include "boost/algorithm/string_regex.hpp"
+#include "boost/filesystem/path.hpp"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -136,9 +137,9 @@ void ConfigManager::loadConfigFile()
     pugi::xml_parse_result result = configDoc.load_file(this->configFile.c_str());
     // Add a comment to this line
     if (!result) {
-		Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
-		Logger::error("error: %s", result.description());
-		exit(-1);
+        Logger::error("Parsing errors in XML configuration file '%s'", this->configFile.c_str());
+        Logger::error("error: %s", result.description());
+        exit(-1);
     }
 
     // make XML node names and attribute names lowercase so we are case insensitive
@@ -335,8 +336,10 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
             configSuccess = false;
             return;
         }
-        Logger::info("turning on attribute based search because position index is enabled");
-        coreInfo->supportAttributeBasedSearch = coreInfo->enablePositionIndex;
+        if (coreInfo->enablePositionIndex) {
+            Logger::info("turning on attribute based search because position index is enabled");
+            coreInfo->supportAttributeBasedSearch = true;
+        } // else leave supportAttributeBasedSearch set to previous value
     }
 
     childNode = indexConfigNode.child(fieldBoostString);
@@ -433,13 +436,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
                                std::stringstream &parseWarnings)
 {
     // scoringExpressionString is an optional field
-    scoringExpressionString = "1"; // By default it is 1
+    coreInfo->scoringExpressionString = "1"; // By default it is 1
     xml_node childNode = queryNode.child(rankingAlgorithmString).child(recordScoreExpressionString);
     if (childNode && childNode.text()) {
         string exp = childNode.text().get();
         boost::algorithm::trim(exp);
         if (isValidRecordScoreExpession(exp)) {
-            scoringExpressionString = exp;
+            coreInfo->scoringExpressionString = exp;
         } else {
             configSuccess = false;
             parseError << "The expression provided for recordScoreExpression is not a valid.";
@@ -448,12 +451,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // fuzzyMatchPenalty is an optional field
-    fuzzyMatchPenalty = 1; // By default it is 1
+    coreInfo->fuzzyMatchPenalty = 1; // By default it is 1
     childNode = queryNode.child(fuzzyMatchPenaltyString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
         if (isValidFuzzyMatchPenalty(qtsb)) {
-            fuzzyMatchPenalty = childNode.text().as_float();
+            coreInfo->fuzzyMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for fuzzyMatchPenalty is not a valid.";
@@ -463,14 +466,14 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
 
     // queryTermSimilarityThreshold is an optional field
     //By default it is 0.5.
-    queryTermSimilarityThreshold = 0.5;
+    coreInfo->queryTermSimilarityThreshold = 0.5;
     childNode = queryNode.child(queryTermSimilarityThresholdString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
         if (isValidQueryTermSimilarityThreshold(qtsb)) {
-            queryTermSimilarityThreshold = childNode.text().as_float();
-            if (queryTermSimilarityThreshold < 0 || queryTermSimilarityThreshold > 1 ){
-                queryTermSimilarityThreshold = 0.5;
+            coreInfo->queryTermSimilarityThreshold = childNode.text().as_float();
+            if (coreInfo->queryTermSimilarityThreshold < 0 || coreInfo->queryTermSimilarityThreshold > 1 ){
+                coreInfo->queryTermSimilarityThreshold = 0.5;
                 parseError << "The value provided for queryTermSimilarityThreshold is not in [0,1].";
             }
         } else {
@@ -481,12 +484,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermLengthBoost is an optional field
-    queryTermLengthBoost = 0.5; // By default it is 0.5
+    coreInfo->queryTermLengthBoost = 0.5; // By default it is 0.5
     childNode = queryNode.child(queryTermLengthBoostString);
     if (childNode && childNode.text()) {
         string qtlb = childNode.text().get();
         if (isValidQueryTermLengthBoost(qtlb)) {
-            queryTermLengthBoost = childNode.text().as_float();
+            coreInfo->queryTermLengthBoost = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The expression provided for queryTermLengthBoost is not a valid.";
@@ -495,13 +498,13 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // prefixMatchPenalty is an optional field.
-    prefixMatchPenalty = 0.95; // By default it is 0.5
+    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.5
     childNode = queryNode.child(prefixMatchPenaltyString);
     if (childNode && childNode.text()) {
         string pm = childNode.text().get();
 
         if (isValidPrefixMatch(pm)) {
-            prefixMatchPenalty = childNode.text().as_float();
+            coreInfo->prefixMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
             parseError << "The value provided for prefixMatch is not a valid.";
@@ -510,12 +513,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // cacheSize is an optional field
-    cacheSizeInBytes = 50 * 1048576;
+    coreInfo->cacheSizeInBytes = 50 * 1048576;
     childNode = queryNode.child(cacheSizeString);
     if (childNode && childNode.text()) {
         string cs = childNode.text().get();
         if (isValidCacheSize(cs)) {
-            cacheSizeInBytes = childNode.text().as_uint();
+            coreInfo->cacheSizeInBytes = childNode.text().as_uint();
         } else {
             parseError << "cache size provided is not set correctly.\n";
             configSuccess = false;
@@ -524,28 +527,14 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // rows is an optional field
-    resultsToRetrieve = 10; // by default it is 10
+    coreInfo->resultsToRetrieve = 10; // by default it is 10
     childNode = queryNode.child(rowsString);
     if (childNode && childNode.text()) {
         string row = childNode.text().get();
         if (isValidRows(row)) {
-            resultsToRetrieve = childNode.text().as_int();
+            coreInfo->resultsToRetrieve = childNode.text().as_int();
         } else {
             parseError << "rows is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    // maxSearchThreads is an optional field
-    numberOfThreads = 1; // by default it is 1
-    childNode = queryNode.child(maxSearchThreadsString);
-    if (childNode && childNode.text()) {
-        string mst = childNode.text().get();
-        if (isValidMaxSearchThreads(mst)) {
-            numberOfThreads = childNode.text().as_int();
-        } else {
-            parseError << "maxSearchThreads is not set correctly.\n";
             configSuccess = false;
             return;
         }
@@ -571,12 +560,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermFuzzyType is an optional field
-    exactFuzzy = false; // by default it is false
+    coreInfo->exactFuzzy = false; // by default it is false
     childNode = queryNode.child(queryTermFuzzyTypeString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
         if (isValidQueryTermFuzzyType(qtmt)) {
-            exactFuzzy = childNode.text().as_bool();
+            coreInfo->exactFuzzy = childNode.text().as_bool();
         } else {
             parseError << "The queryTermFuzzyType that is provided is not valid";
             configSuccess = false;
@@ -585,12 +574,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // queryTermPrefixType is an optional field
-    queryTermPrefixType = false;
+    coreInfo->queryTermPrefixType = false;
     childNode = queryNode.child(queryTermPrefixTypeString);
     if (childNode && childNode.text()) {
         string qt = childNode.text().get();
         if (isValidQueryTermPrefixType(qt)) {
-            queryTermPrefixType = childNode.text().as_bool();
+            coreInfo->queryTermPrefixType = childNode.text().as_bool();
         } else {
             parseError << "The queryTerm that is provided is not valid";
             configSuccess = false;
@@ -599,12 +588,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // responseFormat is an optional field
-    searchResponseJsonFormat = 0; // by default it is 10
+    coreInfo->searchResponseJsonFormat = 0; // by default it is 0
     childNode = queryNode.child(queryResponseWriterString).child(responseFormatString);
     if (childNode && childNode.text()) {
         string rf = childNode.text().get();
         if (isValidResponseFormat(rf)) {
-            searchResponseJsonFormat = childNode.text().as_int();
+            coreInfo->searchResponseJsonFormat = childNode.text().as_int();
         } else {
             parseError << "The provided responseFormat is not valid";
             configSuccess = false;
@@ -613,21 +602,21 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // responseContent is an optional field
-    searchResponseFormat = (ResponseType)0; // by default it is 0
+    coreInfo->searchResponseContent = (ResponseType)0; // by default it is 0
     childNode = queryNode.child(queryResponseWriterString).child(responseContentString);
     if (childNode) {
         string type = childNode.attribute(typeString).value();
         if (isValidResponseContentType(type)) {
-            searchResponseFormat = (ResponseType)childNode.attribute(typeString).as_int();
+            coreInfo->searchResponseContent = (ResponseType)childNode.attribute(typeString).as_int();
         } else {
             parseError << "The type provided for responseContent is not valid";
             configSuccess = false;
             return;
         }
 
-        if (searchResponseFormat == 2) {
+        if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
-                splitString(string(childNode.text().get()), ",", attributesToReturn);
+                splitString(string(childNode.text().get()), ",", coreInfo->attributesToReturn);
             } else {
                 parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
@@ -694,12 +683,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         }
     }
 }
-/*
- * Only called by parseMultipleCores().  This function is specific to parsing the <core> node defining
- * a single core (data source).  However, it doesn't do much itself.  It relies on parseDataFieldSettings() to
- * parse most of the values, including schema, because those specifications can occur under <config>
- * directly as well as under <core>.
- */
 
 /*
  * parentNode is either <config> or <core>.  parseDataFieldSettings() is responsible for loading the settings
@@ -749,7 +732,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
             tempUse = string(childNode.text().get());
             trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-            coreInfo->dataFilePath = this->srch2Home + tempUse;
+            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + tempUse;
         } else {
             parseError << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default") <<
                 " core path to the data file is not set. "
@@ -778,11 +761,25 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         return;
     }
 
+    coreInfo->allowedRecordTokenizerCharacters = "";
+    coreInfo->attributeToSort = 0;
+
+    // set default number of suggestions because we don't have any config options for this yet
+    coreInfo->defaultNumberOfSuggestions = 5;
+
     xml_node indexConfigNode = parentNode.child(indexConfigString);
     map<string, unsigned> boostsMap;
     parseIndexConfig(indexConfigNode, coreInfo, boostsMap, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
+    }
+
+    childNode = parentNode.child(queryString);
+    if (childNode) {
+        parseQuery(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
     }
 
     // <schema>
@@ -865,6 +862,15 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         parseError << "Boost values that are provided in the boostField are not in the range [1 to 100].";
         return;
     }
+
+    // <config><updateHandler> OR <core><updateHandler>
+    childNode = parentNode.child(updateHandlerString);
+    if (childNode) {
+        parseUpdateHandler(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
+    }
 }
 
 void ConfigManager::parseDataConfiguration(const xml_node &configNode,
@@ -902,8 +908,22 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
         coreInfoMap[coreInfo->name] = coreInfo;
     }
 
+    // maxSearchThreads is an optional field
+    numberOfThreads = 1; // by default it is 1
+    xml_node childNode = configNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
+        if (isValidMaxSearchThreads(mst)) {
+            numberOfThreads = childNode.text().as_int();
+        } else {
+            parseError << "maxSearchThreads is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
     // <cores>
-    xml_node childNode = configNode.child(multipleCoresString);
+    childNode = configNode.child(multipleCoresString);
     if (childNode) {
         parseMultipleCores(childNode, configSuccess, parseError, parseWarnings);
         if (configSuccess == false) {
@@ -1172,8 +1192,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                     return;
                 }
             } else {
-				parseWarnings << "Unexpected XML node " << field.name() << " within <fields>";
-			}
+                parseWarnings << "Unexpected XML node " << field.name() << " within <fields>";
+            }
         }
     } else { // No searchable fields provided.
         parseError << "No fields are provided.\n";
@@ -1349,17 +1369,17 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                     coreInfo->stemmerFlag = true;
                                     tempUse = string(field.attribute(dictionaryString).value());
                                     trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
-                                    coreInfo->stemmerFile = this->srch2Home + tempUse;
+                                    coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + tempUse).normalize().string();
                                 }
                             } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
                                 if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
                                     tempUse = string(field.attribute(wordsString).value());
                                     trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
-                                    coreInfo->stopFilterFilePath = this->srch2Home + tempUse;
+                                    coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
                                 if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
-                                this->synonymFilterFilePath = this->srch2Home
+                                this->synonymFilterFilePath = boost::filesystem::path(this->srch2Home).normalize().string();
                                 + string(field.attribute(synonymsString).value());
                                 // checks the validity of boolean provided for 'expand'
                                 tempUse = string(field.attribute(expandString).value());
@@ -1374,10 +1394,10 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                 }
                                 }*/
                             else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
-                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
+                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the file for protected words filter is set.
                                     tempUse = string(field.attribute(wordsString).value());
                                     trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
-                                    coreInfo->protectedWordsFilePath = this->srch2Home + tempUse;
+                                    coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             }
                         }
@@ -1391,6 +1411,114 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
     /*
      * <Schema/>: End
      */
+}
+
+void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    string tempUse = "";
+
+    xml_node childNode = updateHandlerNode.child(maxDocsString);
+    bool mdflag = false;
+    if (childNode && childNode.text()) {
+        string md = childNode.text().get();
+        if (this->isValidMaxDoc(md)) {
+            coreInfo->documentLimit = childNode.text().as_uint();
+            mdflag = true;
+        }
+    }
+    if (!mdflag) {
+        parseError << "MaxDoc is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    coreInfo->memoryLimit = 100000;
+    bool mmflag = false;
+    childNode = updateHandlerNode.child(maxMemoryString);
+    if (childNode && childNode.text()) {
+        string mm = childNode.text().get();
+        if (this->isValidMaxMemory(mm)) {
+            coreInfo->memoryLimit = childNode.text().as_uint();
+            mmflag = true;
+        }
+    }
+    if (!mmflag) {
+        parseError << "MaxDoc is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    // mergeEveryNSeconds
+    childNode = updateHandlerNode.child(mergePolicyString).child(mergeEveryNSecondsString);
+    bool mensflag = false;
+    if (childNode && childNode.text()) {
+        string mens = childNode.text().get();
+        if (this->isValidMergeEveryNSeconds(mens)) {
+            coreInfo->mergeEveryNSeconds = childNode.text().as_uint();
+            mensflag = true;
+        }
+    }
+    if (!mensflag) {
+        parseError << "mergeEveryNSeconds is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    // mergeEveryMWrites
+    childNode = updateHandlerNode.child(mergePolicyString).child(mergeEveryMWritesString);
+    bool memwflag = false;
+    if (childNode && childNode.text()) {
+        string memw = childNode.text().get();
+
+        if (this->isValidMergeEveryMWrites(memw)) {
+            coreInfo->mergeEveryMWrites = childNode.text().as_uint();
+            memwflag = true;
+        }
+    }
+    if (!memwflag) {
+        parseError << "mergeEveryMWrites is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
+    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
+    // is no option in xml for this one yet
+    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
+    coreInfo->updateHistogramEveryPMerges = (unsigned)
+        ( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
+    coreInfo->updateHistogramEveryQWrites =
+        (unsigned)((coreInfo->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
+
+    // TODO - logging per core
+    // logLevel is required
+    this->loglevel = Logger::SRCH2_LOG_INFO;
+    childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
+    bool llflag = true;
+    if (childNode && childNode.text()) {
+        string ll = childNode.text().get();
+        if (this->isValidLogLevel(ll)) {
+            this->loglevel = static_cast<Logger::LogLevel>(childNode.text().as_int());
+        } else {
+            llflag = false;
+        }
+    }
+    if (!llflag) {
+        parseError << "Log Level is not set correctly\n";
+        configSuccess = false;
+        return;
+    }
+
+    // accessLogFile is required
+    childNode = updateHandlerNode.child(updateLogString).child(accessLogFileString);
+    if (childNode && childNode.text()) {
+        tempUse = string(childNode.text().get());
+        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
+        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
+    } else {
+        parseError << "httpServerAccessLogFile is not set.\n";
+        configSuccess = false;
+        return;
+    }
 }
 
 void ConfigManager::parse(const pugi::xml_document& configDoc,
@@ -1437,6 +1565,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     }
 
     defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+    if (defaultCoreInfo == NULL) {
+        parseError << "Default core " << getDefaultCoreName() << " not found\n";
+        configSuccess = false;
+        return;
+    }
 
     /*
      * <Config> in config.xml file
@@ -1473,112 +1606,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    childNode = configNode.child(queryString);
-    parseQuery(childNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
-    if (configSuccess == false) {
-        return;
-    }
-
-    this->writeApiType = HTTPWRITEAPI;
-
-    childNode = configNode.child(updateHandlerString).child(maxDocsString);
-    bool mdflag = false;
-    if (childNode && childNode.text()) {
-        string md = childNode.text().get();
-        if (this->isValidMaxDoc(md)) {
-            this->documentLimit = childNode.text().as_uint();
-            mdflag = true;
-        }
-    }
-    if (!mdflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    this->memoryLimit = 100000;
-    bool mmflag = false;
-    childNode = configNode.child(updateHandlerString).child(maxMemoryString);
-    if (childNode && childNode.text()) {
-        string mm = childNode.text().get();
-        if (this->isValidMaxMemory(mm)) {
-            this->memoryLimit = childNode.text().as_uint();
-            mmflag = true;
-        }
-    }
-    if (!mmflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    // mergeEveryNSeconds
-    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryNSecondsString);
-    bool mensflag = false;
-    if (childNode && childNode.text()) {
-        string mens = childNode.text().get();
-        if (this->isValidMergeEveryNSeconds(mens)) {
-            this->mergeEveryNSeconds = childNode.text().as_uint();
-            mensflag = true;
-        }
-    }
-    if (!mensflag) {
-        parseError << "mergeEveryNSeconds is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    // mergeEveryMWrites
-    childNode = configNode.child(updateHandlerString).child(mergePolicyString).child(mergeEveryMWritesString);
-    bool memwflag = false;
-    if (childNode && childNode.text()) {
-        string memw = childNode.text().get();
-
-        if (this->isValidMergeEveryMWrites(memw)) {
-            this->mergeEveryMWrites = childNode.text().as_uint();
-            memwflag = true;
-        }
-    }
-    if (!memwflag) {
-        parseError << "mergeEveryMWrites is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    // logLevel is required
-    this->loglevel = Logger::SRCH2_LOG_INFO;
-    childNode = configNode.child(updateHandlerString).child(updateLogString).child(logLevelString);
-    bool llflag = true;
-    if (childNode && childNode.text()) {
-        string ll = childNode.text().get();
-        if (this->isValidLogLevel(ll)) {
-            this->loglevel = static_cast<Logger::LogLevel>(childNode.text().as_int());
-        } else {
-            llflag = false;
-        }
-    }
-    if (!llflag) {
-        parseError << "Log Level is not set correctly\n";
-        configSuccess = false;
-        return;
-    }
-
-    // accessLogFile is required
-    childNode = configNode.child(updateHandlerString).child(updateLogString).child(accessLogFileString);
-    if (childNode && childNode.text()) {
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + tempUse;
-    } else {
-        parseError << "httpServerAccessLogFile is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    /*
-     * query: END
-     */
-
     if (defaultCoreInfo->supportAttributeBasedSearch && defaultCoreInfo->searchableAttributesInfo.size() > 31) {
         parseError
             << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
@@ -1586,21 +1613,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-
-    defaultCoreInfo->allowedRecordTokenizerCharacters = "";
+    // TODO - move to individual cores?
     this->ordering = 0;
-    this->attributeToSort = 0;
-
-    // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
-    // is no option in xml for this one yet
-    float updateHistogramWorkRatioOverTime = 0.1; // 10 percent of background thread process is spent for updating histogram
-    this->updateHistogramEveryPMerges = (unsigned)
-        ( 1.0 / updateHistogramWorkRatioOverTime) ; // updateHistogramEvery 10 Merges
-    this->updateHistogramEveryQWrites =
-        (unsigned)((this->mergeEveryMWrites * 1.0 ) / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
-
-    // set default number of suggestions because we don't have any config options for this yet
-    this->defaultNumberOfSuggestions = 5;
 
     // setting default values for getAllResults optimization parameters
     // <getAllResultsMaxResultsThreshold>10000</getAllResultsMaxResultsThreshold>
@@ -1672,27 +1686,27 @@ ConfigManager::~ConfigManager()
     coreInfoMap.clear();
 }
 
-uint32_t ConfigManager::getDocumentLimit() const {
+uint32_t CoreInfo_t::getDocumentLimit() const {
     return documentLimit;
 }
 
-uint64_t ConfigManager::getMemoryLimit() const {
+uint64_t CoreInfo_t::getMemoryLimit() const {
     return memoryLimit;
 }
 
-uint32_t ConfigManager::getMergeEveryNSeconds() const {
+uint32_t CoreInfo_t::getMergeEveryNSeconds() const {
     return mergeEveryNSeconds;
 }
 
-uint32_t ConfigManager::getMergeEveryMWrites() const {
+uint32_t CoreInfo_t::getMergeEveryMWrites() const {
     return mergeEveryMWrites;
 }
 
-uint32_t ConfigManager::getUpdateHistogramEveryPMerges() const {
+uint32_t CoreInfo_t::getUpdateHistogramEveryPMerges() const {
     return updateHistogramEveryPMerges;
 }
 
-uint32_t ConfigManager::getUpdateHistogramEveryQWrites() const {
+uint32_t CoreInfo_t::getUpdateHistogramEveryQWrites() const {
     return updateHistogramEveryQWrites;
 }
 
@@ -1736,12 +1750,9 @@ float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
     return defaultSpatialQueryBoundingBox;
 }
 
-int ConfigManager::getNumberOfThreads() const {
+unsigned int ConfigManager::getNumberOfThreads() const
+{
     return numberOfThreads;
-}
-
-WriteApiType ConfigManager::getWriteApiType() const {
-    return writeApiType;
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
@@ -1889,11 +1900,12 @@ const string& ConfigManager::getAttributeRecordBoostName(const string &coreName)
   return defaultAttributeRecordBoost;
   }*/
 
-const std::string& ConfigManager::getScoringExpressionString() const {
+const std::string& CoreInfo_t::getScoringExpressionString() const
+{
     return scoringExpressionString;
 }
 
-int ConfigManager::getSearchResponseJSONFormat() const {
+int CoreInfo_t::getSearchResponseJSONFormat() const {
     return searchResponseJsonFormat;
 }
 
@@ -1920,11 +1932,13 @@ int ConfigManager::getIsPrimSearchable(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->isPrimSearchable;
 }
 
-bool ConfigManager::getIsFuzzyTermsQuery() const {
+bool CoreInfo_t::getIsFuzzyTermsQuery() const
+{
     return exactFuzzy;
 }
 
-bool ConfigManager::getQueryTermPrefixType() const {
+bool CoreInfo_t::getQueryTermPrefixType() const
+{
     return queryTermPrefixType;
 }
 
@@ -1936,19 +1950,23 @@ unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->queryTermBoost;
 }
 
-float ConfigManager::getFuzzyMatchPenalty() const {
+float CoreInfo_t::getFuzzyMatchPenalty() const
+{
     return fuzzyMatchPenalty;
 }
 
-float ConfigManager::getQueryTermSimilarityThreshold() const {
+float CoreInfo_t::getQueryTermSimilarityThreshold() const
+{
     return queryTermSimilarityThreshold;
 }
 
-float ConfigManager::getQueryTermLengthBoost() const {
+float CoreInfo_t::getQueryTermLengthBoost() const
+{
     return queryTermLengthBoost;
 }
 
-float ConfigManager::getPrefixMatchPenalty() const {
+float CoreInfo_t::getPrefixMatchPenalty() const
+{
     return prefixMatchPenalty;
 }
 
@@ -1960,8 +1978,9 @@ bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->supportAttributeBasedSearch;
 }
 
-ResponseType ConfigManager::getSearchResponseFormat() const {
-    return searchResponseFormat;
+ResponseType CoreInfo_t::getSearchResponseFormat() const
+{
+    return searchResponseContent;
 }
 
 const string& ConfigManager::getLicenseKeyFileName() const {
@@ -1976,11 +1995,13 @@ const string& ConfigManager::getHTTPServerListeningPort() const {
     return httpServerListeningPort;
 }
 
-int ConfigManager::getDefaultResultsToRetrieve() const {
+int CoreInfo_t::getDefaultResultsToRetrieve() const
+{
     return resultsToRetrieve;
 }
 
-int ConfigManager::getAttributeToSort() const {
+int CoreInfo_t::getAttributeToSort() const
+{
     return attributeToSort;
 }
 
@@ -2004,7 +2025,8 @@ const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const {
     return loglevel;
 }
 
-unsigned ConfigManager::getCacheSizeInBytes() const {
+unsigned CoreInfo_t::getCacheSizeInBytes() const
+{
     return cacheSizeInBytes;
 }
 

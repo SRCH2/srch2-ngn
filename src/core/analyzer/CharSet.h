@@ -36,13 +36,16 @@ public:
         HANZI_TYPE,      // Chinese Hanzi character
         WHITESPACE        // simple whitespace, tab
     };
+    unsigned getCharacterType(const CharType c) const;
 
-	static void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters);
-	static const std::string & getRecordAllowedSpecialCharacters();
-	static unsigned getCharacterType(CharType c);
+    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters);
+    const std::string & getRecordAllowedSpecialCharacters();
+
+    CharSet() : recordAllowedSpecialCharacters("") {};
+    ~CharSet() {};
 
 private:
-	static std::string recordAllowedSpecialCharacters;
+    std::string recordAllowedSpecialCharacters;
 };
 
 }}

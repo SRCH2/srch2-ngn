@@ -118,44 +118,7 @@ private:
     string httpServerListeningPort;
     string srch2Home;
 
-    // <config><query><rankingAlgorithm>
-    string scoringExpressionString;
-
-
-    // <config><query>
-    float fuzzyMatchPenalty;
-    float queryTermSimilarityThreshold;
-    float queryTermLengthBoost;
-    float prefixMatchPenalty;
-    vector<string> sortableAttributes;
-    vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-    vector<string> sortableAttributesDefaultValue;
-    unsigned cacheSizeInBytes;
-    int resultsToRetrieve;
-    int numberOfThreads;
-    bool exactFuzzy;
-    bool queryTermPrefixType;
-
-    unsigned defaultNumberOfSuggestions;
-
-    // <config><query><queryResponseWriter>
-    int searchResponseJsonFormat;
-    vector<string> attributesToReturn;
-
-    // <config><query>
-    WriteApiType writeApiType;
-
-    // <config><updatehandler>
-    uint64_t memoryLimit;
-    uint32_t documentLimit;
-
-    // <config><updatehandler><mergePolicy>
-    unsigned mergeEveryNSeconds;
-    unsigned mergeEveryMWrites;
-
-    // no config option for this yet
-    unsigned updateHistogramEveryPMerges;
-    unsigned updateHistogramEveryQWrites;
+    unsigned int numberOfThreads;
 
     // <config><keywordPopularitythreshold>
     unsigned keywordPopularityThreshold;
@@ -169,14 +132,12 @@ private:
 
     float defaultSpatialQueryBoundingBox;
 
-    srch2::instantsearch::ResponseType searchResponseFormat;
     string attributeStringForMySQLQuery;
 
     //vector<string> searchableAttributes;
 
     //vector<unsigned> attributesBoosts;
 
-    int attributeToSort;
     int ordering;
     //string httpServerDocumentRoot;
     string configFile;
@@ -241,10 +202,13 @@ protected:
 
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
@@ -254,6 +218,8 @@ protected:
     void parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     
 public:
     ConfigManager(const string& configfile);
@@ -269,8 +235,6 @@ public:
     void parse(const pugi::xml_document& configDoc, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     const std::string& getCustomerName() const; //XXX: REMOVE?
-    uint32_t getDocumentLimit() const;
-    uint64_t getMemoryLimit() const;
 
     const std::string& getIndexPath(const string &coreName) const;
     const std::string& getPrimaryKey(const string &coreName) const;
@@ -282,7 +246,6 @@ public:
     //const vector<unsigned>* getAttributesBoosts() const;
     const std::string& getAttributeRecordBoostName(const string &coreName) const;
     //string getDefaultAttributeRecordBoost() const;
-    const std::string& getScoringExpressionString() const;
 
     const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
     int getSearchType(const string &coreName) const;
@@ -297,31 +260,15 @@ public:
     const string &getStemmerFile(const string &coreName) const; // stemmer file
     const string &getSrch2Home() const; // Srch2Home Directory
     unsigned getQueryTermBoost(const string &coreName) const;
-    float getFuzzyMatchPenalty() const;
-    float getQueryTermSimilarityThreshold() const ;
-    float getQueryTermLengthBoost() const;
-    float getPrefixMatchPenalty() const;
     bool getSupportAttributeBasedSearch(const string &coreName) const;
-    int getDefaultResultsToRetrieve() const;
-    int getAttributeToSort() const;
+
     int getOrdering() const;
-
-    uint32_t getCacheSizeInBytes() const;
-    uint32_t getMergeEveryNSeconds() const;
-    uint32_t getMergeEveryMWrites() const;
-
-    uint32_t getUpdateHistogramEveryPMerges() const;
-    uint32_t getUpdateHistogramEveryQWrites() const;
 
     unsigned getKeywordPopularityThreshold() const ;
 
-    int getNumberOfThreads() const;
+    unsigned int getNumberOfThreads() const;
 
-    WriteApiType getWriteApiType() const;
-
-    srch2::instantsearch::ResponseType getSearchResponseFormat() const;
     const std::string& getAttributeStringForMySQLQuery() const;
-    int getSearchResponseJSONFormat() const;
 
     const std::string& getLicenseKeyFileName() const;
 
@@ -337,14 +284,6 @@ public:
     const std::string& getAttributeLatitude(const string &coreName) const;
     const std::string& getAttributeLongitude(const string &coreName) const;
     float getDefaultSpatialQueryBoundingBox() const;
-
-    const vector<string> *getAttributesToReturn() const {
-        return &attributesToReturn;
-    }
-
-    void setAttributesToReturn(vector<string> attributesToReturn) {
-        this->attributesToReturn = attributesToReturn;
-    }
 
     bool isFacetEnabled(const string &coreName) const;
 
@@ -373,10 +312,6 @@ public:
     }
 
     bool isPositionIndexEnabled(const string &coreName) const;
-
-    unsigned getDefaultNumberOfSuggestionsToReturn() const {
-    	return defaultNumberOfSuggestions;
-    }
 
     const string &getDefaultCoreName() const
     {
@@ -516,6 +451,25 @@ public:
     const string &getPrimaryKey() const { return primaryKey; }
     int getIsPrimSearchable() const { return isPrimSearchable; }
 
+    const std::string& getScoringExpressionString() const;
+    float getFuzzyMatchPenalty() const;
+    float getQueryTermSimilarityThreshold() const ;
+    float getQueryTermLengthBoost() const;
+    float getPrefixMatchPenalty() const;
+    int getAttributeToSort() const;
+    const vector<string> *getAttributesToReturn() const
+        { return &attributesToReturn; }
+    void setAttributesToReturn(vector<string> attributesToReturn)
+        { this->attributesToReturn = attributesToReturn; }
+    unsigned getDefaultNumberOfSuggestionsToReturn() const
+        { return defaultNumberOfSuggestions; }
+
+    srch2::instantsearch::ResponseType getSearchResponseFormat() const;
+    int getSearchResponseJSONFormat() const;
+
+    uint32_t getCacheSizeInBytes() const;
+    int getDefaultResultsToRetrieve() const;
+
     bool isPositionIndexEnabled() const { return enablePositionIndex; }
 
     bool getSupportSwapInEditDistance() const
@@ -550,6 +504,14 @@ public:
     const string& getRecordAllowedSpecialCharacters() const
         { return allowedRecordTokenizerCharacters; }
 
+    uint32_t getDocumentLimit() const;
+    uint64_t getMemoryLimit() const;
+
+    uint32_t getMergeEveryNSeconds() const;
+    uint32_t getMergeEveryMWrites() const;
+
+    uint32_t getUpdateHistogramEveryPMerges() const;
+    uint32_t getUpdateHistogramEveryQWrites() const;
 
     // **** accessors for settings in ConfigManager (global to all cores) ****
     const string &getSrch2Home() const { return configManager->getSrch2Home(); }
@@ -561,60 +523,28 @@ public:
     const Logger::LogLevel& getHTTPServerLogLevel() const
         { return configManager->getHTTPServerLogLevel(); }
 
-    uint32_t getDocumentLimit() const { return configManager->getDocumentLimit(); }
-    uint64_t getMemoryLimit() const { return configManager->getMemoryLimit(); }
-    int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
-
-    srch2::instantsearch::ResponseType getSearchResponseFormat() const
-      { return configManager->getSearchResponseFormat(); }
-    int getSearchResponseJSONFormat() const { return configManager->getSearchResponseJSONFormat(); }
-
-    bool getIsFuzzyTermsQuery() const { return configManager->getIsFuzzyTermsQuery(); }
-    int getDefaultResultsToRetrieve() const
-        { return configManager->getDefaultResultsToRetrieve(); }
-    float getQueryTermLengthBoost() const { return configManager->getQueryTermLengthBoost(); }
-    float getPrefixMatchPenalty() const { return configManager->getPrefixMatchPenalty(); }
-
-    const vector<string> *getAttributesToReturn() const
-        { return configManager->getAttributesToReturn(); }
-    int getAttributeToSort() const { return configManager->getAttributeToSort(); }
+    bool getIsFuzzyTermsQuery() const;
 
     float getDefaultSpatialQueryBoundingBox() const
 	    { return configManager->getDefaultSpatialQueryBoundingBox(); }
 
     unsigned int getKeywordPopularityThreshold() const
         { return configManager->getKeywordPopularityThreshold(); }
-    const std::string& getScoringExpressionString() const
-        { return configManager->getScoringExpressionString(); }
-    float getQueryTermSimilarityThreshold() const
-        { return configManager->getQueryTermSimilarityThreshold(); }
-    bool getQueryTermPrefixType() const
-        { return configManager->getQueryTermPrefixType(); }
+    bool getQueryTermPrefixType() const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const
         { return configManager->getGetAllResultsNumberOfResultsThreshold(); }
     const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const
         { return configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode(); }
-    unsigned getDefaultNumberOfSuggestionsToReturn() const
-        { return configManager->getDefaultNumberOfSuggestionsToReturn(); }
-    float getFuzzyMatchPenalty() const { return configManager->getFuzzyMatchPenalty(); }
 
-    uint32_t getUpdateHistogramEveryPMerges() const
-        { return configManager->getUpdateHistogramEveryPMerges(); }
-    uint32_t getUpdateHistogramEveryQWrites() const
-        { return configManager->getUpdateHistogramEveryQWrites(); }
-
-    uint32_t getCacheSizeInBytes() const { return configManager->getCacheSizeInBytes(); }
-    uint32_t getMergeEveryNSeconds() const { return configManager->getMergeEveryNSeconds(); }
-    uint32_t getMergeEveryMWrites() const { return configManager->getMergeEveryMWrites(); }
-
-    WriteApiType getWriteApiType() const { return configManager->getWriteApiType(); }
+    unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
 protected:
     string name; // of core
 
     ConfigManager *configManager;
 
+    // <config>
     string dataDir;
     string indexPath; // srch2Home + dataDir
     DataSourceType dataSourceType;
@@ -660,6 +590,31 @@ protected:
     // <config><query>
     int searchType;
 
+    // <config><query><rankingAlgorithm>
+    string scoringExpressionString;
+
+    // <config><query>
+    float fuzzyMatchPenalty;
+    float queryTermSimilarityThreshold;
+    float queryTermLengthBoost;
+    float prefixMatchPenalty;
+    vector<string> sortableAttributes;
+    vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
+    vector<string> sortableAttributesDefaultValue;
+    int attributeToSort;
+    unsigned cacheSizeInBytes;
+    int resultsToRetrieve;
+    bool exactFuzzy;
+    bool queryTermPrefixType;
+
+    unsigned defaultNumberOfSuggestions;
+
+    // <config><query><queryResponseWriter>
+    srch2::instantsearch::ResponseType searchResponseContent;
+    int searchResponseJsonFormat;
+    vector<string> attributesToReturn;
+
+    // <config><query>
     bool supportAttributeBasedSearch;
 
     // facet
@@ -680,6 +635,17 @@ protected:
 
     std::string allowedRecordTokenizerCharacters;
 
+    // <core><updatehandler>
+    uint64_t memoryLimit;
+    uint32_t documentLimit;
+
+    // <config><updatehandler><mergePolicy>
+    unsigned mergeEveryNSeconds;
+    unsigned mergeEveryMWrites;
+
+    // no config option for this yet
+    unsigned updateHistogramEveryPMerges;
+    unsigned updateHistogramEveryQWrites;
 };
 
 }

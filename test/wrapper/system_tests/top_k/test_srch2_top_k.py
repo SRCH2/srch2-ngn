@@ -33,14 +33,10 @@
 #
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 def resultsScoreToRecordMap(json_response):
      decoded_json = json.loads(json_response)
@@ -74,12 +70,10 @@ def verify(jsonA, topk_A, jsonB, topk_B):
    
 if __name__ == "__main__":
     #Start the engine server
-    binary_path = sys.argv[1]
-    binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./top_k/conf.xml &'
-    os.popen(binary)
+    args = [ sys.argv[1], '--config-file=./top_k/conf.xml' ]
+    serverHandle = test_lib.startServer(args)
 
-    pingServer()
+    test_lib.pingServer(port)
 
     base = 'http://localhost:' + port
     #base = "http://shrek.calit2.uci.edu:8081"
@@ -115,15 +109,7 @@ if __name__ == "__main__":
         print "python test_srch2_top_k.py ${query} ${topk_A} ${topk_B}"
         exitCode = 1
 
-        #get pid of srch2-search-server and kill the process
+
     print "======================================="
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd) 
+    test_lib.killServer(serverHandle)
     os._exit(exitCode)

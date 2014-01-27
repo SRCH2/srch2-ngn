@@ -1,0 +1,12 @@
+redemption OR "american comedy"~1||1 2
+redemption AND "american comedy"~1||
+redemption OR "american dark comedy"||1 2
+redemption AND "american dark comedy"||
+american AND "crime gangster"||1
+american OR "crime gangster"||1 2
+drama AND "new york"||3
+drama OR "new york"||3 2
+drama AND description%2Egenre:"crime gangster"||
+drama OR description%2Egenre:"crime gangster"||2 3
+drama AND description%2Bgenre:"crime gangster"||
+drama OR description%2Bgenre:"crime gangster"||1 2 3

@@ -15,49 +15,27 @@
 
 import os, time, sys, commands, urllib2, signal
 
+sys.path.insert(0, 'srch2lib')
+import test_lib
+
+port = 8087
 
 class UpsertTester:
     def __init__(self, binary_path):
-        self.binaryPath = binary_path + '/srch2-search-server'
-        self.startServerCommand = self.binaryPath + ' --config-file=./upsert_batch/srch2-config.xml &'
+        self.binaryPath = binary_path
+        self.startServerCommand = [ self.binaryPath, '--config-file=./upsert_batch/srch2-config.xml' ]
 
     def startServer(self):
         os.popen('rm -rf ./upsert_batch/logs/')
 	os.popen('rm -rf ./upsert_batch/indexes/')
 	os.popen('rm -rf ./data/upsert_batch')
-        #print ('starting engine: {0}'.format(self.startServerCommand))
-        os.popen(self.startServerCommand)
-	#print 'server started'
+        self.serverHandle = test_lib.startServer(self.startServerCommand)
 
-    #make sure the server is started
     def pingServer(self):
-        info = 'curl -s http://localhost:8087/search?q=march | grep -q results'
-        while os.system(info) != 0:
-            time.sleep(1)
-            info = 'curl -s http://localhost:8087/search?q=march | grep -q results'
-        #print 'server is built!'
+        test_lib.pingServer(port)
 
     def killServer(self):
-        """
-        kills the server
-        """
-        try:
-            #print ("killing srch2 server")
-            s = commands.getoutput('ps aux | grep srch2 | grep config')
-            stat = s.split()
-            #print '1 ' + stat[1]
-            os.kill(int(stat[1]), signal.SIGUSR1)
-            #print ("server killed!")
-        except Exception, err:
-            print "Kill server exception: " + str(err)
-            try:
-                s = commands.getoutput("ps -A | fgrep -v '<defunct>' | grep -m1 srch2 | awk '{print $1}'")
-                a = s.split()
-                cmd = "kill {0}".format(a[-1])
-                os.system(cmd)
-                #print ("server killed")
-            except:
-                print "no running instance found to kill, moving ahead."
+        test_lib.killServer(self.serverHandle)
 
     #fire a single query
     def fireQuery(self, query):
@@ -66,7 +44,7 @@ class UpsertTester:
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://localhost:8087/search?q=' + query
+        curlCommand = 'curl -s http://localhost:' + str(port) + '/search?q=' + query
         os.popen(curlCommand)
 
 
@@ -82,7 +60,7 @@ if __name__ == '__main__':
     tester.pingServer()
 
     # test 1, upsert a record that already exists
-    command1 = 'curl "http://localhost:8087/update" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
+    command1 = 'curl "http://localhost:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
     status1, output1 = commands.getstatusoutput(command1)
     #print 'output1 --- ' + str(output1) + "\n-----------------";
     flag = str(output1).find('{"rid":"101","update":"Existing record updated successfully"}');
@@ -90,7 +68,7 @@ if __name__ == '__main__':
     assert flag > -1, 'Error, rid 101 is not updated correctly!'
 
     time.sleep(1.5)
-    command2 = 'curl -i http://localhost:8087/search?q=monday'
+    command2 = 'curl -i http://localhost:' + str(port) + '/search?q=monday'
     status2, output2 = commands.getstatusoutput(command2)
     #print 'output2 --- ' + str(output2) + '\n------------------'
     flag = str(output2).find('"id":"101"');
@@ -100,7 +78,7 @@ if __name__ == '__main__':
 
 
     # test 2, upsert a record that doesn't exist
-    command3 = 'curl "http://localhost:8087/update" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
+    command3 = 'curl "http://localhost:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
 
     status3, output3 = commands.getstatusoutput(command3)
     #print 'output3 -----' + output3 + '\n-----------------'
@@ -108,7 +86,7 @@ if __name__ == '__main__':
     assert flag > -1, 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
-    command4 = 'curl -i http://localhost:8087/search?q=december'
+    command4 = 'curl -i http://localhost:' + str(port) + '/search?q=december'
     status4, output4 = commands.getstatusoutput(command4)
     #print 'output4 -----' + output4 + '\n----------------'
     flag = str(output4).find('"id":"111"')
@@ -116,7 +94,7 @@ if __name__ == '__main__':
 
 
     # test 3, upsert multiple records, some exsit some don't
-    command5 = 'curl "http://localhost:8087/update" -i -X PUT -d ' + '\'[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]\''
+    command5 = 'curl "http://localhost:' + str(port) + '/update" -i -X PUT -d ' + '\'[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]\''
 
     status5, output5 = commands.getstatusoutput(command5)
     #print 'output5 -----' + output5 + '\n-----------------'
@@ -131,7 +109,7 @@ if __name__ == '__main__':
 
 
     time.sleep(1.5)
-    command6 = 'curl -i http://localhost:8087/search?q=wonderful'
+    command6 = 'curl -i http://localhost:' + str(port) + '/search?q=wonderful'
     status6, output6 = commands.getstatusoutput(command6)
     #print 'output4 -----' + output4 + '\n----------------'
     flag = str(output6).find('"id":"102"')

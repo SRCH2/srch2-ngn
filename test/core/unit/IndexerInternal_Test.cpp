@@ -23,6 +23,7 @@
 #include "instantsearch/Schema.h"
 #include "instantsearch/Analyzer.h"
 #include "instantsearch/Record.h"
+#include "analyzer/AnalyzerContainers.h"
 #include "util/Assert.h"
 #include "index/InvertedIndex.h"
 #include <iostream>
@@ -46,8 +47,10 @@ void testIndexData()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     /// Create Analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     /// Create IndexData
     string INDEX_DIR = ".";
@@ -129,13 +132,18 @@ void testIndexData()
 #if ASSERT_LEVEL > 0
     unsigned attributeBitmap = 0;
 #endif
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
+    bool forwardListValid = false;
+    const ForwardList* fl = forwardIndex->getForwardList(0, forwardListValid);
+    ASSERT(forwardListValid);
+    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
+    fl = forwardIndex->getForwardList(1, forwardListValid);
+    ASSERT(forwardListValid);
+    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex
@@ -164,6 +172,7 @@ void testIndexData()
     delete record;
     delete analyzer;
     delete indexData;
+    syn->free();
 }
 
 void test1()
@@ -177,8 +186,9 @@ void test1()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -239,9 +249,10 @@ void addRecords()
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
     
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
     Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -288,6 +299,7 @@ void addRecords()
     delete record;
     delete analyzer;
     delete index;
+    syn->free();
 }
 
 void test3()
@@ -296,8 +308,10 @@ void test3()
     
     /// Test the Trie
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-       		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;

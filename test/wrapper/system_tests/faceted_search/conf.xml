@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -324,7 +324,7 @@
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--

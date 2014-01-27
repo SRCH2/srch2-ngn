@@ -62,6 +62,8 @@ public:
     virtual ~TokenStream() {
     }
 
+    // Set of possible (valid) characters for this token stream.  Used to identify "words" (tokens) and where the words end.
+    CharSet characterSet;
 };
 }
 }

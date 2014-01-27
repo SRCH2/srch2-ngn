@@ -2,7 +2,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -38,8 +38,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
@@ -178,8 +178,8 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
@@ -334,20 +334,20 @@ void updateAndSaveGeoIndex(Indexer *indexer,Analyzer* analyzer, string data_file
     data.close();
 }
 
-void validateDefaultIndex(const Analyzer *analyzer, IndexSearcher *indexSearcher, vector<pair<string, string> > &records_in_index)
+void validateDefaultIndex(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, vector<pair<string, string> > &records_in_index)
 {
     int k = 10;
 
     for (int i=0; i<records_in_index.size(); i++)
     {
         bool ifFound = false;
-        ifFound = existsInTopK(analyzer, indexSearcher, records_in_index[i].second, records_in_index[i].first, k);
+        ifFound = existsInTopK(analyzer, queryEvaluator, records_in_index[i].second, records_in_index[i].first, k);
         ASSERT(ifFound);
     }
 
 }
 
-void validateGeoIndex(const Analyzer *analyzer, IndexSearcher *indexSearcher, vector<pair<pair<string, Point>, string> > &records_in_index)
+void validateGeoIndex(const Analyzer *analyzer, QueryEvaluator *  queryEvaluator, vector<pair<pair<string, Point>, string> > &records_in_index)
 {
     int k = 10;
 
@@ -358,7 +358,7 @@ void validateGeoIndex(const Analyzer *analyzer, IndexSearcher *indexSearcher, ve
         float lb_lng = records_in_index[i].first.second.y - 0.5;
         float rt_lat = records_in_index[i].first.second.x + 0.5;
         float rt_lng = records_in_index[i].first.second.y + 0.5;
-        ifFound = existsInTopKGeo(analyzer, indexSearcher, records_in_index[i].second, records_in_index[i].first.first, k, lb_lat, lb_lng, rt_lat, rt_lng);
+        ifFound = existsInTopKGeo(analyzer, queryEvaluator, records_in_index[i].second, records_in_index[i].first.first, k, lb_lat, lb_lng, rt_lat, rt_lng);
         ASSERT(ifFound);
     }
 
@@ -372,11 +372,12 @@ void testDefaultIndex(string index_dir)
 
     Indexer *indexer = buildIndex(index_dir+"/data/init", index_dir, "idf_score*doc_boost", records_in_index);
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
 
     Analyzer *analyzer = getAnalyzer();
 
-    validateDefaultIndex(analyzer, indexSearcher, records_in_index);
+    validateDefaultIndex(analyzer, queryEvaluator, records_in_index);
     cout << "Init Default Index Validated." << endl;
 
     // update the index and serialize it
@@ -393,17 +394,17 @@ void testDefaultIndex(string index_dir)
     		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
-    IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
+    QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexerLoaded, &runtimeParameters);
 
     Analyzer *analyzerLoaded = getAnalyzer();
 
-    validateDefaultIndex(analyzerLoaded, indexSearcherLoaded, records_in_index);
+    validateDefaultIndex(analyzerLoaded, queryEvaluatorLoaded, records_in_index);
 
     cout << "Loaded Default Index Validated." << endl;
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
-    delete indexSearcherLoaded;
+    delete queryEvaluatorLoaded;
     delete indexerLoaded;
 
     cout << "Default Index Pass." << endl;
@@ -417,11 +418,11 @@ void testGeoIndex(string index_dir)
 
     Indexer *indexer = buildGeoIndex(index_dir+"/data/init", index_dir, "idf_score*doc_boost", records_in_index);
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
-
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
     Analyzer *analyzer = getAnalyzer();
 
-    validateGeoIndex(analyzer, indexSearcher, records_in_index);
+    validateGeoIndex(analyzer, queryEvaluator, records_in_index);
     cout << "Init Geo Index Validated." << endl;
 
     // update the index and serialize it
@@ -438,17 +439,16 @@ void testGeoIndex(string index_dir)
     		index_dir);
 
     Indexer *indexerLoaded = Indexer::load(indexMetaData);
-    IndexSearcher *indexSearcherLoaded = IndexSearcher::create(indexerLoaded);
-
+    QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexer,&runTimeParameters );
     Analyzer *analyzerLoaded = getAnalyzer();
 
-    validateGeoIndex(analyzerLoaded, indexSearcherLoaded, records_in_index);
+    validateGeoIndex(analyzerLoaded, queryEvaluatorLoaded, records_in_index);
 
     cout << "Loaded Geo Index Validated." << endl;
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
-    delete indexSearcherLoaded;
+    delete queryEvaluatorLoaded;
     delete indexerLoaded;
 
     cout << "Geo Index Pass." << endl;

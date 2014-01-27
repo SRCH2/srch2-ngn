@@ -1,25 +1,25 @@
 
 import os, time, sys, commands, urllib2, signal
 
+sys.path.insert(0, 'srch2lib')
+import test_lib
+
+port = '8087'
 
 class logTester():
     def __init__(self, binary_path):
-	self.binaryPath = binary_path + '/srch2-search-server'
-	self.startServerCommand = self.binaryPath + ' --config-file=./reset_logger/srch2-config.xml &'
+	self.args = [ binary_path, '--config-file=./reset_logger/srch2-config.xml' ]
 
     def startServer(self):
 	os.popen('rm -rf ./reset_logger/logs/')
 	os.popen('rm -rf ./reset_logger/indexes/')
         #print ('starting engine: {0}'.format(self.startServerCommand))
-        os.popen(self.startServerCommand)
+        self.serverHandle = test_lib.startServer(self.args);
 
 
     #make sure the server is started
     def pingServer(self):
-        info = 'curl -s http://localhost:8087/search?q=Garden | grep -q results'
-        while os.system(info) != 0:
-            time.sleep(1)
-            info = 'curl -s http://localhost:8087/search?q=Garden | grep -q results'
+        test_lib.pingServer(port)
         #print 'server is built!'
 
     #fire a single query
@@ -29,7 +29,7 @@ class logTester():
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://localhost:8087/search?q=' + query
+        curlCommand = 'curl -s http://localhost:' + str(port) + '/search?q=' + query
         os.popen(curlCommand)
 
 
@@ -37,24 +37,7 @@ class logTester():
         """
         kills the server
         """
-        try:
-            #print ("killing srch2 server")
-            s = commands.getoutput('ps aux | grep srch2 | grep config')
-            stat = s.split()
-            #print '1 ' + stat[1]
-            os.kill(int(stat[1]), signal.SIGTERM)
-            #print ("server killed!")
-        except Exception, err:
-            print "Kill server exception: " + str(err)
-            try:
-                s = commands.getoutput("ps -A | fgrep -v '<defunct>' | grep -m1 srch2 | awk '{print $1}'")
-                a = s.split()
-                cmd = "kill -9 {0}".format(a[-1])
-                os.system(cmd)
-                #print ("server killed")
-            except:
-                print "no running instance found to kill, moving ahead."
-
+        test_lib.killServer(self.serverHandle)
 
 if __name__ == '__main__':
     #Path of the query file

@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -320,12 +320,12 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/fuzzy_attribute_based_search/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_attribute_based_search/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--

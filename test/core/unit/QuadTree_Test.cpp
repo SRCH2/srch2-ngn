@@ -11,14 +11,14 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/GlobalCache.h>
 
 #include "../integration/MapSearchTestHelper.h"
 #include "operation/TermVirtualList.h"
-#include "operation/IndexSearcherInternal.h"
 #include "operation/IndexerInternal.h"
 #include "operation/IndexData.h"
+#include "instantsearch/QueryEvaluator.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 using namespace std;
 using namespace srch2::instantsearch;
@@ -189,7 +189,8 @@ bool parseQueryStrings(string &line, vector<string> &strings, unsigned numOfQuer
 void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, vector<unsigned> &expectedResults, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
 	Query *query = new Query(SearchTypeMapQuery);
@@ -217,9 +218,9 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator , query);
 
-	indexSearcher->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -239,13 +240,14 @@ void searchIndex(Indexer *indexer, double minX, double minY, double maxX, double
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vector<string> &keywords, vector<unsigned> &expectedResults, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
 
 	Query *query = new Query(SearchTypeMapQuery);
@@ -274,9 +276,9 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	query->setRange(x, y, radius);
 
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	vector<unsigned> ids;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -296,14 +298,15 @@ void searchIndexCircle(Indexer *indexer, double x, double y, double radius, vect
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, unsigned number, bool isFuzzy = false)
 {
 	//GlobalCache *cache = GlobalCache::create(100000,1000);
 	//IndexSearcher *indexSearcher = IndexSearcher::create(indexer, cache);
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
 	Query *query = new Query(SearchTypeMapQuery);
 
@@ -331,9 +334,9 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	query->setRange(minX, minY, maxX, maxY);
 
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -350,13 +353,14 @@ void searchIndexCheckResultsNumberOnly(Indexer *indexer, double minX, double min
 	delete query;
 
 	//delete cache;
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 
 void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, bool isFuzzy = false)
 {
 
-	IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
 	Query *query = new Query(SearchTypeMapQuery);
 
@@ -383,9 +387,9 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 
 	query->setRange(minX, minY, maxX, maxY);
 
-	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
-	indexSearcher->search(query, queryResults);
+	queryEvaluator->geoSearch(query, queryResults);
 
 	cout << "number of results: " << queryResults->getNumberOfResults() << endl;
 	/*for(unsigned i = 0; i < queryResults->getNumberOfResults(); i++)
@@ -399,7 +403,7 @@ void searchIndexNoCheck(Indexer *indexer, double minX, double minY, double maxX,
 	delete queryResults;
 	delete query;
 
-	delete indexSearcher;
+	delete queryEvaluator;
 }
 /*
 void searchIndexTwoSteps(Indexer *indexer, double minX, double minY, double maxX, double maxY, vector<string> &keywords, unsigned exactMatchNumber, vector<unsigned> &resultIds)
@@ -677,9 +681,8 @@ void testSingleNodeQuadTree(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -737,9 +740,8 @@ void testCircleRange(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -789,9 +791,8 @@ void testInsertingRecordsWithSameLocation(const string &directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -835,9 +836,8 @@ void testSpecialQueryRange(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -895,9 +895,8 @@ void testThousandRecordsQuadTree(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -956,9 +955,8 @@ void testPrefixSearch(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1075,9 +1073,8 @@ void autoGeneratedTestCases(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1121,9 +1118,8 @@ void testFuzzySearch(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1160,9 +1156,8 @@ void testSerialization(string directoryName)
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
 
-	// Create an analyzer
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    // Create an analyzer
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -1196,8 +1191,7 @@ void testDeserialization(string directoryName)
 	schema->setPrimaryKey("list_id"); // integer, by default not searchable
 	schema->setSearchableAttribute("title", 2); // searchable text
 	schema->setSearchableAttribute("address", 7); // searchable text
-	Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-			"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -1263,8 +1257,7 @@ void testQuadTreePerformance(string directoryName, unsigned flag)
 		schema->setSearchableAttribute("address", 7); // searchable text
 
 		// Create an analyzer
-		analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-				"", "", "", SYNONYM_DONOT_KEEP_ORIGIN,"");
+		analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
 		indexer = Indexer::create(indexMetaData, analyzer, schema);
 

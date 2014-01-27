@@ -21,9 +21,9 @@ LIST(APPEND INTEGRATION_TESTS BuildIndexesForIntegrationTest)
 #ADD_EXECUTABLE(IndexIntegration_Test IndexIntegration_Test.cpp ${IndexIntegration_Source})
 #TARGET_LINK_LIBRARIES(IndexIntegration_Test ${INTEGRATION_TEST_LIBS})
 
-ADD_EXECUTABLE(CacheIntegration_Test CacheIntegration_Test.cpp ${IndexIntegration_Source})
-TARGET_LINK_LIBRARIES(CacheIntegration_Test ${INTEGRATION_TEST_LIBS})
-LIST(APPEND INTEGRATION_TESTS CacheIntegration_Test)
+#ADD_EXECUTABLE(CacheIntegration_Test CacheIntegration_Test.cpp ${IndexIntegration_Source})
+#TARGET_LINK_LIBRARIES(CacheIntegration_Test ${INTEGRATION_TEST_LIBS})
+#LIST(APPEND INTEGRATION_TESTS CacheIntegration_Test)
 
 ADD_EXECUTABLE(QueryStress_Test QueryStress_Test.cpp ${IndexIntegration_Source})
 TARGET_LINK_LIBRARIES(QueryStress_Test ${INTEGRATION_TEST_LIBS})

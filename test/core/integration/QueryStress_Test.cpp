@@ -4,7 +4,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -60,7 +60,8 @@ int main(int argc, char **argv)
 			index_dir);
 	   	
 	Indexer *index = Indexer::load(indexMetaData1);
-	srch2is::IndexSearcher *indexSearcher = srch2is::IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();
 
 	std::vector<std::string> file;
@@ -88,13 +89,13 @@ int main(int argc, char **argv)
 	{
 		//cout << *vectIter << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << file.end() - vectIter << endl;
 		//unsigned resultCount = 10;
-		pingDummyStressTest(analyzer, indexSearcher,*vectIter);//,resultCount,0);
+		pingDummyStressTest(analyzer, queryEvaluator,*vectIter);//,resultCount,0);
 	}
 
 	clock_gettime(CLOCK_REALTIME, &tend);
 	double ts2 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-	delete indexSearcher;
+	delete queryEvaluator;
 	delete index;
 	delete analyzer;
 
