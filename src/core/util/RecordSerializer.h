@@ -1,5 +1,7 @@
-#ifndef __SERIALIZER_H__
-#define __SERIALIZER_H__
+//Author: RJ Atwal
+
+#ifndef __RECORD_SERIALIZER_H__
+#define __RECORD_SERIALIZER_H__
 
 //
 //  This class creates a compact representation from a given set of inputs,
@@ -47,7 +49,8 @@
 //               "Diplomate Cafe", , "yum" }
 //
 //
-//          through the following commands: 
+//          through the following commands
+//            (notice that the order of the function calls does not matter): 
 //                  RecordSerializer serializer(yelpSchema);
 //
 //                                                       (epoch value)
@@ -67,10 +70,10 @@
 //     [     2343     20   1387507479  3.44    40    51    55   69   69   72 
 //
 //                  offset40    offset51   offset55      offset69  offset72
-//                Los Angles      Food   Diplomate Cafe   yum         ]  
+//                Los Angeles      Food   Diplomate Cafe   yum         ]  
 //
 //
-//     * Remember to call nextRecord to serialize the next record this will
+//     * Remember to call .nextRecord to serialize the next record this will
 //       destroy the current buffer 
 
 #include "Allocator.h"

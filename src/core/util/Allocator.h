@@ -1,3 +1,5 @@
+//Author: RJ Atwal
+
 #ifndef __ALLOCATOR_H__
 #define __ALLOCATOR_H__
 
@@ -5,8 +7,8 @@
 #include <cstddef>
 #include <climits>
 
-// ceilings input to the closest power of two greater, unless it is smaller an
-// 64 is which case it returns 256
+// ceilings input to the closest power of two greater, unless it is smaller 
+//than 64 in which case it returns 256
 static inline size_t round(size_t input) {
 #ifdef __GNUC__
     if(input == 0) return 1;
@@ -20,7 +22,7 @@ static inline size_t round(size_t input) {
      input |= input >> 4;
      input |= input >> 8;
      input |= input >> 16;
-     if(64 bit) input >> 32;
+     if((sizeof(size_t) == 8)) input >> 32;
      input++;
      return (input == 0) ? UINT_MAX : (input < 64) ? 256 : input;
 #endif
