@@ -124,6 +124,7 @@ public:
 			delete newEntry;
 //			cout << "/PUT" << endl;
 			lock.unlock();
+//			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET - totalSizeUsed){ // size is bigger than our left budget, we should remove some entries
@@ -155,6 +156,7 @@ public:
 			moveLinkedListElementToLast(cacheEntryWithSameHashedKey->second.second);
 //			cout << "/PUT" << endl;
 			lock.unlock();
+//			ASSERT(checkCacheConsistency());
 			return true;
 		}
 		// 3. if it's not in map push it to the map, append hashedKey to the linkedlist and update the size
@@ -164,6 +166,7 @@ public:
 		ASSERT(totalSizeUsed <= BYTE_BUDGET);
 //		cout << "/PUT" << endl;
 		lock.unlock();
+//		ASSERT(checkCacheConsistency());
 		return true;
 	}
 	bool get(string key, ts_shared_ptr<T> & objectPointer) {
@@ -176,11 +179,13 @@ public:
 		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
 //			cout << "/GET" << endl;
 			lock.unlock();
+//			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		if(cacheEntry->second.first->getKey().compare(key) != 0){
 //			cout << "/GET" << endl;
 			lock.unlock();
+//			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		// cache hit , move the corresponding linked list element to the last position to make it
@@ -194,6 +199,7 @@ public:
 		objectPointer = cacheEntry->second.first->getObjectPointer();
 //		cout << "/GET" << endl;
 		lock.unlock();
+//		ASSERT(checkCacheConsistency());
 		return true;
 	}
 
@@ -243,7 +249,8 @@ public:
 			HashedKeyLinkListElement * nextOfNextToCheck = nextToCheck->next;
 			nextToCheck = nextOfNextToCheck;
 		}
-		// 2. check the consistency of map
+		// 2. check the consistency of map and byte size
+		unsigned byteSize = 0;
 		for(typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::const_iterator cacheEntry = cacheEntries.begin();
 				cacheEntry != cacheEntries.end() ; ++cacheEntry){
 			bool nodeFound = false;
@@ -264,6 +271,15 @@ public:
 				HashedKeyLinkListElement * nextOfNextToCheck = nextToCheck->next;
 				nextToCheck = nextOfNextToCheck;
 			}
+			if(nodeFound == false){
+				lock.unlock();
+				return false;
+			}
+			byteSize += getNumberOfBytesUsedByEntry(cacheEntry->second.first);
+		}
+		if(byteSize != totalSizeUsed){
+			lock.unlock();
+			return false;
 		}
 		lock.unlock();
 		return true;
@@ -287,6 +303,7 @@ public:
 		}
 		elementsLinkListFirst = elementsLinkListLast = NULL;
 //		cout << "/CLEAR" << endl;
+		totalSizeUsed = 0;
 		lock.unlock();
 		return true;
 	}
