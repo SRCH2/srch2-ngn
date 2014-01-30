@@ -117,8 +117,15 @@ enum PortType_t {
     ExportPort,
     ActivatePort,
     ResetLoggerPort,
-    EndOfPortType // stop value - not valid
+    EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
+
+inline  enum PortType_t incrementPortType(PortType_t &oldValue)
+{
+    unsigned int newValue = static_cast<int> (oldValue);
+    newValue++;
+    return static_cast<PortType_t> (newValue);
+}
 
 class ConfigManager {
 public:
@@ -213,6 +220,7 @@ protected:
 
     // <config><cores>
     string defaultCoreName;
+    bool defaultCoreSet; // false unless <cores defaultCoreName="..."> has been parsed
 
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -332,6 +340,12 @@ public:
         return defaultCoreName;
     }
 
+    // true if config specifically names a default core
+    const bool getDefaultCoreSet() const
+    {
+        return defaultCoreSet;
+    }
+
     CoreInfo_t *getDefaultCoreInfo() const;
 
 private:
@@ -428,6 +442,15 @@ private:
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
+    static const char* const searchPortString;
+    static const char* const suggestPortString;
+    static const char* const infoPortString;
+    static const char* const docsPortString;
+    static const char* const updatePortString;
+    static const char* const savePortString;
+    static const char* const exportPortString;
+    static const char* const activatePortString;
+    static const char* const resetLoggerPortString;
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
@@ -554,6 +577,7 @@ public:
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
     unsigned short getPort(PortType_t portType) const;
+    void setPort(PortType_t portType, unsigned short portNumber);
 
 protected:
     string name; // of core
@@ -662,6 +686,9 @@ protected:
     // no config option for this yet
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+
+    // array of local HTTP ports (if any) index by port type enum
+    vector<unsigned short> ports;
 };
 
 }
