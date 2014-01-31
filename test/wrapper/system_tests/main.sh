@@ -87,7 +87,7 @@ if [ $? -gt 0 ]; then
         exit 255
     fi
 else
-    echo "--PASSED $test_id"
+    echo "-- PASSED: $test_id"
 fi
 rm -rf data/ *.idx
 
