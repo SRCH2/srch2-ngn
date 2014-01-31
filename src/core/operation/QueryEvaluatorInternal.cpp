@@ -93,7 +93,7 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
 	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
 	// 2. compute active nodes.
-	ts_shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
+	boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
 	// 3. we don't need the term anymore
 	delete term;
 
@@ -389,7 +389,7 @@ std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) c
 }
 
 // TODO : this function might need to be deleted from here ...
-ts_shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
+boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
     // it should not be an empty std::string
     string *keyword = term->getKeyword();
     vector<CharType> charTypeKeyword;
@@ -403,7 +403,7 @@ ts_shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(
 
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
-    ts_shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
+    boost::shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
     int cacheResponse = this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
@@ -414,12 +414,12 @@ ts_shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
 
     for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
         CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
 
-        ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
+        boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
 
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 
@@ -459,7 +459,7 @@ int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* que
         // TODO
         // after the bug in active node is fixed, see if we should use LeafNodeSetIterator/ActiveNodeSetIterator for PREFIX/COMPLETE terms.
         // see TermVirtualList::TermVirtualList() in src/operation/TermVirtualList.cpp
-        ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
+        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
         for (ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;

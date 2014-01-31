@@ -42,7 +42,7 @@ namespace instantsearch
 template <class T>
 class CacheEntry{
 public:
-	CacheEntry(string & key, ts_shared_ptr<T> & objectPointer){
+	CacheEntry(string & key, boost::shared_ptr<T> & objectPointer){
 		this->setKey(key);
 		this->setObjectPointer(objectPointer);
 		this->numberOfBytes = 0;
@@ -55,10 +55,10 @@ public:
 		return key;
 	}
 
-	void setObjectPointer(ts_shared_ptr<T> & objectPointer){
+	void setObjectPointer(boost::shared_ptr<T> & objectPointer){
 		this->objectPointer = objectPointer;
 	}
-	ts_shared_ptr<T> getObjectPointer(){
+	boost::shared_ptr<T> getObjectPointer(){
 		return this->objectPointer;
 	}
 
@@ -70,7 +70,7 @@ public:
 	}
 private:
 	string key;
-	ts_shared_ptr<T> objectPointer;
+	boost::shared_ptr<T> objectPointer;
 	unsigned numberOfBytes ;
 };
 
@@ -113,7 +113,7 @@ public:
 		cacheEntries.clear();
 	};
 
-	bool put(string & key, ts_shared_ptr<T> & objectPointer){
+	bool put(string & key, boost::shared_ptr<T> & objectPointer){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		ASSERT(checkCacheConsistency());
 		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
@@ -171,7 +171,7 @@ public:
 //		ASSERT(checkCacheConsistency());
 		return true;
 	}
-	bool get(string & key, ts_shared_ptr<T> & objectPointer) {
+	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key
@@ -282,7 +282,6 @@ public:
 
 	bool clear(){
 		boost::unique_lock<boost::shared_mutex> lock(_access);
-//		cout << "CLEAR" << endl;
 
 		for(typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.begin();
 				cacheEntry != cacheEntries.end() ; ++cacheEntry){
@@ -296,7 +295,6 @@ public:
 			nextToDelete = nextOfNextToDelete;
 		}
 		elementsLinkListFirst = elementsLinkListLast = NULL;
-//		cout << "/CLEAR" << endl;
 		totalSizeUsed = 0;
 		lock.unlock();
 		return true;

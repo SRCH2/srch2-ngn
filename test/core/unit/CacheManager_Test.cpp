@@ -42,13 +42,13 @@ public:
 void test1(srch2is::CacheContainer<CachedStruct> * cacheContainer){
 
 	for(unsigned i=0; i< 2000; i++){
-		ts_shared_ptr<CachedStruct> ai ;
+		boost::shared_ptr<CachedStruct> ai ;
 		ai.reset(new CachedStruct(i));
 
 		string key = "" + i;
 		cacheContainer->put(key , ai);
 
-		ts_shared_ptr<CachedStruct> aiHit ;
+		boost::shared_ptr<CachedStruct> aiHit ;
 		ASSERT(cacheContainer->get(key , aiHit));
 		ASSERT(cacheContainer->checkCacheConsistency());
 		ASSERT(aiHit->a == ai->a);

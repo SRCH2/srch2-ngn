@@ -85,7 +85,7 @@ bool QueryResultsInternal::checkCacheHit(
             vectorIterator != queryTerms->end(); vectorIterator++) {
         // compute the active nodes for this term
         Term *term = *vectorIterator;
-        ts_shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = queryEvaluatorInternal
+        boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = queryEvaluatorInternal
                 ->computeActiveNodeSet(term);
 
         // compute the virtual list for this term

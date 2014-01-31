@@ -18,7 +18,7 @@ void PrefixActiveNodeSet::getComputedSimilarPrefixes(const Trie *trie, std::vect
     }
 }
 
-ts_shared_ptr<PrefixActiveNodeSet> PrefixActiveNodeSet::computeActiveNodeSetIncrementally(const CharType additionalChar)
+boost::shared_ptr<PrefixActiveNodeSet> PrefixActiveNodeSet::computeActiveNodeSetIncrementally(const CharType additionalChar)
 {
     // form the new string. // TODO (OPT): avoid string copy
     std::vector<CharType> newString = this->prefix;
@@ -33,7 +33,7 @@ ts_shared_ptr<PrefixActiveNodeSet> PrefixActiveNodeSet::computeActiveNodeSetIncr
         _addPANSetForOneNode(mapIterator->first, mapIterator->second, additionalChar, newActiveNodeSet);
     }
 
-    ts_shared_ptr<PrefixActiveNodeSet> newActiveNodeSetSharedPtr;
+    boost::shared_ptr<PrefixActiveNodeSet> newActiveNodeSetSharedPtr;
     newActiveNodeSetSharedPtr.reset(newActiveNodeSet);
     return newActiveNodeSetSharedPtr;
 }

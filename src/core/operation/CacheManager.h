@@ -44,8 +44,8 @@ class PhysicalOperatorsCache {
     PhysicalOperatorsCache(unsigned long byteSizeOfCache = 134217728){
         this->cacheContainer = new CacheContainer<PhysicalOperatorCacheObject>(byteSizeOfCache);
     }
-    bool getPhysicalOperatorsInfo(string & key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in);
-    void setPhysicalOperatosInfo(string & key , ts_shared_ptr<PhysicalOperatorCacheObject> object);
+    bool getPhysicalOperatorsInfo(string & key,  boost::shared_ptr<PhysicalOperatorCacheObject> & in);
+    void setPhysicalOperatosInfo(string & key , boost::shared_ptr<PhysicalOperatorCacheObject> object);
     int clear();
     ~PhysicalOperatorsCache(){
         delete this->cacheContainer;
@@ -64,8 +64,8 @@ public:
     ActiveNodesCache(unsigned long byteSizeOfCache = 134217728){
         this->cacheContainer = new CacheContainer<PrefixActiveNodeSet>(byteSizeOfCache);
     }
-    int findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in);
-    int setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet);
+    int findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in);
+    int setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet);
     int clear();
     ~ActiveNodesCache(){
         delete cacheContainer;
@@ -137,8 +137,8 @@ public:
         this->cacheContainer = new CacheContainer<QueryResultsCacheEntry>(byteSizeOfCache);
     }
 
-    bool getQueryResults(string & key,  ts_shared_ptr<QueryResultsCacheEntry> & in);
-    void setQueryResults(string & key , ts_shared_ptr<QueryResultsCacheEntry> object);
+    bool getQueryResults(string & key,  boost::shared_ptr<QueryResultsCacheEntry> & in);
+    void setQueryResults(string & key , boost::shared_ptr<QueryResultsCacheEntry> object);
     int clear();
     ~QueryResultsCache(){
         delete this->cacheContainer;

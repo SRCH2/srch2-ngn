@@ -146,7 +146,7 @@ public:
 
     };
 
-    ts_shared_ptr<PrefixActiveNodeSet> computeActiveNodeSetIncrementally(const CharType additionalChar);
+    boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSetIncrementally(const CharType additionalChar);
 
     unsigned getEditDistanceThreshold() const {
         return editDistanceThreshold;

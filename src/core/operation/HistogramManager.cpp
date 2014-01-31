@@ -207,7 +207,7 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 
 }
 
-ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *term) const
+boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *term) const
 {
     // it should not be an empty std::string
     string *keyword = term->getKeyword();
@@ -220,7 +220,7 @@ ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *
 
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
-    ts_shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
+    boost::shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
     int cacheResponse = this->queryEvaluator->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
@@ -232,12 +232,12 @@ ts_shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Term *
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
 
     for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
         CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
 
-        ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
+        boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
 
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 

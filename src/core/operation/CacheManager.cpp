@@ -38,17 +38,17 @@ namespace instantsearch
 {
 
 
-bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string & key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
+bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string & key,  boost::shared_ptr<PhysicalOperatorCacheObject> & in){
 	return this->cacheContainer->get(key , in);
 }
-void PhysicalOperatorsCache::setPhysicalOperatosInfo(string & key , ts_shared_ptr<PhysicalOperatorCacheObject> object){
+void PhysicalOperatorsCache::setPhysicalOperatosInfo(string & key , boost::shared_ptr<PhysicalOperatorCacheObject> object){
 	this->cacheContainer->put(key , object);
 }
 int PhysicalOperatorsCache::clear(){
 	return this->cacheContainer->clear();
 }
 
-int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in){
+int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
 
 	// find the longest prefix with active nodes in the cache
 	unsigned termThreshold = term->getThreshold();
@@ -61,7 +61,7 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<Pre
 		// Cache key is : keyword+0 (for exact) or keyword+1 (for fuzzy)
 		// for example: terminator => "terminator$0"
 		//         and  terminator~0.5 => "terminator$1"
-		ts_shared_ptr<PrefixActiveNodeSet> cacheHit;
+		boost::shared_ptr<PrefixActiveNodeSet> cacheHit;
 		if(this->cacheContainer->get(key , cacheHit) == true && cacheHit->getEditDistanceThreshold() >= termThreshold){
 			in = cacheHit;
 			return 1;
@@ -73,7 +73,7 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<Pre
 }
 
 
-int ActiveNodesCache::setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
+int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
 	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
 	std::stringstream ss ;
 	ss << prefixActiveNodeSet->getEditDistanceThreshold();
@@ -99,10 +99,10 @@ PhysicalOperatorsCache * CacheManager::getPhysicalOperatorsCache(){
 	return this->pCache;
 }
 
-bool QueryResultsCache::getQueryResults(string & key, ts_shared_ptr<QueryResultsCacheEntry> & in){
+bool QueryResultsCache::getQueryResults(string & key, boost::shared_ptr<QueryResultsCacheEntry> & in){
 	return this->cacheContainer->get(key , in);
 }
-void QueryResultsCache::setQueryResults(string & key , ts_shared_ptr<QueryResultsCacheEntry> object){
+void QueryResultsCache::setQueryResults(string & key , boost::shared_ptr<QueryResultsCacheEntry> object){
 	this->cacheContainer->put(key , object);
 }
 int QueryResultsCache::clear(){

@@ -119,7 +119,7 @@ private:
 	void annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy);
 	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
-	ts_shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
+	boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
 			unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const;
 	unsigned computeEstimatedNumberOfResults(float probability);
