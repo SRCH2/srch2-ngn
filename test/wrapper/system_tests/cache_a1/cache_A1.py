@@ -1,6 +1,19 @@
 #this test is used for exact A1
 #using: python exact_A1.py queriesAndResults.txt
 
+# this system test is added to test the physical plan execution cache.
+# the logic is like this:
+# suppose we have two queries q1 and q2 :
+# q1 = "terminator AND movie"
+# q2 = "terminator AND movie AND trailer"
+# if we run q2 alone, or if we run q1 first and then q2,
+# we should get a correct list of results for both cases.
+# the later case is the one which uses the cached entry from q1.
+# if you look at queriesAndResults.txt you'll see some lines like :
+# @CLEAR CACHE
+# this script, when it reaches to these lines, if sleeps for enough time 
+# so that merge happens and cache becomes empty.
+
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
 sys.path.insert(0, 'srch2lib')

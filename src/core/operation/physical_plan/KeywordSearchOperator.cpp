@@ -124,6 +124,9 @@ bool KeywordSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	return true;
 }
 
+//As of now, cache implementation doesn't need this function for this operator.
+// This code is here only if we want to implement a
+//cache module in future that needs it.
 string KeywordSearchOperator::toString(){
 	ASSERT(false);
 	string result = "KeywordSearchOperator";

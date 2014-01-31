@@ -20,6 +20,9 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 
 	// prepare the cache key
 	string key;
+	// "true" means we want to ignore the last leaf node
+	// for example for query "terminator AND movie AND trailer"
+	// we get the cache key of "terminator AND movie"
 	this->getUniqueStringForCache(true , key);
 	key += params.isFuzzy?"fuzzy":"exact";
 
@@ -27,6 +30,19 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 	// CHECK CACHE :
 	// 1(if a cache hit). USE CACHE HIT TO START FROM MIDDLE OF LAST EXECUTION
 	// 2(else). OR JUST START A FRESH NEW EXECUTION
+	// For example :
+	// suppose previously we had a query q1: terminator AND movie
+	// now if we have a query q2 : terminator AND movie AND trailer
+	// we can use the cache entry of "terminator AND movie" to incrementally
+	// compute the results for "terminator AND movie AND trailer".
+	// If a cache entry exists for q1, we can first verify all the past results with
+	// new keyword "trailer", return the verified ones, and then continue the iteration
+	// on the shortest list and verify those records with "movie" and "trailer".
+	// If the cache entry for q1 doesn't exist, we just start fresh and iterate "terminator"
+	// records (assuming it's chosen as the shortest list) and verify those records with
+	// "movie" and "trailer".
+	// A complete documentation about Cache is here :
+	// https://docs.google.com/a/srch2.com/document/d/1Zw4MKSeimsAhbFAWb0VJTB5Msrq_HocVm9Xer4McJuU/edit?disco=AAAAAEouq-w#heading=h.v4ed6yoj3ddf
 	ts_shared_ptr<PhysicalOperatorCacheObject> cacheHit;
 	if(this->queryEvaluator != NULL && // this is for CTEST ShortestList_Test, in normal cases, queryEvaluator cannot be NULL
 			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->

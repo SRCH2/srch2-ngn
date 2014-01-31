@@ -31,4 +31,4 @@
 
 * Improved query performance
 
-* Caching
+* Implemented incremental caching for instant search.

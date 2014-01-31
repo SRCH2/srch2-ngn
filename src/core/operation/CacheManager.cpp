@@ -38,14 +38,14 @@ namespace instantsearch
 {
 
 
-bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
+bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string & key,  ts_shared_ptr<PhysicalOperatorCacheObject> & in){
 	return this->cacheContainer->get(key , in);
 }
-void PhysicalOperatorsCache::setPhysicalOperatosInfo(string key , ts_shared_ptr<PhysicalOperatorCacheObject> object){
+void PhysicalOperatorsCache::setPhysicalOperatosInfo(string & key , ts_shared_ptr<PhysicalOperatorCacheObject> object){
 	this->cacheContainer->put(key , object);
 }
 int PhysicalOperatorsCache::clear(){
-	this->cacheContainer->clear();
+	return this->cacheContainer->clear();
 }
 
 int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<PrefixActiveNodeSet> &in){
@@ -57,7 +57,10 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, ts_shared_ptr<Pre
 	{
 		string prefix = keyword->substr(0, i);
 		std::string exactOrFuzzy =  termThreshold == 0?"0":"1";
-		string key = prefix + exactOrFuzzy;
+		string key = prefix + "$" + exactOrFuzzy;
+		// Cache key is : keyword+0 (for exact) or keyword+1 (for fuzzy)
+		// for example: terminator => "terminator$0"
+		//         and  terminator~0.5 => "terminator$1"
 		ts_shared_ptr<PrefixActiveNodeSet> cacheHit;
 		if(this->cacheContainer->get(key , cacheHit) == true && cacheHit->getEditDistanceThreshold() >= termThreshold){
 			in = cacheHit;
@@ -76,7 +79,7 @@ int ActiveNodesCache::setPrefixActiveNodeSet(ts_shared_ptr<PrefixActiveNodeSet> 
 	ss << prefixActiveNodeSet->getEditDistanceThreshold();
 	std::string exactOrFuzzy = ss.str();
 //	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
-	string key = getUtf8String(*prefix) + exactOrFuzzy;
+	string key = getUtf8String(*prefix) + "$" + exactOrFuzzy;
 	this->cacheContainer->put(key , prefixActiveNodeSet);
 	return 1;
 }
@@ -96,10 +99,10 @@ PhysicalOperatorsCache * CacheManager::getPhysicalOperatorsCache(){
 	return this->pCache;
 }
 
-bool QueryResultsCache::getQueryResults(string key, ts_shared_ptr<QueryResultsCacheEntry> & in){
+bool QueryResultsCache::getQueryResults(string & key, ts_shared_ptr<QueryResultsCacheEntry> & in){
 	return this->cacheContainer->get(key , in);
 }
-void QueryResultsCache::setQueryResults(string key , ts_shared_ptr<QueryResultsCacheEntry> object){
+void QueryResultsCache::setQueryResults(string & key , ts_shared_ptr<QueryResultsCacheEntry> object){
 	this->cacheContainer->put(key , object);
 }
 int QueryResultsCache::clear(){

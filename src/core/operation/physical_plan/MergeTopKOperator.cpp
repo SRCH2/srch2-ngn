@@ -182,8 +182,6 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 	 * 5.1. if maxScore < 'topRecordToReturn'.score, STOP, return 'topRecordToReturn'
 	 * 5.2. else, go to 1
 	 */
-//    struct timespec tstart;
-//    clock_gettime(CLOCK_REALTIME, &tstart);
 	PhysicalPlanRecordItem * topRecordToReturn = NULL;
 
 	// Part 1.
@@ -275,12 +273,6 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		// 5.2: go to the beginning of the loop again
 	}
-//    struct timespec tend;
-//    clock_gettime(CLOCK_REALTIME, &tend);
-//    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-//            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-//    cout << "topk getNext : " << ts1  << endl;
-//    cout << "Number of records visited for one : " << numberOfRecordsVisitedForOneResult << endl;
 	return topRecordToReturn;
 
 }
@@ -305,9 +297,11 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 	// cache
 	//1. cache stuff of children is returned through params
 	//2. prepare key
+	//3. Query evaluator pointer should not be empty in normal query processing. But in CTEST
+	//    MergeTopK_Test since only this operator is being tested, this pointer is null. If this pointer is null,
+	//    we don't do any caching.
 	if(this->queryEvaluator != NULL){
 
-//		cout << "Key : " << key << endl;
 		//3. prepare the cache object of self and add children info to it
 		MergeTopKCacheEntry * mergeTopKCacheEntry = new MergeTopKCacheEntry(this->queryEvaluator ,
 																		fullCandidatesListForCache ,

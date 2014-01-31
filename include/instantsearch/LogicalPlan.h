@@ -236,6 +236,14 @@ public:
 	}
 
 
+	/*
+	 * This function returns a string representation of the logical plan
+	 * by concatenating different parts together. The call to getSubtreeUniqueString()
+	 * gives us a tree representation of the logical plan tree. For example is query is
+	 * q = FOO1 AND BAR OR FOO2
+	 * the string of this subtree is something like:
+	 * FOO1_BAR_FOO2_OR_AND
+	 */
 	string getUniqueStringForCaching(){
 		stringstream ss;
 		if(tree != NULL){

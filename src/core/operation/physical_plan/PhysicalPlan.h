@@ -63,7 +63,7 @@ struct PhysicalPlanExecutionParameters {
 	bool isFuzzy;
 	float prefixMatchPenalty ;
 	Ranker * ranker;
-	// this member is true, then cacheObject contains a cache feed from parent
+	// If this member is true, then cacheObject contains a cache feed from parent
 	bool parentIsCacheEnabled;
 	PhysicalOperatorCacheObject * cacheObject ;
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){

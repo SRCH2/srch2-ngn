@@ -172,6 +172,20 @@ PhysicalPlanExecutionParameters * PhysicalPlan::getExecutionParameters(){
 /*
  * The implementor of this function is supposed to append a unique string to 'uniqueString'
  * which determines the subtree of physical plan uniquely.
+ * For example,
+ * if the physical plan is :
+ * [MergeTopK]______[TVL for terminator]
+ *        |
+ *        |_________[TVL for movie]
+ *        |
+ *        |_________[TVL for trailer]
+ *
+ * A call to this function with ignoreLastLeafNode = true will ignore the last leaf node and
+ * give us a string like this :
+ * MergeTopK_TVL_terminator_TVL_movie
+ * NOTE: this string is much more complicated than that because it basically
+ * serialized all the objects in physical plan. You can look at toString functions
+ * to understand what's prepared finally.
  */
 void PhysicalPlanNode::getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString){
 	// get number of children

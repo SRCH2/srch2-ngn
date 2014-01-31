@@ -1,4 +1,4 @@
-// $Id: Cache.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
+// $Id: CacheBase.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -42,20 +42,20 @@ namespace instantsearch
 template <class T>
 class CacheEntry{
 public:
-	CacheEntry(string key, ts_shared_ptr<T> objectPointer){
+	CacheEntry(string & key, ts_shared_ptr<T> & objectPointer){
 		this->setKey(key);
 		this->setObjectPointer(objectPointer);
 		this->numberOfBytes = 0;
 	}
 
-	void setKey(string key){
+	void setKey(string & key){
 		this->key = key;
 	}
 	string getKey(){
 		return key;
 	}
 
-	void setObjectPointer(ts_shared_ptr<T> objectPointer){
+	void setObjectPointer(ts_shared_ptr<T> & objectPointer){
 		this->objectPointer = objectPointer;
 	}
 	ts_shared_ptr<T> getObjectPointer(){
@@ -94,7 +94,7 @@ class CacheContainer{
 
 public:
 	CacheContainer(unsigned long byteSizeOfCache = 134217728)
-	: BYTE_BUDGET(byteSizeOfCache){
+	: cacheTotalByteBudget(byteSizeOfCache){
 		totalSizeUsed = 0;
 		elementsLinkListFirst = elementsLinkListLast = NULL;
 	}
@@ -113,25 +113,26 @@ public:
 		cacheEntries.clear();
 	};
 
-	bool put(string key, ts_shared_ptr<T> objectPointer){
+	bool put(string & key, ts_shared_ptr<T> & objectPointer){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
-//		cout << "PUT" << endl;
 //		ASSERT(checkCacheConsistency());
 		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
 		unsigned numberOfBytesNeededForNewEntry = getNumberOfBytesUsedByEntry(newEntry);
-		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET){
+		if(numberOfBytesNeededForNewEntry > cacheTotalByteBudget){
 			// we cannot accept this entry, it's bigger than our budget
+			// Cache is isolated from other modules. No one can "assume" something is in cache and must
+			// always call get() to be able to use it. So not inserting it in cache and returning false is
+			// safe.
 			delete newEntry;
-//			cout << "/PUT" << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return false;
 		}
-		if(numberOfBytesNeededForNewEntry > BYTE_BUDGET - totalSizeUsed){ // size is bigger than our left budget, we should remove some entries
+		if(numberOfBytesNeededForNewEntry > cacheTotalByteBudget - totalSizeUsed){ // size is bigger than our left budget, we should remove some entries
 			// keep removing entries until enough space is left
 			while(true){
 				LRUCacheReplacementPolicyKickoutOneEntry();
-				if(numberOfBytesNeededForNewEntry <= BYTE_BUDGET - totalSizeUsed){
+				if(numberOfBytesNeededForNewEntry <= cacheTotalByteBudget - totalSizeUsed){
 					break;
 				}
 			}
@@ -149,12 +150,14 @@ public:
 			totalSizeUsed += numberOfBytesNeededForNewEntry;
 			ASSERT(totalSizeUsed >= sizeOfEntryToRemove);
 			totalSizeUsed -= sizeOfEntryToRemove;
-			ASSERT(totalSizeUsed <= BYTE_BUDGET);
+			ASSERT(totalSizeUsed <= cacheTotalByteBudget);
+			// This delete operation deletes the instance of CacheEntry. Since
+			// ts_shared_ptr<T> objectPointer is a member, it's destructor will be called
+			// and the counter of shared pointer is decremented by one.
 			delete cacheEntryWithSameHashedKey->second.first;
 			cacheEntryWithSameHashedKey->second.first = newEntry;
 			// move the linked list element to front to make it kicked out later
 			moveLinkedListElementToLast(cacheEntryWithSameHashedKey->second.second);
-//			cout << "/PUT" << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return true;
@@ -163,41 +166,32 @@ public:
 		addNewElementToLinkList(newEntryHashedKey );
 		cacheEntries[newEntryHashedKey] = std::make_pair(  newEntry, elementsLinkListLast );
 		totalSizeUsed += numberOfBytesNeededForNewEntry;
-		ASSERT(totalSizeUsed <= BYTE_BUDGET);
-//		cout << "/PUT" << endl;
+		ASSERT(totalSizeUsed <= cacheTotalByteBudget);
 		lock.unlock();
 //		ASSERT(checkCacheConsistency());
 		return true;
 	}
-	bool get(string key, ts_shared_ptr<T> & objectPointer) {
+	bool get(string & key, ts_shared_ptr<T> & objectPointer) {
 		boost::unique_lock< boost::shared_mutex > lock(_access);
-//		cout << "GET" << endl;
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key
 		unsigned hashedKeyToFind = hashDJB2(key.c_str());
 		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
 		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
-//			cout << "/GET" << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		if(cacheEntry->second.first->getKey().compare(key) != 0){
-//			cout << "/GET" << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		// cache hit , move the corresponding linked list element to the last position to make it
 		// get kicked out laster
-
-		{
-//			boost::upgrade_to_unique_lock< boost::shared_mutex > uniqueLock(lock);
-			moveLinkedListElementToLast(cacheEntry->second.second);
-		}
+		moveLinkedListElementToLast(cacheEntry->second.second);
 		// and return the object
 		objectPointer = cacheEntry->second.first->getObjectPointer();
-//		cout << "/GET" << endl;
 		lock.unlock();
 //		ASSERT(checkCacheConsistency());
 		return true;
@@ -317,7 +311,7 @@ private:
 	// LRU replacement policy always requires adding new entries to the tail (after last)
 	HashedKeyLinkListElement * elementsLinkListLast;
 
-	const unsigned long BYTE_BUDGET;
+	const unsigned long cacheTotalByteBudget;
 	unsigned totalSizeUsed;
 
 
@@ -335,6 +329,9 @@ private:
 		cacheEntries.erase(entryToRemove); // remove it from map
 		ASSERT(totalSizeUsed >= numberOfUsedBytesToGetRidOf);
 		totalSizeUsed -= numberOfUsedBytesToGetRidOf;
+		// This delete operation deletes the instance of CacheEntry. Since
+		// ts_shared_ptr<T> objectPointer is a member, it's destructor will be called
+		// and the counter of shared pointer is decremented by one.
 		delete entryToRemove->second.first;
 	}
 

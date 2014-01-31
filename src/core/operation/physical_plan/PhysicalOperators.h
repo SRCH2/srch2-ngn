@@ -418,10 +418,20 @@ public:
 private:
 	MergeByShortestListOperator() ;
 	QueryEvaluatorInternal * queryEvaluator;
+	// this variable keeps the index of the shortest list child
 	unsigned indexOfShortestListChild ;
+	// if the shortest list is exhausted, this boolean is set to true
+	// and from that point, getNext always returns false.
 	bool isShortestListFinished;
+	// If we get a cache entry, first we move on old candidate
+	// results and verify them with the new last keyword, this variable
+	// keeps the cursor on this list
 	unsigned indexOfCandidateListFromCache;
+	// candidate results that came from cache and should be verified with
+	// the new last keyword
 	vector<PhysicalPlanRecordItem *> candidateListFromCache;
+	// all candidate lists which are found which will be sent to cache for a
+	// later query.
 	vector<PhysicalPlanRecordItem *> candidateListForCache;
 };
 
