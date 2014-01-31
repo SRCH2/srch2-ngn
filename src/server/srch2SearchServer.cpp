@@ -77,7 +77,15 @@ struct Listener_t {
 
 int Listener_t::init(struct event_base *evbase, struct evhttp *httpServer, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer)
 {
-    http_server = httpServer;
+    if (httpServer != NULL) {
+        http_server = httpServer;
+    } else {
+        http_server = evhttp_new(evbase);
+        if (http_server == NULL) {
+            perror("evhttp_new");
+            return 0;
+        }
+    }
     srch2Server = searchServer;
     portType = type;
     port = portNumber;
@@ -132,6 +140,43 @@ static void cb_notfound(evhttp_request *req, void *arg)
     }
 }
 
+static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2http::PortType_t operationType)
+{
+    struct operationMap_t {
+        srch2http::PortType_t operationType;
+        const char *operationName;
+    };
+    struct operationMap_t opMap[] = {
+        { srch2http::SearchPort, "search" },
+        { srch2http::SuggestPort, "suggest" },
+        { srch2http::InfoPort, "info" },
+        { srch2http::DocsPort, "docs" },
+        { srch2http::UpdatePort, "update" },
+        { srch2http::SavePort, "save" },
+        { srch2http::ExportPort, "export" },
+        { srch2http::ActivatePort, "activate" },
+        { srch2http::ResetLoggerPort, "resetlogger" },
+        { srch2http::EndOfPortType, NULL },
+    };
+
+    if (operationType >= srch2http::EndOfPortType) {
+        Logger::error("Illegal operation type: %d", static_cast<int> (operationType));
+        return false;
+    }
+
+    string coreName = listener->srch2Server->getCoreName();
+    const srch2http::CoreInfo_t *coreInfo = listener->srch2Server->indexDataConfig;
+    unsigned int listenPort = coreInfo->getPort(operationType);
+
+    if ((listenPort > 0 && listenPort != listener->port) || (listenPort == 0 && listener->port != atoi(listener->srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str()))) {
+        Logger::warn("/%s request on %s core port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), listener->port, listenPort);
+        cb_notfound(req, static_cast<void *> (listener));
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * 'search' callback function
  * @param req evhttp request object
@@ -143,16 +188,10 @@ static void cb_search(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    string coreName = listener->srch2Server->getCoreName();
-    const srch2http::CoreInfo_t *coreInfo = listener->srch2Server->indexDataConfig;
-    unsigned int listenPort = coreInfo->getPort(srch2http::SearchPort);
-
-    if ((listenPort > 0 && listenPort != listener->port) || (listenPort == 0 && listener->port != atoi(listener->srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str()))) {
-        Logger::warn("/search request on %s core port %d denied", coreName.c_str(), listener->port);
-        cb_notfound(req, arg);
+    if (operationPermitted(req, listener, srch2http::SearchPort) == false) {
         return;
     }
-    
+
     try {
         srch2http::HTTPRequestHandler::searchCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -172,6 +211,11 @@ static void cb_suggest(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::SuggestPort) == false) {
+        return;
+    }
+
     try {
         srch2http::HTTPRequestHandler::suggestCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -179,26 +223,6 @@ static void cb_suggest(evhttp_request *req, void *arg)
         Logger::error(e.what());
         srch2http::HTTPRequestHandler::handleException(req);
     }
-}
-
-/**
- * 'lookup' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_lookup(evhttp_request *req, void *arg)
-{
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        srch2http::HTTPRequestHandler::lookupCommand(req, listener->srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
 }
 
 /**
@@ -213,6 +237,11 @@ static void cb_info(evhttp_request *req, void *arg)
             "application/json; charset=UTF-8");
     /*string meminfo;
      getMemoryInfo(meminfo);*/
+
+    if (operationPermitted(req, listener, srch2http::InfoPort) == false) {
+        return;
+    }
+
     string versioninfo = getCurrentVersion();
     try {
         HTTPRequestHandler::infoCommand(req, listener->srch2Server, versioninfo);
@@ -234,6 +263,11 @@ static void cb_write(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::DocsPort) == false) {
+        return;
+    }
+
     try {
         HTTPRequestHandler::writeCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -249,6 +283,11 @@ static void cb_update(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::UpdatePort) == false) {
+        return;
+    }
+
     try {
         HTTPRequestHandler::updateCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -264,6 +303,11 @@ static void cb_save(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::SavePort) == false) {
+        return;
+    }
+
     try {
         HTTPRequestHandler::saveCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -276,10 +320,15 @@ static void cb_save(evhttp_request *req, void *arg)
 
 static void cb_export(evhttp_request *req, void *arg)
 {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
-    HTTPRequestHandler::exportCommand(req, server);
+
+    if (operationPermitted(req, listener, srch2http::ExportPort) == false) {
+        return;
+    }
+
+    HTTPRequestHandler::exportCommand(req, listener->srch2Server);
 }
 
 /**
@@ -292,6 +341,11 @@ static void cb_resetLogger(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::ResetLoggerPort) == false) {
+        return;
+    }
+
     try {
     	HTTPRequestHandler::resetLoggerCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -312,6 +366,11 @@ static void cb_activate(evhttp_request *req, void *arg)
     Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (operationPermitted(req, listener, srch2http::ActivatePort) == false) {
+        return;
+    }
+
     try {
         HTTPRequestHandler::activateCommand(req, listener->srch2Server);
     } catch (exception& e) {
@@ -610,6 +669,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         };
         for (int j = 0; portList[j].path != NULL; j++) {
             evhttp_set_cb(defaultListener->http_server, portList[j].path, portList[j].callback, defaultListener);
+            Logger::info("Routing port %d route %s to default core %s", defaultListener->port, portList[j].path, defaultListener->srch2Server->getCoreName().c_str());
         }
         evhttp_set_gencb(defaultListener->http_server, cb_notfound, NULL);
 
@@ -621,21 +681,25 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                 string coreName = iterator->second->getCoreName();
                 Listener_t *coreListener = NULL; // catch all for ports not specifically called out
                 for (unsigned int j = 0; portList[j].path != NULL; j++) {
-                    unsigned port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
+                    unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
                     string path = string("/") + coreName + string(portList[j].path);
+
                     if (port > 0) {
                         // create new listener just for this special port
                         Listener_t *listener = new Listener_t;
-                        if (listener == NULL || listener->init(evbase, httpServer, portList[j].portType, port, iterator->second) == 0) {
+                        if (listener == NULL || listener->init(evbase, NULL, portList[j].portType, port, iterator->second) == 0) {
                             perror("listener allocation failure");
                             return 255;
                         }
                         evhttp_set_gencb(listener->http_server, cb_notfound, NULL);
+                        evServers->push_back(listener->http_server);
                         listeners.push_back(listener);
                         allListeners->push_back(listener);
                         listener->portType = portList[j].portType;
                         listener->port = port;
                         evhttp_set_cb(listener->http_server, path.c_str(), portList[j].callback, listener);
+
+                        Logger::info("Routing target port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
                     } else {
                         if (coreListener == NULL) {
                             // create new listener for regular ports on this core
@@ -652,17 +716,19 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                         }
                         // no specific port specified, use default for this core
                         evhttp_set_cb(coreListener->http_server, path.c_str(), portList[j].callback, coreListener);
+                        Logger::info("Routing port %d route %s to core %s", coreListener->port, path.c_str(), coreListener->srch2Server->getCoreName().c_str());
                     }
                 }
             }
         }
 
         /* 4). accept bound socket */
-        for (unsigned int j = 0; j < listeners.size(); j++) {
-            if (evhttp_accept_socket(listeners[j]->http_server, (*globalPortMap)[listeners[j]->port]) != 0) {
+        for (unsigned int k = 0; k < listeners.size(); k++) {
+            if (evhttp_accept_socket(listeners[k]->http_server, (*globalPortMap)[listeners[k]->port]) != 0) {
                 perror("evhttp_accept_socket");
                 return 255;
             }
+            Logger::info("Socket accept by thread %d core %s on port %d", i, listeners[k]->srch2Server->getCoreName().c_str(), listeners[k]->port);
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
