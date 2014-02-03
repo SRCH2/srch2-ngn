@@ -69,7 +69,8 @@ PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfClos
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	unsigned estimatedNumberOfTerminalNodes =
+			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
 	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
