@@ -67,15 +67,16 @@ typedef std::map<unsigned short, int> PortMap_t;
  * Container for HTTP servers and related information.  Need one of these per thread, per core, per port.
  */
 struct Listener_t {
-    struct evhttp * http_server;
+    struct evhttp * http_server; // shared by multiple listeners
+    int fd;
     srch2http::Srch2Server *srch2Server;
     srch2http::PortType_t portType;
     unsigned short port;
 
-    int init(struct event_base *evbase, struct evhttp *httpServer, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer);
+    int init(struct event_base *evbase, struct evhttp *httpServer, int socketFd, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer);
 };
 
-int Listener_t::init(struct event_base *evbase, struct evhttp *httpServer, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer)
+int Listener_t::init(struct event_base *evbase, struct evhttp *httpServer, int socketFd, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer)
 {
     if (httpServer != NULL) {
         http_server = httpServer;
@@ -89,6 +90,7 @@ int Listener_t::init(struct event_base *evbase, struct evhttp *httpServer, srch2
     srch2Server = searchServer;
     portType = type;
     port = portNumber;
+    fd = socketFd;
 
     return 1;
 }
@@ -625,7 +627,12 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // Step 2: Serving server
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
-        vector<Listener_t *> listeners; // local list of listeners just for each iteration of thread loop
+        // helper maps to find listeners by port number and core name
+        typedef map<const string /*coreName*/, Listener_t *> CoreNameMap_t;
+        typedef map<unsigned short /*portNumber*/, CoreNameMap_t> ListenersMap_t;
+        ListenersMap_t listeners;
+        typedef map<unsigned short /*portNumber*/, struct evhttp */*http_server*/> ServerMap_t;
+        ServerMap_t serverMap;
 
         struct event_base *evbase = event_base_new();
         if (NULL == evbase) {
@@ -642,14 +649,15 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         evServers->push_back(httpServer);
 
         Listener_t *defaultListener = new Listener_t;
-        if (defaultListener == NULL || defaultListener->init(evbase, httpServer, srch2http::EndOfPortType, http_port, defaultCore) == 0) {
+        if (defaultListener == NULL || defaultListener->init(evbase, httpServer, (*globalPortMap)[http_port], srch2http::EndOfPortType, http_port, defaultCore) == 0) {
             perror("listener allocation failure");
             return 255;
         }
-        listeners.push_back(defaultListener);
+        listeners[http_port][string("")] = defaultListener;
+        serverMap[http_port] = httpServer;
         allListeners->push_back(defaultListener);
 
-        // setup default core callbacks for queries that don't specify a core name
+        // helper array - loop instead of repetitous code
         struct PortList_t {
             const char *path;
             srch2http::PortType_t portType;
@@ -667,6 +675,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
             { NULL, srch2http::EndOfPortType, NULL }
         };
+
+        // setup default core callbacks for queries that don't specify a core name
         for (int j = 0; portList[j].path != NULL; j++) {
             evhttp_set_cb(defaultListener->http_server, portList[j].path, portList[j].callback, defaultListener);
             Logger::info("Routing port %d route %s to default core %s", defaultListener->port, portList[j].path, defaultListener->srch2Server->getCoreName().c_str());
@@ -679,56 +689,43 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
 
                 string coreName = iterator->second->getCoreName();
-                Listener_t *coreListener = NULL; // catch all for ports not specifically called out
                 for (unsigned int j = 0; portList[j].path != NULL; j++) {
                     unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
                     string path = string("/") + coreName + string(portList[j].path);
+                    Listener_t *listener = NULL;
 
-                    if (port > 0) {
-                        // create new listener just for this special port
-                        Listener_t *listener = new Listener_t;
-                        if (listener == NULL || listener->init(evbase, NULL, portList[j].portType, port, iterator->second) == 0) {
+                    if (port < 1) {
+                        port = http_port;
+                    }
+                    ListenersMap_t::iterator listenator = listeners.find(port);
+                    if (listenator == listeners.end() || listenator->second.find(coreName) == listenator->second.end()) {
+                        listener = new Listener_t;
+                        if (listener == NULL || listener->init(evbase, NULL, (*globalPortMap)[port], portList[j].portType, port, iterator->second) == 0) {
                             perror("listener allocation failure");
                             return 255;
                         }
                         evhttp_set_gencb(listener->http_server, cb_notfound, NULL);
-                        evServers->push_back(listener->http_server);
-                        listeners.push_back(listener);
-                        allListeners->push_back(listener);
-                        listener->portType = portList[j].portType;
-                        listener->port = port;
-                        evhttp_set_cb(listener->http_server, path.c_str(), portList[j].callback, listener);
-
-                        Logger::info("Routing target port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
+                        serverMap[port] = listener->http_server; // for accept() in this function
+                        evServers->push_back(listener->http_server); // for free when main() exits
+                        listeners[port][coreName] = listener; // for unique callback argument per port per core
+                        allListeners->push_back(listener); // for free when main() exits
                     } else {
-                        if (coreListener == NULL) {
-                            // create new listener for regular ports on this core
-                            coreListener = new Listener_t;
-                            if (coreListener == NULL || coreListener->init(evbase, httpServer, portList[j].portType, port, iterator->second) == 0) {
-                                perror("listener allocation failure");
-                                return 255;
-                            }
-                            coreListener->portType = srch2http::EndOfPortType;
-                            coreListener->port = http_port;
-                            listeners.push_back(coreListener);
-                            allListeners->push_back(coreListener);
-                            evhttp_set_gencb(coreListener->http_server, cb_notfound, NULL);
-                        }
-                        // no specific port specified, use default for this core
-                        evhttp_set_cb(coreListener->http_server, path.c_str(), portList[j].callback, coreListener);
-                        Logger::info("Routing port %d route %s to core %s", coreListener->port, path.c_str(), coreListener->srch2Server->getCoreName().c_str());
+                        listener = listeners[port][coreName];
                     }
+                    evhttp_set_cb(listener->http_server, path.c_str(), portList[j].callback, listener);
+
+                    Logger::info("Adding port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
                 }
             }
         }
 
         /* 4). accept bound socket */
-        for (unsigned int k = 0; k < listeners.size(); k++) {
-            if (evhttp_accept_socket(listeners[k]->http_server, (*globalPortMap)[listeners[k]->port]) != 0) {
+        for (ServerMap_t::iterator serverIterator = serverMap.begin(); serverIterator != serverMap.end(); serverIterator++) {
+            if (evhttp_accept_socket(serverIterator->second, (*globalPortMap)[serverIterator->first]) != 0) {
                 perror("evhttp_accept_socket");
                 return 255;
             }
-            Logger::info("Socket accept by thread %d core %s on port %d", i, listeners[k]->srch2Server->getCoreName().c_str(), listeners[k]->port);
+            Logger::info("Socket accept by thread %d on port %d", i, serverIterator->first);
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
