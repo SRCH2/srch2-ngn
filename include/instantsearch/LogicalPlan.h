@@ -52,6 +52,18 @@ public:
 
     void setFuzzyTerm(Term * fuzzyTerm);
 
+    unsigned getNumberOfLeafNodes(){
+    	if(nodeType == LogicalPlanNodeTypeTerm){
+    		return 1;
+    	}else{
+    		unsigned sumOfChildren = 0;
+    		for(vector<LogicalPlanNode *>::iterator child = children.begin(); child != children.end() ; ++child){
+    			sumOfChildren += (*child)->getNumberOfLeafNodes();
+    		}
+    		return sumOfChildren;
+    	}
+    }
+
     string toString();
     string getSubtreeUniqueString();
     Term * getTerm(bool isFuzzy){
