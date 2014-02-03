@@ -176,18 +176,13 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	ASSERT(logicalPlan != NULL);
 //	//1. first check to see if we have this query in cache
-//	string key = logicalPlan->getUniqueStringForCaching();
-//	cout << "Key : " << key << endl;
-//	Logger::info("key : %s " , key.c_str());
-//	ts_shared_ptr<QueryResultsCacheEntry> cachedObject ;
-//	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
-//		// cache hit
-//		Logger::info("Cache hit.") ;
-//		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-//		return queryResults->impl->sortedFinalResults.size();
-//	}else{
-//		Logger::info("No cache hit.") ;
-//	}
+	string key = logicalPlan->getUniqueStringForCaching();
+	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
+	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+		// cache hit
+		cachedObject->copyToQueryResultsInternal(queryResults->impl);
+		return queryResults->impl->sortedFinalResults.size();
+	}
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -316,11 +311,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 
-//	// save in cache
-//	ts_shared_ptr<QueryResultsCacheEntry> cacheObject ;
-//	cacheObject.reset(new QueryResultsCacheEntry());
-//	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
-//	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+	// save in cache
+	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
+	cacheObject.reset(new QueryResultsCacheEntry());
+	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
 
 	return queryResults->impl->sortedFinalResults.size();
 
