@@ -68,6 +68,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationTermOperator();
 private:
@@ -114,6 +115,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationAndOperator();
 private:
@@ -150,6 +152,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationOrOperator();
 private:
@@ -188,6 +191,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~RandomAccessVerificationNotOperator();
 private:
@@ -238,6 +242,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByIdOperator();
 private:
@@ -296,6 +301,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~SortByScoreOperator();
 private:
@@ -345,6 +351,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~MergeSortedByIDOperator();
 private:
@@ -397,6 +404,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	bool verifyRecordWithChildren(PhysicalPlanRecordItem * recordItem ,
 						std::vector<float> & runTimeTermRecordScores,
@@ -405,12 +413,54 @@ public:
 						std::vector<unsigned> & attributeBitmaps,
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
-						const PhysicalPlanExecutionParameters & params);
+						const PhysicalPlanExecutionParameters & params, unsigned onlyThisChild = -1 );
 	~MergeByShortestListOperator();
 private:
 	MergeByShortestListOperator() ;
+	QueryEvaluatorInternal * queryEvaluator;
+	// this variable keeps the index of the shortest list child
+	unsigned indexOfShortestListChild ;
+	// if the shortest list is exhausted, this boolean is set to true
+	// and from that point, getNext always returns false.
+	bool isShortestListFinished;
+	// If we get a cache entry, first we move on old candidate
+	// results and verify them with the new last keyword, this variable
+	// keeps the cursor on this list
+	unsigned indexOfCandidateListFromCache;
+	// candidate results that came from cache and should be verified with
+	// the new last keyword
+	vector<PhysicalPlanRecordItem *> candidateListFromCache;
+	// all candidate lists which are found which will be sent to cache for a
+	// later query.
+	vector<PhysicalPlanRecordItem *> candidateListForCache;
+};
+
+class MergeByShortestListCacheEntry : public PhysicalOperatorCacheObject {
+public:
 	unsigned indexOfShortestListChild ;
 	bool isShortestListFinished;
+	vector<PhysicalPlanRecordItem *> candidatesList;
+	MergeByShortestListCacheEntry(	QueryEvaluatorInternal * queryEvaluator,
+												unsigned indexOfShortestListChild,
+												bool isShortestListFinished,
+												vector<PhysicalPlanRecordItem *> candidatesList){
+		this->indexOfShortestListChild = indexOfShortestListChild;
+		this->isShortestListFinished = isShortestListFinished;
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+					cloneForCache(candidatesList.at(i)));
+		}
+	}
+
+    unsigned getNumberOfBytes() {
+    	return sizeof(indexOfShortestListChild) + sizeof(isShortestListFinished);
+    }
+
+	~MergeByShortestListCacheEntry(){
+		for(unsigned i = 0; i < candidatesList.size() ; ++i){
+			delete candidatesList.at(i);
+		}
+	}
 };
 
 class MergeByShortestListOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -442,6 +492,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~UnionSortedByIDOperator();
 private:

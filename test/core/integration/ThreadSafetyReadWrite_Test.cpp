@@ -68,7 +68,7 @@ void addSimpleRecords()
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges , updateHistogramEveryQWrites,
     		INDEX_DIR);
@@ -313,7 +313,7 @@ void test0()
     pthread_t *threadReaders;
     pthread_attr_t pthread_custom_attr;
     int n, i;
-    n = 40;
+    n = 50;
 
     addSimpleRecords();
     // create an index
@@ -321,7 +321,7 @@ void test0()
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
@@ -367,7 +367,7 @@ void test1()
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
@@ -433,7 +433,7 @@ void test2()
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
@@ -468,20 +468,21 @@ void test2()
 int main(int argc, char *argv[])
 {
 	try{
+
+		cout << "Case 0: Multiple Readers - Testing..." << endl;
+		test0();
+		cout << "Test0 Passed" << endl;
+
+		// multiple readers and one writer
+		cout << "Case 1: Multiple Readers and One writer - Testing..." << endl;
+		test1();
+		cout << "Test1 Passed" << endl;
+
+		// mulitple Readers and multiple writers
+		cout << "Case 2: Mulitple Readers and Multiple writers - Testing..." << endl;
+		test2();
+		cout << "Test2 Passed" << endl;
     // multiple readers
-    cout << "Case 0: Multiple Readers - Testing..." << endl;
-    test0();
-    cout << "Test0 Passed" << endl;
-
-    // multiple readers and one writer
-    cout << "Case 1: Multiple Readers and One writer - Testing..." << endl;
-    test1();
-    cout << "Test1 Passed" << endl;
-
-    // mulitple Readers and multiple writers
-    cout << "Case 2: Mulitple Readers and Multiple writers - Testing..." << endl;
-    test2();
-    cout << "Test2 Passed" << endl;
 	}catch(const exception& ex) {
 		cout << ex.what() << endl;
 	}

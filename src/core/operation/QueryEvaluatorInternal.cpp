@@ -61,7 +61,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
 		this->parameters = *parameters;
 	}
     this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
-    this->cacheManager = dynamic_cast<Cache*>(indexer->getCache());
+    this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());
@@ -93,13 +93,13 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
 	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
 	// 2. compute active nodes.
-	PrefixActiveNodeSet *termActiveNodeSet = this->computeActiveNodeSet(term);
+	boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
 	// 3. we don't need the term anymore
 	delete term;
 
 	// 4. now iterate on active nodes and find suggestions for each on of them
     std::vector<SuggestionInfo > suggestionPairs;
-    findKMostPopularSuggestionsSorted(term , termActiveNodeSet , numberOfSuggestionsToReturn, suggestionPairs);
+    findKMostPopularSuggestionsSorted(term , termActiveNodeSet.get() , numberOfSuggestionsToReturn, suggestionPairs);
 
     int suggestionCount = 0;
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
@@ -111,11 +111,6 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
                                                suggestion->suggestedCompleteTermNode, suggestionString);
     	suggestions.push_back(suggestionString);
     }
-	// 5. now delete activenode set
-    if (termActiveNodeSet->isResultsCached() == true)
-    	termActiveNodeSet->busyBit->setFree();
-    else
-        delete termActiveNodeSet;
 	return 0;
 }
 
@@ -178,6 +173,16 @@ unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * log
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
+
+	ASSERT(logicalPlan != NULL);
+//	//1. first check to see if we have this query in cache
+	string key = logicalPlan->getUniqueStringForCaching();
+	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
+	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+		// cache hit
+		cachedObject->copyToQueryResultsInternal(queryResults->impl);
+		return queryResults->impl->sortedFinalResults.size();
+	}
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -304,6 +309,14 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
 		delete facetOperatorPtr;
 	}
+
+
+	// save in cache
+	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
+	cacheObject.reset(new QueryResultsCacheEntry());
+	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+
 	return queryResults->impl->sortedFinalResults.size();
 
 }
@@ -371,7 +384,7 @@ std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) c
 }
 
 // TODO : this function might need to be deleted from here ...
-PrefixActiveNodeSet *QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
+boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNodeSet(Term *term) const{
     // it should not be an empty std::string
     string *keyword = term->getKeyword();
     vector<CharType> charTypeKeyword;
@@ -385,38 +398,31 @@ PrefixActiveNodeSet *QueryEvaluatorInternal::computeActiveNodeSet(Term *term) co
 
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
-    PrefixActiveNodeSet *initialPrefixActiveNodeSet = NULL;
-    int cacheResponse = this->cacheManager->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
+    boost::shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
+    int cacheResponse = this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
-    if ( (initialPrefixActiveNodeSet == NULL) || (cacheResponse == 0)) { // NO CacheHit,  response = 0
+    if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
-        initialPrefixActiveNodeSet = new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance());
-        initialPrefixActiveNodeSet->busyBit->setBusy();
+    	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance()));
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.
-    PrefixActiveNodeSet *prefixActiveNodeSet = initialPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = initialPrefixActiveNodeSet;
 
     for (unsigned iter = cachedPrefixLength; iter < keywordLength; iter++) {
         CharType additionalCharacter = charTypeKeyword[iter]; // get the appended character
 
-        PrefixActiveNodeSet *newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
-        newPrefixActiveNodeSet->busyBit->setBusy();
+        boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
 
-        // If the last result was not put into the cache successfully (e.g., due to
-        // limited cache size), we can safely delete it now
-        if (prefixActiveNodeSet->isResultsCached() == false) {
-            //if (prefixActiveNodeSet->busyBit->isBusy())
-            delete prefixActiveNodeSet;
-        }
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
-            cacheResponse = this->cacheManager->setPrefixActiveNodeSet(prefixActiveNodeSet);
+        	prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet
+            cacheResponse = this->cacheManager->getActiveNodesCache()->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }
     // Possible memory leak due to last prefixActiveNodeSet not being cached. This is checked for
@@ -448,8 +454,8 @@ int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* que
         // TODO
         // after the bug in active node is fixed, see if we should use LeafNodeSetIterator/ActiveNodeSetIterator for PREFIX/COMPLETE terms.
         // see TermVirtualList::TermVirtualList() in src/operation/TermVirtualList.cpp
-        PrefixActiveNodeSet *prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet, queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
+        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
+        for (ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
@@ -464,17 +470,6 @@ int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* que
             else{
                 mapSearcherTerm.expansionStructureVector.push_back(expansion);
             }
-        }
-
-        // Similar to the part in TermVirtualList.cpp destructor, which is used in text only index.
-        // If it's in the cache, set the busyBit off so that it can be freed in the future.
-        // if it's not in the cache, we can delete it right away.
-        if (prefixActiveNodeSet->isResultsCached() == true) {
-            prefixActiveNodeSet->busyBit->setFree();
-        } else {
-            // see ticket https://trac.assembla.com/srch2-root/ticket/142
-            // prefixActiveNodeSet->busyBit->setFree();
-            delete prefixActiveNodeSet;
         }
 
         mapSearcherTerm.termPtr = queryTerms->at(i);
@@ -552,20 +547,21 @@ void QueryEvaluatorInternal::setPhysicalPlanRecordItemFactory(PhysicalPlanRecord
 //DEBUG function. Used in CacheIntegration_Test
 bool QueryEvaluatorInternal::cacheHit(const Query *query)
 {
-    const std::vector<Term* > *queryTerms = query->getQueryTerms();
+//    const std::vector<Term* > *queryTerms = query->getQueryTerms();
+//
+//    //Empty Query case
+//    if (queryTerms->size() == 0)
+//        return false;
+//
+//    // Cache lookup, assume a query with the first k terms found in the cache
+//    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
+//    this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
+//
+//    // Cached results for the first k terms
+//    if (conjunctionCacheResultsEntry != NULL)
+//        return true;
 
-    //Empty Query case
-    if (queryTerms->size() == 0)
-        return false;
-
-    // Cache lookup, assume a query with the first k terms found in the cache
-    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
-    this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
-
-    // Cached results for the first k terms
-    if (conjunctionCacheResultsEntry != NULL)
-        return true;
-
+	// TODO we must write this function again
     return false;
 }
 

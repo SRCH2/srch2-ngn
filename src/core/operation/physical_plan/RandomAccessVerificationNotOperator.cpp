@@ -27,6 +27,16 @@ bool RandomAccessVerificationNotOperator::close(PhysicalPlanExecutionParameters 
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+string RandomAccessVerificationNotOperator::toString(){
+	string result = "RandomAccessVerificationNotOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
+
 bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 
 	bool resultFromChild = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);

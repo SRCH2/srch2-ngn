@@ -47,6 +47,7 @@ ADD_TEST(ActiveNode_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ActiveNode_Test 
 ADD_TEST(Cowvector_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cowvector_Test "--verbose")
 
 ADD_TEST(Cache_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cache_Test "--verbose")
+ADD_TEST(CacheManager_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/CacheManager_Test "--verbose")
 ADD_TEST(Compression_S16_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Compression_S16_Test "--verbose")
 	
 ADD_TEST(TermVirtualList_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/TermVirtualList_Test "--verbose")

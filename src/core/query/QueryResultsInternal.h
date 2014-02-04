@@ -64,6 +64,20 @@ public:
     {
     	return _score;
     }
+
+    unsigned getNumberOfBytes(){
+    	unsigned result = 0;
+    	result += sizeof(externalRecordId);
+    	result += sizeof(internalRecordId);
+    	result += sizeof(_score);
+    	for(unsigned i=0 ; i<matchingKeywords.size(); ++i){
+    		result += sizeof(matchingKeywords[i]);
+    	}
+    	result += attributeBitmaps.size() * sizeof(unsigned);
+    	result += editDistances.size() * sizeof(unsigned);
+    	result += sizeof(physicalDistance);
+    	return result;
+    }
     friend class QueryResultFactoryInternal;
 
 private:
@@ -100,6 +114,11 @@ class QueryResultFactoryInternal{
 public:
 	QueryResult * createQueryResult(){
 		QueryResult * newResult = new QueryResult();
+		queryResultPointers.push_back(newResult);
+		return newResult;
+	}
+	QueryResult * createQueryResult(QueryResult & queryResult){
+		QueryResult * newResult = new QueryResult(queryResult);
 		queryResultPointers.push_back(newResult);
 		return newResult;
 	}

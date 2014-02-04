@@ -242,7 +242,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
  {
-     this->cache = dynamic_cast<Cache*>(indexMetaData->cache);
+     this->cache = dynamic_cast<CacheManager*>(indexMetaData->cache);
      this->mergeEveryNSeconds = indexMetaData->mergeEveryNSeconds;
      this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
      this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;

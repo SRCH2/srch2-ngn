@@ -561,7 +561,7 @@ void testDeletion(vector< pair<string, pair<string, Point> > > &recordsToSearch,
 
 void testSmallInitLargeInsertion(const string directoryName)
 {
-    Cache *cache = new Cache(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
@@ -624,7 +624,7 @@ void testSmallInitLargeInsertion(const string directoryName)
 
 void testIncrementalUpdateGeoIndex(const string directoryName)
 {
-    Cache *cache = new Cache(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,

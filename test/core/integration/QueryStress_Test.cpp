@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-	IndexMetaData *indexMetaData1 = new IndexMetaData( new Cache(),
+	IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			index_dir);

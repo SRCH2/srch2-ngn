@@ -56,6 +56,10 @@ ADD_EXECUTABLE(Cache_Test Cache_Test.cpp)
 TARGET_LINK_LIBRARIES(Cache_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS Cache_Test)
 
+ADD_EXECUTABLE(CacheManager_Test CacheManager_Test.cpp)
+TARGET_LINK_LIBRARIES(CacheManager_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS CacheManager_Test)
+
 ADD_EXECUTABLE(Compression_S16_Test Compression_S16_Test.cpp)
 TARGET_LINK_LIBRARIES(Compression_S16_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS Compression_S16_Test)
