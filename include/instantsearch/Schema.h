@@ -78,6 +78,7 @@ public:
      */
     static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE);
     //    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::FULLPOSITIONINDEX);
+    static Schema *create();
 
     virtual srch2::instantsearch::IndexType getIndexType() const = 0;
 
@@ -94,9 +95,7 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     virtual int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1, bool isMultiValued = false) = 0;
-
-
+            unsigned attributeBoost = 1, bool isMultiValued = false, bool highlightEnabled = false) = 0;
 
 
     virtual int setRefiningAttribute(const std::string &attributeName,
@@ -144,10 +143,7 @@ public:
      */
     virtual unsigned getBoostSumOfSearchableAttributes() const = 0;
 
-
-
-
-
+    virtual bool isHighlightEnabled(unsigned id) const = 0;
 
     // non Searchable attributes
     virtual const std::string* getDefaultValueOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;

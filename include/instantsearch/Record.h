@@ -32,7 +32,14 @@ namespace instantsearch
 {
 class Schema;
 
-
+struct StoredRecordBuffer {
+  const char* start;
+  size_t length;
+  StoredRecordBuffer() { start = NULL; length = 0; }
+  StoredRecordBuffer(const char* s, size_t l) {
+	  start = s; length = l;
+  }
+};
 
 /**
  * This class defines a data record passed to the Indexer. The Schema
@@ -154,8 +161,8 @@ public:
      *
      * @param the compressed copy of data
      */
-    void setInMemoryData(const std::string &inMemoryRecordString);
-    std::string getInMemoryData() const;
+    void setInMemoryData(const void * ptr, unsigned len);
+    StoredRecordBuffer getInMemoryData() const;
 
     /**
      * Gets the boost value of this record in the range [0 - 100].

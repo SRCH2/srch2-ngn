@@ -8,6 +8,7 @@
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Record.h>
 #include <instantsearch/Indexer.h>
+#include "util/RecordSerializer.h"
 
 #include "ConfigManager.h"
 
@@ -23,10 +24,11 @@ class JSONRecordParser
 {
  public:
   static bool populateRecordFromJSON( const std::string &inputLine, const CoreInfo_t *indexDataContainerConf,
-				      srch2is::Record *record, std::stringstream &error);
+				      srch2is::Record *record, std::stringstream &error, RecordSerializer& compactRecSerializer);
   static bool _JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine, const Json::Value &root,
-				       const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
+				       const CoreInfo_t *indexDataContainerConf, std::stringstream &error, RecordSerializer& compactRecSerializer);
   static srch2is::Schema* createAndPopulateSchema( const CoreInfo_t *indexDataContainerConf);
+  static void populateStoredSchema(Schema* storedSchema, const Schema *schema);
 
  private:
   static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
@@ -37,7 +39,8 @@ class JSONRecordParser
 class DaemonDataSource
 {
 	public:
-		static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, const CoreInfo_t *indexDataContainerConf);
+		static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, Schema * storedAttrSchema,
+				const CoreInfo_t *indexDataContainerConf);
 };
 
 

@@ -37,5 +37,9 @@ Schema *Schema::create(srch2::instantsearch::IndexType indexType, srch2::instant
 {
     return new SchemaInternal(indexType, positionIndexType);
 }
+Schema *Schema::create()
+{
+    return new SchemaInternal();
+}
 
 }}

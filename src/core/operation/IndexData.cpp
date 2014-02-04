@@ -111,8 +111,7 @@ IndexData::IndexData(const string& directoryName)
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
-    	if(positionIndexType == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
-    			positionIndexType == srch2::instantsearch::POSITION_INDEX_FULL)
+    	if(isEnabledAttributeBasedSearch(positionIndexType))
     		this->forwardIndex->isAttributeBasedSearch = true;
 
     	serializer.load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);

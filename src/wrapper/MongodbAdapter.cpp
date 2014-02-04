@@ -188,9 +188,14 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
 bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const CoreInfo_t* config){
 
     stringstream error;
-    bool result = JSONRecordParser::populateRecordFromJSON(bsonObj.jsonString(), config, record, error);
+    Schema * storedSchema =  Schema::create();
+    JSONRecordParser::populateStoredSchema(storedSchema, record->getSchema());
+    RecordSerializer recSerializer = RecordSerializer(*storedSchema);
+
+    bool result = JSONRecordParser::populateRecordFromJSON(bsonObj.jsonString(), config, record, error, recSerializer);
     if(!result)
         cout << error.str() << endl;
+    delete storedSchema;
     return result;
 }
 

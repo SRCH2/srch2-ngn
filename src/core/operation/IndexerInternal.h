@@ -158,7 +158,7 @@ public:
         return this->index->getSchema();
     }
 
-    inline std::string getInMemoryData(unsigned internalRecordId) const
+    inline StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const
     {
         return this->index->getInMemoryData(internalRecordId);
     }
@@ -209,6 +209,7 @@ public:
     }
 
     inline QuadTree *getQuadTree() const { return this->index->quadTree; }
+    inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();
     void startMergeThreadLoop();
