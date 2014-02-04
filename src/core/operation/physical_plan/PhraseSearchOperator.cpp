@@ -176,15 +176,16 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
 
     	PhraseSearcher *phraseSearcher = new PhraseSearcher();
-    	vector<unsigned> matchedPosition;
+    	vector< vector<unsigned> > matchedPositions;
+    	//vector<unsigned> matchedPosition;
         unsigned slop = phraseInfo.proximitySlop;
 
         if (slop > 0){
             result = phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
-            		matchedPosition);
+            		matchedPositions, true);
         } else {
             result = phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
-            		matchedPosition);
+            		matchedPositions, true);
         }
         // AND operation and we didn't find result so we should break
         if (ANDOperation && result == false)

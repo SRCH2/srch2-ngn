@@ -22,10 +22,10 @@ public:
     PhraseSearcher();
     bool exactMatch (const vector<vector<unsigned> > &positionListVector,
     				 const vector<unsigned>& keyWordPositionsInPhrase,
-                      vector<unsigned>& matchedPositions);
+                      vector<vector<unsigned> >& matchedPositions, bool stopAtFirstMatch);
     bool proximityMatch(const vector<vector<unsigned> >& positionListVector,
                         const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
-                        vector<unsigned>& matchedPosition);
+                        vector< vector<unsigned> >& matchedPosition, bool stopAtFirstMatch);
     signed  getPhraseSlop(const vector<unsigned>& query,
     		const vector<unsigned>& record);
     // CODE NOT IN USE
