@@ -59,7 +59,7 @@ struct TokenAttributeHits {
      *
      */
     vector<unsigned> attributeList;
-    vector<unsigned> offsetOfTermInOrigRecord;
+    vector<unsigned> offsetOfTermInAttribute;
 };
 
 
@@ -128,6 +128,7 @@ public:
 	bool processToken();
 	std::vector<CharType> & getProcessedToken();
 	unsigned getProcessedTokenOffset();
+	unsigned getProcessedTokenPosition();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */

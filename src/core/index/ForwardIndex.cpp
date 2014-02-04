@@ -336,18 +336,21 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;
-    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
+    if (isEnabledAttributeBasedSearch(positionIndexType)) {
     	shouldAttributeBitMapBeAllocated = true;
     }
 
 	// this buffer is temporary storage of variable length byte array, since its
 	// size is not known in advance.
 	vector<uint8_t> tempPositionIndexBuffer;
-    if (this->schemaInternal->getPositionIndexType() == POSITION_INDEX_FULL) {
+	vector<uint8_t> tempOffsetBuffer;
+
+    if (isEnabledWordPositionIndex(positionIndexType) || isEnabledCharPositionIndex(positionIndexType)) {
     	// Add position indexes in forward list
     	typedef map<string, TokenAttributeHits>::const_iterator TokenAttributeHitsIter;
     	// To avoid frequent resizing, reserve space for vector. 10 is random number
     	tempPositionIndexBuffer.reserve(uniqueKeywordIdList.size() * 10);
+    	tempOffsetBuffer.reserve(uniqueKeywordIdList.size() * 10);
 
     	for (unsigned int i = 0; i < uniqueKeywordIdList.size(); ++i) {
 
@@ -357,23 +360,33 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		unsigned prevAttributeId = 0;
     		vector<unsigned> positionListVector;
+    		vector<unsigned> offsetVector;
 
     		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
     			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
     			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
+    			unsigned offset =  (iterator->second.offsetOfTermInAttribute[j]);  // Non Zero
 
     			// if it is a first element or current attribute is same as
     			// previous attribute id. then continue to push the position
     			// in position list vector
     			if (j == 0 || prevAttributeId == attributeId) {
-    				positionListVector.push_back(position);
+    				if (isEnabledWordPositionIndex(positionIndexType))
+    					positionListVector.push_back(position);
+    				if (isEnabledCharPositionIndex(positionIndexType))
+    					offsetVector.push_back(offset);
     			} else {
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
     				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
+    				convertToVarLengthArray(offsetVector, tempOffsetBuffer);
     				positionListVector.clear();
-    				positionListVector.push_back(position);
+    				offsetVector.clear();
+    				if (isEnabledWordPositionIndex(positionIndexType))
+    					positionListVector.push_back(position);
+    				if (isEnabledCharPositionIndex(positionIndexType))
+    					offsetVector.push_back(offset);
     			}
     			prevAttributeId = attributeId;
     		}
@@ -381,13 +394,16 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		// convert the position list vector of last attribute to variable
     		// length byte array
     		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
+    		convertToVarLengthArray(offsetVector, tempOffsetBuffer);
     		positionListVector.clear();
+			offsetVector.clear();
+
     	}
     }
 
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		refiningAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer);
+    		refiningAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer, tempOffsetBuffer);
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
@@ -406,7 +422,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
 
     // support attribute-based search
-    if (positionIndexType == POSITION_INDEX_FIELDBIT || positionIndexType == POSITION_INDEX_FULL) {
+    if (isEnabledAttributeBasedSearch(positionIndexType)) {
     	this->isAttributeBasedSearch = true;
 
     	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
@@ -544,12 +560,10 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
                 ->getKeywordRecordStaticScore(keywordOffset);
 
         // support attribute-based search
-        if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
-                this->schemaInternal->getPositionIndexType()
-                                == srch2::instantsearch::POSITION_INDEX_FULL)
+        if ( isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
             keywordRichInformationList[keywordOffset].keywordAttribute =
                     forwardList->getKeywordAttributeBitmap(keywordOffset);
+        }
     }
 
     // Note: May be not necessary
@@ -572,10 +586,7 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         //copy attribute
         // support attribute-based search
-        if (this->schemaInternal->getPositionIndexType()
-                == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
-                this->schemaInternal->getPositionIndexType()
-                                == srch2::instantsearch::POSITION_INDEX_FULL) {
+        if (isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
             forwardList->setKeywordAttributeBitmap(keywordOffset,
                     iter->keywordAttribute);
         }
@@ -767,7 +778,7 @@ float ForwardList::computeFieldBoostSummation(const Schema *schema,
 
 unsigned ForwardList::getNumberOfBytes() const {
     unsigned numberOfBytes = sizeof(ForwardList) + this->externalRecordId.size()
-            + this->inMemoryData.size()
+            + this->inMemoryDataLen
             + 2 * this->getNumberOfKeywords() * sizeof(unsigned);
     if (this->getKeywordAttributeBitmaps() != NULL)
         numberOfBytes += this->getNumberOfKeywords() * sizeof(unsigned);
@@ -804,10 +815,7 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
     // FULL. In this case, or if the masked attributes to validate is 0
     // the the hit is always valid.
     if (termSearchableAttributeIdToFilterTermHits == 0
-            || ((schema->getPositionIndexType()
-                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
-            &&  (schema->getPositionIndexType()
-                    != srch2::instantsearch::POSITION_INDEX_FULL))) {
+            || !isEnabledAttributeBasedSearch(schema->getPositionIndexType())) {
         return true;
     } else {
         ASSERT(
@@ -930,6 +938,31 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		 return;
 	}
 
+	fetchDataFromVLBArray(keyOffset, attributeId, currKeyattributeBitMap, pl, piPtr, piOffset);
+}
+
+void ForwardList::getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
+		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
+	if (offsetIndexSize == 0){
+		Logger::warn("Offset Index not found in forward index!!");
+		return;
+	}
+
+	const uint8_t * piPtr = getOffsetIndexPointer();  // pointer to position index for the record
+	unsigned piOffset = 0;
+
+	if (*(piPtr + offsetIndexSize - 1) & 0x80)
+	{
+		Logger::error("Offset index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+
+	fetchDataFromVLBArray(keyOffset, attributeId, currKeyattributeBitMap, pl, piPtr, piOffset);
+
+}
+
+void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
+		unsigned currKeyattributeBitMap, vector<unsigned>& pl, const uint8_t * piPtr, unsigned piOffset) const{
 	// get the correct byte array position for current keyword + attribute combination
 
 	for (unsigned j = 0; j < keyOffset ; ++j) {
@@ -987,12 +1020,12 @@ unsigned getBitSetPositionOfAttr(unsigned attrBitMap, unsigned attributeId) {
 
 
 /**********************************************/
-std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
+StoredRecordBuffer ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(internalRecordId,
             valid);
     if (valid == false)
-        return string("");
+        return StoredRecordBuffer();
     else
         return forwardList->getInMemoryData();
 }
@@ -1143,8 +1176,8 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
         // ignore the invalid record
         if (valid == false)
             continue;
-        const string& compressedInMemoryRecordString = fl->getInMemoryData();
-        snappy::Uncompress(compressedInMemoryRecordString.c_str(), compressedInMemoryRecordString.size(), &uncompressedInMemoryRecordString);
+        StoredRecordBuffer buff = fl->getInMemoryData();
+        snappy::Uncompress(buff.start, buff.length, &uncompressedInMemoryRecordString);
         out << uncompressedInMemoryRecordString << endl;
     }
     out.close();

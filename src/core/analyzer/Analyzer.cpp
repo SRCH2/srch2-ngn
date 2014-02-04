@@ -140,6 +140,9 @@ std::vector<CharType> & Analyzer::getProcessedToken() {
 unsigned Analyzer::getProcessedTokenOffset() {
 	return this->analyzerInternal->getTokenStream()->getProcessedTokenOffset();
 }
+unsigned Analyzer::getProcessedTokenPosition() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenPosition();
+}
 
 void Analyzer::save(boost::archive::binary_oarchive &oa) {
     this->analyzerInternal->save(oa);

@@ -189,7 +189,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
 							setAttributePositionBitVector(attributeIterator,
 									tokens[i].position));
-					tokenAttributeHitsMap[tokens[i].term].offsetOfTermInOrigRecord.push_back(
+					tokenAttributeHitsMap[tokens[i].term].offsetOfTermInAttribute.push_back(
 							tokens[i].charPosition);
 				}
 			}
