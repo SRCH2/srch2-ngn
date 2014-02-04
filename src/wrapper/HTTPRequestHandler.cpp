@@ -25,6 +25,8 @@
 #include "ParserUtility.h"
 #include <event2/http.h>
 #include "util/FileOps.h"
+#include "ServerHighLighter.h"
+#include "util/RecordSerializer.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -102,7 +104,36 @@ void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
     evhttp_send_reply(req, code, reason, returnbuffer);
     evbuffer_free(returnbuffer);
 }
-
+void HTTPRequestHandler::cleanAndAppendToBuffer(const string& in, string& out) {
+	unsigned inLen = in.length();
+	unsigned inIdx = 0;
+	while (inIdx < inLen) {
+		if (in[inIdx] < 32) {
+			++inIdx; continue;
+		}
+		switch(in[inIdx]) {
+		case '"':
+		{
+			// because we have reached here, there was no '\' before this '"'
+			out +='\\'; out +='"';
+			break;
+		}
+		case '\\':
+		{
+			if (inIdx != inLen - 1 and in[inIdx + 1] == '"') {  // looking for '\"'
+				out += in[inIdx++];      // push them in one go...
+				out += in[inIdx];
+			} else {
+				out +='\\'; out +='\\';  // escape the lonesome '\'
+			}
+			break;
+		}
+		default:
+			out += in[inIdx];
+		}
+		++inIdx;
+	}
+}
 /**
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
@@ -113,15 +144,17 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
-        const unsigned ts1, struct timespec &tstart, struct timespec &tend , bool onlyFacets ) {
+        const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
+        const vector<RecordSnippet>& recordSnippets, bool onlyFacets) {
 
     Json::Value root;
     static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
+    static pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
 
     // In each pair, the first one is the internal json label for the unparsed text, and
     // the second one is the final json label used in the print() function
     vector<pair<string, string> > tags;
-    tags.push_back(internalRecordTags);
+    tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
     // We use CustomizableJsonWriter with the internal record tag so that we don't need to
     // parse the internalRecordTag string to add it to the JSON object.
     CustomizableJsonWriter writer(&tags);
@@ -143,19 +176,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                         i);
                 root["results"][counter]["score"] = (0
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
-                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                        || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     unsigned internalRecordId = queryResults->getInternalRecordId(i);
-                    std::string compressedInMemoryRecordString = indexer
-                            ->getInMemoryData(internalRecordId);
-
-                    std::string uncompressedInMemoryRecordString;
-
-                    snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-                            compressedInMemoryRecordString.size(),
-                            &uncompressedInMemoryRecordString);
-
-                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
+                    string sbuffer;
+                    genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i), sbuffer);
+                    // The class CustomizableJsonWriter allows us to
+                    // attach the data string to the JSON tree without parsing it.
+                    root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
                 ++counter;
             }
@@ -187,23 +214,45 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     root["results"][counter]["matching_prefix"][j] =
                             matchingKeywords[j];
                 }
-
-                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                        || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+                if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
                     unsigned internalRecordId = queryResults->getInternalRecordId(i);
-                    std::string compressedInMemoryRecordString = indexer
-                            ->getInMemoryData(internalRecordId);
-
-                    std::string uncompressedInMemoryRecordString;
-
-                    snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-                            compressedInMemoryRecordString.size(),
-                            &uncompressedInMemoryRecordString);
-
+                    string sbuffer;
+                    genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                    		 sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][internalRecordTags.first] = uncompressedInMemoryRecordString;
+                    root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
+
+                string sbuffer = string();
+                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
+                if (i < recordSnippets.size()
+                		&& recordSnippets[i].recordId == queryResults->getInternalRecordId(i)) {
+                	sbuffer.append("{");
+                	for (unsigned j = 0 ; j <  recordSnippets[i].fieldSnippets.size(); ++j) {
+                		sbuffer+='"'; sbuffer+=recordSnippets[i].fieldSnippets[j].FieldId; sbuffer+='"';
+                		sbuffer+=":[";
+                		for (unsigned k = 0 ; k <  recordSnippets[i].fieldSnippets[j].snippet.size(); ++k) {
+                			sbuffer+='"';
+                			cleanAndAppendToBuffer(recordSnippets[i].fieldSnippets[j].snippet[k], sbuffer);
+                			sbuffer+='"';
+                			sbuffer+=',';
+                		}
+                		if (recordSnippets[i].fieldSnippets[j].snippet.size())
+                			sbuffer.erase(sbuffer.length()-1);
+                		sbuffer+="],";
+                	}
+                	if (recordSnippets[i].fieldSnippets.size())
+                		sbuffer.erase(sbuffer.length()-1);
+                	sbuffer.append("}");
+                } else {
+                	sbuffer += "[ ]";
+                	if (recordSnippets.size() != 0) {
+                		Logger::warn("snippet not found for record id = %s !!",
+                				queryResults->getRecordId(i).c_str());
+                	}
+                }
+                root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
             }
 
@@ -346,10 +395,21 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
         const srch2is::Indexer *indexer,
         const string & message,
         const unsigned ts1,
-        struct timespec &tstart, struct timespec &tend){
+        struct timespec &tstart, struct timespec &tend,
+        const vector<RecordSnippet>& recordSnippets){
 
-    Json::FastWriter writer;
     Json::Value root;
+    pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
+    pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
+
+    // In each pair, the first one is the internal json label for the unparsed text, and
+    // the second one is the final json label used in the print() function
+    vector<pair<string, string> > tags;
+    tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
+    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
+    // parse the internalRecordTag string to add it to the JSON object.
+    CustomizableJsonWriter writer(&tags);
+
 
     // For logging
     string logQueries;
@@ -364,23 +424,11 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
         root["results"][counter]["record_id"] = queryResults->getRecordId(i);
 
-        if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                || indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+        if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
-            std::string compressedInMemoryRecordString = indexer
-                    ->getInMemoryData(internalRecordId);
-
-            std::string uncompressedInMemoryRecordString;
-
-            snappy::Uncompress(compressedInMemoryRecordString.c_str(),
-                    compressedInMemoryRecordString.size(),
-                    &uncompressedInMemoryRecordString);
-
-            Json::Value in_mem_String;
-            Json::Reader reader;
-            reader.parse(uncompressedInMemoryRecordString, in_mem_String,
-                    false);
-            root["results"][counter]["record"] = in_mem_String;
+            string sbuffer;
+            genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i), sbuffer);
+            root["results"][counter][internalRecordTags.first] = sbuffer;
         }
         ++counter;
     }
@@ -402,7 +450,40 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
+void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
+		const string& extrnalRecordId, string& sbuffer){
+	Schema * storedAttrSchema = Schema::create();
+	JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+	RecordSerializer compactRecDeserializer = RecordSerializer(*storedAttrSchema);
+	StoredRecordBuffer buffer =  indexer->getInMemoryData(internalRecordId);
+	std::map<std::string, unsigned>::const_iterator iter =
+			storedAttrSchema->getSearchableAttribute().begin();
+	sbuffer.reserve(1.25 * buffer.length);
+	sbuffer.append("{") ;
+	sbuffer+='"'; sbuffer+=*(indexer->getSchema()->getPrimaryKey()); sbuffer+='"';
+	sbuffer+=":\""; sbuffer+=extrnalRecordId; sbuffer+="\",";
+	for ( ; iter != storedAttrSchema->getSearchableAttribute().end(); iter++)
+	{
+		unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
+		unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
+		const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
+		unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
+				*((unsigned *)(buffer.start + lenOffset));
 
+		std::string uncompressedInMemoryRecordString;
+		snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
+		sbuffer+='"'; sbuffer+=iter->first; sbuffer+='"';
+		sbuffer+=':';
+		sbuffer+='"';
+		cleanAndAppendToBuffer(uncompressedInMemoryRecordString, sbuffer);
+		sbuffer+='"';
+		sbuffer+=',';
+	}
+	if (storedAttrSchema->getSearchableAttribute().size())
+		sbuffer.erase(sbuffer.length()-1);
+	sbuffer.append("}");
+
+}
 void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &headers,
         const vector<string> & suggestions,
         const srch2is::Indexer *indexer,
@@ -703,8 +784,7 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_RECORD
-                            || server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SPECIFIED_ATTRIBUTES) {
+        if (server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
@@ -835,7 +915,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 paramContainer.getMessageString(), headers);
         return;
     }
-
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
@@ -859,6 +938,15 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
+	vector<RecordSnippet> highlightInfo;
+    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0) {
+
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer);
+    	highlighter.generateSnippets(highlightInfo);
+    	if (highlightInfo.size() == 0) {
+    		Logger::error("Highligting is on but snippets are not generated!!");
+    	}
+    }
     // compute elapsed time in ms , end the timer
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
@@ -874,7 +962,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer.getMessageString(), ts1, tstart, tend);
+                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo);
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:
@@ -888,7 +976,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend , paramContainer.onlyFacets);
+                    paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo,
+                    paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, logicalPlan,
                     indexDataContainerConf, finalResults,
@@ -896,7 +985,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
+                    paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo,
+                    paramContainer.onlyFacets);
         }
         break;
     case srch2is::SearchTypeRetrieveById:
@@ -908,7 +998,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 finalResults ,
                 server->indexer ,
                 paramContainer.getMessageString() ,
-                ts1, tstart , tend);
+                ts1, tstart , tend,
+                highlightInfo);
         break;
     default:
         break;

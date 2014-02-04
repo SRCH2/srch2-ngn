@@ -56,7 +56,10 @@ class HTTPRequestHandler
 				const unsigned retrievedResults,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
+				struct timespec &tstart, struct timespec &tend,
+				const vector<RecordSnippet>& recordSnippets,
+				bool onlyFacets = false
+				);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
@@ -65,7 +68,8 @@ class HTTPRequestHandler
 				const srch2is::Indexer *indexer,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend);
+				struct timespec &tstart, struct timespec &tend,
+				const vector<RecordSnippet>& recordSnippets);
 
 		static void printSuggestions(evhttp_request *req, const evkeyvalq &headers,
 				const vector<string> & suggestions,
@@ -73,6 +77,9 @@ class HTTPRequestHandler
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
+		static void cleanAndAppendToBuffer(const string& in, string& out);
+		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+				const string& externalId, string& sbuffer);
 };
 
 }
