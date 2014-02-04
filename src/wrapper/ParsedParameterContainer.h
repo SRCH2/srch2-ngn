@@ -122,6 +122,9 @@ public:
 			case LogicalPlanNodeTypeTerm:
 				cout << indentation(indent) << "-- TERM" << endl;
 				break;
+			case LogicalPlanNodeTypePhrase:
+				cout << indentation(indent) << "-- PHRASE" << endl;
+				break;
 		}
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 			(*child)->print(indent+1);
@@ -417,7 +420,7 @@ public:
     // the map whose key is analyzed phrase and value is keyword offsets in phrase
     // "into the wild" becomes "into wild" after applying stop word filter.
     // the map stores key = "into wild" and value = "1, 3".
-    std::map<string, vector<unsigned> > PhraseKeyWordsPositionMap;
+    std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
 };
 
 }

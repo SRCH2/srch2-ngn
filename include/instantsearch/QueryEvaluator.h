@@ -125,7 +125,7 @@ public:
     void search(const std::string & primaryKey, QueryResults *queryResults) ;
 
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-    std::string getInMemoryData(unsigned internalRecordId) const ;
+    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const ;
 
     void cacheClear() ;
     /**

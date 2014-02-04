@@ -26,6 +26,7 @@
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
 #include <instantsearch/TypedValue.h>
+#include "highlighter/Highlighter.h"
 
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
@@ -113,7 +114,7 @@ public:
 	std::vector<QueryResult *> queryResultPointers;
 };
 
-
+//struct keywordHighlightInfo;
 
 ////////////////////////////////////// QueryResultsInternal Header //////////////////////////////////
 class QueryResultsInternal
@@ -175,11 +176,15 @@ public:
      */
 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
     Stat *stat;
-    
+    vector<keywordHighlightInfo> keywordStrToHighlight;
+    /*
+     *  key  =  index of keywordStrToHighlight
+     *  val  =  vector of possible completion
+     */
+    std::map<unsigned, vector<unsigned> *> prefixToCompleteMap;
  private:
     Query* query;
     unsigned nextK;
-
     const QueryEvaluatorInternal *queryEvaluatorInternal;
 
     QueryResultFactory * resultsFactory;

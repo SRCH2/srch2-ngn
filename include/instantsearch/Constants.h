@@ -165,11 +165,30 @@ typedef enum
 
 typedef enum
 {
-    POSITION_INDEX_FULL , // the index of keyword in the record
+	POSITION_INDEX_FULL,
+    POSITION_INDEX_WORD , // the word offset of keyword in the record
+    POSITION_INDEX_CHAR , // the character offset of keyword in the record
     POSITION_INDEX_FIELDBIT ,// keeps the attribute in which a keyword appears in
     POSITION_INDEX_NONE // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
+bool inline isEnabledAttributeBasedSearch(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_FIELDBIT
+			|| positionIndexType == POSITION_INDEX_WORD
+			|| positionIndexType == POSITION_INDEX_CHAR
+			|| positionIndexType == POSITION_INDEX_FULL);
+
+}
+
+bool inline isEnabledWordPositionIndex(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_WORD
+			|| positionIndexType == POSITION_INDEX_FULL);
+}
+
+bool inline isEnabledCharPositionIndex(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_CHAR
+			|| positionIndexType == POSITION_INDEX_FULL);
+}
 /// Term constants
 
 typedef enum
@@ -189,9 +208,8 @@ enum DateTimeType{
 /// response type
 typedef enum
 {
-    RESPONSE_WITH_RECORD,
-    RESPONSE_BASIC,
-    RESPONSE_WITH_SPECIFIED_ATTRIBUTES
+	RESPONSE_WITH_STORED_ATTR,
+    RESPONSE_WITH_NO_STORED_ATTR,
 } ResponseType;
 
 ///

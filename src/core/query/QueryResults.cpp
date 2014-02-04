@@ -28,12 +28,6 @@ namespace srch2
 namespace instantsearch
 {
 
-
-
-
-
-
-
 QueryResultFactory::QueryResultFactory(){
 	impl = new QueryResultFactoryInternal();
 }
@@ -100,7 +94,8 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
 
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
-    return impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
+    return "";
+    //return impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
 }
 
 /**

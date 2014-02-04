@@ -156,7 +156,7 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
     // now sort the suggestions
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
-
+void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId);
 /*
  * Returns the estimated number of results
  */
@@ -259,6 +259,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		numberOfIterations = -1; // to set it to a very big number
 	}
 
+	bool getPrefixToCompleteInfo = isEnabledCharPositionIndex(this->indexer->getSchema()->getPositionIndexType());
+	boost::unordered_set<string> visitedMatchingKeyword;
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -279,6 +281,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
+
+		keywordHighlightInfo keyInfo;
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
 			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
@@ -288,6 +292,26 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			string str;
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
+			/*
+			 *  Code below is a setup for highlighter module when the term offsets are present in
+			 *  the forward index.
+			 */
+			if (visitedMatchingKeyword.count(str) == 0) {
+				visitedMatchingKeyword.insert(str);
+				if(matchingKeywordTrieNodes[i]->isTerminalNode())
+					keyInfo.flag = 1;
+				else
+					keyInfo.flag = 0;
+				keyInfo.key = temp;
+				//Logger::debug("prefix = %s", str.c_str());
+				queryResults->impl->keywordStrToHighlight.push_back(keyInfo);
+				if (getPrefixToCompleteInfo) {
+					unsigned idxKey = queryResults->impl->keywordStrToHighlight.size() - 1;
+					vector<unsigned> *vPtr = new vector<unsigned>();
+					queryResults->impl->prefixToCompleteMap.insert(make_pair(idxKey, vPtr));
+					findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
+				}
+			}
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
@@ -307,7 +331,22 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	return queryResults->impl->sortedFinalResults.size();
 
 }
-
+void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId){
+	vector<TrieNodePointer> buffer;
+	buffer.reserve(1000);  // reserve ~4KB to avoid frequest
+	TrieNodePointer currNode = prefixNode;
+	buffer.push_back(prefixNode);
+	while(buffer.size() > 0) {
+		TrieNodePointer currNode = buffer.back(); buffer.pop_back();
+		if (currNode->isTerminalNode()) {
+			completeKeywordsId.push_back(currNode->id);
+			//continue; ... terminal node can also have childs...e.g good and goods
+		}
+		for(signed i = currNode->getChildrenCount() - 1; i >= 0; --i) {
+			buffer.push_back(currNode->getChild(i));
+		}
+	}
+}
 
 /**
  * Does Map Search
@@ -366,7 +405,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 }
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
+StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
 	return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
 }
 
