@@ -67,29 +67,17 @@ typedef std::map<unsigned short, int> PortMap_t;
  * Container for HTTP servers and related information.  Need one of these per thread, per core, per port.
  */
 struct Listener_t {
-    struct evhttp * http_server; // shared by multiple listeners
+    Srch2Server *srch2Server;
     int fd;
-    srch2http::Srch2Server *srch2Server;
     srch2http::PortType_t portType;
-    unsigned short port;
 
-    int init(struct event_base *evbase, struct evhttp *httpServer, int socketFd, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer);
+    int init(struct event_base *evbase, int socketFd, srch2http::PortType_t type, Srch2Server *searchServer);
 };
 
-int Listener_t::init(struct event_base *evbase, struct evhttp *httpServer, int socketFd, srch2http::PortType_t type, unsigned short portNumber, Srch2Server *searchServer)
+int Listener_t::init(struct event_base *evbase, int socketFd, srch2http::PortType_t type, Srch2Server *searchServer)
 {
-    if (httpServer != NULL) {
-        http_server = httpServer;
-    } else {
-        http_server = evhttp_new(evbase);
-        if (http_server == NULL) {
-            perror("evhttp_new");
-            return 0;
-        }
-    }
     srch2Server = searchServer;
     portType = type;
-    port = portNumber;
     fd = socketFd;
 
     return 1;
@@ -142,6 +130,36 @@ static void cb_notfound(evhttp_request *req, void *arg)
     }
 }
 
+/*
+ * Helper function to parse HTTP port from it's input headers.  Assumes a little knowledge of http_request
+ * internals in libevent.
+ */
+static short int getLibeventHttpRequestPort(struct evhttp_request *req)
+{
+    const char *host = NULL;
+    const char *p;
+    short int port = -1;
+
+    host = evhttp_find_header(req->input_headers, "Host");
+    /* The Host: header may include a port. Look for it here, else return -1 as an error. */
+    if (host) {
+        p = strchr(host,  ':');
+        if (p != NULL) {
+            p++; // skip past colon
+            port = 0;
+            while (isdigit(*p)) {
+                port = (10 * port) + (*p++ - '0');
+            }
+            if (*p != '\000') {
+                Logger::error("Did not reach end of Host input header");
+                port = -1;
+            }
+        }
+    }
+
+    return port;
+}
+
 static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2http::PortType_t operationType)
 {
     struct operationMap_t {
@@ -163,15 +181,29 @@ static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2h
 
     if (operationType >= srch2http::EndOfPortType) {
         Logger::error("Illegal operation type: %d", static_cast<int> (operationType));
+        cb_notfound(req, static_cast<void *> (listener));
         return false;
     }
 
     string coreName = listener->srch2Server->getCoreName();
     const srch2http::CoreInfo_t *coreInfo = listener->srch2Server->indexDataConfig;
-    unsigned int listenPort = coreInfo->getPort(operationType);
+    unsigned short configuredPort = coreInfo->getPort(operationType);
+    short arrivalPort = getLibeventHttpRequestPort(req);
 
-    if ((listenPort > 0 && listenPort != listener->port) || (listenPort == 0 && listener->port != atoi(listener->srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str()))) {
-        Logger::warn("/%s request on %s core port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), listener->port, listenPort);
+    if (arrivalPort < 0) {
+        Logger::warn("Unable to ascertain arrival port from request headers.");
+    }
+
+    // this operation configured for a specific port which doesn't match actual
+    if (configuredPort > 0 && configuredPort != arrivalPort) {
+        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
+        cb_notfound(req, static_cast<void *> (listener));
+        return false;
+    }
+
+    // this operation not set to a specific port so sonly accepted on the default port
+    if (configuredPort == 0 && arrivalPort != atoi(listener->srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str())) {
+        Logger::warn("/%s request for %s core arriving on port %d denied (default port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
         cb_notfound(req, static_cast<void *> (listener));
         return false;
     }
@@ -631,8 +663,6 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         typedef map<const string /*coreName*/, Listener_t *> CoreNameMap_t;
         typedef map<unsigned short /*portNumber*/, CoreNameMap_t> ListenersMap_t;
         ListenersMap_t listeners;
-        typedef map<unsigned short /*portNumber*/, struct evhttp */*http_server*/> ServerMap_t;
-        ServerMap_t serverMap;
 
         struct event_base *evbase = event_base_new();
         if (NULL == evbase) {
@@ -641,20 +671,19 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         }
         evBases->push_back(evbase);
 
-        struct evhttp *httpServer = evhttp_new(evbase);
-        if (NULL == httpServer) {
+        struct evhttp *http_server = evhttp_new(evbase);
+        if (NULL == http_server) {
             perror("evhttp_new");
             return 255;
         }
-        evServers->push_back(httpServer);
+        evServers->push_back(http_server);
 
         Listener_t *defaultListener = new Listener_t;
-        if (defaultListener == NULL || defaultListener->init(evbase, httpServer, (*globalPortMap)[http_port], srch2http::EndOfPortType, http_port, defaultCore) == 0) {
+        if (defaultListener == NULL || defaultListener->init(evbase, (*globalPortMap)[http_port], srch2http::EndOfPortType, defaultCore) == 0) {
             perror("listener allocation failure");
             return 255;
         }
         listeners[http_port][string("")] = defaultListener;
-        serverMap[http_port] = httpServer;
         allListeners->push_back(defaultListener);
 
         // helper array - loop instead of repetitous code
@@ -678,10 +707,10 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         // setup default core callbacks for queries that don't specify a core name
         for (int j = 0; portList[j].path != NULL; j++) {
-            evhttp_set_cb(defaultListener->http_server, portList[j].path, portList[j].callback, defaultListener);
-            Logger::info("Routing port %d route %s to default core %s", defaultListener->port, portList[j].path, defaultListener->srch2Server->getCoreName().c_str());
+            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultListener);
+            Logger::debug("Routing port %d route %s to default core %s", http_port, portList[j].path, defaultListener->srch2Server->getCoreName().c_str());
         }
-        evhttp_set_gencb(defaultListener->http_server, cb_notfound, NULL);
+        evhttp_set_gencb(http_server, cb_notfound, NULL);
 
         if (config->getDefaultCoreSet() == true) {
             // for every core, for every OTHER port that core uses, do accept, each with their own Listener_t so the
@@ -700,32 +729,31 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     ListenersMap_t::iterator listenator = listeners.find(port);
                     if (listenator == listeners.end() || listenator->second.find(coreName) == listenator->second.end()) {
                         listener = new Listener_t;
-                        if (listener == NULL || listener->init(evbase, NULL, (*globalPortMap)[port], portList[j].portType, port, iterator->second) == 0) {
+                        if (listener == NULL || listener->init(evbase, (*globalPortMap)[port], portList[j].portType, iterator->second) == 0) {
                             perror("listener allocation failure");
                             return 255;
                         }
-                        evhttp_set_gencb(listener->http_server, cb_notfound, NULL);
-                        serverMap[port] = listener->http_server; // for accept() in this function
-                        evServers->push_back(listener->http_server); // for free when main() exits
+                        listener->srch2Server = iterator->second;
+                        evhttp_set_gencb(http_server, cb_notfound, NULL);
                         listeners[port][coreName] = listener; // for unique callback argument per port per core
                         allListeners->push_back(listener); // for free when main() exits
                     } else {
                         listener = listeners[port][coreName];
                     }
-                    evhttp_set_cb(listener->http_server, path.c_str(), portList[j].callback, listener);
+                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, listener);
 
-                    Logger::info("Adding port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
+                    Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
                 }
             }
         }
 
         /* 4). accept bound socket */
-        for (ServerMap_t::iterator serverIterator = serverMap.begin(); serverIterator != serverMap.end(); serverIterator++) {
-            if (evhttp_accept_socket(serverIterator->second, (*globalPortMap)[serverIterator->first]) != 0) {
+        for (ListenersMap_t::iterator listenator = listeners.begin(); listenator != listeners.end(); listenator++) {
+            if (evhttp_accept_socket(http_server, (*globalPortMap)[listenator->first]) != 0) {
                 perror("evhttp_accept_socket");
                 return 255;
             }
-            Logger::info("Socket accept by thread %d on port %d", i, serverIterator->first);
+            Logger::debug("Socket accept by thread %d on port %d", i, listenator->first);
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
