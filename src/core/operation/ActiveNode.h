@@ -27,7 +27,6 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
-#include "util/ts_shared_ptr.h"
 
 using srch2::util::Logger;
 

@@ -166,7 +166,7 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 		case LogicalPlanNodeTypeTerm:
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
-			ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
+			boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
 			float termProbability;
 			unsigned numberOfLeafNodes;
 			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);

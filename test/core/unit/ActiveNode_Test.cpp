@@ -20,7 +20,6 @@
 #include "index/Trie.h"
 #include "operation/ActiveNode.h"
 #include "util/Assert.h"
-#include "util/ts_shared_ptr.h"
 #include <iostream>
 #include <functional>
 #include <vector>
@@ -29,7 +28,6 @@
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
-using srch2is::ts_shared_ptr;
 using srch2is::Trie;
 using srch2is::TrieNode;
 using srch2is::PrefixActiveNodeSet;
@@ -141,8 +139,8 @@ void testPrefixActiveNodeSet()
 {
     Trie *trie = constructTrie();
 
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
     vector<string> similarPrefixes;
 
     // case 1: an empty string of exact matching
@@ -397,8 +395,8 @@ void testNoFuzzyPrefixActiveNodeSet()
 
         Trie *trie = constructNoFuzzyTrie();
 
-        ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-        ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+        boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
         vector<string> similarPrefixes;
 
         prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
@@ -421,8 +419,8 @@ void testPrefixIterators()
 {
     Trie *trie = constructTrie();
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
     prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 
@@ -490,8 +488,8 @@ void testPrefixIteratorsWithRanges()
     Trie *trie = constructTrie();
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
     prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 
@@ -589,8 +587,8 @@ void testCompleteIterators()
     Trie *trie = constructTrie();
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
     prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 0));
 
@@ -638,8 +636,8 @@ void testActiveNodeWithTrieUpdate()
     trie->merge(NULL , 0, false);
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
     prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 0));
 
@@ -687,8 +685,8 @@ void testLeafNodeIteratorWithTrieUpdate()
     trie->merge(NULL , 0, false);
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    ts_shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
     prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 

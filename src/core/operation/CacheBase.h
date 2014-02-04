@@ -28,7 +28,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
-#include "util/ts_shared_ptr.h"
 #include <string>
 #include <map>
 

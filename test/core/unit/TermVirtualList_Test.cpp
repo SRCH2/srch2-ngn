@@ -204,7 +204,7 @@ void Test_Complete_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s",(keywords[0]).c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
 
@@ -280,7 +280,7 @@ void Test_Prefix_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     TermType termType = TERM_TYPE_PREFIX;
     Logger::debug("Query: %s", keywords[0].c_str());
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet.get(), term0);
 
@@ -348,7 +348,7 @@ void Test_Complete_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     TermType termType = TERM_TYPE_COMPLETE;
     Logger::debug("Query:%s", keywords[0].c_str());
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
             prefixActiveNodeSet.get(), term0);
@@ -418,7 +418,7 @@ void Test_Prefix_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug("Query: %s",keywords[0].c_str());
     TermType termType = TERM_TYPE_PREFIX;
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(), prefixActiveNodeSet.get(),   term0);
 

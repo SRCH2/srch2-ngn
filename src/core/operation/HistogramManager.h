@@ -49,8 +49,8 @@ public:
 	unsigned estimatedNumberOfResults;
 	float estimatedProbability;
 	unsigned estimatedNumberOfLeafNodes;
-	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
-	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
 
 	LogicalPlanNodeAnnotation(){
 		estimatedNumberOfResults = 0;
@@ -81,7 +81,7 @@ public:
 	void setEstimatedProbability(float p){
 		estimatedProbability = p;
 	}
-	ts_shared_ptr<PrefixActiveNodeSet> getActiveNodeSetForEstimation(bool isFuzzy){
+	boost::shared_ptr<PrefixActiveNodeSet> getActiveNodeSetForEstimation(bool isFuzzy){
 		if(isFuzzy == true){
 			return activeNodeSetFuzzy;
 		}

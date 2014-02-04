@@ -23,7 +23,7 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
 	/*
 	 * Maybe we can get this value from a constant later
 	 */
-	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSets =
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSets =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     queryEvaluatorIntrnal->findKMostPopularSuggestionsSorted(term ,
     		activeNodeSets.get() ,

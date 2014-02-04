@@ -209,7 +209,7 @@ private:
     //int numberOfLeafNodes;
     //int totalInveretListLength ;
 
-    ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     const InvertedIndex *invertedIndex;
     vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap;
     Term *term;

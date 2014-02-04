@@ -25,7 +25,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	// 2. Get the Term object
 	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 	// 3. Get the ActiveNodeSet from the logical plan
-	ts_shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
 
 	// 4. Create the iterator and save it as a member of the class for future calls to getNext
 	if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term
@@ -194,7 +194,7 @@ string UnionLowestLevelSimpleScanOperator::toString(){
 
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	ts_shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
+	boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
