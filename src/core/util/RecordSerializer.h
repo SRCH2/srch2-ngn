@@ -138,8 +138,10 @@ class RecordSerializer {
 
   template<typename T>
   void addSearchableAttribute(const int, const T&);
-
+  template<typename T>
+  void addSearchableAttribute(const std::string &searchableAttrName, const T&);
   offset_type getSearchableOffset(const unsigned);
+  offset_type getSearchableOffset(const std::string &searchableAttrName);
   offset_type getRefiningOffset(const unsigned);
 
   RecordSerializerBuffer serialize();
@@ -155,6 +157,12 @@ RecordSerializer::add<std::string>(const offset_type, const std::string&);
 
 inline offset_type 
 RecordSerializer::getSearchableOffset(const unsigned searchableId) {
+  ASSERT(0 <= searchableId && searchableId < offsets.first.size());
+  return offsets.first.at(searchableId);
+}
+inline offset_type
+RecordSerializer::getSearchableOffset(const std::string &searchableAttrName) {
+  unsigned searchableId = schema.getSearchableAttributeId(searchableAttrName);
   ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   return offsets.first.at(searchableId);
 }
@@ -178,6 +186,14 @@ void RecordSerializer::addSearchableAttribute(const int searchableId,
     const T& attribute) {
   ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   
+  add(offsets.first.at(searchableId), attribute);
+}
+
+template<typename T> inline
+void RecordSerializer::addSearchableAttribute(const std::string &searchableAttrName,
+    const T& attribute) {
+  unsigned searchableId = schema.getSearchableAttributeId(searchableAttrName);
+  ASSERT(0 <= searchableId && searchableId < offsets.first.size());
   add(offsets.first.at(searchableId), attribute);
 }
 
