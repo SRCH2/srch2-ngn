@@ -35,19 +35,22 @@ public:
 	offset = 0;
 	boost = 1;
 	isMultiValued = false;
+	highlight = false;
     }
     SearchableAttributeInfoContainer(const string & name,
 				     const bool required,
 				     const string & defaultValue ,
 				     const unsigned offset,
 				     const unsigned boost,
-				     const bool isMultiValued){
+				     const bool isMultiValued,
+				     bool highlight = false){
         this->attributeName = name;
         this->required = required;
         this->defaultValue = defaultValue;
         this->offset = offset;
         this->boost = boost;
         this->isMultiValued = isMultiValued;
+        this->highlight = highlight;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -58,6 +61,7 @@ public:
     unsigned offset;
     unsigned boost;
     bool isMultiValued;
+    bool highlight;
 };
 
 class RefiningAttributeInfoContainer {
@@ -102,6 +106,7 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
+    vector<bool> highlight;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
@@ -336,6 +341,7 @@ private:
     static const char* const defaultQueryTermBoostString;
     static const char* const dictionaryString;
     static const char* const enablePositionIndexString;
+    static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
     static const char* const facetEndString;
@@ -414,6 +420,11 @@ private:
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
+    static const char* const highLightString;
+    static const char* const highLighterString;
+    static const char* const markerPre;
+    static const char* const markerPost;
+    static const char* const snippetSize;
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
@@ -470,7 +481,8 @@ public:
     uint32_t getCacheSizeInBytes() const;
     int getDefaultResultsToRetrieve() const;
 
-    bool isPositionIndexEnabled() const { return enablePositionIndex; }
+    bool isPositionIndexWordEnabled() const { return enableWordPositionIndex; }
+    bool isPositionIndexCharEnabled() const { return enableCharOffsetIndex; }
 
     bool getSupportSwapInEditDistance() const
         { return supportSwapInEditDistance; }
@@ -539,6 +551,20 @@ public:
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
+    const vector<std::pair<unsigned, string> >& getHighlightAttributeIdsVector() const { return highlightAttributes; }
+    void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
+
+    void getHighLightMarkerPre(string& markerStr) const{
+    	markerStr = highlightMarkerPre;
+    }
+
+    void getHighLightMarkerPost(string& markerStr) const{
+    	markerStr = highlightMarkerPost;
+    }
+    void getHighLightSnippetSize(unsigned& snippetSize) const{
+    	snippetSize = highlightSnippetLen;
+    }
+
 protected:
     string name; // of core
 
@@ -578,7 +604,8 @@ protected:
     // <IndexConfig>
     bool supportSwapInEditDistance;
 
-    bool enablePositionIndex;
+    bool enableWordPositionIndex;
+    bool enableCharOffsetIndex;
 
     bool recordBoostFieldFlag;
     string recordBoostField;
@@ -646,6 +673,10 @@ protected:
     // no config option for this yet
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+    vector<std::pair<unsigned, string> > highlightAttributes;
+    string highlightMarkerPre;
+    string highlightMarkerPost;
+    unsigned highlightSnippetLen;
 };
 
 }
