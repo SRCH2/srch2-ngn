@@ -9,7 +9,7 @@
 #ifndef HIGHLIGHTER_H_
 #define HIGHLIGHTER_H_
 
-#include <instantsearch/Queryresults.h>
+#include <instantsearch/QueryResults.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include "boost/unordered_map.hpp"
 #include "boost/unordered_set.hpp"
