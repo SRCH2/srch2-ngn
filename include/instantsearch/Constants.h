@@ -209,7 +209,7 @@ enum DateTimeType{
 typedef enum
 {
 	RESPONSE_WITH_STORED_ATTR,
-    RESPONSE_WITH_NO_STORED_ATTR,
+    RESPONSE_WITH_NO_STORED_ATTR
 } ResponseType;
 
 ///
