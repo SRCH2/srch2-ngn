@@ -328,7 +328,9 @@ bool test2(int argc, char** argv) {
 
     cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
-    srch2http::DaemonDataSource::createNewIndexFromFile(indexer, core);
+    Schema * storedAttrSchema = Schema::create();
+    srch2http::JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+    srch2http::DaemonDataSource::createNewIndexFromFile(indexer, storedAttrSchema, core);
     indexer->commit();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
@@ -340,7 +342,7 @@ bool test2(int argc, char** argv) {
 	delete serverConf;
 	if (logFile)
 		fclose(logFile);
-
+	delete storedAttrSchema;
     return true;
 }
 

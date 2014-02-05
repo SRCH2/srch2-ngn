@@ -1,13 +1,3 @@
-/*
- * PhraseSearch_Test.cpp
- *
- *  Created on: Sep 13, 2013
- *      Author: sbisht
- */
-
-
-
-
 //$Id: $
 /*
  * pharseSearchTest.cpp
@@ -89,14 +79,14 @@ void exactMatchTest1()
     vector<unsigned> l4;
     l4.push_back(1);l4.push_back(3);l4.push_back(14);l4.push_back(20);l4.push_back(80);
     plv.push_back(l4);
-    vector<unsigned> mvp;
-    mvp.reserve(plv.size());
+    vector<vector<unsigned> > mvp;
+
     vector<unsigned> kpp;
     for (int i =0; i < plv.size(); ++i)
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp);
+    bool result = ps->exactMatch(plv, kpp, mvp, true);
     ASSERT(result);
 
 }
@@ -122,14 +112,14 @@ void exactMatchTest2()
     vector<unsigned> l5;
     l5.push_back(2);l5.push_back(5);l5.push_back(7);l5.push_back(11);l5.push_back(15);l5.push_back(77);
     plv.push_back(l5);
-    vector<unsigned> mvp;
-    mvp.reserve(plv.size());
+    vector<vector<unsigned> >mvp;
+    //mvp.reserve(plv.size());
     vector<unsigned> kpp;
     for (int i =0; i < plv.size(); ++i)
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp);
+    bool result = ps->exactMatch(plv, kpp, mvp, true);
     ASSERT(result);
 
 }
@@ -206,12 +196,12 @@ bool callExactMatch(vector<string>& inpKeywords, map<std::string, std::vector<un
 			positionListVector.push_back(iter->second);
 			kpp.push_back(j);
 		}
-		vector<unsigned> matchedPositions;
-		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions);
+	    vector<vector<unsigned> > matchedPositions;
+		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, true);
 		if (match)
 		{
 			for (unsigned i=0; i < matchedPositions.size(); ++i)
-				cout << matchedPositions[i] << " ";
+				cout << matchedPositions[0][i] << " ";
 
 			cout << endl;
 			return true;
@@ -277,18 +267,18 @@ void proximityTest(map<std::string, std::vector<unsigned> >& piMap) {
 
 bool callProximityMatch(const vector<string>& query,unsigned slop, const vector<vector<unsigned> >& positionListVector){
 
-	vector<unsigned> matchedPositions;
+	vector<vector<unsigned> > matchedPositions;
 	vector<unsigned> kpp;
 	for (unsigned j =0; j < query.size(); ++j)
 	{
 		kpp.push_back(j);
 	}
-	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions);
+	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions, true);
 	if (match)
 	{
 		cout << "match found at position - " << endl;
 		for (unsigned i=0; i < matchedPositions.size(); ++i)
-			cout << matchedPositions[i] << " ";
+			cout << matchedPositions[0][i] << " ";
 
 		cout << endl;
 		return true;
