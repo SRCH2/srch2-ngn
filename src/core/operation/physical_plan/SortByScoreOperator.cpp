@@ -91,6 +91,15 @@ bool SortByScoreOperator::close(PhysicalPlanExecutionParameters & params){
 	recordsAfterTopK.clear();
 	return true;
 }
+
+string SortByScoreOperator::toString(){
+	string result = "SortByScoreOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool SortByScoreOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

@@ -38,7 +38,7 @@ void buildIndex(string data_file, string index_dir)
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
 
     buildIndex(init_data_file, index_dir);
 
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);

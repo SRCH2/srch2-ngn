@@ -53,7 +53,7 @@ This documentation gives step-by-step instructions on how to use the SRCH2 engin
 ##1. Download and Run Server##{id="serverConfig"}
 
 
-<b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/downloads.html) and unzip it to a folder, e.g., "/home/joe/srch2". The tar ball includes the following files and a folder:
+<b>Step 1</b>: Download the latest SRCH2 engine from [here](http://www.srch2.com/download) and unzip it to a folder, e.g., "/home/joe/srch2". The tar ball includes the following files and a folder:
 
  - bin/srch2-engine (the engine binary);
  - readme.txt;
@@ -61,7 +61,7 @@ This documentation gives step-by-step instructions on how to use the SRCH2 engin
  
 The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two front-end UIs (one basic and one advanced).
 
-<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/downloads.html). Store the key file locally as _“srch2_license_key.txt”_ into the install directory.
+<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/download). Store the key file locally as _“srch2_license_key.txt”_ into the install directory.
 
 <b>Step 3</b>: Open the file [example-demo/srch2-config.xml](example-demo/srch2-config.xml), and change the variable "srch2Home" to the install folder of the
 SRCH2 package, e.g., "/home/joe/srch2".

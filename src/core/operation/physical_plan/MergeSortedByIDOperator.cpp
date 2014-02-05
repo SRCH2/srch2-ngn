@@ -155,6 +155,15 @@ bool MergeSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	this->listsHaveMoreRecordsInThem = false;
 	return true;
 }
+
+string MergeSortedByIDOperator::toString(){
+	string result = "MergeSortedByIDOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }

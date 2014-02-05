@@ -23,8 +23,10 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
 	/*
 	 * Maybe we can get this value from a constant later
 	 */
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSets =
+			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     queryEvaluatorIntrnal->findKMostPopularSuggestionsSorted(term ,
-    		this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy) ,
+    		activeNodeSets.get() ,
     		numberOfSuggestionsToFind , suggestionPairs);
 
     suggestionPairCursor = invertedListCursor = 0;
@@ -93,6 +95,15 @@ bool UnionLowestLevelSuggestionOperator::close(PhysicalPlanExecutionParameters &
 	suggestionPairCursor = invertedListCursor = 0;
 	return true;
 }
+
+string UnionLowestLevelSuggestionOperator::toString(){
+	string result = "UnionLowestLevelSuggestionOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool UnionLowestLevelSuggestionOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false); // this operator should be used only when there is a single keyword in the query
 	return true;

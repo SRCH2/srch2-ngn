@@ -34,6 +34,24 @@ namespace instantsearch {
 
 typedef const TrieNode* TrieNodePointer;
 
+
+class PhysicalOperatorCacheObject {
+public:
+	// this class is only used to implement polymorphism
+
+	vector<PhysicalOperatorCacheObject * > children;
+
+    virtual unsigned getNumberOfBytes() = 0;
+
+	virtual ~PhysicalOperatorCacheObject(){
+		for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
+			if(children.at(childOffset) != NULL){
+				delete children.at(childOffset);
+			}
+		}
+	}
+};
+
 /*
  * The instance of this structure is the container which moves the needed
  * runtime parameters (like isFuzzy of K in topK) through the physical plan.
@@ -45,6 +63,9 @@ struct PhysicalPlanExecutionParameters {
 	bool isFuzzy;
 	float prefixMatchPenalty ;
 	Ranker * ranker;
+	// If this member is true, then cacheObject contains a cache feed from parent
+	bool parentIsCacheEnabled;
+	PhysicalOperatorCacheObject * cacheObject ;
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
 		this->isFuzzy = isFuzzy ;
@@ -63,6 +84,9 @@ struct PhysicalPlanExecutionParameters {
 				this->ranker = new DefaultTopKRanker();
 				break;
 		}
+
+		cacheObject = NULL;
+		parentIsCacheEnabled = false;
 	}
 
 	~PhysicalPlanExecutionParameters(){
@@ -161,6 +185,15 @@ public:
 		this->positionIndexOffsets = positionIndexOffsets;
 	}
 
+    unsigned getNumberOfBytes(){
+    	return sizeof(recordId) +
+    			sizeof(recordRuntimeScore) +
+    			sizeof(recordStaticScore) +
+    			sizeof(TrieNodePointer) * matchingPrefixes.size() +
+    			sizeof(unsigned) * editDistances.size() +
+    			sizeof(unsigned) * attributeBitmaps.size() +
+    			sizeof(unsigned) * positionIndexOffsets.size();
+    }
 
 	~PhysicalPlanRecordItem(){};
 
@@ -186,6 +219,54 @@ public:
 		return newObj;
 	}
 
+	// if we get a pointer from this function, we are responsible of
+	// deallocating it
+	PhysicalPlanRecordItem * cloneForCache(PhysicalPlanRecordItem * oldObj){
+		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
+		newObj->setRecordId(oldObj->getRecordId());
+		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
+		vector<TrieNodePointer> matchingPrefixes;
+		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
+		newObj->setRecordMatchingPrefixes(matchingPrefixes);
+		vector<unsigned> editDistances;
+		oldObj->getRecordMatchEditDistances(editDistances);
+		newObj->setRecordMatchEditDistances(editDistances);
+		vector<unsigned> attributeBitmaps;
+		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
+		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		vector<unsigned> positionIndexOffsets;
+		oldObj->getPositionIndexOffsets(positionIndexOffsets);
+		newObj->setPositionIndexOffsets(positionIndexOffsets);
+
+		return newObj;
+	}
+
+	/*
+	 * This factory will take care of deallocation of these pointers.
+	 */
+	PhysicalPlanRecordItem * clone(PhysicalPlanRecordItem * oldObj){
+		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
+		newObj->setRecordId(oldObj->getRecordId());
+		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
+		vector<TrieNodePointer> matchingPrefixes;
+		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
+		newObj->setRecordMatchingPrefixes(matchingPrefixes);
+		vector<unsigned> editDistances;
+		oldObj->getRecordMatchEditDistances(editDistances);
+		newObj->setRecordMatchEditDistances(editDistances);
+		vector<unsigned> attributeBitmaps;
+		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
+		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		vector<unsigned> positionIndexOffsets;
+		oldObj->getPositionIndexOffsets(positionIndexOffsets);
+		newObj->setPositionIndexOffsets(positionIndexOffsets);
+
+		objects.push_back(newObj);
+
+		return newObj;
+	}
+
+
 	~PhysicalPlanRecordItemFactory(){
 		for(unsigned i =0 ; i< objects.size() ; ++i){
 			if(objects.at(i) == NULL){
@@ -205,7 +286,6 @@ public:
 	virtual bool open(QueryEvaluatorInternal * queryEvaluator,PhysicalPlanExecutionParameters & params) = 0;
 	virtual PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) = 0;
 	virtual bool close(PhysicalPlanExecutionParameters & params) = 0;
-
 	virtual ~PhysicalPlanIteratorExecutionInterface(){};
 };
 
@@ -352,6 +432,18 @@ public:
 	// members of parameters argument, so if this function returns true, we use parameters members to
 	// get that information.
 	virtual bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) = 0;
+
+
+	/*
+	 * The implementor of this function is supposed to append a unique string to 'uniqueString'
+	 * which determines the subtree of physical plan uniquely.
+	 */
+	void getUniqueStringForCache(bool ignoreLastLeafNode, string & uniqueString);
+
+	/*
+	 * returns a unique string which represents this operator
+	 */
+	virtual string toString() = 0;
 private:
 	PhysicalPlanOptimizationNode * optimizationNode;
 };

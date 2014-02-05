@@ -186,6 +186,7 @@ public:
 
     unsigned getAttributeToFilterTermHits() const;
 
+    string toString();
     /**
      * Destructor to free persistent resources used by the Term.
      *

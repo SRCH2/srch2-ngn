@@ -99,7 +99,7 @@ should reference the data file's location as
 ```
 <licenseFile>/path/to/srch2_license_key.txt</licenseFile>
 ```
-This setting specifies a license key file required by the engine. Enter your email [here](http://www.srch2.com/downloads.html) to get a free trial key. <br>
+This setting specifies a license key file required by the engine. Enter your email [here](http://www.srch2.com/download) to get a free trial key. <br>
 
 
 ##4. Hostname and Port, Required##{id="listeningHostname"}

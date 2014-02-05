@@ -374,6 +374,7 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 }
 
 PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
+
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
 
@@ -382,7 +383,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 	}
 
 	unsigned treeOptionIndexChosen = 0 ;
-	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size() ; treeOptionIndex++){
+	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size()-1 ; treeOptionIndex++){
 		PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
 		PhysicalPlanCost cost;
 		unsigned numberOfGetNextCalls = 0;
