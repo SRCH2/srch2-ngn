@@ -1,0 +1,10 @@
+sandwiches&fuzzy=false||E11jzpKz9Kw5K7fuARWfRw cGnKNX3I9rthE0-TH24-qA m2CKSsepBCoRYWxiRUsxAg
+sandwiches&fuzzy=true||E11jzpKz9Kw5K7fuARWfRw cGnKNX3I9rthE0-TH24-qA m2CKSsepBCoRYWxiRUsxAg 3rPt0LxF7rgmEUrznoH22w
+chicken AND piz*&fuzzy=false||cGnKNX3I9rthE0-TH24-qA
+chicken OR piz*&fuzzy=false||cGnKNX3I9rthE0-TH24-qA IjZ33sJrzXqU-0X6U8NwyA
+app*&fuzzy=false||m2CKSsepBCoRYWxiRUsxAg
+foo*~0.1&fuzzy=true||riFQ3vxNpP4rWLk_CSri2A fWKvX83p0-ka4JS3dc6E5A m2CKSsepBCoRYWxiRUsxAg E11jzpKz9Kw5K7fuARWfRw IjZ33sJrzXqU-0X6U8NwyA G-WvGaISbqqaMHlNnByodA 3rPt0LxF7rgmEUrznoH22w
+"baked spaghetti"||IjZ33sJrzXqU-0X6U8NwyA
+"cream ice"~2||E11jzpKz9Kw5K7fuARWfRw
+"delicious meals"||riFQ3vxNpP4rWLk_CSri2A
+"dog park" AND park||G-WvGaISbqqaMHlNnByodA

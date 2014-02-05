@@ -77,13 +77,36 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
-test_id="boolean expression test"
+###############################################################################################################
+#
+#  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
+#
+#  NOTE:  If you decide to add your new test case as a first test case (i.e right after this message), then
+#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. 
+#
+###############################################################################################################
+
+test_id="highlighter test"
 printTestBanner "$test_id"
-python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt > system_test.log 2>&1
+python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt > system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "--PASSED $test_id"
+fi
+rm -rf data/ *.idx
+exit
+test_id="boolean expression test"
+printTestBanner "$test_id"
+python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
         exit 255
     fi
 else
@@ -94,7 +117,7 @@ rm -rf data/ *.idx
 
 test_id="qf_dynamic_ranking"
 printTestBanner "$test_id"
-python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt > system_test.log 2>&1
+python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
