@@ -24,7 +24,7 @@
 #include <instantsearch/Indexer.h>
 #include <string>
 #include <record/LocationRecordUtil.h>
-#include <operation/Cache.h>
+#include <operation/CacheManager.h>
 #include <instantsearch/LogicalPlan.h>
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Query.h>

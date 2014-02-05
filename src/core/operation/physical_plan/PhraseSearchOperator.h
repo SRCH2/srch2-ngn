@@ -36,6 +36,7 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~PhraseSearchOperator();
 	PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) ;

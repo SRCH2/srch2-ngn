@@ -23,7 +23,7 @@
 #define __INDEXERINTERNAL_H__
 
 #include <instantsearch/Indexer.h>
-#include "operation/Cache.h"
+#include "operation/CacheManager.h"
 #include "operation/IndexData.h"
 #include <string>
 #include <sstream>
@@ -38,7 +38,7 @@ namespace srch2
 {
 namespace instantsearch
 {
-class Cache;
+class CacheManager;
 class GlobalCache;
 
 struct IndexHealthInfo
@@ -216,7 +216,7 @@ public:
 
 private:
     IndexData *index;
-    Cache *cache;
+    CacheManager *cache;
 
     IndexHealthInfo indexHealthInfo;
 

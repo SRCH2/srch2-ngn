@@ -82,6 +82,15 @@ bool PhraseSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+string PhraseSearchOperator::toString(){
+	string result = "PhraseSearchOperator" + this->phraseSearchInfo.toString();
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

@@ -100,6 +100,16 @@ bool SortByRefiningAttributeOperator::close(PhysicalPlanExecutionParameters & pa
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
     return true;
 }
+
+string SortByRefiningAttributeOperator::toString(){
+	string result = "SortByRefiningAttributeOperator" + this->sortEvaluator->toString();
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
+
 bool SortByRefiningAttributeOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

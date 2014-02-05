@@ -82,13 +82,27 @@ rm -rf data/ *.idx
 #  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
 #
 #  NOTE:  If you decide to add your new test case as a first test case (i.e right after this message), then
-#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. 
+#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. First
+#         test case should overwrite the log and the rest should append to the log.
 #
 ###############################################################################################################
 
 test_id="highlighter test"
 printTestBanner "$test_id"
 python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt > system_test.log 2>&1
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+    exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
+
+test_id="cache_A1 test"
+printTestBanner "$test_id"
+python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
@@ -96,10 +110,11 @@ if [ $? -gt 0 ]; then
         exit 255
     fi
 else
-    echo "--PASSED $test_id"
+
+    echo "-- PASSED: $test_id"
 fi
 rm -rf data/ *.idx
-exit
+
 test_id="boolean expression test"
 printTestBanner "$test_id"
 python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt >> system_test.log 2>&1
@@ -110,7 +125,7 @@ if [ $? -gt 0 ]; then
         exit 255
     fi
 else
-    echo "--PASSED $test_id"
+    echo "-- PASSED $test_id"
 fi
 rm -rf data/ *.idx
 

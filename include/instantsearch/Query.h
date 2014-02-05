@@ -154,6 +154,7 @@ public:
     ResultsPostProcessorPlan * getPostProcessingPlan();
 
 
+    string toString();
     /*
      * TODO Should change this function's name to
      * getSortOrder

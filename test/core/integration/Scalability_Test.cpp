@@ -38,7 +38,7 @@ void buildIndex(string dataFile, string indexDir) {
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
@@ -107,7 +107,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
@@ -350,7 +350,7 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);

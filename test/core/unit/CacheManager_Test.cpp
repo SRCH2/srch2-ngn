@@ -1,4 +1,4 @@
-// $Id: GlobalCache.cpp 3456 2013-06-14 02:11:13Z jiaying $
+//$Id: Cache_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
 
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
@@ -17,16 +17,52 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
-#include "CacheManager.h"
+#include "operation/CacheBase.h"
 
-namespace srch2
-{
-namespace instantsearch
-{
+#include <instantsearch/GlobalCache.h>
+#include <assert.h>
+#include "util/Assert.h"
 
-GlobalCache* GlobalCache::create(unsigned long byteSizeOfCache, unsigned noOfCacheEntries)
-{
-    return dynamic_cast<GlobalCache*>( new CacheManager(byteSizeOfCache) );
+using namespace std;
+using namespace srch2::util;
+using namespace srch2::instantsearch;
+namespace srch2is = srch2::instantsearch;
+
+class CachedStruct{
+public:
+	int a;
+	CachedStruct(int a){
+		this->a = a;
+	}
+	unsigned getNumberOfBytes(){
+		return 12;
+	}
+};
+
+void test1(srch2is::CacheContainer<CachedStruct> * cacheContainer){
+
+	for(unsigned i=0; i< 2000; i++){
+		boost::shared_ptr<CachedStruct> ai ;
+		ai.reset(new CachedStruct(i));
+
+		string key = "" + i;
+		cacheContainer->put(key , ai);
+
+		boost::shared_ptr<CachedStruct> aiHit ;
+		ASSERT(cacheContainer->get(key , aiHit));
+		ASSERT(cacheContainer->checkCacheConsistency());
+		ASSERT(aiHit->a == ai->a);
+	}
+
 }
 
-}}
+
+int main(int argc, char *argv[])
+{
+
+	srch2is::CacheContainer<CachedStruct> * cacheContainer = new srch2is::CacheContainer<CachedStruct>(200);
+
+	test1(cacheContainer);
+
+    cout << "CacheContainer Unit Test: Passed\n";
+}

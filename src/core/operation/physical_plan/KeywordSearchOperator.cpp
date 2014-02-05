@@ -68,6 +68,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			}
 		}
 		params.k = numberOfIterations;
+		params.cacheObject = NULL;
 
 
 
@@ -96,7 +97,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 		physicalPlan.getPlanTree()->close(params);
 
-
 	    if(fuzzyPolicyIter == 0){
 	    	if(isFuzzy == true && results.size() < numberOfIterations){
 	    		logicalPlan->setFuzzy(true);
@@ -123,6 +123,19 @@ bool KeywordSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	logicalPlan = NULL;
 	return true;
 }
+
+//As of now, cache implementation doesn't need this function for this operator.
+// This code is here only if we want to implement a
+//cache module in future that needs it.
+string KeywordSearchOperator::toString(){
+	ASSERT(false);
+	string result = "KeywordSearchOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool KeywordSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;

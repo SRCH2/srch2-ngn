@@ -56,6 +56,16 @@ bool SortByIdOperator::close(PhysicalPlanExecutionParameters & params){
 	records.clear();
 	return true;
 }
+
+string SortByIdOperator::toString(){
+	string result = "SortByIdOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
+
 bool SortByIdOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

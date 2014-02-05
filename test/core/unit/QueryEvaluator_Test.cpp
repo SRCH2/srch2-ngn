@@ -67,7 +67,7 @@ void ActiveNodeSet_test()
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-	srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(new Cache(134217728,20000),
+	srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(new CacheManager(134217728),
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			INDEX_DIR);
@@ -86,7 +86,7 @@ void ActiveNodeSet_test()
     unsigned threshold = 2;
     Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
     PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluator->impl
-            ->computeActiveNodeSet(term);
+            ->computeActiveNodeSet(term).get();
     vector<string> similarPrefixes;
     prefixActiveNodeSet->getComputedSimilarPrefixes(
             queryEvaluator->impl->getTrie(), similarPrefixes);
@@ -514,7 +514,7 @@ void Searcher_Tests() {
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
     srch2is::IndexMetaData *indexMetaData = new srch2is::IndexMetaData(
-            new Cache(), mergeEveryNSeconds, mergeEveryMWrites,
+            new CacheManager(), mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges, updateHistogramEveryQWrites,
             INDEX_DIR);
 

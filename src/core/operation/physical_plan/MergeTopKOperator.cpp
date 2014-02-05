@@ -17,25 +17,141 @@ MergeTopKOperator::~MergeTopKOperator(){
 }
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
+	this->queryEvaluator = queryEvaluator;
+
 	/*
-	 * 1. open all children (no parameters known to pass as of now)
-	 * 2. initialize nextRecordItems vector.
-	 * 3. candidatesList = empty vector
-	 * 4. First assumption is that all lists have records in them.
-	 * 5. Round robin should be initialized
+	 * 0. Cache:
+	 * 1. check to see if cache has this query w/o last keyword
+	 * 2. if yes, get it from cache and initialize self and children
+	 * 3. if no, continue normally
 	 */
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
+	// prepare cache key
+	string key;
+	this->getUniqueStringForCache(true , key);
+	key += params.isFuzzy?"fuzzy":"exact";
+
+
+	// CHECK CACHE :
+	// 1(if a cache hit). USE CACHE HIT TO START FROM MIDDLE OF LAST EXECUTION
+	// 2(else). OR JUST START A FRESH NEW EXECUTION
+	boost::shared_ptr<PhysicalOperatorCacheObject> cacheHit;
+	if(this->queryEvaluator != NULL && // this is for CTEST MergeTopK_Test, in normal cases, queryEvaluator cannot be NULL
+			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+			getPhysicalOperatorsInfo(key ,  cacheHit)){ // cache has key
+
+		MergeTopKCacheEntry * mergeTopKCacheEntry = (MergeTopKCacheEntry *) cacheHit.get();
+		ASSERT(mergeTopKCacheEntry->nextItemsFromChildren.size() == mergeTopKCacheEntry->children.size());
+		//1. pass cache to children by putting it in params and opening them
+		for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+			params.parentIsCacheEnabled = true; // to tell the child that we are giving cache info and
+			// we expect another cache entry in close.
+			if(childOffset >= mergeTopKCacheEntry->children.size()){
+				params.cacheObject = NULL;
+			}else{
+				params.cacheObject = mergeTopKCacheEntry->children.at(childOffset);
+			}
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+		}
+		//2. initialize self
+		for(unsigned i = 0 ; i < mergeTopKCacheEntry->candidatesList.size() ; ++i){
+
+			if(mergeTopKCacheEntry->children.size() < numberOfChildren){
+				bool valid = true;
+				std::vector<float> runTimeTermRecordScores;
+				std::vector<float>  staticTermRecordScores;
+				std::vector<TrieNodePointer> termRecordMatchingKeywords;
+				std::vector<unsigned> attributeBitmaps;
+				std::vector<unsigned> prefixEditDistances;
+				std::vector<unsigned> positionIndexOffsets;
+				// first get all result information which is computed in past
+				runTimeTermRecordScores.push_back(mergeTopKCacheEntry->candidatesList.at(i)->getRecordRuntimeScore());
+				staticTermRecordScores.push_back(mergeTopKCacheEntry->candidatesList.at(i)->getRecordStaticScore());
+				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchingPrefixes(termRecordMatchingKeywords);
+				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchAttributeBitmaps(attributeBitmaps);
+				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchEditDistances(prefixEditDistances);
+				mergeTopKCacheEntry->candidatesList.at(i)->getPositionIndexOffsets(positionIndexOffsets);
+				// now check the result with the new keyword and if it's a match, append new info to
+				// these vectors.
+				for(unsigned childOffset = mergeTopKCacheEntry->children.size(); childOffset < numberOfChildren; ++childOffset){
+					PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+					parameters.recordToVerify = mergeTopKCacheEntry->candidatesList.at(i);
+					parameters.isFuzzy = params.isFuzzy;
+					parameters.prefixMatchPenalty = params.prefixMatchPenalty;
+					bool resultOfThisChild =
+							this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->verifyByRandomAccess(parameters);
+					if(resultOfThisChild == false){
+						valid = false;
+						break;
+					}
+					// append new information to the output
+					runTimeTermRecordScores.push_back(parameters.runTimeTermRecordScore);
+					staticTermRecordScores.push_back(parameters.staticTermRecordScore);
+					termRecordMatchingKeywords.insert(
+							termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
+					attributeBitmaps.insert(
+							attributeBitmaps.end(),parameters.attributeBitmaps.begin(),parameters.attributeBitmaps.end());
+					prefixEditDistances.insert(
+							prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
+					positionIndexOffsets.insert(
+							positionIndexOffsets.end(),parameters.positionIndexOffsets.begin(),parameters.positionIndexOffsets.end());
+
+				}
+				if(valid == false){
+					continue;
+				}
+				// set the members
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchAttributeBitmaps(attributeBitmaps);
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchEditDistances(prefixEditDistances);
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchingPrefixes(termRecordMatchingKeywords);
+				mergeTopKCacheEntry->candidatesList.at(i)->setPositionIndexOffsets(positionIndexOffsets);
+				// nextRecord->setRecordStaticScore() Should we set static score as well ?
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+
+			}
+
+			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+					clone(mergeTopKCacheEntry->candidatesList.at(i)));
+			fullCandidatesListForCache.push_back(candidatesList.at(candidatesList.size()-1));
+		}
+
+		for(unsigned i = 0 ; i < mergeTopKCacheEntry->nextItemsFromChildren.size() ; ++i){
+			if(mergeTopKCacheEntry->nextItemsFromChildren.at(i) == NULL){
+				nextItemsFromChildren.push_back(NULL);
+			}else{
+				nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+						clone(mergeTopKCacheEntry->nextItemsFromChildren.at(i)));
+			}
+		}
+		if(nextItemsFromChildren.size() < this->getPhysicalPlanOptimizationNode()->getChildrenCount()){
+			initializeNextItemsFromChildren(params, nextItemsFromChildren.size());
+		}
+		visitedRecords = mergeTopKCacheEntry->visitedRecords;
+		listsHaveMoreRecordsInThem = mergeTopKCacheEntry->listsHaveMoreRecordsInThem;
+		childRoundRobinOffset = mergeTopKCacheEntry->childRoundRobinOffset;
+
+	}else{ // there is no cache hit, start a fresh execution
+		/*
+		 * 1. open all children (no parameters known to pass as of now)
+		 * 2. initialize nextRecordItems vector.
+		 * 3. candidatesList = empty vector
+		 * 4. First assumption is that all lists have records in them.
+		 * 5. Round robin should be initialized
+		 */
+		params.parentIsCacheEnabled = true;
+		for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
+		}
+
+		initializeNextItemsFromChildren(params);
+
+		// just to make sure
+		candidatesList.clear();
+		fullCandidatesListForCache.clear();
+		listsHaveMoreRecordsInThem = true;
+		childRoundRobinOffset = 0;
+		visitedRecords.clear();
 	}
-
-	initializeNextItemsFromChildren(params);
-
-	// just to make sure
-	candidatesList.clear();
-
-	listsHaveMoreRecordsInThem = true;
-	childRoundRobinOffset = 0;
-	visitedRecords.clear();
 	return true;
 }
 PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionParameters & params) {
@@ -66,8 +182,6 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 	 * 5.1. if maxScore < 'topRecordToReturn'.score, STOP, return 'topRecordToReturn'
 	 * 5.2. else, go to 1
 	 */
-//    struct timespec tstart;
-//    clock_gettime(CLOCK_REALTIME, &tstart);
 	PhysicalPlanRecordItem * topRecordToReturn = NULL;
 
 	// Part 1.
@@ -125,6 +239,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 
 
+		fullCandidatesListForCache.push_back(nextRecord);
 		// from this point, nextRecord is a candidate
 		//4.
 		// set the members
@@ -158,29 +273,69 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		// 5.2: go to the beginning of the loop again
 	}
-//    struct timespec tend;
-//    clock_gettime(CLOCK_REALTIME, &tend);
-//    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-//            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-//    cout << "topk getNext : " << ts1  << endl;
-//    cout << "Number of records visited for one : " << numberOfRecordsVisitedForOneResult << endl;
 	return topRecordToReturn;
 
 }
 bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
+
+	// prepare cache entry, first prepare key recursively
+	string key;
+	this->getUniqueStringForCache(false, key);
+	key += params.isFuzzy?"fuzzy":"exact";
+
+
+	vector<PhysicalOperatorCacheObject *> childrenCacheEntries;
+	// close the children
+	params.parentIsCacheEnabled = true;
+	params.cacheObject = NULL;
+	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
+		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
+		childrenCacheEntries.push_back(params.cacheObject);
+		params.cacheObject = NULL;
+	}
+
+	// cache
+	//1. cache stuff of children is returned through params
+	//2. prepare key
+	//3. Query evaluator pointer should not be empty in normal query processing. But in CTEST
+	//    MergeTopK_Test since only this operator is being tested, this pointer is null. If this pointer is null,
+	//    we don't do any caching.
+	if(this->queryEvaluator != NULL){
+
+		//3. prepare the cache object of self and add children info to it
+		MergeTopKCacheEntry * mergeTopKCacheEntry = new MergeTopKCacheEntry(this->queryEvaluator ,
+																		fullCandidatesListForCache ,
+																		nextItemsFromChildren,
+																		visitedRecords ,
+																		listsHaveMoreRecordsInThem ,
+																		childRoundRobinOffset);
+		for(unsigned i = 0 ; i < childrenCacheEntries.size() ; ++i){
+			mergeTopKCacheEntry->children.push_back(childrenCacheEntries.at(i));
+		}
+		//4. put <key, this object> in the cache
+		boost::shared_ptr<PhysicalOperatorCacheObject> cacheEntry;
+		cacheEntry.reset(mergeTopKCacheEntry);
+		this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
+				setPhysicalOperatosInfo(key , cacheEntry);
+	}
+
+	// self closing stuff
 	candidatesList.clear();
 	childRoundRobinOffset = 0;
 	listsHaveMoreRecordsInThem = true;
 	nextItemsFromChildren.clear();
 	visitedRecords.clear();
-
-	// close the children
-	for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
-		this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->close(params);
-	}
-
 	return true;
 }
+
+string MergeTopKOperator::toString(){
+	string result = "MergeTopKOperator";
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool MergeTopKOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessAndHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }
@@ -268,9 +423,9 @@ bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
 	return true;
 }
 
-void MergeTopKOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params){
+void MergeTopKOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionParameters & params, unsigned fromIndex){
 	unsigned numberOfChildren = this->getPhysicalPlanOptimizationNode()->getChildrenCount();
-	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
+	for(unsigned childOffset = fromIndex; childOffset < numberOfChildren; ++childOffset){
 		PhysicalPlanRecordItem * recordItem =
 				this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->getNext(params);
 		if(recordItem == NULL){
@@ -348,7 +503,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 			this->getChildrenCount();
 	estimatedNumberOfRecordsToVisitForOneCandidate *= 10;
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 50 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
+	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 1 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
 
 
 	resultCost.addMediumFunctionCost(); // finding the records
