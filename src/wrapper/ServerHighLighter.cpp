@@ -36,10 +36,10 @@ void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
  */
 void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnippet& recordSnippets) {
 
-		AttributeSnippet attrSnippet;
         StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
         const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
+    		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
         	const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
@@ -51,8 +51,11 @@ void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnip
         	this->highlightAlgorithms->getSnippet(recordId, highlightAttributes[i].first,
         			uncompressedInMemoryRecordString.c_str(), attrSnippet.snippet);
         	attrSnippet.FieldId = highlightAttributes[i].second;
-        	recordSnippets.fieldSnippets.push_back(attrSnippet);
+        	if (attrSnippet.snippet.size() > 0)
+        		recordSnippets.fieldSnippets.push_back(attrSnippet);
         }
+        if (recordSnippets.fieldSnippets.size() == 0)
+        	Logger::error("could not generate a snippet because search keywords could not be found in any attribute of record!!");
 }
 
 ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *server,

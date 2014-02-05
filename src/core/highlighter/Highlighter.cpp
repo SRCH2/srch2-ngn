@@ -231,12 +231,10 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 	}
 
 	// sweep out invalid positions
-	if (phrasesInfoList.size() > 0) {
-		removeInvalidPositionInPlace(highlightPositions);
-	}
+	removeInvalidPositionInPlace(highlightPositions);
 
 	if (highlightPositions.size() == 0) {
-		Logger::error("could not generate a snippet because keywords could not found in record/attribute.");
+		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
 		return;
 	}
 
@@ -569,7 +567,7 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 	removeInvalidPositionInPlace(highlightPositions);
 
 	if (highlightPositions.size() == 0) {
-		Logger::error("could not generate a snippet because keywords could not found in record/attribute.");
+		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
 		return;
 	}
 
