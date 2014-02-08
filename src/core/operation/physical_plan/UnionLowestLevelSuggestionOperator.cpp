@@ -58,7 +58,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 				newItem->setRecordMatchEditDistances(editDistances);
 				// matching prefix
 				vector<TrieNodePointer> matchingPrefixes;
-				matchingPrefixes.push_back(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode); // TODO this might be wrong
+				matchingPrefixes.push_back(suggestionPairs[suggestionPairCursor].queryTermNode);
 				newItem->setRecordMatchingPrefixes(matchingPrefixes);
 				// runtime score
 				bool isPrefixMatch = true;
