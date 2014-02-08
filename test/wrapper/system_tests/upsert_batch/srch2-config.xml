@@ -18,6 +18,7 @@
  
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
+    <docsPort>8088</docsPort>
  
     <dataDir>./indexes</dataDir>
      
