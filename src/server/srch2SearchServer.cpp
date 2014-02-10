@@ -741,6 +741,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             unsigned int port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
             if (port < 1) {
                 listener = defaultListener;
+                port = http_port;
             } else {
                 listener = findListener(&listeners, port, string(""));
                 if (listener == NULL) {
@@ -751,7 +752,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                 }
             }
             evhttp_set_cb(http_server, portList[j].path, portList[j].callback, listener);
-            Logger::info("Routing port %d route %s to default core %s", http_port, portList[j].path, defaultListener->srch2Server->getCoreName().c_str());
+            Logger::info("Routing port %d route %s to default core %s", port, portList[j].path, listener->srch2Server->getCoreName().c_str());
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
 
