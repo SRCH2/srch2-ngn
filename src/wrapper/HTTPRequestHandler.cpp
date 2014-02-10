@@ -746,7 +746,7 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evhttp_parse_query(req->uri, &headers);
 
     string combinedInfo = "[" + server->indexer->getIndexHealth() + ", "
-            + versioninfo + "]";
+        + "{\"version\":\"" + versioninfo + "\"}]";
 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
     evhttp_clear_headers(&headers);
