@@ -13,6 +13,7 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 port = '8087'
+infoPort = '8088'
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -144,7 +145,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
     #    of 0.85, and should not return any matching records.                             #
     #######################################################################################
 
-    print "\nSecond suite #2: Comparing different engine configurations on the same data source"
+    print "\nTest suite #2: Comparing different engine configurations on the same data source"
     f_in = open(queriesAndResultsPath2, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -166,7 +167,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
             #response = re.sub('[,][}]', '}', response)
-            #print query + ' Got ==> ' + response
+            # print query + ' Got ==> ' + response
 
             response_json = json.loads(response)
 
@@ -174,6 +175,23 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             failCount += checkResult(query, response_json['results'], resultValue)
 
             index += 1
+
+    print "\nTest suite #3: Port security"
+    query='http://localhost:' + infoPort + '/info'
+    #do the query
+    #print query
+    response = urllib2.urlopen(query).read()
+    #print response
+    response_json = json.loads(response)
+    if len(response_json) > 0:
+        if int(response_json['engine_status']['docs_in_index']) != 244:
+            failCount += 1
+            print "Info request did not return expected document count: Got " + str(response_json['engine_status']['docs_in_index']) + " but expected 244."
+        else:
+            print query + ' test pass'
+    else:
+        failCount += 1
+        print "Null response to info request"
 
         
     test_lib.killServer(serverHandle)
