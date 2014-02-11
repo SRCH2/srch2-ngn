@@ -45,6 +45,11 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		if(physicalPlan.getPlanTree() == NULL){
 			return true;
 		}
+
+	    // start the timer for search
+	    struct timespec tstart;
+	    clock_gettime(CLOCK_REALTIME, &tstart);
+
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 
 		if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
@@ -96,6 +101,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		}
 
 		physicalPlan.getPlanTree()->close(params);
+
+	    // compute elapsed time in ms , end the timer
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
+	    cout << ts1/1000 << endl;
 
 	    if(fuzzyPolicyIter == 0){
 	    	if(isFuzzy == true && results.size() < numberOfIterations){
