@@ -118,6 +118,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;
     std::vector<unsigned> positionIndexOffsets;
+    std::vector<TermType> termTypes;
     // the record which is going to be verified by forward index
     PhysicalPlanRecordItem * recordToVerify;
     bool isFuzzy;
@@ -161,7 +162,12 @@ public:
 	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
 		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
 	}
-
+	inline void getTermTypes(vector<TermType> & rTermTypes) const {
+		rTermTypes.insert(rTermTypes.end(),this->termTypes.begin(),this->termTypes.end());
+	}
+	vector<TermType> & getTermTypesRef(){
+			return termTypes;
+	}
 	// setters
 	inline void setRecordId(unsigned id) {
 		this->recordId = id;
@@ -184,7 +190,12 @@ public:
 	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
 		this->positionIndexOffsets = positionIndexOffsets;
 	}
-
+	inline void setTermTypes(const vector<TermType> & rTermType){
+		this->termTypes = rTermType;
+	}
+	inline void addTermType(const TermType & rTermType){
+		this->termTypes.push_back(rTermType);
+	}
     unsigned getNumberOfBytes(){
     	return sizeof(recordId) +
     			sizeof(recordRuntimeScore) +
@@ -206,6 +217,7 @@ private:
 	vector<unsigned> editDistances;
 	vector<unsigned> attributeBitmaps;
 	vector<unsigned> positionIndexOffsets;
+	vector<TermType> termTypes;
 };
 
 /*
@@ -237,7 +249,7 @@ public:
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
+		oldObj->getTermTypes(newObj->getTermTypesRef());
 		return newObj;
 	}
 
@@ -260,7 +272,7 @@ public:
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
+		oldObj->getTermTypes(newObj->getTermTypesRef());
 		objects.push_back(newObj);
 
 		return newObj;

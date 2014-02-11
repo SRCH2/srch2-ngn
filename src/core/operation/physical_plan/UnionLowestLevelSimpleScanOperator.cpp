@@ -151,7 +151,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	attributeBitmaps.push_back(termAttributeBitmap);
 	newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
 
-
+    newItem->addTermType(term->getTermType());
 
 
 	// prepare for next call

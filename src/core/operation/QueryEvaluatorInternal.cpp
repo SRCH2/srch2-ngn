@@ -286,7 +286,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
-
+		vector<TermType> termTypes;
+		newRecord->getTermTypes(termTypes);
 		keywordHighlightInfo keyInfo;
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
@@ -297,14 +298,17 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			string str;
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
+			//cout << str << "("<< termTypes.at(i) << ")"<< ",";
 			/*
 			 *  Code below is a setup for highlighter module when the term offsets are present in
 			 *  the forward index.
 			 */
 			if (visitedMatchingKeyword.count(str) == 0) {
 				visitedMatchingKeyword.insert(str);
-				if(matchingKeywordTrieNodes[i]->isTerminalNode())
+				if(termTypes.at(i) == TERM_TYPE_COMPLETE)
 					keyInfo.flag = 1;
+				else if (termTypes.at(i) == TERM_TYPE_PHRASE)
+					keyInfo.flag = 2;
 				else
 					keyInfo.flag = 0;
 				keyInfo.key = temp;
@@ -314,10 +318,15 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 					unsigned idxKey = queryResults->impl->keywordStrToHighlight.size() - 1;
 					vector<unsigned> *vPtr = new vector<unsigned>();
 					queryResults->impl->prefixToCompleteMap.insert(make_pair(idxKey, vPtr));
-					findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
+					if (keyInfo.flag != 0 && matchingKeywordTrieNodes[i]->isTerminalNode()) {
+						vPtr->push_back(matchingKeywordTrieNodes[i]->id);
+					} else {
+						findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
+					}
 				}
 			}
 		}
+		//cout << endl;
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );

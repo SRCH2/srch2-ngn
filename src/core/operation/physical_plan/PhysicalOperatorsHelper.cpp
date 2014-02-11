@@ -56,6 +56,7 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 						isPrefixMatch,
 						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
 			parameters.staticTermRecordScore = termRecordStaticScore ;
+			parameters.termTypes.push_back(term->getTermType());
 			// parameters.positionIndexOffsets ????
 			return true;
 		}

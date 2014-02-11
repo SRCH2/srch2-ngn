@@ -73,8 +73,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 				vector<unsigned> attributeBitmaps;
 				attributeBitmaps.push_back(termAttributeBitmap);
 				newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
-
-
+				newItem->addTermType(term->getTermType());
 				return newItem;
 			}
 		}else{
