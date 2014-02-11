@@ -1264,6 +1264,11 @@ bool QueryParser::termParser(string &input) {
             this->keywordPrefixComplete.push_back(
                     this->lpKeywordPrefixComplete);
         }
+    } else {
+    	// if phrase term "A B " then treat it as complete. The also keeps keywordPrefixComplete
+    	// vector's indices consistent.
+    	this->keywordPrefixComplete.push_back(
+    	                    srch2::instantsearch::TERM_TYPE_COMPLETE);
     }
     // check for boost modifier, i.e. '^'
     string boostModifier = "";
