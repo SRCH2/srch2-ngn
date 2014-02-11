@@ -178,7 +178,6 @@ static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2h
         { srch2http::UpdatePort, "update" },
         { srch2http::SavePort, "save" },
         { srch2http::ExportPort, "export" },
-        { srch2http::ActivatePort, "activate" },
         { srch2http::ResetLoggerPort, "resetlogger" },
         { srch2http::EndOfPortType, NULL },
     };
@@ -393,31 +392,6 @@ static void cb_resetLogger(evhttp_request *req, void *arg)
     }
 }
 
-
-/**
- * 'activate' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_activate(evhttp_request *req, void *arg)
-{
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (operationPermitted(req, listener, srch2http::ActivatePort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::activateCommand(req, listener->srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
 
 /**
  * Busy 409 event handler.
@@ -730,7 +704,6 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/update", srch2http::UpdatePort, cb_update },
             { "/save", srch2http::SavePort, cb_save },
             { "/export", srch2http::ExportPort, cb_export },
-            { "/activate", srch2http::ActivatePort, cb_activate },
             { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
             { NULL, srch2http::EndOfPortType, NULL }
         };

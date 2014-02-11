@@ -115,7 +115,6 @@ enum PortType_t {
     UpdatePort,
     SavePort,
     ExportPort,
-    ActivatePort,
     ResetLoggerPort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
@@ -449,7 +448,6 @@ private:
     static const char* const updatePortString;
     static const char* const savePortString;
     static const char* const exportPortString;
-    static const char* const activatePortString;
     static const char* const resetLoggerPortString;
 };
 

@@ -129,7 +129,6 @@ const char* const ConfigManager::docsPortString = "docsport";
 const char* const ConfigManager::updatePortString = "updateport";
 const char* const ConfigManager::savePortString = "saveport";
 const char* const ConfigManager::exportPortString = "exportport";
-const char* const ConfigManager::activatePortString = "activateport";
 const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 
 
@@ -769,7 +768,6 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         { UpdatePort, updatePortString },
         { SavePort, savePortString },
         { ExportPort, exportPortString },
-        { ActivatePort, activatePortString },
         { ResetLoggerPort, resetLoggerPortString },
         { EndOfPortType, NULL }
     };
@@ -2481,7 +2479,6 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
     case UpdatePort:
     case SavePort:
     case ExportPort:
-    case ActivatePort:
     case ResetLoggerPort:
         ports[portType] = portNumber;
         break;
