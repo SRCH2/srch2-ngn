@@ -11,6 +11,7 @@ namespace instantsearch {
 
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
 	queryEvaluator = NULL;
+	parentIsCacheEnabled = false;
 }
 
 UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
@@ -24,11 +25,11 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	// 2. Get the Term object
 	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 	// 3. Get the ActiveNodeSet from the logical plan
-	PrefixActiveNodeSet * activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
+	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
 
 	// 4. Create the iterator and save it as a member of the class for future calls to getNext
 	if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term
-        for (LeafNodeSetIterator iter (activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        for (LeafNodeSetIterator iter (activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
@@ -45,7 +46,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             this->invertedListIDs.push_back(leafNode->getInvertedListOffset());
         }
 	}else{ // complete term
-        for (ActiveNodeSetIterator iter(activeNodeSet, term->getThreshold()); !iter.isDone(); iter.next()) {
+        for (ActiveNodeSetIterator iter(activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
@@ -53,8 +54,19 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
         }
 	}
-	this->invertedListOffset = 0;
-	this->cursorOnInvertedList = 0;
+
+	// check cache
+    if(params.parentIsCacheEnabled == true || params.cacheObject == NULL){
+    	// either parent is not passing cache hit info or
+    	// there was no cache hit
+		this->invertedListOffset = 0;
+		this->cursorOnInvertedList = 0;
+    }else if(params.cacheObject != NULL){
+    	UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
+    			(UnionLowestLevelSimpleScanCacheEntry *)params.cacheObject;
+    	this->invertedListOffset = cacheEntry->invertedListOffset;
+    	this->cursorOnInvertedList = cacheEntry->cursorOnInvertedList;
+    }
 
 	return true;
 
@@ -122,7 +134,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	newItem->setRecordMatchEditDistances(editDistances);
 	// matching prefix
 	vector<TrieNodePointer> matchingPrefixes;
-	matchingPrefixes.push_back(this->invertedListLeafNodes.at(this->invertedListOffset)); // TODO this might be wrong
+	matchingPrefixes.push_back(this->invertedListPrefixes.at(this->invertedListOffset)); 
 	newItem->setRecordMatchingPrefixes(matchingPrefixes);
 	// runtime score
 	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) !=
@@ -154,6 +166,11 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 }
 bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
 
+	// set cache object
+	UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
+			new UnionLowestLevelSimpleScanCacheEntry(this->invertedListOffset , this->cursorOnInvertedList);
+	params.cacheObject = cacheEntry;
+
 	this->invertedListsSharedPointers.clear();
 	this->invertedLists.clear();
 	this->invertedListDistances.clear();
@@ -166,14 +183,23 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
 
 	return true;
 }
+
+string UnionLowestLevelSimpleScanOperator::toString(){
+	string result = "UnionLowestLevelSimpleScanOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 }
 
 

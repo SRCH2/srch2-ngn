@@ -24,7 +24,7 @@
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/Indexer.h>
 #include <record/LocationRecordUtil.h>
-#include <operation/Cache.h>
+#include <operation/CacheManager.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Schema.h>
 #include <instantsearch/Term.h>
@@ -129,7 +129,7 @@ public:
         return this->indexData->trie;
     }
 
-    PrefixActiveNodeSet *computeActiveNodeSet(Term *term) const;
+    boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 
     void cacheClear() ;
     /**
@@ -149,6 +149,10 @@ public:
     QueryEvaluatorRuntimeParametersContainer * getQueryEvaluatorRuntimeParametersContainer();
 
 
+    CacheManager * getCacheManager(){
+    	return this->cacheManager;
+    }
+
 public:
     IndexReadStateSharedPtr_Token indexReadToken;
     void findKMostPopularSuggestionsSorted(Term *term ,
@@ -160,7 +164,7 @@ private:
     IndexReaderWriter *indexer;
 
     QueryEvaluatorRuntimeParametersContainer parameters;
-    Cache *cacheManager;
+    CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
     PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
     // search functions for map search

@@ -44,6 +44,19 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
     unsigned ed;
     bool isPrefixMatch;
 
+    unsigned getNumberOfBytes(){
+    	return sizeof(invertedListId) +
+    			sizeof(attributeBitMap) +
+    			sizeof(cursorVectorPosition) +
+    			sizeof(recordId) +
+    			sizeof(termRecordRuntimeScore) +
+    			sizeof(termRecordStaticScore) +
+    			sizeof(positionIndexOffset) +
+    			sizeof(trieNode) +
+    			sizeof(ed) +
+    			sizeof(isPrefixMatch);
+    }
+
     UnionLowestLevelTermVirtualListOperatorHeapItem() {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
@@ -77,11 +90,66 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
         this->ed = ed;
         this->isPrefixMatch = isPrefixMatch;
     }
+    UnionLowestLevelTermVirtualListOperatorHeapItem(
+    		UnionLowestLevelTermVirtualListOperatorHeapItem & oldObj) {
+        this->invertedListId = oldObj.invertedListId;
+        this->cursorVectorPosition = oldObj.cursorVectorPosition;
+        this->recordId = oldObj.recordId;
+        this->attributeBitMap = oldObj.attributeBitMap;
+        this->termRecordRuntimeScore = oldObj.termRecordRuntimeScore;
+        this->termRecordStaticScore = oldObj.termRecordStaticScore;
+        this->positionIndexOffset = oldObj.positionIndexOffset;
+        this->trieNode = oldObj.trieNode;
+        this->ed = oldObj.ed;
+        this->isPrefixMatch = oldObj.isPrefixMatch;
+    }
+
     ~UnionLowestLevelTermVirtualListOperatorHeapItem() {
         trieNode = NULL;
     }
 };
 
+
+class UnionLowestLevelTermVirtualListCacheEntry : public PhysicalOperatorCacheObject {
+public:
+    vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap;
+    unsigned numberOfItemsInPartialHeap;
+    unsigned currentMaxEditDistanceOnHeap;
+    vector<unsigned> cursorVector;
+
+
+    UnionLowestLevelTermVirtualListCacheEntry(
+    		vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap,
+    		unsigned numberOfItemsInPartialHeap,
+    		unsigned currentMaxEditDistanceOnHeap,
+    		vector<unsigned> cursorVector){
+    	this->cursorVector = cursorVector;
+    	this->currentMaxEditDistanceOnHeap = currentMaxEditDistanceOnHeap;
+    	this->numberOfItemsInPartialHeap = numberOfItemsInPartialHeap;
+    	for(unsigned i = 0 ; i < itemsHeap.size() ; ++i){
+    		this->itemsHeap.push_back(
+    				new UnionLowestLevelTermVirtualListOperatorHeapItem(*(itemsHeap.at(i))));
+    	}
+    }
+
+    unsigned getNumberOfBytes(){
+    	unsigned numberOfBytes = 0;
+    	for(unsigned itemsOffset = 0 ; itemsOffset < itemsHeap.size(); ++itemsOffset){
+    		numberOfBytes += itemsHeap.at(itemsOffset)->getNumberOfBytes();
+    	}
+    	numberOfBytes += sizeof(numberOfItemsInPartialHeap) +
+    			sizeof(currentMaxEditDistanceOnHeap) +
+    			sizeof(unsigned) * cursorVector.size();
+    	return numberOfBytes;
+    }
+
+    ~UnionLowestLevelTermVirtualListCacheEntry(){
+    	for(unsigned i = 0 ; i < itemsHeap.size() ; ++i){
+    		delete itemsHeap.at(i);
+    	}
+    }
+
+};
 
 /*
  * This operator is TermVirtualList implementation as a physical operator.
@@ -108,6 +176,8 @@ public:
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
+
 	// this function checks to see if a record (that its id can be found in parameters) is among the
 	// results if this subtree. Different operators have different implementations this function.
 	// When verification is performed, some information like match prefix is calculated and saved in
@@ -127,6 +197,10 @@ private:
     //Called when this->numberOfItemsInPartialHeap = 0
     bool _addItemsToPartialHeap();
 
+    //this flag is set to true when the parent is feeding this operator
+    // a cache entry and expects a newer one in close()
+    bool parentIsCacheEnabled;
+
     QueryEvaluatorInternal * queryEvaluator;
     // the current recordId, initial value is -1
     int currentRecordID;
@@ -135,7 +209,7 @@ private:
     //int numberOfLeafNodes;
     //int totalInveretListLength ;
 
-    PrefixActiveNodeSet *prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     const InvertedIndex *invertedIndex;
     vector<UnionLowestLevelTermVirtualListOperatorHeapItem* > itemsHeap;
     Term *term;

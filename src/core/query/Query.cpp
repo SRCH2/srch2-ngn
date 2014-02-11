@@ -25,6 +25,7 @@
 #include "util/Logger.h"
 #include "record/LocationRecordUtil.h"
 #include <string>
+#include <sstream>
 
 #include <iostream>
 
@@ -51,6 +52,20 @@ struct Query::Impl
 
 
     ResultsPostProcessorPlan *  plan;
+
+    string toString(){
+    	stringstream ss;
+    	ss << type;
+    	if(terms != NULL){
+			for(unsigned i = 0 ; i < terms->size(); ++i){
+				ss << terms->at(i)->toString().c_str();
+			}
+    	}
+    	ss << sortableAttributeId;
+    	ss << lengthBoost ;
+    	ss << prefixMatchPenalty;
+    	return ss.str();
+    }
 
     Impl()
     {
@@ -240,6 +255,10 @@ ResultsPostProcessorPlan * Query::getPostProcessingPlan(){
 	return this->impl->plan;
 }
 
+
+string Query::toString(){
+	return this->impl->toString();
+}
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
 {

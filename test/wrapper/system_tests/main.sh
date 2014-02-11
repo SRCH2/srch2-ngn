@@ -77,6 +77,22 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+
+test_id="cache_A1 test"
+printTestBanner "$test_id"
+python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
+
+
 test_id="boolean expression test"
 printTestBanner "$test_id"
 python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt > system_test.log 2>&1

@@ -676,14 +676,14 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
             Logger::error("Reopen Log file %s failed.",
                     server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
-                "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
+                "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
+                "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
         }
         break;
     }
@@ -745,8 +745,8 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    string combinedInfo = "[" + server->indexer->getIndexHealth() + ", "
-            + versioninfo + "]";
+    string combinedInfo = "{" + server->indexer->getIndexHealth() + ", "
+        + "\"version\":\"" + versioninfo + "\"}";
 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
     evhttp_clear_headers(&headers);

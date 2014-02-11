@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <sstream>
 
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
@@ -78,6 +79,18 @@ public:
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
     std::vector<int> numberOfTopGroupsToReturn;
+
+    string toString(){
+    	stringstream ss;
+    	for(unsigned index = 0 ; index < types.size() ; ++index){
+    		ss << types[index] << fields[index].c_str() <<
+    				rangeStarts[index].c_str() << rangeGaps[index].c_str() <<  rangeEnds[index].c_str();
+    		if(index < numberOfTopGroupsToReturn.size()){
+    			ss << numberOfTopGroupsToReturn[index] ;
+    		}
+    	}
+    	return ss.str();
+    }
 };
 
 class SortEvaluator
@@ -87,6 +100,7 @@ public:
 	// and right records which serve as tie breaker.
 	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
+	virtual string toString() const = 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;
 };
@@ -96,6 +110,7 @@ class RefiningAttributeExpressionEvaluator
 public:
 	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
 	virtual ~RefiningAttributeExpressionEvaluator(){};
+	virtual string toString() = 0;
 };
 
 class PhraseInfo{
@@ -105,6 +120,22 @@ class PhraseInfo{
         vector<unsigned> phraseKeywordPositionIndex;
         unsigned proximitySlop;
         unsigned attributeBitMap;
+
+        string toString(){
+        	stringstream ss;
+        	for(unsigned i = 0 ; i < phraseKeyWords.size() ; ++i ){
+        		ss << phraseKeyWords[i].c_str();
+        	}
+        	for(unsigned i = 0 ; i < keywordIds.size() ; ++i ){
+        		ss << keywordIds[i];
+        	}
+        	for(unsigned i = 0 ; i < phraseKeywordPositionIndex.size() ; ++i ){
+        		ss << phraseKeywordPositionIndex[i];
+        	}
+        	ss << proximitySlop;
+        	ss << attributeBitMap;
+        	return ss.str();
+        }
 };
 
 
@@ -123,6 +154,14 @@ public:
 		phraseInfoVector.push_back(pi);
 	}
 	vector<PhraseInfo> phraseInfoVector;
+
+    string toString(){
+    	stringstream ss;
+    	for(unsigned i=0; i< phraseInfoVector.size() ; ++i){
+    		ss << phraseInfoVector[i].toString().c_str();
+    	}
+    	return ss.str();
+    }
 };
 
 class ResultsPostProcessingInfo{
@@ -140,6 +179,8 @@ public:
 	void setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer);
 	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
 
+
+	string toString();
 private:
 	FacetQueryContainer * facetInfo;
 	SortEvaluator * sortEvaluator;

@@ -47,6 +47,7 @@ ADD_TEST(ActiveNode_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ActiveNode_Test 
 ADD_TEST(Cowvector_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cowvector_Test "--verbose")
 
 ADD_TEST(Cache_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cache_Test "--verbose")
+ADD_TEST(CacheManager_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/CacheManager_Test "--verbose")
 ADD_TEST(Compression_S16_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Compression_S16_Test "--verbose")
 	
 ADD_TEST(TermVirtualList_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/TermVirtualList_Test "--verbose")
@@ -69,6 +70,8 @@ ADD_TEST(ReadWriteMutexCondWait_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadW
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")
+
+ADD_TEST(RecordSerializer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RecordSerializer_Test "--verbose")
 ############INTEGRATION TESTS#################
     
 SET(INTEGRATION_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/integration/test_data/)

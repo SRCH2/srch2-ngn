@@ -11,6 +11,7 @@ namespace instantsearch {
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
 UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator() {
+    this->parentIsCacheEnabled = false;
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
@@ -32,7 +33,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     this->currentMaxEditDistanceOnHeap = 0;
     this->currentRecordID = -1;
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
@@ -43,7 +44,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
             initialiseTermVirtualListElement(prefixNode, leafNode, distance);
         }
     } else { // case 2: Term is complete
-        ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
@@ -55,8 +56,28 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
         }
     }
 
-    // Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
-    make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+
+    // check cache
+    parentIsCacheEnabled = params.parentIsCacheEnabled;
+    if(params.parentIsCacheEnabled == false || params.cacheObject == NULL){
+    	// parent is not feeding us with cache info and does not expect cache entry
+    	// or there was no cache hit
+		// Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
+		make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+    }else if(params.cacheObject != NULL){
+    	// parent is feeding us with cache hit info and does expect newer cache entry.
+    	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
+    			(UnionLowestLevelTermVirtualListCacheEntry *)params.cacheObject;
+    	itemsHeap.clear();
+    	cursorVector.clear();
+    	for(unsigned i = 0; i < cacheEntry->itemsHeap.size() ; ++i){
+    		this->itemsHeap.push_back(
+    				new UnionLowestLevelTermVirtualListOperatorHeapItem(*(cacheEntry->itemsHeap.at(i))));
+    	}
+    	this->cursorVector = cacheEntry->cursorVector;
+    	this->currentMaxEditDistanceOnHeap = cacheEntry->currentMaxEditDistanceOnHeap;
+    	this->numberOfItemsInPartialHeap = cacheEntry->numberOfItemsInPartialHeap;
+    }
 
     return true;
 }
@@ -150,6 +171,16 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
 }
 bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParameters & params){
+
+	// if parent excepts cache must prepare a newer cache entry
+	if(parentIsCacheEnabled){
+		// set cache object
+		UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
+				new UnionLowestLevelTermVirtualListCacheEntry(this->itemsHeap,
+						this->numberOfItemsInPartialHeap , this->currentMaxEditDistanceOnHeap , this->cursorVector);
+		params.cacheObject = cacheEntry;
+	}
+
     queryEvaluator = NULL;
     for (vector<UnionLowestLevelTermVirtualListOperatorHeapItem* >::iterator iter = this->itemsHeap.begin(); iter != this->itemsHeap.end(); iter++) {
         UnionLowestLevelTermVirtualListOperatorHeapItem *currentItem = *iter;
@@ -164,14 +195,23 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
     // We don't delete activenodesets here. Be careful to delete them by PhysicalPlanNode
     return true;
 }
+
+string UnionLowestLevelTermVirtualListOperator::toString(){
+	string result = "UnionLowestLevelTermVirtualListOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 
 }
 // The cost of open of a child is considered only once in the cost computation

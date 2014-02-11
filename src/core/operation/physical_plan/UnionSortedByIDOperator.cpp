@@ -123,6 +123,15 @@ bool UnionSortedByIDOperator::close(PhysicalPlanExecutionParameters & params){
 	visitedRecords.clear();
 	return true;
 }
+
+string UnionSortedByIDOperator::toString(){
+	string result = "UnionSortedByIDOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return verifyByRandomAccessOrHelper(this->getPhysicalPlanOptimizationNode(), parameters);
 }

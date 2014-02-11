@@ -70,9 +70,9 @@ public:
 	static void printIndentations(unsigned indent){
 		if(indent < 1) return;
 		for(int i=0;i<indent-1;i++){
-			cout << "\t" ;
+			Logger::info("\t");
 		}
-		cout << "-\t";
+		Logger::info("-\t");
 	}
 
 };

@@ -15,6 +15,7 @@ RandomAccessVerificationTermOperator::RandomAccessVerificationTermOperator() {
 RandomAccessVerificationTermOperator::~RandomAccessVerificationTermOperator(){
 }
 bool RandomAccessVerificationTermOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
+	// random access needs no caching.
 	this->queryEvaluator = queryEvaluator;
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
@@ -27,14 +28,24 @@ bool RandomAccessVerificationTermOperator::close(PhysicalPlanExecutionParameters
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
 }
+
+string RandomAccessVerificationTermOperator::toString(){
+	string result = "RandomAccessVerificationTermOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
+
 bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	  //do the verification
-	PrefixActiveNodeSet *prefixActiveNodeSet =
+	boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet =
 			this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(parameters.isFuzzy);
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);;
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet, term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 
 }
 // The cost of open of a child is considered only once in the cost computation
@@ -58,7 +69,8 @@ PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfClos
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	unsigned estimatedNumberOfTerminalNodes =
+			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.addFunctionCallCost(5);
 	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);

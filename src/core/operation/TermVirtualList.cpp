@@ -281,12 +281,7 @@ TermVirtualList::~TermVirtualList()
     this->term = NULL;
     this->invertedIndex = NULL;
 
-    if (prefixActiveNodeSet->isResultsCached() == true)
-        prefixActiveNodeSet->busyBit->setFree();
-    else
-        delete prefixActiveNodeSet;
 }
-
 //Called when this->numberOfItemsInPartialHeap = 0
 bool TermVirtualList::_addItemsToPartialHeap()
 {

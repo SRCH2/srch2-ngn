@@ -5,6 +5,7 @@
 #include "util/Assert.h"
 #include "operation/HistogramManager.h"
 #include "instantsearch/ResultsPostProcessor.h"
+#include "sstream"
 
 using namespace std;
 
@@ -47,6 +48,30 @@ LogicalPlanNode::~LogicalPlanNode(){
 void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 	this->fuzzyTerm = fuzzyTerm;
 }
+
+string LogicalPlanNode::toString(){
+	stringstream ss;
+	ss << this->nodeType;
+	if(this->exactTerm != NULL){
+		ss << this->exactTerm->toString();
+	}
+	if(this->fuzzyTerm != NULL){
+		ss << this->fuzzyTerm->toString();
+	}
+	ss << this->forcedPhysicalNode;
+	return ss.str();
+}
+
+string LogicalPlanNode::getSubtreeUniqueString(){
+
+	string result = toString();
+	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
+		ASSERT(this->children.at(childOffset) != NULL);
+		result += this->children.at(childOffset)->getSubtreeUniqueString();
+	}
+	return result;
+}
+
 
 //////////////////////////////////////////////// Logical Plan ///////////////////////////////////////////////
 

@@ -23,7 +23,7 @@
 #define __INDEXERINTERNAL_H__
 
 #include <instantsearch/Indexer.h>
-#include "operation/Cache.h"
+#include "operation/CacheManager.h"
 #include "operation/IndexData.h"
 #include <string>
 #include <sstream>
@@ -38,7 +38,7 @@ namespace srch2
 {
 namespace instantsearch
 {
-class Cache;
+class CacheManager;
 class GlobalCache;
 
 struct IndexHealthInfo
@@ -177,10 +177,10 @@ public:
     inline const string getIndexHealth() const
     {
         std::stringstream str;
-        str << "{";
-        str << "search_requests:" << this->index->_getReadCount() << ",";
-        str << "write_requests:" <<  this->index->_getWriteCount() << ",";
-        str << "docs_in_index:" << this->index->_getNumberOfDocumentsInIndex() << ",";
+        str << "\"engine_status\":{";
+        str << "\"search_requests\":\"" << this->index->_getReadCount() << "\",";
+        str << "\"write_requests\":\"" <<  this->index->_getWriteCount() << "\",";
+        str << "\"docs_in_index\":\"" << this->index->_getNumberOfDocumentsInIndex() << "\",";
         str << this->indexHealthInfo.getIndexHealthString() << "}";
         return str.str();
     }
@@ -215,7 +215,7 @@ public:
 
 private:
     IndexData *index;
-    Cache *cache;
+    CacheManager *cache;
 
     IndexHealthInfo indexHealthInfo;
 

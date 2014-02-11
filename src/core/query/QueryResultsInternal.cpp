@@ -85,20 +85,13 @@ bool QueryResultsInternal::checkCacheHit(
             vectorIterator != queryTerms->end(); vectorIterator++) {
         // compute the active nodes for this term
         Term *term = *vectorIterator;
-        PrefixActiveNodeSet *termActiveNodeSet = queryEvaluatorInternal
+        boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = queryEvaluatorInternal
                 ->computeActiveNodeSet(term);
 
         // compute the virtual list for this term
         TermVirtualList *termVirtualList = new TermVirtualList(
-                queryEvaluatorInternal->getInvertedIndex(), termActiveNodeSet,
+                queryEvaluatorInternal->getInvertedIndex(), termActiveNodeSet.get(),
                 term, query->getPrefixMatchPenalty());
-
-        // check if termActiveNodeSet is cached, if not delete it to prevent memory leaks.
-        if (termActiveNodeSet->isResultsCached() == false) {
-            delete termActiveNodeSet;
-        } else {
-            returnValue = true;
-        }
 
         this->virtualListVector->push_back(termVirtualList);
     }

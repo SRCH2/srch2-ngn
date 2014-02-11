@@ -25,6 +25,7 @@
 #include "util/Assert.h"
 #include <vector>
 #include <string>
+#include <sstream>
 using namespace std;
 
 namespace srch2 {
@@ -51,6 +52,20 @@ public:
 
     void setFuzzyTerm(Term * fuzzyTerm);
 
+    unsigned getNumberOfLeafNodes(){
+    	if(nodeType == LogicalPlanNodeTypeTerm){
+    		return 1;
+    	}else{
+    		unsigned sumOfChildren = 0;
+    		for(vector<LogicalPlanNode *>::iterator child = children.begin(); child != children.end() ; ++child){
+    			sumOfChildren += (*child)->getNumberOfLeafNodes();
+    		}
+    		return sumOfChildren;
+    	}
+    }
+
+    string toString();
+    string getSubtreeUniqueString();
     Term * getTerm(bool isFuzzy){
     	if(isFuzzy){
     		return this->fuzzyTerm;
@@ -232,6 +247,36 @@ public:
 		this->docIdForRetrieveByIdSearchType = docid;
 	}
 
+
+	/*
+	 * This function returns a string representation of the logical plan
+	 * by concatenating different parts together. The call to getSubtreeUniqueString()
+	 * gives us a tree representation of the logical plan tree. For example is query is
+	 * q = FOO1 AND BAR OR FOO2
+	 * the string of this subtree is something like:
+	 * FOO1_BAR_FOO2_OR_AND
+	 */
+	string getUniqueStringForCaching(){
+		stringstream ss;
+		if(tree != NULL){
+			ss << tree->getSubtreeUniqueString().c_str();
+		}
+		ss << docIdForRetrieveByIdSearchType;
+		if(postProcessingInfo != NULL){
+			ss << postProcessingInfo->toString().c_str();
+		}
+		ss << queryType;
+		ss << offset;
+		ss << numberOfResultsToRetrieve;
+		ss << shouldRunFuzzyQuery;
+		if(exactQuery != NULL){
+			ss << exactQuery->toString().c_str();
+		}
+		if(fuzzyQuery != NULL){
+			ss << fuzzyQuery->toString().c_str();
+		}
+		return ss.str();
+	}
 };
 
 }

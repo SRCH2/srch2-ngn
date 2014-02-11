@@ -61,6 +61,7 @@ public:
     virtual bool evaluate(
             std::map<std::string, TypedValue> & nonSearchableAttributeValues)= 0;
 
+	virtual string getUniqueStringForCaching() = 0;
     virtual ~QueryExpression() {
     }
     ;
@@ -198,6 +199,15 @@ public:
     ~RangeQueryExpression() {
     }
 
+	string getUniqueStringForCaching() {
+		stringstream ss;
+		ss << attributeName.c_str();
+		ss << attributeValueLower.c_str();
+		ss << attributeValueUpper.c_str();
+		ss << negative;
+		return ss.str();
+	}
+
 private:
     // the name of the attribute which is checked against the range
     std::string attributeName;
@@ -327,6 +337,15 @@ public:
     ~EqualityQueryExpression() {
     }
 
+	string getUniqueStringForCaching() {
+		stringstream ss;
+		ss << attributeName.c_str();
+		ss << attributeValue.c_str();
+		ss << operation;
+		ss << negative;
+		return ss.str();
+	}
+
 private:
     std::string attributeName;
     string attributeValue;
@@ -426,6 +445,10 @@ public:
 
     ~ComplexQueryExpression() {
     }
+
+	string getUniqueStringForCaching() {
+		return parsedExpression.c_str();
+	}
 
 private:
     string parsedExpression;
@@ -597,6 +620,15 @@ public:
             }
         }
     }
+
+	string toString(){
+		stringstream ss;
+		for(std::vector<QueryExpression *>::iterator queryExpression = expressions.begin();
+				queryExpression != expressions.end() ; ++queryExpression){
+			ss << (*queryExpression)->getUniqueStringForCaching().c_str();
+		}
+		return ss.str();
+	}
 private:
     // each expression is one term (one conjuct or disjunc) of the query
     // for example: for fq= price:[10 TO 100] AND model:JEEP, this vector contains

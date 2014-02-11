@@ -43,6 +43,15 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+string FilterQueryOperator::toString(){
+	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
+
 bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
 }

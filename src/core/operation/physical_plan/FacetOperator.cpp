@@ -326,6 +326,19 @@ bool FacetOperator::close(PhysicalPlanExecutionParameters & params){
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
+
+//As of now, cache implementation doesn't need this function for this operator.
+// This code is here only if we want to implement a
+//cache module in future that needs it.
+string FacetOperator::toString(){
+	ASSERT(false); // this function should not be called for this operator
+	// because we don't have any cache functionality for facet as of now.
+	string result = "facetOperator" ;
+	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
+		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
+	}
+	return result;
+}
 bool FacetOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
 	ASSERT(false);
 	return false;
