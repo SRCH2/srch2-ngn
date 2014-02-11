@@ -1,10 +1,11 @@
 #! /usr/bin/python
 
 # Test case to test multi-core functionality
-# The configuration file for this test case specifies 3 different cores, each with a different
-# data source.  Three search terms are tested, each expected to be returned by one and only one
-# of the cores.  The usual syntax of the queriesAndResults.txt file has been extended to the
-# following format: <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
+# The configuration file for this test case specifies 4 different cores.  The first 3 have a
+# different data source.  Three search terms are tested, each expected to be returned by one
+# and only one of the cores.  The usual syntax of the queriesAndResults.txt file has been
+# extended to the following format:
+#     <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
 # where each ID result set is a space separated list of record IDs expected from the server.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, re
@@ -13,7 +14,6 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 port = '8087'
-infoPort = '8088'
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -175,23 +175,6 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             failCount += checkResult(query, response_json['results'], resultValue)
 
             index += 1
-
-    print "\nTest suite #3: Port security"
-    query='http://localhost:' + infoPort + '/info'
-    #do the query
-    #print query
-    response = urllib2.urlopen(query).read()
-    #print response
-    response_json = json.loads(response)
-    if len(response_json) > 0:
-        if int(response_json['engine_status']['docs_in_index']) != 244:
-            failCount += 1
-            print "Info request did not return expected document count: Got " + str(response_json['engine_status']['docs_in_index']) + " but expected 244."
-        else:
-            print query + ' test pass'
-    else:
-        failCount += 1
-        print "Null response to info request"
 
         
     test_lib.killServer(serverHandle)

@@ -7,10 +7,11 @@
 
     Please email contact@srch2.com if you have questions.
 
-    This configuration file defines 3 separate cores (data sources) in order to allow testing of
+    This configuration file defines 4 separate cores (data sources) in order to allow testing of
     basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
     of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
-    test database).
+    test database).  Core4 also loads the movie demo database, however in addition to some
+    configuration setting differences, it uses a different stop words file.
 -->
  
 <config>
@@ -23,7 +24,6 @@
  
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
-    <infoPort>8088</infoPort>
 
     <!-- moved from <query> which is now per core -->
     <maxSearchThreads>2</maxSearchThreads>
@@ -34,7 +34,6 @@
             <dataFile>movie-data.json</dataFile>
             <dataDir>core1</dataDir>
             <dataSourceType>1</dataSourceType>
-	    <infoPort>8088</infoPort>
             <indexConfig>
                 <indexType>0</indexType>
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
