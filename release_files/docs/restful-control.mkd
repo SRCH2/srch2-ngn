@@ -60,7 +60,7 @@ Content-Type: application/json; charset=UTF-8
 Content-Length: 138
 Date: Thu, 19 Sep 2013 18:52:52 GMT
 
-[{search_requests:0,write_requests:100,docs_in_index:100,"last_merge":"09/19/13 18:52:48","last_merge_time":"0","doc_count":"100"}, 4.0.0]
+{"engine_status":{"search_requests":"0","write_requests":"100","docs_in_index":"100","last_merge":"02/10/14 23:11:21","last_merge_time":"0","doc_count":"100"}, "version":"4.2.0"}
 ```
 
 ##2. Serializing Indexes to Disk##{id="serialize-indexes"}
