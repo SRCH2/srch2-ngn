@@ -48,8 +48,12 @@ void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnip
 
         	std::string uncompressedInMemoryRecordString;
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
-        	this->highlightAlgorithms->getSnippet(recordId, highlightAttributes[i].first,
-        			uncompressedInMemoryRecordString.c_str(), attrSnippet.snippet);
+        	try{
+				this->highlightAlgorithms->getSnippet(recordId, highlightAttributes[i].first,
+						uncompressedInMemoryRecordString.c_str(), attrSnippet.snippet);
+        	}catch(exception ex) {
+        		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
+        	}
         	attrSnippet.FieldId = highlightAttributes[i].second;
         	if (attrSnippet.snippet.size() > 0)
         		recordSnippets.fieldSnippets.push_back(attrSnippet);

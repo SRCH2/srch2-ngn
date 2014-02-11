@@ -59,9 +59,10 @@ HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrT
 			vector<CharType> temp;
 			utf8StringToCharTypeVector(iter->second.phraseKeyWords[i], temp);
 			for(unsigned k = 0; k < this->keywordStrToHighlight.size(); ++k) {
-				if (this->keywordStrToHighlight[k].flag == 1 &&
+				if (this->keywordStrToHighlight[k].flag != 0 &&
 					compareVectors(this->keywordStrToHighlight[k].key, temp)){
-					this->keywordStrToHighlight[k].flag = 2;
+					if (this->keywordStrToHighlight[k].flag == 1)
+						this->keywordStrToHighlight[k].flag = 3; // word present in both phrase and normal query
 					PhraseTermInfo pti;
 					pti.recordPosition = new vector<unsigned>();  // to be filled later
 					pti.queryPosition = iter->second.phraseKeywordPositionIndex[i];
@@ -128,11 +129,17 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 
 void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/, const char *dataIn, vector<string>& snippets) {
 
+	if (!dataIn)
+		return;
+
 	vector<matchedTermInfo> highlightPositions;
 	set<unsigned> actualHighlightedSet;
 	vector<CharType> ctsnippet;
 	vector<CharType> ctv;
 	utf8StringToCharTypeVector(dataIn, ctv);
+	if (ctv.size() == 0)
+		return;
+
 	short mask = (1 << keywordStrToHighlight.size()) - 1;
 
 	/*
@@ -263,66 +270,81 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 		unsigned snippetUpperEnd, unsigned snippetLowerEnd,
 		const vector<matchedTermInfo>& highlightPositions) {
 
-	snippets.reserve(this->snippetSize);
+	ASSERT(highlightPositions.size() > 0);
+
+	unsigned markerCharSize = (snippetUpperEnd - snippetLowerEnd) *
+						  (this->highlightMarkerPre.size() + this->highlightMarkerPost.size());
+	snippets.reserve(this->snippetSize + markerCharSize + 6);
 	unsigned maxSnippetLen = this->snippetSize;
 
 	vector<CharType> filler;
 	utf8StringToCharTypeVector("...", filler);
 
-	ASSERT(highlightPositions.size() > 0);
-
-	if (highlightPositions[0].offset != 0) {
-		snippets.insert(snippets.end(), filler.begin(), filler.end());
-	}
-	unsigned quotaRemaining = maxSnippetLen - snippets.size() - filler.size() /*end filler*/;
-	quotaRemaining -= (snippetUpperEnd - snippetLowerEnd) *
-					  (this->highlightMarkerPre.size() + this->highlightMarkerPost.size());
-
-	unsigned lowerOffset = highlightPositions[snippetLowerEnd].offset;
+	unsigned lowerOffset = highlightPositions[snippetLowerEnd].offset - 1;
 	unsigned upperOffset = highlightPositions[snippetUpperEnd].offset +
 			highlightPositions[snippetUpperEnd].len;
-	while(upperOffset < dataIn.size() && !isWhiteSpace(dataIn[upperOffset - 1])) {
-		upperOffset++;
+	if (upperOffset > dataIn.size() || lowerOffset > upperOffset) {
+		return;
 	}
-	unsigned gap = upperOffset - lowerOffset;;
+	/*
+	 * Move upper offset to find the word boundary. If no word boundary is found within 20 characters
+	 * then we stop
+	 */
+	unsigned tempOffset = upperOffset;
+	while(tempOffset < (upperOffset + 20) && tempOffset < dataIn.size()  &&
+			!isWhiteSpace(dataIn[tempOffset - 1])) {
+		tempOffset++;
+	}
+	upperOffset = tempOffset;
+
+	unsigned quotaRemaining = maxSnippetLen;
+	unsigned gap = upperOffset - lowerOffset;
 
 	if (gap < quotaRemaining) {
 		unsigned leftPad, rightPad;
+		// Because we have all highlighting position with snippet limit
+		// TODO: try to look for sentence boundary to generate more meaningful snippets.
+
 		leftPad = rightPad = (quotaRemaining - gap) / 2;
 		if (upperOffset + rightPad >= dataIn.size()) {
 			/*branch1*/
 			leftPad += rightPad - (dataIn.size() - upperOffset);  // add remaining to leftPad
-			upperOffset = dataIn.size() - 1;  // set the upper offset to the size of data
+			upperOffset = dataIn.size();  // set the upper offset to the size of data
 		} else {
 			/*branch2*/
-			upperOffset = upperOffset + rightPad;
-			while(upperOffset > 0 /*defensive check*/ && !isWhiteSpace(dataIn[upperOffset - 1])){
-				upperOffset--;
+			tempOffset = upperOffset + rightPad;
+			while(tempOffset > upperOffset && !isWhiteSpace(dataIn[tempOffset - 1])){
+				tempOffset--;
 			}
+			upperOffset = tempOffset;
 		}
-		if (lowerOffset - leftPad - 1 > lowerOffset /*unsigned value will wrap around*/) {
+		if (lowerOffset - leftPad > lowerOffset /*unsigned value will wrap around*/) {
 			/*branch3*/
 			rightPad = leftPad - lowerOffset;
-		    lowerOffset = 1;
+		    lowerOffset = 0;
 		} else {
 			/*branch4*/
 			rightPad = 0;
-			lowerOffset = lowerOffset - leftPad;
-			while(lowerOffset < dataIn.size() /*defensive check*/
-					&& !isWhiteSpace(dataIn[lowerOffset - 1])){
-				lowerOffset++;
+			tempOffset = lowerOffset - leftPad;
+			while(tempOffset < lowerOffset && !isWhiteSpace(dataIn[tempOffset])){
+				tempOffset++;
 			}
+			lowerOffset = tempOffset;
 		}
 		// following branch will get executed only if branch 2 and branch 3 were taken above,
-		if (upperOffset < dataIn.size() - 1 && rightPad > 0) {
+		if (upperOffset < dataIn.size() && rightPad > 0) {
 			if (upperOffset + rightPad >= dataIn.size()) {
-				upperOffset = dataIn.size() - 1;  // set the upper offset to the size of data
+				upperOffset = dataIn.size();  // set the upper offset to the size of data
 			} else {
-				upperOffset = upperOffset + rightPad;
-				while(upperOffset > 0 /*defensive check*/ && !isWhiteSpace(dataIn[upperOffset - 1])){
-					upperOffset--;
+				tempOffset = upperOffset + rightPad;
+				while(tempOffset > upperOffset && !isWhiteSpace(dataIn[tempOffset - 1])){
+					tempOffset--;
 				}
+				upperOffset = tempOffset;
 			}
+		}
+		if (lowerOffset != 0) {
+			snippets.insert(snippets.end(), filler.begin(), filler.end());
 		}
 		insertHighlightMarkerIntoSnippets(snippets, dataIn, lowerOffset, upperOffset,
 				highlightPositions, snippetLowerEnd, snippetUpperEnd);
@@ -330,7 +352,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 		// find maximum interval between the offsets of matched keywords.
 		unsigned index = snippetLowerEnd;
 		signed intervalGap = 0;  // keep this signed to check for negative value.
-		unsigned extraChars = gap - quotaRemaining + 3;
+		unsigned extraChars = gap - quotaRemaining;
 		bool snippetShortened = false;
 		vector<std::pair<unsigned, unsigned> > intervalVect;
 		while(index < snippetUpperEnd) {
@@ -369,7 +391,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 			++index;
 		}
 
-		if (!snippetShortened){
+		if (!snippetShortened && intervalVect.size() > 0){
 			index = snippetLowerEnd;
 			sort(intervalVect.begin(), intervalVect.end());
 			unsigned sum = 0;
@@ -378,46 +400,49 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 				sum += intervalVect[idx].first;
 				idx--;
 			}
-			unsigned cushion = (sum - extraChars) / (intervalVect.size() - idx - 1);
-			unsigned cutOffinterval = intervalVect[idx+1].first;
-			unsigned startOffset = lowerOffset;
-			unsigned endOffset = 0;
-			while(index < snippetUpperEnd) {
-				intervalGap = highlightPositions[index + 1].offset -
-									(highlightPositions[index].offset + highlightPositions[index].len);
-				startOffset = highlightPositions[index].offset;
-				if (intervalGap >= (signed)cutOffinterval){
-					endOffset = highlightPositions[index].offset + highlightPositions[index].len +
+			if (sum > extraChars) {
+				unsigned cushion = (sum - extraChars) / ((signed)intervalVect.size() - (signed)idx - 1);
+				unsigned cutOffinterval = intervalVect[(signed)idx+1].first;
+				unsigned startOffset = 0;
+				unsigned endOffset = 0;
+
+				while(index < snippetUpperEnd) {
+					intervalGap = highlightPositions[index + 1].offset -
+							(highlightPositions[index].offset + highlightPositions[index].len);
+					startOffset = highlightPositions[index].offset - 1;
+					if (intervalGap >= (signed)cutOffinterval){
+						endOffset =  highlightPositions[index].offset + highlightPositions[index].len;
+						tempOffset = highlightPositions[index].offset + highlightPositions[index].len +
 								cushion / 2;
-					while(endOffset > startOffset + highlightPositions[index].len
-							&& !isWhiteSpace(dataIn[endOffset - 1])){
-						endOffset--;
+						while(tempOffset  > endOffset && !isWhiteSpace(dataIn[tempOffset - 1])){
+							tempOffset--;
+						}
+						endOffset = tempOffset;
+						insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
+								highlightPositions, snippetLowerEnd, snippetUpperEnd);
+
+						snippets.insert(snippets.end(), filler.begin(), filler.end()); // add "..."
+
+
+						startOffset = highlightPositions[index + 1].offset - 1 - (cushion / 2);
+						endOffset = highlightPositions[index + 1].offset - 1;
+						while(startOffset < endOffset
+								&& !isWhiteSpace(dataIn[startOffset])){
+							startOffset++;
+						}
+						insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
+								highlightPositions, snippetLowerEnd, snippetUpperEnd);
+					} else {
+						endOffset = highlightPositions[index + 1].offset - 1;
+						insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
+								highlightPositions, snippetLowerEnd, snippetUpperEnd);
 					}
-					insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
-													highlightPositions, snippetLowerEnd, snippetUpperEnd);
-
-					snippets.insert(snippets.end(), filler.begin(), filler.end()); // add "..."
-
-
-					startOffset = highlightPositions[index + 1].offset - (cushion / 2);
-					endOffset = highlightPositions[index + 1].offset - 1;
-					while(startOffset < endOffset
-							&& !isWhiteSpace(dataIn[startOffset - 1])){
-						startOffset++;
-					}
-					insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
-													highlightPositions, snippetLowerEnd, snippetUpperEnd);
-				} else {
-					endOffset = highlightPositions[index + 1].offset - 1;
-					if (startOffset < endOffset)
-					insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
-												highlightPositions, snippetLowerEnd, snippetUpperEnd);
+					++index;
 				}
-				++index;
+				startOffset = highlightPositions[index].offset - 1;
+				insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, upperOffset,
+						highlightPositions, snippetLowerEnd, snippetUpperEnd);
 			}
-			startOffset = highlightPositions[index].offset;
-			insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, upperOffset,
-					highlightPositions, snippetLowerEnd, snippetUpperEnd);
 		}
 	}
 	snippets.insert(snippets.end(), filler.begin(), filler.end());
@@ -428,7 +453,7 @@ void HighlightAlgorithm::insertHighlightMarkerIntoSnippets(vector<CharType>& sni
 		const vector<matchedTermInfo>& highlightPositions,
 		unsigned snippetLowerEnd, unsigned snippetUpperEnd) {
 
-	unsigned copyStartOffset = lowerOffset - 1;
+	unsigned copyStartOffset = lowerOffset;
 	for (unsigned i =  snippetLowerEnd; i <= snippetUpperEnd; ++i) {
 		if (highlightPositions[i].offset < lowerOffset)
 			continue;
@@ -463,6 +488,10 @@ TermOffsetAlgorithm::TermOffsetAlgorithm(const Indexer * indexer,
 }
 void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, const char *dataIn,
 		vector<string>& snippets) {
+
+	if (!dataIn)
+		return;
+
 	bool valid = false;
 	const ForwardList * fwdList = fwdIndex->getForwardList(recordId, valid);
 	if (!valid) {
@@ -479,6 +508,10 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 	vector<CharType> ctv;
 	utf8StringToCharTypeVector(dataIn, ctv);
 
+	if(ctv.size() == 0)
+		return;
+
+	set<unsigned> visitedKeyword;
 	const unsigned *keywordIdsPtr = fwdList->getKeywordIds();
 	unsigned keywordsInRec =  fwdList->getNumberOfKeywords();
 
@@ -493,12 +526,12 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 				++i;
 			else {
 				unsigned attributeBitMap =	fwdList->getKeywordAttributeBitmap(j);
-				if (attributeBitMap && (1 << attributeId)) {
+				if (attributeBitMap & (1 << attributeId)) {
 					vector<unsigned> offsetPosition;
 					vector<unsigned> wordPosition;
 					fwdList->getKeyWordOffsetInRecordField(j, attributeId, attributeBitMap, offsetPosition);
+					visitedKeyword.insert(iter->first);
 					for (unsigned _idx = 0; _idx < offsetPosition.size(); ++_idx){
-						// todo replace iter->first with keywordID
 						matchedTermInfo mti = {keywordStrToHighlight[iter->first].flag, iter->first, offsetPosition[_idx],
 							keywordStrToHighlight[iter->first].key.size()};
 						highlightPositions.push_back(mti);
@@ -572,6 +605,18 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 	}
 
 	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
+	/* no phrase for highlighting */
+	if (phrasesInfoList.size() == 0 ) {
+		unsigned j = snippetUpperEnd;
+		while(j > 0){
+			unsigned _id = highlightPositions[j].id;
+			visitedKeyword.erase(_id);
+			if (visitedKeyword.empty())
+				break;
+			--j;
+		};
+		snippetLowerEnd = j;
+	}
 
 	_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
 	string snippet;
