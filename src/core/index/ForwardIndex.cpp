@@ -978,6 +978,12 @@ void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId
 	}
 	currKeyattributeBitMap =
 		    getKeywordAttributeBitmapsPointer()[keyOffset];
+
+	// If keyword's attribute bitmap is 0 ( highly unlikely) or Attribute is not in keyword's attribute
+	// bitmap (programmer's error) ...then return because we cannot get any position/offset info.
+	if (currKeyattributeBitMap == 0 || (currKeyattributeBitMap & (1 << attributeId)) == 0)
+		return;
+
 	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
 	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
 
@@ -1011,7 +1017,7 @@ unsigned getBitSetPositionOfAttr(unsigned attrBitMap, unsigned attributeId) {
 	unsigned shift = 0;
 	unsigned count = 0;
 	while(shift < attributeId) {
-		if ((attrBitMap & (1 << shift)) == 1)
+		if ((attrBitMap & (1 << shift)) > 0)
 			++count;
 		++shift;
 	}
