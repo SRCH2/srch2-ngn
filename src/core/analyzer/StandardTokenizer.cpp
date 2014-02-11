@@ -50,6 +50,7 @@ bool StandardTokenizer::incrementToken() {
             	tokenStreamContainer->currentTokenPosition++;
                 return true;
             }
+            tokenStreamContainer->currentTokenOffset++;
             break;
         case CharSet::LATIN_TYPE:
         case CharSet::BOPOMOFO_TYPE:

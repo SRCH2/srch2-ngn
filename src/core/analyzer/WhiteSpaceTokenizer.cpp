@@ -28,7 +28,7 @@ bool WhiteSpaceTokenizer::incrementToken() {
                 	tokenStreamContainer->currentTokenPosition++;
                     return true;
                 } else {
-                    (tokenStreamContainer->offset)++;
+                    (tokenStreamContainer->currentTokenOffset)++;
                 }
                 break;
             default:

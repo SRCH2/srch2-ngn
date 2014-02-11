@@ -59,40 +59,45 @@ bool NonAlphaNumericFilter::processToken()
 			}
 
 			unsigned currOffset = 0;
+			unsigned offsetOfToken = 0;
+			unsigned origOffset = this->tokenStreamContainer->currentTokenOffset;
 			const vector<CharType> & charTypeBuffer = this->tokenStreamContainer->currentToken;
 			vector<CharType> tempToken;
 			// Try to tokenize keywords based on delimiters
 			while (currOffset < charTypeBuffer.size()) {
 				const CharType& c = charTypeBuffer[currOffset];
-				currOffset++;
 				switch (characterSet.getCharacterType(c)) {
 				case CharSet::DELIMITER_TYPE:
 				case CharSet::WHITESPACE:
 					if (!tempToken.empty()) {
-						internalTokenBuffer.push(tempToken);
+						internalTokenBuffer.push(make_pair(tempToken, origOffset + offsetOfToken));
 						tempToken.clear();
 					}
+					offsetOfToken = currOffset + 1;
 					break;
 				default:
 					tempToken.push_back(c);
 					break;
 				}
+				currOffset++;
 			}
 			if (!tempToken.empty()) {  // whatever is left over, push it to the internal buffer.
-				internalTokenBuffer.push(tempToken);
+				internalTokenBuffer.push(make_pair(tempToken, origOffset + offsetOfToken));
 				tempToken.clear();
 			}
 			if (internalTokenBuffer.size() > 0) {
 				// put first element from the internal token buffer to a shared token buffer for other
 				// filters to consume.  e.g internal buffer = {java script}, put "java" to
 				// the shared token.
-				this->tokenStreamContainer->currentToken = internalTokenBuffer.front();
+				this->tokenStreamContainer->currentToken = internalTokenBuffer.front().first;
+				this->tokenStreamContainer->currentTokenOffset = internalTokenBuffer.front().second;
 				internalTokenBuffer.pop();
 				return true;
 			}
 		} else {
-			this->tokenStreamContainer->currentToken = internalTokenBuffer.front();
+			this->tokenStreamContainer->currentToken = internalTokenBuffer.front().first;
 			this->tokenStreamContainer->currentTokenPosition++;
+			this->tokenStreamContainer->currentTokenOffset = internalTokenBuffer.front().second;
 			internalTokenBuffer.pop();
 			return true;
 		}
