@@ -136,7 +136,7 @@ ConfigManager::ConfigManager(const string& configFile)
 {
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
-    defaultCoreSet = false;
+    defaultCoreSetFlag = false;
 }
 
 void ConfigManager::loadConfigFile()
@@ -677,7 +677,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         // <cores defaultCoreName = "foo">
         if (coresNode.attribute(defaultCoreNameString) && string(coresNode.attribute(defaultCoreNameString).value()).compare("") != 0) {
             defaultCoreName = coresNode.attribute(defaultCoreNameString).value();
-            defaultCoreSet = true;
+            defaultCoreSetFlag = true;
         } else {
             parseWarnings << "Cores defaultCoreName not set <cores defaultCoreName=...>";
         }
@@ -758,7 +758,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     // map of port type enums to strings to simplify code
     struct portNameMap_t {
         enum PortType_t portType;
-        const char *attributeName;
+        const char *portName;
     };
     static portNameMap_t portNameMap[] = {
         { SearchPort, searchPortString },
@@ -772,8 +772,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         { EndOfPortType, NULL }
     };
 
-    for (unsigned int i = 0; portNameMap[i].attributeName != NULL; i++) {
-        childNode = parentNode.child(portNameMap[i].attributeName);
+    for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
+        childNode = parentNode.child(portNameMap[i].portName);
         if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
             coreInfo->setPort(portNameMap[i].portType, childNode.text().as_int());
         }

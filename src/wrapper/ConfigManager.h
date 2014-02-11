@@ -219,7 +219,7 @@ protected:
 
     // <config><cores>
     string defaultCoreName;
-    bool defaultCoreSet; // false unless <cores defaultCoreName="..."> has been parsed
+    bool defaultCoreSetFlag; // false unless <cores defaultCoreName="..."> has been parsed
 
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -340,9 +340,9 @@ public:
     }
 
     // true if config specifically names a default core
-    const bool getDefaultCoreSet() const
+    const bool getDefaultCoreSetFlag() const
     {
-        return defaultCoreSet;
+        return defaultCoreSetFlag;
     }
 
     CoreInfo_t *getDefaultCoreInfo() const;
