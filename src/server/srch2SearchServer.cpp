@@ -729,7 +729,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
 
-        if (config->getDefaultCoreSet() == true) {
+        if (config->getDefaultCoreSetFlag() == true) {
             // for every core, for every OTHER port that core uses, do accept, each with their own Listener_t so the
             // callback can check if the URL (path/operation) is permitted        
             for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
@@ -841,8 +841,7 @@ int main(int argc, char** argv) {
     vector<Listener_t *> listeners; // array of all listeners for all ports, all cores, all threads
     int start = startServers(serverConf, &evBases, &evServers, &cores, &portMap, &listeners);
     if (start != 0) {
-        if (logFile)
-            fclose(logFile);
+        Logger::close();
         return start; // startup failed
     }
 
@@ -870,8 +869,9 @@ int main(int argc, char** argv) {
 
     delete[] threads;
 
-    for (CoreMap_t::const_iterator iterator = cores.begin(); iterator != cores.end(); iterator++) {
+    for (CoreMap_t::iterator iterator = cores.begin(); iterator != cores.end(); iterator++) {
         iterator->second->indexer->save();
+        delete iterator->second;
     }
 
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
@@ -894,7 +894,6 @@ int main(int argc, char** argv) {
     Logger::console("Server stopped successfully");
     // if no log file is set in config file. This variable should be null.
     // Hence, we should do null check before calling fclose
-    if (logFile)
-        fclose(logFile);
+    Logger::close();
     return EXIT_SUCCESS;
 }
