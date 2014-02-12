@@ -719,19 +719,34 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 *      the cost of visiting one record from child i when we know the record is not
 	 *      a candidate and at least one of the random access verifications will fail.
 	 *
-	 * C-NCAN[i] = Scn[i] +
-	 *             R[i+1] + P[i+1] *...* P[i-1] *
-	 *             (Ran[i-1] - P[i-1](Ran[i+1] + ... + Ran[i-1]))
+	 * C-NCAN[i] = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[i-1] * (1 - P[i]) * (Rnd[0] + ... + Rnd[i]) )
+	 *             + Scn[i]  // for this formula, we set P[i] = 1 temporary
+	 *                       // because when record comes from P[i] we don't check
+	 *                       // child i for random access so we always pass it
 	 */
 	vector<unsigned> C_NCAN;
 	for(unsigned c = 0; c < P.size(); ++c){
-		unsigned previousIndex = (c + T -1) % T;
-		unsigned nextIndex = (c + 1) % T;
-		C_NCAN.push_back(
-				Scn[c] +
-				Rnd[nextIndex] + (PiP/(P[c]*P[previousIndex])) *
-				(Rnd[previousIndex] - P[previousIndex] * (SigmaRnd - Rnd[c]))
-				);
+		unsigned C_NCAN_c = 0;
+		float PcBackup = P[c];
+		P[c] = 1;
+		float PPart = 1;
+		unsigned RndPart = 0;
+		for(unsigned d = 0; d < P.size(); ++d){
+			RndPart += Rnd[d];
+			if(d != c){
+				C_NCAN_c += PPart * (1 - P[d]) * RndPart;
+			}
+			PPart *= P[d];
+		}
+		C_NCAN_c += Scn[c];
+		C_NCAN.push_back(C_NCAN_c);
+		//
+		P[c] = PcBackup;
 	}
 	 /* P-NCAN[i] = probability that a record from child i is not a candidate  =
 	 *             1 - P-CAN[i] = 1 - (6)
