@@ -468,7 +468,7 @@ unsigned int MAX_THREADS = 0;
 
 // These are global variables that store host and port information for srch2 engine
 short globalDefaultPort;
-const char *globalAddress;
+const char *globalHostName;
 
 #ifdef __MACH__
 /*
@@ -497,7 +497,7 @@ void makeHttpRequest(){
      */
     char hostIpAddr[20];
 	memset(hostIpAddr, 0, sizeof(hostIpAddr));
-    struct hostent * host = gethostbyname(globalAddress);
+    struct hostent * host = gethostbyname(globalHostName);
     if (host == NULL) {
     	// nothing much can be done..let us try 0.0.0.0
     	strncpy(hostIpAddr, "0.0.0.0", 7);
@@ -542,11 +542,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
     /* 1). event initialization */
     globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
-    globalAddress = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+    globalHostName = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
 
     // bind the default port
     if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
-        int socketFd = bindSocket(globalAddress, globalDefaultPort);
+        int socketFd = bindSocket(globalHostName, globalDefaultPort);
         if ((*globalPortSocketMap)[globalDefaultPort] < 0) {
             perror("socket bind error");
             return 255;
@@ -606,7 +606,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 int port = coreInfo->getPort(portType);
                 if (port > 0 && (globalPortSocketMap->find(port) == globalPortSocketMap->end() || (*globalPortSocketMap)[port] < 0)) {
-                    int socketFd = bindSocket(globalAddress, port);
+                    int socketFd = bindSocket(globalHostName, port);
                     if ((*globalPortSocketMap)[port] < 0) {
                         perror("socket bind error");
                         return 255;
@@ -621,7 +621,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
     MAX_THREADS = config->getNumberOfThreads();
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
-            MAX_THREADS, globalAddress, globalDefaultPort);
+            MAX_THREADS, globalHostName, globalDefaultPort);
 
     // Step 2: Serving server
     threads = new pthread_t[MAX_THREADS];
