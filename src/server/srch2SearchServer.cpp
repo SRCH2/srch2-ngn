@@ -113,6 +113,14 @@ static void cb_notfound(evhttp_request *req, void *arg)
 /*
  * Helper function to parse HTTP port from it's input headers.  Assumes a little knowledge of http_request
  * internals in libevent.
+ *
+ * Typical usage:
+ * void cb_search(evhttp_request *req, void *arg)
+ * {
+ *     int portNumber = getLibeventHttpRequestPort(req);
+ * }
+ *
+ * where cb_search() is a callback invoked by libevent.
  */
 static short int getLibeventHttpRequestPort(struct evhttp_request *req)
 {
@@ -140,7 +148,7 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
     return port;
 }
 
-static bool operationPermitted(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t operationType)
+static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t operationType)
 {
     struct operationMap_t {
         srch2http::PortType_t operationType;
@@ -200,7 +208,7 @@ static void cb_search(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::SearchPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::SearchPort) == false) {
         return;
     }
 
@@ -224,7 +232,7 @@ static void cb_suggest(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::SuggestPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::SuggestPort) == false) {
         return;
     }
 
@@ -248,7 +256,7 @@ static void cb_info(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::InfoPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::InfoPort) == false) {
         return;
     }
 
@@ -274,7 +282,7 @@ static void cb_write(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::DocsPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
         return;
     }
 
@@ -294,7 +302,7 @@ static void cb_update(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::UpdatePort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::UpdatePort) == false) {
         return;
     }
 
@@ -314,7 +322,7 @@ static void cb_save(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::SavePort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::SavePort) == false) {
         return;
     }
 
@@ -334,7 +342,7 @@ static void cb_export(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::ExportPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::ExportPort) == false) {
         return;
     }
 
@@ -352,7 +360,7 @@ static void cb_resetLogger(evhttp_request *req, void *arg)
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, srch2Server, srch2http::ResetLoggerPort) == false) {
+    if (checkOperationPermission(req, srch2Server, srch2http::ResetLoggerPort) == false) {
         return;
     }
 
