@@ -528,7 +528,8 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 *      the cost of visiting one record from child i when we know the record is not
 	 *      a candidate and at least one of the random access verifications will fail.
 	 *
-	 * C-NCAN[i] = Scn[i] + (Ran[0] + Ran[1] + ... + Ran[i-1] + Ran[i+1] + ... + Ran[T-1]) / 2
+	 * C-NCAN[i] = .... = // some conditional probability calculations =>
+	 *             Scn[i] + R[i+1] + P[i+1] *...* P[i-1] (R[i-1] - P[i-1](Ran[i+1] + ... + Ran[i-1]))
 	 * P-NCAN[i] = probability that a record from child i is not a candidate  =
 	 *             1 - P-CAN[i] = 1 - (6)
 	 * NormP-NCAN[i] = probability that a non-candidate record is from child i =
@@ -718,11 +719,19 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 *      the cost of visiting one record from child i when we know the record is not
 	 *      a candidate and at least one of the random access verifications will fail.
 	 *
-	 * C-NCAN[i] = Scn[i] + (Rnd[0] + Rnd[1] + ... + Rnd[i-1] + Rnd[i+1] + ... + Rnd[T-1]) / 2
+	 * C-NCAN[i] = Scn[i] +
+	 *             R[i+1] + P[i+1] *...* P[i-1] *
+	 *             (Ran[i-1] - P[i-1](Ran[i+1] + ... + Ran[i-1]))
 	 */
 	vector<unsigned> C_NCAN;
 	for(unsigned c = 0; c < P.size(); ++c){
-		C_NCAN.push_back(Rnd[(c+1) % P.size()] + (SigmaRnd - Rnd[c])/2 + Scn[c]);
+		unsigned previousIndex = (c + T -1) % T;
+		unsigned nextIndex = (c + 1) % T;
+		C_NCAN.push_back(
+				Scn[c] +
+				Rnd[nextIndex] + (PiP/(P[c]*P[previousIndex])) *
+				(Rnd[previousIndex] - P[previousIndex] * (SigmaRnd - Rnd[c]))
+				);
 	}
 	 /* P-NCAN[i] = probability that a record from child i is not a candidate  =
 	 *             1 - P-CAN[i] = 1 - (6)
