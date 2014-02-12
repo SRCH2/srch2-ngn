@@ -8,6 +8,27 @@
 #    <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
 # where each ID result set is a space separated list of record IDs expected from the server.
 
+# Specifically:
+#
+# Global ports:
+#         /info -> 8088
+#         /[other entrypoints] -> 8087
+#
+# Core 1: Movies, using global ports
+#         /info -> 8088
+#         /[other entrypoints] -> 8087
+#
+# Core 2: StackOverflow data
+#         /save -> 9087
+#         /export -> 9087
+#         /resetLogger -> 9087
+#         /docs -> 9087
+#         /update -> 9087
+# 
+# In the test case, we send HTTP requests to those core-ports. Based on the configuration, some of 
+# the requests should succeed, and some should fail.
+#
+
 import sys, urllib2, json, time, subprocess, os, commands, signal, re
 
 sys.path.insert(0, 'srch2lib')
