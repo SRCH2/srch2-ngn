@@ -61,34 +61,10 @@ using std::string;
 #define SESSION_TTL 120
 
 // map from port numbers (shared among cores) to socket file descriptors
-typedef std::map<unsigned short, int> PortMap_t;
-
-/*
- * Container for HTTP servers and related information.  Need one of these per thread, per core, per port.
- */
-struct Listener_t {
-    Srch2Server *srch2Server;
-    int fd;
-    srch2http::PortType_t portType;
-
-    int init(struct event_base *evbase, int socketFd, srch2http::PortType_t type, Srch2Server *searchServer);
-};
-
-int Listener_t::init(struct event_base *evbase, int socketFd, srch2http::PortType_t type, Srch2Server *searchServer)
-{
-    srch2Server = searchServer;
-    portType = type;
-    fd = socketFd;
-
-    return 1;
-}
+typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortMap_t;
 
 // named access to multiple "cores" (ala Solr)
 typedef std::map<const std::string, srch2http::Srch2Server *> CoreMap_t;
-
-// helper maps to find listeners by port number and core name
-typedef map<const string /*coreName*/, Listener_t *> CoreNameMap_t;
-typedef map<unsigned short /*portNumber*/, CoreNameMap_t> ListenersMap_t;
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -164,7 +140,7 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
     return port;
 }
 
-static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2http::PortType_t operationType)
+static bool operationPermitted(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t operationType)
 {
     struct operationMap_t {
         srch2http::PortType_t operationType;
@@ -184,30 +160,29 @@ static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2h
 
     if (operationType >= srch2http::EndOfPortType) {
         Logger::error("Illegal operation type: %d", static_cast<int> (operationType));
-        cb_notfound(req, static_cast<void *> (listener));
+        cb_notfound(req, static_cast<void *> (srch2Server));
         return false;
     }
 
-    string coreName = listener->srch2Server->getCoreName();
-    const srch2http::CoreInfo_t *coreInfo = listener->srch2Server->indexDataConfig;
+    string coreName = srch2Server->getCoreName();
+    const srch2http::CoreInfo_t *coreInfo = srch2Server->indexDataConfig;
     unsigned short configuredPort = coreInfo->getPort(operationType);
     short arrivalPort = getLibeventHttpRequestPort(req);
 
     if (arrivalPort < 0) {
         Logger::warn("Unable to ascertain arrival port from request headers.");
-    }
-
-    // this operation configured for a specific port which doesn't match actual
-    if (configuredPort > 0 && configuredPort != arrivalPort) {
-        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
-        cb_notfound(req, static_cast<void *> (listener));
         return false;
     }
 
-    // this operation not set to a specific port so sonly accepted on the default port
-    if (configuredPort == 0 && arrivalPort != atoi(listener->srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str())) {
-        Logger::warn("/%s request for %s core arriving on port %d denied (default port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
-        cb_notfound(req, static_cast<void *> (listener));
+    if (configuredPort == 0) {
+        // this operation not set to a specific port so only accepted on the default port
+        configuredPort = atoi(srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str());
+    }
+
+    // compare arrival port to configuration file port
+    if (configuredPort != arrivalPort) {
+        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
+        cb_notfound(req, static_cast<void *> (srch2Server));
         return false;
     }
 
@@ -221,16 +196,16 @@ static bool operationPermitted(evhttp_request *req, Listener_t *listener, srch2h
  */
 static void cb_search(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::SearchPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::SearchPort) == false) {
         return;
     }
 
     try {
-        srch2http::HTTPRequestHandler::searchCommand(req, listener->srch2Server);
+        srch2http::HTTPRequestHandler::searchCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -245,16 +220,16 @@ static void cb_search(evhttp_request *req, void *arg)
  */
 static void cb_suggest(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::SuggestPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::SuggestPort) == false) {
         return;
     }
 
     try {
-        srch2http::HTTPRequestHandler::suggestCommand(req, listener->srch2Server);
+        srch2http::HTTPRequestHandler::suggestCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -269,19 +244,17 @@ static void cb_suggest(evhttp_request *req, void *arg)
  */
 static void cb_info(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
-    /*string meminfo;
-     getMemoryInfo(meminfo);*/
 
-    if (operationPermitted(req, listener, srch2http::InfoPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::InfoPort) == false) {
         return;
     }
 
     string versioninfo = getCurrentVersion();
     try {
-        HTTPRequestHandler::infoCommand(req, listener->srch2Server, versioninfo);
+        HTTPRequestHandler::infoCommand(req, srch2Server, versioninfo);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -297,16 +270,16 @@ static void cb_info(evhttp_request *req, void *arg)
  */
 static void cb_write(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::DocsPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::DocsPort) == false) {
         return;
     }
 
     try {
-        HTTPRequestHandler::writeCommand(req, listener->srch2Server);
+        HTTPRequestHandler::writeCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -317,16 +290,16 @@ static void cb_write(evhttp_request *req, void *arg)
 
 static void cb_update(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::UpdatePort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::UpdatePort) == false) {
         return;
     }
 
     try {
-        HTTPRequestHandler::updateCommand(req, listener->srch2Server);
+        HTTPRequestHandler::updateCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -337,16 +310,16 @@ static void cb_update(evhttp_request *req, void *arg)
 
 static void cb_save(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::SavePort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::SavePort) == false) {
         return;
     }
 
     try {
-        HTTPRequestHandler::saveCommand(req, listener->srch2Server);
+        HTTPRequestHandler::saveCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -357,15 +330,15 @@ static void cb_save(evhttp_request *req, void *arg)
 
 static void cb_export(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::ExportPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::ExportPort) == false) {
         return;
     }
 
-    HTTPRequestHandler::exportCommand(req, listener->srch2Server);
+    HTTPRequestHandler::exportCommand(req, srch2Server);
 }
 
 /**
@@ -375,16 +348,16 @@ static void cb_export(evhttp_request *req, void *arg)
  */
 static void cb_resetLogger(evhttp_request *req, void *arg)
 {
-    Listener_t *listener = reinterpret_cast<Listener_t *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (operationPermitted(req, listener, srch2http::ResetLoggerPort) == false) {
+    if (operationPermitted(req, srch2Server, srch2http::ResetLoggerPort) == false) {
         return;
     }
 
     try {
-    	HTTPRequestHandler::resetLoggerCommand(req, listener->srch2Server);
+    	HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -455,7 +428,9 @@ int bindSocket(const char * hostname, int port) {
     return nfd;
 }
 
+// entry point for each thread
 void* dispatch(void *arg) {
+    // ask libevent to loop on events
     event_base_dispatch((struct event_base*) arg);
     return NULL;
 }
@@ -549,39 +524,10 @@ static void killServer(int signal) {
 #endif
 }
 
-static Listener_t *findListener(ListenersMap_t *listeners, unsigned short port, const string &coreName)
-{
-    ListenersMap_t::iterator listenator = listeners->find(port);
-    if (listenator != listeners->end() && listenator->second.find(coreName) != listenator->second.end()) {
-        return listenator->second.find(coreName)->second;
-    }
-    return NULL;
-}
-
-static Listener_t *createListener(ListenersMap_t *listeners, vector<Listener_t *> *allListeners, unsigned short port, srch2http::PortType_t portType, const string &coreName, struct event_base *evbase, int socketFd, struct evhttp *http_server, Srch2Server *srch2Server)
-{
-    Listener_t *listener = new Listener_t;
-    if (listener == NULL) {
-        perror("listener allocation failure");
-        return NULL;
-    }
-    if (listener->init(evbase, socketFd, portType, srch2Server) == 0) {
-        delete listener;
-        perror("listener initialization failure");
-        return NULL;
-    }
-    listener->srch2Server = srch2Server;
-    evhttp_set_gencb(http_server, cb_notfound, NULL);
-    (*listeners)[port][coreName] = listener; // for unique callback argument per port per core
-    allListeners->push_back(listener); // for free when main() exits
-
-    return listener;
-}
-
 /*
  * Start the srch2 servers, one per core in the config
  */
-static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreMap_t *cores, PortMap_t *globalPortMap, vector<Listener_t *> *allListeners)
+static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreMap_t *cores, PortMap_t *globalPortMap)
 {
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
@@ -635,6 +581,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     }
     //cout << "srch2 server started." << endl;
 
+    // loop over cores setting up mongodb and binding all ports to use
     for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
@@ -656,6 +603,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     }
                 }
             }
+        } else {
+            Logger::warn("Did not find config for core %s", iterator->second->getCoreName().c_str());
         }
     }
 
@@ -666,7 +615,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // Step 2: Serving server
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
-        ListenersMap_t listeners;
+        set<unsigned short> ports;
 
         struct event_base *evbase = event_base_new();
         if (NULL == evbase) {
@@ -681,14 +630,6 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             return 255;
         }
         evServers->push_back(http_server);
-
-        Listener_t *defaultListener = new Listener_t;
-        if (defaultListener == NULL || defaultListener->init(evbase, (*globalPortMap)[http_port], srch2http::EndOfPortType, defaultCore) == 0) {
-            perror("listener allocation failure");
-            return 255;
-        }
-        listeners[http_port][string("")] = defaultListener;
-        allListeners->push_back(defaultListener);
 
         // helper array - loop instead of repetitous code
         struct PortList_t {
@@ -709,65 +650,49 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         };
 
         // setup default core callbacks for queries that don't specify a core name
+        ports.insert(http_port);
         for (int j = 0; portList[j].path != NULL; j++) {
-            Listener_t *listener;
             unsigned int port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
             if (port < 1) {
-                listener = defaultListener;
                 port = http_port;
-            } else {
-                listener = findListener(&listeners, port, string(""));
-                if (listener == NULL) {
-                    listener = createListener(&listeners, allListeners, port, portList[j].portType, string(""), evbase, (*globalPortMap)[port], http_server, defaultCore);
-                    if (listener == NULL) {
-                        return 255;
-                    }
-                }
             }
-            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, listener);
-            Logger::info("Routing port %d route %s to default core %s", port, portList[j].path, listener->srch2Server->getCoreName().c_str());
+            if (ports.find(port) == ports.end()) {
+                ports.insert(port);
+            }
+            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
+            Logger::info("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
 
         if (config->getDefaultCoreSetFlag() == true) {
-            // for every core, for every OTHER port that core uses, do accept, each with their own Listener_t so the
-            // callback can check if the URL (path/operation) is permitted        
+            // for every core, for every OTHER port that core uses, do accept
             for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
-
                 string coreName = iterator->second->getCoreName();
                 for (unsigned int j = 0; portList[j].path != NULL; j++) {
                     string path = string("/") + coreName + string(portList[j].path);
-                    Listener_t *listener = NULL;
 
                     // look if listener already exists for this core on this port
                     unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
                     if (port < 1) {
                         port = http_port;
                     }
-                    listener = findListener(&listeners, port, coreName);
-                    if (listener == NULL) {
-                        listener = createListener(&listeners, allListeners, port, portList[j].portType, coreName, evbase, (*globalPortMap)[port], http_server, iterator->second);
-                        if (listener == NULL) {
-                            return 255;
-                        }
-                    } else {
-                        // listener already exists - just need to add new path/request type
-                        listener = listeners[port][coreName];
+                    if (ports.find(port) == ports.end()) {
+                        ports.insert(port);
                     }
-                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, listener);
+                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, iterator->second);
 
-                    Logger::info("Adding port %d route %s to core %s", port, path.c_str(), listener->srch2Server->getCoreName().c_str());
+                    Logger::info("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
                 }
             }
         }
 
         /* 4). accept bound socket */
-        for (ListenersMap_t::iterator listenator = listeners.begin(); listenator != listeners.end(); listenator++) {
-            if (evhttp_accept_socket(http_server, (*globalPortMap)[listenator->first]) != 0) {
+        for (set<unsigned short>::iterator iterator = ports.begin(); iterator != ports.end(); iterator++) {
+            if (evhttp_accept_socket(http_server, (*globalPortMap)[*iterator]) != 0) {
                 perror("evhttp_accept_socket");
                 return 255;
             }
-            Logger::debug("Socket accept by thread %d on port %d", i, listenator->first);
+            Logger::debug("Socket accept by thread %d on port %d", i, *iterator);
         }
 
         //fprintf(stderr, "Server started on port %d\n", http_port);
@@ -838,8 +763,7 @@ int main(int argc, char** argv) {
     vector<struct evhttp *> evServers;
     PortMap_t portMap;  // map of all ports across all cores to shared socket file descriptors
     CoreMap_t cores; // map from core names to Srch2Servers
-    vector<Listener_t *> listeners; // array of all listeners for all ports, all cores, all threads
-    int start = startServers(serverConf, &evBases, &evServers, &cores, &portMap, &listeners);
+    int start = startServers(serverConf, &evBases, &evServers, &cores, &portMap);
     if (start != 0) {
         Logger::close();
         return start; // startup failed
@@ -879,21 +803,15 @@ int main(int argc, char** argv) {
         evhttp_free(evServers[i]);
     }
 
-    // free resources before we exit
-    for (unsigned int i = 0; i < listeners.size(); i++) {
-        delete listeners[i];
-    }
-
     // use global port map to close each file descriptor just once
     for (PortMap_t::iterator iterator = portMap.begin(); iterator != portMap.end(); iterator++) {
         shutdown(iterator->second, SHUT_RD);
     }
 
     AnalyzerContainer::freeAll();
+    delete serverConf;
 
     Logger::console("Server stopped successfully");
-    // if no log file is set in config file. This variable should be null.
-    // Hence, we should do null check before calling fclose
     Logger::close();
     return EXIT_SUCCESS;
 }
