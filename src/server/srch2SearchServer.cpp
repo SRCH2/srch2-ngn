@@ -61,10 +61,10 @@ using std::string;
 #define SESSION_TTL 120
 
 // map from port numbers (shared among cores) to socket file descriptors
-typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortMap_t;
+typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 
 // named access to multiple "cores" (ala Solr)
-typedef std::map<const std::string, srch2http::Srch2Server *> CoreMap_t;
+typedef std::map<const std::string, srch2http::Srch2Server *> CoreNameServerMap_t;
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -121,6 +121,7 @@ static void cb_notfound(evhttp_request *req, void *arg)
  * }
  *
  * where cb_search() is a callback invoked by libevent.
+ * If "req" is from "localhost:8082/core1/search", then this function will extract "8082" from "req".
  */
 static short int getLibeventHttpRequestPort(struct evhttp_request *req)
 {
@@ -148,13 +149,13 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
     return port;
 }
 
-static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t operationType)
+static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t portType)
 {
-    struct operationMap_t {
-        srch2http::PortType_t operationType;
+    struct portMap_t {
+        srch2http::PortType_t portType;
         const char *operationName;
     };
-    struct operationMap_t opMap[] = {
+    struct portMap_t portTypeOperationMap[] = {
         { srch2http::SearchPort, "search" },
         { srch2http::SuggestPort, "suggest" },
         { srch2http::InfoPort, "info" },
@@ -166,15 +167,14 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::EndOfPortType, NULL },
     };
 
-    if (operationType >= srch2http::EndOfPortType) {
-        Logger::error("Illegal operation type: %d", static_cast<int> (operationType));
+    if (portType >= srch2http::EndOfPortType) {
+        Logger::error("Illegal port type: %d", static_cast<int> (portType));
         cb_notfound(req, static_cast<void *> (srch2Server));
         return false;
     }
 
-    string coreName = srch2Server->getCoreName();
     const srch2http::CoreInfo_t *coreInfo = srch2Server->indexDataConfig;
-    unsigned short configuredPort = coreInfo->getPort(operationType);
+    unsigned short configuredPort = coreInfo->getPort(portType);
     short arrivalPort = getLibeventHttpRequestPort(req);
 
     if (arrivalPort < 0) {
@@ -189,7 +189,8 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
 
     // compare arrival port to configuration file port
     if (configuredPort != arrivalPort) {
-        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", opMap[operationType].operationName, coreName.c_str(), arrivalPort, configuredPort);
+        string coreName = srch2Server->getCoreName();
+        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", portTypeOperationMap[portType].operationName, coreName.c_str(), arrivalPort, configuredPort);
         cb_notfound(req, static_cast<void *> (srch2Server));
         return false;
     }
@@ -466,8 +467,8 @@ pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
 // These are global variables that store host and port information for srch2 engine
-short http_port;
-const char *http_addr;
+short globalDefaultPort;
+const char *globalAddress;
 
 #ifdef __MACH__
 /*
@@ -496,7 +497,7 @@ void makeHttpRequest(){
      */
     char hostIpAddr[20];
 	memset(hostIpAddr, 0, sizeof(hostIpAddr));
-    struct hostent * host = gethostbyname(http_addr);
+    struct hostent * host = gethostbyname(globalAddress);
     if (host == NULL) {
     	// nothing much can be done..let us try 0.0.0.0
     	strncpy(hostIpAddr, "0.0.0.0", 7);
@@ -505,7 +506,7 @@ void makeHttpRequest(){
     	struct in_addr **addr_list = (struct in_addr **) host->h_addr_list;
     	strcpy(hostIpAddr, inet_ntoa(*addr_list[0]));
     }
-    conn = evhttp_connection_new( hostIpAddr, http_port);
+    conn = evhttp_connection_new( hostIpAddr, globalDefaultPort);
     evhttp_connection_set_timeout(conn, 1);
     req = evhttp_request_new(dummyRequestHandler, (void*)NULL);
     evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
@@ -535,21 +536,22 @@ static void killServer(int signal) {
 /*
  * Start the srch2 servers, one per core in the config
  */
-static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreMap_t *cores, PortMap_t *globalPortMap)
+static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap)
 {
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
     /* 1). event initialization */
-    http_port = atoi(config->getHTTPServerListeningPort().c_str());
-    http_addr = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+    globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+    globalAddress = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
 
     // bind the default port
-    if (http_port > 0 && globalPortMap->find(http_port) == globalPortMap->end()) {
-        (*globalPortMap)[http_port] = bindSocket(http_addr, http_port);
-        if ((*globalPortMap)[http_port] < 0) {
+    if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
+        int socketFd = bindSocket(globalAddress, globalDefaultPort);
+        if ((*globalPortSocketMap)[globalDefaultPort] < 0) {
             perror("socket bind error");
             return 255;
         }
+        (*globalPortSocketMap)[globalDefaultPort] = socketFd;
     }
 
     // create a server (core) for each data source in config file
@@ -558,13 +560,13 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         srch2http::Srch2Server *core = new srch2http::Srch2Server;
         core->setCoreName(iterator->second->getName());
-        (*cores)[iterator->second->getName()] = core;
+        (*coreNameServerMap)[iterator->second->getName()] = core;
     }
 
     // make sure we have identified the default core
     srch2http::Srch2Server *defaultCore = NULL;
-    if (cores->find(config->getDefaultCoreName()) != cores->end()) {
-        defaultCore = (*cores)[config->getDefaultCoreName()];
+    if (coreNameServerMap->find(config->getDefaultCoreName()) != coreNameServerMap->end()) {
+        defaultCore = (*coreNameServerMap)[config->getDefaultCoreName()];
     }
     if (defaultCore == NULL)
     {
@@ -574,7 +576,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
     //load the index from the data source
     try{
-        for (CoreMap_t::iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
+        for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
             iterator->second->init(config);
         }
     }catch(exception& ex) {
@@ -590,7 +592,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     //cout << "srch2 server started." << endl;
 
     // loop over cores setting up mongodb and binding all ports to use
-    for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
+    for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
             if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
@@ -603,12 +605,13 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 int port = coreInfo->getPort(portType);
-                if (port > 0 && (globalPortMap->find(port) == globalPortMap->end() || (*globalPortMap)[port] < 0)) {
-                    (*globalPortMap)[port] = bindSocket(http_addr, port);
-                    if ((*globalPortMap)[port] < 0) {
+                if (port > 0 && (globalPortSocketMap->find(port) == globalPortSocketMap->end() || (*globalPortSocketMap)[port] < 0)) {
+                    int socketFd = bindSocket(globalAddress, port);
+                    if ((*globalPortSocketMap)[port] < 0) {
                         perror("socket bind error");
                         return 255;
                     }
+                    (*globalPortSocketMap)[port] = socketFd;
                 }
             }
         } else {
@@ -618,12 +621,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
     MAX_THREADS = config->getNumberOfThreads();
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
-            MAX_THREADS, http_addr, http_port);
+            MAX_THREADS, globalAddress, globalDefaultPort);
 
     // Step 2: Serving server
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
-        set<unsigned short> ports;
 
         struct event_base *evbase = event_base_new();
         if (NULL == evbase) {
@@ -658,14 +660,10 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         };
 
         // setup default core callbacks for queries that don't specify a core name
-        ports.insert(http_port);
         for (int j = 0; portList[j].path != NULL; j++) {
             unsigned int port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
             if (port < 1) {
-                port = http_port;
-            }
-            if (ports.find(port) == ports.end()) {
-                ports.insert(port);
+                port = globalDefaultPort;
             }
             evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
             Logger::info("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
@@ -674,7 +672,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         if (config->getDefaultCoreSetFlag() == true) {
             // for every core, for every OTHER port that core uses, do accept
-            for (CoreMap_t::const_iterator iterator = cores->begin(); iterator != cores->end(); iterator++) {
+            for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
                 string coreName = iterator->second->getCoreName();
                 for (unsigned int j = 0; portList[j].path != NULL; j++) {
                     string path = string("/") + coreName + string(portList[j].path);
@@ -682,10 +680,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     // look if listener already exists for this core on this port
                     unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
                     if (port < 1) {
-                        port = http_port;
-                    }
-                    if (ports.find(port) == ports.end()) {
-                        ports.insert(port);
+                        port = globalDefaultPort;
                     }
                     evhttp_set_cb(http_server, path.c_str(), portList[j].callback, iterator->second);
 
@@ -695,15 +690,15 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         }
 
         /* 4). accept bound socket */
-        for (set<unsigned short>::iterator iterator = ports.begin(); iterator != ports.end(); iterator++) {
-            if (evhttp_accept_socket(http_server, (*globalPortMap)[*iterator]) != 0) {
+        for (PortSocketMap_t::iterator iterator = globalPortSocketMap->begin(); iterator != globalPortSocketMap->end(); iterator++) {
+            if (evhttp_accept_socket(http_server, iterator->second) != 0) {
                 perror("evhttp_accept_socket");
                 return 255;
             }
-            Logger::debug("Socket accept by thread %d on port %d", i, *iterator);
+            Logger::debug("Socket accept by thread %d on port %d", i, iterator->first);
         }
 
-        //fprintf(stderr, "Server started on port %d\n", http_port);
+        //fprintf(stderr, "Server started on port %d\n", globalDefaultPort);
         if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
             return 255;
     }
@@ -769,9 +764,9 @@ int main(int argc, char** argv) {
 
     vector<struct event_base *> evBases; // all libevent base objects (one per thread)
     vector<struct evhttp *> evServers;
-    PortMap_t portMap;  // map of all ports across all cores to shared socket file descriptors
-    CoreMap_t cores; // map from core names to Srch2Servers
-    int start = startServers(serverConf, &evBases, &evServers, &cores, &portMap);
+    PortSocketMap_t globalPortSocketMap;  // map of all ports across all cores to shared socket file descriptors
+    CoreNameServerMap_t coreNameServerMap; // map from core names to Srch2Servers
+    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap);
     if (start != 0) {
         Logger::close();
         return start; // startup failed
@@ -801,7 +796,7 @@ int main(int argc, char** argv) {
 
     delete[] threads;
 
-    for (CoreMap_t::iterator iterator = cores.begin(); iterator != cores.end(); iterator++) {
+    for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
         iterator->second->indexer->save();
         delete iterator->second;
     }
@@ -812,7 +807,7 @@ int main(int argc, char** argv) {
     }
 
     // use global port map to close each file descriptor just once
-    for (PortMap_t::iterator iterator = portMap.begin(); iterator != portMap.end(); iterator++) {
+    for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
         shutdown(iterator->second, SHUT_RD);
     }
 
