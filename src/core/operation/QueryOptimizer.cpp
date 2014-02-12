@@ -378,9 +378,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
 
-//	if(treeOptions.size() == 1){
-//		return treeOptions.at(0);
-//	}
+	if(treeOptions.size() == 1){
+		return treeOptions.at(0);
+	}
 
 	unsigned treeOptionIndexChosen = 0 ;
 	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < 1 ; treeOptionIndex++){

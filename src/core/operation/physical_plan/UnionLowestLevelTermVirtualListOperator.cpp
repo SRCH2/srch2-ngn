@@ -229,6 +229,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfG
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.cost = (unsigned)(log2((double)estimatedNumberOfTerminalNodes));
+	resultCost.cost = resultCost.cost * 0.1 + 1;
 	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
