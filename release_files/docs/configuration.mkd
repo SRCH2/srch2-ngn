@@ -131,10 +131,7 @@ This setting overrides listeningPort for save requests.  Save requests must be s
 ###4.7 ExportPort, Optional:{id="ExportPort"}
 This setting overrides listeningPort for export requests.  Export requests must be sent to this port instead.
 
-###4.8 ActivatePort, Optional:{id="ActivatePort"}
-This setting overrides listeningPort for activate requests.  Activate requests must be sent to this port instead.
-
-###4.9 ResetLoggerPort, Optional:{id="ResetLoggerPort"}
+###4.8 ResetLoggerPort, Optional:{id="ResetLoggerPort"}
 This setting overrides listeningPort for resetlogger requests.  ResetLogger requests must be sent to this port instead.
 
 ##5. Data Directory, Required{id="dataDir"}
