@@ -21,12 +21,12 @@ QueryOptimizer::QueryOptimizer(QueryEvaluatorInternal * queryEvaluator){
  *           and makes sure inputs and outputs of operators are consistent.
  * ---- 2. Applies optimization rules on the physical plan
  */
-void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan){
+void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,LogicalPlan * logicalPlan, unsigned planOffset){
 
 	this->logicalPlan = logicalPlan;
 
 	// Build physical plan
-	buildPhysicalPlanFirstVersion(physicalPlan);
+	buildPhysicalPlanFirstVersion(physicalPlan, planOffset);
 
 	if(physicalPlan.getPlanTree() == NULL){
 		return;
@@ -42,7 +42,7 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,Lo
  * This function maps LogicalPlan nodes to Physical nodes and builds a very first
  * version of the PhysicalPlan. This plan will optimizer in next steps.
  */
-void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
+void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, unsigned planOffset){
 
 	//1. Choose the search type based on user's request and post processing
 	chooseSearchTypeOfPhysicalPlan(physicalPlan);
@@ -58,7 +58,7 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan){
 	buildIncompleteTreeOptions(treeOptions);
 
 	//4. Find the option which has the minimum cost
-	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan);
+	PhysicalPlanOptimizationNode * chosenTree = findTheMinimumCostTree(treeOptions,physicalPlan,planOffset);
 
 	if(chosenTree == NULL){
 		physicalPlan.setPlanTree(NULL);
@@ -373,16 +373,21 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
 	}
 }
 
-PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan){
+PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan, unsigned planOffset){
 
 	PhysicalPlanOptimizationNode * minPlan = NULL;
 	unsigned minCost = 0;
 
+
 	if(treeOptions.size() == 1){
 		return treeOptions.at(0);
 	}
+	if(planOffset < treeOptions.size()-1){
+		return treeOptions.at(planOffset);
+	}
 
 	unsigned treeOptionIndexChosen = 0 ;
+	cout << "QO(";
 	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size()-1 ; treeOptionIndex++){
 		PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
 		PhysicalPlanCost cost;
@@ -402,6 +407,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
+		cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;
+
+
 		if(minPlan == NULL){
 			minPlan = treeOption;
 			minCost = cost.cost;
@@ -414,6 +422,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 			}
 		}
 	}
+	cout << treeOptionIndexChosen << ")\t";
 	return minPlan;
 }
 
